@@ -971,8 +971,6 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
   unsigned int l_compute_instr = 0;
   unsigned int lp_dim_out = 1;
   unsigned int vperm_instr = LIBXSMM_X86_INSTR_VPERMW;
-  unsigned int use_lp_kernel = 0;
-  LIBXSMM_UNUSED(use_lp_kernel);
   LIBXSMM_UNUSED(is_last_call);
 
   /* depending on datatype emit the needed FMA(-sequence) */
@@ -989,11 +987,9 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
     if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
       step_size = 4;
       lp_dim_out = 1;
-      use_lp_kernel = 0;
     } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) || i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_BF16 ) {
       step_size = 8;
       lp_dim_out = 2;
-      use_lp_kernel = 1;
     } else {
       /* shouldn't happen */
     }
@@ -1001,15 +997,12 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
     if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
       step_size = 1;
       lp_dim_out = 1;
-      use_lp_kernel = 0;
     } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) || i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_BF16 ) {
       step_size = 2;
       lp_dim_out = 2;
-      use_lp_kernel = 1;
     } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
       step_size = 4;
       lp_dim_out = 4;
-      use_lp_kernel = 1;
     } else {
       /* shouldn't happen */
     }
@@ -1024,13 +1017,6 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
       int n_fake_pixels;
       int n_compute_pixels;
       int bound;
-
-      /*
-      if (use_lp_kernel == 0) {
-        n_fake_pixels = i_conv_desc->ofw_fake_pixels;
-      } else {
-        n_fake_pixels = 0;
-      }*/
 
       n_fake_pixels = i_conv_desc->ofw_fake_pixels;
 

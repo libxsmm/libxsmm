@@ -95,19 +95,25 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
   LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID max. leaf */
     int feature_cpu = result, feature_os = result;
-    unsigned int maxleaf = eax, ecx2, ecx3;
+    unsigned int maxleaf = eax;
     LIBXSMM_CPUID_X86(1, 0/*ecx*/, eax, ebx, ecx, edx);
     /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
     if (LIBXSMM_CPUID_CHECK(ecx, 0x00100000)) {
       if (LIBXSMM_CPUID_CHECK(ecx, 0x10000000)) { /* AVX(0x10000000) */
         if (LIBXSMM_CPUID_CHECK(ecx, 0x00001000)) { /* FMA(0x00001000) */
+          unsigned int ecx2;
           LIBXSMM_CPUID_X86(7, 0/*ecx*/, eax, ebx, ecx2, edx);
           /* AVX512F(0x00010000), AVX512CD(0x10000000) */
           if (LIBXSMM_CPUID_CHECK(ebx, 0x10010000)) { /* Common */
             /* AVX512DQ(0x00020000), AVX512BW(0x40000000), AVX512VL(0x80000000) */
             if (LIBXSMM_CPUID_CHECK(ebx, 0xC0020000)) { /* AVX512-Core */
               if (LIBXSMM_CPUID_CHECK(ecx2, 0x00000800)) { /* VNNI */
+#if 0 /* no check required yet */
+                unsigned int ecx3;
                 LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx3, edx);
+#else
+                LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx2, edx);
+#endif
                 if (LIBXSMM_CPUID_CHECK(eax, 0x00000020)) { /* BF16 */
                   feature_cpu = LIBXSMM_X86_AVX512_CPX;
                 }

@@ -50,6 +50,11 @@
 #   define LIBXSMM_MALLOC_GLIBC 6
 # endif
 #endif
+#if defined(__THROW)
+# define LIBXSMM_THROW __THROW
+#else
+# define LIBXSMM_THROW
+#endif
 #if defined(_WIN32)
 # include <windows.h>
 # include <malloc.h>
@@ -145,6 +150,8 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
   defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && \
   defined(LIBXSMM_GLIBC) && !defined(_CRAYC) && !defined(__TRACE) /* TODO */
 # define LIBXSMM_MALLOC_HOOK_DYNAMIC
+#endif
+#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 # endif
@@ -1156,8 +1163,8 @@ LIBXSMM_API void __wrap_free(void* ptr)
 #endif /*(defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))*/
 
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* memalign(size_t /*alignment*/, size_t /*size*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* memalign(size_t alignment, size_t size)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t /*alignment*/, size_t /*size*/) LIBXSMM_THROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t alignment, size_t size) LIBXSMM_THROW
 {
   void* result;
 # if defined(LIBXSMM_MALLOC_MMAP_HOOK)
@@ -1168,8 +1175,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* memalign(size_t alignment, size_t size)
   return result;
 }
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* malloc(size_t /*size*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* malloc(size_t size)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t /*size*/) LIBXSMM_THROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t size) LIBXSMM_THROW
 {
   void* result;
 # if defined(LIBXSMM_MALLOC_MMAP_HOOK)
@@ -1181,8 +1188,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* malloc(size_t size)
 }
 
 #if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* calloc(size_t /*num*/, size_t /*size*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* calloc(size_t num, size_t size)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t /*num*/, size_t /*size*/) LIBXSMM_THROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t num, size_t size) LIBXSMM_THROW
 {
   void* result;
   const size_t nbytes = num * size;
@@ -1198,8 +1205,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* calloc(size_t num, size_t size)
 #endif
 
 #if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* /*ptr*/, size_t /*size*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* ptr, size_t size)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* /*ptr*/, size_t /*size*/) LIBXSMM_THROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* ptr, size_t size) LIBXSMM_THROW
 {
   void* result;
 # if defined(LIBXSMM_MALLOC_MMAP_HOOK)
@@ -1211,8 +1218,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* ptr, size_t size)
 }
 #endif
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* /*ptr*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* ptr)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* /*ptr*/) LIBXSMM_THROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* ptr) LIBXSMM_THROW
 {
   INTERNAL_FREE_HOOK(ptr, NULL/*caller*/);
 }

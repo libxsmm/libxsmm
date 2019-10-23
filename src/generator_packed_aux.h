@@ -470,12 +470,12 @@ LIBXSMM_API_INLINE void compact_mult_two_nums_ (
      unsigned int number,
      char regset )
 {
-     int datasize = 0;
      unsigned int i_vmove_instr;
      int i_instruction_set;
-
+#if 0
+     int datasize = 0;
      LIBXSMM_UNUSED(datasize);
-
+#endif
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;
@@ -488,19 +488,27 @@ LIBXSMM_API_INLINE void compact_mult_two_nums_ (
 
      if ( (number==4) && (regset=='y') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VMULPD;
      } else if ( (number==8) && (regset=='z') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VMULPD;
      } else if ( (number==8) && (regset=='y') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VMULPS;
      } else if ( (number==16) && (regset=='z') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VMULPS;
      } else {
         fprintf(stderr,"Unsupported combo of number and regset in compact_mult_two_nums\n");
@@ -518,12 +526,12 @@ LIBXSMM_API_INLINE void compact_add_two_nums_ (
      unsigned int number,
      char regset )
 {
-     int datasize = 0;
      unsigned int i_vmove_instr;
      int i_instruction_set;
-
+#if 0
+     int datasize = 0;
      LIBXSMM_UNUSED(datasize);
-
+#endif
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;
@@ -536,19 +544,27 @@ LIBXSMM_API_INLINE void compact_add_two_nums_ (
 
      if ( (number==4) && (regset=='y') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VADDPD;
      } else if ( (number==8) && (regset=='z') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VADDPD;
      } else if ( (number==8) && (regset=='y') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VADDPS;
      } else if ( (number==16) && (regset=='z') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VADDPS;
      } else {
         fprintf(stderr,"Unsupported combo of number and regset in compact_mult_two_nums\n");
@@ -566,12 +582,12 @@ LIBXSMM_API_INLINE void compact_sub_two_nums_ (
      unsigned int number,
      char regset )
 {
-     int datasize = 0;
      unsigned int i_vmove_instr;
      int i_instruction_set;
-
+#if 0
+     int datasize = 0;
      LIBXSMM_UNUSED(datasize);
-
+#endif
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;
@@ -584,19 +600,27 @@ LIBXSMM_API_INLINE void compact_sub_two_nums_ (
 
      if ( (number==4) && (regset=='y') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VSUBPD;
      } else if ( (number==8) && (regset=='z') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VSUBPD;
      } else if ( (number==8) && (regset=='y') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VSUBPS;
      } else if ( (number==16) && (regset=='z') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VSUBPS;
      } else {
         fprintf(stderr,"Unsupported combo of number and regset in compact_mult_two_nums\n");
@@ -614,12 +638,12 @@ LIBXSMM_API_INLINE void compact_fms_cminusab_(
      unsigned int number,
      char regset )
 {
-     int datasize = 0;
      unsigned int i_vmove_instr;
      int i_instruction_set;
-
+#if 0
+     int datasize = 0;
      LIBXSMM_UNUSED(datasize);
-
+#endif
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;
@@ -632,19 +656,27 @@ LIBXSMM_API_INLINE void compact_fms_cminusab_(
 
      if ( (number==4) && (regset=='y') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VFNMADD231PD;
      } else if ( (number==8) && (regset=='z') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VFNMADD231PD;
      } else if ( (number==8) && (regset=='y') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VFNMADD231PS;
      } else if ( (number==16) && (regset=='z') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VFNMADD231PS;
      } else {
         fprintf(stderr,"Unsupported combo of number and regset in compact_fms_cminusab\n");
@@ -662,12 +694,12 @@ LIBXSMM_API_INLINE void compact_fma_cplusab_(
      unsigned int number,
      char regset )
 {
-     int datasize = 0;
      unsigned int i_vmove_instr;
      int i_instruction_set;
-
+#if 0
+     int datasize = 0;
      LIBXSMM_UNUSED(datasize);
-
+#endif
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;
@@ -680,19 +712,27 @@ LIBXSMM_API_INLINE void compact_fma_cplusab_(
 
      if ( (number==4) && (regset=='y') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VFMADD231PD;
      } else if ( (number==8) && (regset=='z') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VFMADD231PD;
      } else if ( (number==8) && (regset=='y') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VFMADD231PS;
      } else if ( (number==16) && (regset=='z') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VFMADD231PS;
      } else {
         fprintf(stderr,"Unsupported combo of number and regset in compact_fms_cminusab\n");
@@ -710,12 +750,12 @@ LIBXSMM_API_INLINE void compact_divide_two_nums_ (
      unsigned int number,
      char regset )
 {
-     int datasize = 0;
      unsigned int i_vmove_instr;
      int i_instruction_set;
-
+#if 0
+     int datasize = 0;
      LIBXSMM_UNUSED(datasize);
-
+#endif
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;
@@ -728,19 +768,27 @@ LIBXSMM_API_INLINE void compact_divide_two_nums_ (
 
      if ( (number==4) && (regset=='y') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VDIVPD;
      } else if ( (number==8) && (regset=='z') )
      {
+#if 0
         datasize = 8;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VDIVPD;
      } else if ( (number==8) && (regset=='y') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VDIVPS;
      } else if ( (number==16) && (regset=='z') )
      {
+#if 0
         datasize = 4;
+#endif
         i_vmove_instr = LIBXSMM_X86_INSTR_VDIVPS;
      } else {
         fprintf(stderr,"Unsupported combo of number and regset in compact_divide_two_nums\n");
