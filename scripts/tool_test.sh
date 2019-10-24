@@ -115,6 +115,17 @@ then
       PARTITIONS=none
     fi
   fi
+  if [ "random" = "${PARTITION}" ]; then
+    if [ "random" != "${PARTITIONS}" ]; then
+      PARTITIONS=(${PARTITIONS})
+      NPARTITIONS=${#PARTITIONS[@]}
+      PARTITIONS=${PARTITIONS[RANDOM%NPARTITIONS]}
+    else
+      PARTITIONS=none
+    fi
+  fi
+  export PARTITIONS
+  export PARTITION
 
   # setup CONFIGS (multiple configurations)
   if [ "" = "${CONFIGS}" ]; then
