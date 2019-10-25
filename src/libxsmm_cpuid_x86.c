@@ -152,14 +152,29 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
       }
     }
     else feature_os = LIBXSMM_X86_GENERIC;
-#if 0
-    result = LIBXSMM_MIN(feature_os, feature_cpu);
-#else
-    if (LIBXSMM_STATIC_TARGET_ARCH < feature_cpu && feature_os < feature_cpu
-      && 0 != libxsmm_verbosity) /* library code is expected to be mute */
-    {
-      fprintf(stderr, "LIBXSMM WARNING: detected CPU features are not permitted by the OS!\n");
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      const int target_vlen32 = libxsmm_cpuid_vlen32(feature_cpu);
+      const char *const compiler_support = (libxsmm_cpuid_vlen32(LIBXSMM_MAX_STATIC_TARGET_ARCH) < target_vlen32
+        ? "" : (((2 <= libxsmm_verbosity || 0 > libxsmm_verbosity) && LIBXSMM_MAX_STATIC_TARGET_ARCH < feature_cpu)
+          ? "highly " : NULL));
+      int warnings = 0;
+# if !defined(NDEBUG) && defined(__OPTIMIZE__)
+      fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
+      ++warnings;
+# endif
+      if (NULL != compiler_support) {
+        fprintf(stderr, "LIBXSMM WARNING: missing compiler support for %soptimized code paths!\n", compiler_support);
+        ++warnings;
+      }
+      if (LIBXSMM_STATIC_TARGET_ARCH < feature_cpu && feature_os < feature_cpu) {
+        fprintf(stderr, "LIBXSMM WARNING: detected CPU features are not permitted by the OS!\n");
+        ++warnings;
+      }
+      if (0 != warnings) fprintf(stderr, "\n");
     }
+#if 0 /* permitted features */
+    result = LIBXSMM_MIN(feature_os, feature_cpu);
+#else /* opportunistic */
     result = feature_cpu;
 #endif
   }
