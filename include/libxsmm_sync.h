@@ -74,22 +74,11 @@
 # define LIBXSMM_SYNC_PAUSE
 #endif
 
-#if !defined(LIBXSMM_SYNC_SYSTEM) && \
-  ((defined(_CRAYC) && !defined(__GNUC__)) || defined(__MINGW32__))
+#if !defined(LIBXSMM_SYNC_SYSTEM) && ( \
+  (defined(__PGI) && (!defined(LIBXSMM_LIBATOMIC) || !defined(__STATIC))) || \
+  (defined(_CRAYC) && !defined(__GNUC__)) || \
+  (defined(__MINGW32__)))
 # define LIBXSMM_SYNC_SYSTEM
-#endif
-
-#if defined(__PGI)
-# if defined(LIBXSMM_LIBATOMIC)
-#   if defined(__STATIC)
-#   endif
-# else
-#   if 0 /* GCC builtin atomics */
-#     define LIBXSMM_GCC_BASELINE
-#   else /* no atomics! */
-#     define LIBXSMM_SYNC_SYSTEM
-#   endif
-# endif
 #endif
 
 #if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP) && 0
