@@ -79,11 +79,16 @@
 # define LIBXSMM_SYNC_SYSTEM
 #endif
 
-#if defined(__PGI) && !defined(LIBXSMM_LIBATOMIC)
-# if 0 /* GCC builtin atomics */
-#   define LIBXSMM_GCC_BASELINE
-# else /* no atomics! */
-#   define LIBXSMM_SYNC_SYSTEM
+#if defined(__PGI)
+# if defined(LIBXSMM_LIBATOMIC)
+#   if defined(__STATIC)
+#   endif
+# else
+#   if 0 /* GCC builtin atomics */
+#     define LIBXSMM_GCC_BASELINE
+#   else /* no atomics! */
+#     define LIBXSMM_SYNC_SYSTEM
+#   endif
 # endif
 #endif
 
