@@ -58,7 +58,8 @@
     }
 # elif defined(__GNUC__) || !defined(_CRAYC)
 #   if (64 > (LIBXSMM_BITS))
-      LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
+      LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid( /* prototype */
+        unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
 #     define LIBXSMM_XGETBV(XCR, EAX, EDX) EAX = (EDX) = 0xFFFFFFFF
 #     define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
         EAX = (EBX) = (EDX) = 0; ECX = (SUBFN); \
@@ -133,6 +134,11 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
         }
         else feature_cpu = LIBXSMM_X86_SSE4;
       }
+# if !defined(LIBXSMM_INTRINSICS_DEBUG)
+      LIBXSMM_ASSERT_MSG(LIBXSMM_STATIC_TARGET_ARCH <= LIBXSMM_MAX(LIBXSMM_X86_SSE3, feature_cpu),
+        /* TODO: confirm SSE3 */"missed detecting ISA extensions");
+      if (LIBXSMM_STATIC_TARGET_ARCH > feature_cpu) feature_cpu = LIBXSMM_STATIC_TARGET_ARCH;
+# endif
       /* XSAVE/XGETBV(0x04000000), OSXSAVE(0x08000000) */
       if (LIBXSMM_CPUID_CHECK(ecx, 0x0C000000)) { /* OS SSE support */
         feature_os = LIBXSMM_MIN(LIBXSMM_X86_SSE4, feature_cpu);
@@ -169,10 +175,6 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
         }
         if (0 != warnings) fprintf(stderr, "\n");
       }
-# if !defined(LIBXSMM_INTRINSICS_DEBUG)
-      LIBXSMM_ASSERT_MSG(LIBXSMM_STATIC_TARGET_ARCH <= result, "missed detecting ISA extensions");
-      if (LIBXSMM_STATIC_TARGET_ARCH > result) result = LIBXSMM_STATIC_TARGET_ARCH;
-# endif
 # if 0 /* permitted features */
       result = LIBXSMM_MIN(feature_cpu, feature_os);
 # else /* opportunistic */
