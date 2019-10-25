@@ -695,9 +695,9 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 # endif
 #else
-# define LIBXSMM_LOCK_SPINLOCK
-# define LIBXSMM_LOCK_MUTEX
-# define LIBXSMM_LOCK_RWLOCK
+# define LIBXSMM_LOCK_SPINLOCK spinlock_dummy
+# define LIBXSMM_LOCK_MUTEX mutex_dummy
+# define LIBXSMM_LOCK_RWLOCK rwlock_dummy
 # define LIBXSMM_LOCK_ACQUIRED(KIND) 0
 # define LIBXSMM_LOCK_TYPE_ISPOD(KIND) 1
 # define LIBXSMM_LOCK_TYPE_ISRW(KIND) 0

@@ -1160,7 +1160,8 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_end(void)
 #   pragma warning(push)
 #   pragma warning(disable: 26115) /* try-lock is treated incorrectly by static analysis */
 # endif
-  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_DEFAULT) == LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_DEFAULT, &libxsmm_mmbatch_lock)) {
+  /*const*/ int trystate = LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_DEFAULT, &libxsmm_mmbatch_lock);
+  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_DEFAULT) == trystate) {
     const unsigned int max_batchsize = (unsigned int)((LIBXSMM_GEMM_MMBATCH_SCALE) * libxsmm_mmbatch_size);
     const libxsmm_gemm_descriptor flushdesc = libxsmm_mmbatch_desc;
     static int error_once = 0;
