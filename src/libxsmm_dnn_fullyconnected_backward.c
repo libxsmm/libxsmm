@@ -146,16 +146,23 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom(li
   }
 
   /* check if we are on an AVX512 platform */
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_bwd_custom_f32_f32( handle, start_thread, tid);
-    } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+    }
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512F__*/
+    else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_bwd_custom_bf16_f32( handle, start_thread, tid);
-    } else {
+    }
+#endif
+    else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
-  } else {
+  } else
+#endif
+  {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;
@@ -214,6 +221,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck
   }
 
   /* check if we are on an AVX512 platform */
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_f32_f32( handle, start_thread, tid);
@@ -221,7 +229,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
-  } else {
+  } else
+#endif
+  {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;
