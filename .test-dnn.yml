@@ -116,7 +116,8 @@ script:
       done
     done)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+  - if [ "knl" = "${PARTITIONS}" ] || [ "knltrb" = "${PARTITIONS}" ]; then exit 0; fi &&
+    make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
     CHECK=1 ITERS=1000 MB=${OMP_NUM_THREADS};
     for PAD in 0 1; do

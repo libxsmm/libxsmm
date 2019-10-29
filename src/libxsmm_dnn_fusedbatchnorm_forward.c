@@ -394,6 +394,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_fwd_custom(li
   }
 
   /* check if we are on an AVX512 platform */
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if ( ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) &&
        (handle->ofmblock == 16) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -424,7 +425,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_fwd_custom(li
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
-  } else {
+  } else
+#endif
+  {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;

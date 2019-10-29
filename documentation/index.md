@@ -2,9 +2,7 @@
 
 
 
-LIBXSMM is a library for specialized dense and sparse matrix operations as well as for deep learning primitives such as small convolutions targeting Intel Architecture. Small matrix multiplication kernels (SMMs) are generated for Intel&#160;SSE, Intel&#160;AVX, Intel&#160;AVX2, and Intel&#160;AVX&#8209;512 as found in the Intel&#160;Xeon&#160;Phi processor family&#160;(KNL, KNM) and Intel&#160;Xeon processors (SKX). Highly optimized code for small convolutions is targeting Intel&#160;AVX2 and Intel&#160;AVX&#8209;512, whereas other targets can automatically leverage specialized SMMs to perform convolutions.
-
-The library supports statically generated code at configuration time (SMMs), uses optimized code paths based on compiler-generated code as well as Intrinsic functions, but mainly utilizes Just&#8209;In&#8209;Time (JIT) code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and small convolutions). LIBXSMM is suitable for "build once and deploy everywhere" i.e., no special target flags are needed to exploit the available performance.
+LIBXSMM is a library for specialized dense and sparse matrix operations as well as for deep learning primitives such as small convolutions. The library is targeting Intel Architecture with Intel&#160;SSE, Intel&#160;AVX, Intel&#160;AVX2, Intel&#160;AVX&#8209;512 (with VNNI and Bfloat16). Code generation is mainly based on Just&#8209;In&#8209;Time (JIT) code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and deep learning). LIBXSMM is suitable for "build once and deploy everywhere" i.e., no special target flags are needed to exploit the available performance.
 
 For a list questions and answers, please also have a look at [https://github.com/hfp/libxsmm/wiki/Q&A](https://github.com/hfp/libxsmm/wiki/Q&A).
 
@@ -14,11 +12,11 @@ For a list questions and answers, please also have a look at [https://github.com
 * **PDF**: [main](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf) documentation file, and separate [sample](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm_samples.pdf) documentation.
 * **Articles**: [magazine article](https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf) incl. [sample code](https://github.com/hfp/libxsmm/tree/master/samples/magazine) (full list of [Articles](#articles)).
 
-**<a name="what-is-a-small-matrix-multiplication"></a>What is a small matrix multiplication?** When characterizing the problem-size using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within *(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64* (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library is typically used to generate code up to the specified [threshold](libxsmm_tune.md#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M or K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For auto-dispatched problem-sizes above the configurable threshold (explicitly JIT'ted code is **not** subject to the threshold), LIBXSMM is falling back to BLAS. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
+**<a name="what-is-a-small-matrix-multiplication"></a>What is a small matrix multiplication?** When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within *(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64* (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library is typically used to generate code up to the specified [threshold](libxsmm_tune.md#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M or K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For auto-dispatched problem-sizes above the configurable threshold (explicitly JIT'ted code is **not** subject to the threshold), LIBXSMM is falling back to BLAS. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
 
 **<a name="what-is-a-small-convolution"></a>What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy to use invocation of small (direct) convolutions, which are intended for CNN training and classification.
 
-**<a name="getting-started"></a><a name="hello-libxsmm"></a>Getting Started**: The following code is focused on a specific functionality but may be considered as "Hello LIBXSMM". Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile using `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
+**<a name="getting-started"></a><a name="hello-libxsmm"></a>Getting Started**: The following code is focused on a specific functionality but may be considered as "Hello LIBXSMM". Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile with `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
 
 ```cpp
 #include <libxsmm.h>
@@ -103,7 +101,7 @@ The main interface file is *generated*, and it is therefore **not** stored in th
 * [Classic Library (ABI)](#classic-library-abi) and [Link Instructions](#link-instructions) (C/C++ and FORTRAN)
 * [Header-Only](#header-only) (C and C++)
 
-**NOTE**: LIBXSMM is available as prebuilt package for Fedora/RedHat/CentOS, Ubuntu, and FreeBSD. Further, LIBXSMM can be installed using the [Spack Package Manager](http://computation.llnl.gov/projects/spack-hpc-package-manager) or per [EasyBuild+EasyConfig](https://github.com/easybuilders).
+**NOTE**: LIBXSMM is available as prebuilt package for Fedora/RedHat/CentOS, Ubuntu, and FreeBSD. Further, LIBXSMM can be installed with the [Spack Package Manager](http://computation.llnl.gov/projects/spack-hpc-package-manager) or per [EasyBuild+EasyConfig](https://github.com/easybuilders).
 
 ### Classic Library (ABI)
 
@@ -118,7 +116,7 @@ make STATIC=0
 make
 ```
 
-On CRAY systems, the CRAY Compiling Environment (CCE) should be used regardless of using the CRAY compiler, the Intel Compiler, or the GNU&#160;Compiler Collection (GCC). The CCE is eventually suppressing to build shared libraries (STATIC=0). In any case, (1)&#160;switch to the desired compiler (module load/switch), and (2)&#160;rely on:
+On CRAY systems, the CRAY Compiling Environment (CCE) should be used regardless of utilizing the CRAY compiler, the Intel Compiler, or the GNU&#160;Compiler Collection (GCC). The CCE is eventually suppressing to build shared libraries (STATIC=0). In any case, (1)&#160;switch to the desired compiler (module load/switch), and (2)&#160;rely on:
 
 ```bash
 make CXX=CC CC=cc FC=ftn
@@ -192,8 +190,6 @@ Similarly, an application is free to choose any BLAS or LAPACK library (if the l
 **NOTE**: LIBXSMM does not support to dynamically link 'libxsmm' or 'libxsmmext' ("so"), when BLAS is linked statically ("a"). If BLAS is linked statically, the static version of LIBXSMM must be used!
 
 ### Installation
-
-Installing LIBXSMM makes possibly the most sense when combining the JIT backend ([enabled by default](libxsmm_be.md)) with a collection of statically generated SSE kernels (by specifying M, N, K, or MNK). If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags at runtime are not supporting a more specific instruction set extension (code path). Since the JIT backend does not support or generate SSE code by itself, the library is compiled by selecting SSE code generation if not specified otherwise (AVX=1&#124;2&#124;3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE4.2 allows to practically target any deployed system, however using SSE=0 and AVX=0 together is falling back to generic code, and any static kernels are not specialized using the assembly code generator.
 
 There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): (1)&#160;building the library in an out&#8209;of&#8209;tree fashion, and (2)&#160;installing into a certain location. <a name="install-build"></a>Building in an out&#8209;of&#8209;tree fashion looks like:
 
@@ -295,7 +291,7 @@ Please note that comparing performance results depends on whether the operands o
 
 ### High Performance Computing (HPC)
 
-**\[1]&#160;[https://cp2k.org/](https://cp2k.org/)**: Open Source Molecular Dynamics using the [DBCSR library](https://github.com/cp2k/dbcsr) to process batches of small matrix multiplications. The batches originate from a distributed block-sparse with problem-specific small matrix shapes. Starting with [CP2K&#160;3.0](https://www.cp2k.org/version_history), LIBXSMM can substitute CP2K's 'libsmm' library.
+**\[1]&#160;[https://cp2k.org/](https://cp2k.org/)**: Open Source Molecular Dynamics and the [DBCSR library](https://github.com/cp2k/dbcsr), which processes batches of small matrix multiplications. The batches originate from a distributed block-sparse matrix with problem-specific small matrices. Starting with [CP2K&#160;3.0](https://www.cp2k.org/version_history), LIBXSMM can substitute CP2K's 'libsmm' library.
 
 **\[2]&#160;[https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/)**: SeisSol is one of the leading codes for earthquake scenarios, for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see [https://github.com/TUM-I5/seissol_kernels/](https://github.com/TUM-I5/seissol_kernels/).
 
@@ -303,7 +299,7 @@ Please note that comparing performance results depends on whether the operands o
 
 **\[4]&#160;[https://github.com/Nek5000/Nek5000](https://github.com/Nek5000/Nek5000)**: Nek5000 is the open-source, highly-scalable, always-portable spectral element code from [https://nek5000.mcs.anl.gov/](https://nek5000.mcs.anl.gov/). The development branch of the Nek5000 code [incorporates](https://github.com/Nek5000/Nek5000/blob/master/core/mxm_wrapper.f) LIBXSMM.
 
-**\[5]&#160;[http://pyfr.org/](http://pyfr.org/)**: PyFR is an open-source Python based framework for solving advection-diffusion type problems on streaming architectures using the flux reconstruction approach. PyFR&#160;1.6.0 optionally [incorporates LIBXSMM](http://pyfr.org/user_guide.php) as a matrix multiplication provider for the OpenMP backend. Please also note LIBXSMM's [PyFR-related code sample](https://github.com/hfp/libxsmm/tree/master/samples/pyfr).
+**\[5]&#160;[http://pyfr.org/](http://pyfr.org/)**: PyFR is an open-source Python based framework for solving advection-diffusion type problems on streaming architectures by using the flux reconstruction approach. PyFR&#160;1.6.0 optionally [incorporates LIBXSMM](http://pyfr.org/user_guide.php) as a matrix multiplication provider for the OpenMP backend. Please also note LIBXSMM's [PyFR-related code sample](https://github.com/hfp/libxsmm/tree/master/samples/pyfr).
 
 **\[6]&#160;[http://dial3343.org/about/](http://dial3343.org/about/)**: The Extreme-scale Discontinuous Galerkin Environment (EDGE) is a solver for hyperbolic partial differential equations with emphasis on seismic simulations. The EDGE [source code](https://github.com/3343/edge) optionally relies on LIBXSMM, but for high performance LIBXSMM's kernels are highly recommended.
 

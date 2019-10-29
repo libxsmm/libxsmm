@@ -137,7 +137,8 @@ int main(void)
         {
           libxsmm_descriptor_blob blob;
           const libxsmm_mcopy_descriptor *const desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(ELEM_TYPE),
-            m[test], n[test], ldo[test], ldi[test], LIBXSMM_MATCOPY_FLAG_DEFAULT, prefetch[test], NULL/*unroll*/);
+            (unsigned int)m[test], (unsigned int)n[test], (unsigned int)ldo[test], (unsigned int)ldi[test],
+            LIBXSMM_MATCOPY_FLAG_DEFAULT, prefetch[test], NULL/*unroll*/);
           const libxsmm_xmcopyfunction kernel = libxsmm_dispatch_mcopy(desc);
           if (NULL == kernel) {
 # if defined(_DEBUG)

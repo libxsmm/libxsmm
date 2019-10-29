@@ -475,19 +475,10 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
-    const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
-#if !defined(NDEBUG) && defined(__OPTIMIZE__)
-    fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
-#endif
-    if (libxsmm_cpuid_vlen32(LIBXSMM_MAX_STATIC_TARGET_ARCH) < libxsmm_cpuid_vlen32(libxsmm_target_archid)) {
-      fprintf(stderr, "LIBXSMM WARNING: missing compiler support for optimized code paths!\n");
-    }
-    else if (0 != high_verbosity && LIBXSMM_MAX_STATIC_TARGET_ARCH < libxsmm_target_archid) {
-      fprintf(stderr, "LIBXSMM WARNING: missing compiler support for highly optimized code paths!\n");
-    }
     fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
       LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
+      const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
       libxsmm_scratch_info scratch_info; size_t size_scratch = 0, size_private = 0;
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
@@ -1235,7 +1226,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     target_archid = cpuid;
   }
   if (cpuid < target_archid) { /* warn about code path if beyond CPUID */
-    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       const char *const target_arch = libxsmm_cpuid_name(target_archid);
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
         target_arch, libxsmm_cpuid_name(cpuid));
@@ -2002,7 +1996,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
               if (NULL == internal_registry[i].ptr_const) break;
             } while (i != i0);
             if (i == i0) { /* out of capacity (no registry slot available) */
-              diff = 0; /* inside of locked region (do not use break!) */
+              diff = 0; /* do not use break if inside of locked region */
             }
             flux_entry.pmm = NULL; /* no result */
           }
@@ -2023,8 +2017,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
     } while (0 != diff);
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     if (NULL != flux_entry.ptr_const) { /* keep code version on record (cache) */
+      LIBXSMM_ASSERT(0 == diff);
 # if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
-      if (cache->entry.id == libxsmm_ninit)
+      if (cache->entry.id == libxsmm_ninit) /* maintain cache */
 # endif
       {
         if (cache->entry.size < (LIBXSMM_CACHE_MAXSIZE)) { /* grow */
@@ -2036,16 +2031,15 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         }
       }
 # if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
-      else { /* invalidate */
-        LIBXSMM_ASSERT(0 == cache_index);
+      else { /* reset cache */
         cache->entry.id = libxsmm_ninit;
         cache->entry.size = 1;
+        cache_index = 0;
       }
 # endif
       LIBXSMM_ASSIGN127(cache->entry.keys + cache_index, desc);
       cache->entry.code[cache_index] = flux_entry;
       cache->entry.hit = cache_index;
-      LIBXSMM_ASSERT(0 == diff);
     }
 #endif
   }

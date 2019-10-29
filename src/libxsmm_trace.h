@@ -47,7 +47,7 @@
 # define LIBXSMM_TRACE_CALLERID_MAXDEPTH 8
 #endif
 #if !defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && \
-  (!defined(_WIN32) && (defined(__GNUC__) || defined(__clang__)) && (!defined(__PGI) || \
+  ((!defined(_WIN32) || defined(__MINGW32__)) && (defined(__GNUC__) || defined(__clang__)) && (!defined(__PGI) || \
     LIBXSMM_VERSION3(19, 0, 0) <= LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__)))
 # define LIBXSMM_TRACE_CALLERID_GCCBUILTIN
 #endif
