@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 /* size variables, all const */
-const int nImg = handle->desc.N;
+const int nImg = handle->desc.partN;
 const int ifh = handle->desc.H;
 const int ifw = handle->desc.W;
 const int sh = handle->desc.u;
@@ -49,7 +49,7 @@ const int ifwp = ifw + 2*ipw;
 const int nBlocksFm = handle->blocksifm;
 const int nFmBlock = handle->ifmblock;
 
-const element_stats_type nhw = (element_stats_type)(nImg * ifh * ifw);
+const element_stats_type nhw = (element_stats_type)(handle->desc.fullN * ifh * ifw);
 const element_stats_type recp_nhw = 1.0f/nhw;
 
 /* computing first logical thread */
@@ -231,9 +231,26 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
         }
       }
     }
+  } else {
+    /* now we need to reduce the del_gamm and del_beta */
+    for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+      element_stats_type* del_gamma_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, 0, 0, nImg, nFmBlock);
+      element_stats_type* del_beta_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, 0, 0, nImg, nFmBlock);
 
-    libxsmm_barrier_wait(handle->barrier, ltid);
+      for ( img=1; img < nImg; img++ ) {
+        element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
+        element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
+
+        LIBXSMM_PRAGMA_SIMD
+        for ( v=0; v < nFmBlock; v++ ) {
+          del_gamma_ptr[v] += del_gamma_img_ptr[v];
+          del_beta_ptr[v]  += del_beta_img_ptr[v];
+        }
+      }
+    }
   }
+
+  libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
 if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||

@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint rldi = 0 <= lower ? randstart(lower, ldi) : 0;
         km = randstart(LIBXSMM_ABS(lower), m);
         kldi = LIBXSMM_MAX(rldi, km);
-        if (('o' == t || 'O' == t)) {
+        if ('o' == t || 'O' == t) {
           const libxsmm_blasint rldo = 0 <= lower ? randstart(lower, ldo) : 0;
           kn = randstart(LIBXSMM_ABS(lower), n);
           kldo = LIBXSMM_MAX(rldo, kn);
@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
       }
       size += (size_t)(sizeof(ELEM_TYPE) * km * kn);
 
-      if (('o' == t || 'O' == t)) {
+      if ('o' == t || 'O' == t) {
 #if !defined(USE_REFERENCE)
         kldi = km; kldo = kn;
 #endif
@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
           const libxsmm_blasint rldi = 0 <= lower ? randstart(lower, ldi) : 0;
           km = randstart(LIBXSMM_ABS(lower), m);
           kldi = LIBXSMM_MAX(rldi, km);
-          if (('o' == t || 'O' == t)) {
+          if ('o' == t || 'O' == t) {
             const libxsmm_blasint rldo = 0 <= lower ? randstart(lower, ldo) : 0;
             kn = randstart(LIBXSMM_ABS(lower), n);
             kldo = LIBXSMM_MAX(rldo, kn);
@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
           }
         }
 
-        if (('o' == t || 'O' == t)) {
+        if ('o' == t || 'O' == t) {
 #if defined(USE_REFERENCE)
           start = libxsmm_timer_tick();
           OTRANS_GOLD(&km, &kn, a, &kldi, b, &kldo);

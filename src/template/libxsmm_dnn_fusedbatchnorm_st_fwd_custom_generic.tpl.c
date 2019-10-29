@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 /* size variables, all const */
-const int nImg = handle->desc.N;
+const int nImg = handle->desc.partN;
 const int ifh = handle->desc.H;
 const int ifw = handle->desc.W;
 const int sh = handle->desc.u;
@@ -69,7 +69,7 @@ const int thr_end2 = ((ltid + 1) * chunksize2 < work2) ? ((ltid + 1) * chunksize
 
 /* eps to avoid sqrt of zero */
 const element_stats_type sqrt_eps = 1e-7f;
-const element_stats_type nhw = (element_stats_type)(nImg * ifh * ifw);
+const element_stats_type nhw = (element_stats_type)(handle->desc.fullN * ifh * ifw);
 const element_stats_type recp_nhw = 1.0f/nhw;
 
 /* loop variables */
@@ -165,34 +165,34 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 
-  if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
-       ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0)    ) {
-    /* now we need to reduce the sum and sum^2, we use the final  */
-    for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
-      /* @TODO check if we can bake this in into scratch */
-      element_stats_type lcl_sum_ptr[64];
-      element_stats_type lcl_sumsq_ptr[64];
-      element_stats_type* bmean_ptr = &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 0, nFmBlock);
-      element_stats_type* brstd_ptr = &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 0, nFmBlock);
-      element_stats_type* tvar_ptr  = &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, nFmBlock);
+ /* now we need to reduce the sum and sum^2, we use the final  */
+  for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+    /* @TODO check if we can bake this in into scratch */
+    element_stats_type lcl_sum_ptr[64];
+    element_stats_type lcl_sumsq_ptr[64];
+    element_stats_type* bmean_ptr = &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 0, nFmBlock);
+    element_stats_type* brstd_ptr = &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 0, nFmBlock);
+    element_stats_type* tvar_ptr  = &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, nFmBlock);
+
+    LIBXSMM_PRAGMA_SIMD
+    for ( v=0; v < nFmBlock; v++ ) {
+      lcl_sum_ptr[v]   = (element_stats_type)0;
+      lcl_sumsq_ptr[v] = (element_stats_type)0;
+    }
+
+    for ( img=0; img < nImg; img++ ) {
+      element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, img, 0, nImg, nFmBlock);
+      element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, img, 0, nImg, nFmBlock);
 
       LIBXSMM_PRAGMA_SIMD
       for ( v=0; v < nFmBlock; v++ ) {
-        lcl_sum_ptr[v]   = (element_stats_type)0;
-        lcl_sumsq_ptr[v] = (element_stats_type)0;
+        lcl_sum_ptr[v] += sum_img_ptr[v];
+        lcl_sumsq_ptr[v] += sumsq_img_ptr[v];
       }
+    }
 
-      for ( img=0; img < nImg; img++ ) {
-        element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, img, 0, nImg, nFmBlock);
-        element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, img, 0, nImg, nFmBlock);
-
-        LIBXSMM_PRAGMA_SIMD
-        for ( v=0; v < nFmBlock; v++ ) {
-          lcl_sum_ptr[v] += sum_img_ptr[v];
-          lcl_sumsq_ptr[v] += sumsq_img_ptr[v];
-        }
-      }
-
+    if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
+         ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0)    ) {
       LIBXSMM_PRAGMA_SIMD
       for ( v=0; v < nFmBlock; v++ ) {
         const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]) ;
@@ -204,10 +204,19 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
         brstd_ptr[v] = tbrstd;
         tvar_ptr[v] = tvar;
       }
-    }
+    } else {
+      element_stats_type* sum_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, 0, 0, nImg, nFmBlock);
+      element_stats_type* sumsq_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, 0, 0, nImg, nFmBlock);
 
-    libxsmm_barrier_wait(handle->barrier, ltid);
+      LIBXSMM_PRAGMA_SIMD
+      for ( v=0; v < nFmBlock; v++ ) {
+        sum_ptr[v]   = lcl_sum_ptr[v];
+        sumsq_ptr[v] = lcl_sumsq_ptr[v];
+      }
+    }
   }
+
+  libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
 if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||

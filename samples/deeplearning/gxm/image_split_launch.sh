@@ -106,7 +106,7 @@ maxcores=`cpuinfo | grep "Processors(CPUs)" | awk '{print $3}'`
 maxcores=`cpuinfo | grep "Cores             :" | awk '{print $3}'`
 load_bal_threads=0
 numthreads=$(((maxcores-numservers-load_bal_threads)*threadspercore))
-numthreads=32
+#numthreads=32
 
 # MLSL configuration
 export MLSL_LOG_LEVEL=1
@@ -143,8 +143,8 @@ if [ "$threadspercore" == "1" ]; then
   if [ "$numservers" == "0" ]; then
     affinitystr="proclist=[0-$((maxcores-1))],granularity=thread,explicit"
   elif [ "$numservers" == "2" ]; then
-    #affinitystr="proclist=[0-5,7-33,35-55],granularity=thread,explicit"
-    affinitystr="proclist=[0-5,7-16,28-33,35-44],granularity=thread,explicit"
+    affinitystr="proclist=[0-5,7-33,35-55],granularity=thread,explicit"
+    #affinitystr="proclist=[0-5,7-16,28-33,35-44],granularity=thread,explicit"
   elif [ "$numservers" == "1" ]; then
     affinitystr="proclist=[0-5,7-27],granularity=thread,explicit"
   elif [ "$numservers" == "4" ]; then

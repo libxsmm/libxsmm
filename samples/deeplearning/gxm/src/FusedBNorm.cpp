@@ -762,8 +762,7 @@ void FusedBNormNode::backPropagate()
     first_bp = false;
   }
 
-  //impl->backPropagate(tenTopDiff_, tenScaleDiff_, tenShiftDiff_, tenBotDiff_, 0);
-  impl->backPropagate(tenTopDiff_, tenBotData_[0], tenTopData_, tenScaleData_, tenScaleDiff_, tenShiftDiff_, tenBotDiff_, 0);
+  impl->backPropagate(tenTopDiff_, tenScaleDiff_, tenShiftDiff_, tenBotDiff_, 0);
 
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)

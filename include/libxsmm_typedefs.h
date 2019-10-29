@@ -368,7 +368,8 @@ typedef enum libxsmm_dnn_fusedbatchnorm_fuse_op {
 } libxsmm_dnn_fusedbatchnorm_fuse_op;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm_desc {
-  int N;                                     /* number of images in mini-batch */
+  int partN;                                 /* number of images in mini-batch, used for all elementwise computations */
+  int fullN;                                 /* number of images in mini-batch, used for statistics compuataions */
   int C;                                     /* number of input feature maps */
   int H;                                     /* height of input image */
   int W;                                     /* width of input image */

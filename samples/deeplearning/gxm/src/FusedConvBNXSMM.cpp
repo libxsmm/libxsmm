@@ -102,7 +102,8 @@ FusedConvBNXSMM::FusedConvBNXSMM(FusedConvBNImplParams* gp, int engine) : FusedC
     CHKERR_LIBXSMM_DNN( status );
   }
 
-  fusedbn_desc_train.N = gp->batch_size/gp->num_numa_nodes;
+  fusedbn_desc_train.partN = gp->batch_size/gp->num_numa_nodes;
+  fusedbn_desc_train.fullN = gp->batch_size/gp->num_numa_nodes;
   fusedbn_desc_train.C = gp->nOutput;
   fusedbn_desc_train.H = gp->mHeight;
   fusedbn_desc_train.W = gp->mWidth;
@@ -150,7 +151,8 @@ FusedConvBNXSMM::FusedConvBNXSMM(FusedConvBNImplParams* gp, int engine) : FusedC
     CHKERR_LIBXSMM_DNN( status );
   }
 
-  fusedbn_desc_test.N = gp->batch_size/gp->num_numa_nodes;
+  fusedbn_desc_test.partN = gp->batch_size/gp->num_numa_nodes;
+  fusedbn_desc_test.fullN = gp->batch_size/gp->num_numa_nodes;
   fusedbn_desc_test.C = gp->nOutput;
   fusedbn_desc_test.H = gp->mHeight;
   fusedbn_desc_test.W = gp->mWidth;
@@ -257,7 +259,7 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
 
   if(gp->eltwise)
   {
-    imoff = fusedbn_desc_train.N * gp->nInput[1] * ifhp * ifwp;
+    imoff = fusedbn_desc_train.partN * gp->nInput[1] * ifhp * ifwp;
     if(gp->out_data_type == DT_FLOAT)
       imoff = imoff * sizeof(float);
     else if(gp->out_data_type == DT_BF16)
@@ -304,7 +306,7 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
     middle[n] = middle[n-1] + imoff;
 
   output[0] = outp->getBuffer();
-  imoff = fusedbn_desc_train.N * fusedbn_desc_train.C * ofhp * ofwp;
+  imoff = fusedbn_desc_train.partN * fusedbn_desc_train.C * ofhp * ofwp;
   if(gp->out_data_type == DT_FLOAT)
     imoff = imoff * sizeof(float);
   else if(gp->out_data_type == DT_BF16)
@@ -978,7 +980,7 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
 
         float (* __restrict bmean)[VLEN] = (float (*)[VLEN])bexpect[n];
         float (* __restrict bvar)[VLEN] = (float (*)[VLEN])bvariance[n];
-        float nhw_ratio = float(fusedbn_desc_train.N*mfh*mfw)/float(fusedbn_desc_train.N*mfh*mfw - 1);
+        float nhw_ratio = float(fusedbn_desc_train.fullN*mfh*mfw)/float(fusedbn_desc_train.fullN*mfh*mfw - 1);
 
 #ifdef __AVX512F__
         __m512  vmmf       = _mm512_set1_ps(gp->mmf);
@@ -1071,7 +1073,7 @@ void FusedConvBNXSMM::backPropagate(TensorBuf *deloutp, TensorBuf* weightp, Tens
   void *delgamma[NUM_NUMA_NODES];
   void *delbeta[NUM_NUMA_NODES];
 
-  int nImg  = fusedbn_desc_train.N;
+  int nImg  = fusedbn_desc_train.partN;
   int nIFM = gp->nInput[0];
   int nOFM = gp->nOutput;
   int nBIfm = nIFM/VLEN;
@@ -1107,7 +1109,7 @@ void FusedConvBNXSMM::backPropagate(TensorBuf *deloutp, TensorBuf* weightp, Tens
   delinp_r[0] = delinp[0]->getBuffer();
   delinp_l[0] = gp->eltwise ? delinp[1]->getBuffer() : NULL;
 
-  int imoff = fusedbn_desc_train.N * fusedbn_desc_train.C * ofhp * ofwp;
+  int imoff = fusedbn_desc_train.partN * fusedbn_desc_train.C * ofhp * ofwp;
   if(gp->out_data_type == DT_FLOAT)
     imoff = imoff * sizeof(float);
   else if(gp->out_data_type == DT_BF16)
@@ -1136,7 +1138,7 @@ void FusedConvBNXSMM::backPropagate(TensorBuf *deloutp, TensorBuf* weightp, Tens
 
   if(gp->eltwise)
   {
-    imoff = fusedbn_desc_train.N * gp->nInput[1] * fhi * fwi;
+    imoff = fusedbn_desc_train.partN * gp->nInput[1] * fhi * fwi;
     if(gp->in_data_type == DT_FLOAT)
       imoff = imoff * sizeof(float);
     else if(gp->in_data_type == DT_BF16)
@@ -1511,7 +1513,7 @@ void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf
   {
     deloutput[0] = deloutp->getBuffer();
 
-    int imoff = fusedbn_desc_train.N * fusedbn_desc_train.C * ofhp * ofwp;
+    int imoff = fusedbn_desc_train.partN * fusedbn_desc_train.C * ofhp * ofwp;
     if(gp->out_data_type == DT_FLOAT)
       imoff = imoff * sizeof(float);
     else if(gp->out_data_type == DT_BF16)

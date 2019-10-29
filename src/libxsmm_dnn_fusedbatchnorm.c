@@ -45,6 +45,15 @@ LIBXSMM_API libxsmm_dnn_fusedbatchnorm* libxsmm_dnn_create_fusedbatchnorm(libxsm
   libxsmm_dnn_fusedbatchnorm* handle = 0;
   int lpb;
 
+  if ( (fusedbatchnorm_desc.partN > fusedbatchnorm_desc.fullN) && ((fusedbatchnorm_desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED) > 0 ) ) {
+    *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
+    return handle;
+  } else if ( ( fusedbatchnorm_desc.partN != fusedbatchnorm_desc.fullN ) && ((fusedbatchnorm_desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) ) {
+    *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
+    return handle;
+  } else {
+  }
+
   if ( ((fusedbatchnorm_desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (fusedbatchnorm_desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) ||
        ((fusedbatchnorm_desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (fusedbatchnorm_desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32))    ) {
     handle = (libxsmm_dnn_fusedbatchnorm*)malloc(sizeof(libxsmm_dnn_fusedbatchnorm));
@@ -65,7 +74,7 @@ LIBXSMM_API libxsmm_dnn_fusedbatchnorm* libxsmm_dnn_create_fusedbatchnorm(libxsm
       /* create barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
       /* calculate scratch size for batchstats */
-      handle->scratch_size = (sizeof(float) * 2 * handle->desc.C * handle->desc.N);
+      handle->scratch_size = (sizeof(float) * 2 * handle->desc.C * handle->desc.partN);
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     }
@@ -128,13 +137,13 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbatchnorm_create_ten
                 layout->dim_size[1] = handle->desc.W + (2*handle->desc.pad_w_in);
                 layout->dim_size[2] = handle->desc.H + (2*handle->desc.pad_h_in);
                 layout->dim_size[3] = handle->blocksifm;
-                layout->dim_size[4] = handle->desc.N;
+                layout->dim_size[4] = handle->desc.partN;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
                 layout->dim_size[0] = handle->ofmblock;
                 layout->dim_size[1] = (handle->desc.W/handle->desc.v) + (2*handle->desc.pad_w_out);
                 layout->dim_size[2] = (handle->desc.H/handle->desc.u) + (2*handle->desc.pad_h_out);
                 layout->dim_size[3] = handle->blocksofm;
-                layout->dim_size[4] = handle->desc.N;
+                layout->dim_size[4] = handle->desc.partN;
               } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
@@ -164,13 +173,13 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbatchnorm_create_ten
                 layout->dim_size[1] = handle->desc.W + (2*handle->desc.pad_w_in);
                 layout->dim_size[2] = handle->desc.H + (2*handle->desc.pad_h_in);
                 layout->dim_size[3] = handle->blocksifm;
-                layout->dim_size[4] = handle->desc.N;
+                layout->dim_size[4] = handle->desc.partN;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
                 layout->dim_size[0] = handle->ofmblock;
                 layout->dim_size[1] = (handle->desc.W/handle->desc.v) + (2*handle->desc.pad_w_out);
                 layout->dim_size[2] = (handle->desc.H/handle->desc.u) + (2*handle->desc.pad_h_out);
                 layout->dim_size[3] = handle->blocksofm;
-                layout->dim_size[4] = handle->desc.N;
+                layout->dim_size[4] = handle->desc.partN;
               } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
@@ -205,12 +214,12 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbatchnorm_create_ten
                 layout->dim_size[0] = handle->desc.C;
                 layout->dim_size[1] = handle->desc.W + (2*handle->desc.pad_w_in);
                 layout->dim_size[2] = handle->desc.H + (2*handle->desc.pad_h_in);
-                layout->dim_size[3] = handle->desc.N;
+                layout->dim_size[3] = handle->desc.partN;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) )   {
                 layout->dim_size[0] = handle->desc.C;
                 layout->dim_size[1] = (handle->desc.W/handle->desc.v) + (2*handle->desc.pad_w_out);
                 layout->dim_size[2] = (handle->desc.H/handle->desc.u) + (2*handle->desc.pad_h_out);
-                layout->dim_size[3] = handle->desc.N;
+                layout->dim_size[3] = handle->desc.partN;
               } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
@@ -300,7 +309,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbatchnorm_create_ten
             layout->dim_size[1] = (handle->desc.W/handle->desc.v) + (2*handle->desc.pad_w_out);
             layout->dim_size[2] = (handle->desc.H/handle->desc.u) + (2*handle->desc.pad_h_out);
             layout->dim_size[3] = handle->blocksofm;
-            layout->dim_size[4] = handle->desc.N;
+            layout->dim_size[4] = handle->desc.partN;
           } else {
             free(layout);
             layout = 0; /* make sure a NULL is returned */
@@ -320,7 +329,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbatchnorm_create_ten
             layout->dim_size[0] = handle->ofmblock*handle->blocksofm;
             layout->dim_size[1] = (handle->desc.W/handle->desc.v) + (2*handle->desc.pad_w_out);
             layout->dim_size[2] = (handle->desc.H/handle->desc.u) + (2*handle->desc.pad_h_out);
-            layout->dim_size[3] = handle->desc.N;
+            layout->dim_size[3] = handle->desc.partN;
           } else {
             free(layout);
             layout = 0; /* make sure a NULL is returned */
@@ -615,3 +624,41 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_execute_st(libxsmm_dnn_
   return status;
 }
 
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_reduce_stats_st(libxsmm_dnn_fusedbatchnorm** handles, int num_handles, libxsmm_dnn_compute_kind kind,
+  /*unsigned*/int start_thread, /*unsigned*/int tid) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handles && num_handles > 0) {
+    switch (kind) {
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+        switch (handles[0]->desc.buffer_format) {
+          case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
+            status = libxsmm_dnn_fusedbatchnorm_reduce_stats_st_fwd_custom( handles, num_handles, start_thread, tid );
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN;
+          }
+        }
+      } break;
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
+        switch (handles[0]->desc.buffer_format) {
+          case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
+            status = libxsmm_dnn_fusedbatchnorm_reduce_stats_st_bwd_custom( handles, num_handles, start_thread, tid );
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN;
+          }
+        }
+      } break;
+      default: {
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
+    }
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return status;
+}

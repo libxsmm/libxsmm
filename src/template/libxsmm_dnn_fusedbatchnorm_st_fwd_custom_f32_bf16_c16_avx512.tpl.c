@@ -46,7 +46,7 @@
 #endif
 
 /* size variables, all const */
-const int nImg = handle->desc.N;
+const int nImg = handle->desc.partN;
 const int ifh = handle->desc.H;
 const int ifw = handle->desc.W;
 const int sh = handle->desc.u;
@@ -84,7 +84,7 @@ const int thr_end2 = ((ltid + 1) * chunksize2 < work2) ? ((ltid + 1) * chunksize
 
 /* eps to avoid sqrt of zero */
 const element_stats_type sqrt_eps = 1e-7f;
-const element_stats_type nhw = (element_stats_type)(nImg * ifh * ifw);
+const element_stats_type nhw = (element_stats_type)(handle->desc.fullN * ifh * ifw);
 const element_stats_type recp_nhw = 1.0f/nhw;
 
 /* loop variables */
@@ -146,26 +146,26 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 
-  if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
-       ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0)    ) {
-    /* now we need to reduce the sum and sum^2, we use the final  */
-    for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
-      __m512 lcl_vsum      = _mm512_setzero_ps();
-      __m512 lcl_vsumsq    = _mm512_setzero_ps();
+  /* now we need to reduce the sum and sum^2, we use the final  */
+  for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+    __m512 lcl_vsum      = _mm512_setzero_ps();
+    __m512 lcl_vsumsq    = _mm512_setzero_ps();
+    element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, 0, 0, nImg, 16);
+    element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, 0, 0, nImg, 16);
+
+    for ( img=0; img < nImg; img++ ) {
+      lcl_vsum   = _mm512_add_ps( lcl_vsum,   _mm512_loadu_ps( sum_img_ptr ) );
+      lcl_vsumsq = _mm512_add_ps( lcl_vsumsq, _mm512_loadu_ps( sumsq_img_ptr ) );
+      sum_img_ptr   += 16;
+      sumsq_img_ptr += 16;
+    }
+
+    if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
+         ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0)    ) {
       __m512 lcl_vsqrt_eps = _mm512_set1_ps(sqrt_eps);
       __m512 lcl_vrec_nhw  = _mm512_set1_ps(recp_nhw);
       __m512 lcl_vone      = _mm512_set1_ps(1.0);
       __m512 lcl_vbmean, lcl_vbmeansq, lcl_vsqbmean, lcl_vbrstd, lcl_vvar;
-      element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, 0, 0, nImg, 16);
-      element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, 0, 0, nImg, 16);
-
-      for ( img=0; img < nImg; img++ ) {
-        lcl_vsum   = _mm512_add_ps( lcl_vsum,   _mm512_loadu_ps( sum_img_ptr ) );
-        lcl_vsumsq = _mm512_add_ps( lcl_vsumsq, _mm512_loadu_ps( sumsq_img_ptr ) );
-        sum_img_ptr   += 16;
-        sumsq_img_ptr += 16;
-      }
-
       lcl_vbmean   = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsum   );   /* E(X) */
       lcl_vbmeansq = _mm512_mul_ps( lcl_vbmean,   lcl_vbmean );   /* E(X)^2 */
       lcl_vsqbmean = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsumsq );   /* E(X^2) */
@@ -190,10 +190,16 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
       _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 0, 16), lcl_vbmean );
       _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 0, 16), lcl_vbrstd );
       _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, 16), lcl_vvar );
-    }
+    } else {
+      sum_img_ptr   -= 16*nImg;
+      sumsq_img_ptr -= 16*nImg;
 
-    libxsmm_barrier_wait(handle->barrier, ltid);
+      _mm512_storeu_ps( sum_img_ptr,   lcl_vsum );
+      _mm512_storeu_ps( sumsq_img_ptr, lcl_vsumsq );
+    }
   }
+
+  libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
 if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||

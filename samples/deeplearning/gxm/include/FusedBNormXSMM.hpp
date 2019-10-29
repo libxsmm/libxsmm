@@ -44,9 +44,9 @@ class FusedBNormXSMM : public FusedBNormImpl
 {
   protected:
     FusedBNormImpl *gp_;
-    libxsmm_dnn_fusedbatchnorm_desc fusedbn_desc_train;
+    libxsmm_dnn_fusedbatchnorm_desc fusedbn_desc_train[2];
     libxsmm_dnn_fusedbatchnorm_desc fusedbn_desc_test;
-    libxsmm_dnn_fusedbatchnorm* libxsmm_handle_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_fusedbatchnorm* libxsmm_handle_train[2][NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_fusedbatchnorm* libxsmm_handle_test[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_input_train[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_input_add_train[NUM_NUMA_NODES] = {NULL};
@@ -87,6 +87,5 @@ class FusedBNormXSMM : public FusedBNormImpl
 
     // Assume external threading, e.g., #pragma omp
     void forwardPropagate(vector<TensorBuf*> inp, TensorBuf* gammap, TensorBuf* betap, TensorBuf *gmeanp, TensorBuf *gvarp, TensorBuf *outp, int tid);
-    void backPropagate(TensorBuf *deloutp, TensorBuf *inp, TensorBuf *outp, TensorBuf *gammap, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf *> delinp, int tid);
-    //void backPropagate(TensorBuf *deloutp, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf *> delinp, int tid);
+    void backPropagate(TensorBuf *deloutp, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf *> delinp, int tid);
 };

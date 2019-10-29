@@ -300,7 +300,8 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
 
     /* setup LIBXSMM handle */
-    fusedbatchnorm_desc.N = nImg;
+    fusedbatchnorm_desc.partN = nImg;
+    fusedbatchnorm_desc.fullN = nImg;
     fusedbatchnorm_desc.C = nFm;
     fusedbatchnorm_desc.H = ifh;
     fusedbatchnorm_desc.W = ifw;
