@@ -37,7 +37,7 @@
 #endif
 
 #define SMAXLOSS_TYPE_DIRECT 0
-#define LOSSFREQ 1
+#define LOSSFREQ 100
 
 SoftmaxLossNode::SoftmaxLossNode(SoftmaxLossParams* p, MLEngine* e) : NNNode(p, e)
 {
@@ -167,11 +167,23 @@ void SoftmaxLossNode::forwardPropagate()
   return;
 #endif
 
+  struct timeval tvss, tvse, tvcs, tvce;
   float* bot = (float*)(tenBotData_[0]->getBuffer());
   int* label = (int*)(tenBotData_[1]->getBuffer());
   float* top = (float*)(tenTopData_->getBuffer());
 
+#ifdef TIMING
+  gettimeofday(&tvss, NULL);
+#endif
+
   impl->forwardPropagate(tenBotData_[0], tenBotData_[1], tenTopData_);
+
+#ifdef TIMING
+  gettimeofday(&tvse, NULL);
+  double smaxtime = (tvse.tv_sec + tvse.tv_usec*1e-6) - (tvss.tv_sec + tvss.tv_usec*1e-6);
+  if(node_id_ == 0)
+    printf("Softmax FP time: %f ms\n",smaxtime*1000);
+#endif
 
 #ifdef GETSTATS
   if(node_id_ == 0)
@@ -182,10 +194,19 @@ void SoftmaxLossNode::forwardPropagate()
   }
 #endif
 
+#ifdef TIMING
+  gettimeofday(&tvcs, NULL);
+#endif
 #ifdef USE_MLSL
   MPI_Allreduce(MPI_IN_PLACE, &gparams_.loss, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
+#ifdef TIMING
+  gettimeofday(&tvce, NULL);
+  double allrtime = (tvce.tv_sec + tvce.tv_usec*1e-6) - (tvcs.tv_sec + tvcs.tv_usec*1e-6);
+  if(node_id_ == 0)
+    printf("Softmax all-reduce time: %f ms\n",allrtime*1000);
+#endif
   if(node_id_ == 0 && eptr_->get_current_batch() % LOSSFREQ == 0)
   {
     gparams_.loss = gparams_.loss/num_nodes_;

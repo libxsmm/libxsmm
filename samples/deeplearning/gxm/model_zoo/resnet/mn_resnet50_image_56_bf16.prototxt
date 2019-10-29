@@ -74,6 +74,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 3
     pad: 0
     stride: 1
@@ -125,6 +126,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     relu: false
     pad: 0
     stride: 1
@@ -162,6 +164,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -200,6 +203,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -237,6 +241,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -275,6 +280,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -313,6 +319,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -350,6 +357,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -388,6 +396,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -426,6 +435,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -463,6 +473,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 2
@@ -501,6 +512,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     relu: false
     pad: 0
     stride: 1
@@ -538,6 +550,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -576,6 +589,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -613,6 +627,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -651,6 +666,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -689,6 +705,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -726,6 +743,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -764,6 +782,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -802,6 +821,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -839,6 +859,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -877,6 +898,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -915,6 +937,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -952,6 +975,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 2
@@ -990,6 +1014,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     relu: false
     pad: 0
     stride: 1
@@ -1027,6 +1052,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -1065,6 +1091,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -1102,6 +1129,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -1140,6 +1168,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -1178,6 +1207,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -1215,6 +1245,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -1253,6 +1284,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -1291,6 +1323,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -1328,6 +1361,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -1366,6 +1400,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -1404,6 +1439,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -1441,6 +1477,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -1479,6 +1516,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -1517,6 +1555,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -1554,6 +1593,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -1592,6 +1632,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -1630,6 +1671,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -1667,6 +1709,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 2
@@ -1705,6 +1748,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     relu: false
     pad: 0
     stride: 1
@@ -1742,6 +1786,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -1780,6 +1825,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -1817,6 +1863,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -1855,6 +1902,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -1893,6 +1941,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -1930,6 +1979,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1
@@ -1968,6 +2018,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     pad: 1
     stride: 1
     engine: XSMM
@@ -2006,6 +2057,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     ipad: 1
     pad: 0
     stride: 1
@@ -2043,6 +2095,7 @@ node {
   fused_bnorm_param {
     data_type: BF16
     use_global_stats: false
+    mmf: 0.9
     eltwise: true
     pad: 0
     stride: 1

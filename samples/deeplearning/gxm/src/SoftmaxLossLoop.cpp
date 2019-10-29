@@ -51,22 +51,25 @@ void SMaxLossLoop::forwardPropagate(TensorBuf* inpb, TensorBuf* labelb, TensorBu
   float (* __restrict input)[nFM] = (float (*)[*])inp;
   float (* __restrict output)[nFM] = (float (*)[*])outp;
 
-//#ifdef _OPENMP
-//#pragma omp parallel for
-//#endif
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
   for(int i=0; i<nImg; i++)
   {
-    float max = input[i][0];
-    output[i][0] = input[i][0];
+    float max = FLT_MIN;
 
-    for(int fm = 1; fm < nFM; fm++) {
+#pragma omp simd
+    for(int fm = 0; fm < nFM; fm++)
+    {
       output[i][fm] = input[i][fm];
       if(input[i][fm] > max)
         max = input[i][fm];
     }
 
     float sum_of_exp = 0.0;
-    for(int fm = 0; fm < nFM; fm++) {
+#pragma omp simd reduction(+: sum_of_exp)
+    for(int fm = 0; fm < nFM; fm++)
+    {
       output[i][fm] = output[i][fm] - max;
       output[i][fm] = exp(output[i][fm]);
       sum_of_exp += output[i][fm];
@@ -75,12 +78,14 @@ void SMaxLossLoop::forwardPropagate(TensorBuf* inpb, TensorBuf* labelb, TensorBu
     float recp_soe = 1.0/sum_of_exp;
 
     //Normalize each value by sum_of_exp
+#pragma omp simd
     for(int fm = 0; fm < nFM; fm++)
       output[i][fm] = output[i][fm]*recp_soe;
   }
 
   float loss = 0.0;
 
+#pragma omp parallel for reduction(+: loss)
   for(int img = 0; img < nImg; img++)
   {
     float val = output[img][label[img]] > FLT_MIN ? output[img][label[img]] : FLT_MIN;
@@ -116,6 +121,7 @@ void SMaxLossLoop::backPropagate(TensorBuf *outpb, TensorBuf* labelb, TensorBuf 
 #endif
   for(int i=0; i<nImg; i++)
   {
+#pragma omp simd
     for(int fm = 0; fm < nFM; fm++)
     {
       if(fm == label[i])

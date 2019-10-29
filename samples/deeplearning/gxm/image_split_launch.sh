@@ -88,6 +88,9 @@ if [ ${arch_} == skx ]; then
 elif [ ${arch_} == clx ]; then
     numservers=2
     listep=6,34
+elif [ ${arch_} == clxap ]; then
+    numservers=4
+    listep=6,30,54,78
 elif [ ${arch_} == knl ]; then
     numservers=2
     listep=6,7,8,9,10,11,12,13
@@ -103,7 +106,7 @@ maxcores=`cpuinfo | grep "Processors(CPUs)" | awk '{print $3}'`
 maxcores=`cpuinfo | grep "Cores             :" | awk '{print $3}'`
 load_bal_threads=0
 numthreads=$(((maxcores-numservers-load_bal_threads)*threadspercore))
-#numthreads=27
+#numthreads=32
 
 # MLSL configuration
 export MLSL_LOG_LEVEL=1
@@ -138,11 +141,14 @@ numthreads_per_proc=$((numthreads/max_ppn))
 # OMP configuration
 if [ "$threadspercore" == "1" ]; then
   if [ "$numservers" == "0" ]; then
-    affinitystr="proclist=[0-$((ntps-1)),$((ntps+1))-$((numthreads))],granularity=thread,explicit"
+    affinitystr="proclist=[0-$((maxcores-1))],granularity=thread,explicit"
   elif [ "$numservers" == "2" ]; then
     affinitystr="proclist=[0-5,7-33,35-55],granularity=thread,explicit"
+    #affinitystr="proclist=[0-5,7-16,28-33,35-44],granularity=thread,explicit"
   elif [ "$numservers" == "1" ]; then
     affinitystr="proclist=[0-5,7-27],granularity=thread,explicit"
+  elif [ "$numservers" == "4" ]; then
+    affinitystr="proclist=[0-5,7-29,31-53,55-77,79-95],granularity=thread,explicit"
   fi
 else
     affinitystr="proclist=[0-5,$((5+numservers+1))-$((maxcores-1)),$((maxcores))-$((maxcores+5)),$((maxcores+5+numservers+1))-$((2*maxcores-1))],granularity=thread,explicit"
@@ -158,6 +164,8 @@ if [ ${arch_} == skx ]; then
 elif [ ${arch_} == skxbf16 ]; then
     export NUMACTLCMD=
 elif [ ${arch_} == clx ]; then
+    export NUMACTLCMD=
+elif [ ${arch_} == clxap ]; then
     export NUMACTLCMD=
 elif [ ${arch_} == knl ]; then
     export NUMACTLCMD="numactl --preferred=$mcdram"

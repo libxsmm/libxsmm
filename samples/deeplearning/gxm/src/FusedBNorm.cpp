@@ -282,6 +282,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   gparams_.out_data_type = out_dtype;
   gparams_.algType = p->get_algo_type();
   gparams_.num_threads = e->get_num_threads();
+  gparams_.num_numa_nodes = NUM_NUMA_NODES;
   gparams_.use_global_stats = false;
 
   lr_mult_ = p->get_lr_mult();
@@ -452,22 +453,35 @@ void FusedBNormNode::forwardPropagate()
   }
 #endif
 
+  if(eptr_->get_execution_mode() == TRAIN) // || eptr_->get_execution_mode() == VAL)
+  {
+    impl->set_global_stats(false);
+    gparams_.exec_mode = "TRAIN";
+  }
+  else if(eptr_->get_execution_mode() == TEST || eptr_->get_execution_mode() == VAL)
+  {
+    impl->set_global_stats(true);
+    gparams_.exec_mode = "TEST";
+  }
+
   if(first_fp)
   {
     impl->set_bot_compute_engine(bot_cengine_[0]);
     impl->set_top_compute_engine(top_compute_engine_);
     impl->set_node_name(nname_);
     impl->set_scratch_buffer(tenScratchData_);
-    if(eptr_->get_execution_mode() == TRAIN || eptr_->get_execution_mode() == VAL)
+#if 0
+    if(eptr_->get_execution_mode() == TRAIN) // || eptr_->get_execution_mode() == VAL)
     {
       impl->set_global_stats(false);
       gparams_.exec_mode = "TRAIN";
     }
-    else if(eptr_->get_execution_mode() == TEST)
+    else if(eptr_->get_execution_mode() == TEST || eptr_->get_execution_mode() == VAL)
     {
       impl->set_global_stats(true);
       gparams_.exec_mode = "TEST";
     }
+#endif
 
     int size = nImg * ofm * (ofh + 2*oph) * (ofw + 2*opw);
 
@@ -500,6 +514,19 @@ void FusedBNormNode::forwardPropagate()
     scf_ = eptr_->get_scaling_factor();
     impl->set_scaling_factor(scf_);
 
+    void** meanp = tenMeanData_->getBufferPtr();
+    void** varp = tenVarData_->getBufferPtr();
+
+    for(int n=0; n<gparams_.num_numa_nodes; n++)
+    {
+      float *mean = (float*)meanp[n];
+      float *var = (float*)varp[n];
+      for(int i=0; i<ifm0; i++)
+      {
+        mean[i] = 0.0;
+        var[i] = 0.0;
+      }
+    }
     first_fp = false;
   }
 

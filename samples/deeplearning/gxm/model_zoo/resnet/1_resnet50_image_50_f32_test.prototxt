@@ -21,7 +21,7 @@ node {
 
     image_xform_param {
       orig_size: 256
-      mirror: true
+      mirror: false
       crop_image: true
       physical_padding: true
       crop_size: 224

@@ -557,12 +557,12 @@ void MLEngine::run(int mode)
         int ntps = num_threads_/NUM_NUMA_NODES;
         int n = tid/ntps;
         int w = total_weights_;
-//        int b = total_biases_;
+        int b = total_biases_;
 
         if(n != 0 && tid % ntps == 0)
         {
           float *wptr = (float*)weight_buf_[n];
-#if 0
+#if 1
           float *bptr = (float*)bias_buf_[n];
           float *sptr = (float*)stats_buf_[n];
 #endif
@@ -571,7 +571,7 @@ void MLEngine::run(int mode)
           for(int i=0; i<w; i++)
             wptr[i] = ((float*)weight_buf_[0])[i];
 
-#if 0
+#if 1
 #pragma omp simd
           for(int i=0; i<b; i++)
           {
@@ -615,7 +615,7 @@ void MLEngine::run(int mode)
 
       for(; current_batch_<num_train_batches_; current_batch_++)
       {
-        if(global_node_id_ == 0)
+        if(global_node_id_ == 0 && current_batch_ % 100 == 0)
           printf("Executing batch number %d\n",current_batch_);
 
         gettimeofday(&tvs, NULL);
@@ -655,6 +655,10 @@ void MLEngine::run(int mode)
           waitForComms("COMBO");
 #endif
 
+#ifdef MLSL
+          data_parallelism->Barrier(MLSL::GT_DATA);
+#endif
+
 #if 0
           solver_->applyUpdate((float**)weight_buf_, (float**)winc_buf_, wdiff_buf_, total_weights_, (float**)wt_lr_mult_, (float**)wt_decay_mult_, "WEIGHT");
 #else
@@ -666,7 +670,7 @@ void MLEngine::run(int mode)
 #if 0
           solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, (float**)bias_lr_mult_, (float**)bias_decay_mult_, "BIAS");
 #else
-#if 0
+#if 1
           solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, 1.0, 0.0, "BIAS");
 #else
           solver_->applyUpdate((float*)bias_buf_, (float*)biinc_buf_, bidiff_buf_, total_biases_, 1.0, 0.0, "BIAS");
@@ -682,7 +686,7 @@ void MLEngine::run(int mode)
 
         gettimeofday(&tve, NULL);
         fbtime = (tve.tv_sec + tve.tv_usec*1e-6) - (tvs.tv_sec + tvs.tv_usec*1e-6);
-        if(global_node_id_ == 0)
+        if(global_node_id_ == 0 && current_batch_ % 100 == 0)
           printf("Fwd-Bwd time: %f ms\n",fbtime*1000);
 
         if ( current_batch_ > 1 )
@@ -784,7 +788,7 @@ void MLEngine::run(int mode)
       if(lpwdiff_buf_[n] != NULL)
         MLSL::Environment::GetEnv().Free(lpwdiff_buf_[n]);
       MLSL::Environment::GetEnv().Free(winc_buf_[n]);
-#if 0
+#if 1
       MLSL::Environment::GetEnv().Free(bias_buf_[n]);
       MLSL::Environment::GetEnv().Free(bidiff_buf_[n]);
       MLSL::Environment::GetEnv().Free(biinc_buf_[n]);
@@ -803,7 +807,7 @@ void MLEngine::run(int mode)
       if(lpwdiff_buf_[n] != NULL)
         libxsmm_free(lpwdiff_buf_[n]);
       libxsmm_free(winc_buf_[n]);
-#if 0
+#if 1
       libxsmm_free(bias_buf_[n]);
       libxsmm_free(bidiff_buf_[n]);
       libxsmm_free(biinc_buf_[n]);
@@ -841,12 +845,12 @@ void MLEngine::run(int mode)
       int ntps = num_threads_/NUM_NUMA_NODES;
       int n = tid/ntps;
       int w = total_weights_;
-//      int b = total_biases_;
+      int b = total_biases_;
 
       if(n != 0 && tid % ntps == 0)
       {
         float *wptr = (float*)weight_buf_[n];
-#if 0
+#if 1
         float *bptr = (float*)bias_buf_[n];
         float *sptr = (float*)stats_buf_[n];
 #endif
@@ -855,7 +859,7 @@ void MLEngine::run(int mode)
         for(int i=0; i<w; i++)
           wptr[i] = ((float*)weight_buf_[0])[i];
 
-#if 0
+#if 1
 #pragma omp simd
         for(int i=0; i<b; i++)
         {
@@ -991,6 +995,11 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
         num_canaries++;
     }
   }
+
+  if(tenType == "WEIGHT")
+    total_weights_ = s/sizeof(float);
+  else if(tenType == "BIAS" || tenType == "STATS")
+    total_biases_ = s/sizeof(float);
 
   if(solver_->getGlobalFlag())
   {
@@ -1137,7 +1146,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
   }
   else if(tenType == "STATS")
   {
-#if 0
+#if 1
     for(int n=0; n<NUM_NUMA_NODES; n++)
 #ifdef USE_MLSL
       stats_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
@@ -1159,7 +1168,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
   {
     if(buftype == DATA)
     {
-#if 0
+#if 1
       for(int n=0; n<NUM_NUMA_NODES; n++)
 #ifdef USE_MLSL
         bias_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
@@ -1179,7 +1188,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     }
     else if(buftype == DIFF)
     {
-#if 0
+#if 1
       for(int n=0; n<NUM_NUMA_NODES; n++)
 #ifdef USE_MLSL
         bidiff_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
@@ -1199,7 +1208,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     }
     else if(buftype == HISTORY)
     {
-#if 0
+#if 1
       for(int n=0; n<NUM_NUMA_NODES; n++)
 #ifdef USE_MLSL
         biinc_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
@@ -1733,7 +1742,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     }
   }
 
-#if 0
+#if 1
   if(tenType == "BIAS" && buftype == DATA)
   {
 #ifdef _OPENMP
