@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
   size_t nbytes, size, nrpt;
   unsigned char *a, *b;
 
+  LIBXSMM_ASSERT(elsize <= stride);
   if (0 < niters) {
     size = n;
     nrpt = niters;
@@ -70,9 +71,10 @@ int main(int argc, char* argv[])
       start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
         for (j = 0; j < nbytes; j += stride) {
-          const unsigned int hash_a = libxsmm_hash(a + j, elsize, 0/*seed*/);
-          const unsigned int hash_b = libxsmm_hash(b + j, elsize, 0/*seed*/);
-          diff += (hash_a != hash_b || libxsmm_diff(a + j, b + j, (unsigned char)elsize));
+          const void *const aj = a + j, *const bj = b + j;
+          const unsigned int hash_a = libxsmm_hash(aj, elsize, 0/*seed*/);
+          const unsigned int hash_b = libxsmm_hash(bj, elsize, 0/*seed*/);
+          diff += (hash_a != hash_b || libxsmm_diff(aj, bj, (unsigned char)elsize));
         }
         /* memcmp may be pure and without touching a it is not repeated (nrpt) */
         a[i%nbytes] = 255;
@@ -82,11 +84,14 @@ int main(int argc, char* argv[])
     }
 
     { /* benchmark libxsmm_memcmp */
-      size_t diff = 0, i;
+      size_t diff = 0, i, j;
       memcpy(b, a, nbytes);
       start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
-        diff += libxsmm_memcmp(a, b, nbytes); /* take result of every execution */
+        for (j = 0; j < nbytes; j += stride) {
+          const void *const aj = a + j, *const bj = b + j;
+          diff += libxsmm_memcmp(aj, bj, elsize);
+        }
         /* memcmp may be pure and without touching a it is not repeated (nrpt) */
         a[i%nbytes] = 255;
       }
@@ -95,10 +100,20 @@ int main(int argc, char* argv[])
     }
 
     { /* benchmark stdlib's memcmp */
-      size_t diff = 0, i;
+      size_t diff = 0, i, j;
       start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
-        diff += (0 != memcmp(a, b, nbytes)); /* take result of every execution */
+        for (j = 0; j < nbytes; j += stride) {
+          const void *const aj = a + j, *const bj = b + j;
+#if defined(_MSC_VER)
+#         pragma warning(push)
+#         pragma warning(disable: 6385)
+#endif
+          diff += (0 != memcmp(aj, bj, elsize));
+#if defined(_MSC_VER)
+#         pragma warning(pop)
+#endif
+        }
         /* memcmp is likely pure and without touching a it is not repeated (nrpt) */
         a[i%nbytes] = 255;
       }
