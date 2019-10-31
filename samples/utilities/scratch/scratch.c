@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
   int r[MAX_MALLOC_N], i;
   int max_size = 0;
 
-  /* generate set of random number for parallel region */
+  /* generate set of random numbers for parallel region */
   for (i = 0; i < (MAX_MALLOC_N); ++i) r[i] = rand();
 
   /* count number of calls according to randomized scheme */
