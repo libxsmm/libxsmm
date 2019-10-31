@@ -45,6 +45,7 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
   size_t nbytes, size, nrpt;
   unsigned char *a, *b;
+  double duration;
 
   LIBXSMM_ASSERT(elsize <= stride);
   if (0 < niters) {
@@ -60,27 +61,27 @@ int main(int argc, char* argv[])
   b = (unsigned char*)(0 != nbytes ? malloc(nbytes) : NULL);
 
   if (NULL != a && NULL != b) {
-    libxsmm_timer_tickint start;
-
     /* initialize the data */
     libxsmm_rng_seq(a, (libxsmm_blasint)nbytes);
     libxsmm_rng_seq(b, (libxsmm_blasint)nbytes);
 
     { /* benchmark libxsmm_hash/pure */
       size_t diff = 0, i;
-      start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
         const unsigned int hash_a = libxsmm_hash(a, (unsigned int)nbytes, 0/*seed*/);
         const unsigned int hash_b = libxsmm_hash(b, (unsigned int)nbytes, 0/*seed*/);
         diff += (hash_a != hash_b);
       }
-      printf("libxsmm_hash/pure:\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) printf("libxsmm_hash/pure:\t%.8f s (%i MB/s)\n", duration,
+        (int)LIBXSMM_ROUND((2.0 * nrpt * nbytes) / ((1024.0 * 1024.0) * duration)));
       result += (int)diff * ((int)stride / ((int)stride + 1)); /* ignore result */
     }
 
     { /* benchmark libxsmm_hash/cmp */
       size_t diff = 0, i, j;
-      start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
         for (j = 0; j < nbytes; j += stride) {
           const void *const aj = a + j, *const bj = b + j;
@@ -89,27 +90,30 @@ int main(int argc, char* argv[])
           diff += (hash_a != hash_b || libxsmm_diff(aj, bj, (unsigned char)elsize));
         }
       }
-      printf("libxsmm_hash/cmp:\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) printf("libxsmm_hash/cmp:\t%.8f s (%i MB/s)\n", duration,
+        (int)LIBXSMM_ROUND((2.0 * nrpt * nbytes) / ((1024.0 * 1024.0) * duration)));
       result += (int)diff * ((int)stride / ((int)stride + 1)); /* ignore result */
     }
 
     { /* benchmark libxsmm_memcmp */
       size_t diff = 0, i, j;
-      memcpy(b, a, nbytes);
-      start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
         for (j = 0; j < nbytes; j += stride) {
           const void *const aj = a + j, *const bj = b + j;
           diff += libxsmm_memcmp(aj, bj, elsize);
         }
       }
-      printf("libxsmm_memcmp:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) printf("libxsmm_memcmp:\t\t%.8f s (%i MB/s)\n", duration,
+        (int)LIBXSMM_ROUND((2.0 * nrpt * nbytes) / ((1024.0 * 1024.0) * duration)));
       result += (int)diff * ((int)stride / ((int)stride + 1)); /* ignore result */
     }
 
     { /* benchmark stdlib's memcmp */
       size_t diff = 0, i, j;
-      start = libxsmm_timer_tick();
+      const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
         for (j = 0; j < nbytes; j += stride) {
           const void *const aj = a + j, *const bj = b + j;
@@ -125,7 +129,9 @@ int main(int argc, char* argv[])
         /* memcmp is likely pure and without touching a it is not repeated (nrpt) */
         a[i%nbytes] = 255;
       }
-      printf("stdlib memcmp:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) printf("stdlib memcmp:\t\t%.8f s (%i MB/s)\n", duration,
+        (int)LIBXSMM_ROUND((2.0 * nrpt * nbytes) / ((1024.0 * 1024.0) * duration)));
       result += (int)diff * ((int)stride / ((int)stride + 1)); /* ignore result */
     }
   }
