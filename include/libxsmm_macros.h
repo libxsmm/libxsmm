@@ -143,6 +143,16 @@
 # define LIBXSMM_PAD(EXPR) EXPR;
 #endif
 
+#if defined(__INTEL_COMPILER)
+# if !defined(__INTEL_COMPILER_UPDATE)
+#   define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
+# else
+#   define LIBXSMM_INTEL_COMPILER (__INTEL_COMPILER + __INTEL_COMPILER_UPDATE)
+# endif
+#elif defined(__INTEL_COMPILER_BUILD_DATE)
+# define LIBXSMM_INTEL_COMPILER ((__INTEL_COMPILER_BUILD_DATE / 10000 - 2000) * 100)
+#endif
+
 /* LIBXSMM_ATTRIBUTE_USED: mark library functions as used to avoid warning */
 #if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
 # define LIBXSMM_ATTRIBUTE_MALLOC LIBXSMM_ATTRIBUTE(malloc)
@@ -206,16 +216,6 @@
 # else /* assume no string-pooling (perhaps unsafe) */
 #   define LIBXSMM_CALLER_ID LIBXSMM_CALLER
 # endif
-#endif
-
-#if defined(__INTEL_COMPILER)
-# if !defined(__INTEL_COMPILER_UPDATE)
-#   define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
-# else
-#   define LIBXSMM_INTEL_COMPILER (__INTEL_COMPILER + __INTEL_COMPILER_UPDATE)
-# endif
-#elif defined(__INTEL_COMPILER_BUILD_DATE)
-# define LIBXSMM_INTEL_COMPILER ((__INTEL_COMPILER_BUILD_DATE / 10000 - 2000) * 100)
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_BUILD) && \
