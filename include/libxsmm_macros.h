@@ -52,15 +52,28 @@
 #define LIBXSMM_ALPHA LIBXSMM_CONFIG_ALPHA
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
 
+/**
+ * Use "make PLATFORM=1" to disable platform checks.
+ * The platform check is to bail-out with an error
+ * message for an attempt to build an upstream package
+ * and subsequently to list LIBXSMM as "broken" on
+ * that platform.
+ * Note: successful compilation on an unsupported
+ * platform is desired, but only fall-back code is
+ * present at best.
+ */
+#if !defined(LIBXSMM_PLATFORM_FORCE) && 0
+# define LIBXSMM_PLATFORM_FORCE
+#endif
+
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
 # if  (defined(__x86_64__) && 0 != (__x86_64__)) || \
       (defined(__amd64__) && 0 != (__amd64__)) || \
       (defined(_M_X64) || defined(_M_AMD64)) || \
       (defined(__i386__) && 0 != (__i386__)) || \
-      (defined(_M_IX86)) || \
-      (defined(__powerpc64__))
+      (defined(_M_IX86))
 #   define LIBXSMM_PLATFORM_SUPPORTED
-# else /* JIT-generated code (among other issues) is not supported! */
+# elif !defined(LIBXSMM_PLATFORM_FORCE)
 #   error Intel Architecture or compatible CPU required!
 # endif
 #endif
