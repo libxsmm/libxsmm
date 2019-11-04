@@ -152,7 +152,7 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void sgemm_batch(
 #elif (1 == LIBXSMM_NO_BLAS)
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
-#if defined(__GNUC__) && !defined(__PGI)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void LIBXSMM_FSYMBOL(dgemm_batch)(
@@ -167,7 +167,7 @@ void LIBXSMM_FSYMBOL(dgemm_batch)(
 
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
-#if defined(__GNUC__) && !defined(__PGI)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void LIBXSMM_FSYMBOL(sgemm_batch)(
@@ -182,7 +182,7 @@ void LIBXSMM_FSYMBOL(sgemm_batch)(
 
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
-#if defined(__GNUC__) && !defined(__PGI)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void LIBXSMM_FSYMBOL(dgemm)(const char* transa, const char* transb,
@@ -196,7 +196,7 @@ void LIBXSMM_FSYMBOL(dgemm)(const char* transa, const char* transb,
 
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
-#if defined(__GNUC__) && !defined(__PGI)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void LIBXSMM_FSYMBOL(sgemm)(const char* transa, const char* transb,
@@ -210,7 +210,7 @@ void LIBXSMM_FSYMBOL(sgemm)(const char* transa, const char* transb,
 
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
-#if defined(__GNUC__) && !defined(__PGI)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void LIBXSMM_FSYMBOL(dgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
@@ -222,7 +222,7 @@ void LIBXSMM_FSYMBOL(dgemv)(const char* trans, const libxsmm_blasint* m, const l
 
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
-#if defined(__GNUC__) && !defined(__PGI)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void LIBXSMM_FSYMBOL(sgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
@@ -234,7 +234,7 @@ void LIBXSMM_FSYMBOL(sgemv)(const char* trans, const libxsmm_blasint* m, const l
 
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
-#if defined(__GNUC__) && !defined(__PGI)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void dgemm_batch(
@@ -249,7 +249,7 @@ void dgemm_batch(
 
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
-#if defined(__GNUC__) && !defined(__PGI)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void sgemm_batch(

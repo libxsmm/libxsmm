@@ -137,7 +137,7 @@ LIBXSMM_APIVAR(int internal_trace_maxnsyms);
 
 
 LIBXSMM_API
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms);
@@ -198,7 +198,7 @@ LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int
 
 
 LIBXSMM_API
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 int libxsmm_trace_finalize(void);
@@ -224,7 +224,7 @@ LIBXSMM_API int libxsmm_trace_finalize(void)
 
 
 LIBXSMM_API
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
@@ -296,7 +296,7 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
 
 
 LIBXSMM_API
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid,
@@ -543,7 +543,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 
 
 LIBXSMM_API
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void libxsmm_trace(FILE* stream, const int* filter_threadid, const void* filter_symbol, const int* filter_mindepth, const int* filter_maxnsyms);
@@ -574,7 +574,11 @@ LIBXSMM_API void libxsmm_trace(FILE* stream, const int* filter_threadid, const v
 
 #if defined(__TRACE) && defined(__GNUC__) && defined(LIBXSMM_BUILD)
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
+LIBXSMM_API
+#if !defined(__PGI) && !defined(__ibmxl__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+void __cyg_profile_func_enter(void* this_fn, void* call_site);
 LIBXSMM_API void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(LIBXSMM_TRACE)
@@ -587,7 +591,11 @@ LIBXSMM_API void __cyg_profile_func_enter(void* this_fn, void* call_site)
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
+LIBXSMM_API
+#if !defined(__PGI) && !defined(__ibmxl__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+void __cyg_profile_func_exit(void* this_fn, void* call_site);
 LIBXSMM_API void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
