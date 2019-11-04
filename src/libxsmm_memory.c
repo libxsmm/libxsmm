@@ -201,6 +201,38 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* hash_seed, const void* data
 
 
 /* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_char)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_char)(void* hash_seed, const void* data, const int* size)
+{
+  LIBXSMM_FSYMBOL(libxsmm_hash)(hash_seed, data, size);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i8)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i8)(void* hash_seed, const void* data, const int* size)
+{
+  LIBXSMM_FSYMBOL(libxsmm_hash)(hash_seed, data, size);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i32)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i32)(void* hash_seed, const void* data, const int* size)
+{
+  LIBXSMM_FSYMBOL(libxsmm_hash)(hash_seed, data, size);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i64)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i64)(void* hash_seed, const void* data, const int* size)
+{
+  LIBXSMM_FSYMBOL(libxsmm_hash)(hash_seed, data, size);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* result, const void* a, const void* b, const long long* size)
 {
@@ -218,6 +250,38 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* result, const void* a, const
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_memcmp specified!\n");
   }
 #endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_char)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_char)(int* result, const void* a, const void* b, const long long* size)
+{
+  LIBXSMM_FSYMBOL(libxsmm_diff)(result, a, b, size);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i8)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i8)(int* result, const void* a, const void* b, const long long* size)
+{
+  LIBXSMM_FSYMBOL(libxsmm_diff)(result, a, b, size);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i32)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i32)(int* result, const void* a, const void* b, const long long* size)
+{
+  LIBXSMM_FSYMBOL(libxsmm_diff)(result, a, b, size);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i64)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i64)(int* result, const void* a, const void* b, const long long* size)
+{
+  LIBXSMM_FSYMBOL(libxsmm_diff)(result, a, b, size);
 }
 
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
