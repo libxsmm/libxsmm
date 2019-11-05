@@ -54,6 +54,9 @@ LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count);
  */
 LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n);
 
+/** Sequence of random data based on libxsmm_rng_u32. */
+LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint count);
+
 /**
  * Similar to libxsmm_rng_u32, but returns a DP-value in the interval [0, 1).
  * Note: libxsmm_rng_set_seed must be used if one wishes to seed the generator.

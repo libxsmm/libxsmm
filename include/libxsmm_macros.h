@@ -52,6 +52,20 @@
 #define LIBXSMM_ALPHA LIBXSMM_CONFIG_ALPHA
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
 
+/**
+ * Use "make PLATFORM=1" to disable platform checks.
+ * The platform check is to bail-out with an error
+ * message for an attempt to build an upstream package
+ * and subsequently to list LIBXSMM as "broken" on
+ * that platform.
+ * Note: successful compilation on an unsupported
+ * platform is desired, but only fall-back code is
+ * present at best.
+ */
+#if !defined(LIBXSMM_PLATFORM_FORCE) && 0
+# define LIBXSMM_PLATFORM_FORCE
+#endif
+
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
 # if  (defined(__x86_64__) && 0 != (__x86_64__)) || \
       (defined(__amd64__) && 0 != (__amd64__)) || \
@@ -59,7 +73,7 @@
       (defined(__i386__) && 0 != (__i386__)) || \
       (defined(_M_IX86))
 #   define LIBXSMM_PLATFORM_SUPPORTED
-# else /* JIT-generated code (among other issues) is not supported! */
+# elif !defined(LIBXSMM_PLATFORM_FORCE)
 #   error Intel Architecture or compatible CPU required!
 # endif
 #endif
@@ -69,7 +83,8 @@
       (defined(__x86_64__) && 0 != (__x86_64__)) || \
       (defined(__amd64__) && 0 != (__amd64__)) || \
       (defined(_M_X64) || defined(_M_AMD64)) || \
-      (defined(_WIN64))
+      (defined(_WIN64)) || \
+      (defined(__powerpc64))
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
 # elif defined(NDEBUG) /* not for production use! */
@@ -143,6 +158,16 @@
 # define LIBXSMM_PAD(EXPR) EXPR;
 #endif
 
+#if defined(__INTEL_COMPILER)
+# if !defined(__INTEL_COMPILER_UPDATE)
+#   define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
+# else
+#   define LIBXSMM_INTEL_COMPILER (__INTEL_COMPILER + __INTEL_COMPILER_UPDATE)
+# endif
+#elif defined(__INTEL_COMPILER_BUILD_DATE)
+# define LIBXSMM_INTEL_COMPILER ((__INTEL_COMPILER_BUILD_DATE / 10000 - 2000) * 100)
+#endif
+
 /* LIBXSMM_ATTRIBUTE_USED: mark library functions as used to avoid warning */
 #if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
 # define LIBXSMM_ATTRIBUTE_MALLOC LIBXSMM_ATTRIBUTE(malloc)
@@ -206,16 +231,6 @@
 # else /* assume no string-pooling (perhaps unsafe) */
 #   define LIBXSMM_CALLER_ID LIBXSMM_CALLER
 # endif
-#endif
-
-#if defined(__INTEL_COMPILER)
-# if !defined(__INTEL_COMPILER_UPDATE)
-#   define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
-# else
-#   define LIBXSMM_INTEL_COMPILER (__INTEL_COMPILER + __INTEL_COMPILER_UPDATE)
-# endif
-#elif defined(__INTEL_COMPILER_BUILD_DATE)
-# define LIBXSMM_INTEL_COMPILER ((__INTEL_COMPILER_BUILD_DATE / 10000 - 2000) * 100)
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_BUILD) && \

@@ -30,7 +30,8 @@
 !*****************************************************************************!
 
       MODULE LIBXSMM
-        USE, INTRINSIC :: ISO_C_BINDING, ONLY: C_DOUBLE, C_FLOAT,       &
+        USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
+     &    C_DOUBLE, C_FLOAT, C_DOUBLE_COMPLEX, C_FLOAT_COMPLEX,         &
      &    C_LONG_LONG, C_INT, C_SHORT, C_CHAR, C_INT8_T,                &
      &    C_F_POINTER, C_ASSOCIATED, C_LOC, C_PTR, C_NULL_PTR,          &
      &    C_F_PROCPOINTER, C_FUNPTR, C_NULL_FUNPTR
@@ -428,8 +429,11 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: archid
           END SUBROUTINE
 
-          ! Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|clx|cpx", "0": CPUID)
-          ! for subsequent code generation (JIT).
+          ! Set target architecture for subsequent code generation (JIT).
+          ! arch="0"|"sse"|"snb"|"hsw"|"knl"|"knm"|"skx"|"clx"|"cpx",
+          ! or "0" to rely on the CPUID (default).
+          ! There are some alternative target names as well:
+          ! "sse", "avx", "avx2", "avx3" (incomplete list).
           SUBROUTINE libxsmm_set_target_arch(arch) BIND(C)
             IMPORT :: C_CHAR
             CHARACTER(C_CHAR), INTENT(IN) :: arch(*)
@@ -734,15 +738,15 @@
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z0
         FUNCTION libxsmm_ptr_z0(a)
-          COMPLEX(C_DOUBLE), INTENT(IN), TARGET :: a
-          COMPLEX(C_DOUBLE), POINTER :: fptr
+          COMPLEX(C_DOUBLE_COMPLEX), INTENT(IN), TARGET :: a
+          COMPLEX(C_DOUBLE_COMPLEX), POINTER :: fptr
           TYPE(C_PTR) :: libxsmm_ptr_z0
           fptr => a; libxsmm_ptr_z0 = C_LOC(fptr)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z1
         FUNCTION libxsmm_ptr_z1(a)
-          COMPLEX(C_DOUBLE), INTENT(IN) :: a(:)
+          COMPLEX(C_DOUBLE_COMPLEX), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_z1
           IF (0.LT.SIZE(a)) THEN
             libxsmm_ptr_z1 = libxsmm_ptr_z0(a(LBOUND(a,1)))
@@ -753,7 +757,7 @@
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z2
         FUNCTION libxsmm_ptr_z2(a)
-          COMPLEX(C_DOUBLE), INTENT(IN) :: a(:,:)
+          COMPLEX(C_DOUBLE_COMPLEX), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_z2
           IF (ALL(0.LT.SHAPE(a))) THEN
             libxsmm_ptr_z2 = libxsmm_ptr_z0(a(LBOUND(a,1),LBOUND(a,2)))
@@ -764,15 +768,15 @@
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c0
         FUNCTION libxsmm_ptr_c0(a)
-          COMPLEX(C_FLOAT), INTENT(IN), TARGET :: a
-          COMPLEX(C_FLOAT), POINTER :: fptr
+          COMPLEX(C_FLOAT_COMPLEX), INTENT(IN), TARGET :: a
+          COMPLEX(C_FLOAT_COMPLEX), POINTER :: fptr
           TYPE(C_PTR) :: libxsmm_ptr_c0
           fptr => a; libxsmm_ptr_c0 = C_LOC(fptr)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c1
         FUNCTION libxsmm_ptr_c1(a)
-          COMPLEX(C_FLOAT), INTENT(IN) :: a(:)
+          COMPLEX(C_FLOAT_COMPLEX), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_c1
           IF (0.LT.SIZE(a)) THEN
             libxsmm_ptr_c1 = libxsmm_ptr_c0(a(LBOUND(a,1)))
@@ -783,7 +787,7 @@
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c2
         FUNCTION libxsmm_ptr_c2(a)
-          COMPLEX(C_FLOAT), INTENT(IN) :: a(:,:)
+          COMPLEX(C_FLOAT_COMPLEX), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_c2
           IF (ALL(0.LT.SHAPE(a))) THEN
             libxsmm_ptr_c2 = libxsmm_ptr_c0(a(LBOUND(a,1),LBOUND(a,2)))
@@ -1827,7 +1831,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
             PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
-     &      BIND(C, NAME="libxsmm_hash_")
+     &      BIND(C, NAME="libxsmm_hash_char_")
               IMPORT C_INT, C_PTR
               INTEGER(C_INT), INTENT(INOUT)   :: hash_seed
               INTEGER(C_INT), INTENT(IN)      :: keysize
@@ -1851,7 +1855,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
             PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
-     &      BIND(C, NAME="libxsmm_hash_")
+     &      BIND(C, NAME="libxsmm_hash_i8_")
               IMPORT C_INT, C_PTR
               INTEGER(C_INT), INTENT(INOUT)   :: hash_seed
               INTEGER(C_INT), INTENT(IN)      :: keysize
@@ -1875,7 +1879,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
             PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
-     &      BIND(C, NAME="libxsmm_hash_")
+     &      BIND(C, NAME="libxsmm_hash_i32_")
               IMPORT C_INT, C_PTR
               INTEGER(C_INT), INTENT(INOUT)   :: hash_seed
               INTEGER(C_INT), INTENT(IN)      :: keysize
@@ -1899,7 +1903,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
             PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
-     &      BIND(C, NAME="libxsmm_hash_")
+     &      BIND(C, NAME="libxsmm_hash_i64_")
               IMPORT C_INT, C_PTR
               INTEGER(C_INT), INTENT(INOUT)   :: hash_seed
               INTEGER(C_INT), INTENT(IN)      :: keysize
@@ -1923,7 +1927,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
           INTERFACE
             PURE SUBROUTINE internal_diff(memcmp, a, b, nbytes)         &
-     &      BIND(C, NAME="libxsmm_diff_")
+     &      BIND(C, NAME="libxsmm_diff_char_")
               IMPORT C_LONG_LONG, C_INT, C_PTR
               TYPE(C_PTR), INTENT(IN), VALUE    :: a, b
               INTEGER(C_LONG_LONG), INTENT(IN)  :: nbytes
@@ -1953,7 +1957,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
           INTERFACE
             PURE SUBROUTINE internal_diff(memcmp, a, b, nbytes)         &
-     &      BIND(C, NAME="libxsmm_diff_")
+     &      BIND(C, NAME="libxsmm_diff_i8_")
               IMPORT C_LONG_LONG, C_INT, C_PTR
               TYPE(C_PTR), INTENT(IN), VALUE    :: a, b
               INTEGER(C_LONG_LONG), INTENT(IN)  :: nbytes
@@ -1983,7 +1987,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
           INTERFACE
             PURE SUBROUTINE internal_diff(memcmp, a, b, nbytes)         &
-     &      BIND(C, NAME="libxsmm_diff_")
+     &      BIND(C, NAME="libxsmm_diff_i32_")
               IMPORT C_LONG_LONG, C_INT, C_PTR
               TYPE(C_PTR), INTENT(IN), VALUE    :: a, b
               INTEGER(C_LONG_LONG), INTENT(IN)  :: nbytes
@@ -2013,7 +2017,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
           INTERFACE
             PURE SUBROUTINE internal_diff(memcmp, a, b, nbytes)         &
-     &      BIND(C, NAME="libxsmm_diff_")
+     &      BIND(C, NAME="libxsmm_diff_i64_")
               IMPORT C_LONG_LONG, C_INT, C_PTR
               TYPE(C_PTR), INTENT(IN), VALUE    :: a, b
               INTEGER(C_LONG_LONG), INTENT(IN)  :: nbytes

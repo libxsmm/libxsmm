@@ -666,7 +666,7 @@ LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefa
 
 
 LIBXSMM_API_INTERN
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void internal_init(void);
@@ -957,7 +957,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 
 
 LIBXSMM_API
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void libxsmm_finalize(void);

@@ -174,6 +174,11 @@ STATIC ?= 0
 # PIC: PIC or pic
 PIC ?= pic
 
+PLATFORM ?= 0
+ifneq (0,$(PLATFORM))
+  DFLAGS += -DLIBXSMM_PLATFORM_FORCE
+endif
+
 # Intrinsics support level
 INTRINSICS ?= 2
 ifneq (0,$(INTRINSICS))
@@ -500,19 +505,23 @@ ifeq (,$(strip $(FC)))
 endif
 
 # compiler names
-CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) | grep -m1 . \
+ifeq (0,$(PLATFORM))
+  CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) | grep -m1 . \
            | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/[[:space:]][[:space:]]*[Vv]ersion//" \
                  -e "s/[[:space:]][[:space:]]*$(BRACE_OPEN)..*//" -e "s/[[:space:]][[:space:]]*[[:punct:]]//" \
                  -e "s/[[:space:]][[:space:]]*[0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
            | rev | cut -d" " -f1 | rev))
+endif
 ifeq (,$(strip $(CXX_NAME)))
   CXX_NAME = $(basename $(notdir $(CXX)))
 endif
-CC_NAME = $(basename $(shell $(CC) $(CC_VERSION_FLAG) | grep -m1 . \
+ifeq (0,$(PLATFORM))
+  CC_NAME = $(basename $(shell $(CC) $(CC_VERSION_FLAG) | grep -m1 . \
            | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/[[:space:]][[:space:]]*[Vv]ersion//" \
                  -e "s/[[:space:]][[:space:]]*$(BRACE_OPEN)..*//" -e "s/[[:space:]][[:space:]]*[[:punct:]]//" \
                  -e "s/[[:space:]][[:space:]]*[0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
           | rev | cut -d" " -f1 | rev))
+endif
 ifeq (,$(strip $(CC_NAME)))
   CC_NAME = $(basename $(notdir $(CC)))
 endif

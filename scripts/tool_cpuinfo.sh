@@ -42,8 +42,14 @@ if [ "" != "${GREP}" ] && \
    [ "" != "${TR}" ] && \
    [ "" != "${WC}" ];
 then
-  if [ -e /proc/cpuinfo ]; then
+  if [ $(command -v lscpu) ]; then
+    NS=$(lscpu | ${GREP} -m1 "Socket(s)" | ${TR} -d " " | ${CUT} -d: -f2)
+    if [ "" = "${NS}" ]; then NS=1; fi
+    NC=$((NS*$(lscpu | ${GREP} -m1 "Core(s) per socket" | ${TR} -d " " | ${CUT} -d: -f2)))
+    NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
+  elif [ -e /proc/cpuinfo ]; then
     NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
+    if [ "" = "${NS}" ] || [ "" = "${NS}" ]; then NS=1; fi
     NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
     NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
   elif [ "Darwin" = "$(uname)" ]; then

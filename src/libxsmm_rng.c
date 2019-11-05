@@ -41,6 +41,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_RNG_DRAND48) && (!defined(_WIN32) && !defined(__CYGWIN__) && (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE)))
+# define LIBXSMM_RNG_DRAND48
+#endif
+
 #if !defined(LIBXSMM_RNG_SIMD_MIN)
 # define LIBXSMM_RNG_SIMD_MIN 8
 #endif
@@ -243,34 +247,58 @@ LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
 
 LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
 {
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+#if defined(LIBXSMM_RNG_DRAND48)
+  const unsigned int q = ((1U << 31) / n) * n;
+  unsigned int r = (unsigned int)lrand48();
+  if (q != (1U << 31))
+#else
   const unsigned int rand_max1 = (unsigned int)(RAND_MAX)+1U;
   const unsigned int q = (rand_max1 / n) * n;
   unsigned int r = (unsigned int)rand();
   if (q != rand_max1)
-#else
-  const unsigned int q = ((1U << 31) / n) * n;
-  unsigned int r = (unsigned int)lrand48();
-  if (q != (1U << 31))
 #endif
   {
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-    while (q <= r) r = (unsigned int)rand();
-#else
+#if defined(LIBXSMM_RNG_DRAND48)
     while (q <= r) r = (unsigned int)lrand48();
+#else
+    while (q <= r) r = (unsigned int)rand();
 #endif
   }
   return r % n;
 }
 
 
+LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint count)
+{
+  unsigned char* dst = (unsigned char*)data, *end = dst + (count & 0xFFFFFFFFFFFFFFFC);
+  unsigned int r;
+  for (; dst < end; dst += 4) {
+#if defined(LIBXSMM_RNG_DRAND48)
+    r = (unsigned int)lrand48();
+#else
+    r = (unsigned int)rand();
+#endif
+    LIBXSMM_MEMCPY127(dst, &r, 4);
+  }
+  end = (unsigned char*)data + count;
+  if (dst < end) {
+#if defined(LIBXSMM_RNG_DRAND48)
+    r = (unsigned int)lrand48();
+#else
+    r = (unsigned int)rand();
+#endif
+    LIBXSMM_MEMCPY127(dst, &r, end - dst);
+  }
+}
+
+
 LIBXSMM_API double libxsmm_rng_f64(void)
 {
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+#if defined(LIBXSMM_RNG_DRAND48)
+  return drand48();
+#else
   static const double scale = 1.0 / (RAND_MAX);
   return scale * (double)rand();
-#else
-  return drand48();
 #endif
 }
 
