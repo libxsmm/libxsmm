@@ -222,7 +222,7 @@
 #     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE3
 #   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
-# elif defined(__x86_64__) || defined(_WIN32) || defined(_WIN64)
+# elif defined(LIBXSMM_PLATFORM_X86)
 #   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
 #     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_GENERIC
 #   endif

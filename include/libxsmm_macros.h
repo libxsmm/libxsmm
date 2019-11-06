@@ -66,12 +66,16 @@
 # define LIBXSMM_PLATFORM_FORCE
 #endif
 
+#if !defined(LIBXSMM_PLATFORM_X86) && ( \
+    (defined(__x86_64__) && 0 != (__x86_64__)) || \
+    (defined(__amd64__) && 0 != (__amd64__)) || \
+    (defined(_M_X64) || defined(_M_AMD64)) || \
+    (defined(__i386__) && 0 != (__i386__)) || \
+    (defined(_M_IX86)))
+# define LIBXSMM_PLATFORM_X86
+#endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if  (defined(__x86_64__) && 0 != (__x86_64__)) || \
-      (defined(__amd64__) && 0 != (__amd64__)) || \
-      (defined(_M_X64) || defined(_M_AMD64)) || \
-      (defined(__i386__) && 0 != (__i386__)) || \
-      (defined(_M_IX86))
+# if defined(LIBXSMM_PLATFORM_X86)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
 #   error Intel Architecture or compatible CPU required!
