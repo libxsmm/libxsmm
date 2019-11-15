@@ -91,7 +91,7 @@
       (defined(__powerpc64))
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
-# elif defined(NDEBUG) /* not for production use! */
+# elif !defined(LIBXSMM_PLATFORM_FORCE) && defined(NDEBUG)
 #   error LIBXSMM is only supported on a 64-bit platform!
 # else /* JIT-generated code (among other issues) is not supported! */
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFF
