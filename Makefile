@@ -1804,10 +1804,10 @@ deb:
 		echo "export DH_VERBOSE = 1" >> rules; \
 		echo >> rules; \
 		echo "%:" >> rules; \
-		echo "	dh \$$@" >> rules; \
+		$$(which echo) -e "\tdh \$$@" >> rules; \
 		echo >> rules; \
 		echo "override_dh_auto_install:" >> rules; \
-		echo "	dh_auto_install -- prefix=/usr" >> rules; \
+		$$(which echo) -e "\tdh_auto_install -- prefix=/usr" >> rules; \
 		echo >> rules; \
 		echo "9" > compat; \
 		$(CP) ../LICENSE.md copyright; \
