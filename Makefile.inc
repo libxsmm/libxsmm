@@ -869,6 +869,7 @@ NOBLASDEP = $(LIBNAME)noblas.$(LIBEXT)
 
 ifeq (0,$(BLAS))
   MAINLIB += $(NOBLASLIB)
+  #EXTLIB += $(NOBLASLIB)
   LIBDEP += $(NOBLASDEP)
 endif
 
