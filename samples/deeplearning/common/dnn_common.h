@@ -2364,16 +2364,13 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
                    float *icfogoldt, float *wgold, float *rgold, float *scratch )
 {
 #if !defined(TWO_GEMMS)
-  float *xhgold;
+  float *xhgold = scratch;
 #endif
   const char transa = 'N', transb = 'N';   /* no transposes */
   const float alpha = 1, beta = 1;
   int j;
   int K4 = K * 4;
   int CK = C + K;
-#if !defined(TWO_GEMMS)
-  xhgold = scratch;
-#endif
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, csgold, csgoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, cogold, cogoldt, K * N);
@@ -2479,7 +2476,8 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
                        float *dxgoldt, float *dcspgold, float *dhpgold, float *scratch )
 {
 #if !defined(TWO_GEMMS)
-  float *xhgold, *dxhgold;
+  float *xhgold   = &(scratch[K*N*t*5]);
+  float *dxhgold  = &(scratch[K*N*t*5 + (C+K)*N]);
 #endif
   float *dicfogoldt, *doutgoldt;
   float *dout, *dcs, *csp;
@@ -2491,10 +2489,6 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
   int CK = C + K;
   dicfogoldt = scratch;
   doutgoldt  = &(scratch[K*N*t*4]);
-#if !defined(TWO_GEMMS)
-  xhgold    = &(scratch[K*N*t*5]);
-  dxhgold   = &(scratch[K*N*t*5 + (C+K)*N]);
-#endif
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, csgold, csgoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, cogold, cogoldt, K * N);
