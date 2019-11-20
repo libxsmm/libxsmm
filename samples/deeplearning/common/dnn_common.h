@@ -2479,7 +2479,8 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
   float *xhgold   = &(scratch[K*N*t*5]);
   float *dxhgold  = &(scratch[K*N*t*5 + (C+K)*N]);
 #endif
-  float *dicfogoldt, *doutgoldt;
+  float *dicfogoldt = scratch;
+  float *doutgoldt  = &(scratch[K*N*t*4]);
   float *dout, *dcs, *csp;
   const char transa = 'N', transb = 'N';   /* no transposes */
   const char transaT = 'T', transbT = 'T'; /* transposes */
@@ -2487,8 +2488,6 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
   int j, l, p;
   int K4 = K * 4;
   int CK = C + K;
-  dicfogoldt = scratch;
-  doutgoldt  = &(scratch[K*N*t*4]);
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, csgold, csgoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, cogold, cogoldt, K * N);
