@@ -36,8 +36,6 @@ if [ "" = "${GIT_DIR}" ]; then
 fi
 LOCKFILE=${GIT_DIR}/.commit
 
-GREP=$(command -v grep)
-SED=$(command -v sed)
 GIT=$(command -v git)
 RM=$(command -v rm)
 
