@@ -1892,7 +1892,9 @@ ifneq (0,$(MKL))
       CFLAGS += -Wno-unused-value
     endif
   endif
-  BLAS_FLAGS += -D__CBLAS
+  ifneq (0,$(NOBLAS))
+    BLAS_FLAGS += -D__CBLAS
+  endif
 endif
 ifneq (Darwin,$(UNAME))
   ifneq (,$(wildcard $(MKLROOT)/lib/x86_64-linux-gnu/libmkl_rt.*))
@@ -1903,7 +1905,9 @@ ifneq (Darwin,$(UNAME))
 endif
 
 ifeq (1,$(MKL)) # sequential
-  BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
+  ifneq (0,$(NOBLAS))
+    BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
+  endif
   MKL_THREADS = sequential
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
@@ -1911,7 +1915,9 @@ ifeq (1,$(MKL)) # sequential
   endif
   endif
 else ifneq (0,$(MKL)) # multi-threaded
-  BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
+  ifneq (0,$(NOBLAS))
+    BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
+  endif
   MKL_THREADS = $(MKL_OMPRTL)_thread
   ifeq (0,$(OMP))
     ifneq (gnu,$(MKL_OMPRTL))
@@ -1996,7 +2002,9 @@ else ifneq (0,$(BLAS)) # generic
     endif
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
-      BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
+      ifneq (0,$(NOBLAS))
+        BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
+      endif
       ifneq (,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
         BLAS_FLAGS += -D__OPENBLAS77 -I$(dir $(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
       else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
@@ -2005,7 +2013,9 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_FLAGS += -D__OPENBLAS77 -I$(dir $(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))
       endif
     else # BLAS (reference)
-      BLAS_FLAGS += -D__BLAS
+      ifneq (0,$(NOBLAS))
+        BLAS_FLAGS += -D__BLAS
+      endif
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
         BLASLIBFILE = $(call libpath,$(LD),$(LDTEST),blas$(BLAS_BITS).dll)
       else
@@ -2049,9 +2059,11 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
   else # BLAS library is specified via BLASLIB
-    BLAS_FLAGS += -D__BLAS=$(BLAS)
-    ifneq (,$(findstring openblas,$(notdir $(BLASLIB))))
-      BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
+    ifneq (0,$(NOBLAS))
+      BLAS_FLAGS += -D__BLAS=$(BLAS)
+      ifneq (,$(findstring openblas,$(notdir $(BLASLIB))))
+        BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
+      endif
     endif
     ifneq (./,$(firstword $(BLASDIR))$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
