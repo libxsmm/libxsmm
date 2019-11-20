@@ -119,7 +119,7 @@ $(OUTDIR)/$(OUTNAME)_batch: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_batch-c.o $(EXT
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_batch-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/$(OUTNAME)_blas: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blas-c.o $(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blas-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blas-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 ifneq (,$(BLAZEROOT))
 $(OUTDIR)/$(OUTNAME)_blaze: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blaze-cpp.o
