@@ -70,7 +70,7 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
 {
   libxsmm_timer_tickint result;
 #if !(defined(__PGI) && defined(__cplusplus))
-  int dummy;
+  int dummy = 0;
 #endif
 #if defined(_WIN32)
 # if 1

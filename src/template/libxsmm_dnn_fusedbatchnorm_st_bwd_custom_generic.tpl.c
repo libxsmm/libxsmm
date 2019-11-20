@@ -173,7 +173,7 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
           del_output_ptr[v] = del_output_f32.i[1];
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
-          del_output_ptr[v] = ( relumask_ptr[v] == 1 ) ? del_output_ptr[v] : 0;
+          del_output_ptr[v] = (element_output_type)(relumask_ptr[v] == 1 ? del_output_ptr[v] : 0);
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
           del_input_add_ptr[v] = del_output_ptr[v];
@@ -186,7 +186,7 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
           del_output_ptr[v] = LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v];
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
-          del_output_ptr[v] = ( relumask_ptr[v] == 1 ) ? del_output_ptr[v] : 0;
+          del_output_ptr[v] = (element_output_type)(relumask_ptr[v] == 1 ? del_output_ptr[v] : 0);
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
           del_input_add_ptr[v] = del_output_ptr[v];

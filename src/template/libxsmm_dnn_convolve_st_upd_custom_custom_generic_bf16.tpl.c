@@ -137,7 +137,7 @@ const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce
 const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
 const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
 
-const float beta = (handle->use_intermediate_f32_wt_tensor) ? 1.0 : 0.0;
+const float beta = (handle->use_intermediate_f32_wt_tensor ? 1.f : 0.f);
 float *dst_ptr;
 gemm_br_function br_gemm_kernel = 0;
 

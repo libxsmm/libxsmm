@@ -2466,7 +2466,7 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch_addr libxsmm_bsmmdispatch_reducebat
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c3 = (unroll_hint < 127) ? (unsigned char)unroll_hint : 0;
+  desc->c3 = (unsigned char)(unroll_hint < 127 ? unroll_hint : 0);
   result = libxsmm_xmmdispatch(desc);
   return result.bsmra;
 }
@@ -2482,7 +2482,7 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_addr libxsmm_bmmdispatch_reducebatch
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c3 = (unroll_hint < 127) ? (unsigned char)unroll_hint : 0;
+  desc->c3 = (unsigned char)(unroll_hint < 127 ? unroll_hint : 0);
   result = libxsmm_xmmdispatch(desc);
   return result.bmra;
 }
@@ -2554,7 +2554,7 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch_offs libxsmm_bsmmdispatch_reducebat
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c3 = (unroll_hint < 127) ? (unsigned char)unroll_hint : 0;
+  desc->c3 = (unsigned char)(unroll_hint < 127 ? unroll_hint : 0);
   result = libxsmm_xmmdispatch(desc);
   return result.bsmro;
 }
@@ -2570,7 +2570,7 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_offs libxsmm_bmmdispatch_reducebatch
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c3 = (unroll_hint < 127) ? (unsigned char)unroll_hint : 0;
+  desc->c3 = (unsigned char)(unroll_hint < 127 ? unroll_hint : 0);
   result = libxsmm_xmmdispatch(desc);
   return result.bmro;
 }
@@ -2668,7 +2668,7 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd libxsmm_bsmmdispatch_reducebat
   /*const*/ libxsmm_xmmfunction result;
   desc->c1 = (unsigned long long)stride_a;
   desc->c2 = (unsigned long long)stride_b;
-  desc->c3 = (unroll_hint < 127) ? (unsigned char)unroll_hint : 0;
+  desc->c3 = (unsigned char)(unroll_hint < 127 ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -2689,7 +2689,7 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd libxsmm_bmmdispatch_reducebatch
   /*const*/ libxsmm_xmmfunction result;
   desc->c1 = (unsigned long long)stride_a;
   desc->c2 = (unsigned long long)stride_b;
-  desc->c3 = (unroll_hint < 127) ? (unsigned char)unroll_hint : 0;
+  desc->c3 = (unsigned char)(unroll_hint < 127 ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
