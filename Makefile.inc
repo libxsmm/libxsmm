@@ -2039,9 +2039,8 @@ else ifneq (0,$(BLAS)) # generic
         endif
       endif
     endif
-    ifeq (0,$(OMP))
-      LDTEST = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
-      ifeq (,$(LDTEST)) # Fortran compiler cannot link OpenMP runtime
+    ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
+      ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT)))
         BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
       else # common link BLAS/OMP-link flags (all compilers)
         BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
