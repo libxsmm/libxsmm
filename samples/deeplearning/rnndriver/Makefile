@@ -54,13 +54,13 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/rnndriver_nc_ck: $(OUTDIR)/.make $(BLDDIR)/rnndriver_nc_ck-c.o $(EXTDEP) $(LIBDEP) 
-	$(LD) -o $@ $(BLDDIR)/rnndriver_nc_ck-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/rnndriver_nc_ck-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/rnndriver_ncnc_kcck: $(OUTDIR)/.make $(BLDDIR)/rnndriver_ncnc_kcck-c.o $(EXTDEP) $(LIBDEP) 
-	$(LD) -o $@ $(BLDDIR)/rnndriver_ncnc_kcck-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/rnndriver_ncnc_kcck-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/rnndriver_nc_kcck: $(OUTDIR)/.make $(BLDDIR)/rnndriver_nc_kcck-c.o $(EXTDEP) $(LIBDEP) 
-	$(LD) -o $@ $(BLDDIR)/rnndriver_nc_kcck-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/rnndriver_nc_kcck-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

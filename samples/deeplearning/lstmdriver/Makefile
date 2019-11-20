@@ -54,16 +54,16 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/lstmdriver_nc_ck: $(OUTDIR)/.make $(BLDDIR)/lstmdriver_nc_ck-c.o $(EXTDEP) $(LIBDEP) 
-	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_ck-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_ck-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/lstmdriver_nc_ck_bf16: $(OUTDIR)/.make $(BLDDIR)/lstmdriver_nc_ck_bf16-c.o $(EXTDEP) $(LIBDEP) 
-	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_ck_bf16-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_ck_bf16-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/lstmdriver_nc_kcck: $(OUTDIR)/.make $(BLDDIR)/lstmdriver_nc_kcck-c.o $(EXTDEP) $(LIBDEP) 
-	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_kcck-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_kcck-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/lstmdriver_nc_kcck_bf16: $(OUTDIR)/.make $(BLDDIR)/lstmdriver_nc_kcck_bf16-c.o $(EXTDEP) $(LIBDEP) 
-	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_kcck_bf16-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_kcck_bf16-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
