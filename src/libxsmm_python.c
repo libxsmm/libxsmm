@@ -112,8 +112,8 @@ LIBXSMM_API PyObject* libxsmmpy_set_verbosity(PyObject* self, PyObject* args)
 }
 
 
-PyMODINIT_FUNC initlibxsmm(void);
-PyMODINIT_FUNC initlibxsmm(void)
+LIBXSMM_API PyMODINIT_FUNC initlibxsmm(void);
+LIBXSMM_API PyMODINIT_FUNC initlibxsmm(void)
 {
   static PyMethodDef pymethod_def[] = {
     { "GetTargetArch", libxsmmpy_get_target_arch, METH_NOARGS,

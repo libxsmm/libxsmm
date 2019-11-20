@@ -283,7 +283,7 @@ ifneq (,$(PYTHON))
     DFLAGS += -D__PYTHON
     # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
     ifeq (,$(filter environment% override command%,$(origin BLAS)))
-      override BLAS = 0
+      NOBLAS = 1
     endif
     # Enable shared library (req. for Python module)
     override STATIC = 0
@@ -297,9 +297,11 @@ NOBLAS ?= 0
 DNOBLAS = -D__BLAS=0
 ifneq (,$(filter environment% override command%,$(origin BLAS)))
 ifeq (0,$(BLAS))
-  BLAS_FLAGS += $(DNOBLAS)
   NOBLAS = 1
 endif
+endif
+ifneq (0,$(NOBLAS))
+  BLAS_FLAGS += $(DNOBLAS)
 endif
 
 # Secondary static
