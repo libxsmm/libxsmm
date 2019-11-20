@@ -821,8 +821,8 @@ ifneq (Darwin,$(UNAME))
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
   abslibrpath = $(strip $(subst / $(NULL), $(NULL),$(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $1)), \
-    $(call linkopt,--rpath,$(dir $(abspath $1))),$(NULL))))
+    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $(firstword $1))), \
+    $(call linkopt,--rpath,$(dir $(abspath $(firstword $1)))),$(NULL))))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
@@ -835,23 +835,23 @@ else # OSX
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
   abslibrpath = $(strip $(subst / $(NULL), $(NULL),$(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $1)), \
-    $(call linkopt,-rpath,$(dir $(abspath $1))),$(NULL))))
+    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $(firstword $1))), \
+    $(call linkopt,-rpath,$(dir $(abspath $(firstword $1)))),$(NULL))))
 endif
 
 absliblpath = $(strip $(subst / $(NULL), $(NULL), \
-  $(if $(filter .$(ILIBEXT),$(suffix $1)), \
-  $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
-  $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1))))
+  $(if $(filter .$(ILIBEXT),$(suffix $(firstword $1))), \
+  $(if $(firstword $1),-L$(dir $(abspath $(firstword $1))),-L$(dir $(firstword $1))), \
+  $(if $(filter .$(SLIBEXT),$(suffix $(firstword $1))),$(NULL),-L$(firstword $1)))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
-  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
-    $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-       -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$(abspath $1)))
+  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $(firstword $1))), \
+    $(if $(patsubst lib%,%,$(basename $(notdir $(firstword $1)))), \
+       -l$(patsubst lib%,%,$(basename $(notdir $(firstword $1)))),$(NULL)),$(abspath $(firstword $1))))
 else # Cygwin/MinGW (static)
-  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
-    $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-       -l$(basename $(notdir $1)),$(NULL)),$(abspath $1)))
+  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $(firstword $1))), \
+    $(if $(patsubst lib%,%,$(basename $(notdir $(firstword $1)))), \
+       -l$(basename $(notdir $(firstword $1))),$(NULL)),$(abspath $(firstword $1))))
 endif
 
 LIBDEP = $(LIBNAME).$(LIBEXT)
@@ -864,8 +864,8 @@ EXTDEP = $(LIBNAME)ext.$(LIBEXT)
 EXTLIB = $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
 
 # provides libxsmmnoblas to satisfy BLAS symbols
-NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(LIBEXT)) $(XLIB_END)
 NOBLASDEP = $(LIBNAME)noblas.$(LIBEXT)
+NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(NOBLASDEP)) $(XLIB_END)
 
 ifeq (0,$(BLAS))
   MAINLIB += $(NOBLASLIB)
