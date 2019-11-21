@@ -282,7 +282,7 @@ ifneq (,$(PYTHON))
     IFLAGS += -I$(dir $(PYINC))
     DFLAGS += -D__PYTHON
     # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
-    ifeq (,$(filter environment% override command%,$(origin BLAS)))
+    ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
       NOBLAS = 1
     endif
     # Enable shared library (req. for Python module)
