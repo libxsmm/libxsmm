@@ -282,8 +282,8 @@ ifneq (,$(PYTHON))
     IFLAGS += -I$(dir $(PYINC))
     DFLAGS += -D__PYTHON
     # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
-    ifeq (,$(filter environment% override command%,$(origin BLAS)))
-      override BLAS = 0
+    ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
+      NOBLAS = 1
     endif
     # Enable shared library (req. for Python module)
     override STATIC = 0
@@ -297,9 +297,11 @@ NOBLAS ?= 0
 DNOBLAS = -D__BLAS=0
 ifneq (,$(filter environment% override command%,$(origin BLAS)))
 ifeq (0,$(BLAS))
-  BLAS_FLAGS += $(DNOBLAS)
   NOBLAS = 1
 endif
+endif
+ifneq (0,$(NOBLAS))
+  BLAS_FLAGS += $(DNOBLAS)
 endif
 
 # Secondary static
@@ -821,8 +823,8 @@ ifneq (Darwin,$(UNAME))
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
   abslibrpath = $(strip $(subst / $(NULL), $(NULL),$(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $1)), \
-    $(call linkopt,--rpath,$(dir $(abspath $1))),$(NULL))))
+    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $(firstword $1))), \
+    $(call linkopt,--rpath,$(dir $(abspath $(firstword $1)))),$(NULL))))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
@@ -835,23 +837,23 @@ else # OSX
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
   abslibrpath = $(strip $(subst / $(NULL), $(NULL),$(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $1)), \
-    $(call linkopt,-rpath,$(dir $(abspath $1))),$(NULL))))
+    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $(firstword $1))), \
+    $(call linkopt,-rpath,$(dir $(abspath $(firstword $1)))),$(NULL))))
 endif
 
 absliblpath = $(strip $(subst / $(NULL), $(NULL), \
-  $(if $(filter .$(ILIBEXT),$(suffix $1)), \
-  $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
-  $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1))))
+  $(if $(filter .$(ILIBEXT),$(suffix $(firstword $1))), \
+  $(if $(firstword $1),-L$(dir $(abspath $(firstword $1))),-L$(dir $(firstword $1))), \
+  $(if $(filter .$(SLIBEXT),$(suffix $(firstword $1))),$(NULL),-L$(firstword $1)))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
-  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
-    $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-       -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$(abspath $1)))
+  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $(firstword $1))), \
+    $(if $(patsubst lib%,%,$(basename $(notdir $(firstword $1)))), \
+       -l$(patsubst lib%,%,$(basename $(notdir $(firstword $1)))),$(NULL)),$(abspath $(firstword $1))))
 else # Cygwin/MinGW (static)
-  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
-    $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-       -l$(basename $(notdir $1)),$(NULL)),$(abspath $1)))
+  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $(firstword $1))), \
+    $(if $(patsubst lib%,%,$(basename $(notdir $(firstword $1)))), \
+       -l$(basename $(notdir $(firstword $1))),$(NULL)),$(abspath $(firstword $1))))
 endif
 
 LIBDEP = $(LIBNAME).$(LIBEXT)
@@ -862,13 +864,16 @@ FORTLIB = $(call abslib,$(FORTDEP))
 
 EXTDEP = $(LIBNAME)ext.$(LIBEXT)
 EXTLIB = $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
+
+# provides libxsmmnoblas to satisfy BLAS symbols
+NOBLASDEP = $(LIBNAME)noblas.$(LIBEXT)
+NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(NOBLASDEP)) $(XLIB_END)
+
 ifeq (0,$(BLAS))
-  # provides libxsmmnoblas to satisfy BLAS symbols
-  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(LIBEXT)) $(XLIB_END)
-else
-  NOBLASLIB = $(NULL)
+  MAINLIB += $(NOBLASLIB)
+  #EXTLIB += $(NOBLASLIB)
+  LIBDEP += $(NOBLASDEP)
 endif
-XBLASLIB ?= $(NOBLASLIB)
 
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
@@ -1887,7 +1892,9 @@ ifneq (0,$(MKL))
       CFLAGS += -Wno-unused-value
     endif
   endif
-  BLAS_FLAGS += -D__CBLAS
+  ifneq (0,$(NOBLAS))
+    BLAS_FLAGS += -D__CBLAS
+  endif
 endif
 ifneq (Darwin,$(UNAME))
   ifneq (,$(wildcard $(MKLROOT)/lib/x86_64-linux-gnu/libmkl_rt.*))
@@ -1898,7 +1905,9 @@ ifneq (Darwin,$(UNAME))
 endif
 
 ifeq (1,$(MKL)) # sequential
-  BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
+  ifneq (0,$(NOBLAS))
+    BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
+  endif
   MKL_THREADS = sequential
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
@@ -1906,7 +1915,9 @@ ifeq (1,$(MKL)) # sequential
   endif
   endif
 else ifneq (0,$(MKL)) # multi-threaded
-  BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
+  ifneq (0,$(NOBLAS))
+    BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
+  endif
   MKL_THREADS = $(MKL_OMPRTL)_thread
   ifeq (0,$(OMP))
     ifneq (gnu,$(MKL_OMPRTL))
@@ -1991,7 +2002,9 @@ else ifneq (0,$(BLAS)) # generic
     endif
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
-      BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
+      ifneq (0,$(NOBLAS))
+        BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
+      endif
       ifneq (,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
         BLAS_FLAGS += -D__OPENBLAS77 -I$(dir $(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
       else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
@@ -2000,7 +2013,9 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_FLAGS += -D__OPENBLAS77 -I$(dir $(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))
       endif
     else # BLAS (reference)
-      BLAS_FLAGS += -D__BLAS
+      ifneq (0,$(NOBLAS))
+        BLAS_FLAGS += -D__BLAS
+      endif
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
         BLASLIBFILE = $(call libpath,$(LD),$(LDTEST),blas$(BLAS_BITS).dll)
       else
@@ -2036,18 +2051,19 @@ else ifneq (0,$(BLAS)) # generic
         endif
       endif
     endif
-    ifeq (0,$(OMP))
-      LDTEST = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
-      ifeq (,$(LDTEST)) # Fortran compiler cannot link OpenMP runtime
+    ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
+      ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT)))
         BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
       else # common link BLAS/OMP-link flags (all compilers)
         BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
       endif
     endif
   else # BLAS library is specified via BLASLIB
-    BLAS_FLAGS += -D__BLAS=$(BLAS)
-    ifneq (,$(findstring openblas,$(notdir $(BLASLIB))))
-      BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
+    ifneq (0,$(NOBLAS))
+      BLAS_FLAGS += -D__BLAS=$(BLAS)
+      ifneq (,$(findstring openblas,$(notdir $(BLASLIB))))
+        BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
+      endif
     endif
     ifneq (./,$(firstword $(BLASDIR))$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
@@ -2109,7 +2125,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR DFLAGS FINFO \
     ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE DLIBEXT DYNAMIC FLOCK LIBEXT \
     ILIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS SUITE \
-    FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI \
+    FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI \
     ICX GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS LDTEST \
     PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED PRESTATE AVX SSE \
     which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink applyif extname objname \

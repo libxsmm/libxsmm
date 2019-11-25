@@ -49,7 +49,7 @@ if [ "" = "$*" ]; then
 else
   TESTS=$*
 fi
-if [ "" != "${TESTS}" ] && [ "" != "$(${GREP} 'BLAS=0' .state)" ]; then
+if [ "" != "${TESTS}" ] && [ "" != "$(${GREP} 'BLAS=0' ${HERE}/../.state 2>/dev/null)" ]; then
   TESTS=$(echo "${TESTS}" | ${GREP} -v "${TESTS_NEEDBLAS_GREP}")
 fi
 

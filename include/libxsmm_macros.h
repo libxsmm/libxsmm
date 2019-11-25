@@ -66,12 +66,16 @@
 # define LIBXSMM_PLATFORM_FORCE
 #endif
 
+#if !defined(LIBXSMM_PLATFORM_X86) && ( \
+    (defined(__x86_64__) && 0 != (__x86_64__)) || \
+    (defined(__amd64__) && 0 != (__amd64__)) || \
+    (defined(_M_X64) || defined(_M_AMD64)) || \
+    (defined(__i386__) && 0 != (__i386__)) || \
+    (defined(_M_IX86)))
+# define LIBXSMM_PLATFORM_X86
+#endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if  (defined(__x86_64__) && 0 != (__x86_64__)) || \
-      (defined(__amd64__) && 0 != (__amd64__)) || \
-      (defined(_M_X64) || defined(_M_AMD64)) || \
-      (defined(__i386__) && 0 != (__i386__)) || \
-      (defined(_M_IX86))
+# if defined(LIBXSMM_PLATFORM_X86)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
 #   error Intel Architecture or compatible CPU required!
@@ -87,7 +91,7 @@
       (defined(__powerpc64))
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
-# elif defined(NDEBUG) /* not for production use! */
+# elif !defined(LIBXSMM_PLATFORM_FORCE) && defined(NDEBUG)
 #   error LIBXSMM is only supported on a 64-bit platform!
 # else /* JIT-generated code (among other issues) is not supported! */
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFF
@@ -393,6 +397,17 @@
 # define LIBXSMM_PRAGMA_UNROLL LIBXSMM_PRAGMA(unroll)
 # define LIBXSMM_PRAGMA_VALIGNED_VAR(A) LIBXSMM_ASSUME_ALIGNED(A, LIBXSMM_ALIGNMENT);
 /*# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))*/
+#elif defined(__clang__)
+# define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(A, ...)
+# define LIBXSMM_PRAGMA_NONTEMPORAL
+# define LIBXSMM_PRAGMA_VALIGNED_VAR(A)
+# define LIBXSMM_PRAGMA_VALIGNED
+# define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(clang loop vectorize(disable))
+# define LIBXSMM_PRAGMA_FORCEINLINE
+# define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG) LIBXSMM_PRAGMA(unroll(AVG))
+# define LIBXSMM_PRAGMA_UNROLL_AND_JAM(N) LIBXSMM_PRAGMA(unroll(N))
+# define LIBXSMM_PRAGMA_UNROLL_N(N) LIBXSMM_PRAGMA(unroll(N))
+# define LIBXSMM_PRAGMA_UNROLL LIBXSMM_PRAGMA_UNROLL_N(4)
 #else
 # define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(A, ...)
 # define LIBXSMM_PRAGMA_NONTEMPORAL

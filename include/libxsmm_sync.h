@@ -70,6 +70,8 @@
 # else
 #   define LIBXSMM_SYNC_PAUSE _mm_pause()
 # endif
+#elif (LIBXSMM_X86_GENERIC <= LIBXSMM_STATIC_TARGET_ARCH) && defined(__GNUC__)
+# define LIBXSMM_SYNC_PAUSE __asm__ __volatile__("pause" ::: "memory")
 #else
 # define LIBXSMM_SYNC_PAUSE
 #endif
@@ -106,7 +108,7 @@ typedef enum libxsmm_atomic_kind {
 
 #define LIBXSMM_NONATOMIC_LOCKTYPE LIBXSMM_ATOMIC_LOCKTYPE
 #define LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND) (*(SRC_PTR))
-#define LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND) { LIBXSMM_UNUSED(KIND); *(DST_PTR) = VALUE; }
+#define LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND) { LIBXSMM_UNUSED(KIND); *(DST_PTR) = (VALUE); }
 #define LIBXSMM_NONATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, 0, KIND)
 #define LIBXSMM_NONATOMIC_FETCH_OR(DST_PTR, VALUE/*side-effect*/, KIND) (/* 1st step: swap(dst, val) */ \
   ((*DST_PTR) = (*DST_PTR) ^ (VALUE)), (VALUE = (VALUE) ^ (*DST_PTR)), ((*DST_PTR) = (*DST_PTR) ^ (VALUE)), \
@@ -240,9 +242,14 @@ typedef enum libxsmm_atomic_kind {
 #   else /* GCC legacy atomics */
 #     define LIBXSMM_ATOMIC(FN, BITS) FN
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
-#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) { \
-              LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND); *(DST_PTR) = VALUE; \
-              LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND); }
+#     if (LIBXSMM_X86_GENERIC <= LIBXSMM_STATIC_TARGET_ARCH)
+#       define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) { \
+                __asm__ __volatile__("" ::: "memory"); *(DST_PTR) = (VALUE); \
+                __asm__ __volatile__("" ::: "memory"); }
+#     else
+#       define LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND)
+#       define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) *(DST_PTR) = (VALUE)
+#     endif
 #     if !defined(LIBXSMM_ATOMIC_ZERO_STORE)
 #       define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) do {} while (__sync_and_and_fetch(DST_PTR, 0))
 #     endif
@@ -273,7 +280,6 @@ typedef enum libxsmm_atomic_kind {
             LIBXSMM_ASSERT(1 == sizeof(LIBXSMM_ATOMIC_LOCKTYPE)); LIBXSMM_ASSERT(0 == LIBXSMM_MOD2((uintptr_t)(DST_PTR), 4)); \
             while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(DST_PTR, 0/*free*/, NPAUSE); \
             LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE")
-#   define LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND) __asm__ __volatile__ ("" ::: "memory")
 #   if !defined(LIBXSMM_SYNC_NPAUSE)
 #     define LIBXSMM_SYNC_NPAUSE 4096
 #   endif

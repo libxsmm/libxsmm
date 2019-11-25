@@ -87,15 +87,26 @@ then
           ${CP} ${TMPF} ${FILE}
           echo "${FILE}: removed trailing white spaces."
         fi
+        FLAGS=$(${GIT} ls-files -s ${FILE} | ${CUT} -d' ' -f1)
         if [ "*.sh" = "${PATTERN}" ] || [ "*.py" = "${PATTERN}" ]; then
           if [ "" != "$(${SED} -n '1!b;/#!/p' ${FILE})" ] && \
-             [ "100755" != "$(${GIT} ls-files -s ${FILE} | ${CUT} -d' ' -f1)" ];
+             [ "100755" != "${FLAGS}" ];
           then
             ${GIT} update-index --chmod=+x ${FILE}
             echo "${FILE}: added executable flag."
           fi
+        elif [ "100644" != "${FLAGS}" ] && [ "120000" != "${FLAGS}" ]; then
+          ${GIT} update-index --chmod=-x ${FILE}
+          echo "${FILE}: removed executable flag."
         fi
       done
+    done
+    for FILE in $(${GIT} ls-files Makefile*); do
+      if [ "" != "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" ${FILE})" ]; then
+        ${CAT} ${FILE} | ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" > ${TMPF}
+        ${CP} ${TMPF} ${FILE}
+        echo "${FILE}: removed inner tabs."
+      fi
     done
     ${RM} ${TMPF}
     echo "Successfully Completed."

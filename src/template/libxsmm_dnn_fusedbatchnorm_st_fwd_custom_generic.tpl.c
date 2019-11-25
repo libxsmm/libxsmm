@@ -267,7 +267,7 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
           o = ( o > 0.0f ) ? o : 0.0f;
-          relumask_ptr[v] = ( o > 0.0f ) ? 1 : 0;
+          relumask_ptr[v] = (unsigned char)(o > 0.0f ? 1 : 0);
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
           output_f32.f = o;

@@ -71,10 +71,10 @@ define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
 $(1): $(2) $(OBJECTS) $(dir $(1))/.make \
-      $(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(LIBDEP) $(EXTDEP))
+        $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(LIBDEP) $(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(EXTLIB) $(call abslib, $(LIBDEP)) $(XBLASLIB)) \
-		$(LDFLAGS) $(CLDFLAGS)
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB)) \
+		$(MAINLIB) $(LDFLAGS) $(CLDFLAGS)
 else
 .PHONY: $(1)
 endif
@@ -89,8 +89,8 @@ ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(FORTDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
 $(1): $(2) $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
-	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(FORTDEP)) $(EXTLIB) \
-		$(call abslib, $(LIBDEP)) $(XBLASLIB) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FC) $(SLDFLAGS) -o $(1) $(2) $(MAINLIB) $(FORTLIB) $(EXTLIB) \
+		$(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(1)
 endif

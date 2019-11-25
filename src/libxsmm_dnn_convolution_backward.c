@@ -58,7 +58,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_f32_f32(libxsmm_dnn_
     const libxsmm_blasint ldB = (libxsmm_blasint)handle->ofmblock;
     const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
     const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->ifmblock * handle->desc.v) : (libxsmm_blasint)handle->ifmblock;
-    const float  beta = (handle->avoid_acc_load_bwd) ? 0.0 : 1.0;
+    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     typedef float element_input_type;
     typedef float element_output_type;
     typedef float element_filter_type;
@@ -95,7 +95,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_bf16_bf16_emu(libxsm
     const libxsmm_blasint ldB = (libxsmm_blasint)handle->ofmblock;
     const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
     const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->ifmblock * handle->desc.v) : (libxsmm_blasint)handle->ifmblock;
-    const float  beta = (handle->avoid_acc_load_bwd) ? 0.0 : 1.0;
+    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     typedef libxsmm_bfloat16 element_input_type;
     typedef libxsmm_bfloat16 element_output_type;
     typedef libxsmm_bfloat16 element_filter_type;
@@ -130,7 +130,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_bf16_bf16(libxsmm_dn
     const libxsmm_blasint ldB = (libxsmm_blasint)handle->ofmblock;
     const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
     const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->ifmblock * handle->desc.v) : (libxsmm_blasint)handle->ifmblock;
-    const float  beta = (handle->avoid_acc_load_bwd) ? 0.0 : 1.0;
+    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     typedef libxsmm_bfloat16 element_input_type;
     typedef libxsmm_bfloat16 element_output_type;
     typedef libxsmm_bfloat16 element_filter_type;
@@ -173,7 +173,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom_f32_f32(libxsmm_dnn_la
     const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
     const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
     const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
-    const float  beta = (handle->avoid_acc_load_bwd) ? 0.0 : 1.0;
+    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     typedef float element_input_type;
     typedef float element_output_type;
     typedef float element_filter_type;
@@ -216,7 +216,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck_f32_f32(libxsmm_dnn_laye
     const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
     const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
     const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
-    const float  beta = (handle->avoid_acc_load_bwd) ? 0.0 : 1.0;
+    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     typedef float element_input_type;
     typedef float element_output_type;
     typedef float element_filter_type;
@@ -346,7 +346,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(libxs
         const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
         const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
         const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
-        const float  beta = (handle->avoid_acc_load_bwd) ? 0.0 : 1.0;
+        const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
@@ -409,7 +409,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom(lib
         const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
         const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
         const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
-        const float  beta = (handle->avoid_acc_load_bwd) ? 0.0 : 1.0;
+        const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
