@@ -88,8 +88,8 @@ if (handle->desc.C == 2048 && handle->desc.K == 1024) {
 }
 CB_BLOCKS = nBlocksIFm/BF;
 
-perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads &&
-  ik_tasks_per_thread*in_tasks_per_thread*CB_BLOCKS <= 4096) ? 1 : 0;
+perform_2d_decomp = 0; /*(in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads &&
+  ik_tasks_per_thread*in_tasks_per_thread*CB_BLOCKS <= 4096) ? 1 : 0;*/
 
 if (perform_2d_decomp) {
   /* Auxiliary arrays for batch-reduce gemms and potential prefetch */
@@ -127,8 +127,8 @@ if (perform_2d_decomp) {
           index = (ik-my_ik_start)*(my_in_end-my_in_start)*CB_BLOCKS + (in-my_in_start)*CB_BLOCKS + ifm2;
 #endif
 #ifdef ADDRESS_BRGEMM
-          A_array[index] = &LIBXSMM_VLA_ACCESS(4, filter, ik, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bc, handle->bk);
-          B_array[index] = &LIBXSMM_VLA_ACCESS(4, input,  in, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bn, handle->bc);
+          A_array[index] = &LIBXSMM_VLA_ACCESS(4, filter, ik, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bc, handle->bk);
+          B_array[index] = &LIBXSMM_VLA_ACCESS(4, input,  in, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc);
 #endif
 #ifdef OFFSET_BRGEMM
           A_offsets[index] = (ifm2 + ifm1*CB_BLOCKS) * handle->bc * handle->bk * sizeof(element_filter_type);
@@ -146,13 +146,13 @@ if (perform_2d_decomp) {
         batchreduce_kernel(&A_array[index], &B_array[index], &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 #endif
 #ifdef OFFSET_BRGEMM
-        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ik, 0,  0, 0, nBlocksIFm/BF, handle->bc, handle->bk),
-                            &LIBXSMM_VLA_ACCESS(4, input,  in, 0,  0, 0, nBlocksIFm/BF, handle->bn, handle->bc),
+        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ik, ifm1*CB_BLOCKS,  0, 0, nBlocksIFm, handle->bc, handle->bk),
+                            &LIBXSMM_VLA_ACCESS(4, input,  in, ifm1*CB_BLOCKS,  0, 0, nBlocksIFm, handle->bn, handle->bc),
                             &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks, A_offsets, B_offsets);
 #endif
 #ifdef STRIDE_BRGEMM
-        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ik, 0,  0, 0, nBlocksIFm/BF, handle->bc, handle->bk),
-                            &LIBXSMM_VLA_ACCESS(4, input,  in, 0,  0, 0, nBlocksIFm/BF, handle->bn, handle->bc),
+        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ik, ifm1*CB_BLOCKS,  0, 0, nBlocksIFm, handle->bc, handle->bk),
+                            &LIBXSMM_VLA_ACCESS(4, input,  in, ifm1*CB_BLOCKS,  0, 0, nBlocksIFm, handle->bn, handle->bc),
                             &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
 #endif
       }
@@ -196,19 +196,19 @@ unsigned long long  B_offsets[1024];
 #ifdef ADDRESS_BRGEMM
       /* prepare arguments for batch-reduce call */
       for ( ifm2 = 0; ifm2 < CB_BLOCKS; ++ifm2 ) {
-        A_array[ifm2] = &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bc, handle->bk);
-        B_array[ifm2] = &LIBXSMM_VLA_ACCESS(4, input,  mb1,  ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bn, handle->bc);
+        A_array[ifm2] = &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bc, handle->bk);
+        B_array[ifm2] = &LIBXSMM_VLA_ACCESS(4, input,  mb1,  ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc);
       }
       batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 #endif
 #ifdef OFFSET_BRGEMM
-      batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0,    0, 0, nBlocksIFm/BF, handle->bc, handle->bk),
-                          &LIBXSMM_VLA_ACCESS(4, input,  mb1,  0,    0, 0, nBlocksIFm/BF, handle->bn, handle->bc),
+      batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bc, handle->bk),
+                          &LIBXSMM_VLA_ACCESS(4, input,  mb1,  ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bn, handle->bc),
                           &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks, A_offsets, B_offsets);
 #endif
 #ifdef STRIDE_BRGEMM
-      batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0,    0, 0, nBlocksIFm/BF, handle->bc, handle->bk),
-                          &LIBXSMM_VLA_ACCESS(4, input,  mb1,  0,    0, 0, nBlocksIFm/BF, handle->bn, handle->bc),
+      batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bc, handle->bk),
+                          &LIBXSMM_VLA_ACCESS(4, input,  mb1,  ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bn, handle->bc),
                           &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
 #endif
     }
