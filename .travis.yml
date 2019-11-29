@@ -53,7 +53,7 @@ install:
   - if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ]; then
       ( cd /tmp && curl -O -L https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz &&
         tar xvf OpenSSL_1_1_1d.tar.gz && cd openssl-OpenSSL_1_1_1d &&
-        ./config --prefix=${HOME}/openssl && make ${MAKEJ} install &&
+        ./config --prefix=${HOME}/openssl && make ${MAKEJ} && make install &&
         cd /tmp && curl -O -L https://www.libssh2.org/download/libssh2-1.9.0.tar.gz &&
         tar xvf libssh2-1.9.0.tar.gz && cd libssh2-1.9.0 &&
         ./configure --prefix=${HOME}/libssh2 --with-libssl-prefix=${HOME}/openssl &&
