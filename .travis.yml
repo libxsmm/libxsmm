@@ -31,10 +31,9 @@ matrix:
 
 env:
   global:
-  - UPLOAD_DIR=libxsmm
-  - LIBXSMM_VERBOSE=2
   - PEDANTIC_HIGH="PEDANTIC=2"
   - PEDANTIC_TEST="PEDANTIC=1"
+  - LIBXSMM_VERBOSE=2
 
 addons:
   apt:
@@ -44,17 +43,13 @@ addons:
     - liblapack-dev
     - python3
 
-before_install:
-  - source .env/travis.env
+#before_install:
 #  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
 #      if [ "${TRAVIS_OS_NAME}" = "osx" ] && [ "${CC}" != "clang" ]; then sudo easy_install pip; fi;
 #    fi
 
 install:
-  #- if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
-  #    if [ "${CC}" != "clang" ]; then pip install --user codecov; fi;
-  #  fi
-  - if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ]; then
+  - source .env/travis.env && if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ]; then
       ( cd /tmp && curl -O -L https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz &&
         tar xvf OpenSSL_1_1_1d.tar.gz && cd openssl-OpenSSL_1_1_1d &&
         ./config --prefix=${HOME}/openssl && make ${MAKEJ} install &&
@@ -66,15 +61,18 @@ install:
         tar xvf curl-7_67_0.tar.gz && cd curl-curl-7_67_0 && ./buildconf &&
         ./configure --prefix=${HOME}/curl --with-ssl=${HOME}/openssl
           --with-libssh2=${HOME}/libssh2 && make ${MAKEJ} install &&
-        cd ${TRAVIS_BUILD_DIR})
-      || true;
+        cd ${TRAVIS_BUILD_DIR}
+      ) || true;
     fi
+  #- if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
+  #    if [ "${CC}" != "clang" ]; then pip install --user codecov; fi;
+  #  fi
 
 after_success:
   - eval ${CODECOV}
-  - eval ${POSTPROC}
-  - eval ${RUNXCOV}
-  - eval ${UPLOAD}
+
+before_script:
+  - source .env/travis.env
 
 script:
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
@@ -82,47 +80,47 @@ script:
       if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
         env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt;
       fi
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} TRACE=1 MNK="19 27, 23" EFLAGS="-DLIBXSMM_MALLOC_MMAP" install-artifacts test-cp2k
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 MNK="4 8" STATIC=0 PREFETCH=0 CACHE=0 EFLAGS="-DLIBXSMM_NO_CTOR" install-artifacts test-nek
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 PYMOD=1 EFLAGS="-DLIBXSMM_NO_CTOR" install-artifacts tests
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       env TOOL_ENABLED=0 make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 MNK="9 3, 23" STATIC=0 EFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" install-artifacts test-smm
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" INTRINSICS=1 install-artifacts tests
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 SSE=0 AVX=0 JIT=0 EFLAGS="-DELEM_TYPE=short" install-artifacts tests
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make ${MAKEJ} -e ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 test-wrap
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make ${MAKEJ} -e ${PEDANTIC_TEST} VLA=0 STATIC=1 test-wrap
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make ${MAKEJ} -e ${PEDANTIC_TEST} VLA=0 GEMM=2 STATIC=0 BLAS=2 test-wrap
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make -e ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 test-cpp &&
       make -e ${PEDANTIC_HIGH} AVX=2 THREADS=0 test-cpp &&
       make -e ${PEDANTIC_HIGH} AVX=1 VLA=0 test-cpp
-    ) 2>&1 | tee .test.log
+    ) 2>&1 | tee .test.log && eval ${POSTPROC}
 
