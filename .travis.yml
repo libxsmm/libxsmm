@@ -71,13 +71,15 @@ install:
 
 after_success:
   - eval ${CODECOV}
-
 after_failure:
+  - echo "after_failure: $?"
   # upload artifacts once a test failed
   - eval ${UPLOAD}
 
 before_script:
   - source .env/travis.env
+after_script:
+  - echo "after_script: $?"
 
 script:
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
