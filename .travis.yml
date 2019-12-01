@@ -1,5 +1,3 @@
-sudo: false
-
 language: cpp
 
 branches:
@@ -20,11 +18,9 @@ matrix:
     compiler: clang
     env: DBG=1 LIBXSMM_TARGET=sse LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
   - os: osx
-    #osx_image: xcode9.1
     compiler: clang
     env: OPT=1 LIBXSMM_SE=1
   - os: osx
-    # xcode6.4 is deprecated
     osx_image: xcode7.3
     compiler: clang
     env: DBG=1
@@ -70,18 +66,19 @@ install:
   #  fi
 
 after_success:
+  - echo "after success"
   - eval ${CODECOV}
 
 # upload artifacts
 after_failure:
-  - echo "after failure: $?"
+  - echo "after failure"
   - eval ${UPLOAD}
 
 before_script:
   - source .env/travis.env
 
 after_script:
-  - echo "after script: $?"
+  - echo "after script"
 
 script:
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
