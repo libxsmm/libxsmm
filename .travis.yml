@@ -6,7 +6,7 @@ branches:
   - results
 
 matrix:
-  fast_finish: true
+  #fast_finish: true
   include:
   - os: linux
     compiler: gcc
@@ -18,11 +18,11 @@ matrix:
     compiler: clang
     env: DBG=1 LIBXSMM_TARGET=sse LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
   - os: osx
-    compiler: clang
+    #compiler: clang
     env: OPT=1 LIBXSMM_SE=1
   - os: osx
     osx_image: xcode7.3
-    compiler: clang
+    #compiler: clang
     env: DBG=1
 
 env:
