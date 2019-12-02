@@ -75,8 +75,6 @@ after_failure:
 before_script:
   - source .env/travis.env
 
-build-tests
-
 script:
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
       make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} TRACE=1 STATIC=0 BLAS=1 ABSLIBS=1 EFLAGS="-DITYPE=double" install-artifacts tests &&
