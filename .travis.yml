@@ -18,6 +18,7 @@ matrix:
     compiler: clang
     env: DBG=1 LIBXSMM_TARGET=sse LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
   - os: osx
+    osx_image: xcode11.2
     compiler: clang
     env: OPT=1 LIBXSMM_SE=1
   - os: osx
@@ -100,9 +101,7 @@ script:
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
-      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" INTRINSICS=1 install-artifacts &&
-      eval ${UPLOAD} &&
-      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" INTRINSICS=1 tests
+      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" INTRINSICS=1 install-artifacts tests &&
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
