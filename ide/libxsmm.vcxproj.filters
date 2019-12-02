@@ -42,9 +42,6 @@
     <ClInclude Include="..\src\libxsmm_gemm.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\build\libxsmm_dispatch.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_dnn.h">
       <Filter>include</Filter>
     </ClInclude>
