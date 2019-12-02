@@ -6,7 +6,7 @@ branches:
   - results
 
 matrix:
-  #fast_finish: true
+  fast_finish: true
   include:
   - os: linux
     compiler: gcc
@@ -18,11 +18,11 @@ matrix:
     compiler: clang
     env: DBG=1 LIBXSMM_TARGET=sse LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
   - os: osx
-    #compiler: clang
+    compiler: clang
     env: OPT=1 LIBXSMM_SE=1
   - os: osx
     osx_image: xcode7.3
-    #compiler: clang
+    compiler: clang
     env: DBG=1
 
 env:
@@ -66,19 +66,16 @@ install:
   #  fi
 
 after_success:
-  - echo "after success"
   - eval ${CODECOV}
 
 # upload artifacts
 after_failure:
-  - echo "after failure"
   - eval ${UPLOAD}
 
 before_script:
   - source .env/travis.env
 
-after_script:
-  - echo "after script"
+build-tests
 
 script:
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
@@ -105,7 +102,9 @@ script:
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
-      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" INTRINSICS=1 install-artifacts tests
+      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" INTRINSICS=1 install-artifacts &&
+      eval ${UPLOAD} &&
+      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" INTRINSICS=1 tests
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
