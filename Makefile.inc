@@ -1662,6 +1662,9 @@ ifeq (0,$(COMPATIBLE))
 endif
 ifneq (Windows_NT,$(UNAME))
 ifneq (,$(strip $(PIC)))
+  ifneq (,$(shell echo "int main(void) { return 0; }" | $(CC) -f$(PIC) -E -xc /dev/stdin 2>&1))
+    PIC := PIC
+  endif
   PICFLAG = -f$(PIC)
 endif
 endif
