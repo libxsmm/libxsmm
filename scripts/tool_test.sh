@@ -368,7 +368,7 @@ then
       # exit the loop in case of an error
       if [ "0" != "${RESULT}" ]; then
         if [ "" != "${TOUCHFILE}" ]; then
-          ${RM} ${TOUCHFILE}
+          ${RM} -f ${TOUCHFILE}
           TOUCHFILE=""
         fi
         break 4
