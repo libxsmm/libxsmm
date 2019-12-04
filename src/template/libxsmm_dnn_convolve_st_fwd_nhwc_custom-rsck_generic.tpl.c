@@ -199,7 +199,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                     ind++;
                   }
                   n_blocks = ind;
-                  br_gemm_kernel2(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(5, output, img, oj_use, oi_use, ofm2, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock), &n_blocks);
+                  br_gemm_kernel2(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(5, output, img, oj_use, oi_use, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock), &n_blocks);
                 } else {
                   ind = 0;
                   for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
