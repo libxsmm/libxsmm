@@ -575,6 +575,20 @@ LIBXSMM_API size_t libxsmm_dnn_fullyconnected_get_scratch_size(const libxsmm_dnn
 }
 
 
+LIBXSMM_API void* libxsmm_dnn_fullyconnected_get_scratch_ptr(const libxsmm_dnn_fullyconnected* handle, libxsmm_dnn_err_t* status)
+{
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    return handle->scratch;
+  } else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return 0;
+}
+
+
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_bind_scratch(libxsmm_dnn_fullyconnected* handle, const void* scratch) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   uintptr_t address = (uintptr_t)scratch;
