@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
 {
   const char* filename_in = (1 < argc ? argv[1] : "mhd_in.mhd");
   const size_t nrepeat = (size_t)LIBXSMM_MAX(2 < argc ? strtoul(argv[2], 0, 10) : 1, 1);
-  const int kw = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 39, 1);
+  const int kw = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 32, 1);
   const int kh = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : kw, 1);
   const char *const filename_out = (5 < argc ? argv[5] : "mhd_out.mhd");
   int result = 0 != strcmp(filename_in, filename_out) ? EXIT_SUCCESS : EXIT_FAILURE;
