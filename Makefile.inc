@@ -272,23 +272,23 @@ ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
 endif
 
 ifneq (0,$(PYMOD))
-ifneq (,$(PYTHON))
-  PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed $(REVERSION))
-  PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
-  PYROOT = $(abspath $(dir $(call which,$(PYTHON)))/..)
-  PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
-  ifneq (,$(PYINC))
-    LDFLAGS += -lpython$(PYVERSION)
-    IFLAGS += -I$(dir $(PYINC))
-    DFLAGS += -D__PYTHON
-    # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
-    ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
-      NOBLAS = 1
+  ifneq (,$(PYTHON))
+    PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed $(REVERSION))
+    PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
+    PYROOT = $(abspath $(dir $(call which,$(PYTHON)))/..)
+    PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
+    ifneq (,$(PYINC))
+      LDFLAGS += -lpython$(PYVERSION)
+      IFLAGS += -I$(dir $(PYINC))
+      DFLAGS += -D__PYTHON
+      # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
+      ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
+        NOBLAS = 1
+      endif
     endif
-    # Enable shared library (req. for Python module)
-    override STATIC = 0
   endif
-endif
+  # Enable shared library (req. for Python module)
+  override STATIC = 0
 endif
 
 # Explicitly disables BLAS by user's intervention
@@ -1662,6 +1662,9 @@ ifeq (0,$(COMPATIBLE))
 endif
 ifneq (Windows_NT,$(UNAME))
 ifneq (,$(strip $(PIC)))
+  ifneq (,$(shell echo "int main(void) { return 0; }" | $(CC) -f$(PIC) -E -xc -c /dev/stdin 2>&1 >/dev/null))
+    PIC := PIC
+  endif
   PICFLAG = -f$(PIC)
 endif
 endif

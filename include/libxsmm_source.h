@@ -1,13 +1,3 @@
-#!/bin/sh
-
-SRCDIR=../src
-GREP=$(command -v grep)
-
-if [ "" = "${GREP}" ]; then
-  echo "Error: missing prerequisites!"
-  exit 1
-fi
-cat << EOM
 /******************************************************************************
 ** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
@@ -62,30 +52,84 @@ cat << EOM
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-EOM
-
-HERE=$(cd $(dirname $0); pwd -P)
-
-if [ "" = "$1" ]; then
-  DSTDIR=${SRCDIR}
-else
-  DSTDIR=$1
-fi
-
-# determine order of filenames in directory list
-export LC_ALL=C
-
-# good-enough pattern to match a main function, and to exclude this translation unit
-for FILE in $(${GREP} -L "main[[:space:]]*(.*)" ${HERE}/${SRCDIR}/*.c); do
-  BASENAME=$(basename ${FILE})
-  echo "#include \"${DSTDIR}/${BASENAME}\""
-done
-
-cat << EOM
+#include "../src/generator_common.c"
+#include "../src/generator_gemm.c"
+#include "../src/generator_gemm_avx2_microkernel.c"
+#include "../src/generator_gemm_avx512_fsdbcst.c"
+#include "../src/generator_gemm_avx512_microkernel_fsdbcst.c"
+#include "../src/generator_gemm_avx512_microkernel_nofsdbcst.c"
+#include "../src/generator_gemm_avx_microkernel.c"
+#include "../src/generator_gemm_common.c"
+#include "../src/generator_gemm_noarch.c"
+#include "../src/generator_gemm_sse3_avx_avx2_avx512.c"
+#include "../src/generator_gemm_sse3_microkernel.c"
+#include "../src/generator_matcopy.c"
+#include "../src/generator_matcopy_avx_avx512.c"
+#include "../src/generator_packed.c"
+#include "../src/generator_packed_gemm_ac_rm_avx_avx2_avx512.c"
+#include "../src/generator_packed_gemm_avx_avx512.c"
+#include "../src/generator_packed_gemm_bc_rm_avx_avx2_avx512.c"
+#include "../src/generator_packed_getrf_avx_avx512.c"
+#include "../src/generator_packed_trmm_avx_avx512.c"
+#include "../src/generator_packed_trsm_avx_avx512.c"
+#include "../src/generator_spgemm.c"
+#include "../src/generator_spgemm_csc_asparse.c"
+#include "../src/generator_spgemm_csc_bsparse.c"
+#include "../src/generator_spgemm_csc_bsparse_soa.c"
+#include "../src/generator_spgemm_csc_reader.c"
+#include "../src/generator_spgemm_csr_asparse.c"
+#include "../src/generator_spgemm_csr_asparse_reg.c"
+#include "../src/generator_spgemm_csr_asparse_soa.c"
+#include "../src/generator_spgemm_csr_bsparse_soa.c"
+#include "../src/generator_spgemm_csr_reader.c"
+#include "../src/generator_transpose.c"
+#include "../src/generator_transpose_avx_avx512.c"
+#include "../src/generator_x86_instructions.c"
+#include "../src/libxsmm_blocked_gemm.c"
+#include "../src/libxsmm_cpuid_x86.c"
+#include "../src/libxsmm_dnn.c"
+#include "../src/libxsmm_dnn_convolution.c"
+#include "../src/libxsmm_dnn_convolution_backward.c"
+#include "../src/libxsmm_dnn_convolution_forward.c"
+#include "../src/libxsmm_dnn_convolution_weight_update.c"
+#include "../src/libxsmm_dnn_elementwise.c"
+#include "../src/libxsmm_dnn_fullyconnected.c"
+#include "../src/libxsmm_dnn_fullyconnected_backward.c"
+#include "../src/libxsmm_dnn_fullyconnected_forward.c"
+#include "../src/libxsmm_dnn_fullyconnected_weight_update.c"
+#include "../src/libxsmm_dnn_fusedbatchnorm.c"
+#include "../src/libxsmm_dnn_fusedbatchnorm_backward.c"
+#include "../src/libxsmm_dnn_fusedbatchnorm_forward.c"
+#include "../src/libxsmm_dnn_pooling.c"
+#include "../src/libxsmm_dnn_pooling_backward.c"
+#include "../src/libxsmm_dnn_pooling_forward.c"
+#include "../src/libxsmm_dnn_rnncell.c"
+#include "../src/libxsmm_dnn_rnncell_backward_weight_update.c"
+#include "../src/libxsmm_dnn_rnncell_forward.c"
+#include "../src/libxsmm_dnn_tensor.c"
+#include "../src/libxsmm_ext.c"
+#include "../src/libxsmm_ext_blocked_gemm.c"
+#include "../src/libxsmm_ext_gemm.c"
+#include "../src/libxsmm_ext_xcopy.c"
+#include "../src/libxsmm_fsspmdm.c"
+#include "../src/libxsmm_gemm.c"
+#include "../src/libxsmm_generator.c"
+#include "../src/libxsmm_hash.c"
+#include "../src/libxsmm_main.c"
+#include "../src/libxsmm_malloc.c"
+#include "../src/libxsmm_math.c"
+#include "../src/libxsmm_memory.c"
+#include "../src/libxsmm_mhd.c"
+#include "../src/libxsmm_perf.c"
+#include "../src/libxsmm_python.c"
+#include "../src/libxsmm_rng.c"
+#include "../src/libxsmm_spmdm.c"
+#include "../src/libxsmm_sync.c"
+#include "../src/libxsmm_timer.c"
+#include "../src/libxsmm_trace.c"
+#include "../src/libxsmm_xcopy.c"
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
 #endif /*LIBXSMM_SOURCE_H*/
-EOM
-

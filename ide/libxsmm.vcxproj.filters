@@ -18,9 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\libxsmm.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_macros.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -45,13 +42,7 @@
     <ClInclude Include="..\src\libxsmm_gemm.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\build\libxsmm_dispatch.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_dnn.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_source.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_main.h">
@@ -68,9 +59,6 @@
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_perf.h">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\libxsmm_config.h">
-      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\src\perf_jitdump.h">
       <Filter>src</Filter>
@@ -107,12 +95,6 @@
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h">
       <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\template\libxsmm.h">
-      <Filter>src\template</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\template\libxsmm_config.h">
-      <Filter>src\template</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_elementwise.h">
       <Filter>src</Filter>
@@ -271,6 +253,12 @@
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_memory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\libxsmm.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\libxsmm_config.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -802,9 +790,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\include\libxsmm.f">
-      <Filter>include</Filter>
-    </None>
     <None Include="..\scripts\libxsmm_specialized.py">
       <Filter>scripts</Filter>
     </None>
@@ -846,9 +831,6 @@
     <None Include="..\scripts\tool_test.sh">
       <Filter>scripts</Filter>
     </None>
-    <None Include="..\src\template\libxsmm.f">
-      <Filter>src\template</Filter>
-    </None>
     <None Include="..\.test-dnn-fullci" />
     <None Include="..\.test-rnn.yml" />
     <None Include="..\.test-rnn-fullci" />
@@ -861,6 +843,9 @@
     </None>
     <None Include="..\scripts\tool_cpuinfo.sh">
       <Filter>scripts</Filter>
+    </None>
+    <None Include="..\src\template\libxsmm.f">
+      <Filter>include</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

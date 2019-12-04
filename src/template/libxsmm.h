@@ -464,7 +464,7 @@ LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
   const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_DEFAULT_CONFIG)
 $MNK_INTERFACE_LIST
 #endif /*defined(LIBXSMM_BUILD)*/
 

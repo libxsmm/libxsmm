@@ -801,7 +801,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         }
       }
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) ((libxsmm_code_pointer*)new_registry)[i].pmm = NULL;
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_DEFAULT_CONFIG)
 #     include <libxsmm_dispatch.h>
 #endif
       libxsmm_gemm_init(libxsmm_target_archid);
