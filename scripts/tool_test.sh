@@ -329,8 +329,17 @@ then
             -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
             ${SLURMFILE} > ${SLURMFILE}.run && ${CHMOD} +rx ${SLURMFILE}.run
           RUNFILE=$(readlink -f ${SLURMFILE}.run)
-          if [ "" = "${TOOL_ENABLED}" ] || [ "0" != "${TOOL_ENABLED}" ]; then
-            echo -n "${TOOL_COMMAND} ${RUNFILE} ${TOOL_COMMAND_POST}" >> ${TESTSCRIPT}
+          if [ "" != "${TOOL_COMMAND}" ]; then
+            if [ "0" = "${TOOL_INJECT}" ] || [ "" = "$(${SED} -n "/^taskset/p" ${RUNFILE})" ]; then
+              echo -n "${TOOL_COMMAND} ${RUNFILE} ${TOOL_COMMAND_POST}" >> ${TESTSCRIPT}
+            else # inject TOOL_COMMAND
+              TOOL_COMMAND_SED1="$(echo "${TOOL_COMMAND}" | ${SED} "s/\//\\\\\//g") "
+              if [ "" != "${TOOL_COMMAND_POST}" ]; then
+                TOOL_COMMAND_SED2=" $(echo "${TOOL_COMMAND_POST}" | ${SED} "s/\//\\\\\//g")"
+              fi
+              ${SED} -i "s/\(^taskset[[:space:]]..*\)/${TOOL_COMMAND_SED1}\1${TOOL_COMMAND_SED2}/" ${RUNFILE}
+              echo -n "${RUNFILE}" >> ${TESTSCRIPT}
+            fi
           else
             echo -n "${RUNFILE}" >> ${TESTSCRIPT}
           fi

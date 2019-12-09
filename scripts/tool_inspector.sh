@@ -41,7 +41,7 @@ SED=$(command -v sed)
 TR=$(command -v tr)
 RM=$(command -v rm)
 
-if [ "${TOOL_ENABLED}" = "" ] || [ "${TOOL_ENABLED}" != "0" ]; then
+if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
   if [ "" != "$1" ]    && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] && \
      [ "" != "${TR}" ] && [ "" != "${GREP}" ]     && [ "" != "${SED}" ]  && \
                           [ "" != "${ECHO}" ]     && [ "" != "${RM}" ];
