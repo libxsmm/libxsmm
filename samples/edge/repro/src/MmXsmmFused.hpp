@@ -22,7 +22,6 @@
  * @section DESCRIPTION
  * Data structures of the fused LIBXSMM, matrix-matrix multiplication kernels.
  **/
-
 #ifndef EDGE_DATA_MM_XSMM_FUSED_HPP
 #define EDGE_DATA_MM_XSMM_FUSED_HPP
 

@@ -233,7 +233,6 @@ constexpr unsigned short CE_N_FLUXN_MATRICES( t_entityType i_enType ) {
  * N_FACE_MODES              Number of modes per face.
  *
  **/
-
 // devive dimensions from element types
 #if defined PP_T_ELEMENTS_LINE
 #define PP_N_DIM 1

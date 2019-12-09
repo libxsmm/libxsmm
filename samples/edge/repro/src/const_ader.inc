@@ -22,7 +22,6 @@
  * @section DESCRIPTION
  * Compile time constants for ADER-DG simulations.
  **/
-
 #if defined PP_T_ELEMENTS_TRIA3
 #define PP_T_BASIS_HIERARCHICAL
 #elif defined PP_T_ELEMENTS_TET4

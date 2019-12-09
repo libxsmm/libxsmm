@@ -20,7 +20,6 @@
  * @section DESCRIPTION
  * Compile time constants for the elatic wave equations.
  **/
-
 // elastics perform three steps per time step
 // 0) time prediction + local cont
 // 1) neighboring cont

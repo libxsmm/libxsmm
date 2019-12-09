@@ -22,7 +22,6 @@
  * @section DESCRIPTION
  * Time predictions through the ADER scheme for the elastic wave equations.
  **/
-
 #ifndef EDGE_SEISMIC_TIME_PRED_HPP
 #define EDGE_SEISMIC_TIME_PRED_HPP
 

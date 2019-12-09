@@ -20,7 +20,6 @@
  * @section DESCRIPTION
  * Definition of global variables for parallelization.
  **/
-
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
