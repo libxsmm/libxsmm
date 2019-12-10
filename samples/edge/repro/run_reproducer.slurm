@@ -4,7 +4,7 @@
 #   for TACC Stampede2 KNL nodes
 #
 #   *** Serial Job on Normal Queue ***
-# 
+#
 # Last revised: 27 Jun 2017
 #
 # Notes:
