@@ -24,7 +24,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
-
+/* test */
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
