@@ -13,11 +13,12 @@
 # Appends MSG_TAG to the commit message when no file
 # of the change-set matches any of the PATTERNS.
 #
-HERE=$(cd $(dirname $0); pwd -P)
+BINPWD=$(which pwd 2>/dev/null)
+HERE=$(cd "$(dirname $0)"; ${BINPWD} -P)
 if [ "" = "${GIT_DIR}" ]; then
   GIT_DIR=${HERE}/../../.git
 fi
-ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
+ROOTDIR=$(cd "${GIT_DIR}/.."; ${BINPWD} -P)
 CODEFILE=${ROOTDIR}/.codefile
 MSG_NOCI="[skip ci]"
 MSG_FILE=$1
@@ -32,12 +33,12 @@ if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no 
 
   if [ "" != "${ECHO}" ] && [ "" != "${GREP}" ] && [ "" != "${CAT}" ] && \
      [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \
-     [ "0" != "$(${GREP} -qs -F "${MSG_NOCI}" ${MSG_FILE}; ${ECHO} $?)" ];
+     [ "0" != "$(${GREP} -qs -F "${MSG_NOCI}" "${MSG_FILE}"; ${ECHO} $?)" ];
   then
     set -o noglob # disable wild-card expansion
 
-    if [ -e ${CODEFILE} ]; then
-      PATTERNS="$(${CAT} ${CODEFILE} 2>/dev/null)"
+    if [ -e "${CODEFILE}" ]; then
+      PATTERNS="$(${CAT} "${CODEFILE}" 2>/dev/null)"
     fi
     PATTERNS+=$(${ECHO} -e "\nMakefile*")
 
@@ -49,7 +50,7 @@ if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no 
         if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e 'version.txt' 2>/dev/null)" ]; then
           exit 0
         fi
-        BASENAME=$(basename ${FILENAME})
+        BASENAME=$(basename "${FILENAME}")
         for PATTERN in ${PATTERNS}; do
           if [[ ${BASENAME} = ${PATTERN} ]]; then # must use double-braces
             exit 0

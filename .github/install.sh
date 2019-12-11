@@ -10,7 +10,8 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
+BINPWD=$(which pwd 2>/dev/null)
+HERE=$(cd "$(dirname $0)"; ${BINPWD} -P)
 GIT_DIR=${HERE}/../.git
 LOCKFILE=${GIT_DIR}/.commit
 
@@ -18,13 +19,13 @@ GIT=$(command -v git)
 CP=$(command -v cp)
 RM=$(command -v rm)
 
-if [ -e ${GIT_DIR}/hooks ] && \
+if [ -e "${GIT_DIR}/hooks" ] && \
    [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ]; \
 then
   # make sure the path to .gitconfig is a relative path
   ${GIT} config --local include.path ../.gitconfig 2>/dev/null
-  ${CP} ${HERE}/post-commit ${GIT_DIR}/hooks
-  ${CP} ${HERE}/pre-commit ${GIT_DIR}/hooks
-  ${CP} ${HERE}/prepare-commit-msg ${GIT_DIR}/hooks
-  ${RM} -f ${LOCKFILE}-version
+  ${CP} "${HERE}/post-commit" "${GIT_DIR}/hooks"
+  ${CP} "${HERE}/pre-commit" "${GIT_DIR}/hooks"
+  ${CP} "${HERE}/prepare-commit-msg" "${GIT_DIR}/hooks"
+  ${RM} -f "${LOCKFILE}-version"
 fi

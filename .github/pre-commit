@@ -10,7 +10,8 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
+BINPWD=$(which pwd 2>/dev/null)
+HERE=$(cd "$(dirname $0)"; ${BINPWD} -P)
 if [ "" = "${GIT_DIR}" ]; then
   GIT_DIR=${HERE}/../../.git
 fi
@@ -98,9 +99,9 @@ if [ "" != "${GIT}" ]; then
   if [ "" != "${TOUCH}" ] && [ "" != "${GREP}" ] && [ "" != "${RM}" ]; then
     if [ "" = "$(${GIT} diff --cached --name-only | ${GREP} version.txt)" ]; then
       # trigger updating the version file
-      ${TOUCH} ${LOCKFILE}-version
+      ${TOUCH} "${LOCKFILE}-version"
     else # cleanup
-      ${RM} -f ${LOCKFILE}-version
+      ${RM} -f "${LOCKFILE}-version"
     fi
   fi
 fi

@@ -18,6 +18,7 @@ PINCDIR ?= $(INCDIR)
 PSRCDIR ?= $(PINCDIR)/libxsmm
 POUTDIR ?= $(OUTDIR)
 PPKGDIR ?= $(OUTDIR)
+PMODDIR ?= $(OUTDIR)
 PBINDIR ?= $(BINDIR)
 PTSTDIR ?= $(TSTDIR)
 PDOCDIR ?= share/libxsmm
@@ -194,9 +195,9 @@ DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = \
-  DESTDIR PREFIX PKG_CONFIG_PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR \
-  TSTDIR PBINDIR PINCDIR POUTDIR PPKGDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
-  TEST VERSION_STRING DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
+  DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR \
+  PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR \
+  SRCDIR TEST VERSION_STRING DEPSTATIC ALIAS_% BLAS %_TARGET %ROOT MPSS KNC
 
 ifeq (,$(M)$(N)$(K))
 ifneq (,$(filter 0,$(MNK) 0))
@@ -653,7 +654,7 @@ endif
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
 ifneq (,$(PYTHON))
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py
-	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(abspath .state) $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py "$(abspath .state)" $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 else
 .PHONY: $(BLDDIR)/libxsmm_dispatch.h
 endif
@@ -860,7 +861,7 @@ module: module_hst module_mic
 
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
-$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
+$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB) $(OUTDIR)/module
 ifeq (0,$(STATIC))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(OBJFILES_GEN_LIB) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS) $(LIBRT)
@@ -1536,8 +1537,8 @@ else ifeq (,$(strip $(PREFIX)))
   endif
 endif
 
-# PKG_CONFIG_PREFIX aliases PREFIX
-PKG_CONFIG_PREFIX = $(PREFIX)
+# ALIAS_* variables for PKG_CONFIG and MODULES
+ALIAS_PREFIX = $(PREFIX)
 
 .PHONY: install-minimal
 install-minimal: libxsmm
@@ -1587,11 +1588,15 @@ ifneq ($(abspath $(PREFIX)),$(abspath .))
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(PREFIX)/$(POUTDIR)/mic; \
 	fi
+	@echo
+	@echo "LIBXSMM installing pkg-config and module files..."
 	@mkdir -p $(PREFIX)/$(PPKGDIR)
 	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/libxsmmnoblas.pc > $(PREFIX)/$(PPKGDIR)/libxsmmnoblas.pc 2>/dev/null || true
 	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/libxsmmext.pc > $(PREFIX)/$(PPKGDIR)/libxsmmext.pc 2>/dev/null || true
 	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/libxsmmf.pc > $(PREFIX)/$(PPKGDIR)/libxsmmf.pc 2>/dev/null || true
 	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/libxsmm.pc > $(PREFIX)/$(PPKGDIR)/libxsmm.pc 2>/dev/null || true
+	@mkdir -p $(PREFIX)/$(PMODDIR)
+	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/module > $(PREFIX)/$(PMODDIR)/module 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
@@ -1658,20 +1663,20 @@ ifneq ($(abspath $(PREFIX)),$(abspath .))
 endif
 
 ifeq (Windows_NT,$(UNAME))
-  PKG_CONFIG_PRIVLIBS = -ldbghelp
+  ALIAS_PRIVLIBS = -ldbghelp
 else ifneq (Darwin,$(UNAME))
   ifneq (FreeBSD,$(UNAME))
-    PKG_CONFIG_PRIVLIBS = -lpthread -lrt -ldl -lm -lc
+    ALIAS_PRIVLIBS = -lpthread -lrt -ldl -lm -lc
   else
-    PKG_CONFIG_PRIVLIBS = -ldl -lm -lc
+    ALIAS_PRIVLIBS = -ldl -lm -lc
   endif
 endif
 ifneq (Darwin,$(UNAME))
-  PKG_CONFIG_PRIVLIBS_EXT = -fopenmp
+  ALIAS_PRIVLIBS_EXT = -fopenmp
 endif
 
-PKG_CONFIG_INCLUDEDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(PINCDIR)))
-PKG_CONFIG_LIBDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(POUTDIR)))
+ALIAS_INCLUDEDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
+ALIAS_LIBDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
@@ -1679,17 +1684,17 @@ $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
-	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
-	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
+	@echo "prefix=$(ALIAS_PREFIX)" >> $@
+	@echo "includedir=$(ALIAS_INCLUDEDIR)" >> $@
+	@echo "libdir=$(ALIAS_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
-ifneq (,$(PKG_CONFIG_PRIVLIBS))
+ifneq (,$(ALIAS_PRIVLIBS))
 	@if [ -e $(OUTDIR)/libxsmm.$(DLIBEXT) ]; then \
 		echo "Libs: -L\$${libdir} -lxsmm" >> $@; \
-		echo "Libs.private: $(PKG_CONFIG_PRIVLIBS)" >> $@; \
+		echo "Libs.private: $(ALIAS_PRIVLIBS)" >> $@; \
 	else \
-		echo "Libs: -L\$${libdir} -lxsmm $(PKG_CONFIG_PRIVLIBS)" >> $@; \
+		echo "Libs: -L\$${libdir} -lxsmm $(ALIAS_PRIVLIBS)" >> $@; \
 	fi
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmm" >> $@
@@ -1701,9 +1706,9 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
-	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
-	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
+	@echo "prefix=$(ALIAS_PREFIX)" >> $@
+	@echo "includedir=$(ALIAS_INCLUDEDIR)" >> $@
+	@echo "libdir=$(ALIAS_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
@@ -1715,18 +1720,18 @@ $(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
-	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
-	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
+	@echo "prefix=$(ALIAS_PREFIX)" >> $@
+	@echo "includedir=$(ALIAS_INCLUDEDIR)" >> $@
+	@echo "libdir=$(ALIAS_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
-ifneq (,$(PKG_CONFIG_PRIVLIBS_EXT))
+ifneq (,$(ALIAS_PRIVLIBS_EXT))
 	@if [ -e $(OUTDIR)/libxsmmext.$(DLIBEXT) ]; then \
 		echo "Libs: -L\$${libdir} -lxsmmext" >> $@; \
-		echo "Libs.private: $(PKG_CONFIG_PRIVLIBS_EXT)" >> $@; \
+		echo "Libs.private: $(ALIAS_PRIVLIBS_EXT)" >> $@; \
 	else \
-		echo "Libs: -L\$${libdir} -lxsmmext $(PKG_CONFIG_PRIVLIBS_EXT)" >> $@; \
+		echo "Libs: -L\$${libdir} -lxsmmext $(ALIAS_PRIVLIBS_EXT)" >> $@; \
 	fi
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmmext" >> $@
@@ -1738,13 +1743,26 @@ $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
-	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
-	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
+	@echo "prefix=$(ALIAS_PREFIX)" >> $@
+	@echo "includedir=$(ALIAS_INCLUDEDIR)" >> $@
+	@echo "libdir=$(ALIAS_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
 	@echo "Libs: -L\$${libdir} -lxsmmnoblas" >> $@
+
+$(OUTDIR)/module: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
+	@echo "#%Module1.0" > $@
+	@echo >> $@
+	@echo "module-whatis \"LIBXSMM $(VERSION_STRING)\"" >> $@
+	@echo >> $@
+	@echo "set PREFIX \"$(ALIAS_PREFIX)\"" >> $@
+	@echo "prepend-path PATH \"\$$PREFIX/bin\"" >> $@
+	@echo "prepend-path LD_LIBRARY_PATH \"\$$PREFIX/lib\"" >> $@
+	@echo >> $@
+	@echo "prepend-path PKG_CONFIG_PATH \"\$$PREFIX/lib\"" >> $@
+	@echo "prepend-path LIBRARY_PATH \"\$$PREFIX/lib\"" >> $@
+	@echo "prepend-path CPATH \"\$$PREFIX/include\"" >> $@
 
 .PHONY: deb
 deb:

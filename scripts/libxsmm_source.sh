@@ -1,6 +1,7 @@
 #!/bin/sh
 
 SRCDIR=../src
+BINPWD=$(which pwd 2>/dev/null)
 GREP=$(command -v grep)
 
 if [ "" = "${GREP}" ]; then
@@ -44,7 +45,7 @@ cat << EOM
 #endif
 EOM
 
-HERE=$(cd $(dirname $0); pwd -P)
+HERE=$(cd $(dirname $0); ${BINPWD} -P)
 
 if [ "" = "$1" ]; then
   DSTDIR=${SRCDIR}

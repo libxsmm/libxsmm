@@ -10,7 +10,8 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
+BINPWD=$(which pwd 2>/dev/null)
+HERE=$(cd "$(dirname $0)"; ${BINPWD} -P)
 if [ "" = "${GIT_DIR}" ]; then
   GIT_DIR=${HERE}/../../.git
 fi
@@ -19,11 +20,11 @@ LOCKFILE=${GIT_DIR}/.commit
 GIT=$(command -v git)
 RM=$(command -v rm)
 
-if [ -e ${LOCKFILE}-version ] && \
+if [ -e "${LOCKFILE}-version" ] && \
    [ "" != "${RM}" ];
 then
   # lock file must be deleted *prior* to below commit
-  ${RM} ${LOCKFILE}-version
+  ${RM} "${LOCKFILE}-version"
   # update the version file
   .github/version.sh > version.txt
   # quietly amend the previous commit
