@@ -17,7 +17,7 @@ PATBAN="s/[${BANNED_CHARS}]/"
 PATEOL="s/\r$/"
 PATSPC="s/[[:space:]][[:space:]]*$/"
 
-HERE=$(cd $(dirname $0); pwd -P)
+HERE=$(cd "$(dirname $0)"; pwd -P)
 REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
