@@ -12,6 +12,9 @@
 #include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 #include <libxsmm.h>
+/* #define STRIDE_BRGEMM */
+/* #define OFFSET_BRGEMM */
+#define ADDRESS_BRGEMM
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -102,7 +105,18 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_f32_f32(libxsmm_dn
   element_input_type beta = (element_input_type)0;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+#ifdef ADDRESS_BRGEMM
+    /* libxsmm_bsmmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_bwd.xgemm.bsmra; */
     libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bc, handle->bn, handle->bk, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+#endif
+#ifdef OFFSET_BRGEMM
+    //libxsmm_bsmmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_bwd.xgemm.bsmro;
+    libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = libxsmm_smmdispatch_reducebatch_offs(handle->bc, handle->bn, handle->bk, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+#endif
+#ifdef STRIDE_BRGEMM
+    libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_bwd.xgemm.bsmrs;
+    //libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = libxsmm_smmfunction_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bc*handle->bk*sizeof(float), handle->bn*handle->bk*sizeof(float), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+#endif
 # include "template/libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_generic.tpl.c"
   } else {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;

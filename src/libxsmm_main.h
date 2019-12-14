@@ -478,6 +478,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   void* scratch;
 
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_bwd;     /* ability to hoist backward GEMMs */
 };
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
