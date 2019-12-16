@@ -72,7 +72,7 @@ CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CPPSRCS:.cpp=-cpp.o)))
 
 SOURCES := $(CPPSRCS) #$(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) #$(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-MODULES := $(addsuffix .mod,$(call qbname,$(FTNSRCS))) $(addsuffix .modmic,$(call qbname,$(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 
 EXFILES := $(OUTDIR)/local_$(EDGE_CONFIG) \
            $(OUTDIR)/neigh_$(EDGE_CONFIG) \

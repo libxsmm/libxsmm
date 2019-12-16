@@ -41,13 +41,13 @@ F90SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f90 2>/dev/null | tr "\n" " ") \
            $(shell grep -L $(FMAIN) $(SRCDIR)/*.F90 2>/dev/null | tr "\n" " ")
 F90SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f90 2>/dev/null | tr "\n" " ") \
            $(shell grep -l $(FMAIN) $(SRCDIR)/*.F90 2>/dev/null | tr "\n" " ")
-MODULES := $(addsuffix    .mod,$(call qbname,$(FXXSRCS) $(F77SRCS) $(F90SRCS))) \
-           $(addsuffix .modmic,$(call qbname,$(FXXSRCS) $(F77SRCS) $(F90SRCS)))
-OBJECTS := $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS))
-OBJECTX := $(call objname, $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX))
-FTNOBJS := $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS))
-FTNOBJX := $(call objname, $(FXXSRCX) $(F77SRCX) $(F90SRCX))
-XFILES  := $(addprefix $(OUTDIR)/,$(call qbname,$(call qndir,\
+MODULES := $(addsuffix    .mod,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS))) \
+           $(addsuffix .modmic,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS)))
+OBJECTS := $(call objname,$(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS))
+OBJECTX := $(call objname,$(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX))
+FTNOBJS := $(call objname,$(FXXSRCS) $(F77SRCS) $(F90SRCS))
+FTNOBJX := $(call objname,$(FXXSRCX) $(F77SRCX) $(F90SRCX))
+XFILES  := $(addprefix $(OUTDIR)/,$(basename $(notdir \
            $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX) \
            $(FXXSRCX) $(F77SRCX) $(F90SRCX))))
 
@@ -65,7 +65,7 @@ test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 	@$(OUTDIR)/test.sh $(TEST)
 
 # determine header-only tests (to avoid linking against LIBXSMM libraries; see below)
-HEADER_ONLY = $(call qbname,$(call qndir,$(shell grep -H libxsmm_source *.c | cut -d: -f1)))
+HEADER_ONLY = $(basename $(call qndir,$(shell grep -H libxsmm_source *.c | cut -d: -f1)))
 
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBDEP)))
@@ -106,10 +106,10 @@ endif
 endef
 
 $(foreach SRC, $(filter-out $(SRCDIR)/headeronly.c,$(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX)), \
-  $(eval $(call DEFINE_LINK_LD_RULE, $(call qbname,$(call qndir,$(SRC))), $(call objname, $(SRC)))))
+  $(eval $(call DEFINE_LINK_LD_RULE, $(basename $(call qndir,$(SRC))), $(call objname,$(SRC)))))
 
 $(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX), \
-  $(eval $(call DEFINE_LINK_FC_RULE, $(call qbname,$(call qndir,$(SRC))), $(call objname, $(SRC)))))
+  $(eval $(call DEFINE_LINK_FC_RULE, $(basename $(call qndir,$(SRC))), $(call objname,$(SRC)))))
 
 ifeq (0,$(MIX))
 $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o

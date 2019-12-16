@@ -1650,7 +1650,7 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo
 	@echo "LIBXSMM installing tests..."
 	@mkdir -p $(PREFIX)/$(PTSTDIR)
-	@$(CP) -v $(call qbname,$(wildcard $(ROOTDIR)/$(TSTDIR)/*.c)) $(PREFIX)/$(PTSTDIR) 2>/dev/null || true
+	@$(CP) -v $(basename $(wildcard $(ROOTDIR)/$(TSTDIR)/*.c)) $(PREFIX)/$(PTSTDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-artifacts
