@@ -43,10 +43,10 @@ F90SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f90 2>/dev/null | tr "\n" " ") \
            $(shell grep -l $(FMAIN) $(SRCDIR)/*.F90 2>/dev/null | tr "\n" " ")
 MODULES := $(addsuffix    .mod,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS))) \
            $(addsuffix .modmic,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS)))
-OBJECTS := $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS))
-OBJECTX := $(call objname, $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX))
-FTNOBJS := $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS))
-FTNOBJX := $(call objname, $(FXXSRCX) $(F77SRCX) $(F90SRCX))
+OBJECTS := $(call objname,$(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS))
+OBJECTX := $(call objname,$(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX))
+FTNOBJS := $(call objname,$(FXXSRCS) $(F77SRCS) $(F90SRCS))
+FTNOBJX := $(call objname,$(FXXSRCX) $(F77SRCX) $(F90SRCX))
 XFILES  := $(addprefix $(OUTDIR)/,$(basename $(notdir \
            $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX) \
            $(FXXSRCX) $(F77SRCX) $(F90SRCX))))
@@ -106,10 +106,10 @@ endif
 endef
 
 $(foreach SRC, $(filter-out $(SRCDIR)/headeronly.c,$(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX)), \
-  $(eval $(call DEFINE_LINK_LD_RULE, $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
+  $(eval $(call DEFINE_LINK_LD_RULE, $(basename $(notdir $(SRC))), $(call objname,$(SRC)))))
 
 $(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX), \
-  $(eval $(call DEFINE_LINK_FC_RULE, $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
+  $(eval $(call DEFINE_LINK_FC_RULE, $(basename $(notdir $(SRC))), $(call objname,$(SRC)))))
 
 ifeq (0,$(MIX))
 $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o
@@ -143,8 +143,8 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Make
 
 .PHONY: clean
 clean:
-ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BLDDIR)),$(abspath .))
+ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@rm -rf $(BLDDIR)
 endif
 endif
@@ -156,8 +156,8 @@ endif
 
 .PHONY: realclean
 realclean: clean
-ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
-ifneq ($(abspath $(OUTDIR)),$(abspath .))
+ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@rm -rf $(OUTDIR)
 endif
 endif

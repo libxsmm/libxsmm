@@ -31,8 +31,8 @@ HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(IN
            $(DEPDIR)/include/libxsmm_source.h
 CCXSRCS := $(wildcard $(SRCDIR)/*.cc)
 CSOURCS := $(wildcard $(SRCDIR)/*.c)
-CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
-COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
+CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CCXSRCS:.cc=-cc.o)))
+COBJCTS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CSOURCS:.c=-c.o)))
 SOURCES := $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CCXOBJS) $(COBJCTS)
 XFILES := $(OUTDIR)/libxsmm_lstm.so
@@ -75,8 +75,8 @@ uninstall:
 
 .PHONY: clean
 clean:
-ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BLDDIR)),$(abspath .))
+ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@rm -rf $(BLDDIR)
 endif
 endif
