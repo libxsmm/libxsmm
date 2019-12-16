@@ -164,7 +164,7 @@ LIBXSMM_API size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype datatype)
 }
 
 
-LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length ) {
+LIBXSMM_API_INLINE float libxsmm_internal_get_max( float* in_buffer, int length ) {
   float absmax_value = LIBXSMM_ABS(in_buffer[0]);
   int i = 0;
 #ifdef _OPENMP
