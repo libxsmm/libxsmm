@@ -31,8 +31,8 @@ TR=$(command -v tr)
 CP=$(command -v cp)
 RM=$(command -v rm)
 
-if [ -e ${CODEFILE} ]; then
-  PATTERNS="$(cat ${CODEFILE})"
+if [ -e "${CODEFILE}" ]; then
+  PATTERNS="$(cat "${CODEFILE}")"
 fi
 
 if [ "" != "${FLAKE8}" ] && [ "0" = "$(${FLAKE8} 2>&1 >/dev/null; echo $?)" ] && \
@@ -50,7 +50,7 @@ then
     CAT=$(command -v cat)
   fi
   if [ "" != "${CAT}" ]; then
-    TMPF=$(${MKTEMP} .libxsmm_XXXXXX.txt)
+    TMPF=$("${MKTEMP}" .libxsmm_XXXXXX.txt)
     # disable glob in Shell
     set -f
     # Search the content of the diffs matching the given file types
