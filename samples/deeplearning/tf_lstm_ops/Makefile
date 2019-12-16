@@ -1,7 +1,7 @@
 # Export all variables to sub-make processes.
 #.EXPORT_ALL_VARIABLES: #export
 
-ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
 #TF_CFLAGS=$(shell python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))')
 #TF_LFLAGS=$(shell python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))')
 DEPDIR = ../../..
@@ -31,8 +31,8 @@ HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(IN
            $(DEPDIR)/include/libxsmm_source.h
 CCXSRCS := $(wildcard $(SRCDIR)/*.cc)
 CSOURCS := $(wildcard $(SRCDIR)/*.c)
-CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
-COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
+CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CCXSRCS:.cc=-cc.o)))
+COBJCTS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CSOURCS:.c=-c.o)))
 SOURCES := $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CCXOBJS) $(COBJCTS)
 XFILES := $(OUTDIR)/libxsmm_lstm.so
@@ -75,8 +75,8 @@ uninstall:
 
 .PHONY: clean
 clean:
-ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BLDDIR)),$(abspath .))
+ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@rm -rf $(BLDDIR)
 endif
 endif

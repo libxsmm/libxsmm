@@ -1,7 +1,7 @@
 # Export all variables to sub-make processes.
 #.EXPORT_ALL_VARIABLES: #export
 
-ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
 DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
@@ -34,19 +34,19 @@ FXXSRCS := $(wildcard $(SRCDIR)/*.f)
 F77SRCS := $(wildcard $(SRCDIR)/*.F)
 F90SRCS := $(wildcard $(SRCDIR)/*.f90) $(wildcard $(SRCDIR)/*.F90)
 
-CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
-CXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
-CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
-COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
-FXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(FXXSRCS:.f=-f.o)))
-F77OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F77SRCS:.F=-f77.o)))
-F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
-F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.F90=-f90.o)))
+CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CPPSRCS:.cpp=-cpp.o)))
+CXXOBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CXXSRCS:.cxx=-cxx.o)))
+CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CCXSRCS:.cc=-cc.o)))
+COBJCTS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CSOURCS:.c=-c.o)))
+FXXOBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(FXXSRCS:.f=-f.o)))
+F77OBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(F77SRCS:.F=-f77.o)))
+F90OBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(F90SRCS:.f90=-f90.o)))
+F90OBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(F90SRCS:.F90=-f90.o)))
 
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(call qbname,$(FTNSRCS))) $(addsuffix .modmic,$(call qbname,$(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/$(OUTNAME)
 
@@ -102,8 +102,8 @@ endif
 
 .PHONY: clean
 clean:
-ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BLDDIR)),$(abspath .))
+ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@rm -rf $(BLDDIR)
 endif
 endif
@@ -115,8 +115,8 @@ endif
 
 .PHONY: realclean
 realclean: clean
-ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
-ifneq ($(abspath $(OUTDIR)),$(abspath .))
+ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@rm -rf $(OUTDIR)
 endif
 endif

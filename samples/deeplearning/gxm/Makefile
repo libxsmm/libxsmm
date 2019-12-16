@@ -60,9 +60,9 @@ NONGEN_CXX_SRCS := $(shell find \
 # Generated files
 # The generated files for protocol buffers
 PROTO_GEN_HEADER_SRCS := $(addprefix $(PROTO_BUILD_DIR)/, \
-		$(notdir ${PROTO_SRCS:.proto=.pb.h}))
+		$(call qndir,${PROTO_SRCS:.proto=.pb.h}))
 PROTO_GEN_HEADER := $(addprefix $(PROTO_BUILD_INCLUDE_DIR)/, \
-		$(notdir ${PROTO_SRCS:.proto=.pb.h}))
+		$(call qndir,${PROTO_SRCS:.proto=.pb.h}))
 PROTO_GEN_CC := $(addprefix $(BUILD_DIR)/, ${PROTO_SRCS:.proto=.pb.cc})
 # Source file objects
 CXX_OBJS := $(addprefix $(BUILD_DIR)/, ${CXX_SRCS:.cpp=.o})

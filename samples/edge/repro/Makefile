@@ -1,4 +1,4 @@
-ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
 DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)/src
 INCDIR = .
@@ -68,11 +68,11 @@ HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(IN
            $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
            $(DEPDIR)/include/libxsmm_source.h
 CPPSRCS := $(wildcard $(SRCDIR)/*.cpp)
-CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
+CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(CPPSRCS:.cpp=-cpp.o)))
 
 SOURCES := $(CPPSRCS) #$(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) #$(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(call qbname,$(FTNSRCS))) $(addsuffix .modmic,$(call qbname,$(FTNSRCS)))
 
 EXFILES := $(OUTDIR)/local_$(EDGE_CONFIG) \
            $(OUTDIR)/neigh_$(EDGE_CONFIG) \
@@ -135,8 +135,8 @@ $(BLDDIR)/%_$(EDGE_CONFIG).o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) 
 
 .PHONY: clean
 clean:
-ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BLDDIR)),$(abspath .))
+ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@rm -rf $(BLDDIR)
 endif
 endif
@@ -148,8 +148,8 @@ endif
 
 .PHONY: realclean
 realclean: clean
-ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
-ifneq ($(abspath $(OUTDIR)),$(abspath .))
+ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@rm -rf $(OUTDIR)
 endif
 endif
