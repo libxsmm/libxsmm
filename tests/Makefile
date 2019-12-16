@@ -65,12 +65,12 @@ test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 	@$(OUTDIR)/test.sh $(TEST)
 
 # determine header-only tests (to avoid linking against LIBXSMM libraries; see below)
-HEADER_ONLY = $(basename $(call qndir,$(shell grep -H libxsmm_source *.c | cut -d: -f1)))
+HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -f1)))
 
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
-$(1): $(2) $(OBJECTS) $(call qdir,$(1))/.make \
+$(1): $(2) $(OBJECTS) $(dir $(1))/.make \
         $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(LIBDEP) $(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
 		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB)) \
@@ -88,7 +88,7 @@ ifneq (,$(strip $(FC)))
 ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(FORTDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
-$(1): $(2) $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(call qdir,$(1))/.make
+$(1): $(2) $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
 	$(FC) $(SLDFLAGS) -o $(1) $(2) $(MAINLIB) $(FORTLIB) $(EXTLIB) \
 		$(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
@@ -106,10 +106,10 @@ endif
 endef
 
 $(foreach SRC, $(filter-out $(SRCDIR)/headeronly.c,$(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX)), \
-  $(eval $(call DEFINE_LINK_LD_RULE, $(basename $(call qndir,$(SRC))), $(call objname,$(SRC)))))
+  $(eval $(call DEFINE_LINK_LD_RULE, $(basename $(notdir $(SRC))), $(call objname,$(SRC)))))
 
 $(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX), \
-  $(eval $(call DEFINE_LINK_FC_RULE, $(basename $(call qndir,$(SRC))), $(call objname,$(SRC)))))
+  $(eval $(call DEFINE_LINK_FC_RULE, $(basename $(notdir $(SRC))), $(call objname,$(SRC)))))
 
 ifeq (0,$(MIX))
 $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o

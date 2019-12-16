@@ -873,10 +873,9 @@ else # OSX
     $(call linkopt,-rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
 endif
 
-absliblpath = $(strip \
-  $(if $(findstring .$(ILIBEXT),$1), \
-  $(if $1,-L"$(call qdir,$(call qapath,$1))",-L"$(call qdir,$1)"), \
-  $(if $(findstring .$(SLIBEXT),$1),$(NULL),-L"$(call qdir,$1)")))
+absliblpath = $(strip $(if $1, \
+  $(if $(findstring .$(ILIBEXT),$1),-L"$(call qdir,$(call qapath,$1))", \
+  $(if $(findstring .$(SLIBEXT),$1),$(NULL),-L"$(call qdir,$1)")),$(NULL)))
 
 ifneq (0,$(ABSLIBS))
 #ifeq (0,$(DEPSTATIC))
@@ -889,8 +888,7 @@ libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL),$(shell $1 $2 -l$3 -Wl,--verbose 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
     | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)[[:space:]]..*/\1/p" \
-    | xargs readlink -f | tail -n1), \
-  $(NULL))))
+    | xargs readlink -f 2>/dev/null | tail -n1)),$(NULL)))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
