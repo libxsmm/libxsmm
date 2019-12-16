@@ -1008,6 +1008,7 @@ else # static
 endif
 
 DIRS_SAMPLES = $(call qdir,$(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
+	| grep -v /deeplearning/fusedgndriver/ \
 	| grep -v /deeplearning/grudriver/ \
 	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
