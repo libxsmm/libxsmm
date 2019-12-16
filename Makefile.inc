@@ -240,9 +240,9 @@ SPACES ?= 1
 # spaces are quoted
 QUOTED ?= 0
 
-REVERSION0 := "[0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*"
-REVERSION1 := "s/..* \($(REVERSION0)\)[ \S]*.*/\1/"
-REVERSION2 := "s/..* \([0-9]\{5\}[0-9]*\)[ \S]*.*/\1/"
+REVERSION0 := [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*
+REVERSION1 := s/..* \($(REVERSION0)\)[ \S]*.*/\1/
+REVERSION2 := s/..* \([0-9]\{5\}[0-9]*\)[ \S]*.*/\1/
 BRACE_OPEN := (
 BRACE_CLOSE := )
 
@@ -275,7 +275,7 @@ endif
 
 ifneq (0,$(PYMOD))
   ifneq (,$(PYTHON))
-    PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n $(REVERSION1)p)
+    PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n "$(REVERSION1)p")
     PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
     PYROOT = $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
     PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
@@ -398,9 +398,9 @@ else
   endif
 endif
 
-CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n $(REVERSION1)p)
+CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
 ifeq (,$(CXX_VERSION_STRING))
-  CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n $(REVERSION2)p)
+  CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
 endif
 CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d. -f1)
 CXX_VERSION_MINOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d. -f2)
@@ -415,9 +415,9 @@ else
   CXX_VERSION = 0
 endif
 
-CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n $(REVERSION1)p)
+CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
 ifeq (,$(CC_VERSION_STRING))
-  CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n $(REVERSION2)p)
+  CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
 endif
 CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | cut -d. -f1)
 CC_VERSION_MINOR = $(shell echo "$(CC_VERSION_STRING)" | cut -d. -f2)
@@ -463,9 +463,9 @@ endif
 endif
 
 ifneq (,$(strip $(FC)))
-  FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n $(REVERSION1)p)
+  FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
   ifeq (,$(FC_VERSION_STRING))
-    FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n $(REVERSION2)p)
+    FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
   endif
   FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f1)
   FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f2)
@@ -483,9 +483,9 @@ ifneq (,$(strip $(FC)))
     ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
       ifneq (gfortran,$(call qndir,$(FC)))
         FC = gfortran
-        FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n $(REVERSION1)p)
+        FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
         ifeq (,$(FC_VERSION_STRING))
-          FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n $(REVERSION2)p)
+          FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
         endif
         FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f1)
         FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f2)
@@ -671,7 +671,7 @@ ifneq (0,$(GCC))
 else ifeq (0,$(CLANG))
   GCCBIN = $(call qndir,$(call which,gcc))
   ifneq (,$(strip $(GCCBIN)))
-    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) | head -n1 | sed -n $(REVERSION1)p)
+    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
     GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d. -f1)
     GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d. -f2)
     GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | cut -d. -f3)
