@@ -250,7 +250,7 @@ ifeq (Linux,$(UNAME))
   readlink = $(shell readlink -f "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}")
 else # BSD, etc.
   readlink = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && if [ "" != "$(strip $1)" ]; then \
-    echo "$$(cd "$$(dirname "$${VAR}")" && pwd -P)/$$(basename "$${VAR}")"; fi)
+    echo "$$(cd "$$(dirname "$${VAR}")" 2>/dev/null && pwd -P)/$$(basename "$${VAR}")"; fi)
 endif
 ifneq (0,$(QUOTED))
   quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//;s/ /\\\ /g;s/\\\\\\\/\\\/g")
@@ -926,10 +926,12 @@ ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
     solink = -o "$1.$2.$3.$4" $(XLNKOPT)-soname=$(strip $(call qndir,$1).$5)
     ifneq (0,$(SONAMELNK))
-      solink += $(shell cd "$(call qdir,$1)" && ln -fs $(call qndir,$1.$2.$3.$4) $(call qndir,$1.$5))
+      solink += $(shell cd "$(call qdir,$1)" 2>/dev/null && \
+        ln -fs $(call qndir,$1.$2.$3.$4) $(call qndir,$1.$5))
     endif
     ifneq (0,$(shell echo "$$((1<$(SONAMELNK) || 0>$(SONAMELNK)))"))
-      solink += $(shell cd "$(call qdir,$1)" && ln -fs $(call qndir,$1.$5) $(call qndir,$1))
+      solink += $(shell cd "$(call qdir,$1)" 2>/dev/null && \
+        ln -fs $(call qndir,$1.$5) $(call qndir,$1))
     endif
   else # MinGW
     solink = -o "$1" $(XLNKOPT)-soname=$(strip $(call qndir,$1).$5)
@@ -939,7 +941,8 @@ else # osx
            -install_name $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) \
            -current_version $2.$3.$4 -compatibility_version $5
   ifneq (0,$(SONAMELNK))
-    solink += $(shell cd "$(call qdir,$1)" && ln -fs $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) $(call qndir,$1))
+    solink += $(shell cd "$(call qdir,$1)" 2>/dev/null && \
+      ln -fs $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) $(call qndir,$1))
   endif
 endif
 
