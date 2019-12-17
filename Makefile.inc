@@ -249,8 +249,8 @@ BRACE_CLOSE := )
 ifeq (Linux,$(UNAME))
   readlink = $(shell readlink -f "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}")
 else # BSD, etc.
-  readlink = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && \
-    echo "$$(cd "$$(dirname "$${VAR}")" && pwd -P)/$$(basename "$${VAR}")")
+  readlink = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && if [ "" != "$(strip $1)" ]; then \
+    echo "$$(cd "$$(dirname "$${VAR}")" && pwd -P)/$$(basename "$${VAR}")"; fi)
 endif
 ifneq (0,$(QUOTED))
   quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//;s/ /\\\ /g;s/\\\\\\\/\\\/g")
