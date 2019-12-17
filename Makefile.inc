@@ -246,19 +246,21 @@ REVERSION2 := s/..* \([0-9]\{5\}[0-9]*\)[ \S]*.*/\1/
 BRACE_OPEN := (
 BRACE_CLOSE := )
 
+ifeq (Linux,$(UNAME))
+  readlink = $(shell readlink -f "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}")
+else # BSD, etc.
+  readlink = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && \
+    echo "$$(cd "$$(dirname "$${VAR}")" && pwd -P)/$$(basename "$${VAR}")")
+endif
 ifneq (0,$(QUOTED))
   quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//;s/ /\\\ /g;s/\\\\\\\/\\\/g")
 else
-  quote = $(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
+  quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//")
 endif
 ifneq (0,$(SPACES))
-  ifneq (0,$(QUOTED))
-    qapath = $(shell readlink -f "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//;s/ /\\\ /g;s/\\\\\\\/\\\/g")
-  else
-    qapath = $(shell readlink -f "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//")
-  endif
-  qndir = $(shell export VAR="$$(basename "$(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x")" && echo "$${VAR%x}")
-  qdir = $(shell dirname "$(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x")/
+  qapath = $(call quote,$(call readlink,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qndir = $(call quote,$(shell export VAR="$$(basename "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}x")" && echo "$${VAR%x}"))
+  qdir = $(call quote,$(shell dirname "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}x")/)
 else
   qapath = $(abspath $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qndir = $(notdir $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
@@ -266,7 +268,7 @@ else
 endif
 qsuffix = $(suffix $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qbname = $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-qname = $(basename $(shell echo "$(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" | sed "s/\.$(REVERSION0)//"))
+qname = $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
 
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
@@ -888,7 +890,7 @@ libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL),$(shell $1 $2 -l$3 -Wl,--verbose 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
     | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)[[:space:]]..*/\1/p" \
-    | xargs readlink -f 2>/dev/null | tail -n1)),$(NULL)))
+    | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1)),$(NULL)))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
