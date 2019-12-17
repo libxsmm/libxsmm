@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w;
-  naive_fusedbatchnorm_t naive_param;
+  naive_fusedgroupnorm_t naive_param;
   void* scratch;
   size_t scratch_size = 0;
 
@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
   int ifh = 20;           /* input height, "H" */
   int nImg = 32;          /* mini-batch size, "N" */
   int nFm = 256;          /* number of input feature maps, "C" */
+  int nG = 32;
   int stride = 1;         /* stride when accessing inputs */
   int pad_h_in = 0;       /* padding mode */
   int pad_w_in = 0;       /* padding mode */
@@ -100,7 +101,7 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&diff);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters inpWidth inpHeight nImg nFm pad_w_in pad_h_in pad_w_out pad_h_out stride type format\n", argv[0]);
+    printf("Usage: %s iters inpWidth inpHeight nImg nFm nG pad_w_in pad_h_in pad_w_out pad_h_out stride type format\n", argv[0]);
     return 0;
   }
   libxsmm_rng_set_seed(1);
@@ -112,6 +113,7 @@ int main(int argc, char* argv[])
   if (argc > i) ifh        = atoi(argv[i++]);
   if (argc > i) nImg       = atoi(argv[i++]);
   if (argc > i) nFm        = atoi(argv[i++]);
+  if (argc > i) nG         = atoi(argv[i++]);
   if (argc > i) pad_w_in   = atoi(argv[i++]);
   if (argc > i) pad_h_in   = atoi(argv[i++]);
   if (argc > i) pad_w_out  = atoi(argv[i++]);
@@ -148,6 +150,7 @@ int main(int argc, char* argv[])
   /* set struct for naive convolution */
   naive_param.N = nImg;
   naive_param.C = nFm;
+  naive_param.G = nG;
   naive_param.H = ifh;
   naive_param.W = ifw;
   naive_param.stride_h = stride_h;
@@ -266,7 +269,7 @@ int main(int argc, char* argv[])
     }
     if (type == 'A' || type == 'B') {
       naive_fusedgroupnorm_bp(&naive_param, naive_input, naive_delinput, naive_output, naive_deloutput, naive_delinput_add,
-                       naive_beta, naive_delbeta, naive_gamma, naive_delgamma, naive_expectval, naive_rcpstddev);
+                       naive_beta, naive_delbeta, naive_gamma, naive_delgamma, naive_expectval, naive_rcpstddev, naive_variance);
     }
     printf("##########################################\n");
     printf("#      Computing Reference ... done      #\n");
