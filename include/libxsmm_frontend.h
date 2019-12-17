@@ -123,7 +123,7 @@
 #if defined(LIBXSMM_GEMM_CONST)
 # undef LIBXSMM_GEMM_CONST
 # define LIBXSMM_GEMM_CONST const
-#elif defined(LIBXSMM_GEMM_NONCONST) || defined(__OPENBLAS)
+#elif defined(LIBXSMM_GEMM_NONCONST) || defined(__OPENBLAS) || defined(__OPENBLAS77)
 # define LIBXSMM_GEMM_CONST
 #else
 # define LIBXSMM_GEMM_CONST const
