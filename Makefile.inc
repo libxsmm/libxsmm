@@ -126,11 +126,7 @@ else
 endif
 
 # Optimization flag derived from OPT flag
-ifeq (0,$(shell echo "$(OPT)" | grep -q "^[0-9]\+$$"; echo "$$?"))
-  OPTFLAG = -O$(OPT)
-else
-  OPTFLAG = -$(OPT)
-endif
+OPTFLAG ?= -O$(patsubst O%,%,$(OPT))
 
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
@@ -1295,11 +1291,6 @@ else # GCC assumed
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
   ifeq (0,$(DBG))
-    ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
-      CXXFLAGS += -funroll-loops
-      CFLAGS += -funroll-loops
-      FCFLAGS += -funroll-loops
-    endif
     ifneq (0,$(IPO))
       CXXFLAGS += -flto
       CFLAGS += -flto
@@ -1643,15 +1634,20 @@ ifeq (0,$(COMPATIBLE))
         endif
       endif
     endif # SIMD
-    ifeq (0,$(PGI))
-      ifneq (,$(CTARGET))
-        CXXFLAGS += -ftree-vectorize
-        CFLAGS += -ftree-vectorize
-      endif
-      ifneq (,$(CTARGET))
-        FCFLAGS += -ftree-vectorize
-      endif
+  endif
+  endif
+  ifneq (,$(filter 1 2,$(patsubst O%,%,$(OPT))))
+  ifeq (0,$(PGI))
+  ifneq (,$(CTARGET))
+    ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
+      CXXFLAGS += -funroll-loops
+      CFLAGS += -funroll-loops
+      FCFLAGS += -funroll-loops
     endif
+    CXXFLAGS += -ftree-vectorize
+    CFLAGS += -ftree-vectorize
+    FCFLAGS += -ftree-vectorize
+  endif
   endif
   endif
   ifneq (Darwin,$(UNAME))
