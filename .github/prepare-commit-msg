@@ -13,12 +13,11 @@
 # Appends MSG_TAG to the commit message when no file
 # of the change-set matches any of the PATTERNS.
 #
-BINPWD=$(which pwd 2>/dev/null)
-HERE=$(cd "$(dirname $0)"; ${BINPWD} -P)
+HERE=$(cd "$(dirname $0)"; pwd -P)
 if [ "" = "${GIT_DIR}" ]; then
   GIT_DIR=${HERE}/../../.git
 fi
-ROOTDIR=$(cd "${GIT_DIR}/.."; ${BINPWD} -P)
+ROOTDIR=$(cd "${GIT_DIR}/.."; pwd -P)
 CODEFILE=${ROOTDIR}/.codefile
 MSG_NOCI="[skip ci]"
 MSG_FILE=$1

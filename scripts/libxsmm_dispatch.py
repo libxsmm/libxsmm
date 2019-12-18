@@ -23,7 +23,7 @@ if __name__ == "__main__":
         if arg1_isfile:
             print("#if !defined(_WIN32)")
             print("{ static const char *const build_state =")
-            print('#   include "' + sys.argv[1] + '"')
+            print('#   include "../' + os.path.basename(arg1_filename) + '"')
             print("  ;")
             print("  internal_build_state = build_state;")
             print("}")

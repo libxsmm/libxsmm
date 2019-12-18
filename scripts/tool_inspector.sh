@@ -26,7 +26,7 @@ if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
      [ "" != "${TR}" ] && [ "" != "${GREP}" ]     && [ "" != "${SED}" ]  && \
                           [ "" != "${ECHO}" ]     && [ "" != "${RM}" ];
   then
-    HERE=$(cd $(dirname $0); pwd -P)
+    HERE=$(cd "$(dirname $0)"; pwd -P)
     if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
       export TRAVIS_BUILD_DIR=${HERE}/..
     fi

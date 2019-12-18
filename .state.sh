@@ -22,7 +22,7 @@ if [ "" != "${TOUCH}" ] && [ "" != "${DIFF}" ] && [ "" != "${SED}" ] && [ "" != 
     STATEFILE=$1/.state
   fi
 
-  STATE=$(${TR} '?' '\n' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')
+  STATE=$(${TR} '?' '\n' | ${TR} '"' \' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')
   if [ ! -e ${STATEFILE} ]; then
     if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
       printf "%s\n" "${STATE}" > ${STATEFILE}

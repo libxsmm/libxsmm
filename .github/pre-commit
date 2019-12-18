@@ -10,8 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-BINPWD=$(which pwd 2>/dev/null)
-HERE=$(cd "$(dirname $0)"; ${BINPWD} -P)
+HERE=$(cd "$(dirname $0)"; pwd -P)
 if [ "" = "${GIT_DIR}" ]; then
   GIT_DIR=${HERE}/../../.git
 fi
