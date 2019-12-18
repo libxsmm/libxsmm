@@ -26,7 +26,7 @@ void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT
 void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
-  BLASINT_TYPE i;
+  BLASINT_TYPE i = 0;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif

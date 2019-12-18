@@ -10,8 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-BINPWD=$(which pwd 2>/dev/null)
-HERE=$(cd "$(dirname $0)"; ${BINPWD} -P)
+HERE=$(cd "$(dirname $0)"; pwd -P)
 GIT_DIR=${HERE}/../.git
 LOCKFILE=${GIT_DIR}/.commit
 

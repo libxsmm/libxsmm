@@ -27,8 +27,8 @@ LICFILE ?= LICENSE.md
 
 # initial default flags: RPM_OPT_FLAGS are usually NULL
 CFLAGS = $(RPM_OPT_FLAGS)
-CXXFLAGS := $(CFLAGS)
-FCFLAGS := $(CFLAGS)
+CXXFLAGS = $(RPM_OPT_FLAGS)
+FCFLAGS = $(RPM_OPT_FLAGS)
 DFLAGS = -DLIBXSMM_BUILD
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(ROOTDIR)/$(SRCDIR)
 
@@ -315,7 +315,7 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c libxsmm_dnn_pooling_backward.c libxsmm_dnn_convolution_forward.c \
           libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c libxsmm_dnn_fullyconnected_backward.c \
           libxsmm_dnn_fullyconnected_weight_update.c libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c)
-SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c) \
+SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
           libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c)
 
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
@@ -654,7 +654,7 @@ endif
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
 ifneq (,$(PYTHON))
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py
-	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py "$(abspath .state)" $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py "$(call qapath,.state)" $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 else
 .PHONY: $(BLDDIR)/libxsmm_dispatch.h
 endif
@@ -1007,7 +1007,8 @@ else # static
 	$(AR) -rs $@ $(NOBLAS_HST)
 endif
 
-DIRS_SAMPLES = $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
+DIRS_SAMPLES = $(call qdir,$(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
+	| grep -v /deeplearning/fusedgndriver/ \
 	| grep -v /deeplearning/grudriver/ \
 	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
@@ -1290,12 +1291,12 @@ test-cpp: $(INCDIR)/libxsmm_source.h
 .PHONY: test-cp2k
 test-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt
 $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst cp2k
-	@$(FLOCK) $(dir $@) "./cp2k-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * 128)))"
+	@$(FLOCK) $(call qdir,$@) "./cp2k-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE) * 128)))"
 
 .PHONY: perf-cp2k
 perf-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt
 $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst cp2k
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "./cp2k-perf.sh $(notdir $@)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "./cp2k-perf.sh $(call qndir,$@)"
 
 .PHONY: test-wrap
 test-wrap: wrap
@@ -1305,14 +1306,14 @@ test-wrap: wrap
 ifneq (,$(strip $(FC)))
 test-smm: $(ROOTDIR)/$(SPLDIR)/smm/smm-test.txt
 $(ROOTDIR)/$(SPLDIR)/smm/smm-test.txt: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh lib_hst smm
-	@$(FLOCK) $(dir $@) "./smmf-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(call qdir,$@) "./smmf-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
 .PHONY: perf-smm
 ifneq (,$(strip $(FC)))
 perf-smm: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.txt
 $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.txt: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh lib_hst smm
-	@$(FLOCK) $(dir $@) "./smmf-perf.sh $(notdir $@)"
+	@$(FLOCK) $(call qdir,$@) "./smmf-perf.sh $(call qndir,$@)"
 endif
 
 .PHONY: test-nek
@@ -1323,13 +1324,13 @@ test-nek: \
 	$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt
 $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) axhm"
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./axhm-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./axhm-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE) * -128)))"
 $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) grad"
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./grad-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./grad-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE) * -128)))"
 $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) rstr"
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./rstr-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./rstr-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
 $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
@@ -1368,7 +1369,7 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--template=$(notdir $(TMPFILE)) --listings \
+		--template=$(call qndir,$(TMPFILE)) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
@@ -1377,7 +1378,7 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-V linkcolor=black \
 		-V citecolor=black \
 		-V urlcolor=black \
-		-o $(notdir $@)
+		-o $(call qndir,$@)
 	@rm $(TMPFILE)
 
 $(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/utilities/*/README.md
@@ -1425,7 +1426,7 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--template=$(notdir $(TMPFILE)) --listings \
+		--template=$(call qndir,$(TMPFILE)) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="TensorFlow with LIBXSMM" \
@@ -1434,7 +1435,7 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 		-V linkcolor=black \
 		-V citecolor=black \
 		-V urlcolor=black \
-		-o $(notdir $@)
+		-o $(call qndir,$@)
 	@rm $(TMPFILE)
 
 .PHONY: documentation
@@ -1450,8 +1451,8 @@ mkdocs: $(ROOTDIR)/documentation/index.md $(ROOTDIR)/documentation/libxsmm_sampl
 
 .PHONY: clean
 clean:
-ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BLDDIR)),$(abspath .))
+ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@rm -rf $(BLDDIR)
 endif
 endif
@@ -1465,8 +1466,8 @@ endif
 
 .PHONY: realclean
 realclean: clean
-ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
-ifneq ($(abspath $(OUTDIR)),$(abspath .))
+ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@rm -rf $(OUTDIR)
 endif
 endif
@@ -1478,8 +1479,8 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@rm -f $(OUTDIR)/libxsmmgen.$(LIBEXT)*
 	@rm -f $(OUTDIR)/libxsmm*.pc
 endif
-ifneq ($(abspath $(BINDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BINDIR)),$(abspath .))
+ifneq ($(call qapath,$(BINDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(BINDIR)),$(call qapath,.))
 	@rm -rf $(BINDIR)
 endif
 endif
@@ -1523,8 +1524,8 @@ endif
 # - if PREFIX is not specified, or
 # - if PREFIX is a relative path
 ifneq (,$(strip $(STAGEDIR)))
-  ifneq (,$(filter-out /%,$(PREFIX)))
-    override PREFIX := $(abspath $(STAGEDIR)/$(PREFIX))
+  ifeq (,$(filter /%,$(PREFIX)))
+    override PREFIX := $(call qapath,$(STAGEDIR)/$(PREFIX))
   endif
   ifeq (FreeBSD,$(UNAME))
     PPKGDIR = libdata/pkgconfig
@@ -1533,7 +1534,7 @@ else ifeq (,$(strip $(PREFIX)))
   ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
     override PREFIX = /usr/local
   else
-    override PREFIX = $(abspath .)
+    override PREFIX = $(call qapath,.)
   endif
 endif
 
@@ -1542,7 +1543,7 @@ ALIAS_PREFIX = $(PREFIX)
 
 .PHONY: install-minimal
 install-minimal: libxsmm
-ifneq ($(abspath $(PREFIX)),$(abspath .))
+ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR) $(PREFIX)/$(PSRCDIR)
 	@echo
 	@echo "LIBXSMM installing libraries..."
@@ -1615,7 +1616,7 @@ endif
 
 .PHONY: install
 install: install-minimal
-ifneq ($(abspath $(PREFIX)),$(abspath .))
+ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo
 	@echo "LIBXSMM installing documentation..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)
@@ -1623,14 +1624,14 @@ ifneq ($(abspath $(PREFIX)),$(abspath .))
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
 	@mkdir -p $(PREFIX)/$(LICFDIR)
-ifneq ($(abspath $(PREFIX)/$(PDOCDIR)/LICENSE.md),$(abspath $(PREFIX)/$(LICFDIR)/$(LICFILE)))
+ifneq ($(call qapath,$(PREFIX)/$(PDOCDIR)/LICENSE.md),$(call qapath,$(PREFIX)/$(LICFDIR)/$(LICFILE)))
 	@$(MV) $(PREFIX)/$(PDOCDIR)/LICENSE.md $(PREFIX)/$(LICFDIR)/$(LICFILE)
 endif
 endif
 
 .PHONY: install-all
 install-all: install samples
-ifneq ($(abspath $(PREFIX)),$(abspath .))
+ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo
 	@echo "LIBXSMM installing samples..."
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
@@ -1646,7 +1647,7 @@ endif
 
 .PHONY: install-dev
 install-dev: install-all build-tests
-ifneq ($(abspath $(PREFIX)),$(abspath .))
+ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo
 	@echo "LIBXSMM installing tests..."
 	@mkdir -p $(PREFIX)/$(PTSTDIR)
@@ -1655,7 +1656,7 @@ endif
 
 .PHONY: install-artifacts
 install-artifacts: install-dev
-ifneq ($(abspath $(PREFIX)),$(abspath .))
+ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo
 	@echo "LIBXSMM installing artifacts..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)/artifacts
