@@ -723,6 +723,17 @@ LIBXSMM_API_INTERN void internal_init(void)
 #else /* attempt to set libxsmm_target_archid per environment variable */
     libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
 #endif
+    { /* setup some viable affinity if nothing else is present */
+      const char *const gomp_cpu_affinity = getenv("GOMP_CPU_AFFINITY");
+      const char *const kmp_affinity = getenv("KMP_AFFINITY");
+      const char *const omp_proc_bind = getenv("OMP_PROC_BIND");
+      if  ((NULL == gomp_cpu_affinity || 0 == *gomp_cpu_affinity)
+        && (NULL == kmp_affinity || 0 == *kmp_affinity)
+        && (NULL == omp_proc_bind || 0 == *omp_proc_bind))
+      {
+        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV("OMP_PROC_BIND=TRUE"));
+      }
+    }
     { const char *const env = getenv("LIBXSMM_SYNC");
       libxsmm_nosync = (NULL == env || 0 == *env) ? 0/*default*/ : atoi(env);
     }
