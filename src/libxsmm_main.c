@@ -689,7 +689,8 @@ LIBXSMM_API_INTERN void internal_init(void)
         && (NULL == kmp_affinity || 0 == *kmp_affinity)
         && (NULL == omp_proc_bind || 0 == *omp_proc_bind))
       {
-        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV("OMP_PROC_BIND=TRUE"));
+        static char affinity[] = "OMP_PROC_BIND=TRUE";
+        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(affinity));
       }
     }
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
