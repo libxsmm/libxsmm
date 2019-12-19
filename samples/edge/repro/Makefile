@@ -1,6 +1,6 @@
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../../..
-SRCDIR = $(ROOTDIR)/src
+SRCDIR = src
 INCDIR = .
 BLDDIR = build
 OUTDIR = bin
@@ -63,7 +63,7 @@ SYM = 1
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
-OUTNAME := $(shell basename $(ROOTDIR))
+OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
            $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
            $(DEPDIR)/include/libxsmm_source.h
@@ -126,11 +126,11 @@ $(OUTDIR)/test_neigh_$(EDGE_CONFIG): $(OUTDIR)/.make $(BLDDIR)/edge_neigh.test_$
 $(OUTDIR)/test_combine_$(EDGE_CONFIG): $(OUTDIR)/.make $(BLDDIR)/edge_combine.test_$(EDGE_CONFIG).o $(LIBDEP)
 	$(XLD) -o $@ $(BLDDIR)/edge_combine.test_$(EDGE_CONFIG).o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-# $(OUTDIR)/test_helper: $(SRCDIR)/edge_helper.test.cpp .state $(OUTDIR)/.make $(SRCDIR)/edge_helper.hpp $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBDEP)
+# $(OUTDIR)/test_helper: $(SRCDIR)/edge_helper.test.cpp .state $(OUTDIR)/.make $(SRCDIR)/edge_helper.hpp Makefile $(DEPDIR)/Makefile.inc $(LIBDEP)
 # 	$(CXX) $(EDGE_CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $(SRCDIR)/edge_helper.test.cpp -o $(BLDDIR)/edge_helper.test.o
 # 	$(XLD) -o $@ $(BLDDIR)/edge_helper.test.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(BLDDIR)/%_$(EDGE_CONFIG).o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%_$(EDGE_CONFIG).o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: clean

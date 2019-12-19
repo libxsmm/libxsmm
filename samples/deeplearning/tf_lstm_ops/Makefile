@@ -5,7 +5,7 @@ ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 #TF_CFLAGS=$(shell python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))')
 #TF_LFLAGS=$(shell python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))')
 DEPDIR = ../../..
-SRCDIR = $(ROOTDIR)
+SRCDIR = .
 INCDIR = .
 BLDDIR = build
 OUTDIR = xsmm_lstm
@@ -25,7 +25,7 @@ include $(DEPDIR)/Makefile.inc
 
 override CXX=g++
 
-OUTNAME := $(shell basename $(ROOTDIR))
+OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
            $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
            $(DEPDIR)/include/libxsmm_source.h
@@ -58,10 +58,10 @@ $(TF_FLAGS):
 $(OUTDIR)/libxsmm_lstm.so: $(OUTDIR)/.make $(CCXOBJS) $(COBJCTS) $(EXTDEP) $(LIBDEP) $(TF_FLAGS)
 	$(LD) -o $@ -shared $(CCXOBJS) $(COBJCTS) $(MAINLIB) $(TF_LFLAGS) -lsvml -liomp5 -fPIC 
 
-$(BLDDIR)/%-cc.o: $(SRCDIR)/%.cc .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(TF_FLAGS)
+$(BLDDIR)/%-cc.o: $(SRCDIR)/%.cc .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc $(TF_FLAGS)
 	g++ -std=c++11 $(GCC_OMP_FLAGS) $(TF_CFLAGS) -fPIC -c $< -o $@
 
-$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: install
