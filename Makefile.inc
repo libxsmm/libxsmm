@@ -242,12 +242,8 @@ REVERSION2 := s/..* \([0-9]\{5\}[0-9]*\)[ \S]*.*/\1/
 BRACE_OPEN := (
 BRACE_CLOSE := )
 
-ifeq (Linux,$(UNAME))
-  readlink = $(shell readlink -f "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}")
-else # BSD, etc.
-  readlink = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && if [ "" != "$(strip $1)" ]; then \
-    echo "$$(cd "$$(dirname "$${VAR}")" 2>/dev/null && pwd -P)/$$(basename "$${VAR}")"; fi)
-endif
+readlink = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
+  if [ -d "$${VAR}" ]; then cd "$${VAR}" 2>/dev/null && pwd -P; else cd "$$(dirname "$${VAR}")" && echo "$$(pwd -P)/$$(basename "$${VAR}")"; fi)
 ifneq (0,$(QUOTED))
   quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//;s/ /\\\ /g;s/\\\\\\\/\\\/g")
 else
@@ -891,7 +887,7 @@ libpath = $(strip $(if $1, \
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
-       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))),$(NULL)),$(call qapath,$1)))
+       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))),$(NULL)),"$(call qapath,$1)"))
 else # Cygwin/MinGW (static)
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
