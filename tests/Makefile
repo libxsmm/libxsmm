@@ -70,11 +70,10 @@ HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
-$(1): $(2) $(OBJECTS) $(dir $(1))/.make \
-        $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(LIBDEP) $(EXTDEP))
+$(1): $(2) $(OBJECTS) $(dir $(1))/.make $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(LIBDEP) $(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB)) \
-		$(MAINLIB) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(MAINLIB) $(EXTLIB)) \
+		$(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(1)
 endif
