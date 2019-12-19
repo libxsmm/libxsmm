@@ -242,16 +242,18 @@ REVERSION2 := s/..* \([0-9]\{5\}[0-9]*\)[ \S]*.*/\1/
 BRACE_OPEN := (
 BRACE_CLOSE := )
 
-readlink = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
-  if [ -d "$${VAR}" ]; then cd "$${VAR}" 2>/dev/null && pwd -P; else cd "$$(dirname "$${VAR}")" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}")"; fi)
 ifneq (0,$(QUOTED))
   quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//;s/ /\\\ /g;s/\\\\\\\/\\\/g")
 else
   quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//")
 endif
 ifneq (0,$(SPACES))
-  qapath = $(call quote,$(call readlink,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qndir = $(call quote,$(shell export VAR="$$(basename "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}x")" && echo "$${VAR%x}"))
+  apath = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
+    if [ ! -d "$${VAR}" ]; then cd "$$(dirname "$${VAR}")" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}")"; else cd "$${VAR}" 2>/dev/null && pwd -P; fi)
+  afile = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
+    if [ ! -d "$${VAR}" ]; then basename "$${VAR}"; fi)
+  qapath = $(call quote,$(call apath,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qndir = $(call quote,$(call afile,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qdir = $(call quote,$(shell dirname "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}x")/)
 else
   qapath = $(abspath $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
@@ -887,11 +889,13 @@ libpath = $(strip $(if $1, \
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
-       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))),$(NULL)),"$(call qapath,$1)"))
+       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))),$(NULL)), \
+    $(if $(call qndir,$1),"$(call qapath,$1)",$(NULL))))
 else # Cygwin/MinGW (static)
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
-    $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
-       -l$(call qname,$(call qndir,$1)),$(NULL)),$(call qapath,$1)))
+    $(if $(call qname,$(call qndir,$1)), \
+       -l$(call qname,$(call qndir,$1)),$(NULL)), \
+    $(if $(call qndir,$1),"$(call qapath,$1)",$(NULL))))
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
@@ -1682,6 +1686,7 @@ ifeq (0,$(COMPATIBLE))
     endif
     endif
     ifeq (0,$(PGI))
+    ifneq (0,$(OPT))
       CXXFLAGS += -fdata-sections -ffunction-sections
       CFLAGS += -fdata-sections -ffunction-sections
       ifeq (0,$(INTEL))
@@ -1696,6 +1701,7 @@ ifeq (0,$(COMPATIBLE))
         #FCFLAGS += -fvisibility=hidden
         CFLAGS += -fvisibility=hidden
       endif
+    endif
     endif
   endif
   ifeq (0,$(EXP))
@@ -2099,11 +2105,9 @@ endif
 
 cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
 # cleanup eventually duplicated flags and slashes
-cleanld = $(strip $(shell echo "$1" | sed \
+cleanld = $(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed \
   -e "s/[[:space:]]$(XLIB_BEGIN)[[:space:]]$(XLIB_END)/ /g" \
   -e "s/[[:space:]]$(XLIB_END)[[:space:]]$(XLIB_BEGIN)/ /g" \
-  -e "s/[[:space:]][[:space:]][[:space:]]*/ /g" \
-  -e "s/\/[[:space:]]/ /g" \
   -e "s/\/\//\//g"))
 
 # no-BLAS flags: cleanup and extra flags
