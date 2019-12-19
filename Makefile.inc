@@ -243,7 +243,7 @@ BRACE_OPEN := (
 BRACE_CLOSE := )
 
 readlink = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
-  if [ -d "$${VAR}" ]; then cd "$${VAR}" 2>/dev/null && pwd -P; else cd "$$(dirname "$${VAR}")" && echo "$$(pwd -P)/$$(basename "$${VAR}")"; fi)
+  if [ -d "$${VAR}" ]; then cd "$${VAR}" 2>/dev/null && pwd -P; else cd "$$(dirname "$${VAR}")" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}")"; fi)
 ifneq (0,$(QUOTED))
   quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//;s/ /\\\ /g;s/\\\\\\\/\\\/g")
 else
