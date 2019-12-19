@@ -486,7 +486,6 @@
 # define LIBXSMM_LOG2(A) (log(A) * (1.0 / (M_LN2)))
 # define LIBXSMM_EXPF(A) ((float)exp((double)(A)))
 # define LIBXSMM_LOGF(A) ((float)log((double)(A)))
-
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
@@ -629,6 +628,7 @@
 #endif
 
 #if !defined(LIBXSMM_NO_CTOR) && !defined(LIBXSMM_CTOR) && \
+    (defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__)) && \
     (defined(LIBXSMM_BUILD) && !defined(__STATIC)) && \
     (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
