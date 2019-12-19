@@ -55,8 +55,8 @@ $(TF_FLAGS):
 	@echo "TF_CFLAGS=$(TF_CFLAGS)" > $@
 	@echo "TF_LFLAGS=$(TF_LFLAGS)" >> $@
 
-$(OUTDIR)/libxsmm_lstm.so: $(OUTDIR)/.make $(CCXOBJS) $(COBJCTS) $(EXTDEP) $(LIBDEP) $(TF_FLAGS)
-	$(LD) -o $@ -shared $(CCXOBJS) $(COBJCTS) $(MAINLIB) $(TF_LFLAGS) -lsvml -liomp5 -fPIC 
+$(OUTDIR)/libxsmm_lstm.so: $(OUTDIR)/.make $(CCXOBJS) $(COBJCTS) $(LIBDEP) $(EXTDEP) $(TF_FLAGS)
+	$(LD) -o $@ -shared $(CCXOBJS) $(COBJCTS) $(MAINLIB) $(TF_LFLAGS) -lsvml -liomp5 -fPIC
 
 $(BLDDIR)/%-cc.o: $(SRCDIR)/%.cc .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc $(TF_FLAGS)
 	g++ -std=c++11 $(GCC_OMP_FLAGS) $(TF_CFLAGS) -fPIC -c $< -o $@
@@ -84,6 +84,6 @@ ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@rm -f $(OBJECTS)
 endif
 	@rm -f .make .state $(XFILES) $(OUTDIR)/*.pyc
-	@rm -rf dist xsmm_lstm.egg-info 
+	@rm -rf dist xsmm_lstm.egg-info
 
 

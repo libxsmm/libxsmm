@@ -59,7 +59,7 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
 ifneq (0,$(shell echo "$$((3>$(GCC) || 40600<=$(FC_VERSION)))"))
-$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP)
 	$(FLD) -o $@ $(FTNOBJS) $(EXTLIB) $(FORTLIB) $(MAINLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
@@ -68,8 +68,7 @@ else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
 endif
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(EXTDEP) $(LIBDEP)
-#	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/kernel: $(OUTDIR)/.make $(BLDDIR)/kernel-c.o $(LIBDEP)

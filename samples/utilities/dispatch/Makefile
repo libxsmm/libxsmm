@@ -55,7 +55,7 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
-$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP)
 	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(MAINLIB) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else

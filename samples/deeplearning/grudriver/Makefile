@@ -54,10 +54,10 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/grudriver_nc_ck: $(OUTDIR)/.make $(BLDDIR)/grudriver_nc_ck-c.o $(EXTDEP) $(LIBDEP) 
+$(OUTDIR)/grudriver_nc_ck: $(OUTDIR)/.make $(BLDDIR)/grudriver_nc_ck-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/grudriver_nc_ck-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/grudriver_nc_kcck: $(OUTDIR)/.make $(BLDDIR)/grudriver_nc_kcck-c.o $(EXTDEP) $(LIBDEP) 
+$(OUTDIR)/grudriver_nc_kcck: $(OUTDIR)/.make $(BLDDIR)/grudriver_nc_kcck-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/grudriver_nc_kcck-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc

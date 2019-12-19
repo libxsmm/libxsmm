@@ -132,7 +132,7 @@ endif
 
 # Debugging
 ifeq ($(DEBUG), 1)
-	COMMON_FLAGS += -g -O0 
+	COMMON_FLAGS += -g -O0
 else
 	COMMON_FLAGS += -DNDEBUG -O2 -ip -ipo #-qopt-report-phase=vec -qopt-report=2
 endif

@@ -54,7 +54,7 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/kernel: $(OUTDIR)/.make $(BLDDIR)/kernel-c.o $(LIBDEP)

@@ -82,7 +82,7 @@ ifneq (0,$(XWRAP))
   DFLAGS += -DWRAP
 endif
 
-$(OUTDIR)/autobatch: $(BLDDIR)/autobatch-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/autobatch: $(BLDDIR)/autobatch-c.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 
 ifeq (0,$(NOBLAS))
@@ -114,7 +114,7 @@ else
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 else ifneq (,$(strip $(OMPLIB)))
@@ -128,7 +128,7 @@ else
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
 else ifneq (,$(strip $(OMPLIB)))

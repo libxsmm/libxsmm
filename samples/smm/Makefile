@@ -72,16 +72,16 @@ else
 .PHONY: $(OUTDIR)/$(OUTNAME)
 endif
 
-$(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/dispatched: $(BLDDIR)/dispatched-cpp.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/dispatched: $(BLDDIR)/dispatched-cpp.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/inlined: $(BLDDIR)/inlined-cpp.o $(OUTDIR)/.make $(LIBDEP)
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
