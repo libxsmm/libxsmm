@@ -444,10 +444,7 @@ LIBXSMM_API_INTERN void libxsmm_hash_init(int target_arch)
     internal_hash_function = (libxsmm_hash_function)internal_crc32_sse4;
   }
 #if (LIBXSMM_X86_SSE4 > LIBXSMM_STATIC_TARGET_ARCH)
-  else
-#endif
-#if (LIBXSMM_X86_SSE4 > LIBXSMM_STATIC_TARGET_ARCH)
-  {
+  else {
 # if !defined(LIBXSMM_INTRINSICS_SSE4)
     static int error_once = 0;
     if (0 == error_once && 0 != libxsmm_verbosity) { /* library code is expected to be mute */

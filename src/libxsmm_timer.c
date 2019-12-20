@@ -29,24 +29,25 @@
 # include <sys/platform/ppc.h>
 #endif
 
-#if defined(__powerpc64__)
-# define LIBXSMM_TIMER_RDTSC(CYCLE) { \
-    CYCLE = __ppc_get_timebase(); \
-  }
-#elif ((defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER) || defined(__PGI)) && (64 <= (LIBXSMM_BITS)))
-# define LIBXSMM_TIMER_RDTSC(CYCLE) { libxsmm_timer_tickint libxsmm_timer_rdtsc_hi_; \
-    __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
-    CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
-  }
-#elif (defined(_rdtsc) || defined(_WIN32))
-# define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
+#if 1 /* TSC */
+# if defined(__powerpc64__)
+#   define LIBXSMM_TIMER_RDTSC(CYCLE) { \
+      CYCLE = __ppc_get_timebase(); \
+    }
+# elif ((defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER) || defined(__PGI)) && (64 <= (LIBXSMM_BITS)))
+#   define LIBXSMM_TIMER_RDTSC(CYCLE) { libxsmm_timer_tickint libxsmm_timer_rdtsc_hi_; \
+      __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
+      CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
+    }
+# elif (defined(_rdtsc) || defined(_WIN32))
+#   define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
+# endif
 #endif
-
 
 LIBXSMM_APIVAR(int internal_timer_init_rtc);
 
 
-LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
+LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(int* tsc)
 {
   libxsmm_timer_tickint result;
 #if !(defined(__PGI) && defined(__cplusplus))
@@ -69,6 +70,11 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
   gettimeofday(&t, 0);
   result = 1000000ULL * t.tv_sec + t.tv_usec;
 #endif
+#if defined(LIBXSMM_TIMER_RDTSC)
+  if (NULL != tsc) *tsc = 1;
+#else
+  if (NULL != tsc) *tsc = 0;
+#endif
 #if !(defined(__PGI) && defined(__cplusplus))
   LIBXSMM_UNUSED(dummy);
   dummy =
@@ -85,7 +91,7 @@ libxsmm_timer_tickint libxsmm_timer_tick(void)
 #if defined(LIBXSMM_TIMER_RDTSC)
   LIBXSMM_TIMER_RDTSC(result);
 #else
-  result = libxsmm_timer_tick_rtc();
+  result = libxsmm_timer_tick_rtc(NULL/*tsc*/);
 #endif
   return result;
 }

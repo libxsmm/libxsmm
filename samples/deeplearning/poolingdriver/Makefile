@@ -3,7 +3,7 @@
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../../..
-SRCDIR = $(ROOTDIR)
+SRCDIR = .
 INCDIR = .
 BLDDIR = build
 OUTDIR = .
@@ -20,7 +20,7 @@ SYM = 1
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
-OUTNAME := $(shell basename $(ROOTDIR))
+OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
            $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
            $(DEPDIR)/include/libxsmm_source.h
@@ -54,16 +54,16 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -lm
+$(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/layer_example_bf16: $(OUTDIR)/.make $(BLDDIR)/layer_example_bf16-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example_bf16-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -lm
+$(OUTDIR)/layer_example_bf16: $(OUTDIR)/.make $(BLDDIR)/layer_example_bf16-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/layer_example_bf16-c.o $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
+$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
-$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: clean

@@ -486,7 +486,6 @@
 # define LIBXSMM_LOG2(A) (log(A) * (1.0 / (M_LN2)))
 # define LIBXSMM_EXPF(A) ((float)exp((double)(A)))
 # define LIBXSMM_LOGF(A) ((float)log((double)(A)))
-
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
@@ -629,6 +628,7 @@
 #endif
 
 #if !defined(LIBXSMM_NO_CTOR) && !defined(LIBXSMM_CTOR) && \
+    (defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__)) && \
     (defined(LIBXSMM_BUILD) && !defined(__STATIC)) && \
     (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
@@ -648,13 +648,21 @@
 #if !defined(LIBXSMM_MKTEMP_PATTERN)
 # define LIBXSMM_MKTEMP_PATTERN "XXXXXX"
 #endif
+
 #if defined(_WIN32) && 0
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
-# define setenv(NAME, VALUE, OVERWRITE) _putenv(NAME "=" VALUE)
 #elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
 # define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
+#endif
+#if defined(_WIN32)
+# define LIBXSMM_PUTENV _putenv
+# define LIBXSMM_SETENV(NAME, VALUE, OVERWRITE) \
+    if (NULL == getenv(NAME) || (OVERWRITE)) LIBXSMM_PUTENV(NAME "=" VALUE)
+#else
+# define LIBXSMM_PUTENV putenv
+# define LIBXSMM_SETENV setenv
 #endif
 #if (0 == LIBXSMM_SYNC)
 # define LIBXSMM_FLOCK(FILE)
@@ -751,7 +759,10 @@
 #endif
 #if !defined(LIBXSMM_EXPECT)
 # if defined(NDEBUG)
-#   define LIBXSMM_EXPECT(RESULT, EXPR) (EXPR)
+#   define LIBXSMM_EXPECT(RESULT, EXPR) do { \
+      /*const*/ int libxsmm_expect_result_ = (EXPR); \
+      LIBXSMM_UNUSED(libxsmm_expect_result_); \
+    } while(0)
 # else
 #   define LIBXSMM_EXPECT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) == (EXPR))
 # endif

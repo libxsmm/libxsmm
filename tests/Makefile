@@ -2,8 +2,8 @@
 #.EXPORT_ALL_VARIABLES: #export
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-DEPDIR = $(ROOTDIR)/..
-SRCDIR = $(ROOTDIR)
+DEPDIR = ..
+SRCDIR = .
 INCDIR = $(ROOTDIR)
 BLDDIR = build
 OUTDIR = .
@@ -21,7 +21,7 @@ MIX ?= 1
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
-OUTNAME := $(shell basename $(ROOTDIR))
+OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
            $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
            $(DEPDIR)/include/libxsmm_source.h
@@ -70,11 +70,10 @@ HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
-$(1): $(2) $(OBJECTS) $(dir $(1))/.make \
-        $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(LIBDEP) $(EXTDEP))
+$(1): $(2) $(OBJECTS) $(dir $(1))/.make $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(LIBDEP) $(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB)) \
-		$(MAINLIB) $(LDFLAGS) $(CLDFLAGS)
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(MAINLIB) $(EXTLIB)) \
+		$(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(1)
 endif
@@ -90,7 +89,7 @@ ifneq (,$(wildcard $(FORTDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
 $(1): $(2) $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
 	$(FC) $(SLDFLAGS) -o $(1) $(2) $(MAINLIB) $(FORTLIB) $(EXTLIB) \
-		$(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+		$(FCMTFLAGS) $(call cleanld,$(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS))
 else
 .PHONY: $(1)
 endif
@@ -113,33 +112,33 @@ $(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX), \
 
 ifeq (0,$(MIX))
 $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o
-	$(LD) -o $@ $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o $(call cleanld,$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 else # compile headeronly_aux.c as C++ translation unit
 $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o
 	@rm -f $(SRCDIR)/headeronly_aux.cpp
 	@$(CP) $(SRCDIR)/headeronly_aux.c $(SRCDIR)/headeronly_aux.cpp
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $(SRCDIR)/headeronly_aux.cpp -o $(BLDDIR)/headeronly_aux-cpp.o
-	$(XLD) -o $@ $(BLDDIR)/headeronly_aux-cpp.o $(BLDDIR)/headeronly-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(XLD) -o $@ $(BLDDIR)/headeronly_aux-cpp.o $(BLDDIR)/headeronly-c.o $(call cleanld,$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 	@rm -f headeronly_aux.cpp
 endif
 
-$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc #$(DEPDIR)/include/libxsmm_source.h
+$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc #$(DEPDIR)/include/libxsmm_source.h
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
-$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
-#$(BLDDIR)/%-f.o: $(SRCDIR)/%.f .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
-#	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
+#$(BLDDIR)/%-f.o: $(SRCDIR)/%.f .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+#$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
-#$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
-#	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
+#$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+#$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
-#$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
-#	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
+#$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+#$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
-#$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
-#	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
+#$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+#$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
 .PHONY: clean
 clean:

@@ -3,7 +3,7 @@
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../../..
-SRCDIR = $(ROOTDIR)
+SRCDIR = .
 INCDIR = .
 BLDDIR = build
 OUTDIR = .
@@ -35,7 +35,7 @@ ifneq (0,$(DEPSTATIC))
 endif
 endif
 
-OUTNAME := $(shell basename $(ROOTDIR))
+OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
            $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
            $(DEPDIR)/include/libxsmm_source.h
@@ -82,7 +82,7 @@ ifneq (0,$(XWRAP))
   DFLAGS += -DWRAP
 endif
 
-$(OUTDIR)/autobatch: $(BLDDIR)/autobatch-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/autobatch: $(BLDDIR)/autobatch-c.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 
 ifeq (0,$(NOBLAS))
@@ -114,7 +114,7 @@ else
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 else ifneq (,$(strip $(OMPLIB)))
@@ -128,7 +128,7 @@ else
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
 else ifneq (,$(strip $(OMPLIB)))
@@ -152,22 +152,22 @@ test: $(OUTDIR)/.make $(OUTDIR)/wrap-test.sh $(XFILES)
 	@bash $(OUTDIR)/wrap-test.sh dgemv 200 200 256 1 1 1 0
 	@bash $(OUTDIR)/wrap-test.sh dgemv  24  21  32 2 2 1 1
 
-$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
-$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
-$(BLDDIR)/%-f.o: $(SRCDIR)/%.f .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%-f.o: $(SRCDIR)/%.f .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
-$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
 .PHONY: clean
