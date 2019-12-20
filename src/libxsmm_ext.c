@@ -14,7 +14,7 @@
 
 
 #if defined(LIBXSMM_BUILD)
-#if defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC) /* no-BLAS library */
+#if defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC)
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(dgemm_batch)(
   const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
@@ -129,7 +129,7 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void sgemm_batch(
     group_count, group_size);
 }
 
-#elif (1 == LIBXSMM_NO_BLAS)
+#elif (0 != LIBXSMM_NO_BLAS) /* no-BLAS library */
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
 #if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
@@ -241,6 +241,7 @@ void sgemm_batch(
     alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
     group_count, group_size);
 }
+
 #endif
-#endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/
+#endif /*defined(LIBXSMM_BUILD)*/
 

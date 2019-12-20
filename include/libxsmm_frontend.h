@@ -132,8 +132,10 @@
 #if !defined(LIBXSMM_NO_BLAS)
 # if (!defined(__BLAS) || (0 != __BLAS))
 #   define LIBXSMM_NO_BLAS 0
+#   define LIBXSMM_BLAS 1
 # else
 #   define LIBXSMM_NO_BLAS 1
+#   define LIBXSMM_BLAS 0
 # endif
 #endif
 
@@ -174,7 +176,7 @@
 #define LIBXSMM_BLAS_SYMBOL_CDECL(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
   void LIBXSMM_CBLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND))
 
-#if (0 == LIBXSMM_NO_BLAS) /* BLAS available */
+#if (0 != LIBXSMM_BLAS) /* BLAS available */
 # define LIBXSMM_BLAS_SYMBOL_DECL(TYPE, KIND) LIBXSMM_BLAS_DECL(TYPE, KIND, LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, TYPE, KIND))
 #else
 # define LIBXSMM_BLAS_SYMBOL_DECL(TYPE, KIND)
@@ -228,7 +230,7 @@
 
 /** Map to appropriate BLAS function (or fall-back). The mapping is used e.g., inside of LIBXSMM_BLAS_XGEMM. */
 #define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
-#if (0 == LIBXSMM_NO_BLAS) /* Helper macro to eventually (if defined) call libxsmm_init */
+#if (0 != LIBXSMM_BLAS) /* Helper macro to eventually (if defined) call libxsmm_init */
 # if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
 #   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch_function
 #   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch_function
@@ -505,8 +507,8 @@ LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void);
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
 LIBXSMM_API_EXPORT libxsmm_dgemv_function libxsmm_original_dgemv(void);
 LIBXSMM_API_EXPORT libxsmm_sgemv_function libxsmm_original_sgemv(void);
-LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol);
-LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC);
+LIBXSMM_API_EXPORT libxsmm_sink_function libxsmm_blas_error(const char* symbol);
+LIBXSMM_API_EXPORT void libxsmm_sink(LIBXSMM_VARIADIC);
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS
