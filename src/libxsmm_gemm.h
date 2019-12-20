@@ -60,6 +60,14 @@
 # endif
 #endif
 
+#if !defined(LIBXSMM_BLAS_ERROR)
+#define LIBXSMM_BLAS_ERROR(SYMBOL, PCOUNTER) do { \
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(PCOUNTER, 1, LIBXSMM_ATOMIC_RELAXED)) { \
+      fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS %s!\n", SYMBOL); \
+    } \
+  } while(0)
+#endif
+
 #if defined(LIBXSMM_BUILD)
 # define LIBXSMM_BLAS_WRAPPER_STATIC1(TYPE, KIND, ORIGINAL) if (NULL == (ORIGINAL)) { \
     ORIGINAL = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, KIND))); \
