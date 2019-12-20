@@ -44,6 +44,7 @@
     <ClInclude Include="..\include\libxsmm_memory.h" />
     <ClInclude Include="..\include\libxsmm_mhd.h" />
     <ClInclude Include="..\include\libxsmm_rng.h" />
+    <ClInclude Include="..\include\libxsmm_source.h" />
     <ClInclude Include="..\include\libxsmm_spmdm.h" />
     <ClInclude Include="..\include\libxsmm_sync.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
