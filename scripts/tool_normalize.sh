@@ -54,10 +54,18 @@ then
     # disable glob in Shell
     set -f
     # Search the content of the diffs matching the given file types
-    for PATTERN in ${PATTERNS}; do
+    for PATTERN in ${PATTERNS} *Makefile*; do
       for FILE in $(${GIT} ls-files ${PATTERN}); do
-        if [ "" != "$(${SED} -n "${PATBAN}x/p" ${FILE} 2>/dev/null)" ]; then
-          echo "Warning: ${FILE} contains banned characters!"
+        if [[ ${FILE} != *"Makefile"* ]]; then
+          if [ "" != "$(${SED} -n "${PATBAN}x/p" ${FILE} 2>/dev/null)" ]; then
+            echo "Warning: ${FILE} contains banned characters!"
+          fi
+        else
+          if [ "" != "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" ${FILE})" ]; then
+            ${CAT} ${FILE} | ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" > ${TMPF}
+            ${CP} ${TMPF} ${FILE}
+            echo "${FILE}: removed inner tabs."
+          fi
         fi
         if [ "" != "$(${SED} -n "${PATEOL}x/p" ${FILE} 2>/dev/null | ${TR} -d "\n")" ]; then
           echo "Warning: ${FILE} uses non-UNIX line endings!"
@@ -80,13 +88,6 @@ then
           echo "${FILE}: removed executable flag."
         fi
       done
-    done
-    for FILE in $(${GIT} ls-files Makefile*); do
-      if [ "" != "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" ${FILE})" ]; then
-        ${CAT} ${FILE} | ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" > ${TMPF}
-        ${CP} ${TMPF} ${FILE}
-        echo "${FILE}: removed inner tabs."
-      fi
     done
     ${RM} ${TMPF}
     echo "Successfully Completed."

@@ -681,6 +681,18 @@ LIBXSMM_API_INTERN void internal_init(void)
 #if !defined(_WIN32) && 0
     umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
 #endif
+    { /* setup some viable affinity if nothing else is present */
+      const char *const gomp_cpu_affinity = getenv("GOMP_CPU_AFFINITY");
+      const char *const kmp_affinity = getenv("KMP_AFFINITY");
+      const char *const omp_proc_bind = getenv("OMP_PROC_BIND");
+      if  ((NULL == gomp_cpu_affinity || 0 == *gomp_cpu_affinity)
+        && (NULL == kmp_affinity || 0 == *kmp_affinity)
+        && (NULL == omp_proc_bind || 0 == *omp_proc_bind))
+      {
+        static char affinity[] = "OMP_PROC_BIND=TRUE";
+        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(affinity));
+      }
+    }
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     { const char *const env = getenv("LIBXSMM_SCRATCH_POOLS");
       if (NULL == env || 0 == *env) {
@@ -898,22 +910,19 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #endif
       }
       { /* calibrate timer */
-        libxsmm_timer_tickint s0, t0, s1, t1;
-        libxsmm_timer_tick_rtc(); libxsmm_timer_tick(); /* warm-up */
-        s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick(); /* start timing */
+        libxsmm_timer_tickint s0, t0, s1, t1; int tsc = 0;
+        libxsmm_timer_tick_rtc(&tsc); libxsmm_timer_tick(); /* warm-up */
+        s0 = libxsmm_timer_tick_rtc(&tsc); t0 = libxsmm_timer_tick(); /* start timing */
         internal_init();
         if (EXIT_SUCCESS != atexit(internal_finalize) && 0 != libxsmm_verbosity) {
           fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
         }
-        s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick(); /* final timing */
+        s1 = libxsmm_timer_tick_rtc(&tsc); t1 = libxsmm_timer_tick(); /* final timing */
         if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && t0 != t1) {
           const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
           libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / dt;
-          if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-            const libxsmm_timer_tickint ds = LIBXSMM_DELTA(s0, s1);
-            if (ds > LIBXSMM_DELTA(ds, dt)) { /* no LIBXSMM_TIMER_RDTSC/cycles */
-              fprintf(stderr, "LIBXSMM WARNING: libxsmm_timer_ncycles may not measure in cycles!\n");
-            }
+          if (0 != libxsmm_verbosity && 0 == tsc) { /* library code is expected to be mute */
+            fprintf(stderr, "LIBXSMM WARNING: libxsmm_timer_ncycles may not measure in cycles!\n");
           }
         }
       }
