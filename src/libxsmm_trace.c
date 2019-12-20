@@ -116,12 +116,7 @@ LIBXSMM_APIVAR(int internal_trace_threadid);
 LIBXSMM_APIVAR(int internal_trace_maxnsyms);
 
 
-LIBXSMM_API
-#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms);
-
+LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE int libxsmm_trace_init(int /*filter_threadid*/, int /*filter_mindepth*/, int /*filter_maxnsyms*/);
 LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
   int result = EXIT_SUCCESS;
@@ -177,12 +172,7 @@ LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int
 }
 
 
-LIBXSMM_API
-#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-int libxsmm_trace_finalize(void);
-
+LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE int libxsmm_trace_finalize(void);
 LIBXSMM_API int libxsmm_trace_finalize(void)
 {
   int result;
@@ -203,12 +193,7 @@ LIBXSMM_API int libxsmm_trace_finalize(void)
 }
 
 
-LIBXSMM_API
-#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
-
+LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE unsigned int libxsmm_backtrace(const void* /*buffer*/[], unsigned int /*size*/, unsigned int /*skip*/);
 LIBXSMM_API
 #if defined(_WIN32)
 /*TODO: no inline*/
@@ -275,12 +260,9 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
 #endif
 
 
-LIBXSMM_API
-#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid,
-  const void* filter_symbol, const int* filter_mindepth, const int* filter_maxnsyms);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE
+const char* libxsmm_trace_info(unsigned int* /*depth*/, unsigned int* /*threadid*/, const int* /*filter_threadid*/,
+  const void* /*filter_symbol*/, const int* /*filter_mindepth*/, const int* /*filter_maxnsyms*/);
 
 LIBXSMM_API
 #if defined(_WIN32)
@@ -522,11 +504,8 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 }
 
 
-LIBXSMM_API
-#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-void libxsmm_trace(FILE* stream, const int* filter_threadid, const void* filter_symbol, const int* filter_mindepth, const int* filter_maxnsyms);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE
+void libxsmm_trace(FILE* stream, const int* /*filter_threadid*/, const void* /*filter_symbol*/, const int* /*filter_mindepth*/, const int* /*filter_maxnsyms*/);
 
 LIBXSMM_API void libxsmm_trace(FILE* stream, const int* filter_threadid, const void* filter_symbol, const int* filter_mindepth, const int* filter_maxnsyms)
 {
@@ -554,11 +533,7 @@ LIBXSMM_API void libxsmm_trace(FILE* stream, const int* filter_threadid, const v
 
 #if defined(__TRACE) && defined(__GNUC__) && defined(LIBXSMM_BUILD)
 
-LIBXSMM_API
-#if !defined(__PGI) && !defined(__ibmxl__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-void __cyg_profile_func_enter(void* this_fn, void* call_site);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE void __cyg_profile_func_enter(void* /*this_fn*/, void* /*call_site*/);
 LIBXSMM_API void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(LIBXSMM_TRACE)
@@ -571,11 +546,7 @@ LIBXSMM_API void __cyg_profile_func_enter(void* this_fn, void* call_site)
 }
 
 
-LIBXSMM_API
-#if !defined(__PGI) && !defined(__ibmxl__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-void __cyg_profile_func_exit(void* this_fn, void* call_site);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE void __cyg_profile_func_exit(void* /*this_fn*/, void* /*call_site*/);
 LIBXSMM_API void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */

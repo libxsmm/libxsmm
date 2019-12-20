@@ -639,6 +639,12 @@
 # define LIBXSMM_ATTRIBUTE_DTOR
 #endif
 
+#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
+# define LIBXSMM_ATTRIBUTE_NO_TRACE LIBXSMM_ATTRIBUTE(no_instrument_function)
+#else
+# define LIBXSMM_ATTRIBUTE_NO_TRACE
+#endif
+
 #if defined(__GNUC__)
 # define LIBXSMM_MAY_ALIAS LIBXSMM_ATTRIBUTE(__may_alias__)
 #else
