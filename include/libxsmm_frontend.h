@@ -507,8 +507,8 @@ LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void);
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
 LIBXSMM_API_EXPORT libxsmm_dgemv_function libxsmm_original_dgemv(void);
 LIBXSMM_API_EXPORT libxsmm_sgemv_function libxsmm_original_sgemv(void);
-LIBXSMM_API_EXPORT libxsmm_sink_function libxsmm_blas_error(const char* symbol);
-LIBXSMM_API_EXPORT void libxsmm_sink(LIBXSMM_VARIADIC);
+LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol);
+LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC);
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS

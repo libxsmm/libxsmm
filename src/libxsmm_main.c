@@ -1082,7 +1082,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 }
 
 
-LIBXSMM_API_EXPORT void libxsmm_sink(LIBXSMM_VARIADIC)
+LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC)
 {
   /* does nothing else but sinking given arguments */
 }

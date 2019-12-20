@@ -310,7 +310,7 @@ LIBXSMM_GEMM_WEAK libxsmm_sgemv_function libxsmm_original_sgemv(void)
 }
 
 
-LIBXSMM_API_EXPORT libxsmm_sink_function libxsmm_blas_error(const char* symbol)
+LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol)
 {
   static int error_once = 0;
   LIBXSMM_BLAS_ERROR(symbol, &error_once);
