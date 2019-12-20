@@ -1054,6 +1054,8 @@
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <InstrumentIntelTBB>true</InstrumentIntelTBB>
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -1063,6 +1065,7 @@
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -1072,6 +1075,8 @@
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <InstrumentIntelTBB>true</InstrumentIntelTBB>
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -1079,6 +1084,8 @@
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <InstrumentIntelTBB>true</InstrumentIntelTBB>
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -1088,6 +1095,7 @@
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|x64'" Label="Configuration">
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -1098,6 +1106,7 @@
     <InstrumentIntelTBB>true</InstrumentIntelTBB>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />

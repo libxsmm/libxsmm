@@ -45,6 +45,7 @@
     <UseIntelMKL>Sequential</UseIntelMKL>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <InstrumentIntelTBB>true</InstrumentIntelTBB>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -65,6 +66,7 @@
     <UseIntelMKL>Sequential</UseIntelMKL>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <InstrumentIntelTBB>true</InstrumentIntelTBB>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -73,6 +75,7 @@
     <UseIntelMKL>Sequential</UseIntelMKL>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <InstrumentIntelTBB>true</InstrumentIntelTBB>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
     <WholeProgramOptimization>true</WholeProgramOptimization>
