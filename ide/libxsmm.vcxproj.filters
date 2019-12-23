@@ -261,6 +261,9 @@
     <ClInclude Include="..\src\template\libxsmm_config.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_source.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">

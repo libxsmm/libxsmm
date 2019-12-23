@@ -193,7 +193,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
 #if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
 LIBXSMM_API_EXPORT libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(void)
 {
-# if (!defined(__BLAS) || (0 != __BLAS))
+# if (0 != LIBXSMM_BLAS)
   LIBXSMM_BLAS_WRAPPER(1, double, gemm_batch, libxsmm_original_dgemm_batch_function, libxsmm_original_dgemm_batch/*self*/);
 # else
   LIBXSMM_BLAS_WRAPPER(0, double, gemm_batch, libxsmm_original_dgemm_batch_function, libxsmm_original_dgemm_batch/*self*/);
@@ -204,7 +204,7 @@ LIBXSMM_API_EXPORT libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(voi
 
 LIBXSMM_API_EXPORT libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch(void)
 {
-# if (!defined(__BLAS) || (0 != __BLAS))
+# if (0 != LIBXSMM_BLAS)
   LIBXSMM_BLAS_WRAPPER(1, float, gemm_batch, libxsmm_original_sgemm_batch_function, libxsmm_original_sgemm_batch/*self*/);
 # else
   LIBXSMM_BLAS_WRAPPER(0, float, gemm_batch, libxsmm_original_sgemm_batch_function, libxsmm_original_sgemm_batch/*self*/);
@@ -215,7 +215,7 @@ LIBXSMM_API_EXPORT libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch(voi
 
 LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
-# if (!defined(__BLAS) || (0 != __BLAS))
+# if (0 != LIBXSMM_BLAS)
   LIBXSMM_BLAS_WRAPPER(1, double, gemm, libxsmm_original_dgemm_function, libxsmm_original_dgemm/*self*/);
 # else
   LIBXSMM_BLAS_WRAPPER(0, double, gemm, libxsmm_original_dgemm_function, libxsmm_original_dgemm/*self*/);
@@ -226,7 +226,7 @@ LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void)
 
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
-# if (!defined(__BLAS) || (0 != __BLAS))
+# if (0 != LIBXSMM_BLAS)
   LIBXSMM_BLAS_WRAPPER(1, float, gemm, libxsmm_original_sgemm_function, libxsmm_original_sgemm/*self*/);
 # else
   LIBXSMM_BLAS_WRAPPER(0, float, gemm, libxsmm_original_sgemm_function, libxsmm_original_sgemm/*self*/);
@@ -237,7 +237,7 @@ LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void)
 
 LIBXSMM_API_EXPORT libxsmm_dgemv_function libxsmm_original_dgemv(void)
 {
-# if (!defined(__BLAS) || (0 != __BLAS))
+# if (0 != LIBXSMM_BLAS)
   LIBXSMM_BLAS_WRAPPER(1, double, gemv, libxsmm_original_dgemv_function, libxsmm_original_dgemv/*self*/);
 # else
   LIBXSMM_BLAS_WRAPPER(0, double, gemv, libxsmm_original_dgemv_function, libxsmm_original_dgemv/*self*/);
@@ -248,7 +248,7 @@ LIBXSMM_API_EXPORT libxsmm_dgemv_function libxsmm_original_dgemv(void)
 
 LIBXSMM_API_EXPORT libxsmm_sgemv_function libxsmm_original_sgemv(void)
 {
-# if (!defined(__BLAS) || (0 != __BLAS))
+# if (0 != LIBXSMM_BLAS)
   LIBXSMM_BLAS_WRAPPER(1, float, gemv, libxsmm_original_sgemv_function, libxsmm_original_sgemv/*self*/);
 # else
   LIBXSMM_BLAS_WRAPPER(0, float, gemv, libxsmm_original_sgemv_function, libxsmm_original_sgemv/*self*/);
@@ -343,7 +343,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       || ((unsigned int)*m) != libxsmm_mmbatch_desc.m
       || ((unsigned int)*n) != libxsmm_mmbatch_desc.n
       || ((unsigned int)*k) != libxsmm_mmbatch_desc.k
-      || (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)) != (LIBXSMM_GEMM_FLAG_TRANS_AB & libxsmm_mmbatch_desc.flags)
+      || (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)) != (int)(LIBXSMM_GEMM_FLAG_TRANS_AB & libxsmm_mmbatch_desc.flags)
       || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_mmbatch_desc.flags) ? 0 : */1, *alpha)
       || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta)))
 #endif
@@ -480,7 +480,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       || ((unsigned int)*m) != libxsmm_mmbatch_desc.m
       || ((unsigned int)*n) != libxsmm_mmbatch_desc.n
       || ((unsigned int)*k) != libxsmm_mmbatch_desc.k
-      || (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)) != (LIBXSMM_GEMM_FLAG_TRANS_AB & libxsmm_mmbatch_desc.flags)
+      || (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)) != (int)(LIBXSMM_GEMM_FLAG_TRANS_AB & libxsmm_mmbatch_desc.flags)
       || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_mmbatch_desc.flags) ? 0 : */1, *alpha)
       || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta)))
 #endif

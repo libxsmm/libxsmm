@@ -645,12 +645,7 @@ LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefa
 }
 
 
-LIBXSMM_API_INTERN
-#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-void internal_init(void);
-
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE void internal_init(void);
 LIBXSMM_API_INTERN void internal_init(void)
 {
   int i;
@@ -945,12 +940,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 }
 
 
-LIBXSMM_API
-#if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-void libxsmm_finalize(void);
-
+LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE void libxsmm_finalize(void);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 {
   void *const regaddr = &internal_registry;
@@ -1084,7 +1074,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 
 LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC)
 {
-  /* does nothing else but sink the given arguments */
+  /* does nothing else but sinking given arguments */
 }
 
 
