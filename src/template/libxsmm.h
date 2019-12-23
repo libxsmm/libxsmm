@@ -114,10 +114,6 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_b
 LIBXSMM_API libxsmm_wimmfunction libxsmm_wimmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision, fp32-accumulate) */
-LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch);
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (bf16 inputs, fp32-accumulate) */
 LIBXSMM_API libxsmm_bsmmfunction libxsmm_bsmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
@@ -431,12 +427,6 @@ LIBXSMM_API void libxsmm_wigemm(const char* transa, const char* transb,
   const int* alpha, const short* a, const libxsmm_blasint* lda,
   const short* b, const libxsmm_blasint* ldb,
   const int* beta, int* c, const libxsmm_blasint* ldc);
-/** Dispatched general dense matrix multiplication (I16 input, F32 result). */
-LIBXSMM_API void libxsmm_wsgemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const short* a, const libxsmm_blasint* lda,
-  const short* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc);
 /** Dispatched general dense matrix multiplication (BF16 input, F32 result). */
 LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -702,24 +692,6 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
    const int* beta,         int* c, const libxsmm_blasint* ldc)
 {
   libxsmm_wigemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-/** Dispatched general dense matrix multiplication (low-precision). */
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const short* a, const libxsmm_blasint* lda,
-                      const short* b, const libxsmm_blasint* ldb,
-   const float* beta,       float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_wsgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const float* alpha, const short* a, const libxsmm_blasint* lda,
-                      const short* b, const libxsmm_blasint* ldb,
-   const float* beta,       float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_wsgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** Dispatched general dense matrix multiplication (low-precision). */
