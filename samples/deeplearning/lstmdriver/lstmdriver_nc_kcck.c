@@ -522,9 +522,6 @@ int main(int argc, char* argv[])
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, K * N), &K, hgoldTp, &N, &beta, djdrogold, &K);
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, K * N), &K, hgoldTp, &N, &beta, djdrcgold, &K);
 
-#if defined(_OPENMP)
-#     pragma omp parallel for private(l)
-#endif
         /* compute djdbgold */
         for (l = 0; l < K*N; l++) {
           djdbigold[l%K] += LIBXSMM_VLA_ACCESS(2, djdigold, j, l, K * N);
