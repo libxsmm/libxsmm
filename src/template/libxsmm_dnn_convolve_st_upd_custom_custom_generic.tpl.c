@@ -20,7 +20,7 @@ element_output_type *const out = (element_output_type*)handle->grad_output->data
 LIBXSMM_VLA_DECL(5, const element_output_type, output, (const element_output_type*)out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 LIBXSMM_VLA_DECL(5, const element_input_type, input, (const element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, element_filter_type, weight_global, (element_filter_type*)handle->grad_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-element_filter_type *weight_ptr = (element_filter_type*)handle->scratch7 + ltid * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
+element_filter_type *weight_ptr = (handle->weight_copies == 1) ? (element_filter_type*)handle->grad_filter->data : (element_filter_type*)handle->scratch7 + ltid * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
 LIBXSMM_VLA_DECL(6, element_filter_type, weight_private, (element_filter_type*)weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 int prefetch_mode = (handle->desc.u == 2 || (handle->desc.R == 3 && handle->ofw == 7) ) ? libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE) : libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BL1);
 
