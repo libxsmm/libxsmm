@@ -486,8 +486,18 @@ unsigned int libxsmm_generator_gemm_avx512_fsdbcst_get_max_n_blocking( const lib
     return 28;
   }
 
+  /* handle KNM qvnni */
+  if ( ( i_arch == LIBXSMM_X86_AVX512_KNM ) && ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+    return 28;
+  }
+
   /* handle int16 on SKX */
   if ( ( i_arch == LIBXSMM_X86_AVX512_CORE ) && ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+    return 28;
+  }
+
+  /* handle int8 on all AVX512 */
+  if ( ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     return 28;
   }
 
