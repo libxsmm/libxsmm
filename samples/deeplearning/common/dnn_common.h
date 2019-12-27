@@ -2210,7 +2210,7 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
 
   LIBXSMM_VLA_DECL(5, const float, input,      input_ptr,      nG,  nFMG, ifh, ifw);
   LIBXSMM_VLA_DECL(5,       float, dinput,     dinput_ptr,     nG,  nFMG, ifh, ifw);
-  LIBXSMM_VLA_DECL(5, const float, output,     output_ptr,     nG,  nFMG, ofh, ofw);
+  /*LIBXSMM_VLA_DECL(5, const float, output,     output_ptr,     nG,  nFMG, ofh, ofw);*/
   LIBXSMM_VLA_DECL(5,       float, doutput,    doutput_ptr,    nG,  nFMG, ofh, ofw);
   LIBXSMM_UNUSED(beta_ptr);
 
