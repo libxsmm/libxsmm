@@ -46,7 +46,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom_f32_f32(libxsmm_dnn_f
     gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
   } else {
-    status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+    status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -77,7 +77,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom_bf16_f32(libxsmm_dnn_
 # include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32
   } else {
-    status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+    status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -106,7 +106,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_f32_f32(libxsmm_dn
     libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
   } else {
-    status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+    status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -160,7 +160,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom(li
        gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
       } else {
-        status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+        status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
       }
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef libxsmm_bfloat16 element_input_type;
@@ -179,7 +179,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom(li
 # include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32
       } else {
-        status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+        status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
       }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -229,7 +229,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck
         libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
       } else {
-        status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+        status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
       }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
