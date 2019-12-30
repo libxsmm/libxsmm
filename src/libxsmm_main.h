@@ -457,6 +457,31 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm {
   void* scratch;
 };
 
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedgroupnorm {
+  libxsmm_dnn_fusedgroupnorm_desc desc;
+  libxsmm_dnn_tensor* reg_input;      /* input tensor */
+  libxsmm_dnn_tensor* reg_output;     /* output tensor */
+  libxsmm_dnn_tensor* grad_input;     /* grad input tensor */
+  libxsmm_dnn_tensor* grad_output;    /* grad output tensor */
+  libxsmm_dnn_tensor* reg_add;        /* elementwise tensor */
+  libxsmm_dnn_tensor* grad_add;       /* grad elementwise tensor */
+  libxsmm_dnn_tensor* reg_beta;       /* beta tensor */
+  libxsmm_dnn_tensor* reg_gamma;      /* gamma tensor */
+  libxsmm_dnn_tensor* grad_beta;      /* grad beta tensor */
+  libxsmm_dnn_tensor* grad_gamma;     /* grad gamma tensor */
+  libxsmm_dnn_tensor* expvalue;       /* expected value */
+  libxsmm_dnn_tensor* rcpstddev;      /* reciprocal of standard derivation */
+  libxsmm_dnn_tensor* variance;       /* variance */
+  libxsmm_dnn_tensor* relumask;       /* relumask */
+  libxsmm_barrier* barrier;           /* barrier */
+  int ifmblock;
+  int ofmblock;
+  int blocksifm;
+  int blocksofm;
+  size_t scratch_size;
+  void* scratch;
+};
+
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_dnn_fullyconnected_desc desc;
   libxsmm_dnn_tensor* reg_input;      /* input tensor */

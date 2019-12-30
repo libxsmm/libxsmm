@@ -395,6 +395,47 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm_
   libxsmm_dnn_fusedbatchnorm_fuse_op fuse_ops;      /* used ops into convolutions */
 } libxsmm_dnn_fusedbatchnorm_desc;
 
+typedef enum libxsmm_dnn_fusedgroupnorm_fuse_order {
+  /* the fuse order is: 1. BN, 2. element-wise 3. RELU */
+  LIBXSMM_DNN_FUSEDGN_ORDER_GN_ELTWISE_RELU = 0
+} libxsmm_dnn_fusedgroupnorm_fuse_order;
+
+typedef enum libxsmm_dnn_fusedgroupnorm_fuse_op {
+  /* the fuse order is: 1. GN, 2. element-wise 3. RELU */
+  LIBXSMM_DNN_FUSEDGN_OPS_GN = 1,
+  LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE = 2,
+  LIBXSMM_DNN_FUSEDGN_OPS_RELU = 4,
+  LIBXSMM_DNN_FUSEDGN_OPS_RELU_WITH_MASK = 8,
+  LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE_RELU = LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDGN_OPS_RELU,
+  LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDGN_OPS_RELU,
+  LIBXSMM_DNN_FUSEDGN_OPS_GN_ELTWISE = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE,
+  LIBXSMM_DNN_FUSEDGN_OPS_GN_RELU = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_RELU,
+  LIBXSMM_DNN_FUSEDGN_OPS_GN_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_RELU_WITH_MASK,
+  LIBXSMM_DNN_FUSEDGN_OPS_GN_ELTWISE_RELU = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDGN_OPS_RELU,
+  LIBXSMM_DNN_FUSEDGN_OPS_GN_ELTWISE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDGN_OPS_RELU_WITH_MASK
+} libxsmm_dnn_fusedgroupnorm_fuse_op;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedgroupnorm_desc {
+  int N;                                     /* number of images in mini-batch */
+  int G;                                     /* groups of channels to norm */
+  int C;                                     /* number of input feature maps */
+  int H;                                     /* height of input image */
+  int W;                                     /* width of input image */
+  int u;                                     /* vertical stride */
+  int v;                                     /* horizontal stride */
+  int pad_h_in;                              /* height of physical zero-padding in input buffer */
+  int pad_w_in;                              /* width of physical zero-padding in input buffer */
+  int pad_h_out;                             /* height of physical zero-padding in output buffer */
+  int pad_w_out;                             /* width of physical zero-padding in output buffer */
+  int threads;                               /* number of threads used */
+  libxsmm_dnn_datatype datatype_in;          /* datatype used for all input related buffers */
+  libxsmm_dnn_datatype datatype_out;         /* datatype used for all output related buffers */
+  libxsmm_dnn_datatype datatype_stats;       /* datatype used for all stats related buffers */
+  libxsmm_dnn_tensor_format buffer_format;   /* format which is for activation buffers */
+  libxsmm_dnn_fusedgroupnorm_fuse_order fuse_order; /* additional options */
+  libxsmm_dnn_fusedgroupnorm_fuse_op fuse_ops;      /* used ops into convolutions */
+} libxsmm_dnn_fusedgroupnorm_desc;
+
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */

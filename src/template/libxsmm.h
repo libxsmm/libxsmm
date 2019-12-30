@@ -36,6 +36,7 @@
 #include "libxsmm_dnn_convolution.h"
 #include "libxsmm_dnn_fullyconnected.h"
 #include "libxsmm_dnn_fusedbatchnorm.h"
+#include "libxsmm_dnn_fusedgroupnorm.h"
 #include "libxsmm_dnn_pooling.h"
 #include "libxsmm_dnn_rnncell.h"
 #include "libxsmm_generator.h"
