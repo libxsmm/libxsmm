@@ -30,8 +30,8 @@ else
   ITERS=$2
   NUMA=$3
   BIN=$4
-  FUSE=$6
-  PASS=$7
+  FUSE=$5
+  PASS=$6
 fi
 
 if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then

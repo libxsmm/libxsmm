@@ -173,7 +173,7 @@ for ( img = thr_begin; img < thr_end; ++img ) {
           del_input_add_ptr[v] = del_output_ptr[v];
 #endif
           input_f32.i[1] = input_ptr[v];
-          lcl_gamma_ptr[v] += (input_f32.f - bmean_ptr[v]) * del_output_f32.f * brstd_ptr[v];
+          lcl_gamma_ptr[v] += (input_f32.f - bmean_ptr[g]) * del_output_f32.f * brstd_ptr[g];
           lcl_beta_ptr[v]  += del_output_f32.f;
           d1_val_img_ptr[g] += (input_f32.f - bmean_ptr[g]) * del_output_f32.f * brstd_ptr[g];
           d2_val_img_ptr[g] +=  del_output_f32.f;
@@ -206,7 +206,7 @@ for ( img = thr_begin; img < thr_end; ++img ) {
   for ( fm = 0; fm < nBlocksFm; ++fm ) {
     for ( hi=iph, ho=oph; hi < (ifh + iph); hi+=sh, ho++ ) {
       for ( wi=ipw, wo=opw; wi < (ifw + ipw); wi+=sw, wo++ ) {
-        element_input_type*  del_input_ptr     = &LIBXSMM_VLA_ACCESS(5,     dinput, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
+              element_input_type*  del_input_ptr     = &LIBXSMM_VLA_ACCESS(5,     dinput, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
         const element_input_type*  input_ptr         = &LIBXSMM_VLA_ACCESS(5,      input, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
         const element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
         const element_stats_type*  bmean_ptr         = &LIBXSMM_VLA_ACCESS(2, bmean,     img, 0, nG);

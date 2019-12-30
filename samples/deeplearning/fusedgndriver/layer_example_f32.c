@@ -310,6 +310,7 @@ int main(int argc, char* argv[])
       /* shouldn't happen */
       return -1;
     }
+    printf("fuse type is: %i\n", fuse_type);
 
     libxsmm_handle = libxsmm_dnn_create_fusedgroupnorm( fusedgroupnorm_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
