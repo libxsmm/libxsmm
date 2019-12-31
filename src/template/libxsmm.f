@@ -229,31 +229,30 @@
           MODULE PROCEDURE libxsmm_release_dmmkernel
           MODULE PROCEDURE libxsmm_release_smmkernel
           MODULE PROCEDURE libxsmm_release_wimmkernel
-          MODULE PROCEDURE libxsmm_release_wsmmkernel
         END INTERFACE
 
         ! Construct JIT-code depending on given argument set.
         INTERFACE libxsmm_mmdispatch
           MODULE PROCEDURE libxsmm_dmmdispatch, libxsmm_smmdispatch
-          MODULE PROCEDURE libxsmm_wimmdispatch, libxsmm_wsmmdispatch
+          MODULE PROCEDURE libxsmm_wimmdispatch
         END INTERFACE
 
         ! Construct JIT-code depending on given argument set.
         INTERFACE libxsmm_dispatch
           MODULE PROCEDURE libxsmm_dmmdispatch, libxsmm_smmdispatch
-          MODULE PROCEDURE libxsmm_wimmdispatch, libxsmm_wsmmdispatch
+          MODULE PROCEDURE libxsmm_wimmdispatch
         END INTERFACE
 
         ! Check if a function is available (LIBXSMM_?MMFUNCTION).
         INTERFACE libxsmm_mmavailable
           MODULE PROCEDURE libxsmm_dmmavailable, libxsmm_smmavailable
-          MODULE PROCEDURE libxsmm_wimmavailable, libxsmm_wsmmavailable
+          MODULE PROCEDURE libxsmm_wimmavailable
         END INTERFACE
 
         ! Check if a function is available (LIBXSMM_?MMFUNCTION).
         INTERFACE libxsmm_available
           MODULE PROCEDURE libxsmm_smmavailable, libxsmm_dmmavailable
-          MODULE PROCEDURE libxsmm_wimmavailable, libxsmm_wsmmavailable
+          MODULE PROCEDURE libxsmm_wimmavailable
         END INTERFACE
 
         ! Call a specialized function.
@@ -283,13 +282,6 @@
           MODULE PROCEDURE libxsmm_wigemm2
         END INTERFACE
 
-        ! Overloaded GEMM routines (low precision).
-        INTERFACE libxsmm_wsgemm
-          MODULE PROCEDURE libxsmm_wsgemm0
-          MODULE PROCEDURE libxsmm_wsgemm1
-          MODULE PROCEDURE libxsmm_wsgemm2
-        END INTERFACE
-
         ! Overloaded GEMM routines.
         INTERFACE libxsmm_gemm
           MODULE PROCEDURE libxsmm_dgemm0
@@ -301,9 +293,6 @@
           MODULE PROCEDURE libxsmm_wigemm0
           MODULE PROCEDURE libxsmm_wigemm1
           MODULE PROCEDURE libxsmm_wigemm2
-          MODULE PROCEDURE libxsmm_wsgemm0
-          MODULE PROCEDURE libxsmm_wsgemm1
-          MODULE PROCEDURE libxsmm_wsgemm2
         END INTERFACE
 
         ! Overloaded BLAS GEMM routines (double precision).
@@ -1004,12 +993,6 @@
           CALL libxsmm_release_kernel(kernel%handle)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_wsmmkernel
-        SUBROUTINE libxsmm_release_wsmmkernel(kernel)
-          TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
-          CALL libxsmm_release_kernel(kernel%handle)
-        END SUBROUTINE
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmdispatch
         SUBROUTINE libxsmm_dmmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
@@ -1058,22 +1041,6 @@
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmdispatch
-        SUBROUTINE libxsmm_wsmmdispatch(kernel,                         &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          TYPE(LIBXSMM_WSMMFUNCTION), INTENT(OUT) :: kernel
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
-     &                                OPTIONAL, TARGET :: lda, ldb, ldc
-          REAL(C_FLOAT),  INTENT(IN), OPTIONAL, TARGET :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
-          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
-          CALL libxsmm_xmmdispatch2(kernel%handle,                      &
-     &      LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_F32,     &
-     &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
-     &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
-        END SUBROUTINE
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
         LOGICAL FUNCTION libxsmm_dmmavailable(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
@@ -1090,12 +1057,6 @@
         LOGICAL FUNCTION libxsmm_wimmavailable(kernel)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_wimmavailable = C_ASSOCIATED(kernel%handle)
-        END FUNCTION
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmavailable
-        LOGICAL FUNCTION libxsmm_wsmmavailable(kernel)
-          TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
-          libxsmm_wsmmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall
@@ -1152,24 +1113,6 @@
           END IF
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmcall
-        SUBROUTINE libxsmm_wsmmcall(kernel, a,b,c, pa,pb,pc)
-          TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
-          INTEGER(C_SHORT), INTENT(IN), TARGET :: a(*), b(*)
-          REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(*)
-          INTEGER(C_SHORT), INTENT(IN), OPTIONAL, TARGET :: pa(*)
-          INTEGER(C_SHORT), INTENT(IN), OPTIONAL, TARGET :: pb(*)
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pc(*)
-          IF (PRESENT(pa).AND.PRESENT(pb).AND.PRESENT(pc)) THEN
-            CALL libxsmm_xmmcall_prf(kernel%handle,                     &
-     &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
-     &        C_LOC(pa), C_LOC(pb), C_LOC(pc))
-          ELSE
-            CALL libxsmm_xmmcall_abc(kernel%handle,                     &
-     &        C_LOC(a), C_LOC(b), C_LOC(c))
-          END IF
-        END SUBROUTINE
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
         SUBROUTINE libxsmm_dmmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
@@ -1191,13 +1134,6 @@
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmcall_abc
-        SUBROUTINE libxsmm_wsmmcall_abc(kernel, a, b, c)
-          TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
-          TYPE(C_PTR), INTENT(IN) :: a, b, c
-          CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
-        END SUBROUTINE
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prf
         SUBROUTINE libxsmm_dmmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
@@ -1215,13 +1151,6 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall_prf
         SUBROUTINE libxsmm_wimmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
-          TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmcall_prf
-        SUBROUTINE libxsmm_wsmmcall_prf(kernel, a,b,c, pa,pb,pc)
-          TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
@@ -1427,75 +1356,6 @@
           INTEGER(C_INT), INTENT(INOUT) :: c(:,:)
           IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
             CALL libxsmm_wigemm0(transa, transb, m, n, k,               &
-     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
-     &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
-     &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
-          END IF
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm0
-        PURE SUBROUTINE libxsmm_wsgemm0(transa, transb, m, n, k,        &
-     &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_SHORT), INTENT(IN) :: a, b
-          REAL(C_FLOAT), INTENT(INOUT) :: c
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
-          INTERFACE
-            PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
-     &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
-     &      BIND(C, NAME="libxsmm_wsgemm_")
-              IMPORT C_CHAR, C_SHORT, C_FLOAT, LIBXSMM_BLASINT_KIND
-              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldb
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldc
-              REAL(C_FLOAT), INTENT(IN) :: alpha, beta
-              INTEGER(C_SHORT), INTENT(IN) :: a, b
-              REAL(C_FLOAT), INTENT(INOUT) :: c
-            END SUBROUTINE
-          END INTERFACE
-          CALL internal_gemm(transa, transb, m, n, k,                   &
-     &      alpha, a, lda, b, ldb, beta, c, ldc)
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm1
-        PURE SUBROUTINE libxsmm_wsgemm1(transa, transb, m, n, k,        &
-     &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_SHORT), INTENT(IN) :: a(:), b(:)
-          REAL(C_FLOAT), INTENT(INOUT) :: c(:)
-          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
-            CALL libxsmm_wsgemm0(transa, transb, m, n, k,               &
-     &        alpha, a(LBOUND(a,1)), lda,                               &
-     &               b(LBOUND(b,1)), ldb,                               &
-     &         beta, c(LBOUND(c,1)), ldc)
-          END IF
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm2
-        PURE SUBROUTINE libxsmm_wsgemm2(transa, transb, m, n, k,        &
-     &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_SHORT), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
-            CALL libxsmm_wsgemm0(transa, transb, m, n, k,               &
      &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
      &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
      &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)

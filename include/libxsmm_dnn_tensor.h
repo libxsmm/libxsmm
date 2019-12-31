@@ -45,6 +45,8 @@ typedef enum libxsmm_dnn_tensor_dimtype {
   LIBXSMM_DNN_TENSOR_DIMTYPE_S,
   /** sequence lenth counter */
   LIBXSMM_DNN_TENSOR_DIMTYPE_T,
+  /** channle group counter */
+  LIBXSMM_DNN_TENSOR_DIMTYPE_G,
   /** general counter */
   LIBXSMM_DNN_TENSOR_DIMTYPE_X
 } libxsmm_dnn_tensor_dimtype;

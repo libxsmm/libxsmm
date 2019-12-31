@@ -16,14 +16,13 @@ else # check
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1; fi
 fi
 
-if [ $# -ne 7 ]
+if [ $# -ne 6 ]
 then
-  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) NORM (0,1) FUSE (0,1,2,3) PASS ('A'-ALL/'F'-FP/'B'-BP); using default values; using default values: 64 1000 1 f32 0 0 A"
+  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) FUSE (0,1,2,3) PASS ('A'-ALL/'F'-FP/'B'-BP); using default values; using default values: 64 1000 1 f32 0 A"
   MB=${CHECK_DNN_MB}
   ITERS=${CHECK_DNN_ITERS}
   NUMA=-1
   BIN=f32
-  NORM=0
   FUSE=0
   PASS="A"
 else
@@ -31,9 +30,8 @@ else
   ITERS=$2
   NUMA=$3
   BIN=$4
-  NORM=$5
-  FUSE=$6
-  PASS=$7
+  FUSE=$5
+  PASS=$6
 fi
 
 if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
@@ -88,24 +86,24 @@ fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nG padw_in padh_in padw_out padh_out stride norm fuse pass
 #
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  112 112 ${MB}   64 32 3 3 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  256 32 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}   64 32 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}   64 32 1 1 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}   64 32 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  512 32 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  128 32 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128 32 1 1 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  512 32 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128 32 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB} 1024 32 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256 32 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256 32 1 1 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB} 1024 32 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256 32 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB} 2048 32 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512 32 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512 32 1 1 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 2048 32 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512 32 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  112 112 ${MB}   64 32 3 3 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  256 32 0 0 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}   64 32 0 0 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}   64 32 1 1 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}   64 32 0 0 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  512 32 0 0 0 0 2 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  128 32 0 0 0 0 2 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128 32 1 1 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  512 32 0 0 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128 32 0 0 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB} 1024 32 0 0 0 0 2 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256 32 0 0 0 0 2 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256 32 1 1 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB} 1024 32 0 0 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256 32 0 0 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB} 2048 32 0 0 0 0 2 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512 32 0 0 0 0 2 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512 32 1 1 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 2048 32 0 0 0 0 1 ${FUSE} ${PASS}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512 32 0 0 0 0 1 ${FUSE} ${PASS}
 

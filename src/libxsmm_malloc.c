@@ -2060,7 +2060,6 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         LIBXSMM_ASSERT(0 < alloc_alignment);
         /* former content must be preserved prior to setup of buffer_info */
         if (NULL != *memory) { /* preserve/copy previous content */
-          LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_REALLOC & flags));
           /* content behind foreign pointers is not explicitly preserved; buffers may overlap */
           memmove(aligned, *memory, LIBXSMM_MIN(max_preserve, size));
           if (NULL != info /* known allocation (non-foreign pointer) */

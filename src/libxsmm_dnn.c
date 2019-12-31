@@ -113,9 +113,9 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: failed to create internal layout arrays!";
     case LIBXSMM_DNN_ERR_NOT_IMPLEMENTED:
       return "LIBXSMM DNN Error: the requested functionality is right now not implemented!";
-    case LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_ORDER:
+    case LIBXSMM_DNN_ERR_FUSEDBN_UNSUPPORTED_ORDER:
       return "LIBXSMM DNN Error: the requested order of fusion in batch norm is right now not implemented!";
-    case LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION:
+    case LIBXSMM_DNN_ERR_FUSEDBN_UNSUPPORTED_FUSION:
       return "LIBXSMM DNN Error: the requested fusion in batch norm is right now not implemented!";
     case LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN:
       return "LIBXSMM DNN Error: Unsupported format when requesting a fused batch norm!";
@@ -125,6 +125,12 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Unsupported format when requesting a fullyconnected layer!";
     case LIBXSMM_DNN_ERR_RNN_INVALID_SEQ_LEN:
       return "LIBXSMM DNN Error: max sequence length is shorter than sequence length we attempt to set!";
+    case LIBXSMM_DNN_ERR_FUSEDGN_UNSUPPORTED_ORDER:
+      return "LIBXSMM DNN Error: the requested order of fusion in group norm is right now not implemented!";
+    case LIBXSMM_DNN_ERR_FUSEDGN_UNSUPPORTED_FUSION:
+      return "LIBXSMM DNN Error: the requested fusion in group norm is right now not implemented!";
+    case LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION:
+      return "LIBXSMM DNN Error: the requested fusion in fullyconnected is right now not implemented!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occurred!";
   }

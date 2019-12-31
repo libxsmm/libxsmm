@@ -240,20 +240,20 @@
 #     if !defined(LIBXSMM_INTRINSICS_DEBUG)
 #       include <immintrin.h>
 #     endif
-#   elif (defined(__GNUC__)  && LIBXSMM_VERSION2( 4, 9) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
-     && (!defined(__PGI)     || LIBXSMM_VERSION2(19, 0) <= LIBXSMM_VERSION2(__PGIC__, __PGIC_MINOR__)) \
-     && (!defined(__clang__) || LIBXSMM_VERSION2( 4, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)) \
-     && (!defined(__APPLE__) || !defined(__MACH__)) /* TODO */
+#   elif ((defined(__GNUC__)  && LIBXSMM_VERSION2( 4, 9) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) || defined(_MSC_VER)) \
+      && (!defined(__PGI)     || LIBXSMM_VERSION2(19, 0) <= LIBXSMM_VERSION2(__PGIC__, __PGIC_MINOR__)) \
+      && (!defined(__clang__) || LIBXSMM_VERSION2( 4, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)) \
+      && (!defined(__APPLE__) || !defined(__MACH__)) /* TODO */
 #     if defined(__CYGWIN__) && !defined(LIBXSMM_INTRINSICS_DEBUG) /* Cygwin: invalid register for .seh_savexmm */
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     elif (defined(__GNUC__)  && LIBXSMM_VERSION2(10, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
-        || (defined(__clang__) && LIBXSMM_VERSION2( 9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
+        || (defined(__clang__) && LIBXSMM_VERSION2( 9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__) && !defined(_MSC_VER))
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
 #     elif (defined(__GNUC__)  && LIBXSMM_VERSION2(8, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
-        || (defined(__clang__) && LIBXSMM_VERSION2(6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
+        || (defined(__clang__) && LIBXSMM_VERSION2(6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__) && !defined(_MSC_VER))
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CLX
 #     elif (defined(__GNUC__) && LIBXSMM_VERSION2(5, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
-        || (defined(__clang__) && LIBXSMM_VERSION2(6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
+        || (defined(__clang__) && LIBXSMM_VERSION2(6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__) && !defined(_MSC_VER))
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
 #     else
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2

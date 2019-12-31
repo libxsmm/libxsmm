@@ -514,17 +514,9 @@ LIBXSMM_API void libxsmm_blocked_gemm_st(const libxsmm_blocked_gemm_handle* hand
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
 #       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB short
-        if (LIBXSMM_GEMM_PRECISION_I32 == handle->oprec) {
-#         define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C int
-#         include "template/libxsmm_blocked_gemm.tpl.c"
-#         undef LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C
-        }
-        else { /* WSMM */
-#         define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C float
-#         include "template/libxsmm_blocked_gemm.tpl.c"
-#         undef LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C
-          LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == handle->oprec);
-        }
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C  int
+#       include "template/libxsmm_blocked_gemm.tpl.c"
+#       undef LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C
 #       undef LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB
       } break;
       default: if (0 != libxsmm_verbosity /* library code is expected to be mute */
