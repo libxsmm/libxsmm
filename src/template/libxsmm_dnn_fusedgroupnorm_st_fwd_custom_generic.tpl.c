@@ -31,6 +31,9 @@ const int nBlocksFm = handle->blocksifm;
 const int nFmBlock = handle->ifmblock;
 /* derive channels per group */
 const int nFmG = (nBlocksFm * nFmBlock) / nG;
+/* size of sample */
+const element_stats_type ghw = (element_stats_type)(nFmG * ifh * ifw);
+const element_stats_type recp_ghw = 1.0f/ghw;
 
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -46,14 +49,10 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 /* eps to avoid sqrt of zero */
 const element_stats_type sqrt_eps = 1e-7f;
 
-/* size of sample */
-const element_stats_type ghw = (element_stats_type)(nFmG * ifh * ifw);
-const element_stats_type recp_ghw = 1.0f/ghw;
-
 /* loop variables */
 int img = 0;
 int fm = 0;
-int imgfm = 0;
+/*int imgfm = 0;*/
 int hi = 0;
 int wi = 0;
 int v = 0;
@@ -177,8 +176,6 @@ for ( img = thr_begin; img < thr_end; ++img ) {
 #endif
         const element_stats_type*  gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, nFmBlock);
         const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, nFmBlock);
-        const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     img, 0, nG);
-        const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     img, 0, nG);
               element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
 #if defined(LIBXSMM_DNN_FUSEDGN_FWD_ENABLE_RELU_WITH_MASK)
               unsigned char*       relumask_ptr  = &LIBXSMM_VLA_ACCESS(5, relumask,  img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
