@@ -182,10 +182,8 @@ for ( img = thr_begin; img < thr_end; ++img ) {
 #endif
         float o;
 
-#if 0
 #if !defined(LIBXSMM_DNN_FUSEDGN_FWD_BF16)
         LIBXSMM_PRAGMA_SIMD
-#endif
 #endif
         for (v = 0; v < nFmBlock; v++ ) {
           g = ((fm*nFmBlock)+v)/nFmG;
