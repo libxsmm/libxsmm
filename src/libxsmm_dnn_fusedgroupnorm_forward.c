@@ -412,7 +412,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedgroupnorm_st_fwd_custom(li
       if ( handle->desc.fuse_order != LIBXSMM_DNN_FUSEDGN_ORDER_GN_ELTWISE_RELU ) {
         status = LIBXSMM_DNN_ERR_FUSEDGN_UNSUPPORTED_ORDER;
       } else {
-        if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDGN_OPS_GN) ) {
+        if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDGN_OPS_GN ) {
 # include "template/libxsmm_dnn_fusedgroupnorm_st_fwd_custom_generic.tpl.c"
         } else if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE_RELU) == LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE_RELU ) {
 # define LIBXSMM_DNN_FUSEDGN_FWD_ENABLE_ELTWISE
@@ -451,7 +451,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedgroupnorm_st_fwd_custom(li
       if ( handle->desc.fuse_order != LIBXSMM_DNN_FUSEDGN_ORDER_GN_ELTWISE_RELU ) {
         status = LIBXSMM_DNN_ERR_FUSEDGN_UNSUPPORTED_ORDER;
       } else {
-        if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDGN_OPS_GN) ) {
+        if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDGN_OPS_GN ) {
 # include "template/libxsmm_dnn_fusedgroupnorm_st_fwd_custom_generic.tpl.c"
         } else if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE_RELU) == LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE_RELU ) {
 # define LIBXSMM_DNN_FUSEDGN_FWD_ENABLE_ELTWISE
