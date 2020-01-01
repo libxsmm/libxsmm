@@ -20,7 +20,7 @@ ABINEW=.abi.log
 ABITMP=.abi.tmp
 ABICUR=.abi.txt
 
-LIBARGS="--defined-only"
+#LIBARGS="--defined-only"
 if [ -e "${LIBS}"/${INCLUDE}.so ]; then
   LIBARGS="${LIBARGS} -D"
   LIBTYPE=so
