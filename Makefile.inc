@@ -1637,17 +1637,17 @@ ifeq (0,$(COMPATIBLE))
   endif
   endif
   ifneq (,$(filter 1 2,$(patsubst O%,%,$(OPT))))
-  ifeq (0,$(PGI))
   ifneq (,$(CTARGET))
-    ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
+    ifeq (,$(filter-out 0,$(PGI)))
       CXXFLAGS += -funroll-loops
       CFLAGS += -funroll-loops
       FCFLAGS += -funroll-loops
     endif
-    CXXFLAGS += -ftree-vectorize
-    CFLAGS += -ftree-vectorize
-    FCFLAGS += -ftree-vectorize
-  endif
+    ifeq (,$(filter-out 0,$(PGI) $(INTEL)))
+      CXXFLAGS += -ftree-vectorize
+      CFLAGS += -ftree-vectorize
+      FCFLAGS += -ftree-vectorize
+    endif
   endif
   endif
   ifneq (Darwin,$(UNAME))
