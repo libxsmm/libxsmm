@@ -14,7 +14,7 @@
 #include "libxsmm_macros.h"
 
 #if defined(__clang_analyzer__)
-# define LIBXSMM_MEMSET127(PTRDST, VALUE, SIZE) memset(PTRDST, VALUE, SIZE)
+# define LIBXSMM_MEMSET127(PTRDST, VALUE, SIZE) memset((void*)(PTRDST), VALUE, SIZE)
 #else
 # define LIBXSMM_MEMSET127(PTRDST, VALUE, SIZE) { \
   char *const libxsmm_memset127_dst_ = (char*)(PTRDST); \
