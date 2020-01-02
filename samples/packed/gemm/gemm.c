@@ -70,17 +70,17 @@ void dcopy_to_temp ( int layout, double *A, int lda, int m, int n, double *Atemp
     if ( layout == 102 )
     {
        /* printf("Column major\n"); */
-       for ( j = 0 ; j < n ; j++ )
+       for ( j = 0; j < n; j++ )
        {
-          for ( i = 0 ; i < m ; i++ )
+          for ( i = 0; i < m; i++ )
           {
              Atemp[i+j*m] = A[i*VLEN+j*lda*VLEN];
           }
        }
 #if EVENTUALLY_USE_THIS_LOOP_IT_SHOULD_BE_FASTER
-       for ( j = 0 ; j < n ; j++ )
+       for ( j = 0; j < n; j++ )
        {
-          for ( i = 0, ia = 0 ; i < m ; i++, ia+=VLEN )
+          for ( i = 0, ia = 0; i < m; i++, ia+=VLEN )
           {
              Atemp[i+j*m] = A[ ia+j*lda*VLEN ];
           }
@@ -88,9 +88,9 @@ void dcopy_to_temp ( int layout, double *A, int lda, int m, int n, double *Atemp
 #endif
     } else {
        /* printf("Row major\n"); */
-       for ( j = 0 ; j < n ; j++ )
+       for ( j = 0; j < n; j++ )
        {
-          for ( i = 0 ; i < m ; i++ )
+          for ( i = 0; i < m; i++ )
           {
              /* Transpose the data */
              Atemp[i+j*m] = A[j*VLEN+i*lda*VLEN];
@@ -113,18 +113,18 @@ void scopy_to_temp ( int layout, float *A, int lda, int m, int n, float *Atemp,
     if ( layout == 102 )
     {
        /* printf("Column major\n"); */
-       for ( j = 0 ; j < n ; j++ )
+       for ( j = 0; j < n; j++ )
        {
-          for ( i = 0 ; i < m ; i++ )
+          for ( i = 0; i < m; i++ )
           {
              Atemp[i+j*m] = A[i*VLEN+j*lda*VLEN];
           }
        }
     } else {
        /* printf("Row major\n"); */
-       for ( j = 0 ; j < n ; j++ )
+       for ( j = 0; j < n; j++ )
        {
-          for ( i = 0 ; i < m ; i++ )
+          for ( i = 0; i < m; i++ )
           {
              /* Transpose the data */
              Atemp[i+j*m] = A[j*VLEN+i*lda*VLEN];
@@ -145,17 +145,17 @@ void dcopy_from_temp ( int layout, double *A, int lda, int m, int n, double *Ate
     }
     if ( layout == 102 )
     {
-       for ( j = 0 ; j < n ; j++ )
+       for ( j = 0; j < n; j++ )
        {
-          for ( i = 0, ia = 0 ; i < m ; i++, ia+=VLEN )
+          for ( i = 0, ia = 0; i < m; i++, ia+=VLEN )
           {
              A[ia+j*lda*VLEN] = Atemp[i+j*m];
           }
        }
     } else {
-       for ( j = 0 ; j < n ; j++ )
+       for ( j = 0; j < n; j++ )
        {
-          for ( i = 0 ; i < m ; i++ )
+          for ( i = 0; i < m; i++ )
           {
              /* Transpose the data */
              A[j*VLEN+i*lda*VLEN] = Atemp[i+j*m];
@@ -176,17 +176,17 @@ void scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp
     }
     if ( layout == 102 )
     {
-       for ( j = 0 ; j < n ; j++ )
+       for ( j = 0; j < n; j++ )
        {
-          for ( i = 0, ia = 0 ; i < m ; i++, ia+=VLEN )
+          for ( i = 0, ia = 0; i < m; i++, ia+=VLEN )
           {
              A[ia+j*lda*VLEN] = Atemp[i+j*m];
           }
        }
     } else {
-       for ( j = 0 ; j < n ; j++ )
+       for ( j = 0; j < n; j++ )
        {
-          for ( i = 0 ; i < m ; i++ )
+          for ( i = 0; i < m; i++ )
           {
              /* Transpose the data */
              A[j*VLEN+i*lda*VLEN] = Atemp[i+j*m];
@@ -218,9 +218,9 @@ void compact_dgemm_ ( unsigned int *layout, char *transa, char *transb,
 
     if ( ++ntimes < 3 ) printf("Inside reference compact_dgemm_()\n");
     if ( ++ntimes < 3 ) printf("layout=%d m/n/k=%d %d %d lda/b/c=%d %d %d nmat=%d VLEN=%d\n",*layout,*m,*n,*k,*lda,*ldb,*ldc,*nmat,*VLEN);
-    for ( i = 0, num = 0 ; i < (*nmat) ; i+= *VLEN, num++ )
+    for ( i = 0, num = 0; i < (*nmat); i+= *VLEN, num++ )
     {
-       for ( j = 0 ; j < *VLEN ; j++ )
+       for ( j = 0; j < *VLEN; j++ )
        {
            /* Unpack the data, call a reference DGEMM, repack the data */
            Ap = &A[j+num*(*lda)*(*k)*(*VLEN)];
@@ -260,9 +260,9 @@ void compact_sgemm_ ( char *transa, char *transb,
 
     if ( ++ntimes < 3 ) printf("Inside reference compact_sgemm_()\n");
     if ( ++ntimes < 3 ) printf("layout=%d m/n/k=%d %d %d lda/b/c=%d %d %d nmat=%d VLEN=%d\n",*layout,*m,*n,*k,*lda,*ldb,*ldc,*nmat,*VLEN);
-    for ( i = 0, num = 0 ; i < (*nmat) ; i+= *VLEN, num++ )
+    for ( i = 0, num = 0; i < (*nmat); i+= *VLEN, num++ )
     {
-       for ( j = 0 ; j < *VLEN ; j++ )
+       for ( j = 0; j < *VLEN; j++ )
        {
            /* Unpack the data, call a reference DGEMM, repack the data */
            Ap = &A[j+num*(*lda)*(*k)*(*VLEN)];
@@ -291,7 +291,7 @@ void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned in
      fprintf(stderr,"Error in dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
-  for ( j = 1 ; j <= n ; j++ )
+  for ( j = 1; j <= n; j++ )
   {
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
@@ -312,12 +312,12 @@ void dfill_identity ( double *matrix, unsigned int ld, unsigned int m, unsigned 
      fprintf(stderr,"Error in dfill_identity: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
-  for ( h = 0; h < (unsigned int)number_of_cases ; h++ ) {
+  for ( h = 0; h < (unsigned int)number_of_cases; h++ ) {
      ia = h*ld*n*VLEN;
-     for ( j = 1 ; j <= n ; j++ ) {
-        for ( i = 1 ; i <= ld; i++ ) {
+     for ( j = 1; j <= n; j++ ) {
+        for ( i = 1; i <= ld; i++ ) {
            if ( i == j ) dtmp = 1.0; else dtmp = 0.0;
-           for ( k = 0 ; k < (unsigned int)VLEN ; k++ ) matrix[ia++] = dtmp;
+           for ( k = 0; k < (unsigned int)VLEN; k++ ) matrix[ia++] = dtmp;
         }
      }
   }
@@ -334,7 +334,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
      fprintf(stderr,"Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
-  for ( j = 1 ; j <= n ; j++ )
+  for ( j = 1; j <= n; j++ )
   {
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
@@ -357,7 +357,7 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
    *nerrs = 0;
    *ncorr = 0;
    derror = 0.0;
-   for ( j = 1 ; j<= n; j++ )
+   for ( j = 1; j<= n; j++ )
    {
       for ( i = 1; i <= m; i++ )
       {
@@ -414,7 +414,7 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
    *nerrs = 0;
    *ncorr = 0;
    derror = 0.0;
-   for ( j = 1 ; j<= n; j++ )
+   for ( j = 1; j<= n; j++ )
    {
       for ( i = 1; i <= m; i++ )
       {
@@ -650,10 +650,10 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
   dfill_matrix ( dc, ldc, m, n*nmat );
 
 #ifndef NO_ACCURACY_CHECK
-  for ( i = 0 ; i < ldc*n*nmat ; i++ ) sd[i]=sc[i];
-  for ( i = 0 ; i < ldc*n*nmat ; i++ ) dd[i]=dc[i];
-  for ( i = 0 ; i < ldc*n*nmat ; i++ ) sc1[i]=sc[i];
-  for ( i = 0 ; i < ldc*n*nmat ; i++ ) dc1[i]=dc[i];
+  for ( i = 0; i < ldc*n*nmat; i++ ) sd[i]=sc[i];
+  for ( i = 0; i < ldc*n*nmat; i++ ) dd[i]=dc[i];
+  for ( i = 0; i < ldc*n*nmat; i++ ) sc1[i]=sc[i];
+  for ( i = 0; i < ldc*n*nmat; i++ ) dc1[i]=dc[i];
   printf("Pointing at the kernel now\n");
 #endif
 
@@ -680,7 +680,7 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
   fputs("\t.align 256\n",fp);
   fputs("\t.globl gemm_\n",fp);
   fputs("gemm_:\n",fp);
-  for (i = 0 ; i < 7000; i+=4 )
+  for (i = 0; i < 7000; i+=4 )
   {
      sprintf(buffer,".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cptr[i],cptr[i+1],cptr[i+2],cptr[i+3]);
      fputs(buffer,fp);
@@ -720,10 +720,10 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
 #endif
 
   timer = 0.0;
-  for ( j = 0 ; j < (int)ntest ; j++ )
+  for ( j = 0; j < (int)ntest; j++ )
   {
-  for ( i = 0 ; i < ldc*n*nmat ; i++ ) dc[i]=dc1[i];
-  for ( i = 0 , num = 0; i < (int)nmat ; i+= (int)VLEND, num++ )
+  for ( i = 0; i < ldc*n*nmat; i++ ) dc[i]=dc1[i];
+  for ( i = 0 , num = 0; i < (int)nmat; i+= (int)VLEND, num++ )
   {
      double *Ap = &da[num*lda*k*VLEND];
      double *Bp = &db[num*ldb*n*VLEND];
@@ -776,7 +776,7 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
 #ifdef TEST_SINGLE
   printf("Before r4 routine, initial C(1,1)=%g C[256]=%g\n",sc[0],sc[256]);
 
-  for ( i = 0 , num = 0; i < nmats ; i+= VLENS, num++ )
+  for ( i = 0 , num = 0; i < nmats; i+= VLENS, num++ )
   {
      float *Ap = &sa[num*lda*k*VLENS];
      float *Bp = &sb[num*ldb*n*VLENS];
@@ -791,9 +791,9 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
 #ifndef NO_ACCURACY_CHECK
   /* Call some reference code now on a copy of the B matrix (C) */
   double timer2 = 0.0;
-  for ( j = 0 ; j < (int)ntest ; j++ )
+  for ( j = 0; j < (int)ntest; j++ )
   {
-  for ( i = 0 ; i < ldc*n*nmat ; i++ ) dd[i]=dc1[i];
+  for ( i = 0; i < ldc*n*nmat; i++ ) dd[i]=dc1[i];
 #ifdef MKL_TIMER
   tmptimer = dsecnd_();
 #else
@@ -834,7 +834,7 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
 #endif
 
 #else
-  for ( j = 0, nerrs = 0 ; j < lda*n*nmat; j++ )
+  for ( j = 0, nerrs = 0; j < lda*n*nmat; j++ )
   {
      if ( isnan(dc[j]) || isinf(dc[j]) )
      {

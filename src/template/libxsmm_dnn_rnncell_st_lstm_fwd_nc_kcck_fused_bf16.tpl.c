@@ -32,7 +32,7 @@ do { \
   __m256i packed_result; \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=16 ) { \
-    packed_result = _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i]) ), 16 ) ) ; \
+    packed_result = _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i]) ), 16 ) ); \
     _mm256_storeu_si256((__m256i*)&dst[(__j*ld)+__i], packed_result); \
     } \
   } \
@@ -169,7 +169,7 @@ for (CB = 0; CB < BF; CB++) {
         eltwise_start = _rdtsc();
       }
 #endif
-      cps_ptr = &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K) ;
+      cps_ptr = &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K);
       /* Compute i, ci, f, o, cs, co and h */
 #if defined(LIBXSMM_RNN_CELL_AVX512)
       if (bk % 16 == 0 && bc % 16 == 0) {
@@ -340,7 +340,7 @@ for (j = 1; j < t; ++j) {
           eltwise_start = _rdtsc();
         }
 #endif
-        cps_ptr = &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K) ;
+        cps_ptr = &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K);
         /* Compute i, ci, f, o, cs, co and h */
 #if defined(LIBXSMM_RNN_CELL_AVX512)
         if (bk % 16 == 0 && bc % 16 == 0) {

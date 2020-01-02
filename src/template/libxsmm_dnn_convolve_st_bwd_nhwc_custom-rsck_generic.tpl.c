@@ -47,7 +47,7 @@ LIBXSMM_VLA_DECL(6, element_filter_type, wt, (element_filter_type*)handle->reg_f
 #endif
 LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->scratch1, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
 /* define weight pointer which has the correct format */
-element_filter_type* weight_base = ((handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) ? (element_filter_type*)handle->reg_filter_tr->data : (element_filter_type*)handle->scratch1 ;
+element_filter_type* weight_base = ((handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) ? (element_filter_type*)handle->reg_filter_tr->data : (element_filter_type*)handle->scratch1;
 LIBXSMM_VLA_DECL(6, const element_filter_type, weight, weight_base, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
 /* lazy barrier init */
@@ -335,7 +335,7 @@ if (handle->pack_input_bwd == 1) {
           } else {
             LIBXSMM_PRAGMA_SIMD
               for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-                LIBXSMM_VLA_ACCESS(5,  del_input_full, img, oj, oi, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock) = LIBXSMM_VLA_ACCESS(5, del_input, img, oj/handle->desc.u, oi/handle->desc.v, ifm1, ifm2, IFH, IFW, handle->blocksifm,handle->ifmblock) ;
+                LIBXSMM_VLA_ACCESS(5,  del_input_full, img, oj, oi, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock) = LIBXSMM_VLA_ACCESS(5, del_input, img, oj/handle->desc.u, oi/handle->desc.v, ifm1, ifm2, IFH, IFW, handle->blocksifm,handle->ifmblock);
               }
           }
         }

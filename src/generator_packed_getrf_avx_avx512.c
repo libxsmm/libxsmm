@@ -200,11 +200,11 @@ compact_store_matrix_gen_ ( io_code, tra, lda, 1, 1, onereg, numb, datasz, regse
 mn=0;
 #endif
 
-     for ( ii = 1 ; ii <= mn ; ii += nb ) {
+     for ( ii = 1; ii <= mn; ii += nb ) {
         bot = LIBXSMM_MIN(ii+nb-1,mn);
 
-        for ( j = ii ; j <= bot ; j++ ) {
-           for ( i = j+1 ; i <= m1 ; i++ ) {
+        for ( j = ii; j <= bot; j++ ) {
+           for ( i = j+1; i <= m1; i++ ) {
               if ( i == j+1 ) {
                  compact_load_matrix_gen_ ( io_code, tra, lda, j, j, a0, numb, datasz, regset, l_matrix_gpreg );
                  compact_divide_two_nums_ ( io_code, onereg, a0, a0, numb, regset );
@@ -213,7 +213,7 @@ mn=0;
               compact_mult_two_nums_ ( io_code, a0, a1, a1, numb, regset );
               fincol = bot;
               if ( i <= bot ) fincol = n1;
-              for ( k = j+1 ; k <= fincol; k++ ) {
+              for ( k = j+1; k <= fincol; k++ ) {
                  compact_load_matrix_gen_ ( io_code, tra, lda, i, k, a2, numb, datasz, regset, l_matrix_gpreg );
                  compact_load_matrix_gen_ ( io_code, tra, lda, j, k, b0, numb, datasz, regset, l_matrix_gpreg );
                  compact_fms_cminusab_ ( io_code, a2, a1, b0, numb, regset );
@@ -247,13 +247,12 @@ mn=0;
 #define DEBUG_GIVE_BYTE_CODE_OUTPUT
 #endif
 #ifdef DEBUG_GIVE_BYTE_CODE_OUTPUT
-   buf = (unsigned char *) io_code->generated_code;
-   printf("#Final Routine: \n");
-   for ( i = 0 ; i < io_code->code_size ; i+=8 )
-   {
-      printf("#\tBytes %d-%d\n",i,i+7);
-      printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
-   }
+  buf = (unsigned char *) io_code->generated_code;
+  printf("#Final Routine: \n");
+  for ( i = 0; i < io_code->code_size; i+=8 ) {
+    printf("#\tBytes %d-%d\n",i,i+7);
+    printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
+  }
 #endif
 
 }

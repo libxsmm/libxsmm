@@ -283,7 +283,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
         libxsmm_x86_instruction_register_jump_back_label( io_code, &l_loop_label_tracker );
      }
 
-     for ( j = bn1 ; j <= bn2 ; j+=jun ) {
+     for ( j = bn1; j <= bn2; j+=jun ) {
 #ifdef COMPACT_GEMMNN_DEBUG
         printf("Doing j loop from %d to %d with blocksize %d\n",bn1,bn2,jun);
 #endif
@@ -311,7 +311,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            libxsmm_x86_instruction_register_jump_back_label( io_code, &l_loop_label_tracker );
            mloopadj = 1;
         }
-        for ( i = am1; i <= am2 ; i+=iun ) {
+        for ( i = am1; i <= am2; i+=iun ) {
            if ( (  i  <= am2 ) && ( iun >= 1 ) ) i0 = 1; else i0 = 0;
            if ( ( i+1 <= am2 ) && ( iun >= 2 ) ) i1 = 1; else i1 = 0;
            if ( ( i+2 <= am2 ) && ( iun >= 3 ) ) i2 = 1; else i2 = 0;
@@ -418,7 +418,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            if (i7 && j6) compact_mult_two_nums_ ( io_code, a7, b6, c76, numb, regset );
            if (i7 && j7) compact_mult_two_nums_ ( io_code, a7, b7, c77, numb, regset );
 
-           for ( l = ak1+1 ; l <= ak2; l++ ) {
+           for ( l = ak1+1; l <= ak2; l++ ) {
 #ifdef COMPACT_GEMMNN_DEBUG
               printf("Doing l loop from %d to %d\n",ak1+1,ak2);
 #endif
@@ -506,18 +506,18 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
 
            } /* Inner loop */
            /* Storing into C, do it one column at a time and reuse some regs */
-           for ( l = j ; l <= LIBXSMM_MIN(j+jun-1,bn2); l++ ) {
+           for ( l = j; l <= LIBXSMM_MIN(j+jun-1,bn2); l++ ) {
 #ifdef COMPACT_GEMMNN_DEBUG
               printf("Doing j wrap-up storage from %d to %d\n",j,LIBXSMM_MIN(j+jun-1,bn2));
 #endif
-              if (l== j ) { c0=c00 ; c1=c10; c2=c20; c3=c30; c4=c40; c5=c50; c6=c60; c7=c70; }
-              if (l==j+1) { c0=c01 ; c1=c11; c2=c21; c3=c31; c4=c41; c5=c51; c6=c61; c7=c71; }
-              if (l==j+2) { c0=c02 ; c1=c12; c2=c22; c3=c32; c4=c42; c5=c52; c6=c62; c7=c72; }
-              if (l==j+3) { c0=c03 ; c1=c13; c2=c23; c3=c33; c4=c43; c5=c53; c6=c63; c7=c73; }
-              if (l==j+4) { c0=c04 ; c1=c14; c2=c24; c3=c34; c4=c44; c5=c54; c6=c64; c7=c74; }
-              if (l==j+5) { c0=c05 ; c1=c15; c2=c25; c3=c35; c4=c45; c5=c55; c6=c65; c7=c75; }
-              if (l==j+6) { c0=c06 ; c1=c16; c2=c26; c3=c36; c4=c46; c5=c56; c6=c66; c7=c76; }
-              if (l==j+7) { c0=c07 ; c1=c17; c2=c27; c3=c37; c4=c47; c5=c57; c6=c67; c7=c77; }
+              if (l== j ) { c0=c00; c1=c10; c2=c20; c3=c30; c4=c40; c5=c50; c6=c60; c7=c70; }
+              if (l==j+1) { c0=c01; c1=c11; c2=c21; c3=c31; c4=c41; c5=c51; c6=c61; c7=c71; }
+              if (l==j+2) { c0=c02; c1=c12; c2=c22; c3=c32; c4=c42; c5=c52; c6=c62; c7=c72; }
+              if (l==j+3) { c0=c03; c1=c13; c2=c23; c3=c33; c4=c43; c5=c53; c6=c63; c7=c73; }
+              if (l==j+4) { c0=c04; c1=c14; c2=c24; c3=c34; c4=c44; c5=c54; c6=c64; c7=c74; }
+              if (l==j+5) { c0=c05; c1=c15; c2=c25; c3=c35; c4=c45; c5=c55; c6=c65; c7=c75; }
+              if (l==j+6) { c0=c06; c1=c16; c2=c26; c3=c36; c4=c46; c5=c56; c6=c66; c7=c76; }
+              if (l==j+7) { c0=c07; c1=c17; c2=c27; c3=c37; c4=c47; c5=c57; c6=c67; c7=c77; }
               if ( beta == 1.0 ) {
                  if (i0 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1, l-bn1+cn1, a0, numb, datasz, regset, creg );
                  if (i1 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+1, l-bn1+cn1, a1, numb, datasz, regset, creg );

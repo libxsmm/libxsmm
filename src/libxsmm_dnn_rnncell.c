@@ -876,7 +876,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
 LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status)
 {
   size_t size = 0;
-  size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in) ;
+  size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in);
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
@@ -1012,7 +1012,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   uintptr_t address = (uintptr_t)scratch;
-  size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in) ;
+  size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in);
   size_t offset = 0;
 
   if (0 != handle) {

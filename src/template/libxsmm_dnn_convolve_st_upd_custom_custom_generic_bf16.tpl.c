@@ -112,7 +112,7 @@ element_output_type *zero_ptr_out;
 #endif
 
 /* transpose, copy and reduce work-related variables  */
-const int reduce_work = (handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S)/16 ;
+const int reduce_work = (handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S)/16;
 const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
 const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
 const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;

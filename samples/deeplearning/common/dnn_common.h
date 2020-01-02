@@ -274,12 +274,10 @@ LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf(buf, size);
-#if 1
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
-#endif
-   for (i = 0; i < (int)size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rng_f64() : (0.05 - libxsmm_rng_f64()/10.0)));
   }
 }
@@ -291,7 +289,7 @@ LIBXSMM_INLINE void init_buf_int16(short* buf, size_t size, int initPos, int ini
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
-   for (i = 0; i < (int)size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (short)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%7) : (rand()%7-3)));
   }
 }
@@ -303,7 +301,7 @@ LIBXSMM_INLINE void init_buf_int32(int* buf, size_t size, int initPos, int initO
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
-   for (i = 0; i < (int)size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (int)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%7) : (rand()%7-3)));
   }
 }
@@ -315,7 +313,7 @@ LIBXSMM_INLINE void init_buf_int8(char* buf, size_t size, int initPos, int initO
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
-   for (i = 0; i < (int)size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (char)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%3) : (rand()%3)-1));
   }
 }
@@ -328,7 +326,7 @@ LIBXSMM_INLINE void init_buf_uint8(unsigned char* buf, size_t size, int initPos,
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
-   for (i = 0; i < (int)size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (unsigned char)((initOne != 0) ? 1 : (rand()%3));
   }
 }
@@ -341,12 +339,13 @@ LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, in
 #if defined(_OPENMP)
 # pragma omp parallel for private(n,c,h,w)
 #endif
-   for ( n = 0; n < N; n++ ) {
+  for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
-          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
+          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w) {
             LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0.0;
+          }
         }
       }
     }
@@ -361,12 +360,13 @@ LIBXSMM_INLINE void set_zeropad_nchw_int16(short* nchw, int N, int C, int H, int
 #if defined(_OPENMP)
 # pragma omp parallel for private(n,c,h,w)
 #endif
-   for ( n = 0; n < N; n++ ) {
+  for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
-          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
+          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w) {
             LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0;
+          }
         }
       }
     }
@@ -381,12 +381,13 @@ LIBXSMM_INLINE void set_zeropad_nchw_int32(int* nchw, int N, int C, int H, int W
 #if defined(_OPENMP)
 # pragma omp parallel for private(n,c,h,w)
 #endif
-   for ( n = 0; n < N; n++ ) {
+  for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
-          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
+          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w) {
             LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0;
+          }
         }
       }
     }
@@ -401,12 +402,13 @@ LIBXSMM_INLINE void set_zeropad_nchw_uint8(unsigned char* nchw, int N, int C, in
 #if defined(_OPENMP)
 # pragma omp parallel for private(n,c,h,w)
 #endif
-   for ( n = 0; n < N; n++ ) {
+  for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
-          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
+          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w) {
             LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0;
+          }
         }
       }
     }
@@ -422,7 +424,7 @@ LIBXSMM_INLINE void copy_internal_nchw(float* dst , float* src, int N, int C, in
 #if defined(_OPENMP)
 # pragma omp parallel for private(n,c,h,w)
 #endif
-   for ( n = 0; n < N; n++ ) {
+  for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
@@ -442,7 +444,7 @@ LIBXSMM_INLINE void copy_internal_nchw_int16(short* dst , short* src, int N, int
 #if defined(_OPENMP)
 # pragma omp parallel for private(n,c,h,w)
 #endif
-   for ( n = 0; n < N; n++ ) {
+  for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
@@ -462,7 +464,7 @@ LIBXSMM_INLINE void copy_internal_nchw_uint8(unsigned char* dst , unsigned char*
 #if defined(_OPENMP)
 # pragma omp parallel for private(n,c,h,w)
 #endif
-   for ( n = 0; n < N; n++ ) {
+  for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
@@ -482,7 +484,7 @@ LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int 
 #if defined(_OPENMP)
 # pragma omp parallel for private(n,c,h,w)
 #endif
-   for ( n = 0; n < N; n++ ) {
+  for ( n = 0; n < N; n++ ) {
     for ( h = 0; h < H; h++ ) {
       for ( w = 0; w < W; w++ ) {
         for ( c = 0; c < C; c++ ) {
@@ -503,7 +505,7 @@ LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int 
 #if defined(_OPENMP)
 # pragma omp parallel for private(n,c,h,w)
 #endif
-   for ( n = 0; n < N; n++ ) {
+  for ( n = 0; n < N; n++ ) {
     for ( h = 0; h < H; h++ ) {
       for ( w = 0; w < W; w++ ) {
         for ( c = 0; c < C; c++ ) {
@@ -524,7 +526,7 @@ LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int 
 #if defined(_OPENMP)
 # pragma omp parallel for private(r,s,c,k)
 #endif
-   for ( r = 0; r < R; r++ ) {
+  for ( r = 0; r < R; r++ ) {
     for ( s = 0; s < S; s++ ) {
       for ( c = 0; c < C; c++ ) {
         for ( k = 0; k < K; k++ ) {
@@ -546,7 +548,7 @@ LIBXSMM_INLINE void naive_copy_RSCK_to_KCRS(const float* rsck, float* kcrs, int 
 #if defined(_OPENMP)
 # pragma omp parallel for private(r,s,c,k)
 #endif
-   for ( r = 0; r < R; r++ ) {
+  for ( r = 0; r < R; r++ ) {
     for ( s = 0; s < S; s++ ) {
       for ( c = 0; c < C; c++ ) {
         for ( k = 0; k < K; k++ ) {
@@ -569,7 +571,7 @@ LIBXSMM_INLINE void matrix_copy_NC_to_NCNC(float *src, float *dst, int T, int N,
 #if defined(_OPENMP)
 # pragma omp parallel for private(t,n1,c1,n2,c2)
 #endif
-   for (t = 0; t < T; t++) {
+  for (t = 0; t < T; t++) {
     for (n1 = 0; n1 < nBlocks; n1++) {
       for (c1 = 0; c1 < cBlocks; c1++) {
         for (n2 = 0; n2 < bn; n2++) {
@@ -594,7 +596,7 @@ LIBXSMM_INLINE void matrix_copy_NCNC_to_NC(float *src, float *dst, int T, int N,
 #if defined(_OPENMP)
 # pragma omp parallel for private(t,n1,c1,n2,c2)
 #endif
-   for (t = 0; t < T; t++) {
+  for (t = 0; t < T; t++) {
     for (n1 = 0; n1 < nBlocks; n1++) {
       for (c1 = 0; c1 < cBlocks; c1++) {
         for (n2 = 0; n2 < bn; n2++) {
@@ -619,7 +621,7 @@ LIBXSMM_INLINE void matrix_copy_NC_to_NCNC_bf16(libxsmm_bfloat16 *src, libxsmm_b
 #if defined(_OPENMP)
 # pragma omp parallel for private(t,n1,c1,n2,c2)
 #endif
-   for (t = 0; t < T; t++) {
+  for (t = 0; t < T; t++) {
     for (n1 = 0; n1 < nBlocks; n1++) {
       for (c1 = 0; c1 < cBlocks; c1++) {
         for (n2 = 0; n2 < bn; n2++) {
@@ -644,7 +646,7 @@ LIBXSMM_INLINE void matrix_copy_NCNC_to_NC_bf16(libxsmm_bfloat16 *src, libxsmm_b
 #if defined(_OPENMP)
 # pragma omp parallel for private(t,n1,c1,n2,c2)
 #endif
-   for (t = 0; t < T; t++) {
+  for (t = 0; t < T; t++) {
     for (n1 = 0; n1 < nBlocks; n1++) {
       for (c1 = 0; c1 < cBlocks; c1++) {
         for (n2 = 0; n2 < bn; n2++) {
@@ -1887,7 +1889,7 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
 #else
   float* tmp_buffer = (float*)malloc(sizeof(float)*ofh*ofw);
 #endif
-   for (img = 0; img < nImg; img++) {
+  for (img = 0; img < nImg; img++) {
     for (fm = 0; fm < nFm; fm++) {
 #if defined(_OPENMP)
       float* lcl_buffer_ptr = tmp_buffer + (ifh*ifw*omp_get_thread_num());
@@ -1981,7 +1983,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
         }
       }
 
-      tbmean = (recp_nhw * ch_sum) ;
+      tbmean = recp_nhw * ch_sum;
       tbmeansq  = tbmean * tbmean;
       tsqbmean = recp_nhw * ch_sumsq;
       tvariance = tsqbmean - tbmeansq;
@@ -2144,7 +2146,7 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
         }
       }
 
-      tbmean = (recp_ghw * ch_sum) ;
+      tbmean = recp_ghw * ch_sum;
       tbmeansq  = tbmean * tbmean;
       tsqbmean = recp_ghw * ch_sumsq;
       tvariance = tsqbmean - tbmeansq;

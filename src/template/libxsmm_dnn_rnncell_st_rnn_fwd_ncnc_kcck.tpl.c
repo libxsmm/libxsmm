@@ -118,23 +118,23 @@ if (perform_2d_decomp) {
       libxsmm_blasint total_blocks = in_tasks_per_thread*ik_tasks_per_thread*cBlocks;
       const element_input_type **src_ptr = &A_array[0][0][0];
       const element_input_type **dst_ptr = &A_array_pf[0][0][0];
-      for (ii = 0 ; ii < total_blocks - pf_dist_A; ii++) {
+      for (ii = 0; ii < total_blocks - pf_dist_A; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_A];
       }
       src_ptr = &B_array[0][0][0];
       dst_ptr = &B_array_pf[0][0][0];
-      for (ii = 0 ; ii < total_blocks - pf_dist_B; ii++) {
+      for (ii = 0; ii < total_blocks - pf_dist_B; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_B];
       }
       total_blocks = in_tasks_per_thread*ik_tasks_per_thread*kBlocks;
       src_ptr = &A_array2[0][0][0];
       dst_ptr = &A_array2_pf[0][0][0];
-      for (ii = 0 ; ii < total_blocks - pf_dist_A; ii++) {
+      for (ii = 0; ii < total_blocks - pf_dist_A; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_A];
       }
       src_ptr = &B_array2[0][0][0];
       dst_ptr = &B_array2_pf[0][0][0];
-      for (ii = 0 ; ii < total_blocks - pf_dist_B; ii++) {
+      for (ii = 0; ii < total_blocks - pf_dist_B; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_B];
       }
     }

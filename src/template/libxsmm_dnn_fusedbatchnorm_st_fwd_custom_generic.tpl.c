@@ -175,7 +175,7 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
          ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0)    ) {
       LIBXSMM_PRAGMA_SIMD
       for ( v=0; v < nFmBlock; v++ ) {
-        const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]) ;
+        const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]);
         const element_stats_type tbmeansq = tbmean * tbmean;
         const element_stats_type tsqbmean = recp_nhw * lcl_sumsq_ptr[v];
         const element_stats_type tvar     = tsqbmean - tbmeansq;

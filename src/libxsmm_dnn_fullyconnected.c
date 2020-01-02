@@ -97,7 +97,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
         handle->scratch_size = (sizeof(float) * LIBXSMM_MAX( LIBXSMM_MAX( handle->bk, handle->bn ), handle->bc ) * LIBXSMM_MAX( LIBXSMM_MAX( handle->bk, handle->bn ), handle->bc ) * handle->desc.threads);
       } else {
         handle->scratch_size = sizeof(float) * LIBXSMM_MAX( ((size_t)handle->desc.C + (size_t)handle->desc.K) * (size_t)handle->desc.N,
-                                                           (size_t)handle->desc.C * (size_t)handle->desc.K                            ) ;
+                                                             (size_t)handle->desc.C * (size_t)handle->desc.K);
       }
       /* create code pointers in some special cases */
       if ( ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) > 0) && ((handle->desc.filter_format & LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) > 0)  ) {

@@ -130,13 +130,13 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
 #if defined(_WIN32) || defined(__CYGWIN__)
      unsigned int areg = LIBXSMM_X86_GP_REG_RCX;
      unsigned int breg = LIBXSMM_X86_GP_REG_RDX;
-     unsigned int creg = LIBXSMM_X86_GP_REG_R8 ;
+     unsigned int creg = LIBXSMM_X86_GP_REG_R8;
 #else
      unsigned int areg = LIBXSMM_X86_GP_REG_RDI;
      unsigned int breg = LIBXSMM_X86_GP_REG_RSI;
      unsigned int creg = LIBXSMM_X86_GP_REG_RDX;
 #endif
-     const double beta = 1.0 ;
+     const double beta = 1.0;
      unsigned int m1=m, n1=n, k1=k;
      unsigned int j;
      /*int REGSIZE;*/
@@ -198,7 +198,7 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
         i = io_code->code_size;
         buf[i++] = 0xc3; /* retq */
         io_code->code_size = i;
-        return ;
+        return;
      }
 
 #if 0
@@ -246,13 +246,12 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
 #define DEBUG_GIVE_BYTE_CODE_OUTPUT
 #endif
 #ifdef DEBUG_GIVE_BYTE_CODE_OUTPUT
-   buf = (unsigned char *) io_code->generated_code;
-   printf("#Final Routine: \n");
-   for ( i = 0 ; i < io_code->code_size ; i+=8 )
-   {
-      printf("#\tBytes %d-%d\n",i,i+7);
-      printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
-   }
+  buf = (unsigned char *) io_code->generated_code;
+  printf("#Final Routine: \n");
+  for ( i = 0; i < io_code->code_size; i+=8 ) {
+    printf("#\tBytes %d-%d\n",i,i+7);
+    printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
+  }
 #endif
 }
 

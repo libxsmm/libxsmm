@@ -101,7 +101,7 @@ for ( img = thr_begin; img < thr_end; ++img ) {
   element_stats_type* sumsq_img_ptr = NULL;
 
   /* create reduction over all pixels per channel */
-  for ( fm = 0 ; fm < nBlocksFm; ++fm ) {
+  for ( fm = 0; fm < nBlocksFm; ++fm ) {
     /* @TODO check if we can bake this in into scratch */
     element_stats_type lcl_sum_ptr[64];
     element_stats_type lcl_sumsq_ptr[64];
@@ -145,7 +145,7 @@ for ( img = thr_begin; img < thr_end; ++img ) {
   /* new we compute mean, variance and rstd per channel group */
   sum_img_ptr = &LIBXSMM_VLA_ACCESS(3, sum_img, img, 0, 0, nImg, nFmBlock);
   sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, img, 0, 0, nImg, nFmBlock);
-  for ( g = 0 ; g < nG ; ++g ) {
+  for ( g = 0; g < nG; ++g ) {
     element_stats_type lcl_fm_sum = 0.0f;
     element_stats_type lcl_fm_sumsq = 0.0f;
 
@@ -155,7 +155,7 @@ for ( img = thr_begin; img < thr_end; ++img ) {
     }
 
     {
-      const element_stats_type tbmean = (recp_ghw * lcl_fm_sum) ;
+      const element_stats_type tbmean = (recp_ghw * lcl_fm_sum);
       const element_stats_type tbmeansq = tbmean * tbmean;
       const element_stats_type tsqbmean = recp_ghw * lcl_fm_sumsq;
       const element_stats_type tvar     = tsqbmean - tbmeansq;

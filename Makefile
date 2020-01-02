@@ -1086,7 +1086,7 @@ endif
 	@echo >> $@
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
-	@echo "for RUN in \$${RUNS} ; do" >> $@
+	@echo "for RUN in \$${RUNS}; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
@@ -1124,7 +1124,7 @@ endif
 	@echo >> $@
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
-	@echo "for RUN in \$${RUNS} ; do" >> $@
+	@echo "for RUN in \$${RUNS}; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
@@ -1162,7 +1162,7 @@ endif
 	@echo >> $@
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
-	@echo "for RUN in \$${RUNS} ; do" >> $@
+	@echo "for RUN in \$${RUNS}; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
@@ -1200,7 +1200,7 @@ endif
 	@echo >> $@
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
-	@echo "for RUN in \$${RUNS} ; do" >> $@
+	@echo "for RUN in \$${RUNS}; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
@@ -1242,8 +1242,8 @@ endif
 	@echo "NRUNS=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
 	@echo "NRUNT=\$$(echo \$${RUNT} | wc -w | tr -d ' ')" >> $@
 	@echo "NMAX=\$$((NRUNS*NRUNT))" >> $@
-	@echo "for RUN1 in \$${RUNS} ; do" >> $@
-	@echo "  for RUN2 in \$${RUNT} ; do" >> $@
+	@echo "for RUN1 in \$${RUNS}; do" >> $@
+	@echo "  for RUN2 in \$${RUNT}; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN1} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN1} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN1} | cut -d_ -f3)" >> $@

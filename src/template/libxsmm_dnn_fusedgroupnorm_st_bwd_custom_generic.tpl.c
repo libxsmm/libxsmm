@@ -116,7 +116,7 @@ for ( img = thr_begin; img < thr_end; ++img ) {
   element_stats_type*  d1_val_img_ptr = &LIBXSMM_VLA_ACCESS(2, d1_val_img, img, 0, nG);
   element_stats_type*  d2_val_img_ptr = &LIBXSMM_VLA_ACCESS(2, d2_val_img, img, 0, nG);
 
-  for ( g = 0; g < nG ; ++g ) {
+  for ( g = 0; g < nG; ++g ) {
     d1_val_img_ptr[g] = 0.0f;
     d2_val_img_ptr[g] = 0.0f;
   }

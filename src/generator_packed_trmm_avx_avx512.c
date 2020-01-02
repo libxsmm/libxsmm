@@ -179,7 +179,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
         i = io_code->code_size;
         buf[i++] = 0xc3; /* retq */
         io_code->code_size = i;
-        return ;
+        return;
      }
      if ( LIBXSMM_NEQ(1, alpha) )
      {
@@ -196,7 +196,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
               /* Do LUN* cases: B<- alpha*inv(A)*B */
               for ( j = 1; j <= n1; j+=3 )
               {
-                 for ( k = 1 ; k <= m1 ; k++ )
+                 for ( k = 1; k <= m1; k++ )
                  {
                     compact_load_matrix_gen_ ( io_code, 0, ldb, k, j, 0, numb, datasz, regset, breg );
                     if ( j+1 <= n1 ) compact_load_matrix_gen_ ( io_code, 0, ldb, k, j+1, 4, numb, datasz, regset, breg );
@@ -206,7 +206,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
                        if ( j+1 <= n1 ) compact_mult_two_nums_ ( io_code, 4, 2, 4, numb, regset );
                        if ( j+2 <= n1 ) compact_mult_two_nums_ ( io_code, 7, 2, 7, numb, regset );
                     }
-                    for ( i = 1 ; i <= k-1 ; i++ )
+                    for ( i = 1; i <= k-1; i++ )
                     {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 3, numb, datasz, regset, breg );
                        compact_load_matrix_gen_ ( io_code, 0, lda, i, k, 1, numb, datasz, regset, areg );
@@ -246,7 +246,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
               /* Do LLN* cases: B <- alpha * inv(A)*B */
               for ( j = 1; j <= n1; j+=3 )
               {
-                 for ( k = m1; k >= 1 ; k-- )
+                 for ( k = m1; k >= 1; k-- )
                  {
                     compact_load_matrix_gen_ ( io_code, 0, ldb, k, j, 0, numb, datasz, regset, breg );
                     if ( j+1<=n1 ) compact_load_matrix_gen_ ( io_code, 0, ldb, k, j+1, 4, numb, datasz, regset, breg );
@@ -276,7 +276,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
                           compact_store_matrix_gen_ ( io_code, 0, ldb, k, j+2, 8, numb, datasz, regset, breg );
                        }
                     }
-                    for ( i = k+1 ; i <= m1 ; i++ ) {
+                    for ( i = k+1; i <= m1; i++ ) {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 3, numb, datasz, regset, breg );
                        compact_load_matrix_gen_ ( io_code, 0, lda, i, k, 1, numb, datasz, regset, areg );
                        compact_fma_cplusab_ ( io_code, 3, 0, 1, numb, regset );
@@ -301,7 +301,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
               /* Do LUT* cases: B<- alpha*A^T*B */
               for ( j = 1; j <= n1; j+=3 )
               {
-                 for ( i = m1 ; i >= 1 ; i-- ) {
+                 for ( i = m1; i >= 1; i-- ) {
                     compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                     if ( j+1 <= n1 ) compact_load_matrix_gen_ ( io_code, 0, ldb, i, j+1, 4, numb, datasz, regset, breg );
                     if ( j+2 <= n1 ) compact_load_matrix_gen_ ( io_code, 0, ldb, i, j+2, 7, numb, datasz, regset, breg );
@@ -338,7 +338,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
               /* Do LLT* cases: B <- alpha * A*B */
               for ( j = 1; j <= n1; j+=3 )
               {
-                 for ( i = 1 ; i <= m1 ; i++ ) {
+                 for ( i = 1; i <= m1; i++ ) {
                     compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                     if ( j+1 <= n1 ) compact_load_matrix_gen_ ( io_code, 0, ldb, i, j+1, 4, numb, datasz, regset, breg );
                     if ( j+2 <= n1 ) compact_load_matrix_gen_ ( io_code, 0, ldb, i, j+2, 7, numb, datasz, regset, breg );
@@ -379,7 +379,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
            if ( (uplo=='U') || (uplo=='u') )
            {
               /* Do RUN* cases: B<- alpha*B*A */
-              for ( j = n1 ; j >= 1 ; j-- ) {
+              for ( j = n1; j >= 1; j-- ) {
                  if ( nounit ) {
                     compact_load_matrix_gen_ ( io_code, 0, lda, j, j, 1, numb, datasz, regset, areg );
                  }
@@ -394,18 +394,18 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #endif
                  }
                  if ( LIBXSMM_NEQ(1, alpha) || nounit ) {
-                    for ( i = 1 ; i <= m1 ; i++ ) {
+                    for ( i = 1; i <= m1; i++ ) {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                        compact_mult_two_nums_ ( io_code, 0, 1, 0, numb, regset );
                        compact_store_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                     }
                  }
-                 for ( k = 1 ; k <= j - 1 ; k++ ) {
+                 for ( k = 1; k <= j - 1; k++ ) {
                     compact_load_matrix_gen_ ( io_code, 0, lda, k, j, 1, numb, datasz, regset, areg );
                     if ( LIBXSMM_NEQ(1, alpha) ) {
                        compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
                     }
-                    for ( i = 1; i <= m1 ; i++ ) {
+                    for ( i = 1; i <= m1; i++ ) {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, k, 3, numb, datasz, regset, breg );
                        compact_fma_cplusab_ ( io_code, 0, 1, 3, numb, regset );
@@ -415,7 +415,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
               }
            } else {
               /* Do RLN* cases: B <- alpha * B * A */
-              for ( j = 1 ; j <= n1; j++ )
+              for ( j = 1; j <= n1; j++ )
               {
                  if ( nounit ) {
                     compact_load_matrix_gen_ ( io_code, 0, lda, j, j, 1, numb, datasz, regset, areg );
@@ -431,18 +431,18 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #endif
                  }
                  if ( LIBXSMM_NEQ(1, alpha) || nounit ) {
-                    for ( i = 1 ; i <= m1 ; i++ ) {
+                    for ( i = 1; i <= m1; i++ ) {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                        compact_mult_two_nums_ ( io_code, 0, 1, 0, numb, regset );
                        compact_store_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                     }
                  }
-                 for ( k = j+1 ; k <= n1 ; k++ ) {
+                 for ( k = j+1; k <= n1; k++ ) {
                     compact_load_matrix_gen_ ( io_code, 0, lda, k, j, 1, numb, datasz, regset, areg );
                     if ( LIBXSMM_NEQ(1, alpha) ) {
                        compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
                     }
-                    for ( i = 1; i <= m1 ; i++ ) {
+                    for ( i = 1; i <= m1; i++ ) {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, k, 3, numb, datasz, regset, breg );
                        compact_fma_cplusab_ ( io_code, 0, 1, 3, numb, regset );
@@ -455,15 +455,15 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
            if ( (uplo=='U') || (uplo=='u') )
            {
               /* Do RUT* cases: B<- alpha*B *A^T */
-              for ( k = 1 ; k <= n1 ; k++ )
+              for ( k = 1; k <= n1; k++ )
               {
-                 for ( j = 1 ; j <= k-1 ; j++ )
+                 for ( j = 1; j <= k-1; j++ )
                  {
                     compact_load_matrix_gen_ ( io_code, 0, lda, j, k, 1, numb, datasz, regset, areg );
                     if ( LIBXSMM_NEQ(1, alpha) ) {
                        compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
                     }
-                    for ( i = 1 ; i <= m1 ; i++ ) {
+                    for ( i = 1; i <= m1; i++ ) {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, k, 3, numb, datasz, regset, breg );
                        compact_fma_cplusab_ ( io_code, 0, 1, 3, numb, regset );
@@ -484,7 +484,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #endif
                  }
                  if ( LIBXSMM_NEQ(1, alpha) || nounit ) {
-                    for ( i = 1 ; i <= m1 ; i++ ) {
+                    for ( i = 1; i <= m1; i++ ) {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, k, 0, numb, datasz, regset, breg );
                        compact_mult_two_nums_ ( io_code, 0, 1, 0, numb, regset );
                        compact_store_matrix_gen_ ( io_code, 0, ldb, i, k, 0, numb, datasz, regset, breg );
@@ -493,15 +493,15 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
               }
            } else {
               /* Do RLT* cases: B <- alpha * B *inv(A^T) */
-              for ( k = n1 ; k >= 1 ; k-- )
+              for ( k = n1; k >= 1; k-- )
               {
-                 for ( j = k+1 ; j <= n1 ; j++ )
+                 for ( j = k+1; j <= n1; j++ )
                  {
                     compact_load_matrix_gen_ ( io_code, 0, lda, j, k, 1, numb, datasz, regset, areg );
                     if ( LIBXSMM_NEQ(1, alpha) ) {
                        compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
                     }
-                    for ( i = 1 ; i <= m1 ; i++ ) {
+                    for ( i = 1; i <= m1; i++ ) {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, j, 0, numb, datasz, regset, breg );
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, k, 3, numb, datasz, regset, breg );
                        compact_fma_cplusab_ ( io_code, 0, 1, 3, numb, regset );
@@ -522,7 +522,7 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #endif
                  }
                  if ( LIBXSMM_NEQ(1, alpha) || nounit ) {
-                    for ( i = 1 ; i <= m1 ; i++ ) {
+                    for ( i = 1; i <= m1; i++ ) {
                        compact_load_matrix_gen_ ( io_code, 0, ldb, i, k, 0, numb, datasz, regset, breg );
                        compact_mult_two_nums_ ( io_code, 0, 1, 0, numb, regset );
                        compact_store_matrix_gen_ ( io_code, 0, ldb, i, k, 0, numb, datasz, regset, breg );
@@ -547,13 +547,12 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #define DEBUG_GIVE_BYTE_CODE_OUTPUT
 #endif
 #ifdef DEBUG_GIVE_BYTE_CODE_OUTPUT
-   buf = (unsigned char *) io_code->generated_code;
-   printf("#Final Routine: \n");
-   for ( i = 0 ; i < io_code->code_size ; i+=8 )
-   {
-      printf("#\tBytes %d-%d\n",i,i+7);
-      printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
-   }
+  buf = (unsigned char *) io_code->generated_code;
+  printf("#Final Routine: \n");
+  for ( i = 0; i < io_code->code_size; i+=8 ) {
+    printf("#\tBytes %d-%d\n",i,i+7);
+    printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
+  }
 #endif
 
 }

@@ -215,7 +215,7 @@ for (j = 0; j < t; ++j) {
           eltwise_start = _rdtsc();
         }
 #endif
-        cps_ptr = (j == 0) ? &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K) : &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K) ;
+        cps_ptr = (j == 0) ? &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K) : &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K);
         /* Compute i, ci, f, o, cs, co and h */
 #if defined(LIBXSMM_RNN_CELL_AVX512)
         if (bk % 16 == 0 && bc % 16 == 0) {

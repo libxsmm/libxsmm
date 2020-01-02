@@ -172,7 +172,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
         i = io_code->code_size;
         buf[i++] = 0xc3; /* retq */
         io_code->code_size = i;
-        return ;
+        return;
      }
      if ( LIBXSMM_NEQ(1, alpha) )
      {
@@ -190,7 +190,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               if ( nounit )
               {
                   compact_set_one_ ( io_code, 15, numb, datasz, regset );
-                  for ( i = 1 ; i <= m1 ; i++ )
+                  for ( i = 1; i <= m1; i++ )
                   {
                      compact_load_matrix1_ ( io_code, lda, i, i, 3, numb, datasz, regset );
                      compact_divide_two_nums_ ( io_code, 15, 3, 3 , numb, regset );
@@ -222,7 +222,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #endif
                        compact_store_matrix2_ ( io_code, ldb, k, j, 0, numb, datasz, regset );
                     }
-                    for ( i = 1 ; i <= k-1 ; i++ )
+                    for ( i = 1; i <= k-1; i++ )
                     {
                        compact_load_matrix2_ ( io_code, ldb, i, j, 1, numb, datasz, regset );
                        compact_load_matrix1_ ( io_code, lda, i, k, 3, numb, datasz, regset );
@@ -251,7 +251,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               if ( nounit )
               {
                   compact_set_one_ ( io_code, 15, numb, datasz, regset );
-                  for ( i = 1 ; i <= m1 ; i++ )
+                  for ( i = 1; i <= m1; i++ )
                   {
                      compact_load_matrix1_ ( io_code, lda, i, i, 3, numb, datasz, regset );
                      compact_divide_two_nums_ ( io_code, 15, 3, 3 , numb, regset );
@@ -261,7 +261,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 
               for ( j = 1; j <= n1; j+=3 )
               {
-                 for ( k = 1 ; k <= m1; k+=2 )
+                 for ( k = 1; k <= m1; k+=2 )
                  {
                     scalealpha = 0;
                     if ( LIBXSMM_NEQ(1, alpha) && (k==1) ) scalealpha = 1;
@@ -322,7 +322,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                           }
                        }
                     }
-                    for ( i = k+2 ; i <= m1; i++ )
+                    for ( i = k+2; i <= m1; i++ )
                     {
                        compact_load_matrix2_ ( io_code, ldb, i, j, 1, numb, datasz, regset );
                        if ( scalealpha == 1 ) {
@@ -380,7 +380,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               if ( nounit )
               {
                   compact_set_one_ ( io_code, 15, numb, datasz, regset );
-                  for ( i = 1 ; i <= m1 ; i++ )
+                  for ( i = 1; i <= m1; i++ )
                   {
                      compact_load_matrix1_ ( io_code, lda, i, i, 3, numb, datasz, regset );
                      compact_divide_two_nums_ ( io_code, 15, 3, 3 , numb, regset );
@@ -395,7 +395,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               for ( j = 1; j <= n1; j++  )
 #endif
               {
-                 for ( i = 1 ; i <= m1; i+=2 )
+                 for ( i = 1; i <= m1; i+=2 )
                  {
                     compact_load_matrix2_ ( io_code, ldb, i, j, 0, numb, datasz, regset );
 #ifdef LUT_N2
@@ -495,7 +495,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               if ( nounit )
               {
                   compact_set_one_ ( io_code, 15, numb, datasz, regset );
-                  for ( i = 1 ; i <= m1 ; i++ )
+                  for ( i = 1; i <= m1; i++ )
                   {
                      compact_load_matrix1_ ( io_code, lda, i, i, 3, numb, datasz, regset );
                      compact_divide_two_nums_ ( io_code, 15, 3, 3 , numb, regset );
@@ -510,9 +510,9 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #endif
               {
 #ifdef LLT_M2
-                 for ( i = m1 ; i >= 1; i-=2 )
+                 for ( i = m1; i >= 1; i-=2 )
 #else
-                 for ( i = m1 ; i >= 1; i-=1 )
+                 for ( i = m1; i >= 1; i-=1 )
 #endif
                  {
                     compact_load_matrix2_ ( io_code, ldb, i, j, 0, numb, datasz, regset );
@@ -642,7 +642,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               if ( nounit )
               {
                   compact_set_one_ ( io_code, 15, numb, datasz, regset );
-                  for ( i = 1 ; i <= n1 ; i++ )
+                  for ( i = 1; i <= n1; i++ )
                   {
                      compact_load_matrix1_ ( io_code, lda, i, i, 3, numb, datasz, regset );
                      compact_divide_two_nums_ ( io_code, 15, 3, 3 , numb, regset );
@@ -686,7 +686,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                     if ( j+2 <= n1 ) compact_load_matrix1_ ( io_code, lda, k, j+2, 10, numb, datasz, regset );
                     if ( j+3 <= n1 ) compact_load_matrix1_ ( io_code, lda, k, j+3, 12, numb, datasz, regset );
 #endif
-                    for ( i = 1 ; i <= m1 ; i++ )
+                    for ( i = 1; i <= m1; i++ )
                     {
                        compact_load_matrix2_ ( io_code, ldb, i, j, 1, numb, datasz, regset );
                        if (j+1<=n1) compact_load_matrix2_ ( io_code, ldb, i, j+1, 7, numb, datasz, regset );
@@ -721,7 +721,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                        compact_load_matrix1_ ( io_code, lda, k, j+1, 6, numb, datasz, regset );
                        if ( j==1 && nounit ) compact_load_matrix3_ ( io_code, n1, j, 1, 9, numb, datasz, regset );
                        if ( nounit ) compact_load_matrix3_ ( io_code, n1, j+1, 1, 1, numb, datasz, regset );
-                       for ( i = 1; i <= m1 ; i++ ) {
+                       for ( i = 1; i <= m1; i++ ) {
                           compact_load_matrix2_ ( io_code, ldb, i, j+1, 7, numb, datasz, regset );
                           compact_load_matrix2_ ( io_code, ldb, i, k, 8, numb, datasz, regset );
                           if (j==1 && nounit) {
@@ -740,7 +740,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                     for ( k = j; k <= j+1; k++ ) {
                        compact_load_matrix1_ ( io_code, lda, k, j+2, 6, numb, datasz, regset );
                        if ( (k==j+1) && nounit ) compact_load_matrix3_ ( io_code, n1, j+2, 1, 1, numb, datasz, regset );
-                       for ( i = 1; i <= m1 ; i++ ) {
+                       for ( i = 1; i <= m1; i++ ) {
                           compact_load_matrix2_ ( io_code, ldb, i, j+2, 7, numb, datasz, regset );
                           compact_load_matrix2_ ( io_code, ldb, i, k, 8, numb, datasz, regset );
                           compact_fms_cminusab_ ( io_code, 7, 6, 8, numb, regset );
@@ -753,7 +753,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                     for ( k = j; k <= j+2; k++ ) {
                        compact_load_matrix1_ ( io_code, lda, k, j+3, 6, numb, datasz, regset );
                        if ( (k==j+2) && nounit ) compact_load_matrix3_ ( io_code, n1, j+3, 1, 1, numb, datasz, regset );
-                       for ( i = 1; i <= m1 ; i++ ) {
+                       for ( i = 1; i <= m1; i++ ) {
                           compact_load_matrix2_ ( io_code, ldb, i, j+3, 7, numb, datasz, regset );
                           compact_load_matrix2_ ( io_code, ldb, i, k, 8, numb, datasz, regset );
                           compact_fms_cminusab_ ( io_code, 7, 6, 8, numb, regset );
@@ -780,7 +780,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                  for ( k = j+1; k <= n1; k++ )
                  {
                     compact_load_matrix1_ ( io_code, lda, k, j, 3, numb, datasz, regset );
-                    for ( i = 1 ; i <= m1 ; i++ )
+                    for ( i = 1; i <= m1; i++ )
                     {
                        compact_load_matrix2_ ( io_code, ldb, i, j, 1, numb, datasz, regset );
                        compact_load_matrix2_ ( io_code, ldb, i, k, 4, numb, datasz, regset );
@@ -792,7 +792,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                  {
                     compact_load_matrix1_( io_code, lda, j, j, 1, numb, datasz, regset );
                     compact_divide_two_nums_ ( io_code, 5, 1, 1, numb, regset );
-                    for ( i = 1; i <= m1 ; i++ )
+                    for ( i = 1; i <= m1; i++ )
                     {
                        compact_load_matrix2_ ( io_code, ldb, i, j, 3, numb, datasz, regset );
                        compact_mult_two_nums_ ( io_code, 1, 3, 3, numb, regset );
@@ -805,7 +805,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
            if ( (uplo=='U') || (uplo=='u') )
            {
               /* Do RUT* cases: B<- alpha*B *inv(A^T) */
-              for ( k = n1 ; k >= 1; k-- )
+              for ( k = n1; k >= 1; k-- )
               {
                  if ( nounit )
                  {
@@ -818,10 +818,10 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                        compact_store_matrix2_ ( io_code, ldb, i, k, 3, numb, datasz, regset );
                     }
                  }
-                 for ( j = 1; j <= k-1 ; j++ )
+                 for ( j = 1; j <= k-1; j++ )
                  {
                     compact_load_matrix1_ ( io_code, lda, j, k, 1, numb, datasz, regset );
-                    for ( i = 1 ; i <= m1; i++ )
+                    for ( i = 1; i <= m1; i++ )
                     {
                        compact_load_matrix2_ ( io_code, ldb, i, j, 0, numb, datasz, regset );
                        compact_load_matrix2_ ( io_code, ldb, i, k, 3, numb, datasz, regset );
@@ -841,7 +841,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               }
            } else {
               /* Do RLT* cases: B <- alpha * B *inv(A^T) */
-              for ( k = 1 ; k <= n1; k++ )
+              for ( k = 1; k <= n1; k++ )
               {
                  if ( nounit )
                  {
@@ -854,10 +854,10 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                        compact_store_matrix2_ ( io_code, ldb, i, k, 3, numb, datasz, regset );
                     }
                  }
-                 for ( j = k+1; j <= n1 ; j++ )
+                 for ( j = k+1; j <= n1; j++ )
                  {
                     compact_load_matrix1_ ( io_code, lda, j, k, 1, numb, datasz, regset );
-                    for ( i = 1 ; i <= m1; i++ )
+                    for ( i = 1; i <= m1; i++ )
                     {
                        compact_load_matrix2_( io_code, ldb, i, j, 0, numb, datasz, regset );
                        compact_load_matrix2_( io_code, ldb, i, k, 3, numb, datasz, regset );
@@ -896,13 +896,12 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #define DEBUG_GIVE_BYTE_CODE_OUTPUT
 #endif
 #ifdef DEBUG_GIVE_BYTE_CODE_OUTPUT
-   buf = (unsigned char *) io_code->generated_code;
-   printf("#Final Routine: \n");
-   for ( i = 0 ; i < io_code->code_size ; i+=8 )
-   {
-      printf("#\tBytes %d-%d\n",i,i+7);
-      printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
-   }
+  buf = (unsigned char *) io_code->generated_code;
+  printf("#Final Routine: \n");
+  for ( i = 0; i < io_code->code_size; i+=8 ) {
+    printf("#\tBytes %d-%d\n",i,i+7);
+    printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
+  }
 #endif
 }
 

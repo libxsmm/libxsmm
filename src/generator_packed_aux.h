@@ -57,12 +57,12 @@ LIBXSMM_API_INLINE void compact_load_parameter_ (
 
      if ( datasize == 8 ) {
         double vector[16];
-        for ( i = 0 ; i < (int)number ; i++ ) vector[i]=alpha;
+        for ( i = 0; i < (int)number; i++ ) vector[i]=alpha;
 
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadconst", regset, reg );
      } else {
         float vector[16];
-        for ( i = 0 ; i < (int)number ; i++ ) vector[i]=(float)alpha;
+        for ( i = 0; i < (int)number; i++ ) vector[i]=(float)alpha;
 
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadconst", regset, reg );
      }
@@ -109,7 +109,7 @@ LIBXSMM_API_INLINE void compact_set_one_ (
         fprintf(stderr,"loading too large a parameter for compact_set_one_\n");
         exit(-1);
      }
-     for ( i = 0 ; i < (int)number ; i++ ) { dvector[i]=1.0; svector[i]=1.0; }
+     for ( i = 0; i < (int)number; i++ ) { dvector[i]=1.0; svector[i]=1.0; }
 
      if ( datasize == 4 )
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) svector, "loadone", regset, reg );

@@ -694,18 +694,18 @@ int main(int argc, char* argv[])
       flops += K * N; /* d9 = d7 + d8 */
       flops += 3.0 * K * N; /* d10 = d8.tanh'(g) */
       flops += 3.0 * K * N; /* d11 = d9.sig'(z) */
-      flops += (2.0 * K * K * N + K * K) ; /* d13 = Wg^T * d10 (including transpose) */
-      flops += (2.0 * K * K * N + K * K) ; /* d15 = Wz^T * d11 (including transpose) */
+      flops += (2.0 * K * K * N + K * K); /* d13 = Wg^T * d10 (including transpose) */
+      flops += (2.0 * K * K * N + K * K); /* d15 = Wz^T * d11 (including transpose) */
       flops += K * N; /* d16 = d13.z */
       flops += K * N; /* d17 = d13.r */
       flops += 3.0 * K * N; /* d18 = d16.sig'(r) */
       flops += K * N; /* d19 = d17 + d4 */
-      flops += (2.0 * K * K * N + K * K) ; /* d21 = Wr^T * d18 (including transpose) */
+      flops += (2.0 * K * K * N + K * K); /* d21 = Wr^T * d18 (including transpose) */
       flops += K * N; /* d22 = d21 + d15 */
       flops += K * N; /* d23 = d19 + d22 */
-      flops += (2.0 * K * C * N + K * C) ; /* d12 = Ug^T * d10 (including transpose) */
-      flops += (2.0 * K * C * N + K * C) ; /* d14 = Uz^T * d11 (including transpose) */
-      flops += (2.0 * K * C * N + K * C) ; /* d20 = Ur^T * d18 (including transpose) */
+      flops += (2.0 * K * C * N + K * C); /* d12 = Ug^T * d10 (including transpose) */
+      flops += (2.0 * K * C * N + K * C); /* d14 = Uz^T * d11 (including transpose) */
+      flops += (2.0 * K * C * N + K * C); /* d20 = Ur^T * d18 (including transpose) */
       flops += 2.0 * K * N; /* djdx = d12 + d14 + d20 */
       flops *= t; /* for t time steps */
       flops *= iters;
@@ -748,21 +748,21 @@ int main(int argc, char* argv[])
       flops += K * N; /* d9 = d7 + d8 */
       flops += 3.0 * K * N; /* d10 = d8.tanh'(g) */
       flops += 3.0 * K * N; /* d11 = d9.sig'(z) */
-      flops += (2.0 * K * K * N + K * K) ; /* d13 = Wg^T * d10 (including transpose) */
-      flops += (2.0 * K * K * N + K * K) ; /* d15 = Wz^T * d11 (including transpose) */
+      flops += (2.0 * K * K * N + K * K); /* d13 = Wg^T * d10 (including transpose) */
+      flops += (2.0 * K * K * N + K * K); /* d15 = Wz^T * d11 (including transpose) */
       flops += K * N; /* d16 = d13.z */
       flops += K * N; /* d17 = d13.r */
       flops += 3.0 * K * N; /* d18 = d16.sig'(r) */
       flops += K * N; /* d19 = d17 + d4 */
-      flops += (2.0 * K * K * N + K * K) ; /* d21 = Wr^T * d18 (including transpose) */
+      flops += (2.0 * K * K * N + K * K); /* d21 = Wr^T * d18 (including transpose) */
       flops += K * N; /* d22 = d21 + d15 */
       flops += K * N; /* d23 = d19 + d22 */
-      flops += (2.0 * K * N * K + K * N + K * K) ; /* djdwr = djdwr + d18 * h^T */
-      flops += (2.0 * K * N * K + K * N + K * K) ; /* djdwz = djdwz + d11 * h^T */
-      flops += (2.0 * K * N * K + 2.0 * K * N + K * K) ; /* djdwg = djdwg + d10 * (h.r)^T */
-      flops += (2.0 * K * N * C + C * N + K * C) ; /* djdur = djdur + d18 * x^T */
-      flops += (2.0 * K * N * C + C * N + K * C) ; /* djduz = djduz + d11 * x^T */
-      flops += (2.0 * K * N * C + C * N + K * C) ; /* djdug = djdug + d10 * x^T */
+      flops += (2.0 * K * N * K + K * N + K * K); /* djdwr = djdwr + d18 * h^T */
+      flops += (2.0 * K * N * K + K * N + K * K); /* djdwz = djdwz + d11 * h^T */
+      flops += (2.0 * K * N * K + 2.0 * K * N + K * K); /* djdwg = djdwg + d10 * (h.r)^T */
+      flops += (2.0 * K * N * C + C * N + K * C); /* djdur = djdur + d18 * x^T */
+      flops += (2.0 * K * N * C + C * N + K * C); /* djduz = djduz + d11 * x^T */
+      flops += (2.0 * K * N * C + C * N + K * C); /* djdug = djdug + d10 * x^T */
       flops += K * N; /* djdbr = djdbr + d18 */
       flops += K * N; /* djdbz = djdbz + d11 */
       flops += K * N; /* djdbg = djdbg + d10 */
@@ -807,25 +807,25 @@ int main(int argc, char* argv[])
       flops += K * N; /* d9 = d7 + d8 */
       flops += 3.0 * K * N; /* d10 = d8.tanh'(g) */
       flops += 3.0 * K * N; /* d11 = d9.sig'(z) */
-      flops += (2.0 * K * K * N + K * K) ; /* d13 = Wg^T * d10 (including transpose) */
-      flops += (2.0 * K * K * N + K * K) ; /* d15 = Wz^T * d11 (including transpose) */
+      flops += (2.0 * K * K * N + K * K); /* d13 = Wg^T * d10 (including transpose) */
+      flops += (2.0 * K * K * N + K * K); /* d15 = Wz^T * d11 (including transpose) */
       flops += K * N; /* d16 = d13.z */
       flops += K * N; /* d17 = d13.r */
       flops += 3.0 * K * N; /* d18 = d16.sig'(r) */
       flops += K * N; /* d19 = d17 + d4 */
-      flops += (2.0 * K * K * N + K * K) ; /* d21 = Wr^T * d18 (including transpose) */
+      flops += (2.0 * K * K * N + K * K); /* d21 = Wr^T * d18 (including transpose) */
       flops += K * N; /* d22 = d21 + d15 */
       flops += K * N; /* d23 = d19 + d22 */
-      flops += (2.0 * K * C * N + K * C) ; /* d12 = Ug^T * d10 (including transpose) */
-      flops += (2.0 * K * C * N + K * C) ; /* d14 = Uz^T * d11 (including transpose) */
-      flops += (2.0 * K * C * N + K * C) ; /* d20 = Ur^T * d18 (including transpose) */
+      flops += (2.0 * K * C * N + K * C); /* d12 = Ug^T * d10 (including transpose) */
+      flops += (2.0 * K * C * N + K * C); /* d14 = Uz^T * d11 (including transpose) */
+      flops += (2.0 * K * C * N + K * C); /* d20 = Ur^T * d18 (including transpose) */
       flops += 2.0 * K * N; /* djdx = d12 + d14 + d20 */
-      flops += (2.0 * K * N * K + K * N + K * K) ; /* djdwr = djdwr + d18 * h^T */
-      flops += (2.0 * K * N * K + K * N + K * K) ; /* djdwz = djdwz + d11 * h^T */
-      flops += (2.0 * K * N * K + 2.0 * K * N + K * K) ; /* djdwg = djdwg + d10 * (h.r)^T */
-      flops += (2.0 * K * N * C + C * N + K * C) ; /* djdur = djdur + d18 * x^T */
-      flops += (2.0 * K * N * C + C * N + K * C) ; /* djduz = djduz + d11 * x^T */
-      flops += (2.0 * K * N * C + C * N + K * C) ; /* djdug = djdug + d10 * x^T */
+      flops += (2.0 * K * N * K + K * N + K * K); /* djdwr = djdwr + d18 * h^T */
+      flops += (2.0 * K * N * K + K * N + K * K); /* djdwz = djdwz + d11 * h^T */
+      flops += (2.0 * K * N * K + 2.0 * K * N + K * K); /* djdwg = djdwg + d10 * (h.r)^T */
+      flops += (2.0 * K * N * C + C * N + K * C); /* djdur = djdur + d18 * x^T */
+      flops += (2.0 * K * N * C + C * N + K * C); /* djduz = djduz + d11 * x^T */
+      flops += (2.0 * K * N * C + C * N + K * C); /* djdug = djdug + d10 * x^T */
       flops += K * N; /* djdbr = djdbr + d18 */
       flops += K * N; /* djdbz = djdbz + d11 */
       flops += K * N; /* djdbg = djdbg + d10 */

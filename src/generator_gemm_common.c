@@ -1125,7 +1125,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       unsigned int l_m_2_blocking = (l_m_blocking/2)*2;
       l_m = 0;
 
-      for ( ; l_m < l_m_2_blocking; l_m+=2 ) {
+      for (; l_m < l_m_2_blocking; l_m+=2 ) {
         unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
         unsigned int reg_X2 = l_vec_reg_acc_start + l_m+1 + (l_m_blocking * l_n);
 
@@ -1146,7 +1146,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
             'z',
             0, 0, 0, 1 );
       }
-      for ( ; l_m < l_m_blocking; l_m++ ) {
+      for (; l_m < l_m_blocking; l_m++ ) {
         unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
 
         libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
