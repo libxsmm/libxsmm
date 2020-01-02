@@ -12,8 +12,7 @@
 #include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 #include <libxsmm.h>
-/* #define STRIDE_BRGEMM */
-#define ADDRESS_BRGEMM
+#define STRIDE_BRGEMM
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
