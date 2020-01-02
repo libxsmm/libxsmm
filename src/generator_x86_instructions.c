@@ -3899,7 +3899,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_alu_instr,
                                       const unsigned int      i_gp_reg_number,
-                                      const int               i_immediate ) {
+                                      const long long         i_immediate ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -3996,9 +3996,9 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%i, %%%%%s\\n\\t\"\n", l_instr_name, i_immediate, l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%lli, %%%%%s\\n\\t\"\n", l_instr_name, i_immediate, l_gp_reg_name );
     } else {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%i, %%%s\n", l_instr_name, i_immediate, l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%lli, %%%s\n", l_instr_name, i_immediate, l_gp_reg_name );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }

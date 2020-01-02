@@ -328,7 +328,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_alu_instr,
                                       const unsigned int      i_gp_reg_number,
-                                      const int               i_immediate );
+                                      const long long         i_immediate );
 
 /**
  * Generates regular all instructions with immediates, 64bit
