@@ -239,13 +239,13 @@ int main(int argc, char* argv[])
   set_zeropad_nchw(naive_output_pad,       nImg, nFm, ofhp, ofwp, pad_h_out, pad_w_out);
   set_zeropad_nchw(naive_deloutput_pad,    nImg, nFm, ofhp, ofwp, pad_h_out, pad_w_out);
 
-  init_buf(naive_beta,      nFm, 0, 0);
-  init_buf(naive_gamma,     nFm, 0, 0);
-  init_buf(naive_delbeta,   nFm, 0, 0);
-  init_buf(naive_delgamma,  nFm, 0, 0);
-  init_buf(naive_expectval, nFm, 0, 0);
-  init_buf(naive_rcpstddev, nFm, 0, 0);
-  init_buf(naive_variance,  nFm, 0, 0);
+  init_buf(naive_beta,      nFm,     0, 0);
+  init_buf(naive_gamma,     nFm,     0, 0);
+  init_buf(naive_delbeta,   nFm,     0, 0);
+  init_buf(naive_delgamma,  nFm,     0, 0);
+  init_buf(naive_expectval, nImg*nG, 0, 0);
+  init_buf(naive_rcpstddev, nImg*nG, 0, 0);
+  init_buf(naive_variance,  nImg*nG, 0, 0);
   copy_buf(naive_beta,      beta_libxsmm,      nFm);
   copy_buf(naive_gamma,     gamma_libxsmm,     nFm);
   copy_buf(naive_delbeta,   delbeta_libxsmm,   nFm);
