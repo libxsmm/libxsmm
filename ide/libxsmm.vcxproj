@@ -1015,9 +1015,7 @@
     <None Include="..\.gitconfig" />
     <None Include="..\.gitignore" />
     <None Include="..\.state.sh" />
-    <None Include="..\.test-dnn-fullci" />
     <None Include="..\.test-dnn.yml" />
-    <None Include="..\.test-rnn-fullci" />
     <None Include="..\.test-rnn.yml" />
     <None Include="..\.travis.yml" />
     <None Include="..\LICENSE.md" />
