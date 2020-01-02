@@ -1910,7 +1910,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         alloc_size = size + extra_size + sizeof(internal_malloc_info_type) + alloc_alignment - 1;
         alloc_failed = MAP_FAILED;
         if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* anonymous and non-executable */
+# if 0
           LIBXSMM_ASSERT(NULL != info || NULL == *memory); /* no memory mapping of foreign pointer */
+# endif
           buffer = mmap(NULL == info ? NULL : info->pointer, alloc_size, PROT_READ | PROT_WRITE,
             MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | prefault | xflags, -1, 0/*offset*/);
         }
@@ -2060,6 +2062,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         LIBXSMM_ASSERT(0 < alloc_alignment);
         /* former content must be preserved prior to setup of buffer_info */
         if (NULL != *memory) { /* preserve/copy previous content */
+#if 0
+          LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_REALLOC & flags));
+#endif
           /* content behind foreign pointers is not explicitly preserved; buffers may overlap */
           memmove(aligned, *memory, LIBXSMM_MIN(max_preserve, size));
           if (NULL != info /* known allocation (non-foreign pointer) */
