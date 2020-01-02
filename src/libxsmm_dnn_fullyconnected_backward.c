@@ -104,16 +104,16 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_f32_f32(libxsmm_dn
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #ifdef ADDRESS_BRGEMM
-    /* libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_bwd.xgemm.smra; */
-    libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bc, handle->bn, handle->bk, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+    libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_bwd.xgemm.smra;
+    /* libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bc, handle->bn, handle->bk, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL); */
 #endif
 #ifdef OFFSET_BRGEMM
-    /* libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_bwd.xgemm.smro; */
-    libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = libxsmm_smmdispatch_reducebatch_offs(handle->bc, handle->bn, handle->bk, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+    libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_bwd.xgemm.smro;
+    /* libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = libxsmm_smmdispatch_reducebatch_offs(handle->bc, handle->bn, handle->bk, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL); */
 #endif
 #ifdef STRIDE_BRGEMM
-    /* libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_bwd.xgemm.smrs; */
-    libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = libxsmm_smmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(float), handle->bk*handle->bn*sizeof(float), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+    libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_bwd.xgemm.smrs;
+    /* libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = libxsmm_smmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(float), handle->bk*handle->bn*sizeof(float), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL); */
 #endif
 # include "template/libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_generic.tpl.c"
   } else {
