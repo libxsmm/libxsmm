@@ -12,9 +12,9 @@
 int img, my_img_start, my_img_end, ofmb, ifmb, ojb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, ind, j_br, img_br, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
-int LDA = handle->ofmblock;
-int LDB = (handle->upd_pack_input == 1) ? handle->ifmblock : handle->desc.v * handle->ifmblock;
-int LDC = handle->ofmblock;
+libxsmm_blasint LDA = handle->ofmblock;
+libxsmm_blasint LDB = (handle->upd_pack_input == 1) ? handle->ifmblock : handle->desc.v * handle->ifmblock;
+libxsmm_blasint LDC = handle->ofmblock;
 int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 element_output_type *const out = (element_output_type*)handle->grad_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, const element_output_type, output, (const element_output_type*)out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);

@@ -141,9 +141,9 @@ const element_output_type *A_ptrs[1024];
 const element_input_type  *B_ptrs[1024];
 unsigned long long n_blocks;
 
-int LDA = handle->ofmblock;
-int LDB = handle->input_pixels;
-int LDC = handle->ofmblock;
+libxsmm_blasint LDA = handle->ofmblock;
+libxsmm_blasint LDB = handle->input_pixels;
+libxsmm_blasint LDC = handle->ofmblock;
 int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
 int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
 
