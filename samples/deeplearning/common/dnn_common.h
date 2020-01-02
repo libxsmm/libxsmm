@@ -2218,7 +2218,7 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
 
 #if defined(_OPENMP)
   LIBXSMM_OMP_VAR(hi); LIBXSMM_OMP_VAR(wi); LIBXSMM_OMP_VAR(ho); LIBXSMM_OMP_VAR(wo);
-#   pragma omp parallel for private(img, fm, hi, wi, ho, wo)
+#   pragma omp parallel for private(img, fm, hi, wi, ho, wo, g)
 #endif
   for ( fm = 0; fm < nFm; fm++ ) {
     del_gamma_ptr[fm] = 0.0f;

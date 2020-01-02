@@ -153,9 +153,6 @@ for ( img = thr_begin; img < thr_end; ++img ) {
         const element_stats_type*  bmean_ptr         = &LIBXSMM_VLA_ACCESS(2, bmean,     img, 0, nG);
         const element_stats_type*  brstd_ptr         = &LIBXSMM_VLA_ACCESS(2, brstd,     img, 0, nG);
 
-#if !defined(LIBXSMM_DNN_FUSEDGN_BWD_BF16)
-        LIBXSMM_PRAGMA_SIMD
-#endif
         for ( v=0; v < nFmBlock; v++ ) {
           g = ((fm*nFmBlock)+v)/nFmG;
 #if defined(LIBXSMM_DNN_FUSEDGN_BWD_BF16)
@@ -214,8 +211,10 @@ for ( img = thr_begin; img < thr_end; ++img ) {
         const element_stats_type*  variance_ptr      = &LIBXSMM_VLA_ACCESS(2, variance,  img, 0, nG);
         const element_stats_type*  gamma_ptr         = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, nFmBlock);
 
+#if 0
 #if !defined(LIBXSMM_DNN_FUSEDGN_BWD_BF16)
         LIBXSMM_PRAGMA_SIMD
+#endif
 #endif
         for ( v=0; v < nFmBlock; v++ ) {
           element_stats_type t0_val;
