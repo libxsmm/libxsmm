@@ -44,7 +44,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom_f32_f32(libxsmm_dnn_f
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
     typedef libxsmm_smmfunction gemm_function;
     gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
-# include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
+#   include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
   } else {
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
@@ -74,7 +74,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom_bf16_f32(libxsmm_dnn_
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
     gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # define LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32
-# include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
+#   include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32
   } else {
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
@@ -100,11 +100,11 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_f32_f32(libxsmm_dn
   libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
   element_input_type alpha = (element_input_type)1;
   element_input_type beta = (element_input_type)0;
-  libxsmm_blasint l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
     libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
-# include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
+#   include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
   } else {
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
@@ -157,8 +157,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom(li
       element_input_type beta = (element_input_type)0;
 
      if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-       gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
-# include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
+        gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+#       include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
       } else {
         status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
       }
@@ -176,7 +176,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom(li
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
         gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # define LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32
-# include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
+#       include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32
       } else {
         status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
@@ -227,7 +227,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
         libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
-# include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
+#       include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
       } else {
         status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
       }
