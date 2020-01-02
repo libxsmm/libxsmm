@@ -337,6 +337,7 @@ LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, in
   int n, h, w, c;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
 # pragma omp parallel for private(n,c,h,w)
 #endif
   for ( n = 0; n < N; n++ ) {
@@ -344,7 +345,7 @@ LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, in
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
           if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w) {
-            LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0.0;
+            LIBXSMM_VLA_ACCESS(4, input, n, c, h, w, C, H, W) = 0.0;
           }
         }
       }
@@ -358,6 +359,7 @@ LIBXSMM_INLINE void set_zeropad_nchw_int16(short* nchw, int N, int C, int H, int
   int n, h, w, c;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
 # pragma omp parallel for private(n,c,h,w)
 #endif
   for ( n = 0; n < N; n++ ) {
@@ -365,7 +367,7 @@ LIBXSMM_INLINE void set_zeropad_nchw_int16(short* nchw, int N, int C, int H, int
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
           if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w) {
-            LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0;
+            LIBXSMM_VLA_ACCESS(4, input, n, c, h, w, C, H, W) = 0;
           }
         }
       }
@@ -379,6 +381,7 @@ LIBXSMM_INLINE void set_zeropad_nchw_int32(int* nchw, int N, int C, int H, int W
   int n, h, w, c;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
 # pragma omp parallel for private(n,c,h,w)
 #endif
   for ( n = 0; n < N; n++ ) {
@@ -386,7 +389,7 @@ LIBXSMM_INLINE void set_zeropad_nchw_int32(int* nchw, int N, int C, int H, int W
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
           if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w) {
-            LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0;
+            LIBXSMM_VLA_ACCESS(4, input, n, c, h, w, C, H, W) = 0;
           }
         }
       }
@@ -400,6 +403,7 @@ LIBXSMM_INLINE void set_zeropad_nchw_uint8(unsigned char* nchw, int N, int C, in
   int n, h, w, c;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
 # pragma omp parallel for private(n,c,h,w)
 #endif
   for ( n = 0; n < N; n++ ) {
@@ -407,7 +411,7 @@ LIBXSMM_INLINE void set_zeropad_nchw_uint8(unsigned char* nchw, int N, int C, in
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
           if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w) {
-            LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0;
+            LIBXSMM_VLA_ACCESS(4, input, n, c, h, w, C, H, W) = 0;
           }
         }
       }
@@ -422,13 +426,14 @@ LIBXSMM_INLINE void copy_internal_nchw(float* dst , float* src, int N, int C, in
   int n, h, w, c;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
 # pragma omp parallel for private(n,c,h,w)
 #endif
   for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
-          LIBXSMM_VLA_ACCESS(4, new_input, n, c, h+pad_h, w+pad_w, C, H+2*pad_h, W+2*pad_w) =  LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W);
+          LIBXSMM_VLA_ACCESS(4, new_input, n, c, h+pad_h, w+pad_w, C, H+2*pad_h, W+2*pad_w) =  LIBXSMM_VLA_ACCESS(4, input, n, c, h, w, C, H, W);
         }
       }
     }
@@ -442,13 +447,14 @@ LIBXSMM_INLINE void copy_internal_nchw_int16(short* dst , short* src, int N, int
   int n, h, w, c;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
 # pragma omp parallel for private(n,c,h,w)
 #endif
   for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
-          LIBXSMM_VLA_ACCESS(4, new_input, n, c, h+pad_h, w+pad_w, C, H+2*pad_h, W+2*pad_w) =  LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W);
+          LIBXSMM_VLA_ACCESS(4, new_input, n, c, h+pad_h, w+pad_w, C, H+2*pad_h, W+2*pad_w) =  LIBXSMM_VLA_ACCESS(4, input, n, c, h, w, C, H, W);
         }
       }
     }
@@ -462,13 +468,14 @@ LIBXSMM_INLINE void copy_internal_nchw_uint8(unsigned char* dst , unsigned char*
   int n, h, w, c;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
 # pragma omp parallel for private(n,c,h,w)
 #endif
   for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
-          LIBXSMM_VLA_ACCESS(4, new_input, n, c, h+pad_h, w+pad_w, C, H+2*pad_h, W+2*pad_w) =  LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W);
+          LIBXSMM_VLA_ACCESS(4, new_input, n, c, h+pad_h, w+pad_w, C, H+2*pad_h, W+2*pad_w) =  LIBXSMM_VLA_ACCESS(4, input, n, c, h, w, C, H, W);
         }
       }
     }
@@ -482,6 +489,7 @@ LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int 
   int n, h, w, c;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
 # pragma omp parallel for private(n,c,h,w)
 #endif
   for ( n = 0; n < N; n++ ) {
@@ -489,7 +497,7 @@ LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int 
       for ( w = 0; w < W; w++ ) {
         for ( c = 0; c < C; c++ ) {
           LIBXSMM_VLA_ACCESS(4, output, n, h, w, c, H, W, C) =
-          LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W);
+          LIBXSMM_VLA_ACCESS(4, input, n, c, h, w, C, H, W);
         }
       }
     }
@@ -503,6 +511,7 @@ LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int 
   int n, h, w, c;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
 # pragma omp parallel for private(n,c,h,w)
 #endif
   for ( n = 0; n < N; n++ ) {
@@ -510,7 +519,7 @@ LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int 
       for ( w = 0; w < W; w++ ) {
         for ( c = 0; c < C; c++ ) {
           LIBXSMM_VLA_ACCESS(4, output, n, c, h, w, C, H, W) =
-          LIBXSMM_VLA_ACCESS(4,  input, n, h, w, c, H, W, C);
+          LIBXSMM_VLA_ACCESS(4, input, n, h, w, c, H, W, C);
         }
       }
     }
@@ -524,6 +533,7 @@ LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int 
   int r, s, c, k;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(s); LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(k);
 # pragma omp parallel for private(r,s,c,k)
 #endif
   for ( r = 0; r < R; r++ ) {
@@ -531,7 +541,7 @@ LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int 
       for ( c = 0; c < C; c++ ) {
         for ( k = 0; k < K; k++ ) {
           LIBXSMM_VLA_ACCESS(4, output, r, s, c, k, S, C, K) =
-          LIBXSMM_VLA_ACCESS(4,  input, k, c, r, s, C, R, S);
+          LIBXSMM_VLA_ACCESS(4, input, k, c, r, s, C, R, S);
         }
       }
     }
@@ -546,6 +556,7 @@ LIBXSMM_INLINE void naive_copy_RSCK_to_KCRS(const float* rsck, float* kcrs, int 
   int r, s, c, k;
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(s); LIBXSMM_OMP_VAR(c); LIBXSMM_OMP_VAR(k);
 # pragma omp parallel for private(r,s,c,k)
 #endif
   for ( r = 0; r < R; r++ ) {
@@ -553,7 +564,7 @@ LIBXSMM_INLINE void naive_copy_RSCK_to_KCRS(const float* rsck, float* kcrs, int 
       for ( c = 0; c < C; c++ ) {
         for ( k = 0; k < K; k++ ) {
           LIBXSMM_VLA_ACCESS(4, output, k, c, r, s, C, R, S) =
-            LIBXSMM_VLA_ACCESS(4,  input, r, s, c, k, S, C, K);
+            LIBXSMM_VLA_ACCESS(4, input, r, s, c, k, S, C, K);
         }
       }
     }
@@ -569,6 +580,7 @@ LIBXSMM_INLINE void matrix_copy_NC_to_NCNC(float *src, float *dst, int T, int N,
   LIBXSMM_VLA_DECL(5, float, real_dst, dst, nBlocks, cBlocks, bn, bc);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(n1); LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(n2); LIBXSMM_OMP_VAR(c2);
 # pragma omp parallel for private(t,n1,c1,n2,c2)
 #endif
   for (t = 0; t < T; t++) {
@@ -594,6 +606,7 @@ LIBXSMM_INLINE void matrix_copy_NCNC_to_NC(float *src, float *dst, int T, int N,
   LIBXSMM_VLA_DECL(5, float, real_src, src, nBlocks, cBlocks, bn, bc);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(n1); LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(n2); LIBXSMM_OMP_VAR(c2);
 # pragma omp parallel for private(t,n1,c1,n2,c2)
 #endif
   for (t = 0; t < T; t++) {
@@ -619,6 +632,7 @@ LIBXSMM_INLINE void matrix_copy_NC_to_NCNC_bf16(libxsmm_bfloat16 *src, libxsmm_b
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, nBlocks, cBlocks, bn, bc);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(n1); LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(n2); LIBXSMM_OMP_VAR(c2);
 # pragma omp parallel for private(t,n1,c1,n2,c2)
 #endif
   for (t = 0; t < T; t++) {
@@ -644,6 +658,7 @@ LIBXSMM_INLINE void matrix_copy_NCNC_to_NC_bf16(libxsmm_bfloat16 *src, libxsmm_b
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, nBlocks, cBlocks, bn, bc);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(n1); LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(n2); LIBXSMM_OMP_VAR(c2);
 # pragma omp parallel for private(t,n1,c1,n2,c2)
 #endif
   for (t = 0; t < T; t++) {
@@ -669,6 +684,7 @@ LIBXSMM_INLINE void matrix_copy_CK_to_KCCK(float *src, float *dst, int C, int K,
   LIBXSMM_VLA_DECL(4, float, real_dst, dst, cBlocks, bc, bk);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
@@ -692,6 +708,7 @@ LIBXSMM_INLINE void matrix_copy_CK_to_CKKC(float *src, float *dst, int C, int K,
   LIBXSMM_VLA_DECL(4, float, real_dst, dst, kBlocks, bk, bc);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(k1); LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (c1 = 0; c1 < cBlocks; c1++) {
@@ -715,6 +732,7 @@ LIBXSMM_INLINE void matrix_copy_KC_to_KCCK(float *src, float *dst, int C, int K,
   LIBXSMM_VLA_DECL(4, float, real_dst, dst, cBlocks, bc, bk);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
@@ -738,6 +756,7 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_KC(float *src, float *dst, int C, int K,
   LIBXSMM_VLA_DECL(4, float, real_src, src, cBlocks, bc, bk);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
@@ -761,6 +780,7 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_CK(float *src, float *dst, int C, int K,
   LIBXSMM_VLA_DECL(4, float, real_src, src, cBlocks, bc, bk);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
@@ -784,6 +804,7 @@ LIBXSMM_INLINE void matrix_copy_CK_to_KCCK_bf16(libxsmm_bfloat16 *src, libxsmm_b
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/2, bk, 2);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
@@ -807,6 +828,7 @@ LIBXSMM_INLINE void matrix_copy_CK_to_CKKC_bf16(libxsmm_bfloat16 *src, libxsmm_b
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, kBlocks, bk/2, bc, 2);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(k1); LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (c1 = 0; c1 < cBlocks; c1++) {
@@ -830,6 +852,7 @@ LIBXSMM_INLINE void matrix_copy_KC_to_KCCK_bf16(libxsmm_bfloat16 *src, libxsmm_b
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/2, bk, 2);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
@@ -853,6 +876,7 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_KC_bf16(libxsmm_bfloat16 *src, libxsmm_b
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/2, bk, 2);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
@@ -876,6 +900,7 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_CK_bf16(libxsmm_bfloat16 *src, libxsmm_b
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/2, bk, 2);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
@@ -899,6 +924,7 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_CKKC_bf16(libxsmm_bfloat16 *src, libxsmm
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/2, bk, 2);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(k2);
 # pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
@@ -2123,8 +2149,8 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
   LIBXSMM_VLA_DECL(5,       float, output,    output_ptr,    nG,  nFMG, ofh, ofw);
 
 #if defined(_OPENMP)
-  LIBXSMM_OMP_VAR(wi); LIBXSMM_OMP_VAR(hi);
-#   pragma omp parallel for private(img, g, fmg, hi, wi)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(g); LIBXSMM_OMP_VAR(fmg); LIBXSMM_OMP_VAR(hi); LIBXSMM_OMP_VAR(wi);
+# pragma omp parallel for private(img, g, fmg, hi, wi)
 #endif
   for ( img = 0; img < nImg; img++ ) {
     for (g = 0; g < nG; g++) {
@@ -2219,8 +2245,8 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
   LIBXSMM_VLA_DECL(4,       float, dinput_add,    dinput_add_ptr, nFm, ifh, ifw);
 
 #if defined(_OPENMP)
-  LIBXSMM_OMP_VAR(hi); LIBXSMM_OMP_VAR(wi); LIBXSMM_OMP_VAR(ho); LIBXSMM_OMP_VAR(wo);
-#   pragma omp parallel for private(img, fm, hi, wi, ho, wo, g)
+  LIBXSMM_OMP_VAR(hi); LIBXSMM_OMP_VAR(wi); LIBXSMM_OMP_VAR(ho); LIBXSMM_OMP_VAR(wo); LIBXSMM_OMP_VAR(g);
+# pragma omp parallel for private(img, fm, hi, wi, ho, wo, g)
 #endif
   for ( fm = 0; fm < nFm; fm++ ) {
     del_gamma_ptr[fm] = 0.0f;
@@ -2251,6 +2277,7 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
   }
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(fmg);
 # pragma omp parallel for private(img, g, fmg, hi, wi, ho, wo)
 #endif
   for ( img = 0; img < nImg; img++ ) {
