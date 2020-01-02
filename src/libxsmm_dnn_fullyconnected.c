@@ -108,7 +108,6 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
           libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
           libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
-          libxsmm_blasint l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 
           if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #ifdef ADDRESS_BRGEMM
