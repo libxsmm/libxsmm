@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Evangelos Georganas (Intel Corp.)
+/* Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 /* size variables, all const */
 const int bn = handle->bn;

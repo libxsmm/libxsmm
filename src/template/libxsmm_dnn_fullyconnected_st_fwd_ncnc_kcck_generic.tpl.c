@@ -68,8 +68,8 @@ if (handle->desc.C == 2048 && handle->desc.K == 1024) {
 }
 CB_BLOCKS = nBlocksIFm/BF;
 
-perform_2d_decomp = 0; /*(in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads &&
-  ik_tasks_per_thread*in_tasks_per_thread*CB_BLOCKS <= 4096) ? 1 : 0;*/
+perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads &&
+  ik_tasks_per_thread*in_tasks_per_thread*CB_BLOCKS <= 4096) ? 1 : 0;
 
 if (perform_2d_decomp) {
   /* Auxiliary arrays for batch-reduce gemms and potential prefetch */
