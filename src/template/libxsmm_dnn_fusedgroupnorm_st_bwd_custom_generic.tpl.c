@@ -35,6 +35,7 @@ const int nFmG = (nBlocksFm * nFmBlock) / nG;
 /* size of sample */
 const element_stats_type ghw = (element_stats_type)(nFmG * ifh * ifw);
 const element_stats_type recp_ghw = 1.0f/ghw;
+const element_stats_type eps = 1e-7;
 
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -172,7 +173,7 @@ for ( img = thr_begin; img < thr_end; ++img ) {
           input_f32.i[1] = input_ptr[v];
           lcl_gamma_ptr[v] += (input_f32.f - bmean_ptr[g]) * del_output_f32.f * brstd_ptr[g];
           lcl_beta_ptr[v]  += del_output_f32.f;
-          d1_val_img_ptr[g] += (input_f32.f - bmean_ptr[g]) * del_output_f32.f * brstd_ptr[g];
+          d1_val_img_ptr[g] += (input_f32.f - bmean_ptr[g]) * del_output_f32.f;
           d2_val_img_ptr[g] +=  del_output_f32.f;
 #else
 #if defined(LIBXSMM_DNN_FUSEDGN_BWD_ENABLE_RELU)
@@ -186,7 +187,7 @@ for ( img = thr_begin; img < thr_end; ++img ) {
 #endif
           lcl_gamma_ptr[v] += (input_ptr[v] - bmean_ptr[g]) * del_output_ptr[v] * brstd_ptr[g];
           lcl_beta_ptr[v]  += del_output_ptr[v];
-          d1_val_img_ptr[g] += (input_ptr[v] - bmean_ptr[g]) * del_output_ptr[v] * brstd_ptr[g];
+          d1_val_img_ptr[g] += (input_ptr[v] - bmean_ptr[g]) * del_output_ptr[v];
           d2_val_img_ptr[g] += del_output_ptr[v];
 #endif
         }
@@ -223,10 +224,10 @@ for ( img = thr_begin; img < thr_end; ++img ) {
 #if defined(LIBXSMM_DNN_FUSEDGN_BWD_BF16)
           del_output_f32.i[1] = del_output_ptr[v];
           input_f32.i[1] = input_ptr[v];
-          del_input_f32.f = t0_val * (ghw * del_output_f32.f - d2_val_img_ptr[g] - (input_f32.f - bmean_ptr[g]) * d1_val_img_ptr[g] * (1.0f/variance_ptr[g]));
+          del_input_f32.f = t0_val * ((ghw * del_output_f32.f) - d2_val_img_ptr[g] - ((input_f32.f - bmean_ptr[g]) * d1_val_img_ptr[g] * (1.0f/(variance_ptr[g] + eps))));
           del_input_ptr[v] = del_input_f32.i[1];
 #else
-          del_input_ptr[v] = t0_val * (ghw * del_output_ptr[v] - d2_val_img_ptr[g] - (input_ptr[v] - bmean_ptr[g]) * d1_val_img_ptr[g] * (1.0f/variance_ptr[g]));
+          del_input_ptr[v] = t0_val * ((ghw * del_output_ptr[v]) - d2_val_img_ptr[g] - ((input_ptr[v] - bmean_ptr[g]) * d1_val_img_ptr[g] * (1.0f/(variance_ptr[g] + eps))));
 #endif
         }
       }
