@@ -12,17 +12,21 @@
 #define PROFILE
 #endif
 
-#define _mm512_loadcvt_bf16_fp32(A) _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+#define _mm512_loadcvt_bf16_fp32(A) _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))), 16))
 #if defined(LIBXSMM_DNN_RNNCELL_BWD_AVX512_CPX)
-#define _mm512_storecvt_fp32_bf16(A,B) _mm256_stream_si256((__m256i*)(A), (__m256i)_mm512_cvtneps_pbh((B)))
-#define _mm512_cvt2_fp32_bf16(A,B) ((__m512i)_mm512_cvtne2ps_pbh((A), (B)))
+#define _mm512_storecvt_fp32_bf16(A, B) _mm256_stream_si256((__m256i*)(A), (__m256i)_mm512_cvtneps_pbh(B))
+#define _mm512_cvt2_fp32_bf16(A, B) ((__m512i)_mm512_cvtne2ps_pbh(A, B))
 #else
-#define _mm512_storecvt_fp32_bf16(A,B) _mm256_stream_si256((__m256i*)(A), _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(B), 16)))
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE) __m512i _mm512_cvt2_fp32_bf16(__m512 a, __m512 b) { /* avoid remark about unspec. eval. order */
+#define _mm512_storecvt_fp32_bf16(A, B) _mm256_stream_si256((__m256i*)(A), _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(B), 16)))
+#if !defined(internal_mm512_cvt2_fp32_bf16) /* guard for one-definition-rule (ODR) */
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE) __m512i INTERNAL_MM512_CVT2_FP32_BF16(__m512 a, __m512 b) { /* avoid remark about unspec. eval. order */
   const __m256i aa = _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(b), 16));
   const __m256i bb = _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(a), 16));
   return _mm512_inserti64x4(_mm512_inserti64x4(_mm512_setzero_si512(), aa, 0), bb, 1);
 }
+# define internal_mm512_cvt2_fp32_bf16(A, B) INTERNAL_MM512_CVT2_FP32_BF16(A, B)
+#endif
+#define _mm512_cvt2_fp32_bf16(A, B) internal_mm512_cvt2_fp32_bf16(A, B)
 #endif
 
 /* helper variables */
