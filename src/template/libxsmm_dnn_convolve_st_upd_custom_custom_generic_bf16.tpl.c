@@ -331,7 +331,10 @@ if (handle->upd_linearized_pixels == 0) {
     const __m512i skipper = LIBXSMM_INTRINSICS_MM512_SET_EPI16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 19, 11, 3, 26, 18, 10, 2, 25, 17, 9, 1, 24, 16, 8, 0);
     __m512i p0, p1, p2, p3;
     __m256i _p0, _p1, _p2, _p3;
-    __m256i r0, r1, r2, r3;
+    __m256i r0 = _mm256_undefined_si256();
+    __m256i r1 = _mm256_undefined_si256();
+    __m256i r2 = _mm256_undefined_si256();
+    __m256i r3 = _mm256_undefined_si256();
     LDA = handle->ofmblock;
     LDB = handle->ifhp*handle->ifwp_extended;
     LDC = handle->ofmblock;
