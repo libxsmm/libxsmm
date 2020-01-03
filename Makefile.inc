@@ -753,6 +753,15 @@ PGI ?= 0
 LD = $(CC)
 XLD = $(CXX)
 
+ifneq (Windows_NT,$(UNAME))
+ifneq (,$(strip $(PIC)))
+  ifneq (,$(shell echo "int main(void) { return 0; }" | $(CC) -f$(PIC) -E -xc -c /dev/stdin 2>&1 >/dev/null))
+    PIC := PIC
+  endif
+  PICFLAG = -f$(PIC)
+endif
+endif
+
 ifeq (0,$(DEPSTATIC))
   LIB_LD := $(LD) -shared $(PICFLAG)
   LIB_XLD := $(XLD) -shared $(PICFLAG)
@@ -1256,7 +1265,7 @@ else # GCC assumed
     FPEDANTIC += $(FWARNEXTRA)
     ifeq (1,$(PEDANTIC))
       CSTD = -std=c99
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      CXXFLAGS += $(CPEDANTIC) #-Wno-long-long
       #CXXFLAGS += -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FFORM_FLAG)
@@ -1271,7 +1280,7 @@ else # GCC assumed
       else # Clang may run into ICEs under OSX
         CSTD = -std=c99
       endif
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long #-Wzero-as-null-pointer-constant
+      CXXFLAGS += $(CPEDANTIC) #-Wno-long-long #-Wzero-as-null-pointer-constant
       #CXXFLAGS += -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FSTD) $(FPEDANTIC)
@@ -1707,14 +1716,6 @@ ifeq (0,$(COMPATIBLE))
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
   endif
-endif
-ifneq (Windows_NT,$(UNAME))
-ifneq (,$(strip $(PIC)))
-  ifneq (,$(shell echo "int main(void) { return 0; }" | $(CC) -f$(PIC) -E -xc -c /dev/stdin 2>&1 >/dev/null))
-    PIC := PIC
-  endif
-  PICFLAG = -f$(PIC)
-endif
 endif
 
 ifneq (0,$(THREADS))
