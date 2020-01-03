@@ -860,7 +860,7 @@ ifneq (Darwin,$(UNAME))
   endif
   linkopt = $(XLNKOPT)$(if $2,$1="$2",$1)
   abslibrpath = $(strip $(if \
-    $(filter .$(ILIBEXT),.$(SLIBEXT))$(filter-out .$(SLIBEXT),$1), \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out %.$(SLIBEXT),$1), \
     $(call linkopt,--rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
@@ -874,7 +874,7 @@ else # OSX
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) "$2"
   abslibrpath = $(strip $(if \
-    $(filter .$(ILIBEXT),.$(SLIBEXT))$(filter-out .$(SLIBEXT),$1), \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out %.$(SLIBEXT),$1), \
     $(call linkopt,-rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
 endif
 
