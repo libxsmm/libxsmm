@@ -334,17 +334,17 @@ endif
 GNU ?= 0
 ifeq (0,$(GNU))
   ifeq (,$(shell echo "$${CXX}"))
-    ifneq (,$(call qndir,$(call which,icpx)))
-      CXX = icpx
-    else ifneq (,$(call qndir,$(call which,icpc)))
+    ifneq (,$(call qndir,$(call which,icpc)))
       CXX = icpc
+    else ifneq (,$(call qndir,$(call which,icpx)))
+      CXX = icpx
     endif
   endif
   ifeq (,$(shell echo "$${CC}"))
-    ifneq (,$(call qndir,$(call which,icx)))
-      CC = icx
-    else ifneq (,$(call qndir,$(call which,icc)))
+    ifneq (,$(call qndir,$(call which,icc)))
       CC = icc
+    else ifneq (,$(call qndir,$(call which,icx)))
+      CC = icx
     endif
   endif
   ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" | $(CC) $(ECFLAGS) $(EFLAGS) -E -P - 2>/dev/null))
