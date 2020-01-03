@@ -144,13 +144,10 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
             element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 64);
       for ( wi=ipw, wo=opw; wi < (ifw + ipw); wi+=sw, wo++ ) {
         __m512 lcl_vdeloutput, lcl_vdeloutput2, lcl_vdeloutput3, lcl_vdeloutput4;
-#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU) || defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
         __mmask16 lcl_relumask, lcl_relumask2, lcl_relumask3, lcl_relumask4;
-#endif
-#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
-        __mmask16 lcl_relumask, lcl_relumask2, lcl_relumask3, lcl_relumask4;
-#endif
         const __m512 vzero = _mm512_setzero_ps();
+#endif
 
         lcl_vdeloutput = _mm512_load_act( del_output_ptr );
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
