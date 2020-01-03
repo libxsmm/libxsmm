@@ -123,7 +123,7 @@ gemm_br_function br_gemm_kernel = 0;
 
 /* These are used for the vnni reformatting of the f32 output  */
 __m256i c0, c1;
-__m512i c01;
+__m512i c01 = LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32();
 const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
 
 /* Related to the output transpose */
@@ -305,15 +305,15 @@ if (handle->upd_linearized_pixels == 0) {
 
                     br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);
 
-                    /* Convert fully caccumulated buffer to bf16 weight buffer in case of full accumulation has happened */
+                    /* Convert fully accumulated buffer to bf16 weight buffer in case of full accumulation has happened */
                     if (oj + handle->batchreduce_h_pixels >= handle->ofh) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
                           c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
                           c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
-                          c01 = _mm512_inserti64x4 (c01, c0, 0);
-                          c01 = _mm512_inserti64x4 (c01, c1, 1);
+                          c01 = _mm512_inserti64x4(c01, c0, 0);
+                          c01 = _mm512_inserti64x4(c01, c1, 1);
                           _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                         }
                       }
@@ -417,15 +417,15 @@ if (handle->upd_linearized_pixels == 0) {
 
                     br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);
 
-                    /* Convert fully caccumulated buffer to bf16 weight buffer in case of full accumulation has happened */
+                    /* Convert fully accumulated buffer to bf16 weight buffer in case of full accumulation has happened */
                     if (oj + handle->batchreduce_h_pixels >= handle->ofh) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
                           c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
                           c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
-                          c01 = _mm512_inserti64x4 (c01, c0, 0);
-                          c01 = _mm512_inserti64x4 (c01, c1, 1);
+                          c01 = _mm512_inserti64x4(c01, c0, 0);
+                          c01 = _mm512_inserti64x4(c01, c1, 1);
                           _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                         }
                       }
@@ -537,8 +537,8 @@ if (handle->upd_linearized_pixels == 0) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
                           c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
                           c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
-                          c01 = _mm512_inserti64x4 (c01, c0, 0);
-                          c01 = _mm512_inserti64x4 (c01, c1, 1);
+                          c01 = _mm512_inserti64x4(c01, c0, 0);
+                          c01 = _mm512_inserti64x4(c01, c1, 1);
                           _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_private_group, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                         }
                       }
@@ -592,15 +592,15 @@ if (handle->upd_linearized_pixels == 0) {
                         &LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, 0, pix + kj * handle->ifwp + ki, handle->blocksifm, handle->ifmblock, handle->input_pixels),
                         dst_ptr);
 
-                    /* Convert fully caccumulated buffer to bf16 weight buffer in case of full accumulation has happened */
+                    /* Convert fully accumulated buffer to bf16 weight buffer in case of full accumulation has happened */
                     if (pix + handle->pixel_blocking >= handle->n_used_pixels) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
                           c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
                           c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
-                          c01 = _mm512_inserti64x4 (c01, c0, 0);
-                          c01 = _mm512_inserti64x4 (c01, c1, 1);
+                          c01 = _mm512_inserti64x4(c01, c0, 0);
+                          c01 = _mm512_inserti64x4(c01, c1, 1);
                           _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                         }
                       }
