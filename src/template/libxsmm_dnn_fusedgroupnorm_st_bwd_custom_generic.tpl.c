@@ -35,7 +35,7 @@ const int nFmG = (nBlocksFm * nFmBlock) / nG;
 /* size of sample */
 const element_stats_type ghw = (element_stats_type)(nFmG * ifh * ifw);
 const element_stats_type recp_ghw = 1.0f/ghw;
-const element_stats_type eps = 1e-7;
+const element_stats_type eps = 1e-7f;
 
 /* computing first logical thread */
 const int ltid = tid - start_thread;

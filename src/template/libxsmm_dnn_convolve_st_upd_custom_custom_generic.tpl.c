@@ -9,7 +9,7 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-int img, my_img_start, my_img_end, ofmb, ifmb, ojb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, ind, j_br, img_br, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm;
+int img, my_img_start, my_img_end, ofmb, ifmb, ojb, ofm1, ifm1, ifm2 = 0, ofm2 = 0, oj, oi, ii, ij, kj, ki, ind, j_br, img_br, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 libxsmm_blasint LDA = handle->ofmblock;
@@ -526,5 +526,4 @@ if (handle->weight_copies > 1) {
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
-
 
