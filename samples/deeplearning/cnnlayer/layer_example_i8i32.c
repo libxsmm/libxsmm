@@ -246,11 +246,7 @@ int main(int argc, char* argv[])
   conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
-#if defined(USE_OVERWRITE)
-  conv_desc.options = (libxsmm_dnn_conv_option)(LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED);
-#else
-  conv_desc.options = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED;
-#endif
+  conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_I8;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_I32;
 

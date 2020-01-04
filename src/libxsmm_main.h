@@ -412,6 +412,12 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   void* scratchVk;            /* Winograd weight buffer */
   size_t scratchVk_size;
 
+  libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd2;     /* ability to hoist forward GEMMs */
+
+  unsigned long long *A_offsets;
+  unsigned long long *B_offsets;
+
   /* JIT-generated convolution code */
   libxsmm_code_pointer code_fwd[3];
   libxsmm_code_pointer code_bwd[3];

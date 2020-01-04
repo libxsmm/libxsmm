@@ -166,6 +166,11 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_blocksifm_blocking( libxsmm
   if (handle->blocksifm % result != 0) {
     result = 1;
   }
+
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) {  
+    result = handle->blocksifm;
+  }  
+
   return result;
 }
 
@@ -233,7 +238,10 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_avoid_rim_fmas_fwd( libxsmm
     if (handle->ofw <= 28) {
       result = 1;
     }
-  }
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) {  
+      result = 0;
+    }
+  }  
   return result;
 }
 
@@ -715,6 +723,50 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->code_fwd[1].pmm = 0;
   handle->code_fwd[2].pmm = 0;
 
+  /* Create strided BRGEMMs for i8i32 convolutions  */
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) {
+    const libxsmm_blasint ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
+    const libxsmm_blasint ldA = handle->ofmblock;
+    const libxsmm_blasint ldC = handle->ofmblock;
+    const int beta = (handle->avoid_acc_load) ? 0 : 1;
+    int l_flags = ( LIBXSMM_GEMM_FLAGS('N', 'N') ) | handle->fwd_flags;
+    if (handle->desc.R == 1 && handle->desc.S == 1) {
+      const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
+      const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
+      libxsmm_blasint stride_A = handle->ifmblock * handle->ofmblock * sizeof(char);
+      libxsmm_blasint stride_B = handle->ifmblock * IFW * IFH * sizeof(char) ;
+      handle->gemm_fwd.xgemm.subimrs = libxsmm_subimmdispatch_reducebatch_strd(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, stride_A, stride_B, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+    } else {
+      const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
+      const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
+      if (handle->avoid_fmas_in_rim == 0) {
+        int n_blocks = handle->desc.R * handle->desc.S * handle->blocksifm_blocking;
+        int i = 0, ifm, ki, kj;
+        handle->A_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
+        handle->B_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
+        for (ifm = 0; ifm < handle->blocksifm_blocking; ifm++) {
+          for (kj = 0; kj < handle->desc.R; kj++) {
+            for (ki = 0; ki < handle->desc.S; ki++) {
+              handle->A_offsets[i] = (ifm * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock +
+                  kj * handle->desc.S * handle->ifmblock * handle->ofmblock +
+                  ki * handle->ifmblock * handle->ofmblock) * sizeof(char);
+              handle->B_offsets[i] = (ifm * IFH * IFW * handle->ifmblock +
+                  kj * IFW * handle->ifmblock +
+                  ki * handle->ifmblock) * sizeof(char);
+              i++;
+            }
+          }
+        }
+        handle->gemm_fwd.xgemm.subimro = libxsmm_subimmdispatch_reducebatch_offs(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+      } else {
+        libxsmm_blasint stride_A = handle->ifmblock * handle->desc.R * handle->desc.S * handle->ofmblock * sizeof(char);
+        libxsmm_blasint stride_B = handle->ifmblock * IFW * IFH * sizeof(char) ;
+        handle->gemm_fwd.xgemm.subimrs = libxsmm_subimmdispatch_reducebatch_strd(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, stride_A, stride_B, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+        handle->gemm_fwd2.xgemm.subimrs = libxsmm_subimmdispatch_reducebatch_strd(handle->ofmblock, handle->fwd_ofh_rb*(handle->fwd_ofw_rb-1), handle->ifmblock, stride_A, stride_B, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+      }
+    } 
+  }
+
 #if 0
   /* Spit out FWD parameters that are selected...  */
   printf("FWD params...\n");
@@ -858,9 +910,9 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
   /* we only support physical paddind in these days */
   /* @TODO: add logical padding support */
   if ( ( conv_desc.pad_h != conv_desc.pad_h_in )  ||
-       ( conv_desc.pad_w != conv_desc.pad_w_in )  ||
-       ( conv_desc.pad_h != conv_desc.pad_h_out ) ||
-       ( conv_desc.pad_w != conv_desc.pad_w_out )    ) {
+      ( conv_desc.pad_w != conv_desc.pad_w_in )  ||
+      ( conv_desc.pad_h != conv_desc.pad_h_out ) ||
+      ( conv_desc.pad_w != conv_desc.pad_w_out )    ) {
     *status = LIBXSMM_DNN_ERR_INVALID_PADDING;
     return 0;
   }
@@ -914,7 +966,7 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
       }
       if (handle->desc.pre_bn != NULL) {
         handle->fuse_batchstats_bwd = 1;
-     }
+      }
     }
 
     handle->options = conv_desc.options;
@@ -1027,7 +1079,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
     if (layout != 0) {
       memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
       if ( (type == LIBXSMM_DNN_REGULAR_INPUT)  || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  ||
-           (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT)    ) {
+          (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT)    ) {
         layout->format = handle->buffer_format;
         layout->tensor_type = LIBXSMM_DNN_ACTIVATION;
 
@@ -1068,7 +1120,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
               layout = 0; /* make sure a NULL is returned */
               *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
             }
-          /* @TODO this need to change */
+            /* @TODO this need to change */
           } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) ) {
             if ( ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_INPUT) )  ) {
               layout->datatype = handle->datatype_in;
