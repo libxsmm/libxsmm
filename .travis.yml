@@ -4,6 +4,7 @@ branches:
   except:
   - develop
   - results
+  - wip
 
 matrix:
   fast_finish: true
