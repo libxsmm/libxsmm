@@ -359,7 +359,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
   LIBXSMM_VLA_DECL(5, const float, in,  in_buffer,  C/cblk_f32, H, W, cblk_f32);
   LIBXSMM_VLA_DECL(6, short, out, out_buffer, C/(cblk_i16*lp_blk), H, W, cblk_i16, lp_blk);
   const unsigned int cblk = C/(cblk_i16*lp_blk);
-  int i1 = 0, i2, i3, i4, i5, i6;
+  int i1 = 0, i2 = 0, i3 = 0, i4 = 0, i5, i6;
 
   /* some quick and dirty checks */
   assert((C % cblk_f32) == 0);
@@ -462,7 +462,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
   LIBXSMM_VLA_DECL(7, short, out, out_buffer, C/(cblk_i16*lp_blk), R, S, cblk_i16, kblk_i16, lp_blk);
   unsigned int cblk = C/(cblk_i16*lp_blk);
   unsigned int kblk = K/kblk_i16;
-  int i1 = 0, i2, i3, i4, i5, i6, i7;
+  int i1 = 0, i2 = 0, i3 = 0, i4 = 0, i5, i6, i7;
 
   /* some quick and dirty checks */
   assert((C % cblk_f32) == 0);
