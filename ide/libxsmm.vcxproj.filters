@@ -273,6 +273,12 @@
     <ClInclude Include="..\include\libxsmm_dnn_tensor.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_fusedgroupnorm_backward.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_fusedgroupnorm_forward.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -769,6 +775,15 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_internal_lstm_fwd_fused_eltwise_bf16.tpl.c">
       <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_fusedgroupnorm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_fusedgroupnorm_backward.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_fusedgroupnorm_forward.c">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
