@@ -953,7 +953,9 @@ endif
 
 ifneq (0,$(INTEL))
   ifeq (1,$(STATIC))
-    SLDFLAGS += -no-intel-extensions -static-intel -static-libstdc++
+    ifeq (0,$(ICX))
+      SLDFLAGS += -no-intel-extensions -static-intel -static-libstdc++
+    endif
     ifneq (Darwin,$(UNAME))
       SLDFLAGS += -static-libgcc
     endif
