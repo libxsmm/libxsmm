@@ -321,8 +321,9 @@ ifeq (0,$(STATIC))
   ifeq (Windows_NT,$(UNAME))
     LNKSOFT = 0
   else ifeq (Darwin,$(UNAME))
-    EXCLUDE_VALUE += -undefined dynamic_lookup
-    LDFLAGS += -undefined dynamic_lookup
+    #EXCLUDE_VALUE += -undefined dynamic_lookup
+    #LDFLAGS += -undefined dynamic_lookup
+    LNKSOFT = 0
   endif
 endif
 
