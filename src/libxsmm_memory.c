@@ -21,8 +21,11 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_DIFF_MEMCMP) && 0
-# define LIBXSMM_DIFF_MEMCMP
+#if !defined(LIBXSMM_MEMORY_MEMCMP) && 0
+# define LIBXSMM_MEMORY_MEMCMP
+#endif
+#if !defined(LIBXSMM_MEMORY_AVX512) && 0
+# define LIBXSMM_MEMORY_AVX512
 #endif
 
 
@@ -103,10 +106,13 @@ int internal_memcmp_avx512(const void* a, const void* b, size_t size)
 
 LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch)
 {
+#if defined(LIBXSMM_MEMORY_AVX512)
   if (LIBXSMM_X86_AVX512 <= target_arch) {
     internal_memcmp_function = internal_memcmp_avx512;
   }
-  else if (LIBXSMM_X86_AVX2 <= target_arch) {
+  else
+#endif
+  if (LIBXSMM_X86_AVX2 <= target_arch) {
     internal_memcmp_function = internal_memcmp_avx2;
   }
   else if (LIBXSMM_X86_SSE3 <= target_arch) {
@@ -178,7 +184,7 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
 {
   unsigned int result;
   LIBXSMM_ASSERT(size <= stride);
-#if defined(LIBXSMM_DIFF_MEMCMP)
+#if defined(LIBXSMM_MEMORY_MEMCMP)
   LIBXSMM_DIFF_N(unsigned int, result, memcmp, a, bn, size, stride, hint, n);
 #else
   switch (size) {
@@ -213,9 +219,9 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
 
 LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size)
 {
-#if defined(LIBXSMM_DIFF_MEMCMP)
+#if defined(LIBXSMM_MEMORY_MEMCMP)
   return memcmp(a, b, size);
-#elif (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) && 0
+#elif (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_MEMORY_AVX512)
   return internal_memcmp_avx512(a, b, size);
 #elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return internal_memcmp_avx2(a, b, size);
