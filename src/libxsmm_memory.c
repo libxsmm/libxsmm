@@ -24,9 +24,6 @@
 #if !defined(LIBXSMM_MEMORY_MEMCMP) && 0
 # define LIBXSMM_MEMORY_MEMCMP
 #endif
-#if !defined(LIBXSMM_MEMORY_AVX512) && 0
-# define LIBXSMM_MEMORY_AVX512
-#endif
 
 
 LIBXSMM_APIVAR_PRIVATE(int (*internal_memcmp_function)(const void*, const void*, size_t));
@@ -106,7 +103,7 @@ int internal_memcmp_avx512(const void* a, const void* b, size_t size)
 
 LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch)
 {
-#if defined(LIBXSMM_MEMORY_AVX512)
+#if defined(LIBXSMM_DIFF_AVX512_ENABLED)
   if (LIBXSMM_X86_AVX512 <= target_arch) {
     internal_memcmp_function = internal_memcmp_avx512;
   }
@@ -169,10 +166,10 @@ LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned ch
 {
   const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
   unsigned char i;
-  for (i = 0; i < (size & 0xF0); i += 16) {
-    LIBXSMM_DIFF_16_DECL(a16);
-    LIBXSMM_DIFF_16_LOAD(a16, a8 + i);
-    if (LIBXSMM_DIFF_16(a16, b8 + i, 0/*dummy*/)) return 1;
+  for (i = 0; i < (size & 0xE0); i += 32) {
+    LIBXSMM_DIFF_16_DECL(aa);
+    LIBXSMM_DIFF_16_LOAD(aa, a8 + i);
+    if (LIBXSMM_DIFF_16(aa, b8 + i, 0/*dummy*/)) return 1;
   }
   for (; i < size; ++i) if (a8[i] ^ b8[i]) return 1;
   return 0;
@@ -221,14 +218,17 @@ LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size)
 {
 #if defined(LIBXSMM_MEMORY_MEMCMP)
   return memcmp(a, b, size);
-#elif (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_MEMORY_AVX512)
+#elif (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_DIFF_AVX512_ENABLED)
   return internal_memcmp_avx512(a, b, size);
 #elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return internal_memcmp_avx2(a, b, size);
-#else /* pointer based function call */
-  LIBXSMM_INIT
+#elif defined(LIBXSMM_INIT_COMPLETED) /* pointer based function call */
   LIBXSMM_ASSERT(NULL != internal_memcmp_function);
   return internal_memcmp_function(a, b, size);
+#else
+  return NULL != internal_memcmp_function
+    ? internal_memcmp_function(a, b, size)
+    : internal_memcmp_sw(a, b, size);
 #endif
 }
 
