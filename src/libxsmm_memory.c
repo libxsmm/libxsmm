@@ -167,9 +167,9 @@ LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned ch
   const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
   unsigned char i;
   for (i = 0; i < (size & 0xE0); i += 32) {
-    LIBXSMM_DIFF_16_DECL(aa);
-    LIBXSMM_DIFF_16_LOAD(aa, a8 + i);
-    if (LIBXSMM_DIFF_16(aa, b8 + i, 0/*dummy*/)) return 1;
+    LIBXSMM_DIFF_32_DECL(aa);
+    LIBXSMM_DIFF_32_LOAD(aa, a8 + i);
+    if (LIBXSMM_DIFF_32(aa, b8 + i, 0/*dummy*/)) return 1;
   }
   for (; i < size; ++i) if (a8[i] ^ b8[i]) return 1;
   return 0;
