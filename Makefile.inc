@@ -321,7 +321,8 @@ ifeq (0,$(STATIC))
   ifeq (Windows_NT,$(UNAME))
     LNKSOFT = 0
   else ifeq (Darwin,$(UNAME))
-    LNKSOFT = 0
+    EXCLUDE_VALUE += -undefined dynamic_lookup
+    LDFLAGS += -undefined dynamic_lookup
   endif
 endif
 
@@ -832,6 +833,7 @@ ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
   RESULT=$$($(CC) -dynamic $${INFILE} -o $${INFILE}.exe 2>&1); \
   if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
   rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+    EXCLUDE_VALUE += -dynamic
     XLD := $(XLD) -dynamic
     FLD := $(FLD) -dynamic
     LD := $(LD) -dynamic
@@ -1688,6 +1690,7 @@ ifeq (0,$(COMPATIBLE))
     ifneq (ld,$(call qndir,$(LD)))
     ifneq (Windows_NT,$(UNAME))
       ifneq (0,$(DEPSTATIC))
+        EXCLUDE_VALUE += $(call linkopt,--export-dynamic)
         ifneq (0,$(HARDEN))
           ifneq (,$(strip $(HARDEN))) # explicit
             LDFLAGS := $(call linkopt,--export-dynamic) $(LDFLAGS)
@@ -2160,7 +2163,7 @@ objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .% _% MAKE_% HAVE_% LIB_% MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION% \
+  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION% \
     CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR DFLAGS FINFO \
     ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE DLIBEXT DYNAMIC FLOCK LIBEXT \
     ILIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNK% BRACE_OPEN BRACE_CLOSE MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS SUITE \
@@ -2168,9 +2171,9 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS \
     LDTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED PRESTATE AVX SSE \
     which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink \
-    applyif extname objname quote qapath qndir qdir qsuffix qbname qname \
+    applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC,$(NULL)) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
-    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(call linkopt,--export-dynamic) -dynamic,$($V))))?))))
+    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
 
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 .state: $(firstword $(PRESTATE))
