@@ -424,6 +424,7 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 {
   libxsmm_xrelease_scratch(NULL/*lock*/);
   /* release global services */
+  libxsmm_memory_finalize();
   libxsmm_hash_finalize();
   libxsmm_malloc_finalize();
 }
@@ -747,6 +748,7 @@ LIBXSMM_API_INTERN void internal_init(void)
     }
 #endif
     libxsmm_hash_init(libxsmm_target_archid); /* used by debug memory allocation (checksum) */
+    libxsmm_memory_init(libxsmm_target_archid);
     if (
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       (EXIT_SUCCESS == libxsmm_xmalloc((void**)new_cache, (LIBXSMM_NTHREADS_MAX) * sizeof(internal_cache_type), LIBXSMM_CACHELINE/*alignment*/,
