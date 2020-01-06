@@ -46,40 +46,9 @@ int main(int argc, char* argv[])
   if (NULL != a && NULL != b) {
     /* initialize the data */
     libxsmm_rng_seq(a, (libxsmm_blasint)nbytes);
-    libxsmm_rng_seq(b, (libxsmm_blasint)nbytes);
+    memcpy(b, a, nbytes); /* same content */
 
-    { /* benchmark libxsmm_hash/pure */
-      size_t diff = 0, i;
-      const libxsmm_timer_tickint start = libxsmm_timer_tick();
-      for (i = 0; i < nrpt; ++i) {
-        const unsigned int hash_a = libxsmm_hash(a, (unsigned int)nbytes, 0/*seed*/);
-        const unsigned int hash_b = libxsmm_hash(b, (unsigned int)nbytes, 0/*seed*/);
-        diff += (hash_a != hash_b);
-      }
-      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      if (0 < duration) printf("libxsmm_hash/pure:\t%.8f s (%i MB/s)\n", duration,
-        (int)LIBXSMM_ROUND((2.0 * nrpt * nbytes) / ((1024.0 * 1024.0) * duration)));
-      result += (int)diff * ((int)stride / ((int)stride + 1)); /* ignore result */
-    }
-
-    if (elsize < 128) { /* benchmark libxsmm_hash/cmp */
-      size_t diff = 0, i, j;
-      const libxsmm_timer_tickint start = libxsmm_timer_tick();
-      for (i = 0; i < nrpt; ++i) {
-        for (j = 0; j < nbytes; j += stride) {
-          const void *const aj = a + j, *const bj = b + j;
-          const unsigned int hash_a = libxsmm_hash(aj, elsize, 0/*seed*/);
-          const unsigned int hash_b = libxsmm_hash(bj, elsize, 0/*seed*/);
-          diff += (hash_a != hash_b || libxsmm_diff(aj, bj, (unsigned char)elsize));
-        }
-      }
-      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      if (0 < duration) printf("libxsmm_hash/cmp:\t%.8f s (%i MB/s)\n", duration,
-        (int)LIBXSMM_ROUND((2.0 * nrpt * nbytes) / ((1024.0 * 1024.0) * duration)));
-      result += (int)diff * ((int)stride / ((int)stride + 1)); /* ignore result */
-    }
-
-    if (elsize < 128) { /* benchmark libxsmm_diff */
+    if (elsize < 256) { /* benchmark libxsmm_diff */
       size_t diff = 0, i, j;
       const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
@@ -119,7 +88,7 @@ int main(int argc, char* argv[])
       const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
         if (stride == elsize) {
-          diff += libxsmm_memcmp(a, b, nbytes);
+          diff += (0 != memcmp(a, b, nbytes));
         }
         else {
           for (j = 0; j < nbytes; j += stride) {
@@ -134,14 +103,50 @@ int main(int argc, char* argv[])
 #endif
           }
         }
-        /* memcmp is likely pure and without touching a it is not repeated (nrpt) */
-        a[i%nbytes] = 255;
       }
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) printf("stdlib memcmp:\t\t%.8f s (%i MB/s)\n", duration,
         (int)LIBXSMM_ROUND((2.0 * nrpt * nbytes) / ((1024.0 * 1024.0) * duration)));
       result += (int)diff * ((int)stride / ((int)stride + 1)); /* ignore result */
     }
+#if 1
+    { /* validation */
+      size_t diff = 0, i, j, k;
+      printf("validation error(s): ");
+      fflush(stdout);
+      for (i = 0; i < nrpt; ++i) {
+        for (j = 0; j < nbytes; j += stride) {
+          unsigned char *const aj = a + j, *const bj = b + j;
+          for (k = 0; k < 2; ++k) {
+            const int r = rand() % elsize;
+#if defined(_MSC_VER)
+#           pragma warning(push)
+#           pragma warning(disable: 6385)
+#endif
+            if (0 != memcmp(aj, bj, elsize)) {
+              if (elsize < 256 && 0 == libxsmm_diff(aj, bj, (unsigned char)elsize)) ++diff;
+              if (0 == libxsmm_memcmp(aj, bj, elsize)) ++diff;
+            }
+            else {
+              if (elsize < 256 && 0 != libxsmm_diff(aj, bj, (unsigned char)elsize)) ++diff;
+              if (0 != libxsmm_memcmp(aj, bj, elsize)) ++diff;
+            }
+#if defined(_MSC_VER)
+#           pragma warning(pop)
+#endif
+            /* inject difference into a or b */
+            if (0 != (rand() & 1)) {
+              aj[r] = (unsigned char)(rand() % 256);
+            }
+            else {
+              bj[r] = (unsigned char)(rand() % 256);
+            }
+          }
+        }
+      }
+      printf("%i\n", (int)diff);
+    }
+#endif
   }
   else {
     result = EXIT_FAILURE;
