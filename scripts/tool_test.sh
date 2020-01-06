@@ -212,7 +212,6 @@ then
       if [ "" != "${PARTITION}" ]; then PARTITIONS=${PARTITION}; fi
     fi
     if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
-       [ "" != "$(command -v touch)" ] && \
        [ "" != "$(command -v stat)" ] && \
        [ "" != "$(command -v date)" ];
     then
@@ -366,7 +365,7 @@ then
     done # CONFIGS
     done # PARTITIONS
     if [ "" != "${TOUCHFILE}" ]; then
-      touch ${TOUCHFILE}
+      echo "${JOBID}" > ${TOUCHFILE}
       TOUCHFILE=""
     fi
     done # SLURMFILE
