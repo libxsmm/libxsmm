@@ -158,17 +158,6 @@ endif
 
 # Intrinsics support level
 INTRINSICS ?= 2
-ifneq (0,$(INTRINSICS))
-  ifeq (1,$(INTRINSICS))
-    ifeq (0,$(INTEL))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    else ifneq (,$(CTARGET))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    endif
-  endif
-else # disabled
-  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
-endif
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
@@ -339,16 +328,16 @@ endif
 GNU ?= 0
 ifeq (0,$(GNU))
   ifeq (,$(shell echo "$${CXX}"))
-    ifneq (,$(call qndir,$(call which,icpc)))
+    ifneq (,$(filter icpc icpc1,$(call qndir,$(call which,icpc))$(INTEL)))
       CXX = icpc
-    else ifneq (,$(call qndir,$(call which,icpx)))
+    else ifneq (,$(filter icpx icpx2,$(call qndir,$(call which,icpx))$(INTEL)))
       CXX = icpx
     endif
   endif
   ifeq (,$(shell echo "$${CC}"))
-    ifneq (,$(call qndir,$(call which,icc)))
+    ifneq (,$(filter icc icc1,$(call qndir,$(call which,icc))$(INTEL)))
       CC = icc
-    else ifneq (,$(call qndir,$(call which,icx)))
+    else ifneq (,$(filter icx icx2,$(call qndir,$(call which,icx))$(INTEL)))
       CC = icx
     endif
   endif
@@ -1576,6 +1565,18 @@ ifeq (undefined,$(origin TARGET))
   endif # DBG
 else # take user's TARGET into account
   CTARGET := $(TARGET)
+endif
+
+ifneq (0,$(INTRINSICS))
+  ifeq (1,$(INTRINSICS))
+    ifeq (0,$(INTEL))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    else ifneq (,$(CTARGET))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    endif
+  endif
+else # disabled
+  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
 endif
 
 ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
