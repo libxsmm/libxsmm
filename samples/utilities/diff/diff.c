@@ -65,7 +65,11 @@ int main(int argc, char* argv[])
 
     { /* benchmark libxsmm_memcmp */
       size_t diff = 0, i, j;
-      const libxsmm_timer_tickint start = libxsmm_timer_tick();
+      libxsmm_timer_tickint start;
+      /* reinitialize the data (flush caches) */
+      libxsmm_rng_seq(a, (libxsmm_blasint)nbytes);
+      memcpy(b, a, nbytes); /* same content */
+      start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
         if (stride == elsize) {
           diff += libxsmm_memcmp(a, b, nbytes);
@@ -85,7 +89,11 @@ int main(int argc, char* argv[])
 
     { /* benchmark stdlib's memcmp */
       size_t diff = 0, i, j;
-      const libxsmm_timer_tickint start = libxsmm_timer_tick();
+      libxsmm_timer_tickint start;
+      /* reinitialize the data (flush caches) */
+      libxsmm_rng_seq(a, (libxsmm_blasint)nbytes);
+      memcpy(b, a, nbytes); /* same content */
+      start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
         if (stride == elsize) {
           diff += (0 != memcmp(a, b, nbytes));
@@ -112,8 +120,6 @@ int main(int argc, char* argv[])
 #if 1
     { /* validation */
       size_t diff = 0, i, j, k;
-      printf("validation error(s): ");
-      fflush(stdout);
       for (i = 0; i < nrpt; ++i) {
         for (j = 0; j < nbytes; j += stride) {
           unsigned char *const aj = a + j, *const bj = b + j;
@@ -144,7 +150,10 @@ int main(int argc, char* argv[])
           }
         }
       }
-      printf("%i\n", (int)diff);
+      if (0 != diff) {
+        fprintf(stderr, "ERROR: errors=%i - validation failed!", (int)diff);
+        result = EXIT_FAILURE;
+      }
     }
 #endif
   }
