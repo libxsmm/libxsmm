@@ -68,7 +68,7 @@
 # define LIBXSMM_DIFF_AVX512_DECL(A) __m512i A
 # define LIBXSMM_DIFF_AVX512_ASSIGN(A, B) (A) = (B)
 # define LIBXSMM_DIFF_AVX512_LOAD(A, SRC) A = _mm512_loadu_si512((const __m512i*)(SRC))
-# define LIBXSMM_DIFF_AVX512(A, B, ...) ((unsigned char)(0xFFFF != _cvtmask16_u32(_mm512_cmpeq_epi32_mask( \
+# define LIBXSMM_DIFF_AVX512(A, B, ...) ((unsigned char)(0xFFFF != (unsigned int)/*_cvtmask16_u32*/(_mm512_cmpeq_epi32_mask( \
     A, _mm512_loadu_si512((const __m512i*)(B))))))
 #else
 # define LIBXSMM_DIFF_AVX512_DECL LIBXSMM_DIFF_64SW_DECL
