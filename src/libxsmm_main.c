@@ -1977,6 +1977,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
               }
 # endif
             }
+            if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == desc->kind) {
+              internal_update_mmstatistic(&desc->gemm.desc, 1/*try*/, 0, 0, 0);
+            }
             /* leave here even in case of a build-error; do not use break (inside of locked region) */
             diff = 0;
           }
@@ -1999,14 +2002,14 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         else /* JIT-code generation not available */
 #endif
         { /* leave the dispatch loop */
+          if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == desc->kind) {
+            internal_update_mmstatistic(&desc->gemm.desc, 1/*try*/, 0, 0, 0);
+          }
 #if !defined(NDEBUG) && (0 != LIBXSMM_JIT)
           build = EXIT_FAILURE;
 #endif
           flux_entry.pmm = NULL;
           diff = 0;
-        }
-        if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == desc->kind) {
-          internal_update_mmstatistic(&desc->gemm.desc, 1/*try*/, 0, 0, 0);
         }
       }
     } while (0 != diff);
