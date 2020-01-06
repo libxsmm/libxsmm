@@ -508,7 +508,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         }
       }
       if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-        fprintf(stderr, "Uptime: %f s", libxsmm_timer_duration(internal_timer_start, libxsmm_timer_tick()));
+        fprintf(stderr, "Uptime: %f s\n", libxsmm_timer_duration(internal_timer_start, libxsmm_timer_tick()));
       }
     }
     else {
