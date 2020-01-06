@@ -181,7 +181,6 @@ LIBXSMM_APIVAR(internal_cache_type* internal_cache_buffer);
 # endif
 #endif /*defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))*/
 
-
 /** Determines the try-lock property (1<N: disabled, N=1: enabled [N=0: disabled in case of RW-lock]). */
 LIBXSMM_APIVAR(int internal_reglock_count);
 LIBXSMM_APIVAR(size_t internal_registry_nbytes);
@@ -198,6 +197,9 @@ LIBXSMM_APIVAR(unsigned int internal_statistic_num_trsm);
 LIBXSMM_APIVAR(unsigned int internal_statistic_num_trmm);
 LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR(const char* internal_build_state);
+
+/** Time stamp (startup time of library). */
+LIBXSMM_APIVAR(libxsmm_timer_tickint internal_timer_start);
 
 #if !defined(INTERNAL_DELIMS)
 # define INTERNAL_DELIMS ";,:"
@@ -504,6 +506,9 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         else {
           fprintf(stderr, "\n");
         }
+      }
+      if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+        fprintf(stderr, "Uptime: %f s", libxsmm_timer_duration(internal_timer_start, libxsmm_timer_tick()));
       }
     }
     else {
@@ -922,6 +927,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
             fprintf(stderr, "LIBXSMM WARNING: libxsmm_timer_ncycles may not measure in cycles!\n");
           }
         }
+        internal_timer_start = libxsmm_timer_tick();
       }
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
