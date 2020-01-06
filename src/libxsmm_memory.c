@@ -11,6 +11,7 @@
 #include <libxsmm_memory.h>
 #include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -266,9 +267,9 @@ LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned ch
   LIBXSMM_ASSERT(NULL != internal_diff_function);
   return internal_diff_function(a, b, size);
 #else
-  return NULL != internal_diff_function
+  return (unsigned char)(NULL != internal_diff_function
     ? internal_diff_function(a, b, size)
-    : internal_diff_sw(a, b, size);
+    : internal_diff_sw(a, b, size));
 #endif
 }
 
