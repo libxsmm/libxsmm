@@ -763,22 +763,23 @@
 #if !defined(LIBXSMM_ASSERT_MSG)
 # define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) && (0 != *(MSG)))
 #endif
-#if !defined(LIBXSMM_EXPECT)
-# if defined(NDEBUG)
-#   define LIBXSMM_EXPECT(RESULT, EXPR) do { \
-      /*const*/ int libxsmm_expect_result_ = (EXPR); \
-      LIBXSMM_UNUSED(libxsmm_expect_result_); \
-    } while(0)
-# else
-#   define LIBXSMM_EXPECT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) == (EXPR))
-# endif
+#if !defined(LIBXSMM_EXPECT_ELIDE)
+# define LIBXSMM_EXPECT_ELIDE(RESULT, EXPR) do { \
+    /*const*/ int libxsmm_expect_result_ = (EXPR); \
+    LIBXSMM_UNUSED(libxsmm_expect_result_); \
+  } while(0)
 #endif
-#if !defined(LIBXSMM_EXPECT_NOT)
-# if defined(NDEBUG)
-#   define LIBXSMM_EXPECT_NOT(RESULT, EXPR) (EXPR)
-# else
-#   define LIBXSMM_EXPECT_NOT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) != (EXPR))
-# endif
+#if defined(NDEBUG)
+# define LIBXSMM_EXPECT LIBXSMM_EXPECT_ELIDE
+# define LIBXSMM_EXPECT_NOT LIBXSMM_EXPECT_ELIDE
+#else
+# define LIBXSMM_EXPECT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) == (EXPR))
+# define LIBXSMM_EXPECT_NOT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) != (EXPR))
+#endif
+#if defined(_DEBUG)
+# define LIBXSMM_EXPECT_DEBUG LIBXSMM_EXPECT
+#else
+# define LIBXSMM_EXPECT_DEBUG LIBXSMM_EXPECT_ELIDE
 #endif
 #include <stddef.h>
 #include <stdint.h>
