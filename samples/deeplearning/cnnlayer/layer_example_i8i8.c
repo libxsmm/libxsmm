@@ -29,7 +29,7 @@
 int main(int argc, char* argv[])
 {
 
-  float *naive_input_fp, *naive_output_fp, *naive_filter_fp, *naive_libxsmm_output_fp, *dq_naive_input, *dq_naive_filter; 
+  float *naive_input_fp, *naive_output_fp, *naive_filter_fp, *naive_libxsmm_output_fp, *dq_naive_input, *dq_naive_filter;
   char *naive_filter_i8, *naive_output_i8, *naive_libxsmm_output, *filter_libxsmm, *output_libxsmm;
   unsigned char *naive_input_i8, *input_libxsmm;
 
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
   naive_input_i8        = (unsigned char*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(unsigned char), 2097152);
   naive_output_i8       = (char*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(char),   2097152);
   naive_filter_i8       = (char*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(char), 2097152);
-  
+
   naive_libxsmm_output      = (char*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(char),   2097152);
   naive_libxsmm_output_fp   = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float),   2097152);
   input_libxsmm         = (unsigned char*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(unsigned char), 2097152);
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
 
   dq_naive_input        = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   dq_naive_filter       = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
- 
+
   /* initialize data */
   if (padding_mode == 0 ) {
     init_buf_range(naive_input_fp, nImg*nIfm*ifhp*ifwp, 0.0, 1.0);
@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
     /* run naive convolutions */
     if (type == 'A' || type == 'F') {
       zero_buf(naive_output_fp,    nImg*nOfm*ofhp*ofwp);
-      naive_conv_fp(&naive_param, naive_input_fp, naive_output_fp, naive_filter_fp, NULL); 
+      naive_conv_fp(&naive_param, naive_input_fp, naive_output_fp, naive_filter_fp, NULL);
     }
     printf("##########################################\n");
     printf("#      Computing Reference ... done      #\n");
@@ -249,7 +249,7 @@ int main(int argc, char* argv[])
   printf("Linf rel.error: %.24f\n", norms_quant.linf_rel);
   printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
   libxsmm_matdiff_clear(&norms_quant);
-  
+
   libxsmm_matdiff(&norms_quant, LIBXSMM_DATATYPE_F32, nIfm*nOfm*kw*kh, 1, naive_filter_fp, dq_naive_filter, 0, 0);
   printf("Filter Quantization:\n");
   printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
@@ -259,9 +259,9 @@ int main(int argc, char* argv[])
   printf("Linf abs.error: %.24f\n", norms_quant.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_quant.linf_rel);
   printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
-  libxsmm_matdiff_clear(&norms_quant);  printf("\n"); 
-#endif 
-  
+  libxsmm_matdiff_clear(&norms_quant);  printf("\n");
+#endif
+
   printf("\n");
   printf("##########################################\n");
   printf("#     Setting Up    (custom-Storage)     #\n");

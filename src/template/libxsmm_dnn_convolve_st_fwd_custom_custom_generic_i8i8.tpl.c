@@ -140,7 +140,7 @@ if (handle->avoid_fmas_in_rim == 1) {
                   LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 5, output_int32, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                       &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                       handle->fwd_ofw_rb * handle->ofmblock, vscf);
-                }              
+                }
               }
             }
           }
@@ -187,7 +187,7 @@ if (handle->avoid_fmas_in_rim == 1) {
                   LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 5, output_int32, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                       &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                       handle->fwd_ofw_rb * handle->ofmblock, vscf);
-                }              
+                }
               }
             }
           }
@@ -217,7 +217,7 @@ if (handle->avoid_fmas_in_rim == 1) {
                 LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 3, scratch_int32, ojj, 0, 0, handle->fwd_ofw_rb, handle->ofmblock),
                     &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                     handle->fwd_ofw_rb * handle->ofmblock, vscf);
-              }               
+              }
             }
           }
         }
@@ -260,7 +260,7 @@ if (handle->avoid_fmas_in_rim == 1) {
                   LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 5, output_int32, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                       &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                       handle->fwd_ofw_rb * handle->ofmblock, vscf);
-                }                
+                }
               }
             }
           }
@@ -290,7 +290,7 @@ if (handle->avoid_fmas_in_rim == 1) {
                 LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 3, scratch_int32, ojj, 0, 0, handle->fwd_ofw_rb, handle->ofmblock),
                     &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                     handle->fwd_ofw_rb * handle->ofmblock, vscf);
-              }               
+              }
             }
           }
         }
