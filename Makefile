@@ -129,7 +129,12 @@ MALLOC ?= -1
 WRAP ?= 1
 
 # JIT backend is enabled by default
-JIT ?= 1
+ifeq (0,$(PLATFORM))
+  JIT ?= 1
+else # disabled if platform is forced
+# enable: make PLATFORM=1 JIT=1
+  JIT ?= 0
+endif
 
 # TRACE facility
 INSTRUMENT ?= $(TRACE)
