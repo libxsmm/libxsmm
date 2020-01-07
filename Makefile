@@ -129,7 +129,7 @@ MALLOC ?= -1
 WRAP ?= 1
 
 # JIT backend is enabled by default
-ifeq (0,$(PLATFORM))
+ifeq (,$(filter-out 0,$(PLATFORM)))
   JIT ?= 1
 else # disabled if platform is forced
 # enable: make PLATFORM=1 JIT=1
