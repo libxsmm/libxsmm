@@ -1606,7 +1606,7 @@ else # revoke target flags
 endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
-  TARGET ?= $(CTARGET)
+  TARGET = $(CTARGET)
 endif
 
 ifeq (0,$(COMPATIBLE))
