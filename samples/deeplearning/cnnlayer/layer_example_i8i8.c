@@ -409,19 +409,25 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_conv_layer( libxsmm_handle ) );
 
   /* deallocate data */
-  //libxsmm_free(naive_input);
+  libxsmm_free(naive_input_fp);
+  libxsmm_free(naive_filter_fp);
   libxsmm_free(naive_output_fp);
+  libxsmm_free(naive_libxsmm_output_fp);
+  libxsmm_free(dq_naive_input);
+  libxsmm_free(dq_naive_filter);
+  libxsmm_free(naive_filter_i8);
+  libxsmm_free(naive_output_i8);
   libxsmm_free(naive_libxsmm_output);
-  //libxsmm_free(naive_filter);
   libxsmm_free(input_libxsmm);
+  libxsmm_free(naive_input_i8);
   libxsmm_free(output_libxsmm);
   libxsmm_free(filter_libxsmm);
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
-    const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
+    const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 0.01 : atof(env_check_scale));
     if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel) && (global_status == LIBXSMM_DNN_SUCCESS)) {
-      //fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
-      //exit(EXIT_FAILURE);
+      fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+      exit(EXIT_FAILURE);
     }
   }
 
