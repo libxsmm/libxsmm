@@ -181,7 +181,6 @@ LIBXSMM_APIVAR(internal_cache_type* internal_cache_buffer);
 # endif
 #endif /*defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))*/
 
-
 /** Determines the try-lock property (1<N: disabled, N=1: enabled [N=0: disabled in case of RW-lock]). */
 LIBXSMM_APIVAR(int internal_reglock_count);
 LIBXSMM_APIVAR(size_t internal_registry_nbytes);
@@ -198,6 +197,9 @@ LIBXSMM_APIVAR(unsigned int internal_statistic_num_trsm);
 LIBXSMM_APIVAR(unsigned int internal_statistic_num_trmm);
 LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR(const char* internal_build_state);
+
+/** Time stamp (startup time of library). */
+LIBXSMM_APIVAR(libxsmm_timer_tickint internal_timer_start);
 
 #if !defined(INTERNAL_DELIMS)
 # define INTERNAL_DELIMS ";,:"
@@ -424,6 +426,7 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 {
   libxsmm_xrelease_scratch(NULL/*lock*/);
   /* release global services */
+  libxsmm_memory_finalize();
   libxsmm_hash_finalize();
   libxsmm_malloc_finalize();
 }
@@ -503,6 +506,9 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         else {
           fprintf(stderr, "\n");
         }
+      }
+      if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+        fprintf(stderr, "Uptime: %f s\n", libxsmm_timer_duration(internal_timer_start, libxsmm_timer_tick()));
       }
     }
     else {
@@ -747,6 +753,7 @@ LIBXSMM_API_INTERN void internal_init(void)
     }
 #endif
     libxsmm_hash_init(libxsmm_target_archid); /* used by debug memory allocation (checksum) */
+    libxsmm_memory_init(libxsmm_target_archid);
     if (
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       (EXIT_SUCCESS == libxsmm_xmalloc((void**)new_cache, (LIBXSMM_NTHREADS_MAX) * sizeof(internal_cache_type), LIBXSMM_CACHELINE/*alignment*/,
@@ -920,6 +927,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
             fprintf(stderr, "LIBXSMM WARNING: libxsmm_timer_ncycles may not measure in cycles!\n");
           }
         }
+        internal_timer_start = libxsmm_timer_tick();
       }
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
@@ -1975,6 +1983,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
               }
 # endif
             }
+            if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == desc->kind) {
+              internal_update_mmstatistic(&desc->gemm.desc, 1/*try*/, 0, 0, 0);
+            }
             /* leave here even in case of a build-error; do not use break (inside of locked region) */
             diff = 0;
           }
@@ -1997,14 +2008,14 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         else /* JIT-code generation not available */
 #endif
         { /* leave the dispatch loop */
+          if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == desc->kind) {
+            internal_update_mmstatistic(&desc->gemm.desc, 1/*try*/, 0, 0, 0);
+          }
 #if !defined(NDEBUG) && (0 != LIBXSMM_JIT)
           build = EXIT_FAILURE;
 #endif
           flux_entry.pmm = NULL;
           diff = 0;
-        }
-        if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == desc->kind) {
-          internal_update_mmstatistic(&desc->gemm.desc, 1/*try*/, 0, 0, 0);
         }
       }
     } while (0 != diff);

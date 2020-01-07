@@ -540,7 +540,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_reduce_stats_st_
     /* compute thr_begin and thr_end */
     const int thr_begin2 = (ltid * chunksize2 < work2) ? (ltid * chunksize2) : work2;
     const int thr_end2 = ((ltid + 1) * chunksize2 < work2) ? ((ltid + 1) * chunksize2) : work2;
-    int v, fm;
+    int v = 0, fm;
     const float sqrt_eps = 1e-7f;
     const float nhw = (float)(handles[0]->desc.fullN * handles[0]->desc.H * handles[0]->desc.W);
     const float recp_nhw = 1.0f/nhw;

@@ -336,7 +336,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_blocked_gemm_han
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_zero_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -347,7 +347,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_zero_ld(libxsmm_blasint m, libxs
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_copy_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -358,7 +358,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_copy_ld(libxsmm_blasint m, libxs
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_add_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src0, LIBXSMM_DNN_ELTWISE_FTYPE *src1, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -369,7 +369,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_add_ld(libxsmm_blasint m, libxsm
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_sub_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src0, LIBXSMM_DNN_ELTWISE_FTYPE *src1, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -380,7 +380,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sub_ld(libxsmm_blasint m, libxsm
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_mult_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src0, LIBXSMM_DNN_ELTWISE_FTYPE *src1, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -391,7 +391,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_mult_ld(libxsmm_blasint 
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_inplace_eltwise_mult_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src0, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -402,7 +402,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_inplace_eltwise_mult_ld(libxsmm_
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_fma_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src0, LIBXSMM_DNN_ELTWISE_FTYPE *src1, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -413,7 +413,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_fma_ld(libxsmm_blasint m
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_add_colvector_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst, LIBXSMM_DNN_ELTWISE_FTYPE *colv) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -424,7 +424,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_add_colvector_ld(libxsmm_blasint
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_colvector_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst, LIBXSMM_DNN_ELTWISE_FTYPE *colv) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -448,7 +448,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_cvt_bf16_fp32_colvector_ld(
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_colvector_const_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst, LIBXSMM_DNN_ELTWISE_FTYPE *colv, LIBXSMM_DNN_ELTWISE_FTYPE const_bias) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -472,7 +472,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_cvt_bf16_fp32_colvector_con
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -484,7 +484,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_ld(libxsmm_blasint m, li
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -495,7 +495,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_ld(libxsmm_blasint m, libxs
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -506,7 +506,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_ld(libxsmm_blasint m, libxs
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -519,7 +519,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse_ld(libxsmm_blasi
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -531,7 +531,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse_ld(libxsmm_blasint 
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -542,7 +542,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse_ld(libxsmm_blasint 
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse_inplace_eltwise_mult_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -555,7 +555,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse_inplace_eltwise_
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse_inplace_eltwise_mult_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -567,7 +567,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse_inplace_eltwise_mul
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse_inplace_eltwise_mult_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -578,7 +578,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse_inplace_eltwise_mul
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -589,7 +589,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_ld(libxsmm_blasint m,
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
@@ -667,3 +667,4 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_cvt_bf16_fp32_ld(libxsmm_blasint
     }
   }
 }
+

@@ -38,7 +38,7 @@ const libxsmm_blasint nw_k = kk / handle->bk;
 const libxsmm_blasint nw = nw_i * nw_j;
 
 libxsmm_blasint m, n, k, mb, nb, kb;
-libxsmm_blasint ki, kj, w_i, ki2;
+libxsmm_blasint ki, kj = 0, w_i, ki2;
 libxsmm_blasint nw_k2 = nw_k;
 
 /* TODO: take transa and transb into account (flags) */

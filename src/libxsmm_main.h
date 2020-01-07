@@ -755,6 +755,9 @@ LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_point
 /** Returns the current tick of a (monotonic) platform-specific counter; not necessarily CPU cycles. */
 LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(int* tsc);
 
+LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch);
+LIBXSMM_API_INTERN void libxsmm_memory_finalize(void);
+
 LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
 

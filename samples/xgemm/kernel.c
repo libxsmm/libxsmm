@@ -446,7 +446,6 @@ int main(int argc, char* argv []) {
   /* Gold data */
   double* l_c_gold_d = 0;
   float* l_c_gold_f = 0;
-  int* l_c_gold_b = 0;
   libxsmm_bfloat16* l_c_gold_bf = 0;
   int* l_c_gold_w_i = 0;
   int* l_c_gold_b_i = 0;

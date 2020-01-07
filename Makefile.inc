@@ -158,17 +158,6 @@ endif
 
 # Intrinsics support level
 INTRINSICS ?= 2
-ifneq (0,$(INTRINSICS))
-  ifeq (1,$(INTRINSICS))
-    ifeq (0,$(INTEL))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    else ifneq (,$(CTARGET))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    endif
-  endif
-else # disabled
-  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
-endif
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
@@ -191,6 +180,9 @@ else ifneq (3,$(AVX))
 else
   LIBNAME ?= $(DEPDIR)/lib/libxsmm
 endif
+
+# Additional library search paths
+LIBFIND ?= /usr/local/lib
 
 # Internal utilities
 MKTEMP = $(DEPDIR)/.mktmp.sh
@@ -289,7 +281,7 @@ ifneq (0,$(PYMOD))
   override STATIC = 0
 endif
 
-# Explicitly disables BLAS by user's intervention
+# Explicitly disable BLAS by user's intervention
 # Makefile defines what happens (perhaps nothing)
 NOBLAS ?= 0
 DNOBLAS = -D__BLAS=0
@@ -318,6 +310,8 @@ ifeq (0,$(STATIC))
   ifeq (Windows_NT,$(UNAME))
     LNKSOFT = 0
   else ifeq (Darwin,$(UNAME))
+    #EXCLUDE_VALUE += -undefined dynamic_lookup
+    #LDFLAGS += -undefined dynamic_lookup
     LNKSOFT = 0
   endif
 endif
@@ -334,16 +328,16 @@ endif
 GNU ?= 0
 ifeq (0,$(GNU))
   ifeq (,$(shell echo "$${CXX}"))
-    ifneq (,$(call qndir,$(call which,icpc)))
+    ifneq (,$(filter icpc icpc1,$(call qndir,$(call which,icpc))$(INTEL)))
       CXX = icpc
-    else ifneq (,$(call qndir,$(call which,icpx)))
+    else ifneq (,$(filter icpx icpx2,$(call qndir,$(call which,icpx))$(INTEL)))
       CXX = icpx
     endif
   endif
   ifeq (,$(shell echo "$${CC}"))
-    ifneq (,$(call qndir,$(call which,icc)))
+    ifneq (,$(filter icc icc1,$(call qndir,$(call which,icc))$(INTEL)))
       CC = icc
-    else ifneq (,$(call qndir,$(call which,icx)))
+    else ifneq (,$(filter icx icx2,$(call qndir,$(call which,icx))$(INTEL)))
       CC = icx
     endif
   endif
@@ -829,6 +823,7 @@ ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
   RESULT=$$($(CC) -dynamic $${INFILE} -o $${INFILE}.exe 2>&1); \
   if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
   rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+    EXCLUDE_VALUE += -dynamic
     XLD := $(XLD) -dynamic
     FLD := $(FLD) -dynamic
     LD := $(LD) -dynamic
@@ -858,21 +853,23 @@ ifneq (Darwin,$(UNAME))
   ifneq (ld,$(call qndir,$(LD)))
     XLNKOPT = -Wl,
   endif
-  linkopt = $(XLNKOPT)$(if $2,$1="$2",$1)
+  XLNKVERBOSE = --verbose
+  linkopt = $(if $1,$(XLNKOPT)$(if $2,$1="$2",$1))
   abslibrpath = $(strip $(if \
     $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out %.$(SLIBEXT),$1), \
     $(call linkopt,--rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
-  XGROUP_BEGIN = $(XLNKOPT)--start-group
-  XGROUP_END = $(XLNKOPT)--end-group
+  XGROUP_BEGIN = $(call linkopt,--start-group)
+  XGROUP_END = $(call linkopt,--end-group)
   ifneq (0,$(ASNEEDED))
-    XLIB_BEGIN = $(XLNKOPT)--as-needed
-    XLIB_END = $(XLNKOPT)--no-as-needed
+    XLIB_BEGIN = $(call linkopt,--as-needed)
+    XLIB_END = $(call linkopt,--no-as-needed)
   endif
 else # OSX
   ifneq (ld,$(call qndir,$(LD)))
     XLNKOPT = -Xlinker
   endif
-  linkopt = $(XLNKOPT) $1 $(XLNKOPT) "$2"
+  #XLNKVERBOSE = -t
+  linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) "$2",$1))
   abslibrpath = $(strip $(if \
     $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out %.$(SLIBEXT),$1), \
     $(call linkopt,-rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
@@ -890,7 +887,7 @@ endif
 abslibpath ?= $(call absliblpath,$1)
 
 libpath = $(strip $(if $1, \
-  $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL),$(shell $1 $2 -l$3 -Wl,--verbose 2>&1 \
+  $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
     | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)[[:space:]]..*/\1/p" \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1)),$(NULL)))
@@ -929,7 +926,7 @@ endif
 
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    solink = -o "$1.$2.$3.$4" $(XLNKOPT)-soname=$(strip $(call qndir,$1).$5)
+    solink = -o "$1.$2.$3.$4" $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
     ifneq (0,$(SONAMELNK))
       solink += $(shell cd "$(call qdir,$1)" 2>/dev/null && \
         ln -fs $(call qndir,$1.$2.$3.$4) $(call qndir,$1.$5))
@@ -939,7 +936,7 @@ ifneq (Darwin,$(UNAME))
         ln -fs $(call qndir,$1.$5) $(call qndir,$1))
     endif
   else # MinGW
-    solink = -o "$1" $(XLNKOPT)-soname=$(strip $(call qndir,$1).$5)
+    solink = -o "$1" $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
   endif
 else # osx
   solink = -o "$(call qbname,$1).$2$(call qsuffix,$1)" \
@@ -953,7 +950,9 @@ endif
 
 ifneq (0,$(INTEL))
   ifeq (1,$(STATIC))
-    SLDFLAGS += -no-intel-extensions -static-intel -static-libstdc++
+    ifeq (0,$(ICX))
+      SLDFLAGS += -no-intel-extensions -static-intel -static-libstdc++
+    endif
     ifneq (Darwin,$(UNAME))
       SLDFLAGS += -static-libgcc
     endif
@@ -1307,7 +1306,7 @@ else # GCC assumed
       CFLAGS += -flto
       FCFLAGS += -flto
       #FLDFLAGS += -fno-lto
-      LDFLAGS += $(XLNKOPT)-flto
+      LDFLAGS += $(call linkopt,-flto)
       ifneq (0,$(FAT))
         CXXFLAGS += -ffat-lto-objects
         CFLAGS += -ffat-lto-objects
@@ -1375,6 +1374,9 @@ else # GCC assumed
         OMPFLAG_FORCE = -fopenmp
         OMPRT = omp
       endif
+    else # Darwin
+      OMPFLAG_FORCE = -Xpreprocessor -fopenmp
+      OMPRT = omp
     endif
   endif
   ifeq (,$(OMPFLAG_FORCE))
@@ -1393,45 +1395,41 @@ else # GCC assumed
   ifeq (,$(strip $(OMPRT))) # fallback
     OMPRT = gomp
   endif
-  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
+  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
   ifneq (0,$(OMP))
   ifneq (,$(OMPFLAG_FORCE))
-  ifneq (,$(OMPLIBFILE))
-    # clang: OMP=libomp
-    ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
-      ifneq (0,$(CLANG))
-        CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
-        CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+    ifneq (,$(OMPLIBFILE))
+      # clang: OMP=libomp
+      ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
+        ifneq (0,$(CLANG))
+          CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+          CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+        endif
+        CXXLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+        CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+        CLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+        CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+      else ifneq (Darwin,$(UNAME))
+        ifneq (0,$(CLANG))
+          CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+          CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+        endif
+        CXXLDFLAGS += $(OMPFLAG_FORCE)
+        CLDFLAGS += $(OMPFLAG_FORCE)
+        CXXFLAGS += $(OMPFLAG_FORCE)
+        CFLAGS += $(OMPFLAG_FORCE)
       endif
-      CXXLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-      CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-      CLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-      CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-    else ifneq (Darwin,$(UNAME))
-      ifneq (0,$(CLANG))
-        CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
-        CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
-      endif
-      CXXLDFLAGS += $(OMPFLAG_FORCE)
-      CLDFLAGS += $(OMPFLAG_FORCE)
-      CXXFLAGS += $(OMPFLAG_FORCE)
-      CFLAGS += $(OMPFLAG_FORCE)
     endif
-  endif
-  endif
-  endif
-  ifneq (0,$(OMP))
-  ifneq (,$(OMPFLAG_FORCE))
     ifeq (3,$(GCC)) # pure GNU toolchain
       FLDFLAGS += $(OMPFLAG_FORCE)
       FCFLAGS += $(OMPFLAG_FORCE)
     else # mixed toolchain
-      LDTEST = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
+      LDTEST = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
       ifneq (,$(LDTEST))
         FLDFLAGS += $(OMPFLAG_FORCE)
         FCFLAGS += $(OMPFLAG_FORCE)
       else
-        LDTEST = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,gomp)
+        LDTEST = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),gomp)
         FLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
         ifneq (,$(LDTEST))
           FLDFLAGS += $(OMPFLAG_FORCE)
@@ -1569,6 +1567,18 @@ else # take user's TARGET into account
   CTARGET := $(TARGET)
 endif
 
+ifneq (0,$(INTRINSICS))
+  ifeq (1,$(INTRINSICS))
+    ifeq (0,$(INTEL))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    else ifneq (,$(CTARGET))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    endif
+  endif
+else # disabled
+  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
+endif
+
 ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
   # check target flags by feeding an ad-hoc C program into the compiler
   ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
@@ -1682,14 +1692,15 @@ ifeq (0,$(COMPATIBLE))
     ifneq (ld,$(call qndir,$(LD)))
     ifneq (Windows_NT,$(UNAME))
       ifneq (0,$(DEPSTATIC))
+        EXCLUDE_VALUE += $(call linkopt,--export-dynamic)
         ifneq (0,$(HARDEN))
           ifneq (,$(strip $(HARDEN))) # explicit
-            LDFLAGS := $(XLNKOPT)--export-dynamic $(LDFLAGS)
+            LDFLAGS := $(call linkopt,--export-dynamic) $(LDFLAGS)
           else ifneq (0,$(SYM))
-            LDFLAGS := $(XLNKOPT)--export-dynamic $(LDFLAGS)
+            LDFLAGS := $(call linkopt,--export-dynamic) $(LDFLAGS)
           endif
         else ifneq (0,$(SYM))
-          LDFLAGS := $(XLNKOPT)--export-dynamic $(LDFLAGS)
+          LDFLAGS := $(call linkopt,--export-dynamic) $(LDFLAGS)
         endif
       endif
       # Linux distributions may apply similar hardening
@@ -1706,7 +1717,7 @@ ifeq (0,$(COMPATIBLE))
         FCFLAGS += -fdata-sections -ffunction-sections
       endif
       # --gc-sections: relies on section-flags present at compile-stage
-      LDFLAGS := $(XLNKOPT)--gc-sections $(LDFLAGS)
+      LDFLAGS := $(call linkopt,--gc-sections) $(LDFLAGS)
       ifeq (0,$(VISIBILITY)) # -fvisibility=hidden may cause crashes
         CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
         #FCFLAGS += -fvisibility=hidden
@@ -1801,10 +1812,16 @@ ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
 endif
 GLIBC ?= 0
 
-OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
+OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
 ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB = $(call abslib,$(OMPLIBFILE))
+else ifeq (0,$(shell echo "\#include <omp.h>\nint main(void) { return omp_get_max_threads(); }" \
+  | $(LD) -xc $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) /dev/stdin 2>&1 >/dev/null; echo "$$?"))
+  OMPLIB = $(addprefix -L,$(LIBFIND)) -l$(OMPRT)
+  CXXLDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
+  CLDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
 endif
+
 ifneq (,$(OMPFLAG_FORCE))
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
   echo "\#if defined(_OPENMP)" > $${INFILE}; \
@@ -1921,9 +1938,7 @@ ifneq (0,$(MKL))
       CFLAGS += -Wno-unused-value
     endif
   endif
-  ifneq (0,$(NOBLAS))
-    BLAS_FLAGS += -D__CBLAS
-  endif
+  BLAS_FLAGS += -D__CBLAS
 endif
 ifneq (Darwin,$(UNAME))
   ifneq (,$(wildcard $(MKLROOT)/lib/x86_64-linux-gnu/libmkl_rt.*))
@@ -1934,9 +1949,7 @@ ifneq (Darwin,$(UNAME))
 endif
 
 ifeq (1,$(MKL)) # sequential
-  ifneq (0,$(NOBLAS))
-    BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
-  endif
+  BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
   MKL_THREADS = sequential
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
@@ -1944,9 +1957,7 @@ ifeq (1,$(MKL)) # sequential
   endif
   endif
 else ifneq (0,$(MKL)) # multi-threaded
-  ifneq (0,$(NOBLAS))
-    BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
-  endif
+  BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
   MKL_THREADS = $(MKL_OMPRTL)_thread
   ifeq (0,$(OMP))
     ifneq (gnu,$(MKL_OMPRTL))
@@ -2012,7 +2023,7 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_THREADS = p
       endif
     endif
-    BLASDIR ?= $(wildcard /usr/local/lib /usr/lib)
+    BLASDIR ?= $(wildcard $(LIBFIND) /usr/lib)
     BLASROOT = $(wildcard $(patsubst %,%/..,$(BLASDIR)))
     ifeq (0,$(BLAS_STATIC)) # shared
       LDTEST = $(filter-out -static,$(SLDFLAGS)) $(patsubst %,-L%,$(BLASDIR))
@@ -2031,9 +2042,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
-      ifneq (0,$(NOBLAS))
-        BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
-      endif
+      BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
       ifneq (,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
         BLAS_FLAGS += -D__OPENBLAS77 -I"$(call qdir,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))"
       else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
@@ -2042,9 +2051,7 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_FLAGS += -D__OPENBLAS77 -I"$(call qdir,$(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))"
       endif
     else # BLAS (reference)
-      ifneq (0,$(NOBLAS))
-        BLAS_FLAGS += -D__BLAS
-      endif
+      BLAS_FLAGS += -D__BLAS
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
         BLASLIBFILE = $(call libpath,$(LD),$(LDTEST),blas$(BLAS_BITS).dll)
       else
@@ -2081,18 +2088,16 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
     ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
-      ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT)))
+      ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT)))
         BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
       else # common link BLAS/OMP-link flags (all compilers)
         BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
       endif
     endif
   else # BLAS library is specified via BLASLIB
-    ifneq (0,$(NOBLAS))
-      BLAS_FLAGS += -D__BLAS=$(BLAS)
-      ifneq (,$(findstring openblas,$(call qndir,$(BLASLIB))))
-        BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
-      endif
+    BLAS_FLAGS += -D__BLAS=$(BLAS)
+    ifneq (,$(findstring openblas,$(call qndir,$(BLASLIB))))
+      BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
     endif
     ifneq (./,$(firstword $(BLASDIR))$(call qdir,$(BLASLIB)))
       ifeq (./,$(call qdir,$(BLASLIB)))
@@ -2148,17 +2153,17 @@ objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .% _% MAKE_% HAVE_% LIB_% MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION% \
+  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION% \
     CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR DFLAGS FINFO \
     ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE DLIBEXT DYNAMIC FLOCK LIBEXT \
-    ILIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS SUITE \
+    ILIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNK% BRACE_OPEN BRACE_CLOSE MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS SUITE \
     FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI ICX \
-    GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS LDTEST \
-    PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED PRESTATE AVX SSE \
+    GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS \
+    LDTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED PRESTATE AVX SSE \
     which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink \
-    applyif extname objname quote qapath qndir qdir qsuffix qbname qname \
+    applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC,$(NULL)) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
-    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(XLNKOPT)--export-dynamic -dynamic,$($V))))?))))
+    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
 
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 .state: $(firstword $(PRESTATE))

@@ -210,7 +210,7 @@
   const libxsmm_blasint libxsmm_inline_xgemm_ldc_ = (NULL != ((void*)(LDC)) ? (*(const libxsmm_blasint*)(LDC)) : libxsmm_inline_xgemm_m_); \
   const OTYPE libxsmm_inline_xgemm_alpha_ = (NULL != ((void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_inline_xgemm_beta_  = (NULL != ((void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
-  libxsmm_blasint libxsmm_inline_xgemm_ni_, libxsmm_inline_xgemm_mi_, libxsmm_inline_xgemm_ki_; /* loop induction variables */ \
+  libxsmm_blasint libxsmm_inline_xgemm_ni_, libxsmm_inline_xgemm_mi_ = 0, libxsmm_inline_xgemm_ki_; /* loop induction variables */ \
   LIBXSMM_ASSERT('n' == libxsmm_inline_xgemm_transa_ || *"N" == libxsmm_inline_xgemm_transa_); \
   LIBXSMM_ASSERT('n' == libxsmm_inline_xgemm_transb_ || *"N" == libxsmm_inline_xgemm_transb_); \
   LIBXSMM_PRAGMA_SIMD \
@@ -400,7 +400,7 @@
   /*const*/ double libxsmm_matinit_seed_ = (double)SEED; /* avoid constant conditional */ \
   const double libxsmm_matinit_scale_ = (SCALE) * libxsmm_matinit_seed_ + (SCALE); \
   const libxsmm_blasint libxsmm_matinit_ld_ = (libxsmm_blasint)LD; \
-  libxsmm_blasint libxsmm_matinit_i_, libxsmm_matinit_j_; \
+  libxsmm_blasint libxsmm_matinit_i_ = 0, libxsmm_matinit_j_; \
   LIBXSMM_OMP_VAR(libxsmm_matinit_i_); LIBXSMM_OMP_VAR(libxsmm_matinit_j_); \
   if (0 != libxsmm_matinit_seed_) { \
     OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
