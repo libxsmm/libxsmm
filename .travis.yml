@@ -51,16 +51,18 @@ addons:
     branch_pattern: coverity
 
 before_install:
-  - echo -n | openssl s_client -connect scan.coverity.com:443 2>/dev/null
-    | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
-    | sudo tee -a /etc/ssl/certs/ca-certificates.crt
   - source .env/travis.env
-#  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
-#      if [ "${TRAVIS_OS_NAME}" = "osx" ] && [ "${CC}" != "clang" ]; then sudo easy_install pip; fi;
-#    fi
+  - if [ -e /etc/ssl/certs/ca-certificates.crt ]; then
+      echo -n | openssl s_client -connect scan.coverity.com:443 2>/dev/null
+      | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
+      | sudo tee -a /etc/ssl/certs/ca-certificates.crt;
+    fi
+  - if [ "" = "${CODECOV_ENABLED}" ] || [ "0" != "${CODECOV_ENABLED}" ]; then
+      if [ "osx" = "${TRAVIS_OS_NAME}" ] && [ "clang" != "${CC}" ]; then sudo easy_install pip; fi;
+    fi
 
 install:
-  - if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ] && [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then
+  - if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "${UPLOAD_ENABLED}" ] && [ "1" != "${COVERITY_SCAN_BRANCH}" ]; then
       ( cd /tmp && curl -O -L https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz &&
         tar xvf OpenSSL_1_1_1d.tar.gz && cd openssl-OpenSSL_1_1_1d &&
         ./config --prefix=${HOME}/openssl && make ${MAKEJ} && make install &&
@@ -75,9 +77,9 @@ install:
         cd ${TRAVIS_BUILD_DIR}
       ) || true;
     fi
-  #- if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
-  #    if [ "${CC}" != "clang" ]; then pip install --user codecov; fi;
-  #  fi
+  - if [ "" = "${CODECOV_ENABLED}" ] || [ "0" != "${CODECOV_ENABLED}" ]; then
+      if [ "clang" != "${CC}" ]; then pip install --user codecov; fi;
+    fi
 
 after_success:
   - eval ${CODECOV}
@@ -90,61 +92,61 @@ before_script:
   - source .env/travis.env
 
 script:
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} TRACE=1 STATIC=0 BLAS=1 ABSLIBS=1 EFLAGS="-DITYPE=double" ${INSTALL} tests &&
-      if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
+      if [ "g++" != "${CXX}" ] && [ "osx" != "${TRAVIS_OS_NAME}" ]; then
         env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt;
       fi
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} TRACE=1 MNK="19 27, 23" EFLAGS="-DLIBXSMM_MALLOC_MMAP" ${INSTALL} test-cp2k
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 MNK="4 8" STATIC=0 PREFETCH=0 CACHE=0 EFLAGS="-DLIBXSMM_NO_CTOR" ${INSTALL} test-nek
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 PYMOD=1 EFLAGS="-DLIBXSMM_NO_CTOR" ${INSTALL} tests
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 MNK="9 3, 23" STATIC=0 EFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" ${INSTALL} test-smm
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" INTRINSICS=1 ${INSTALL} tests
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 SSE=0 AVX=0 JIT=0 EFLAGS="-DELEM_TYPE=short" ${INSTALL} tests
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 test-wrap
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 test-wrap
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 GEMM=2 STATIC=0 BLAS=2 test-wrap
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - if [ "${COVERITY_SCAN_BRANCH}" != "1" ]; then exit 0; fi;
-    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" = "clang" ]; then echo "0"; fi) && make -e clean && (
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 test-cpp &&
       make -e ${PEDANTIC_HIGH} AVX=2 THREADS=0 test-cpp &&
       make -e ${PEDANTIC_HIGH} AVX=1 VLA=0 test-cpp
