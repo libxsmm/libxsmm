@@ -1386,7 +1386,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
     lp_block = 2;
   } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
     lp_block = 2;
-  } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (datatype_out == LIBXSMM_DNN_DATATYPE_I32)) {
+  } else if (datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
     lp_block = 4;
   } else {
     status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
