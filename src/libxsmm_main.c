@@ -1365,7 +1365,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
 
   /* C */
   if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE) {
-    tmp_max_c_block = 32;
+    tmp_max_c_block = 64;
+    if (datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
+      tmp_max_c_block = 32;
+    }
   }
   if ( C < tmp_max_c_block ) {
     ifmblock = C;
@@ -1377,7 +1380,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
 
   /* K */
   if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE) {
-    tmp_max_k_block = 32;
+    tmp_max_k_block = 64;
+    if (datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
+      tmp_max_k_block = 32;
+    }
   }
   if ( K < tmp_max_k_block ) {
     ofmblock = K;

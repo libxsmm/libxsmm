@@ -96,6 +96,11 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_ofw_rb( libxsmm_dnn_lay
   if (handle->ofw == 56) {
     result = 28;
   }
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
+    if (handle->ofw % 2 == 0) {
+      result = handle->ofw/2;
+    }
+  }
   return result;
 }
 

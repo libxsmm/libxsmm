@@ -321,6 +321,19 @@ int main(int argc, char* argv[])
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
     /* run LIBXSMM convolution for performance */
+    for (i = 0; i < 10; ++i) {
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+        libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
+      }
+    }
     l_start = libxsmm_timer_tick();
     for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
