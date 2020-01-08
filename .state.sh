@@ -10,35 +10,38 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-TOUCH=$(command -v touch)
+MKDIR=$(command -v mkdir)
 DIFF=$(command -v diff)
 SED=$(command -v sed)
 TR=$(command -v tr)
 
-if [ "" != "${TOUCH}" ] && [ "" != "${DIFF}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
+if [ "" != "${MKDIR}" ] && [ "" != "${DIFF}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
+  HERE=$(cd "$(dirname $0)"; pwd -P)
   if [ "$1" = "" ]; then
-    STATEFILE=./.state
+    STATEFILE=${HERE}/.state
   else
+    ${MKDIR} -p "$1"
     STATEFILE=$1/.state
   fi
 
   STATE=$(${TR} '?' '\n' | ${TR} '"' \' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')
-  if [ ! -e ${STATEFILE} ]; then
+  TOUCH=$(command -v touch)
+  if [ ! -e "${STATEFILE}" ]; then
     if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
-      printf "%s\n" "${STATE}" > ${STATEFILE}
+      printf "%s\n" "${STATE}" > "${STATEFILE}"
     fi
     echo "$0"
     # only needed to execute body of .state-rule
-    ${TOUCH} $0
+    if [ "" != "${TOUCH}" ]; then ${TOUCH} $0; fi
   else # difference must be determined
-    STATE_DIFF=$(echo "${STATE}" | ${DIFF} --new-line-format="" --unchanged-line-format="" ${STATEFILE} - 2>/dev/null)
+    STATE_DIFF=$(echo "${STATE}" | ${DIFF} --new-line-format="" --unchanged-line-format="" "${STATEFILE}" - 2>/dev/null)
     if [ "0" != "$?" ] || [ "" != "${STATE_DIFF}" ]; then
       if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
-        printf "%s\n" "${STATE}" > ${STATEFILE}
+        printf "%s\n" "${STATE}" > "${STATEFILE}"
       fi
       echo "$0 $(echo "${STATE_DIFF}" | ${SED} -e 's/=..*$//' -e 's/\"//g' -e '/^$/d')"
       # only needed to execute body of .state-rule
-      ${TOUCH} $0
+      if [ "" != "${TOUCH}" ]; then ${TOUCH} $0; fi
     fi
   fi
 else

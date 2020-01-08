@@ -204,6 +204,9 @@ EXCLUDE_STATE = \
   PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR \
   SRCDIR TEST VERSION_STRING DEPSTATIC ALIAS_% BLAS %_TARGET %ROOT MPSS KNC
 
+# fixed .state file directory (included by source)
+DIRSTATE = $(OUTDIR)/..
+
 ifeq (,$(M)$(N)$(K))
 ifneq (,$(filter 0,$(MNK) 0))
   EXCLUDE_STATE += PRECISION MNK M N K
@@ -603,7 +606,7 @@ endif
 
 .PHONY: config
 config: $(INCDIR)/libxsmm_config.h
-$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
+$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(DIRSTATE)/.state $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
                             $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py \
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
                             $(wildcard $(ROOTDIR)/.github/*) \
@@ -661,7 +664,7 @@ endif
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
 ifneq (,$(PYTHON))
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py
-	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py "$(call qapath,.state)" $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py "$(call qapath,$(DIRSTATE)/.state)" $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 else
 .PHONY: $(BLDDIR)/libxsmm_dispatch.h
 endif
@@ -1667,7 +1670,7 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo
 	@echo "LIBXSMM installing artifacts..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)/artifacts
-	@$(CP) -v .state $(PREFIX)/$(PDOCDIR)/artifacts/make.txt
+	@$(CP) -v $(DIRSTATE)/.state $(PREFIX)/$(PDOCDIR)/artifacts/make.txt
 endif
 
 ifeq (Windows_NT,$(UNAME))
