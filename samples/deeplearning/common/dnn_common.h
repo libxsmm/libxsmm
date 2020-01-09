@@ -2230,7 +2230,7 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
   const int nFMG = nFm/nG;
   const float ghw = (float)(nFMG * ifh * ifw);
   const float recp_ghw = 1.0f/ghw;
-  const float eps = 1e-7;
+  const float eps = 1e-7f;
 
   int img, g, fmg, fm, hi, wi, ho, wo;
 
