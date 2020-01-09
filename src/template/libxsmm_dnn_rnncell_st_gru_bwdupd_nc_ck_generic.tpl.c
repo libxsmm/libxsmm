@@ -274,7 +274,7 @@ for (j = t-1; j >= 0; --j) {
     if (0 == j) {
       libxsmm_internal_matrix_sub_ld(             bk, bn, K, &LIBXSMM_VLA_ACCESS(2, hp, in, ik, K),        &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
     } else {
-      LIBXSMM_ASSERT(NULL != h); /* coverity[var_deref_op] */
+      LIBXSMM_ASSERT(NULL != ht); /* coverity[var_deref_op] */
       libxsmm_internal_matrix_sub_ld(             bk, bn, K, &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
     }
     libxsmm_internal_matrix_eltwise_mult_ld(      bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K),   &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dc, in, ik, K) );

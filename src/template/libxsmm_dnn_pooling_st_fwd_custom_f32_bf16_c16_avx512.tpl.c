@@ -117,9 +117,9 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 
       wi = ((wo-opw) * sw) - handle->desc.pad_w;
       for ( kh = 0; kh < handle->desc.R; kh++ ) {
-        if(hi+kh < 0 || hi+kh >= ifh) continue;
+        if (hi+kh < 0 || hi+kh >= ifh) continue;
         for ( kw = 0; kw < handle->desc.S; kw++ ) {
-          if(wi+kw < 0 || wi+kw >= ifw) {
+          if (wi+kw < 0 || wi+kw >= ifw) {
             continue;
           } else {
             const element_input_type*      input_ptr  = &LIBXSMM_VLA_ACCESS(5, input,      img, fm, hi+kh+iph, wi+kw+ipw, 0, nBlocksFm, ifhp, ifwp, 16);

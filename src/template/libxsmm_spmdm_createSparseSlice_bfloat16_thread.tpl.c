@@ -45,8 +45,8 @@ else {
   float * values_ptr = (float *)(slice.values);
 #if SIMD_WIDTH_FP32 > 1
   SIMDTYPE_INT32 vzero = _MM_SET1_INT32(0);
-#endif
   SIMDTYPE_FP32 vzerof = _MM_SET1_FP32(0.0);
+#endif
   uint16_t cnt = 0;
 #if (1 == SIMD_WIDTH_FP32)
   ncols_aligned = 0;

@@ -78,7 +78,7 @@ double derive_cycles_from_time(double time) {
   } else {
     FILE* fp;
     fp = popen("lscpu | grep MHz | awk '{print $3}'", "r");
-    if(fp > 0) {
+    if (fp > 0) {
       char tmp_buffer[20];
       fread(tmp_buffer, 20, 1, fp);
       d_freq = atof(tmp_buffer);
