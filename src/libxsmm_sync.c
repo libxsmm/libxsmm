@@ -468,6 +468,7 @@ LIBXSMM_API void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
   assert(0 != mutex);
   while (0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&mutex->state, lock_free, lock_state, LIBXSMM_ATOMIC_RELAXED)) {
     libxsmm_mutex_state state;
+    /* coverity[unreachable] may be reachable more than once due to volatile state */
     for (state = mutex->state; INTERNAL_SYNC_LOCK_FREE != state; state = mutex->state) {
 #     if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
       LIBXSMM_SYNC_CYCLE_ELSE(&mutex->state, INTERNAL_SYNC_LOCK_FREE, LIBXSMM_SYNC_NPAUSE, {

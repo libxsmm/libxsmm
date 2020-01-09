@@ -204,9 +204,12 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
           unsigned int l_corrected_vlen;
 
           /* compute the mask count, depends on vlen as block in M */
+#if 0 /* same code regardless of which branch is taken */
           if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
             l_corrected_vlen = l_micro_kernel_config.vector_length;
-          } else {
+          } else
+#endif
+          {
             l_corrected_vlen = l_micro_kernel_config.vector_length;
           }
 

@@ -267,8 +267,8 @@ LIBXSMM_API_INLINE void internal_update_mmstatistic(const libxsmm_gemm_descripto
     else { /*huge*/
       bucket = 3;
     }
-    if (0 != ncol) LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ncol, ncol, LIBXSMM_ATOMIC_RELAXED);
-    if (0 != ntry) LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ntry, ntry, LIBXSMM_ATOMIC_RELAXED);
+    if (0 != ncol) ncol/*dummy assignment*/ = LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ncol, ncol, LIBXSMM_ATOMIC_RELAXED);
+    if (0 != ntry) ntry/*dummy assignment*/ = LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ntry, ntry, LIBXSMM_ATOMIC_RELAXED);
     /* the following counters are not manipulated concurrently (no need for atomic increment) */
     if (0 != njit) internal_statistic[idx][bucket].njit += njit;
     if (0 != nsta) internal_statistic[idx][bucket].nsta += nsta;
@@ -1746,7 +1746,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
         fprintf(stderr, "LIBXSMM ERROR: invalid build request discovered!\n");
       }
-      result = EXIT_FAILURE;
+      /*result = EXIT_FAILURE;*/
     }
 # endif
   }

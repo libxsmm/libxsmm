@@ -977,7 +977,9 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           const libxsmm_blasint ildb = (NULL != ldb ? ldb[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & flags) ? ik : in));
           const libxsmm_blasint ildc = (NULL != ldc ? ldc[g] : im);
           const void **const galpha = &alpha, **const gbeta = &beta;
+          /* coverity[overrun-local] */
           const void *const ialpha = (NULL != alpha ? galpha[g] : NULL);
+          /* coverity[overrun-local] */
           const void *const ibeta = (NULL != beta ? gbeta[g] : NULL);
           if (EXIT_SUCCESS == libxsmm_mmbatch_blas(iprec, oprec, ta, tb, im, in, ik, ialpha,
             (const char*)a + sa * base[i], &ilda, (const char*)b + sb * base[i], &ildb, ibeta, (char*)c + sc * base[i], &ildc,
