@@ -909,7 +909,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           internal_singleton_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR) : -1);
         internal_singleton_handle = fcntl(singleton_handle, F_SETLK, &singleton_flock);
         if (0 > internal_singleton_handle && 0 <= singleton_handle) close(singleton_handle);
-#endif
+#endif  /* coverity[leaked_handle] */
       }
       { /* calibrate timer */
         libxsmm_timer_tickint s0, t0, s1, t1; int tsc = 0;
