@@ -533,6 +533,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
           if (NULL != file) {
             int c = fgetc(file);
             fprintf(stdout, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
+            /* coverity[tainted_data] */
             while (EOF != c) {
               fputc(c, stdout);
               c = fgetc(file);
@@ -1722,10 +1723,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
       }
     } break;
-    case LIBXSMM_BUILD_KIND_TRSM: { /* compact TRSM kernel (packed) */
-      unsigned int tsize;
-      LIBXSMM_ASSERT(NULL != request->descriptor.trsm);
-      tsize = (unsigned int)request->descriptor.trsm->typesize;
+    case LIBXSMM_BUILD_KIND_TRSM: if (NULL != request->descriptor.trsm) { /* compact TRSM kernel (packed) */
+      const unsigned int tsize = (unsigned int)request->descriptor.trsm->typesize;
       if (4 == tsize || 8 == tsize) {
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_trsm_kernel, &generated_code, request->descriptor.trsm, target_arch);
 # if !defined(LIBXSMM_VTUNE)

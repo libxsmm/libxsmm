@@ -608,7 +608,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     handle->upd_linearized_pixels = 0;
     handle->upd_trans_w_only = 0;
   }
-  /* For large images facilitate the "large" transposes by blocking the pixel/reduciton domains  */
+  /* For large images facilitate the "large" transposes by blocking the pixel/reduction domains  */
   if (handle->ofw >= 56 && handle->ofh >=56 && handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.u == 1 && handle->desc.v == 1) {
     handle->upd_linearized_pixels = 0;
     handle->upd_trans_w_only = 1;

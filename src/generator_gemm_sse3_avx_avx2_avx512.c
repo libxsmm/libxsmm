@@ -263,7 +263,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                   l_gp_reg_mapping.gp_reg_a_prefetch,
                   0 );
             }
-            if (adjust_B_pf_ptrs) {
+            if (adjust_B_pf_ptrs) { /* coverity[dead_error_line] */
               libxsmm_x86_instruction_alu_mem( io_generated_code,
                   l_micro_kernel_config.alu_mov_instruction,
                   l_gp_reg_mapping.gp_reg_b_prefetch,

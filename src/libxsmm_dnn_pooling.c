@@ -129,7 +129,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_pooling_create_tensor_dat
                 layout->dim_size[2] = handle->ofh;
                 layout->dim_size[3] = handle->blocksofm;
                 layout->dim_size[4] = handle->desc.N;
-              } else {
+              } else { /* coverity[dead_error_begin] */
                 free(layout->dim_type);
                 free(layout->dim_size);
                 free(layout);

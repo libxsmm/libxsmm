@@ -88,6 +88,7 @@ else {
       }
     }
     else {
+#if (1 != SIMD_WIDTH_FP32)
       for (k = 0; k < ncols_aligned; k += 4*SIMD_WIDTH_FP32) {
         SIMDTYPE_INT32 v1tmp, v2tmp;
         SIMDTYPE_FP32 v1, v2, v3, v4;
@@ -107,6 +108,7 @@ else {
         COMPRESS_FP32(v3, k + 2*SIMD_WIDTH_FP32, m3, cnt);
         COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
       }
+#endif
       for (k = ncols_aligned; k < ncols; k++) {
         uint16_t v1tmp = input_ptr[i*handle->k + k];
         union {int i; float f; } v1tmp_int;

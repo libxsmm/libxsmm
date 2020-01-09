@@ -103,6 +103,7 @@ else {
         COMPRESS_FP32(v3, k + 2*SIMD_WIDTH_FP32, m3, cnt);
         COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
       }
+#if (1 != SIMD_WIDTH_FP32)
       for (k = ncols_aligned; k < ncols_aligned_2; k += SIMD_WIDTH_FP32) {
         SIMDTYPE_FP32 v1;
         SIMDMASKTYPE_FP32 m1;
@@ -111,6 +112,7 @@ else {
         m1 = _MM_CMPNEQ_FP32(v1, vzero);
         COMPRESS_FP32(v1, k, m1, cnt);
       }
+#endif
       for (k = ncols_aligned_2; k < ncols; k++) {
         const float v1 = input_ptr[i*handle->k + k];
         const int m1 = LIBXSMM_FEQ(0, v1) ? 0 : 1;

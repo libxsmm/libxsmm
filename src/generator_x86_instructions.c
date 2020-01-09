@@ -3734,6 +3734,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         if (l_gp8) l_sse_preamble += 1;
 #if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
         LIBXSMM_ASSERT(0 == l_ix8);
+        /* coverity[dead_error_line] */
         if (l_ix8) l_sse_preamble += 2;
 #endif
         buf[i++] = (unsigned char)l_sse_preamble;
@@ -3751,7 +3752,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         if ( l_regbas0 == 4 ) buf[i++]=0x24;
     }
 #if !defined(NDEBUG)
-    else {
+    else { /* coverity[dead_error_begin] */
         const int l_regidx = i_gp_reg_idx % 8;
         int l_sca = 0;
         if (i_scale == 2) l_sca = 0x40;

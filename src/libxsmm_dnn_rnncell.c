@@ -837,7 +837,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
                 } else {
                   layout->dim_size[0] = (unsigned int)handle->desc.K;
                 }
-              } else {
+              } else { /* coverity[dead_error_begin] */
                 free(layout->dim_type);
                 free(layout->dim_size);
                 free(layout);
