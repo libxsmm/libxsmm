@@ -54,6 +54,7 @@ else {
   for (i = 0; i < nrows; i++) {
     rowidx_ptr[i] = cnt;
     if ('T' == transa || 't' == transa) {
+#if (1 != SIMD_WIDTH_FP32)
       for (k = 0; k < ncols_aligned; k += 4*SIMD_WIDTH_FP32) {
         int vals[32];
         int kk;
@@ -75,7 +76,7 @@ else {
           COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
         }
       }
-
+#endif
       for (k = ncols_aligned; k < ncols; k++) {
         uint16_t v1tmp = input_ptr[k*handle->m + i];
         union {int i; float f; } v1tmp_int;

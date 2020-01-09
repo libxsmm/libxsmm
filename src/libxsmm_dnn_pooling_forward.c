@@ -223,6 +223,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_fwd_custom(libxsmm_d
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_pooling_st_fwd_custom_f32_f32_c16( handle, start_thread, tid);
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
+      LIBXSMM_ASSERT(NULL != handle->mask);
       status = libxsmm_dnn_pooling_st_fwd_custom_bf16_bf16_c16( handle, start_thread, tid);
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;

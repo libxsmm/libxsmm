@@ -23,7 +23,6 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -173,6 +172,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 
     /* define the micro kernel code gen properties, especially m-blocking affects the vector instruction length */
     l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc );
+    LIBXSMM_ASSERT(0 != l_m_blocking);
 
     /* apply m_blocking */
     while (l_m_done != (unsigned int)i_xgemm_desc->m) {
@@ -183,17 +183,15 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
           if (i_xgemm_desc->m == 56) {
             l_m_done = 32;
           } else {
-            assert(0 != l_m_blocking);
             l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
           }
         } else {
           l_m_done_old = l_m_done;
-          assert(0 != l_m_blocking);
           l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
         }
       } else {
         l_m_done_old = l_m_done;
-        assert(0 != l_m_blocking);
+        /* coverity[divide_by_zero] */
         l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
       }
 

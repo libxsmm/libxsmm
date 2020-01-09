@@ -844,7 +844,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           if (NULL != kernel[i].ptr_const) {
             if (size < asize) size = asize;
 #if !defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
-            LIBXSMM_ASSERT(NULL != desc);
+            LIBXSMM_ASSERT(NULL != desc); /* coverity[var_deref_op] */
             kflags[i] = desc->flags;
 #endif
           }

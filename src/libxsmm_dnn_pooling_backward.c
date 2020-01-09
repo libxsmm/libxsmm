@@ -221,6 +221,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_bwd_custom(libxsmm_d
   if ( ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) &&
        (handle->ofmblock == 16) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      LIBXSMM_ASSERT(NULL != handle->mask);
       status = libxsmm_dnn_pooling_st_bwd_custom_f32_f32_c16( handle, start_thread, tid);
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
       status = libxsmm_dnn_pooling_st_bwd_custom_bf16_bf16_c16( handle, start_thread, tid);

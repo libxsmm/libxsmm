@@ -182,7 +182,8 @@ void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
-    /* check LDC  coverity[copy_paste_error] */
+    /* check LDC */
+    /* coverity[copy_paste_error] */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
