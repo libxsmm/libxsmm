@@ -132,11 +132,9 @@ if (handle->avoid_fmas_in_rim == 1) {
       }
     }
     /* Convert int32 chunk to int8 */
-    for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
-      LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 5, output_int32, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-          &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-          handle->fwd_ofw_rb * handle->ofmblock, vscf);
-    }
+    LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 5, output_int32, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+        &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+        handle->fwd_ofw_rb * handle->ofmblock, vscf);
   }
 } else {
   n_blocks = handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
@@ -166,11 +164,9 @@ if (handle->avoid_fmas_in_rim == 1) {
               &LIBXSMM_VLA_ACCESS(5, output_int32, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), &n_blocks);
         }
         /* Convert int32 chunk to int8 */
-        for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
-          LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 5, output_int32, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-              &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-              handle->fwd_ofw_rb * handle->ofmblock, vscf);
-        }
+        LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 5, output_int32, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+            &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+            handle->fwd_ofw_rb * handle->ofmblock, vscf);
       }
     } else {
       for (imgofm1ofhofw = thr_begin; imgofm1ofhofw < thr_end; ++imgofm1ofhofw) {
@@ -185,11 +181,9 @@ if (handle->avoid_fmas_in_rim == 1) {
             &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
             &LIBXSMM_VLA_ACCESS(3, scratch_int32, 0, 0, 0, handle->fwd_ofw_rb, handle->ofmblock), &n_blocks);
         /* Convert int32 chunk to int8 */
-        for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
-          LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 3, scratch_int32, ojj, 0, 0, handle->fwd_ofw_rb, handle->ofmblock),
-              &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-              handle->fwd_ofw_rb * handle->ofmblock, vscf);
-        }
+        LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 3, scratch_int32, 0, 0, 0, handle->fwd_ofw_rb, handle->ofmblock),
+            &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+            handle->fwd_ofw_rb * handle->ofmblock, vscf);
       }
     }
   } else { /* Offset based BRGEMM */
@@ -218,11 +212,9 @@ if (handle->avoid_fmas_in_rim == 1) {
               &LIBXSMM_VLA_ACCESS(5, output_int32, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), &n_blocks, handle->A_offsets, handle->B_offsets);
         }
         /* Convert int32 chunk to int8 */
-        for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
-          LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 5, output_int32, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-              &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-              handle->fwd_ofw_rb * handle->ofmblock, vscf);
-        }
+        LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 5, output_int32, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+            &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+            handle->fwd_ofw_rb * handle->ofmblock, vscf);
       }
     } else {
       for (imgofm1ofhofw = thr_begin; imgofm1ofhofw < thr_end; ++imgofm1ofhofw) {
@@ -237,11 +229,9 @@ if (handle->avoid_fmas_in_rim == 1) {
             &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
             &LIBXSMM_VLA_ACCESS(3, scratch_int32, 0, 0, 0, handle->fwd_ofw_rb, handle->ofmblock), &n_blocks, handle->A_offsets, handle->B_offsets);
         /* Convert int32 chunk to int8 */
-        for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
-          LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 3, scratch_int32, ojj, 0, 0, handle->fwd_ofw_rb, handle->ofmblock),
-              &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-              handle->fwd_ofw_rb * handle->ofmblock, vscf);
-        }
+        LIBXSMM_DNN_CONVOLUTION_FWD_DOWNCONVERT_I32_I8( &LIBXSMM_VLA_ACCESS( 3, scratch_int32, 0, 0, 0, handle->fwd_ofw_rb, handle->ofmblock),
+            &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+            handle->fwd_ofw_rb * handle->ofmblock, vscf);
       }
     }
   }

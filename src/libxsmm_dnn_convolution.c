@@ -128,7 +128,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_ofh_rb( libxsmm_dnn_lay
     result = 1;
   }
   /* In this case we will be using fallback generic loops, thus ofh_rb should be 1 */
-  if (handle->desc.N % handle->desc.threads != 0) {
+  if ((handle->desc.N % handle->desc.threads != 0) || (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)) {
     result = 1;
   }
   return result;
