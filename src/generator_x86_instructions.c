@@ -620,6 +620,30 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_num2 += 1;
           l_penultimate += 0x22;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVDB:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 16;
+          l_ivectype2 += 0x02;
+          l_num2 += 1;
+          l_penultimate += 0x20;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVSDB:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 16;
+          l_ivectype2 += 0x02;
+          l_num2 += 1;
+          l_penultimate += 0x10;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVUSDB:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 16;
+          l_ivectype2 += 0x02;
+          l_num2 += 1;
+          /* l_penultimate += 0x00;*/
+          break;
        case LIBXSMM_X86_INSTR_VPMOVSXWD:
           if ( i_vector_name=='x' ) l_ivectype += 1;
           if ( l_num == 1 ) l_ivectype3 -= 0x80;
