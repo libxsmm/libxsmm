@@ -1606,7 +1606,7 @@ else # revoke target flags
 endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
-  TARGET ?= $(CTARGET)
+  TARGET = $(CTARGET)
 endif
 
 ifeq (0,$(COMPATIBLE))
@@ -2159,14 +2159,15 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ILIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNK% BRACE_OPEN BRACE_CLOSE MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS SUITE \
     FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI ICX \
     GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS \
-    LDTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED PRESTATE AVX SSE \
+    LDTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
     which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink \
     applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC,$(NULL)) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
 
-PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
-.state: $(firstword $(PRESTATE))
+DIRSTATE ?= .
+PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
+$(DIRSTATE)/.state: $(firstword $(PRESTATE))
 ifneq (0,$(STATIC))
 ifneq (STATIC2,$(word 2,$(PRESTATE))$(words $(PRESTATE)))
 	@rm -f $(OUTDIR)/lib*.$(DLIBEXT) $(OUTDIR)/lib*.$(DLIBEXT).*
@@ -2179,4 +2180,6 @@ endif
 
 .make:
 	@touch $@
+
+.DEFAULT_GOAL := $(NULL)
 

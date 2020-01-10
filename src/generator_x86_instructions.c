@@ -620,6 +620,30 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_num2 += 1;
           l_penultimate += 0x22;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVDB:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 16;
+          l_ivectype2 += 0x02;
+          l_num2 += 1;
+          l_penultimate += 0x20;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVSDB:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 16;
+          l_ivectype2 += 0x02;
+          l_num2 += 1;
+          l_penultimate += 0x10;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVUSDB:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 16;
+          l_ivectype2 += 0x02;
+          l_num2 += 1;
+          /* l_penultimate += 0x00;*/
+          break;
        case LIBXSMM_X86_INSTR_VPMOVSXWD:
           if ( i_vector_name=='x' ) l_ivectype += 1;
           if ( l_num == 1 ) l_ivectype3 -= 0x80;
@@ -964,6 +988,38 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
     switch ( i_vec_instr ) {
        case LIBXSMM_X86_INSTR_VCVTDQ2PS:
           l_fifth = 0x48;
+          l_vec0 = i_vec_reg_src_0;
+          l_vec1 = i_vec_reg_dst;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVDB:
+          l_second = 0x1;
+          l_third += 2;
+          l_fifth = 0x1E;
+          l_vec0 = i_vec_reg_dst;
+          l_vec1 = i_vec_reg_src_0;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVSDB:
+          l_second = 0x1;
+          l_third += 2;
+          l_fifth = 0xE;
+          l_vec0 = i_vec_reg_dst;
+          l_vec1 = i_vec_reg_src_0;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVUSDB:
+          l_second = 0x1;
+          l_third += 2;
+          l_fifth = -2;
+          l_vec0 = i_vec_reg_dst;
+          l_vec1 = i_vec_reg_src_0;
+          break;
+       case LIBXSMM_X86_INSTR_VCVTPS2DQ:
+          l_fifth = 0x48;
+          l_third += 1;
+          l_vec0 = i_vec_reg_src_0;
+          l_vec1 = i_vec_reg_dst;
+          break;
+       case LIBXSMM_X86_INSTR_VCVTPS2UDQ:
+          l_fifth = 0x66;
           l_vec0 = i_vec_reg_src_0;
           l_vec1 = i_vec_reg_dst;
           break;
@@ -3734,6 +3790,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         if (l_gp8) l_sse_preamble += 1;
 #if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
         LIBXSMM_ASSERT(0 == l_ix8);
+        /* coverity[dead_error_line] */
         if (l_ix8) l_sse_preamble += 2;
 #endif
         buf[i++] = (unsigned char)l_sse_preamble;
@@ -3751,7 +3808,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         if ( l_regbas0 == 4 ) buf[i++]=0x24;
     }
 #if !defined(NDEBUG)
-    else {
+    else { /* coverity[dead_error_begin] */
         const int l_regidx = i_gp_reg_idx % 8;
         int l_sca = 0;
         if (i_scale == 2) l_sca = 0x40;
@@ -4799,7 +4856,7 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 9)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 9)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }
@@ -5261,7 +5318,7 @@ void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*     
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 9)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 9)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }
@@ -5343,7 +5400,7 @@ void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*    
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 11)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 11)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }
@@ -5428,7 +5485,7 @@ void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*       
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 9)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 9)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }
@@ -5515,7 +5572,7 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 10)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 10)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }

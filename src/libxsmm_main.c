@@ -206,8 +206,10 @@ LIBXSMM_APIVAR(libxsmm_timer_tickint internal_timer_start);
 #endif
 
 #if defined(_WIN32)
+# define INTERNAL_SINGLETON(HANDLE) (NULL != (HANDLE))
 LIBXSMM_APIVAR(HANDLE internal_singleton_handle);
 #else
+# define INTERNAL_SINGLETON(HANDLE) (0 <= (HANDLE) && 0 != *internal_singleton_fname)
 LIBXSMM_APIVAR_ARRAY(char internal_singleton_fname, 64);
 LIBXSMM_APIVAR(int internal_singleton_handle);
 #endif
@@ -267,8 +269,8 @@ LIBXSMM_API_INLINE void internal_update_mmstatistic(const libxsmm_gemm_descripto
     else { /*huge*/
       bucket = 3;
     }
-    if (0 != ncol) LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ncol, ncol, LIBXSMM_ATOMIC_RELAXED);
-    if (0 != ntry) LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ntry, ntry, LIBXSMM_ATOMIC_RELAXED);
+    if (0 != ncol) ncol/*dummy assignment*/ = LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ncol, ncol, LIBXSMM_ATOMIC_RELAXED);
+    if (0 != ntry) ntry/*dummy assignment*/ = LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ntry, ntry, LIBXSMM_ATOMIC_RELAXED);
     /* the following counters are not manipulated concurrently (no need for atomic increment) */
     if (0 != njit) internal_statistic[idx][bucket].njit += njit;
     if (0 != nsta) internal_statistic[idx][bucket].nsta += nsta;
@@ -519,12 +521,8 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   if (EXIT_SUCCESS != atexit(internal_release_scratch) && 0 != libxsmm_verbosity) {
     fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
   }
-#if defined(_WIN32)
-  if (NULL != internal_singleton_handle)
-#else
-  if (0 <= internal_singleton_handle && 0 != *internal_singleton_fname)
-#endif
-  { /* dump per-node info */
+  /* determine whether this instance is unique or not */
+  if (INTERNAL_SINGLETON(internal_singleton_handle)) { /* dump per-node info */
     if (NULL != env_dump_build || NULL != env_dump_files) {
       if (NULL != env_dump_files && 0 != *env_dump_files) {
         const char *filename = strtok(env_dump_files, INTERNAL_DELIMS);
@@ -533,6 +531,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
           if (NULL != file) {
             int c = fgetc(file);
             fprintf(stdout, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
+            /* coverity[tainted_data] */
             while (EOF != c) {
               fputc(c, stdout);
               c = fgetc(file);
@@ -664,23 +663,17 @@ LIBXSMM_API_INTERN void internal_init(void)
 # endif
 #endif
   if (NULL == internal_registry) { /* double-check after acquiring the lock(s) */
-    void *new_registry = NULL, *new_keys = &internal_registry_keys;
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     void* new_cache = &internal_cache_buffer;
 #endif
-    /* setup verbosity as early as possible since below code may rely on verbose output */
+    void *new_registry = NULL, *new_keys = &internal_registry_keys;
     const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
-    if (NULL != env_verbose && 0 != *env_verbose) {
-      libxsmm_verbosity = atoi(env_verbose);
-    }
-#if !defined(NDEBUG)
-    else {
-      libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
-    }
-#endif
-    LIBXSMM_ASSERT(NULL == internal_registry_keys); /* should never happen */
-#if !defined(_WIN32) && 0
-    umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
+#if defined(LIBXSMM_INTERCEPT_DYNAMIC)
+    /* clear error status (dummy condition: it does not matter if MPI_Init or MPI_Abort) */
+    const char *const dlsymname = (NULL == dlerror() ? "MPI_Init" : "MPI_Abort");
+    const void *const dlsymbol = dlsym(RTLD_NEXT, dlsymname);
+    /* MPI: non-user affinity can slow-down unrelated jobs, e.g., CP2K regtests */
+    if (NULL == dlerror() && NULL == dlsymbol)
 #endif
     { /* setup some viable affinity if nothing else is present */
       const char *const gomp_cpu_affinity = getenv("GOMP_CPU_AFFINITY");
@@ -694,6 +687,19 @@ LIBXSMM_API_INTERN void internal_init(void)
         LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(affinity));
       }
     }
+    /* setup verbosity as early as possible since below code may rely on verbose output */
+    if (NULL != env_verbose && 0 != *env_verbose) {
+      libxsmm_verbosity = atoi(env_verbose);
+    }
+#if !defined(NDEBUG)
+    else {
+      libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
+    }
+#endif
+    LIBXSMM_ASSERT(NULL == internal_registry_keys); /* should never happen */
+#if !defined(_WIN32) && 0
+    umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
+#endif
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     { const char *const env = getenv("LIBXSMM_SCRATCH_POOLS");
       if (NULL == env || 0 == *env) {
@@ -909,7 +915,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           internal_singleton_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR) : -1);
         internal_singleton_handle = fcntl(singleton_handle, F_SETLK, &singleton_flock);
         if (0 > internal_singleton_handle && 0 <= singleton_handle) close(singleton_handle);
-#endif
+#endif  /* coverity[leaked_handle] */
       }
       { /* calibrate timer */
         libxsmm_timer_tickint s0, t0, s1, t1; int tsc = 0;
@@ -1728,10 +1734,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
       }
     } break;
-    case LIBXSMM_BUILD_KIND_TRSM: { /* compact TRSM kernel (packed) */
-      unsigned int tsize;
-      LIBXSMM_ASSERT(NULL != request->descriptor.trsm);
-      tsize = (unsigned int)request->descriptor.trsm->typesize;
+    case LIBXSMM_BUILD_KIND_TRSM: if (NULL != request->descriptor.trsm) { /* compact TRSM kernel (packed) */
+      const unsigned int tsize = (unsigned int)request->descriptor.trsm->typesize;
       if (4 == tsize || 8 == tsize) {
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_trsm_kernel, &generated_code, request->descriptor.trsm, target_arch);
 # if !defined(LIBXSMM_VTUNE)
@@ -1752,7 +1756,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
         fprintf(stderr, "LIBXSMM ERROR: invalid build request discovered!\n");
       }
-      result = EXIT_FAILURE;
+      /*result = EXIT_FAILURE;*/
     }
 # endif
   }

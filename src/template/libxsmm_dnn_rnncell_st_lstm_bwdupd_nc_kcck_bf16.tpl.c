@@ -335,7 +335,6 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
 #if 0
   for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
     icb = ikic / (K/bk);
-    ic = icb*bc;
     ikb = ikic % (K/bk);
     ik = ikb*bk;
     for (jc = 0; jc < bc; jc++) {
@@ -355,7 +354,6 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
 
   for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
     icb = ikic / (K/bk);
-    ic = icb*bk;
     ikb = ikic % (K/bk);
     ik = ikb*bk;
     for (jc = 0; jc < bk; jc++) {
@@ -378,7 +376,6 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
   for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
     icb = ikic / (K/bk);
-    ic = icb*bc;
     ikb = ikic % (K/bk);
     ik = ikb*bk;
     for (jc = 0; jc < bc; jc+=2) {
@@ -405,7 +402,6 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
 
   for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
     icb = ikic / (K/bk);
-    ic = icb*bk;
     ikb = ikic % (K/bk);
     ik = ikb*bk;
     for (jc = 0; jc < bk; jc+=2) {

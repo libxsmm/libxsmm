@@ -1661,11 +1661,12 @@ LIBXSMM_API_INLINE void* internal_xmalloc_xmap(const char* dir, size_t size, int
   void* result = MAP_FAILED;
   char filename[4096] = LIBXSMM_MALLOC_XMAP_TEMPLATE;
   int i = 0;
-  LIBXSMM_ASSERT(NULL != rx);
+  LIBXSMM_ASSERT(NULL != rx && MAP_FAILED != *rx);
   if (NULL != dir && 0 != *dir) {
     i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/" LIBXSMM_MALLOC_XMAP_TEMPLATE, dir);
   }
   if (0 <= i && i < (int)sizeof(filename)) {
+    /* coverity[secure_temp] */
     i = mkstemp(filename);
     if (0 <= i) {
       if (0 == unlink(filename) && 0 == ftruncate(i, size)) {
@@ -1680,6 +1681,7 @@ LIBXSMM_API_INLINE void* internal_xmalloc_xmap(const char* dir, size_t size, int
           }
           else {
             munmap(xmap, size);
+            *rx = NULL;
           }
         }
       }
@@ -1918,7 +1920,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         }
         else { /* executable buffer requested */
           static /*LIBXSMM_TLS*/ int fallback = -1;
-          if (0 > LIBXSMM_ATOMIC_LOAD(&fallback, LIBXSMM_ATOMIC_RELAXED)) { /* initialize fall-back allocation method */
+          if (0 > (int)LIBXSMM_ATOMIC_LOAD(&fallback, LIBXSMM_ATOMIC_RELAXED)) { /* initialize fall-back allocation method */
             FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
             const char *const env = getenv("LIBXSMM_SE");
             if (NULL != selinux) {
@@ -2378,7 +2380,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_aligned_malloc(size_t size, size_t alignment)
 {
-  void* result;
+  void* result = NULL;
   LIBXSMM_INIT
   if (2 > internal_malloc_kind) {
 #if !defined(NDEBUG)

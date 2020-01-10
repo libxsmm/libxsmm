@@ -538,8 +538,11 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   double load_imbalance_1, load_imbalance_2, load_imbalance;
 
   libxsmm_init(); /* !LIBXSMM_INIT */
-  LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_statistic_num_spmdm, 1,
-    LIBXSMM_ATOMIC_RELAXED); /* count number of invocations */
+  { unsigned int dummy =
+    LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_statistic_num_spmdm, 1,
+      LIBXSMM_ATOMIC_RELAXED); /* count number of invocations */
+    LIBXSMM_UNUSED(dummy);
+  }
 
   handle->m  = M;
   handle->n  = N;

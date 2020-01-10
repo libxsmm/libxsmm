@@ -723,7 +723,7 @@ end program test
         ibool_inv_st(iglob_p,iphase) = ip + 1
 
         ! sets maximum of used valence
-        if( ibool_inv_num(iglob) > num_used_ibool_inv_tbl ) num_used_ibool_inv_tbl = ibool_inv_num(iglob)
+        if (ibool_inv_num(iglob) > num_used_ibool_inv_tbl) num_used_ibool_inv_tbl = ibool_inv_num(iglob)
 
         ! loops over valence
         do inum = 1, ibool_inv_num(iglob)
@@ -741,7 +741,7 @@ end program test
     num_globs(iphase) = iglob_p
 
     ! checks
-    if( num_used_ibool_inv_tbl > num_alloc_ibool_inv_tbl )  then
+    if (num_used_ibool_inv_tbl > num_alloc_ibool_inv_tbl)  then
       print *,"Error invalid inverse table setting:"
       print *,"  num_alloc_ibool_inv_tbl = ",num_alloc_ibool_inv_tbl
       print *,"  num_used_ibool_inv_tbl  = ",num_used_ibool_inv_tbl

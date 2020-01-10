@@ -239,6 +239,7 @@ LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
 #endif
   {
 #if defined(LIBXSMM_RNG_DRAND48)
+    /* coverity[dont_call] */
     while (q <= r) r = (unsigned int)lrand48();
 #else
     while (q <= r) r = (unsigned int)rand();
@@ -254,6 +255,7 @@ LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint count)
   unsigned int r;
   for (; dst < end; dst += 4) {
 #if defined(LIBXSMM_RNG_DRAND48)
+    /* coverity[dont_call] */
     r = (unsigned int)lrand48();
 #else
     r = (unsigned int)rand();
@@ -275,6 +277,7 @@ LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint count)
 LIBXSMM_API double libxsmm_rng_f64(void)
 {
 #if defined(LIBXSMM_RNG_DRAND48)
+  /* coverity[dont_call] */
   return drand48();
 #else
   static const double scale = 1.0 / (RAND_MAX);

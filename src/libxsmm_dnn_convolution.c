@@ -621,7 +621,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     handle->upd_linearized_pixels = 0;
     handle->upd_trans_w_only = 0;
   }
-  /* For large images facilitate the "large" transposes by blocking the pixel/reduciton domains  */
+  /* For large images facilitate the "large" transposes by blocking the pixel/reduction domains  */
   if (handle->ofw >= 56 && handle->ofh >=56 && handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.u == 1 && handle->desc.v == 1) {
     handle->upd_linearized_pixels = 0;
     handle->upd_trans_w_only = 1;
@@ -685,7 +685,8 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     handle->ofwp_extended = handle->ofwp + remainder_pixels;
     handle->ifwp_extended = handle->ifwp + remainder_pixels;
     handle->output_pixels = handle->ofwp * handle->ofwp_extended;
-    handle->batchreduce_h_pixels = (handle->upd_trans_w_only) ? 1 : 1;
+    /* coverity[identical_branches] */
+    handle->batchreduce_h_pixels = (handle->upd_trans_w_only) ? 1 : 1; /* TODO: identical_branches */
     handle->use_intermediate_f32_wt_tensor = (handle->batchreduce_h_pixels == handle->ofh) ? 0 : 1;
     handle->scratch2_size = (size_t) (handle->desc.N * handle->ofhp*handle->ofwp_extended * handle->desc.K * sizeof(float)/2);
     if (handle->use_intermediate_f32_wt_tensor) {
@@ -1186,7 +1187,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
                 layout->dim_size[2] = handle->ofhp;
                 layout->dim_size[3] = handle->blocksofm;
                 layout->dim_size[4] = handle->desc.N;
-              } else {
+              } else { /* coverity[dead_error_begin] */
                 free(layout->dim_type);
                 free(layout->dim_size);
                 free(layout);
@@ -1251,7 +1252,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
                 layout->dim_size[2] = handle->ifhp;
                 layout->dim_size[3] = handle->blocksifm;
                 layout->dim_size[4] = handle->desc.N;
-              } else {
+              } else { /* coverity[dead_error_begin] */
                 free(layout->dim_type);
                 free(layout->dim_size);
                 free(layout);
@@ -1285,7 +1286,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
                 layout->dim_size[1] = handle->ofwp;
                 layout->dim_size[2] = handle->ofhp;
                 layout->dim_size[3] = handle->desc.N;
-              } else {
+              } else { /* coverity[dead_error_begin] */
                 free(layout->dim_type);
                 free(layout->dim_size);
                 free(layout);

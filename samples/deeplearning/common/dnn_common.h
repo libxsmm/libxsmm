@@ -1907,9 +1907,9 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
         for( wo = 0; wo < ofw; wo++ ) {
           wi = (wo * sw) - pad_w;
           for( kh = 0; kh < r; kh++ ) {
-            if(hi+kh < 0 || hi+kh >= ifh) continue;
+            if (hi+kh < 0 || hi+kh >= ifh) continue;
             for( kw = 0; kw < s; kw++ ) {
-              if(wi+kw < 0 || wi+kw >= ifw) continue;
+              if (wi+kw < 0 || wi+kw >= ifw) continue;
               if ( param->type == 0 ) {
                 const int index = (hi+kh)*ifw + wi+kw;
                 if ( LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw) > LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) ) {
@@ -2001,9 +2001,9 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
           for( wo = 0; wo < ofw; wo++ ) {
             wi = (wo * sw) - pad_w;
             for( kh = 0; kh < r; kh++ ) {
-              if(hi+kh < 0 || hi+kh >= ifh) continue;
+              if (hi+kh < 0 || hi+kh >= ifh) continue;
               for( kw = 0; kw < s; kw++ ) {
-                if(wi+kw < 0 || wi+kw >= ifw) continue;
+                if (wi+kw < 0 || wi+kw >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(2, lcl_buffer, hi+kh, wi+kw, ifw) += ( LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, nFm, ofh, ofw) * (1.0f/(((float)r) * ((float)s))) );
               }
             }
@@ -2290,7 +2290,7 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
   const int nFMG = nFm/nG;
   const float ghw = (float)(nFMG * ifh * ifw);
   const float recp_ghw = 1.0f/ghw;
-  const float eps = 1e-7;
+  const float eps = 1e-7f;
 
   int img, g, fmg, fm, hi, wi, ho, wo;
 

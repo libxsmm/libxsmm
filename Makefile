@@ -129,7 +129,12 @@ MALLOC ?= -1
 WRAP ?= 1
 
 # JIT backend is enabled by default
-JIT ?= 1
+ifeq (,$(filter-out 0,$(PLATFORM)))
+  JIT ?= 1
+else # disabled if platform is forced
+# enable: make PLATFORM=1 JIT=1
+  JIT ?= 0
+endif
 
 # TRACE facility
 INSTRUMENT ?= $(TRACE)
@@ -198,6 +203,9 @@ EXCLUDE_STATE = \
   DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR \
   PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR \
   SRCDIR TEST VERSION_STRING DEPSTATIC ALIAS_% BLAS %_TARGET %ROOT MPSS KNC
+
+# fixed .state file directory (included by source)
+DIRSTATE = $(OUTDIR)/..
 
 ifeq (,$(M)$(N)$(K))
 ifneq (,$(filter 0,$(MNK) 0))
@@ -598,7 +606,7 @@ endif
 
 .PHONY: config
 config: $(INCDIR)/libxsmm_config.h
-$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
+$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(DIRSTATE)/.state $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
                             $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py \
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
                             $(wildcard $(ROOTDIR)/.github/*) \
@@ -656,7 +664,7 @@ endif
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
 ifneq (,$(PYTHON))
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py
-	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py "$(call qapath,.state)" $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py "$(call qapath,$(DIRSTATE)/.state)" $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 else
 .PHONY: $(BLDDIR)/libxsmm_dispatch.h
 endif
@@ -963,16 +971,8 @@ endif
 ext_hst: $(OUTDIR)/libxsmmext.pc
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(EXTOBJS_HST)
 ifeq (0,$(STATIC))
-ifneq (Darwin,$(UNAME))
 	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
-else ifneq (0,$(INTEL)) # intel @ osx
-	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-			$(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
-else # osx
-	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-			$(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
-endif
 else # static
 	@rm -f $@
 	$(AR) -rs $@ $(EXTOBJS_HST)
@@ -997,16 +997,8 @@ endif
 noblas_hst: $(OUTDIR)/libxsmmnoblas.pc
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(NOBLAS_HST)
 ifeq (0,$(STATIC))
-ifneq (Darwin,$(UNAME))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(NOBLAS_HST) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
-else ifneq (0,$(INTEL)) # intel @ osx
-	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_HST) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
-else # osx
-	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_HST) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
-endif
 else # static
 	@rm -f $@
 	$(AR) -rs $@ $(NOBLAS_HST)
@@ -1662,7 +1654,7 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo
 	@echo "LIBXSMM installing artifacts..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)/artifacts
-	@$(CP) -v .state $(PREFIX)/$(PDOCDIR)/artifacts/make.txt
+	@$(CP) -v $(DIRSTATE)/.state $(PREFIX)/$(PDOCDIR)/artifacts/make.txt
 endif
 
 ifeq (Windows_NT,$(UNAME))

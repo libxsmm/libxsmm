@@ -29,7 +29,7 @@ element_input_type  *xt    = (element_input_type* )handle->xt->data;
 element_input_type  *hpD   = (element_input_type* )handle->hp->data;
 element_filter_type *w     = (element_filter_type*)handle->w->data;
 element_filter_type *r     = (element_filter_type*)handle->r->data;
-element_output_type *ht    = handle->ht ? (element_output_type*)handle->ht->data : (element_output_type*)NULL;
+element_output_type *ht    = (element_output_type*)(handle->ht ? handle->ht->data : NULL);
 element_output_type *it    = (element_output_type*)handle->it->data;
 element_output_type *ct    = (element_output_type*)handle->cit->data;
 element_output_type *ft    = (element_output_type*)handle->ft->data;
@@ -274,6 +274,7 @@ for (j = t-1; j >= 0; --j) {
     if (0 == j) {
       libxsmm_internal_matrix_sub_ld(             bk, bn, K, &LIBXSMM_VLA_ACCESS(2, hp, in, ik, K),        &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
     } else {
+      LIBXSMM_ASSERT(NULL != ht); /* coverity[var_deref_op] */
       libxsmm_internal_matrix_sub_ld(             bk, bn, K, &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
     }
     libxsmm_internal_matrix_eltwise_mult_ld(      bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K),   &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dc, in, ik, K) );

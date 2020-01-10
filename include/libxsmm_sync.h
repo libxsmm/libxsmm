@@ -506,7 +506,7 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
 #     define LIBXSMM_LOCK_TYPE_mutex pthread_mutex_t
 #     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) LIBXSMM_EXPECT(0, pthread_mutex_init(LOCK, ATTR))
-#     define LIBXSMM_LOCK_DESTROY_mutex(LOCK) LIBXSMM_EXPECT(0, pthread_mutex_destroy(LOCK))
+#     define LIBXSMM_LOCK_DESTROY_mutex(LOCK) LIBXSMM_EXPECT_DEBUG(0, pthread_mutex_destroy(LOCK))
 #     define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) pthread_mutex_trylock(LOCK) /*!LIBXSMM_EXPECT*/
 #     define LIBXSMM_LOCK_ACQUIRE_mutex(LOCK) LIBXSMM_EXPECT(0, pthread_mutex_lock(LOCK))
 #     define LIBXSMM_LOCK_RELEASE_mutex(LOCK) LIBXSMM_EXPECT(0, pthread_mutex_unlock(LOCK))

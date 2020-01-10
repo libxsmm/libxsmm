@@ -828,11 +828,13 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           const char *const ta = (NULL != transa ? (transa + g) : NULL);
           const char *const tb = (NULL != transb ? (transb + g) : NULL);
           const int flags = LIBXSMM_GEMM_PFLAGS(ta, tb, LIBXSMM_FLAGS);
+          const void **const galpha = &alpha, **const gbeta = &beta;
           libxsmm_descriptor_blob blob;
+          /* coverity[ptr_arith] */
           libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec, im, in, ik,
             NULL != lda ? lda[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & flags) ? im : ik),
             NULL != ldb ? ldb[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & flags) ? ik : in),
-            NULL != ldc ? ldc[g] : im, NULL != alpha ? (&alpha)[g] : NULL, NULL != beta ? (&beta)[g] : NULL,
+            NULL != ldc ? ldc[g] : im, NULL != alpha ? galpha[g] : NULL, NULL != beta ? gbeta[g] : NULL,
             flags, prefetch);
           if (NULL != desc) {
             libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, 0 < group_count ? isize : -asize, 1 != max_nthreads);
@@ -842,7 +844,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           if (NULL != kernel[i].ptr_const) {
             if (size < asize) size = asize;
 #if !defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
-            LIBXSMM_ASSERT(NULL != desc);
+            LIBXSMM_ASSERT(NULL != desc); /* coverity[var_deref_op] */
             kflags[i] = desc->flags;
 #endif
           }
@@ -974,7 +976,11 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           const libxsmm_blasint ilda = (NULL != lda ? lda[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & flags) ? im : ik));
           const libxsmm_blasint ildb = (NULL != ldb ? ldb[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & flags) ? ik : in));
           const libxsmm_blasint ildc = (NULL != ldc ? ldc[g] : im);
-          const void *const ialpha = (NULL != alpha ? (&alpha)[g] : NULL), *const ibeta = (NULL != beta ? (&beta)[g] : NULL);
+          const void **const galpha = &alpha, **const gbeta = &beta;
+          /* coverity[overrun-local] */
+          const void *const ialpha = (NULL != alpha ? galpha[g] : NULL);
+          /* coverity[overrun-local] */
+          const void *const ibeta = (NULL != beta ? gbeta[g] : NULL);
           if (EXIT_SUCCESS == libxsmm_mmbatch_blas(iprec, oprec, ta, tb, im, in, ik, ialpha,
             (const char*)a + sa * base[i], &ilda, (const char*)b + sb * base[i], &ildb, ibeta, (char*)c + sc * base[i], &ildc,
             index_base, index_stride, stride_a, stride_b, stride_c, batchsize[g]))

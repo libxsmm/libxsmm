@@ -23,7 +23,6 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -173,6 +172,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 
     /* define the micro kernel code gen properties, especially m-blocking affects the vector instruction length */
     l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc );
+    LIBXSMM_ASSERT(0 != l_m_blocking);
 
     /* apply m_blocking */
     while (l_m_done != (unsigned int)i_xgemm_desc->m) {
@@ -183,17 +183,17 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
           if (i_xgemm_desc->m == 56) {
             l_m_done = 32;
           } else {
-            assert(0 != l_m_blocking);
+            /* coverity[divide_by_zero] */
             l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
           }
         } else {
           l_m_done_old = l_m_done;
-          assert(0 != l_m_blocking);
+          /* coverity[divide_by_zero] */
           l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
         }
       } else {
         l_m_done_old = l_m_done;
-        assert(0 != l_m_blocking);
+        /* coverity[divide_by_zero] */
         l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
       }
 
@@ -204,9 +204,12 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
           unsigned int l_corrected_vlen;
 
           /* compute the mask count, depends on vlen as block in M */
+#if 0 /* same code regardless of which branch is taken */
           if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
             l_corrected_vlen = l_micro_kernel_config.vector_length;
-          } else {
+          } else
+#endif
+          {
             l_corrected_vlen = l_micro_kernel_config.vector_length;
           }
 
@@ -230,6 +233,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a);
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b);
             if (adjust_A_pf_ptrs) {
+              /* coverity[dead_error_line] */
               libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a_prefetch );
             }
             if (adjust_B_pf_ptrs) {
@@ -261,6 +265,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                   0 );
             }
             if (adjust_B_pf_ptrs) {
+              /* coverity[dead_error_line] */
               libxsmm_x86_instruction_alu_mem( io_generated_code,
                   l_micro_kernel_config.alu_mov_instruction,
                   l_gp_reg_mapping.gp_reg_b_prefetch,
@@ -366,6 +371,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
           if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
             if (adjust_B_pf_ptrs) {
+              /* coverity[dead_error_begin] */
               libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
               libxsmm_x86_instruction_alu_mem( io_generated_code,
                   l_micro_kernel_config.alu_mov_instruction,

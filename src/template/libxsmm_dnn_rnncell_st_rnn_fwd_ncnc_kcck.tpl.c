@@ -111,7 +111,7 @@ if (perform_2d_decomp) {
       }
     }
 
-    if (prefetch_mode != LIBXSMM_GEMM_PREFETCH_NONE) {
+    if (prefetch_mode != LIBXSMM_GEMM_PREFETCH_NONE) { /* coverity[dead_error_begin] */
       /* Prepare additional prefetch arrays that are shifted images of regular ones when external prefetching is requested  */
       int pf_dist_A = 2;
       int pf_dist_B = 4;

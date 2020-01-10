@@ -38,7 +38,7 @@ LIBXSMM_BLAS_SYMBOL_DECL(ITYPE, gemm)
 # define CHECK
 #endif
 
-#define MYASSERT(x) if(!(x)) { printf("Assertion %s failed...\n", #x); exit(1);}
+#define MYASSERT(x) if (!(x)) { printf("Assertion %s failed...\n", #x); exit(1);}
 
 
 int main(int argc, char* argv[])
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
     libxsmm_free(b);
     libxsmm_free(c);
   }
-  if(!ab) {
+  if (!ab) {
     fprintf(stdout, "Finished\n");
   }
   return result;
