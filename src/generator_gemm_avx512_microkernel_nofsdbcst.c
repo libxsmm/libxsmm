@@ -53,27 +53,10 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
   }
 #endif
 
-  if (l_m_blocking == 1) {
-    /* load column vectors of A */
-    libxsmm_x86_instruction_vec_move( io_generated_code,
-        i_micro_kernel_config->instruction_set,
-        i_micro_kernel_config->a_vmove_instruction,
-        i_gp_reg_mapping->gp_reg_a,
-        LIBXSMM_X86_GP_REG_UNDEF, 0,
-        0,
-        i_micro_kernel_config->vector_name,
-        i_n_blocking, i_micro_kernel_config->use_masking_a_c, 1, 0 );
-    /* loop over columns of B */
-    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-      /* post increment of a pointer early */
-      if ( l_n == 0 ) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code,
-            i_micro_kernel_config->alu_add_instruction,
-            i_gp_reg_mapping->gp_reg_a,
-            (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
-      }
-      /* different ways of using B */
-      if ( i_offset != (-1) ) {
+  /* Special case that arises in GEMMS from Resnet50 layers  */
+  if (i_n_blocking == 7 && l_m_blocking == 4) {
+    if ( i_offset != (-1) ) {
+      for ( l_n = 0; l_n < 3; l_n++ ) {
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
           l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb) + (l_n * i_micro_kernel_config->datatype_size);
@@ -89,7 +72,21 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
             l_b_offset,
             i_micro_kernel_config->vector_name,
             l_n, 0, 1, 0 );
-      } else {
+      }
+      if ( i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1 ) {
+        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+          l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb);
+        } else {
+          l_b_offset = (i_micro_kernel_config->datatype_size * i_offset);
+        }
+        libxsmm_x86_instruction_prefetch(io_generated_code,
+            LIBXSMM_X86_INSTR_PREFETCHT0,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            l_b_offset + 16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
+      }
+    } else {
+      for ( l_n = 0; l_n < 3; l_n++ ) {
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
           l_b_offset = l_n * i_micro_kernel_config->datatype_size;
@@ -105,7 +102,323 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
             l_b_offset,
             i_micro_kernel_config->vector_name,
             l_n, 0, 1, 0 );
-        if ( l_n == (i_n_blocking -1) ) {
+      }
+      if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
+        libxsmm_x86_instruction_prefetch(io_generated_code,
+            LIBXSMM_X86_INSTR_PREFETCHT0,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
+      }
+    }
+
+    /* load column vectors of A and multiply with all broadcasted row entries of B */
+    for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          i_micro_kernel_config->a_vmove_instruction,
+          i_gp_reg_mapping->gp_reg_a,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
+          i_micro_kernel_config->vector_name,
+          3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+
+      /* In case of batch reduce try to prefetch a few more columns ahead...  */
+      if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
+        unsigned int pf_a_cols_ahead = 16;
+        if (i_xgemm_desc->lda == 1024) {
+          pf_a_cols_ahead = 4;
+        }
+        libxsmm_x86_instruction_prefetch( io_generated_code,
+            LIBXSMM_X86_INSTR_PREFETCHT0,
+            i_gp_reg_mapping->gp_reg_a,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m + pf_a_cols_ahead * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size);
+      }
+
+      for ( l_n = 0; l_n < 3; l_n++ ) {
+        /* issue fma */
+        if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->vmul_instruction,
+                i_micro_kernel_config->vector_name,
+                l_n,
+                3,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->vmul_instruction,
+                i_micro_kernel_config->vector_name,
+                3,
+                l_n,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          } else {
+            /* should not happen */
+          }
+        } else {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmul_instruction,
+              i_micro_kernel_config->vector_name,
+              3,
+              l_n,
+              l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+        }
+      }
+    }
+
+    if ( i_offset != (-1) ) {
+      for ( l_n = 3; l_n < 6; l_n++ ) {
+        /* handle trans B */
+        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+          l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb) + (l_n * i_micro_kernel_config->datatype_size);
+        } else {
+          l_b_offset = (i_micro_kernel_config->datatype_size * i_offset) + (i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size);
+        }
+
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            i_micro_kernel_config->b_vmove_instruction,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            l_b_offset,
+            i_micro_kernel_config->vector_name,
+            l_n-3, 0, 1, 0 );
+      }
+    } else {
+      for ( l_n = 3; l_n < 6; l_n++ ) {
+        /* handle trans B */
+        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+          l_b_offset = l_n * i_micro_kernel_config->datatype_size;
+        } else {
+          l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size;
+        }
+
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            i_micro_kernel_config->b_vmove_instruction,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            l_b_offset,
+            i_micro_kernel_config->vector_name,
+            l_n-3, 0, 1, 0 );
+      }
+    }
+
+    for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          i_micro_kernel_config->a_vmove_instruction,
+          i_gp_reg_mapping->gp_reg_a,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
+          i_micro_kernel_config->vector_name,
+          3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+      for ( l_n = 3; l_n < 6; l_n++ ) {
+        /* issue fma */
+        if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->vmul_instruction,
+                i_micro_kernel_config->vector_name,
+                l_n-3,
+                3,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->vmul_instruction,
+                i_micro_kernel_config->vector_name,
+                3,
+                l_n-3,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          } else {
+            /* should not happen */
+          }
+        } else {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmul_instruction,
+              i_micro_kernel_config->vector_name,
+              3,
+              l_n-3,
+              l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+        }
+      }
+    }
+
+    if ( i_offset != (-1) ) {
+      for ( l_n = 6; l_n < 7; l_n++ ) {
+        /* handle trans B */
+        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+          l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb) + (l_n * i_micro_kernel_config->datatype_size);
+        } else {
+          l_b_offset = (i_micro_kernel_config->datatype_size * i_offset) + (i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size);
+        }
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            i_micro_kernel_config->b_vmove_instruction,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            l_b_offset,
+            i_micro_kernel_config->vector_name,
+            l_n-6, 0, 1, 0 );
+      }
+    } else {
+      for ( l_n = 6; l_n < 7; l_n++ ) {
+        /* handle trans B */
+        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+          l_b_offset = l_n * i_micro_kernel_config->datatype_size;
+        } else {
+          l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size;
+        }
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            i_micro_kernel_config->b_vmove_instruction,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            l_b_offset,
+            i_micro_kernel_config->vector_name,
+            l_n-6, 0, 1, 0 );
+      }
+      /* handle trans B */
+      if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+        l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;
+      } else {
+        l_b_offset = i_micro_kernel_config->datatype_size;
+      }
+
+      libxsmm_x86_instruction_alu_imm( io_generated_code,
+          i_micro_kernel_config->alu_add_instruction,
+          i_gp_reg_mapping->gp_reg_b,
+          l_b_offset );
+    }
+
+    for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          i_micro_kernel_config->a_vmove_instruction,
+          i_gp_reg_mapping->gp_reg_a,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
+          i_micro_kernel_config->vector_name,
+          3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+
+      for ( l_n = 6; l_n < 7; l_n++ ) {
+        /* post increment early */
+        if ( (l_m == (l_m_blocking-1)) && (l_n == 6) ) {
+          libxsmm_x86_instruction_alu_imm( io_generated_code,
+              i_micro_kernel_config->alu_add_instruction,
+              i_gp_reg_mapping->gp_reg_a,
+              (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
+        }
+
+        /* issue fma */
+        if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->vmul_instruction,
+                i_micro_kernel_config->vector_name,
+                l_n-6,
+                3,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->vmul_instruction,
+                i_micro_kernel_config->vector_name,
+                3,
+                l_n-6,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          } else {
+            /* should not happen */
+          }
+        } else {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmul_instruction,
+              i_micro_kernel_config->vector_name,
+              3,
+              l_n-6,
+              l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+        }
+      }
+    }
+  } else {
+    /* load column vectors of A upront */
+    for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          i_micro_kernel_config->a_vmove_instruction,
+          i_gp_reg_mapping->gp_reg_a,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
+          i_micro_kernel_config->vector_name,
+          1+l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+    }
+
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      if ( i_offset != (-1) ) {
+        /* handle trans B */
+        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+          l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb) + (l_n * i_micro_kernel_config->datatype_size);
+        } else {
+          l_b_offset = (i_micro_kernel_config->datatype_size * i_offset) + (i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size);
+        }
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            i_micro_kernel_config->b_vmove_instruction,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            l_b_offset,
+            i_micro_kernel_config->vector_name,
+            0, 0, 1, 0 );
+
+        if (l_n == i_n_blocking - 1) {
+          if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
+            if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+              l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb);
+            } else {
+              l_b_offset = (i_micro_kernel_config->datatype_size * i_offset);
+            }
+            libxsmm_x86_instruction_prefetch(io_generated_code,
+                LIBXSMM_X86_INSTR_PREFETCHT0,
+                i_gp_reg_mapping->gp_reg_b,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                l_b_offset + 16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
+          }
+        }
+      } else {
+        /* handle trans B */
+        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+          l_b_offset = l_n * i_micro_kernel_config->datatype_size;
+        } else {
+          l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size;
+        }
+
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            i_micro_kernel_config->b_vmove_instruction,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            l_b_offset,
+            i_micro_kernel_config->vector_name,
+            0, 0, 1, 0 );
+
+        if (l_n == i_n_blocking - 1) {
+          if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
+            libxsmm_x86_instruction_prefetch(io_generated_code,
+                LIBXSMM_X86_INSTR_PREFETCHT0,
+                i_gp_reg_mapping->gp_reg_b,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
+          }
+
           /* handle trans B */
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
             l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;
@@ -119,525 +432,59 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               l_b_offset );
         }
       }
-      /* issue fma */
-      if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
-                i_micro_kernel_config->vmul_instruction,
-                i_micro_kernel_config->vector_name,
-                l_n,
-                i_n_blocking,
-                l_vec_reg_acc_start + l_n );
-        } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
-                i_micro_kernel_config->vmul_instruction,
-                i_micro_kernel_config->vector_name,
-                i_n_blocking,
-                l_n,
-                l_vec_reg_acc_start + l_n );
-        } else {
-          /* should not happen */
+
+      /* In case of batch reduce try to prefetch a few more columns ahead for A...  */
+      if ((l_n < l_m_blocking)  && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE))) {
+        unsigned int pf_a_cols_ahead = 16;
+        if (i_xgemm_desc->lda == 1024) {
+          pf_a_cols_ahead = 4;
         }
-      } else {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+        libxsmm_x86_instruction_prefetch( io_generated_code,
+            LIBXSMM_X86_INSTR_PREFETCHT0,
+            i_gp_reg_mapping->gp_reg_a,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_n + pf_a_cols_ahead * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size);
+      }
+
+      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+        /* post increment early */
+        if ( (l_m == 0) && (l_n == i_n_blocking-1) ) {
+          libxsmm_x86_instruction_alu_imm( io_generated_code,
+              i_micro_kernel_config->alu_add_instruction,
+              i_gp_reg_mapping->gp_reg_a,
+              (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
+        }
+        /* issue fma */
+        if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->vmul_instruction,
+                i_micro_kernel_config->vector_name,
+                0,
+                1+l_m,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->vmul_instruction,
+                i_micro_kernel_config->vector_name,
+                1+l_m,
+                0,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+          } else {
+            /* should not happen */
+          }
+        } else {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
               i_micro_kernel_config->instruction_set,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
-              i_n_blocking,
-              l_n,
-              l_vec_reg_acc_start + l_n );
-      }
-    }
-  } else {
-    /* Special case that arises in GEMMS from Resnet50 layers  */
-    if (i_n_blocking == 7 && l_m_blocking == 4) {
-      if ( i_offset != (-1) ) {
-        for ( l_n = 0; l_n < 3; l_n++ ) {
-          /* handle trans B */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb) + (l_n * i_micro_kernel_config->datatype_size);
-          } else {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset) + (i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size);
-          }
-
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->b_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset,
-              i_micro_kernel_config->vector_name,
-              l_n, 0, 1, 0 );
-        }
-        if ( i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1 ) {
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb);
-          } else {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset);
-          }
-          libxsmm_x86_instruction_prefetch(io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT0,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset + 16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
-        }
-      } else {
-        for ( l_n = 0; l_n < 3; l_n++ ) {
-          /* handle trans B */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = l_n * i_micro_kernel_config->datatype_size;
-          } else {
-            l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size;
-          }
-
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->b_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset,
-              i_micro_kernel_config->vector_name,
-              l_n, 0, 1, 0 );
-        }
-        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-          libxsmm_x86_instruction_prefetch(io_generated_code,
-            LIBXSMM_X86_INSTR_PREFETCHT0,
-            i_gp_reg_mapping->gp_reg_b,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
-        }
-      }
-
-      /* load column vectors of A and multiply with all broadcasted row entries of B */
-      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            i_micro_kernel_config->a_vmove_instruction,
-            i_gp_reg_mapping->gp_reg_a,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
-            i_micro_kernel_config->vector_name,
-            3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
-
-        /* In case of batch reduce try to prefetch a few more columns ahead...  */
-        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
-          unsigned int pf_a_cols_ahead = 16;
-          if (i_xgemm_desc->lda == 1024) {
-            pf_a_cols_ahead = 4;
-          }
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT0,
-              i_gp_reg_mapping->gp_reg_a,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m + pf_a_cols_ahead * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size);
-        }
-
-        for ( l_n = 0; l_n < 3; l_n++ ) {
-          /* issue fma */
-          if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-            if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                    i_micro_kernel_config->instruction_set,
-                    i_micro_kernel_config->vmul_instruction,
-                    i_micro_kernel_config->vector_name,
-                    l_n,
-                    3,
-                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                    i_micro_kernel_config->instruction_set,
-                    i_micro_kernel_config->vmul_instruction,
-                    i_micro_kernel_config->vector_name,
-                    3,
-                    l_n,
-                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            } else {
-              /* should not happen */
-            }
-          } else {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                  i_micro_kernel_config->instruction_set,
-                  i_micro_kernel_config->vmul_instruction,
-                  i_micro_kernel_config->vector_name,
-                  3,
-                  l_n,
-                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-          }
-        }
-      }
-
-      if ( i_offset != (-1) ) {
-        for ( l_n = 3; l_n < 6; l_n++ ) {
-          /* handle trans B */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb) + (l_n * i_micro_kernel_config->datatype_size);
-          } else {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset) + (i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size);
-          }
-
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->b_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset,
-              i_micro_kernel_config->vector_name,
-              l_n-3, 0, 1, 0 );
-        }
-      } else {
-        for ( l_n = 3; l_n < 6; l_n++ ) {
-          /* handle trans B */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = l_n * i_micro_kernel_config->datatype_size;
-          } else {
-            l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size;
-          }
-
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->b_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset,
-              i_micro_kernel_config->vector_name,
-              l_n-3, 0, 1, 0 );
-        }
-      }
-
-      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            i_micro_kernel_config->a_vmove_instruction,
-            i_gp_reg_mapping->gp_reg_a,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
-            i_micro_kernel_config->vector_name,
-            3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
-        for ( l_n = 3; l_n < 6; l_n++ ) {
-          /* issue fma */
-          if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-            if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                    i_micro_kernel_config->instruction_set,
-                    i_micro_kernel_config->vmul_instruction,
-                    i_micro_kernel_config->vector_name,
-                    l_n-3,
-                    3,
-                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                    i_micro_kernel_config->instruction_set,
-                    i_micro_kernel_config->vmul_instruction,
-                    i_micro_kernel_config->vector_name,
-                    3,
-                    l_n-3,
-                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            } else {
-              /* should not happen */
-            }
-          } else {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                  i_micro_kernel_config->instruction_set,
-                  i_micro_kernel_config->vmul_instruction,
-                  i_micro_kernel_config->vector_name,
-                  3,
-                  l_n-3,
-                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-          }
-        }
-      }
-
-      if ( i_offset != (-1) ) {
-        for ( l_n = 6; l_n < 7; l_n++ ) {
-          /* handle trans B */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb) + (l_n * i_micro_kernel_config->datatype_size);
-          } else {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset) + (i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size);
-          }
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->b_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset,
-              i_micro_kernel_config->vector_name,
-              l_n-6, 0, 1, 0 );
-        }
-      } else {
-        for ( l_n = 6; l_n < 7; l_n++ ) {
-          /* handle trans B */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = l_n * i_micro_kernel_config->datatype_size;
-          } else {
-            l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size;
-          }
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->b_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset,
-              i_micro_kernel_config->vector_name,
-              l_n-6, 0, 1, 0 );
-        }
-        /* handle trans B */
-        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-          l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;
-        } else {
-          l_b_offset = i_micro_kernel_config->datatype_size;
-        }
-
-        libxsmm_x86_instruction_alu_imm( io_generated_code,
-            i_micro_kernel_config->alu_add_instruction,
-            i_gp_reg_mapping->gp_reg_b,
-            l_b_offset );
-      }
-
-      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            i_micro_kernel_config->a_vmove_instruction,
-            i_gp_reg_mapping->gp_reg_a,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
-            i_micro_kernel_config->vector_name,
-            3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
-
-        for ( l_n = 6; l_n < 7; l_n++ ) {
-          /* post increment early */
-          if ( (l_m == (l_m_blocking-1)) && (l_n == 6) ) {
-            libxsmm_x86_instruction_alu_imm( io_generated_code,
-                i_micro_kernel_config->alu_add_instruction,
-                i_gp_reg_mapping->gp_reg_a,
-                (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
-          }
-
-          /* issue fma */
-          if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-            if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                    i_micro_kernel_config->instruction_set,
-                    i_micro_kernel_config->vmul_instruction,
-                    i_micro_kernel_config->vector_name,
-                    l_n-6,
-                    3,
-                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                    i_micro_kernel_config->instruction_set,
-                    i_micro_kernel_config->vmul_instruction,
-                    i_micro_kernel_config->vector_name,
-                    3,
-                    l_n-6,
-                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            } else {
-              /* should not happen */
-            }
-          } else {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                  i_micro_kernel_config->instruction_set,
-                  i_micro_kernel_config->vmul_instruction,
-                  i_micro_kernel_config->vector_name,
-                  3,
-                  l_n-6,
-                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-          }
-        }
-      }
-    } else {
-      /* broadcast from B -> into vec registers 0 to i_n_blocking */
-      if ( i_offset != (-1) ) {
-        for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-          /* handle trans B */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb) + (l_n * i_micro_kernel_config->datatype_size);
-          } else {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset) + (i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size);
-          }
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->b_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset,
-              i_micro_kernel_config->vector_name,
-              l_n, 0, 1, 0 );
-        }
-        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb);
-          } else {
-            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset);
-          }
-          libxsmm_x86_instruction_prefetch(io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT0,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset + 16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
-        }
-      } else {
-        for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-          /* handle trans B */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-            l_b_offset = l_n * i_micro_kernel_config->datatype_size;
-          } else {
-            l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size;
-          }
-
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->b_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_b,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              l_b_offset,
-              i_micro_kernel_config->vector_name,
-              l_n, 0, 1, 0 );
-        }
-        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-          libxsmm_x86_instruction_prefetch(io_generated_code,
-            LIBXSMM_X86_INSTR_PREFETCHT0,
-            i_gp_reg_mapping->gp_reg_b,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
-        }
-
-        /* handle trans B */
-        if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-          l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;
-        } else {
-          l_b_offset = i_micro_kernel_config->datatype_size;
-        }
-
-        libxsmm_x86_instruction_alu_imm( io_generated_code,
-            i_micro_kernel_config->alu_add_instruction,
-            i_gp_reg_mapping->gp_reg_b,
-            l_b_offset );
-      }
-
-      if (l_m_blocking == 4) {
-        /* load column vectors of A and multiply with all broadcasted row entries of B */
-        for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->a_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_a,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
-              i_micro_kernel_config->vector_name,
-              i_n_blocking, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
-
-          /* In case of batch reduce try to prefetch a few more columns ahead...  */
-          if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
-            unsigned int pf_a_cols_ahead = 16;
-            if (i_xgemm_desc->lda == 1024) {
-              pf_a_cols_ahead = 4;
-            }
-            libxsmm_x86_instruction_prefetch( io_generated_code,
-                LIBXSMM_X86_INSTR_PREFETCHT0,
-                i_gp_reg_mapping->gp_reg_a,
-                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m + pf_a_cols_ahead * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size);
-          }
-
-          for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-            /* post increment early */
-            if ( (l_m == (l_m_blocking-1)) && (l_n == 0) ) {
-              libxsmm_x86_instruction_alu_imm( io_generated_code,
-                  i_micro_kernel_config->alu_add_instruction,
-                  i_gp_reg_mapping->gp_reg_a,
-                  (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
-            }
-
-            /* issue fma */
-            if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-              if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-                libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                      i_micro_kernel_config->instruction_set,
-                      i_micro_kernel_config->vmul_instruction,
-                      i_micro_kernel_config->vector_name,
-                      l_n,
-                      i_n_blocking,
-                      l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-              } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-                libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                      i_micro_kernel_config->instruction_set,
-                      i_micro_kernel_config->vmul_instruction,
-                      i_micro_kernel_config->vector_name,
-                      i_n_blocking,
-                      l_n,
-                      l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-              } else {
-                /* should not happen */
-              }
-            } else {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                    i_micro_kernel_config->instruction_set,
-                    i_micro_kernel_config->vmul_instruction,
-                    i_micro_kernel_config->vector_name,
-                    i_n_blocking,
-                    l_n,
-                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            }
-          }
-        }
-      } else {
-        /* load column vectors of A and multiply with all broadcasted row entries of B */
-        for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->a_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_a,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
-              i_micro_kernel_config->vector_name,
-              i_n_blocking+l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
-        }
-        for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-          for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-            /* post increment early */
-            if ( (l_m == (l_m_blocking-1)) && (l_n == 0) ) {
-              libxsmm_x86_instruction_alu_imm( io_generated_code,
-                  i_micro_kernel_config->alu_add_instruction,
-                  i_gp_reg_mapping->gp_reg_a,
-                  (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
-            }
-            /* issue fma */
-            if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-              if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-                libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                      i_micro_kernel_config->instruction_set,
-                      i_micro_kernel_config->vmul_instruction,
-                      i_micro_kernel_config->vector_name,
-                      l_n,
-                      i_n_blocking+l_m,
-                      l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-              } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-                libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                      i_micro_kernel_config->instruction_set,
-                      i_micro_kernel_config->vmul_instruction,
-                      i_micro_kernel_config->vector_name,
-                      i_n_blocking+l_m,
-                      l_n,
-                      l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-              } else {
-                /* should not happen */
-              }
-            } else {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                    i_micro_kernel_config->instruction_set,
-                    i_micro_kernel_config->vmul_instruction,
-                    i_micro_kernel_config->vector_name,
-                    i_n_blocking+l_m,
-                    l_n,
-                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            }
-          }
+              1+l_m,
+              0,
+              l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       }
     }
   }
 }
-
