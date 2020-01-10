@@ -1653,6 +1653,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
     }
 #endif /*defined(LIBXSMM_GEMM_BATCHREDUCE)*/
   }
+  /* coverity[missing_unlock] */
   return result;
 }
 

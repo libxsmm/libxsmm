@@ -62,9 +62,13 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
             0 != *o_row_count && 0 != *o_column_count && 0 != *o_element_count)
         {
           /* allocate CSC data-structure matching mtx file */
+          /* coverity[tainted_data] */
           *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
+          /* coverity[tainted_data] */
           *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)(*o_row_count) + 1));
+          /* coverity[tainted_data] */
           *o_values = (double*) malloc(sizeof(double) * (*o_element_count));
+          /* coverity[tainted_data] */
           l_row_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count));
 
           /* check if mallocs were successful */
@@ -80,12 +84,17 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
           }
 
           /* set everything to zero for init */
+          /* coverity[tainted_data] */
           memset(*o_row_idx, 0, sizeof(unsigned int) * ((size_t)(*o_row_count) + 1));
+          /* coverity[tainted_data] */
           memset(*o_column_idx, 0, sizeof(unsigned int) * (*o_element_count));
+          /* coverity[tainted_data] */
           memset(*o_values, 0, sizeof(double) * (*o_element_count));
+          /* coverity[tainted_data] */
           memset(l_row_idx_id, 0, sizeof(unsigned int) * (*o_row_count));
 
           /* init column idx */
+          /* coverity[tainted_data] */
           for ( l_i = 0; l_i <= *o_row_count; ++l_i )
             (*o_row_idx)[l_i] = (*o_element_count);
 
@@ -118,6 +127,7 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
         (*o_values)[l_i] = l_value;
         l_i++;
         /* handle columns, set id to own for this column, yeah we need to handle empty columns */
+        /* coverity[tainted_data] */
         l_row_idx_id[l_row] = 1;
         (*o_row_idx)[l_row+1] = l_i;
       }

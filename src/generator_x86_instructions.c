@@ -4856,7 +4856,7 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 9)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 9)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }
@@ -5318,7 +5318,7 @@ void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*     
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 9)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 9)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }
@@ -5400,7 +5400,7 @@ void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*    
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 11)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 11)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }
@@ -5485,7 +5485,7 @@ void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*       
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 9)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 9)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }
@@ -5572,7 +5572,7 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
-    if (l_max_size < (l_code_size + 10)) {
+    if (NULL == l_code_buffer || l_max_size < (l_code_size + 10)) {
       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
       return;
     }
