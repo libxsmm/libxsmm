@@ -630,7 +630,8 @@ cheader: $(INCDIR)/libxsmm.h
 ifneq (,$(PYTHON))
 $(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
-                     $(INCDIR)/libxsmm_config.h $(HEADERS)
+                     $(INCDIR)/libxsmm_config.h $(HEADERS) \
+                     $(SRCFILES_KERNELS)
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
 else
