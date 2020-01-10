@@ -11,10 +11,10 @@ matrix:
   include:
   - os: linux
     compiler: gcc
-    env: INSTALL=install OPT=1 PYTHON=python3 LIBXSMM_MALLOC=1
+    env: INSTALL=install-artifacts OPT=1 PYTHON=python3 LIBXSMM_MALLOC=1
   - os: linux
     compiler: gcc
-    env: INSTALL=install-artifacts DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0
+    env: INSTALL=install DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0
   - os: linux
     compiler: clang
     env: INSTALL=install DBG=1 LIBXSMM_TARGET=sse
@@ -78,7 +78,10 @@ install:
       ) || true;
     fi
   - if [ "" = "${CODECOV_ENABLED}" ] || [ "0" != "${CODECOV_ENABLED}" ]; then
-      if [ "clang" != "${CC}" ]; then pip install --user codecov; fi;
+      if [ "clang" != "${CC}" ]; then
+        pip install --upgrade pip;
+        pip install --user codecov;
+      fi;
     fi
 
 after_success:
