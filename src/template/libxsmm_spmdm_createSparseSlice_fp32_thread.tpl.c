@@ -16,10 +16,10 @@ const __m256i *const shufmasks = internal_spmdm_shufmasks_32;
 #endif
 #if SIMD_WIDTH_FP32 > 1
 const __m256i *const shufmasks2 = internal_spmdm_shufmasks_16;
+SIMDTYPE_INT32 vindex = _MM_SETZERO_INT32();
 #endif
 int block_offset_base, block_offset;
 int idx_array[16];
-SIMDTYPE_INT32 vindex = _MM_SETZERO_INT32();
 
 LIBXSMM_UNUSED(nthreads);
 LIBXSMM_UNUSED(tid);
@@ -31,7 +31,9 @@ if ('T' == transa || 't' == transa) {
   block_offset_base = mb * handle->bm;
   block_offset = block_offset_base + kb * handle->m * handle->bk;
   for (kk = 0; kk < SIMD_WIDTH_FP32; kk++) idx_array[kk] = kk*handle->m;
+#if SIMD_WIDTH_FP32 > 1
   vindex = _MM_LOADU_INT32(idx_array);
+#endif
 }
 else {
   block_offset_base = kb * handle->bk;
@@ -42,23 +44,22 @@ else {
   int nrows = ((mb + 1)*handle->bm > handle->m)?(handle->m - (mb)*handle->bm):handle->bm;
   int ncols = ((kb + 1)*handle->bk > handle->k)?(handle->k - (kb)*handle->bk):handle->bk;
   /*printf("nrows: %d, ncols: %d\n", nrows, ncols);*/
-  int ncols_aligned = ncols / (4*SIMD_WIDTH_FP32)*(4*SIMD_WIDTH_FP32);
-  int ncols_aligned_2 = ncols / (SIMD_WIDTH_FP32)*(SIMD_WIDTH_FP32);
   const float * input_ptr = a + block_offset;
   uint16_t * rowidx_ptr = slice.rowidx;
   uint16_t * colidx_ptr = slice.colidx;
   float    * values_ptr = (float *)(slice.values);
   uint16_t cnt = 0;
-#if (1 != SIMD_WIDTH_FP32)
-  SIMDTYPE_FP32 vzero = _MM_SET1_FP32(0.0);
+#if SIMD_WIDTH_FP32 > 1
+  const SIMDTYPE_FP32 vzero = _MM_SETZERO_FP32();
+  const int ncols_aligned = ncols / (4*SIMD_WIDTH_FP32)*(4*SIMD_WIDTH_FP32);
+  const int ncols_aligned_2 = ncols / (SIMD_WIDTH_FP32)*(SIMD_WIDTH_FP32);
 #else
-  ncols_aligned = 0;
-  ncols_aligned_2 = 0;
+  const int ncols_aligned_2 = 0;
 #endif
   for (i = 0; i < nrows; i++) {
     rowidx_ptr[i] = cnt;
     if ('T' == transa || 't' == transa) {
-#if (1 != SIMD_WIDTH_FP32)
+#if SIMD_WIDTH_FP32 > 1
       for (k = 0; k < ncols_aligned; k += 4*SIMD_WIDTH_FP32) {
         SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + (size_t)k * handle->m + i, vindex, 4);
         SIMDTYPE_FP32 v2 = _MM_GATHER_FP32(input_ptr + ((size_t)k+1*SIMD_WIDTH_FP32) * handle->m + i, vindex, 4);
@@ -86,7 +87,7 @@ else {
       }
     }
     else {
-#if (1 != SIMD_WIDTH_FP32)
+#if SIMD_WIDTH_FP32 > 1
       for (k = 0; k < ncols_aligned; k += 4*SIMD_WIDTH_FP32) {
         SIMDTYPE_FP32 v1, v2, v3, v4;
         SIMDMASKTYPE_FP32 m1, m2, m3, m4;

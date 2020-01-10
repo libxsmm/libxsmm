@@ -34,8 +34,8 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*        io_code,
-                                                       const libxsmm_trsm_descriptor* i_packed_trsm_desc,
-                                                       const char*                    i_arch )
+                                                      const libxsmm_trsm_descriptor* i_packed_trsm_desc,
+                                                      const char*                    i_arch )
 {
   unsigned char *const buf = (unsigned char *) io_code->generated_code;
   libxsmm_loop_label_tracker l_loop_label_tracker /*= { 0 }*/;
@@ -98,7 +98,7 @@ void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*   
    *        convert one instruction at a time to those in
    *        generator_x86_instructions.h. Or add to the existing instructions */
   if (NULL == buf) {
-    LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+    LIBXSMM_HANDLE_ERROR(io_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
     return;
   }
 
