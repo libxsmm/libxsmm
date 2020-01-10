@@ -22,6 +22,7 @@
 # pragma offload_attribute(pop)
 #endif
 
+/* coverity[tainted_data] */
 LIBXSMM_API_INTERN
 void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
                                 const char*             i_csr_file_in,

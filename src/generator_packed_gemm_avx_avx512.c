@@ -217,6 +217,7 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
         if ( trb ) trb = 0; else trb = 1;
 #if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
         LIBXSMM_ASSERT(0 == trc);
+        /* coverity[dead_error_line] */
         if ( trc ) trc = 0; else
 #endif
         trc = 1;

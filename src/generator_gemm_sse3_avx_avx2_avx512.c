@@ -183,10 +183,12 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
           if (i_xgemm_desc->m == 56) {
             l_m_done = 32;
           } else {
+            /* coverity[divide_by_zero] */
             l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
           }
         } else {
           l_m_done_old = l_m_done;
+          /* coverity[divide_by_zero] */
           l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
         }
       } else {
@@ -231,6 +233,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a);
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b);
             if (adjust_A_pf_ptrs) {
+              /* coverity[dead_error_line] */
               libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a_prefetch );
             }
             if (adjust_B_pf_ptrs) {
@@ -261,7 +264,8 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                   l_gp_reg_mapping.gp_reg_a_prefetch,
                   0 );
             }
-            if (adjust_B_pf_ptrs) { /* coverity[dead_error_line] */
+            if (adjust_B_pf_ptrs) {
+              /* coverity[dead_error_line] */
               libxsmm_x86_instruction_alu_mem( io_generated_code,
                   l_micro_kernel_config.alu_mov_instruction,
                   l_gp_reg_mapping.gp_reg_b_prefetch,
@@ -367,6 +371,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
           if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
             if (adjust_B_pf_ptrs) {
+              /* coverity[dead_error_begin] */
               libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
               libxsmm_x86_instruction_alu_mem( io_generated_code,
                   l_micro_kernel_config.alu_mov_instruction,

@@ -48,15 +48,17 @@ else {
   uint16_t * rowidx_ptr = slice.rowidx;
   uint16_t * colidx_ptr = slice.colidx;
   float    * values_ptr = (float *)(slice.values);
-  SIMDTYPE_FP32 vzero = _MM_SET1_FP32(0.0);
   uint16_t cnt = 0;
-#if (1 == SIMD_WIDTH_FP32)
+#if (1 != SIMD_WIDTH_FP32)
+  SIMDTYPE_FP32 vzero = _MM_SET1_FP32(0.0);
+#else
   ncols_aligned = 0;
   ncols_aligned_2 = 0;
 #endif
   for (i = 0; i < nrows; i++) {
     rowidx_ptr[i] = cnt;
     if ('T' == transa || 't' == transa) {
+#if (1 != SIMD_WIDTH_FP32)
       for (k = 0; k < ncols_aligned; k += 4*SIMD_WIDTH_FP32) {
         SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + (size_t)k * handle->m + i, vindex, 4);
         SIMDTYPE_FP32 v2 = _MM_GATHER_FP32(input_ptr + ((size_t)k+1*SIMD_WIDTH_FP32) * handle->m + i, vindex, 4);
@@ -71,7 +73,6 @@ else {
         COMPRESS_FP32(v3, k + 2*SIMD_WIDTH_FP32, m3, cnt);
         COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
       }
-#if (1 != SIMD_WIDTH_FP32)
       for (k = ncols_aligned; k < ncols_aligned_2; k += SIMD_WIDTH_FP32) {
         SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + (size_t)k * handle->m + i, vindex, 4);
         SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzero);
