@@ -97,6 +97,10 @@ void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*   
   /* Todo-> I first want this code to work, and verify it works, then I can
    *        convert one instruction at a time to those in
    *        generator_x86_instructions.h. Or add to the existing instructions */
+  if (NULL == buf) {
+    LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+    return;
+  }
 
   if ( io_code->code_type > 1 )
   {
