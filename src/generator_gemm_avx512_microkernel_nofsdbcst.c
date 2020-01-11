@@ -43,12 +43,16 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
   int l_b_offset = 0;
 
 #if !defined(NDEBUG)
-  if ( (i_n_blocking > 7) || (i_n_blocking < 1) ) {
+  if ( (i_n_blocking > 30) || (i_n_blocking < 1) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
   if ( (l_m_blocking < 1) || (l_m_blocking > 6) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return;
+  }
+  if ( ((l_m_blocking*i_n_blocking) + l_m_blocking + 1) > 32 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
     return;
   }
 #endif
