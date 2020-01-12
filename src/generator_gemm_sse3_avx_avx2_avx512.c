@@ -50,23 +50,6 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   unsigned int adjust_A_pf_ptrs = 0;
   unsigned int adjust_B_pf_ptrs = 0;
 
-  /* as we have 32 registers, we can block more aggressively */
-  /* @TODO: take M blocking into account */
-  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
-    if (i_xgemm_desc->n == 7) {
-      libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 7, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
-    } else {
-      libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 6, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
-    }
-  } else {
-    libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 3, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
-  }
-  /* check that l_n_N1 is non-zero */
-  if ( l_n_N[0] == 0 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
-    return;
-  }
-
   /* Make sure we properly adjust A,B prefetch pointers in case of batch-reduce gemm kernel  */
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
     if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_AL1 ||
@@ -142,6 +125,28 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
+  /* as we have 32 registers, we can block more aggressively on AVX512 */
+  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    if (i_xgemm_desc->n == 7) {
+      libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 7, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
+    } else {
+      unsigned int max_n_blocking  = 30;
+      unsigned int init_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc );
+      unsigned int init_m_blocks = ( init_m_blocking % l_micro_kernel_config.vector_length  == 0 ) ? init_m_blocking/l_micro_kernel_config.vector_length : (init_m_blocking/l_micro_kernel_config.vector_length)+1;
+      while (((init_m_blocks * max_n_blocking) + 1 + init_m_blocks) > 32) {
+        max_n_blocking--;
+      }
+      libxsmm_compute_equalized_blocking( i_xgemm_desc->n, max_n_blocking, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
+    }
+  } else {
+    libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 3, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
+  }
+  /* check that l_n_N1 is non-zero */
+  if ( l_n_N[0] == 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
+  }
+
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
@@ -200,20 +205,9 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
       if ( (l_m_done != l_m_done_old) && (l_m_done > 0) ) {
         /* when on AVX512, load mask, if needed */
         if ( ( l_micro_kernel_config.use_masking_a_c != 0 ) && ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
-          unsigned int l_mask_count;
-          unsigned int l_corrected_vlen;
-
           /* compute the mask count, depends on vlen as block in M */
-#if 0 /* same code regardless of which branch is taken */
-          if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
-            l_corrected_vlen = l_micro_kernel_config.vector_length;
-          } else
-#endif
-          {
-            l_corrected_vlen = l_micro_kernel_config.vector_length;
-          }
-
-          l_mask_count = l_corrected_vlen - ( l_m_blocking % l_corrected_vlen );
+          unsigned int l_corrected_vlen = l_micro_kernel_config.vector_length;
+          unsigned int l_mask_count = l_corrected_vlen - ( l_m_blocking % l_corrected_vlen );
 
           libxsmm_generator_gemm_initialize_avx512_mask( io_generated_code, l_gp_reg_mapping.gp_reg_help_5, i_xgemm_desc, l_mask_count );
         }
