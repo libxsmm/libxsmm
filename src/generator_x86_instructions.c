@@ -3970,6 +3970,11 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     int l_r8adjment = 1;
     int l_reg0multiplier = 1;
 
+    if (NULL == buf) {
+      LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+      return;
+    }
+
     switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_ADDQ:
           break;
