@@ -21,7 +21,7 @@ then
   for FORK in $(${CURL} -s https://api.github.com/repos/hfp/libxsmm/forks \
   | ${GREP} "\"html_url\"" | ${GREP} "libxsmm" | ${CUT} -d/ -f4);
   do
-    ${GIT} remote add ${FORK} https://github.com/${FORK}/recoll-webui.git
+    ${GIT} remote add ${FORK} https://github.com/${FORK}/libxsmm.git
     ${GIT} fetch ${FORK}
   done
 else
