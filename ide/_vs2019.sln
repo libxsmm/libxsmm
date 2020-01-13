@@ -420,6 +420,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_f32", "..\sam
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "timer", "..\tests\timer.vcxproj", "{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -1282,6 +1287,18 @@ Global
 		{8D23BCAE-ECF1-4C6D-AB18-0D028EEDE39D}.symbols|Win32.Build.0 = symbols|Win32
 		{8D23BCAE-ECF1-4C6D-AB18-0D028EEDE39D}.symbols|x64.ActiveCfg = symbols|x64
 		{8D23BCAE-ECF1-4C6D-AB18-0D028EEDE39D}.symbols|x64.Build.0 = symbols|x64
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.debug|Win32.ActiveCfg = debug|Win32
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.debug|Win32.Build.0 = debug|Win32
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.debug|x64.ActiveCfg = debug|x64
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.debug|x64.Build.0 = debug|x64
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.release|Win32.ActiveCfg = release|Win32
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.release|Win32.Build.0 = release|Win32
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.release|x64.ActiveCfg = release|x64
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.release|x64.Build.0 = release|x64
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.symbols|Win32.ActiveCfg = symbols|Win32
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.symbols|Win32.Build.0 = symbols|Win32
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.symbols|x64.ActiveCfg = symbols|x64
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1369,6 +1386,7 @@ Global
 		{F97A06B1-22C1-44B8-99E4-F7E9BA3D659D} = {19D4CE59-98AA-421B-B824-34017E235623}
 		{2723C222-5053-4CDE-93B8-A5CF62E51FD6} = {F97A06B1-22C1-44B8-99E4-F7E9BA3D659D}
 		{8D23BCAE-ECF1-4C6D-AB18-0D028EEDE39D} = {F97A06B1-22C1-44B8-99E4-F7E9BA3D659D}
+		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD13D8C2-5B0F-431B-897A-AA0FE5BDFCB2}
