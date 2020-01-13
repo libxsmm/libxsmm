@@ -21,7 +21,7 @@
 # define MAX_NSECONDS 16
 #endif
 #if !defined(MAX_TOLPERC)
-# define MAX_TOLPERC 1
+# define MAX_TOLPERC 2
 #endif
 
 #if defined(_DEBUG) || !defined(USE_QUIET)
