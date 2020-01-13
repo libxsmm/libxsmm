@@ -151,6 +151,18 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
+  /* If int8 kernel, broadcast quantization factor to spare zmm */
+  if ( (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) && (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags) ) ) {
+    libxsmm_x86_instruction_vec_move( io_generated_code,
+        l_micro_kernel_config.instruction_set,
+        LIBXSMM_X86_INSTR_VBROADCASTSS,
+        l_gp_reg_mapping.gp_reg_reduce_count,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        8,
+        l_micro_kernel_config.vector_name,
+        3/* FIXME: function of blocking params the zmm number*/, 0, 1, 0 );
+  }
+
   /* Load the actual batch-reduce trip count */
   if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -499,7 +511,7 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking(
   } else if ( ( i_arch == LIBXSMM_X86_AVX2 )    && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     l_m_blocking = 16;
   } else if ( ( i_arch <= LIBXSMM_X86_ALLFEAT ) && ( ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ||
-                                                     ( LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )    ) ) {
+        ( LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )    ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
     /* @TODO check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 64 ) {
@@ -632,7 +644,7 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_update_m_blocking( libx
       /* we are done with m_blocking */
     }
   } else if ( ( i_arch <= LIBXSMM_X86_ALLFEAT ) && ( ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ||
-                                                     ( LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )    ) ) {
+        ( LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )    ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32 out kernel with the same logic */
     if (i_current_m_blocking == 64) {
       l_m_blocking = i_xgemm_desc->m % 64;
