@@ -21,7 +21,7 @@
 # define MAX_NSECONDS 16
 #endif
 #if !defined(MAX_TOLPERC)
-# define MAX_TOLPERC 2
+# define MAX_TOLPERC 3
 #endif
 
 #if defined(_DEBUG) || !defined(USE_QUIET)
@@ -45,9 +45,9 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
   const int max_nseconds_input = (1 < argc ? atoi(argv[1]) : MAX_NSECONDS);
   const int max_nseconds = LIBXSMM_UP2POT(max_nseconds_input);
+  double total = 0, maxtol = 0, t, d;
   libxsmm_timer_tickint start;
   int n = max_nseconds;
-  double total = 0, d;
 
 #if !defined(USE_NOINIT)
   libxsmm_init();
@@ -58,7 +58,9 @@ int main(int argc, char* argv[])
     SLEEP(n);
     d = libxsmm_timer_duration(start, libxsmm_timer_tick());
     total += d;
-    if (((double)(MAX_TOLPERC) * n) < (100.0 * LIBXSMM_DELTA(d, (double)n))) {
+    t = LIBXSMM_DELTA(d, (double)n);
+    if (maxtol < t) maxtol = t;
+    if (((double)(MAX_TOLPERC) * n) < (100.0 * t)) {
       result = EXIT_FAILURE;
     }
 #if defined(USE_QUIET)
@@ -70,12 +72,14 @@ int main(int argc, char* argv[])
   start = libxsmm_timer_tick();
   SLEEP(1);
   d = libxsmm_timer_duration(start, libxsmm_timer_tick());
+  t = LIBXSMM_DELTA(d, 1.0);
+  if (maxtol < t) maxtol = t;
   total += d;
 
   if (EXIT_SUCCESS != result /* previously exceeded tolerance */
     || ((double)(MAX_TOLPERC) * max_nseconds) < (100.0 * LIBXSMM_DELTA(total, (double)max_nseconds)))
   {
-    result = EXIT_FAILURE;
+    result = (int)LIBXSMM_ROUND(100.0 * maxtol);
   }
 #if defined(USE_QUIET)
   if (EXIT_SUCCESS != result)
