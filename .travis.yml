@@ -14,7 +14,7 @@ matrix:
     env: INSTALL=install-artifacts OPT=1 PYTHON=python3 LIBXSMM_MALLOC=1
   - os: linux
     compiler: gcc
-    env: INSTALL=install DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0
+    env: INSTALL=install DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0 ANALYZE=1
   - os: linux
     compiler: clang
     env: INSTALL=install DBG=1 LIBXSMM_TARGET=sse
@@ -154,4 +154,8 @@ script:
       make -e ${PEDANTIC_HIGH} AVX=2 THREADS=0 test-cpp &&
       make -e ${PEDANTIC_HIGH} AVX=1 VLA=0 test-cpp
     ) 2>&1 | tee .test.log && eval ${POSTPROC}
+
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ "" = "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+    source ${TRAVIS_BUILD_DIR}/.env/codecov.env 0;
+    ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh
 

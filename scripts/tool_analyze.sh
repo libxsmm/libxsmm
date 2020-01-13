@@ -25,7 +25,7 @@ then
   if [ "" = "${ARG}" ]; then
     ARG=lib
   fi
-  ${MAKE} CXX=${CXX} CC=${CC} FC= FORCE_CXX=1 DBG=1 ILP64=1 EFLAGS="--analyze" ${ARG} 2> .analyze.log
+  ${MAKE} -e CXX=${CXX} CC=${CC} FC= FORCE_CXX=1 DBG=1 ILP64=1 EFLAGS="--analyze" ${ARG} 2> .analyze.log
   ISSUES=$(${GREP} -e "error:" -e "warning:" .analyze.log | ${GREP} -v "is never read" | ${SORT} -u)
   echo
   echo   "================================================================================"
@@ -36,6 +36,7 @@ then
     echo "Errors (warnings)"
     echo "================================================================================"
     echo "${ISSUES}"
+    exit 1
   fi
 else
   echo "Error: missing prerequisites!"
