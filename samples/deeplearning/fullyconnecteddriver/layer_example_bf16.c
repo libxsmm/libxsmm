@@ -306,7 +306,6 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
     }
-#if 0
     if ( (type == 'A' || type == 'B') && LIBXSMM_NEQ(0, check) ) {
       printf("##########################################\n");
       printf("#   Correctness - BWD (custom-Storage)   #\n");
@@ -326,7 +325,7 @@ int main(int argc, char* argv[])
 
       /* copy out data */
       matrix_copy_NCNC_to_NC_bf16( delinput_libxsmm, naive_libxsmm_delinput_bf16, 1, nImg, nIFm, bn, bc );
-      libxsmm_convert_bf16_f32( naive_libxsmm_delinput_bf16, naive_libxsmm_delinput_f32, nIFm*nIFm );
+      libxsmm_convert_bf16_f32( naive_libxsmm_delinput_bf16, naive_libxsmm_delinput_f32, nImg*nIFm );
 
       /* compare */
       libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput_f32, 0, 0);
@@ -339,7 +338,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_bwd);
     }
-#endif
+
 #if 0
     if ( (type == 'A' || type == 'U') && LIBXSMM_NEQ(0, check) ) {
       printf("##########################################\n");
@@ -405,7 +404,6 @@ int main(int argc, char* argv[])
         nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
         norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
-#if 0
     if (type == 'A' || type == 'B') {
       printf("##########################################\n");
       printf("#   Performance - BWD (custom-Storage)   #\n");
@@ -437,8 +435,6 @@ int main(int argc, char* argv[])
         nOFm, ((double)(l_total/iters)), gflop/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
         norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
-#endif
-#if 0
     if (type == 'A' || type == 'U') {
       printf("##########################################\n");
       printf("#   Performance - UPD (custom-Storage)   #\n");
@@ -470,7 +466,6 @@ int main(int argc, char* argv[])
         nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
         norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
-#endif
     /* clean-up */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_scratch( libxsmm_handle ) );
     libxsmm_free(scratch);
