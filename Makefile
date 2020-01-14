@@ -1618,6 +1618,7 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/SECURITY.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
+	@sed "s/^\"//;s/\\\n\"$$//;/STATIC=/d" $(DIRSTATE)/.state > $(PREFIX)/$(PDOCDIR)/build.txt 2>/dev/null || true
 	@mkdir -p $(PREFIX)/$(LICFDIR)
 ifneq ($(call qapath,$(PREFIX)/$(PDOCDIR)/LICENSE.md),$(call qapath,$(PREFIX)/$(LICFDIR)/$(LICFILE)))
 	@$(MV) $(PREFIX)/$(PDOCDIR)/LICENSE.md $(PREFIX)/$(LICFDIR)/$(LICFILE)
