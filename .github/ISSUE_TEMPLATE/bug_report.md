@@ -9,3 +9,13 @@ Please help with a clear and concise description of what the bug is, and what yo
 ```bash
 make
 ```
+
+Determine accurate build information in case of an upstreamed package (binary distribution):
+
+```bash
+export LIBXSMM_DUMP_BUILD=1
+./application_linked_with_libxsmm ...
+```
+
+Build information is available when LIBXSMM was dynamically or statically linked with an application (not for header-only).
+
