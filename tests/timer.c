@@ -13,11 +13,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#if !defined(USE_NOINIT) && 0
+#if !defined(USE_NOINIT)
 # define USE_NOINIT
-#endif
-#if !defined(USE_QUIET)
-# define USE_QUIET
 #endif
 
 #if !defined(MAX_NSECONDS)
@@ -27,31 +24,36 @@
 # define MAX_TOLPERC 2
 #endif
 
-#if defined(_DEBUG) || !defined(USE_QUIET)
-# define FPRINTF(STREAM, ...) fprintf(STREAM, __VA_ARGS__)
-#else
-# define FPRINTF(STREAM, ...)
-#endif
-
 #if defined(_WIN32)
 # include <Windows.h>
-# define SLEEP(SEC) Sleep(1000*(SEC))
 #else
 # include <unistd.h>
-# define SLEEP(SEC) sleep(SEC)
 #endif
+
+
+LIBXSMM_INLINE int timer_sleep(unsigned int seconds)
+{
+  int result;
+#if defined(_WIN32)
+  Sleep((DWORD)(1000 * seconds));
+  result = EXIT_SUCCESS;
+#else
+  result = (0 == sleep(seconds) ? EXIT_SUCCESS : EXIT_FAILURE);
+#endif
+  return result;
+}
 
 
 int main(int argc, char* argv[])
 {
-  int result = EXIT_SUCCESS;
   const int max_nseconds_input = (1 < argc ? atoi(argv[1]) : MAX_NSECONDS);
-  const int max_nseconds = LIBXSMM_UP2POT(max_nseconds_input);
+  const unsigned int max_nseconds = (unsigned int)LIBXSMM_UP2POT(max_nseconds_input);
   const char *const env_test = getenv("TEST_TIMER");
   const int nofailure = (NULL == env_test || 0 == *env_test) ? 0 : (0 == atoi(env_test));
-  double total = 0, maxtol = 0, t, d;
+  double total = 0, delta = 0, d, t;
+  unsigned int n = max_nseconds;
   libxsmm_timer_tickint start;
-  int n = max_nseconds;
+  int result;
 
 #if !defined(USE_NOINIT)
   libxsmm_init();
@@ -59,38 +61,32 @@ int main(int argc, char* argv[])
 
   for (n >>= 1; 0 < n; n >>= 1) {
     start = libxsmm_timer_tick();
-    SLEEP(n);
-    d = libxsmm_timer_duration(start, libxsmm_timer_tick());
-    total += d;
-    t = LIBXSMM_DELTA(d, (double)n);
-    if (maxtol < t) maxtol = t;
-    if (((double)(MAX_TOLPERC) * n) < (100.0 * t)) {
-      result = EXIT_FAILURE;
+    if (EXIT_SUCCESS == timer_sleep(n)) {
+      t = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      d = LIBXSMM_DELTA(t, (double)n);
+      if (delta < d) delta = d;
+      total += t;
     }
-#if defined(USE_QUIET)
-    if (EXIT_SUCCESS != result)
-#endif
-    FPRINTF(stderr, "%i <-> %f s\n", n, d);
+    else total += (double)n;
   }
 
   start = libxsmm_timer_tick();
-  SLEEP(1);
-  d = libxsmm_timer_duration(start, libxsmm_timer_tick());
-  t = LIBXSMM_DELTA(d, 1.0);
-  if (maxtol < t) maxtol = t;
-  total += d;
-
-  if (EXIT_SUCCESS != result /* previously exceeded tolerance */
-    || ((double)(MAX_TOLPERC) * max_nseconds) < (100.0 * LIBXSMM_DELTA(total, (double)max_nseconds)))
-  {
-    result = (int)LIBXSMM_ROUND(100.0 * maxtol);
+  if (EXIT_SUCCESS == timer_sleep(1)) {
+    t = libxsmm_timer_duration(start, libxsmm_timer_tick());
+    d = LIBXSMM_DELTA(t, 1.0);
+    if (delta < d) delta = d;
+    total += t;
   }
-#if defined(USE_QUIET)
-  if (EXIT_SUCCESS != result)
-#endif
-  FPRINTF(stderr, "%i <-> %f s\n", max_nseconds, total);
+  else total += 1.0;
 
-  if (0 != nofailure) {
+  d = LIBXSMM_DELTA(total, (double)max_nseconds);
+  if (delta < d) delta = d;
+
+  result = (int)LIBXSMM_ROUND(100.0 * delta);
+  if ((MAX_TOLPERC) >= result) {
+    result = EXIT_SUCCESS;
+  }
+  else if (0 != nofailure) {
     fprintf(stderr, "delta=%i%%\n", result);
     result = EXIT_SUCCESS;
   }
