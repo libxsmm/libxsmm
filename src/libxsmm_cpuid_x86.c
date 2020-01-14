@@ -146,7 +146,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
         ++warnings;
 # endif
         if (NULL != compiler_support) {
-          fprintf(stderr, "LIBXSMM WARNING: missing compiler support for %soptimized code paths!\n", compiler_support);
+          fprintf(stderr, "LIBXSMM WARNING: missing support for %soptimized non-JIT code paths!\n", compiler_support);
           ++warnings;
         }
         if (LIBXSMM_STATIC_TARGET_ARCH < feature_cpu && feature_os < feature_cpu) {
