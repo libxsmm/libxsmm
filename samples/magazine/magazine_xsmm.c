@@ -17,6 +17,9 @@
 #if 0 /* auto-dispatch SMM kernel */
 # define AUTO
 #endif
+#if 0 /* disable auto-prefetch */
+# define NOPREFETCH
+#endif
 
 
 int main(int argc, char* argv[])
@@ -59,7 +62,7 @@ int main(int argc, char* argv[])
    */
 #if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
   const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
-# if (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+# if !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
   const int prefetch = LIBXSMM_PREFETCH_AUTO;
 # else
   const int prefetch = LIBXSMM_PREFETCH_NONE;
@@ -97,12 +100,12 @@ int main(int argc, char* argv[])
 #endif
     for (i = 0; i < size - 1; ++i) {
 #if defined(SHUFFLE)
-# if !defined(AUTO) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+# if !defined(AUTO) && !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
       const int p = ((i + 1) * shuffle) % size;
 # endif
       j = (i * shuffle) % size;
 #else
-# if !defined(AUTO) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+# if !defined(AUTO) && !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
       const int p = i + 1; /* next location */
 # endif
       j = i;
@@ -111,7 +114,7 @@ int main(int argc, char* argv[])
       libxsmm_dgemm(&transa, &transb, &m, &n, &k,
         &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
          &beta, c + STREAM_C(j * nc), &ldc);
-#elif (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+#elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
       xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc),
           a + STREAM_A(p * na), b + STREAM_B(p * nb), c + STREAM_C(p * nc));
 #else
@@ -128,7 +131,7 @@ int main(int argc, char* argv[])
   libxsmm_dgemm(&transa, &transb, &m, &n, &k,
     &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
      &beta, c + STREAM_C(j * nc), &ldc);
-#elif (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+#elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
   xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc),
       a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
 #else
