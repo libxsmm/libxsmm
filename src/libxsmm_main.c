@@ -841,6 +841,9 @@ LIBXSMM_API_INTERN void internal_init(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
+    libxsmm_timer_tickint s0, t0, s1, t1; int tsc = 0;
+    libxsmm_timer_tick_rtc(&tsc); libxsmm_timer_tick(); /* warm-up */
+    s0 = libxsmm_timer_tick_rtc(&tsc); t0 = libxsmm_timer_tick(); /* start timing */
     /* libxsmm_ninit (1: started, 2: library initialized), invalidate code-TLS */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
 #if (0 != LIBXSMM_SYNC)
@@ -915,23 +918,20 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         if (0 > internal_singleton_handle && 0 <= singleton_handle) close(singleton_handle);
 #endif  /* coverity[leaked_handle] */
       }
-      { /* calibrate timer */
-        libxsmm_timer_tickint s0, t0, s1, t1; int tsc = 0;
-        libxsmm_timer_tick_rtc(&tsc); libxsmm_timer_tick(); /* warm-up */
-        s0 = libxsmm_timer_tick_rtc(&tsc); t0 = libxsmm_timer_tick(); /* start timing */
-        internal_init();
-        if (EXIT_SUCCESS != atexit(internal_finalize) && 0 != libxsmm_verbosity) {
-          fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
+      internal_init(); /* duration used to calibrate timer */
+      if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+        if (EXIT_SUCCESS != atexit(internal_finalize)) {
+          fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
         }
-        s1 = libxsmm_timer_tick_rtc(&tsc); t1 = libxsmm_timer_tick(); /* final timing */
-        if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && t0 != t1) {
-          const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
-          libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / dt;
-          if (0 != libxsmm_verbosity && 0 == tsc) { /* library code is expected to be mute */
-            fprintf(stderr, "LIBXSMM WARNING: libxsmm_timer_ncycles may not measure in cycles!\n");
-          }
+        if (0 == tsc) {
+          fprintf(stderr, "LIBXSMM WARNING: timer is maybe not cycle-accurate!\n");
         }
-        internal_timer_start = libxsmm_timer_tick();
+      }
+      s1 = libxsmm_timer_tick_rtc(&tsc); t1 = libxsmm_timer_tick(); /* final timing */
+      if (t0 != t1) { /* no further check needed aka first-time visit */
+        const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
+        libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / dt;
+        internal_timer_start = t0;
       }
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
