@@ -11,7 +11,7 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
+IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include"
 
 # Fortran code here does not allow for PEDANTIC=2
 override PEDANTIC = 1

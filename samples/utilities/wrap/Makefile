@@ -11,7 +11,7 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
+IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include"
 
 BLAS = 2
 OMP = 1

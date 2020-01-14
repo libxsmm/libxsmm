@@ -30,7 +30,7 @@ CFLAGS = $(RPM_OPT_FLAGS)
 CXXFLAGS = $(RPM_OPT_FLAGS)
 FCFLAGS = $(RPM_OPT_FLAGS)
 DFLAGS = -DLIBXSMM_BUILD
-IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(ROOTDIR)/$(SRCDIR)
+IFLAGS = -I"$(INCDIR)" -I"$(BLDDIR)" -I"$(ROOTDIR)/$(SRCDIR)"
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS
 # A value of zero (0) populates a default threshold
@@ -370,7 +370,7 @@ ifeq (,$(filter Darwin,$(UNAME)))
       LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
       OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
       DFLAGS += -DLIBXSMM_VTUNE
-      IFLAGS += -I$(VTUNEROOT)/include
+      IFLAGS += -I"$(VTUNEROOT)/include"
       ifneq (0,$(INTEL))
         CXXFLAGS += -diag-disable 271
         CFLAGS += -diag-disable 271

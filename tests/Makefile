@@ -11,7 +11,7 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = -DLIBXSMM_GEMM_CONST
-IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include -I$(DEPDIR)/src
+IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include" -I"$(DEPDIR)/src"
 
 BLAS ?= 1
 OMP ?= 1

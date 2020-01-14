@@ -13,7 +13,7 @@ OUTDIR = xsmm_lstm
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
+IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include"
 GCC_OMP_FLAGS = -fopenmp
 
 BLAS = 0

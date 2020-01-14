@@ -11,7 +11,7 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = -DLIBXSMM_GEMM_CONST
-IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
+IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include"
 
 BLAS = 1
 OMP = 1
@@ -67,7 +67,7 @@ endif
 
 ifneq (,$(EIGENROOT))
   DFLAGS += -D__EIGEN
-  IFLAGS += -I$(EIGENROOT)
+  IFLAGS += -I"$(EIGENROOT)"
   EIGEN ?= 1
   ifneq (0,$(MKL))
     DFLAGS += -DEIGEN_USE_MKL_ALL
