@@ -10,12 +10,10 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
-#if !defined(USE_CHECK) && (defined(_WIN32) || defined(__linux__))
-# define USE_CHECK
-#endif
-#if !defined(USE_NOINIT)
+#if !defined(USE_NOINIT) && 0
 # define USE_NOINIT
 #endif
 #if !defined(USE_QUIET)
@@ -26,16 +24,12 @@
 # define MAX_NSECONDS 16
 #endif
 #if !defined(MAX_TOLPERC)
-# define MAX_TOLPERC 1
+# define MAX_TOLPERC 2
 #endif
 
 #if defined(_DEBUG) || !defined(USE_QUIET)
-# include <stdio.h>
 # define FPRINTF(STREAM, ...) fprintf(STREAM, __VA_ARGS__)
 #else
-# if !defined(USE_CHECK)
-#   include <stdio.h>
-#endif
 # define FPRINTF(STREAM, ...)
 #endif
 
@@ -53,6 +47,8 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
   const int max_nseconds_input = (1 < argc ? atoi(argv[1]) : MAX_NSECONDS);
   const int max_nseconds = LIBXSMM_UP2POT(max_nseconds_input);
+  const char *const env_test = getenv("TEST_TIMER");
+  const int nofailure = (NULL == env_test || 0 == *env_test) ? 0 : (0 == atoi(env_test));
   double total = 0, maxtol = 0, t, d;
   libxsmm_timer_tickint start;
   int n = max_nseconds;
@@ -94,11 +90,11 @@ int main(int argc, char* argv[])
 #endif
   FPRINTF(stderr, "%i <-> %f s\n", max_nseconds, total);
 
-#if defined(_WIN32) || defined(__linux__)
+  if (0 != nofailure) {
+    fprintf(stderr, "delta=%i%%\n", result);
+    result = EXIT_SUCCESS;
+  }
+
   return result;
-#else
-  if (EXIT_SUCCESS != result) fprintf(stderr, "delta=%i%%\n", result);
-  return EXIT_SUCCESS;
-#endif
 }
 
