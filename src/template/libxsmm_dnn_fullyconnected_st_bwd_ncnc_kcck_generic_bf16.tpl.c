@@ -105,7 +105,7 @@ if (BF > 1) {
       /* downconvert intermediate f32 tensor to bf 16 and store to final C */
       if ( ofm1 == BF-1  ) {
         for ( img2 = 0; img2 < handle->bn; ++img2 ) {
-          for ( ofm2 = 0; ofm2 < handle->bk; ofm2 += 16 ) {
+          for ( ofm2 = 0; ofm2 < handle->bc; ofm2 += 16 ) {
             _mm256_storeu_si256( (__m256i *) &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, img2, ofm2, nBlocksIFm, bn, bc),
                 _mm512_cvtepi32_epi16( _mm512_srai_epi32( _mm512_castps_si512( _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, img2, ofm2, nBlocksIFm, bn, bc) ) ), 16 ) ) );
           }
