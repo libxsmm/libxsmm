@@ -240,13 +240,13 @@ else
   quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//")
 endif
 ifneq (0,$(SPACES))
-  apath = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
-    if [ ! -d "$${VAR}" ]; then cd "$$(dirname "$${VAR}")" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}")"; else cd "$${VAR}" 2>/dev/null && pwd -P; fi)
-  afile = $(shell export VAR="$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
-    if [ ! -d "$${VAR}" ]; then basename "$${VAR}"; fi)
+  apath = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
+    if [ ! -d "$${VAR}" ]; then cd "$$(dirname "$${VAR}" 2>/dev/null)" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}" 2>/dev/null)"; else cd "$${VAR}" 2>/dev/null && pwd -P; fi)
+  afile = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
+    if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi)
   qapath = $(call quote,$(call apath,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qndir = $(call quote,$(call afile,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qdir = $(call quote,$(shell dirname "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}x")/)
+  qdir = $(call quote,$(shell dirname "$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x" 2>/dev/null)/)
 else
   qapath = $(abspath $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qndir = $(notdir $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
@@ -875,9 +875,9 @@ else # OSX
     $(call linkopt,-rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
 endif
 
-absliblpath = $(strip $(if \
-  $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
-  -L"$(call qdir,$(call qapath,$1))",$(NULL)))
+absliblpath = $(strip $(if $1, \
+  $(if $(findstring .$(ILIBEXT),$1),-L"$(call qdir,$(call qapath,$1))", \
+  $(if $(findstring .$(SLIBEXT),$1),$(NULL),-L"$(call qdir,$1)")),$(NULL)))
 
 ifneq (0,$(ABSLIBS))
 #ifeq (0,$(DEPSTATIC))
@@ -893,15 +893,15 @@ libpath = $(strip $(if $1, \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1)),$(NULL)))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
-  abslibfile = $(strip $(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
+  abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
-       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))),$(NULL)),$1))
+       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))),$(NULL)), \
+    $(if $(filter $(call qndir,$1),$(call qapath,$1)),"$(call qapath,$1)",$1)))
 else # Cygwin/MinGW (static)
-  abslibfile = $(strip $(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
+  abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(call qname,$(call qndir,$1)), \
-       -l$(call qname,$(call qndir,$1)),$(NULL)),$1))
+       -l$(call qname,$(call qndir,$1)),$(NULL)), \
+    $(if $(filter $(call qndir,$1),$(call qapath,$1)),"$(call qapath,$1)",$1)))
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
