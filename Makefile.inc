@@ -1407,8 +1407,11 @@ else # GCC assumed
   endif
   OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
   ifeq (,$(OMPLIBFILE))
+  ifeq (0,$(shell echo "\#include <omp.h>\nint main(void) { return omp_get_max_threads(); }" \
+    | $(LD) -xc $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) /dev/stdin 2>&1 >/dev/null; echo "$$?"))
     LDFLAGS += $(addprefix -L,$(LIBFIND))
     OMPLIBFILE += -l$(OMPRT)
+  endif
   endif
   ifneq (0,$(OMP))
   ifneq (,$(OMPFLAG_FORCE))
