@@ -29,8 +29,6 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 int mb1 = 0, ifm1ofm1 = 0, ofm1 = 0, ifm1 = 0;
 
 /* Batch reduce related variables */
-const element_output_type *A_array[1024];
-const element_input_type  *B_array[1024];
 unsigned long long  blocks = nBlocksMB;
 
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,    (element_input_type* )handle->reg_input->data, nBlocksIFm, bn, bc);
@@ -43,12 +41,7 @@ libxsmm_barrier_init(handle->barrier, ltid);
 for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
   ofm1 = ifm1ofm1 / nBlocksIFm;
   ifm1 = ifm1ofm1 % nBlocksIFm;
-  /* prepare arguments for batch-reduce call  */
-  for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
-    A_array[mb1] = &LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1,  0, 0, nBlocksOFm, bn, bk);
-    B_array[mb1] = &LIBXSMM_VLA_ACCESS(4, input, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc);
-  }
-  batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &blocks);
+  batchreduce_kernel(&LIBXSMM_VLA_ACCESS(4, doutput,  0, ofm1,  0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(4, input, 0, ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &blocks);
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
