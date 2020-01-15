@@ -886,7 +886,7 @@ ifneq (0,$(ABSLIBS))
 endif
 abslibpath ?= $(call absliblpath,$1)
 
-ctest = $(if $(shell $1 -E $2 /dev/null 2>/dev/null >/dev/null && echo "OK"),$2)
+ctest = $(if $1,$(if $(shell $1 -E $2 /dev/null 2>/dev/null >/dev/null && echo "OK"),$2))
 ldtest = $(if $3,$(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),-l$3))
 
 libpath = $(strip $(if $1, \
