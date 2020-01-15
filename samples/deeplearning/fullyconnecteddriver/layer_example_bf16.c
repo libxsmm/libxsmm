@@ -349,7 +349,6 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &norms_bwd);
     }
 
-#if 0
     if ( (type == 'A' || type == 'U') && LIBXSMM_NEQ(0, check) ) {
       printf("##########################################\n");
       printf("#   Correctness - UPD (custom-Storage)   #\n");
@@ -382,7 +381,6 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd);
     }
-#endif
     if (type == 'A' || type == 'F') {
       printf("##########################################\n");
       printf("#   Performance - FWD (custom-Storage)   #\n");
