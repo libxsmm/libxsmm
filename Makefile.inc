@@ -722,7 +722,7 @@ else ifneq (0,$(GCC))
   SUITE = GNU Compiler Collection
   MKL_OMPRTL = gnu
 else ifneq (0,$(PGI))
-  SUITE = $(if $(filter-out 0,$(PGI)),PGI $(NULL),$(NULL))Compiler
+  SUITE = $(if $(filter-out 0,$(PGI)),PGI $(NULL))Compiler
   MKL_OMPRTL = pgi
 else
   ifeq (0,$(CLANG))
@@ -857,7 +857,7 @@ ifneq (Darwin,$(UNAME))
   linkopt = $(if $1,$(XLNKOPT)$(if $2,$1="$2",$1))
   abslibrpath = $(strip $(if \
     $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
-    $(call linkopt,--rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
+    $(call linkopt,--rpath,$(call qdir,$(call qapath,$1)))))
   XGROUP_BEGIN = $(call linkopt,--start-group)
   XGROUP_END = $(call linkopt,--end-group)
   ifneq (0,$(ASNEEDED))
@@ -872,12 +872,12 @@ else # OSX
   linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) "$2",$1))
   abslibrpath = $(strip $(if \
     $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
-    $(call linkopt,-rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
+    $(call linkopt,-rpath,$(call qdir,$(call qapath,$1)))))
 endif
 
 absliblpath = $(strip $(if $1, \
   $(if $(findstring .$(ILIBEXT),$1),-L"$(call qdir,$(call qapath,$1))", \
-  $(if $(findstring .$(SLIBEXT),$1),$(NULL),-L"$(call qdir,$1)")),$(NULL)))
+  $(if $(findstring .$(SLIBEXT),$1),$(NULL),-L"$(call qdir,$1)"))))
 
 ifneq (0,$(ABSLIBS))
 #ifeq (0,$(DEPSTATIC))
@@ -890,17 +890,17 @@ libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
     | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)[[:space:]]..*/\1/p" \
-    | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1)),$(NULL)))
+    | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
-       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))),$(NULL)), \
+       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1)))), \
     $(if $(filter $(call qndir,$1),$(call qapath,$1)),"$(call qapath,$1)",$1)))
 else # Cygwin/MinGW (static)
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(call qname,$(call qndir,$1)), \
-       -l$(call qname,$(call qndir,$1)),$(NULL)), \
+       -l$(call qname,$(call qndir,$1))), \
     $(if $(filter $(call qndir,$1),$(call qapath,$1)),"$(call qapath,$1)",$1)))
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
@@ -2154,7 +2154,7 @@ FLDFLAGS := $(call cleanld,$(FLDFLAGS))
 .SUFFIXES:
 
 # applyif(A1,A2,A3,A4) evaluates to A4 if the basenames (A1, A2) match and if A1 is non-zero (precondition)
-applyif = $(if $(filter 0,$1),$(NULL),$(if $(filter $2,$(call qname,$(call qndir,$3))),$(if $1,$4,$(NULL)),$(NULL)))
+applyif = $(if $(filter 0,$1),$(NULL),$(if $(filter $2,$(call qname,$(call qndir,$3))),$(if $1,$4)))
 # derives the extension of a filename
 extname = $(subst .,,$(call qsuffix,$(1)))
 # derives the name of an object files for a given source file
@@ -2171,7 +2171,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     LDTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
     which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink \
     applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile \
-    $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC,$(NULL)) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
+    $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
 
 DIRSTATE ?= .
