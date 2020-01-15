@@ -887,10 +887,10 @@ endif
 abslibpath ?= $(call absliblpath,$1)
 
 ctest = $(if $1,$(if $(shell $1 -E $2 /dev/null 2>/dev/null >/dev/null && echo "OK"),$2))
-ldtest = $(if $3,$(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),-l$3))
+ldtest = $(if $3,$(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL),-l$3))
 
 libpath = $(strip $(if $1, \
-  $(if $(call ldtest,$1 $2 $3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
+  $(if $(call ldtest,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
     | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)[[:space:]]..*/\1/p" \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
@@ -1413,7 +1413,7 @@ else # GCC assumed
   ifeq (0,$(shell echo "\#include <omp.h>\nint main(void) { return omp_get_max_threads(); }" \
     | $(LD) -xc $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) /dev/stdin 2>&1 >/dev/null; echo "$$?"))
     LDFLAGS += $(addprefix -L,$(LIBFIND))
-    OMPLIBFILE += -l$(OMPRT)
+    OMPLIBFILE = -l$(OMPRT)
   endif
   endif
   ifneq (0,$(OMP))
