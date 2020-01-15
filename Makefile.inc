@@ -856,7 +856,7 @@ ifneq (Darwin,$(UNAME))
   XLNKVERBOSE = --verbose
   linkopt = $(if $1,$(XLNKOPT)$(if $2,$1="$2",$1))
   abslibrpath = $(strip $(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out %.$(SLIBEXT),$1), \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
     $(call linkopt,--rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
   XGROUP_BEGIN = $(call linkopt,--start-group)
   XGROUP_END = $(call linkopt,--end-group)
@@ -871,13 +871,13 @@ else # OSX
   #XLNKVERBOSE = -t
   linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) "$2",$1))
   abslibrpath = $(strip $(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out %.$(SLIBEXT),$1), \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
     $(call linkopt,-rpath,$(call qdir,$(call qapath,$1))),$(NULL)))
 endif
 
-absliblpath = $(strip $(if $1, \
-  $(if $(findstring .$(ILIBEXT),$1),-L"$(call qdir,$(call qapath,$1))", \
-  $(if $(findstring .$(SLIBEXT),$1),$(NULL),-L"$(call qdir,$1)")),$(NULL)))
+absliblpath = $(strip $(if \
+  $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
+  -L"$(call qdir,$(call qapath,$1))",$(NULL)))
 
 ifneq (0,$(ABSLIBS))
 #ifeq (0,$(DEPSTATIC))
@@ -893,15 +893,15 @@ libpath = $(strip $(if $1, \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1)),$(NULL)))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
-  abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
+  abslibfile = $(strip $(if \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
-       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))),$(NULL)), \
-    $(if $(call qndir,$1),"$(call qapath,$1)",$(NULL))))
+       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))),$(NULL)),$1))
 else # Cygwin/MinGW (static)
-  abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
+  abslibfile = $(strip $(if \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
     $(if $(call qname,$(call qndir,$1)), \
-       -l$(call qname,$(call qndir,$1)),$(NULL)), \
-    $(if $(call qndir,$1),"$(call qapath,$1)",$(NULL))))
+       -l$(call qname,$(call qndir,$1)),$(NULL)),$1))
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
@@ -1396,6 +1396,10 @@ else # GCC assumed
     OMPRT = gomp
   endif
   OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
+  ifeq (,$(OMPLIBFILE))
+    LDFLAGS += $(addprefix -L,$(LIBFIND))
+    OMPLIBFILE += -l$(OMPRT)
+  endif
   ifneq (0,$(OMP))
   ifneq (,$(OMPFLAG_FORCE))
     ifneq (,$(OMPLIBFILE))
@@ -1815,11 +1819,6 @@ GLIBC ?= 0
 OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
 ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB = $(call abslib,$(OMPLIBFILE))
-else ifeq (0,$(shell echo "\#include <omp.h>\nint main(void) { return omp_get_max_threads(); }" \
-  | $(LD) -xc $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) /dev/stdin 2>&1 >/dev/null; echo "$$?"))
-  OMPLIB = $(addprefix -L,$(LIBFIND)) -l$(OMPRT)
-  CXXLDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
-  CLDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
 endif
 
 ifneq (,$(OMPFLAG_FORCE))
