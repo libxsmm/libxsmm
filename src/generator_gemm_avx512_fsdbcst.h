@@ -12,6 +12,7 @@
 #ifndef GENERATOR_GEMM_AVX512_FSDBCST_H
 #define GENERATOR_GEMM_AVX512_FSDBCST_H
 
+#if 0
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
@@ -21,6 +22,7 @@ unsigned int libxsmm_generator_gemm_avx512_fsdbcst_get_max_n_blocking( const lib
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*        io_generated_code,
                                                    const libxsmm_gemm_descriptor* i_xgemm_desc );
+#endif
 
 #endif /* GENERATOR_GEMM_AVX512_FSDBCST_H */
 

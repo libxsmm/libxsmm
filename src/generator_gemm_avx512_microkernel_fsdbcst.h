@@ -12,6 +12,7 @@
 #ifndef GENERATOR_GEMM_AVX512_MICROKERNEL_H
 #define GENERATOR_GEMM_AVX512_MICROKERNEL_H
 
+#if 0
 #include "generator_common.h"
 #include "generator_gemm_common.h"
 
@@ -46,5 +47,6 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_fsdbcst_kloop( libxsmm_generat
                                                                  const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                  unsigned int                       i_n_blocking );
 
+#endif
 #endif /* GENERATOR_GEMM_AVX512_MICROKERNEL_H */
 

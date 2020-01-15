@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+#if 0
 #include "generator_gemm_avx512_microkernel_fsdbcst.h"
 #include "generator_x86_instructions.h"
 #include "libxsmm_main.h"
@@ -2110,4 +2111,4 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_fsdbcst_kloop( libxsmm_generat
 
   return l_k_unrolled;
 }
-
+#endif
