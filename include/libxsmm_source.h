@@ -89,7 +89,6 @@
 #include "../src/libxsmm_dnn_rnncell.c"
 #include "../src/libxsmm_dnn_rnncell_backward_weight_update.c"
 #include "../src/libxsmm_dnn_rnncell_forward.c"
-#include "../src/libxsmm_dnn_setup.c_TUNE.c"
 #include "../src/libxsmm_dnn_tensor.c"
 #include "../src/libxsmm_ext.c"
 #include "../src/libxsmm_ext_blocked_gemm.c"
