@@ -53,7 +53,7 @@ EDGE_FLAGS += -std=c++11
 CXXFLAGS = $(EDGE_CXXFLAGS) $(EDGE_FLAGS)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
+IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include"
 
 # settings for libxsmm
 BLAS = 1

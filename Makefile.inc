@@ -1853,7 +1853,7 @@ ifneq (,$(TBBROOT))
       TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(ILIBEXT))
     endif
     ifneq (,$(TBBLIB_MALLOC))
-      IFLAGS += -I$(TBBROOT)/include
+      IFLAGS += -I"$(TBBROOT)/include"
       DFLAGS += -D__TBB
       LDFLAGS += $(XLIB_BEGIN) $(call abslib,$(TBBLIB_MALLOC)) $(XLIB_END)
     endif
@@ -1982,7 +1982,7 @@ else ifneq (0,$(MKL)) # multi-threaded
 endif
 ifneq (0,$(MKL))
   ifeq (,$(MKL_INCFILE))
-    BLAS_IFLAGS += -I$(MKLROOT)/include
+    BLAS_IFLAGS += -I"$(MKLROOT)/include"
   else
     BLAS_IFLAGS += -I"$(call qdir,$(MKL_INCFILE))"
   endif
