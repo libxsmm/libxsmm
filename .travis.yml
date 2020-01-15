@@ -26,7 +26,7 @@ matrix:
   - os: osx
     osx_image: xcode11.2
     compiler: clang
-    env: DBG=1 SPACES=0 TEST_TIMER=0 UPLOAD_ENABLED=1
+    env: DBG=1 SPACES=0 TEST_TIMER=0 UPLOAD_ENABLED=2
 
 env:
   global:
@@ -86,6 +86,7 @@ install:
 
 after_success:
   - eval ${CODECOV}
+  - if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "$((1<UPLOAD_ENABLED))" ]; then eval ${UPLOAD}; fi
 
 # upload artifacts
 after_failure:
