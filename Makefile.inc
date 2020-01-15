@@ -886,8 +886,11 @@ ifneq (0,$(ABSLIBS))
 endif
 abslibpath ?= $(call absliblpath,$1)
 
+ctest = $(if $(shell $1 -E $2 /dev/null 2>/dev/null >/dev/null && echo "OK"),$2)
+ldtest = $(if $3,$(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),-l$3))
+
 libpath = $(strip $(if $1, \
-  $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
+  $(if $(call ldtest,$1 $2 $3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
     | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)[[:space:]]..*/\1/p" \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
@@ -1438,19 +1441,30 @@ else # GCC assumed
       endif
     endif
     ifeq (3,$(GCC)) # pure GNU toolchain
-      FLDFLAGS += $(OMPFLAG_FORCE)
-      FCFLAGS += $(OMPFLAG_FORCE)
+      FLDFLAGS += -fopenmp
+      FCFLAGS += -fopenmp
     else # mixed toolchain
-      LDTEST = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
-      ifneq (,$(LDTEST))
-        FLDFLAGS += $(OMPFLAG_FORCE)
-        FCFLAGS += $(OMPFLAG_FORCE)
+      OMPTEST = $(call ldtest,$(FLD),$(SLDFLAGS),$(OMPRT))
+      ifneq (,$(OMPTEST))
+        FLDFLAGS += $(OMPTEST)
       else
-        LDTEST = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),gomp)
-        FLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
-        ifneq (,$(LDTEST))
-          FLDFLAGS += $(OMPFLAG_FORCE)
-          FCFLAGS += $(OMPFLAG_FORCE)
+        OMPTEST = $(call ldtest,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))
+        ifneq (,$(OMPTEST))
+          FLDFLAGS += $(addprefix -L,$(LIBFIND)) $(OMPTEST)
+        else # last try
+          OMPTEST = $(call ldtest,$(FLD),$(SLDFLAGS),gomp)
+          ifneq (,$(OMPTEST))
+            FLDFLAGS += $(OMPTEST)
+          endif
+        endif
+      endif
+      OMPTEST = $(call ctest,$(FC),-fopenmp)
+      ifneq (,$(OMPTEST))
+        FCFLAGS += $(OMPTEST)
+      else
+        OMPTEST = $(call ctest,$(FC),$(OMPFLAG_FORCE))
+        ifneq (,$(OMPTEST))
+          FCFLAGS += $(OMPTEST)
         endif
       endif
     endif
@@ -1465,7 +1479,7 @@ endif
 
 ifeq (undefined,$(origin TARGET))
   ifneq (,$(CTARGET))
-  ifneq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+  ifeq (,$(call ctest,$(CC),$(CTARGET)))
     undefine CTARGET
   endif
   endif
@@ -1491,13 +1505,13 @@ ifeq (undefined,$(origin TARGET))
     ifneq (0,$(shell echo "$$(((0!=$(GCC) && 60000<=$(GCC_VERSION)) || \
           (0!=$(CLANG) && (40000<=$(CC_VERSION) || 0==$(CC_VERSION))) || \
           (0!=$(PGI) && 190000<=$(CC_VERSION))))"))
-    ifeq (0,$(shell $(CC) -E -mfma -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+    ifneq (,$(call ctest,$(CC),-mfma -mavx512f -mavx512cd))
       CTARGET = -mfma -mavx512f -mavx512cd
       ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
-        ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+        ifneq (,$(call ctest,$(CC),-mavx512pf -mavx512er))
           CTARGET += -mavx512pf -mavx512er
         endif
-      else ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+      else ifneq (,$(call ctest,$(CC),-mavx512dq -mavx512bw -mavx512vl))
         ifneq (Darwin,$(UNAME))
           CTARGET += -mavx512dq -mavx512bw -mavx512vl
           #CTARGET += -mavx512ifma -mavx512vbmi
@@ -1596,7 +1610,7 @@ else # disabled
   DFLAGS += -DLIBXSMM_INTRINSICS_NONE
 endif
 
-ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+ifneq (,$(call ctest,$(CC),$(CTARGET)))
   # check target flags by feeding an ad-hoc C program into the compiler
   ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
     echo "int main(void) { return 0; }" > $${INFILE}; \
@@ -2038,13 +2052,13 @@ else ifneq (0,$(BLAS)) # generic
     BLASDIR ?= $(wildcard $(LIBFIND) /usr/lib)
     BLASROOT = $(wildcard $(patsubst %,%/..,$(BLASDIR)))
     ifeq (0,$(BLAS_STATIC)) # shared
-      LDTEST = $(filter-out -static,$(SLDFLAGS)) $(patsubst %,-L%,$(BLASDIR))
+      BLASTEST = $(filter-out -static,$(SLDFLAGS)) $(patsubst %,-L%,$(BLASDIR))
     else # static
-      LDTEST = $(SLDFLAGS) $(patsubst %,-L%,$(BLASDIR))
+      BLASTEST = $(SLDFLAGS) $(patsubst %,-L%,$(BLASDIR))
     endif
-    BLASLIBFILE = $(call libpath,$(LD),$(LDTEST),openblas$(BLAS_THREADS)$(BLAS_BITS))
+    BLASLIBFILE = $(call libpath,$(LD),$(BLASTEST),openblas$(BLAS_THREADS)$(BLAS_BITS))
     ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
-      BLASLIBFILE = $(call libpath,$(LD),$(LDTEST),openblas$(BLAS_BITS))
+      BLASLIBFILE = $(call libpath,$(LD),$(BLASTEST),openblas$(BLAS_BITS))
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
     ifeq (0,$(PGI))
@@ -2065,9 +2079,9 @@ else ifneq (0,$(BLAS)) # generic
     else # BLAS (reference)
       BLAS_FLAGS += -D__BLAS
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
-        BLASLIBFILE = $(call libpath,$(LD),$(LDTEST),blas$(BLAS_BITS).dll)
+        BLASLIBFILE = $(call libpath,$(LD),$(BLASTEST),blas$(BLAS_BITS).dll)
       else
-        BLASLIBFILE = $(call libpath,$(LD),$(LDTEST),blas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),$(BLASTEST),blas$(BLAS_BITS))
       endif
     endif
     ifneq (,$(BLASLIBFILE))
@@ -2082,20 +2096,20 @@ else ifneq (0,$(BLAS)) # generic
     ifeq (0,$(OPENBLAS)) # BLAS (reference)
       ifneq (0,$(DEPSTATIC))
         ifneq (,$(LIBGFORTRAN))
-          LDTEST += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+          BLASTEST += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
         else ifeq (3,$(GCC))
-          LDTEST += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
+          BLASTEST += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
         endif
       endif
       ifeq (0,$(PGI))
         QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
         ifneq (0,$(QUADMATH))
-          LDTEST += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+          BLASTEST += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
         endif
         ifneq (3,$(GCC))
-          BLAS_LDFLAGS += $(LDTEST)
+          BLAS_LDFLAGS += $(BLASTEST)
         else
-          BLAS_CLDFLAGS += $(LDTEST)
+          BLAS_CLDFLAGS += $(BLASTEST)
         endif
       endif
     endif
@@ -2171,9 +2185,9 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ILIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNK% BRACE_OPEN BRACE_CLOSE MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS SUITE \
     FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI ICX \
     GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS \
-    LDTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
-    which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink \
-    applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile \
+    OMPTEST BLASTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
+    ldtest which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
+    ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
 
