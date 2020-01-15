@@ -1041,7 +1041,9 @@ ifneq (0,$(INTEL))
       CFLAGS += -Wcheck
     endif
   else ifneq (0,$(PEDANTIC))
-    CSTD = -std=c89
+    ifeq (0,$(FORCE_CXX))
+      CSTD = -std=c89
+    endif
     CXXFLAGS += $(CPEDANTIC)
     CFLAGS += $(CSTD) $(CPEDANTIC)
     ifneq (990000,$(CC_VERSION))
@@ -1055,7 +1057,9 @@ ifneq (0,$(INTEL))
       FMFLAGS += -fixed
     endif
   else
-    CSTD = -std=c89
+    ifeq (0,$(FORCE_CXX))
+      CSTD = -std=c89
+    endif
     ifeq (,$(strip $(GFC)))
       FCFLAGS += $(FFORM_FLAG)
     endif
@@ -1271,11 +1275,15 @@ else # GCC assumed
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
     else ifneq (0,$(PEDANTIC))
       ifneq (Darwin,$(UNAME))
-        CSTD = -std=c89
+        ifeq (0,$(FORCE_CXX))
+          CSTD = -std=c89
+        endif
         CPEDANTIC += -Wno-long-long
         CXXFLAGS += $(CPEDANTIC)
       else ifneq (0,$(GCC))
-        CSTD = -std=c89
+        ifeq (0,$(FORCE_CXX))
+          CSTD = -std=c89
+        endif
         CPEDANTIC += -Wno-long-long
         CXXFLAGS += $(CPEDANTIC)
       else # Clang may run into ICEs under OSX
@@ -1288,7 +1296,9 @@ else # GCC assumed
     else ifeq (0,$(COMPATIBLE))
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
       FCFLAGS += $(FFORM_FLAG)
-      CSTD = -std=c89
+      ifeq (0,$(FORCE_CXX))
+        CSTD = -std=c89
+      endif
     endif
     # flag specifying output directory must be last
     ifeq (0,$(PGI))
