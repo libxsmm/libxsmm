@@ -533,9 +533,11 @@
  * To ultimately disable VLA-support, define LIBXSMM_NO_VLA (make VLA=0).
  * VLA-support is signaled by LIBXSMM_VLA.
  */
-#if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && !defined(__PGI) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
-   (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus)) /*|| \
-    (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) && !defined(__cplusplus)) || (defined(__INTEL_COMPILER) && !defined(_WIN32))*/)
+#if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && !defined(__PGI) && ( \
+    (defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || \
+    (defined(__GNUC__) && LIBXSMM_VERSION2(5, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus)) /*|| \
+    (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) && !defined(__cplusplus)) || \
+    (defined(__INTEL_COMPILER) && !defined(_WIN32))*/)
 # define LIBXSMM_VLA
 #endif
 
@@ -573,18 +575,20 @@
 # define LIBXSMM_VLA_POSTFIX _
 #endif
 #if defined(LIBXSMM_VLA)
+LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) LIBXSMM_VLA_ACCESS_ND(NDIMS, LIBXSMM_CONCATENATE(ARRAY, LIBXSMM_VLA_POSTFIX), LIBXSMM_VLA_ACCESS_SINK, __VA_ARGS__)
 # define LIBXSMM_VLA_ACCESS_SINK(S) + 0 * (S)
+# define LIBXSMM_VLA_ACCESS_NONCONST(I) libxsmm_nonconst_int(I)
 # define LIBXSMM_VLA_ACCESS_ND(NDIMS, ARRAY, XY, ...) LIBXSMM_CONCATENATE3(LIBXSMM_VLA_ACCESS_, NDIMS, D)(ARRAY, XY, __VA_ARGS__)
 # define LIBXSMM_VLA_ACCESS_0D(ARRAY, XY, ...) (ARRAY)/*scalar*/
-# define LIBXSMM_VLA_ACCESS_1D(ARRAY, XY, ...) ((ARRAY)[LIBXSMM_SELECT_HEAD(__VA_ARGS__)])
-# define LIBXSMM_VLA_ACCESS_2D(ARRAY, XY, I0, I1, ...) (((ARRAY) XY(__VA_ARGS__))[I0][I1])
-# define LIBXSMM_VLA_ACCESS_3D(ARRAY, XY, I0, I1, I2, S1, ...) (((ARRAY) XY(S1) XY(__VA_ARGS__))[I0][I1][I2])
-# define LIBXSMM_VLA_ACCESS_4D(ARRAY, XY, I0, I1, I2, I3, S1, S2, ...) (((ARRAY) XY(S1) XY(S2) XY(__VA_ARGS__))[I0][I1][I2][I3])
-# define LIBXSMM_VLA_ACCESS_5D(ARRAY, XY, I0, I1, I2, I3, I4, S1, S2, S3, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(__VA_ARGS__))[I0][I1][I2][I3][I4])
-# define LIBXSMM_VLA_ACCESS_6D(ARRAY, XY, I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5])
-# define LIBXSMM_VLA_ACCESS_7D(ARRAY, XY, I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(S5) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5][I6])
-# define LIBXSMM_VLA_ACCESS_8D(ARRAY, XY, I0, I1, I2, I3, I4, I5, I6, I7, S1, S2, S3, S4, S5, S6, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(S5) XY(S6) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5][I6][I7])
+# define LIBXSMM_VLA_ACCESS_1D(ARRAY, XY, ...) ((ARRAY)[LIBXSMM_VLA_ACCESS_NONCONST(LIBXSMM_SELECT_HEAD(__VA_ARGS__))])
+# define LIBXSMM_VLA_ACCESS_2D(ARRAY, XY, I0, I1, ...) (((ARRAY) XY(__VA_ARGS__))[I0][LIBXSMM_VLA_ACCESS_NONCONST(I1)])
+# define LIBXSMM_VLA_ACCESS_3D(ARRAY, XY, I0, I1, I2, S1, ...) (((ARRAY) XY(S1) XY(__VA_ARGS__))[I0][I1][LIBXSMM_VLA_ACCESS_NONCONST(I2)])
+# define LIBXSMM_VLA_ACCESS_4D(ARRAY, XY, I0, I1, I2, I3, S1, S2, ...) (((ARRAY) XY(S1) XY(S2) XY(__VA_ARGS__))[I0][I1][I2][LIBXSMM_VLA_ACCESS_NONCONST(I3)])
+# define LIBXSMM_VLA_ACCESS_5D(ARRAY, XY, I0, I1, I2, I3, I4, S1, S2, S3, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(__VA_ARGS__))[I0][I1][I2][I3][LIBXSMM_VLA_ACCESS_NONCONST(I4)])
+# define LIBXSMM_VLA_ACCESS_6D(ARRAY, XY, I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][LIBXSMM_VLA_ACCESS_NONCONST(I5)])
+# define LIBXSMM_VLA_ACCESS_7D(ARRAY, XY, I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(S5) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5][LIBXSMM_VLA_ACCESS_NONCONST(I6)])
+# define LIBXSMM_VLA_ACCESS_8D(ARRAY, XY, I0, I1, I2, I3, I4, I5, I6, I7, S1, S2, S3, S4, S5, S6, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(S5) XY(S6) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5][I6][LIBXSMM_VLA_ACCESS_NONCONST(I7)])
 # define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, ARRAY_VAR, .../*initial value, and bounds*/) \
     ELEMENT_TYPE LIBXSMM_VLA_ACCESS_ND(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT LIBXSMM_CONCATENATE(ARRAY_VAR, LIBXSMM_VLA_POSTFIX), \
       LIBXSMM_ELIDE, LIBXSMM_SELECT_TAIL(__VA_ARGS__, 0)/*bounds*/, LIBXSMM_SELECT_TAIL(__VA_ARGS__, 0)/*dummy*/) = \
