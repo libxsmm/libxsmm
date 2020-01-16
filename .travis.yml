@@ -61,7 +61,7 @@ before_install:
       | cut -d":" -f2- | tr -s "\n" " "
       | tr "[:upper:]" "[:lower:]";
     fi
-  - if [ "1" != "${COVERITY_SCAN_BRANCH}" ] && [ -e /etc/ssl/certs/ca-certificates.crt ]; then
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] && [ -e /etc/ssl/certs/ca-certificates.crt ]; then
       echo -n | openssl s_client -connect scan.coverity.com:443 2>/dev/null
       | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
       | sudo tee -a /etc/ssl/certs/ca-certificates.crt;
