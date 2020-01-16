@@ -35,5 +35,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_upda
                                                                                                const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                                                                const unsigned int             i_current_m_blocking );
 
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_avx512_get_max_n_blocking( const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                                  const unsigned int             i_arch );
+
 #endif /* GENERATOR_GEMM_SSE3_AVX_AVX2_AVX512_H */
 
