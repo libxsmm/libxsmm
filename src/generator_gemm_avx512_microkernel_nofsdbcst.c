@@ -22,14 +22,13 @@
 # pragma offload_attribute(pop)
 #endif
 
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code*             io_generated_code,
-                                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                          const unsigned int                 i_m_blocking,
-                                                          const unsigned int                 i_n_blocking,
-                                                          const int                          i_offset )
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code*            io_generated_code,
+                                                                             const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                             const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                             const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                             const unsigned int                 i_m_blocking,
+                                                                             const unsigned int                 i_n_blocking,
+                                                                             const int                          i_offset )
 {
   /* deriving register blocking from kernel config */
   unsigned int l_m_blocking = ( i_m_blocking % i_micro_kernel_config->vector_length  == 0 ) ? i_m_blocking/i_micro_kernel_config->vector_length : (i_m_blocking/i_micro_kernel_config->vector_length)+1;
@@ -494,18 +493,16 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
 }
 
 
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code*            io_generated_code,
-                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                        const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                        const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                        const unsigned int                 i_n_blocking,
-                                                        const unsigned int                 i_k_blocking )
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code*            io_generated_code,
+                                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                           const unsigned int                 i_n_blocking,
+                                                                           const unsigned int                 i_k_blocking )
 {
   unsigned int l_n;
   unsigned int l_k;
   unsigned int l_n_accs = 0;
-  unsigned int b_prefetch_blocks = 0;
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 30 ) {
@@ -944,9 +941,9 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
   /* add additional accumulators, if needed */
   for ( l_k = 1; l_k < l_n_accs; l_k++) {
     for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-      if ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ||
-           LIBXSMM_GEMM_PRECISION_F64  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ||
-           LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )    ) {
+      if ( (LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
+           (LIBXSMM_GEMM_PRECISION_F64  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
+           (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ))    ) {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                              io_generated_code->arch,
                                              i_micro_kernel_config->vadd_instruction,
@@ -954,7 +951,8 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
                                              i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n,
                                              i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n,
                                              i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
-      } else if (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      } else if ( (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
+                  (LIBXSMM_GEMM_PRECISION_I8  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ))    ) {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                              io_generated_code->arch,
                                              LIBXSMM_X86_INSTR_VPADDD,
