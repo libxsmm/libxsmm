@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include "generator_gemm_avx512_microkernel_nofsdbcst.h"
+#include "generator_gemm_avx512_microkernel.h"
 #include "generator_x86_instructions.h"
 #include "libxsmm_main.h"
 

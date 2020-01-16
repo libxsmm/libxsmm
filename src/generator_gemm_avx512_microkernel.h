@@ -9,8 +9,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_GEMM_AVX512_MICROKERNEL_NOFSDBCST_H
-#define GENERATOR_GEMM_AVX512_MICROKERNEL_NOFSDBCST_H
+#ifndef GENERATOR_GEMM_AVX512_MICROKERNEL_H
+#define GENERATOR_GEMM_AVX512_MICROKERNEL_H
 
 #include "generator_common.h"
 #include "generator_gemm_common.h"
@@ -37,5 +37,5 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
                                                                                 const unsigned int                 i_n_blocking,
                                                                                 const unsigned int                 i_k_blocking );
 
-#endif /* GENERATOR_GEMM_AVX512_MICROKERNEL_NOFSDBCST_H */
+#endif /* GENERATOR_GEMM_AVX512_MICROKERNEL_H */
 

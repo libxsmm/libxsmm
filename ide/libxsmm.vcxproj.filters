@@ -108,7 +108,7 @@
     <ClInclude Include="..\src\generator_gemm_avx2_microkernel.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.h">
+    <ClInclude Include="..\src\generator_gemm_avx512_microkernel.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_gemm_common.h">
@@ -428,7 +428,7 @@
     <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.c">
+    <ClCompile Include="..\src\generator_gemm_avx512_microkernel.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_common.c">

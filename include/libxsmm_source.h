@@ -35,7 +35,7 @@
 #include "../src/generator_common.c"
 #include "../src/generator_gemm.c"
 #include "../src/generator_gemm_avx2_microkernel.c"
-#include "../src/generator_gemm_avx512_microkernel_nofsdbcst.c"
+#include "../src/generator_gemm_avx512_microkernel.c"
 #include "../src/generator_gemm_avx_microkernel.c"
 #include "../src/generator_gemm_common.c"
 #include "../src/generator_gemm_noarch.c"

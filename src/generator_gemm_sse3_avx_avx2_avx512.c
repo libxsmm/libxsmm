@@ -15,7 +15,7 @@
 #include "generator_gemm_sse3_microkernel.h"
 #include "generator_gemm_avx_microkernel.h"
 #include "generator_gemm_avx2_microkernel.h"
-#include "generator_gemm_avx512_microkernel_nofsdbcst.h"
+#include "generator_gemm_avx512_microkernel.h"
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
