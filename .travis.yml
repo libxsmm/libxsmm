@@ -26,7 +26,7 @@ matrix:
   - os: osx
     osx_image: xcode11.2
     compiler: clang
-    env: DBG=1 SPACES=0 TEST_TIMER=0 UPLOAD_ENABLED=2
+    env: DBG=1 SPACES=0 TEST_TIMER=0
 
 env:
   global:
@@ -51,6 +51,14 @@ addons:
     branch_pattern: coverity
 
 before_install:
+  - if [ -e /proc/cpuinfo ]; then
+      grep -m1 flags /proc/cpuinfo | cut -d: -f2-;
+    elif [ "osx" = "${TRAVIS_OS_NAME}" ]; then
+      sysctl -a machdep.cpu.features
+        machdep.cpu.extfeatures
+        machdep.cpu.leaf7_features
+      | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:];
+    fi
   - source .env/travis.env
   - if [ -e /etc/ssl/certs/ca-certificates.crt ]; then
       echo -n | openssl s_client -connect scan.coverity.com:443 2>/dev/null
