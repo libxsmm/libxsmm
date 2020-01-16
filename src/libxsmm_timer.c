@@ -33,7 +33,12 @@
 # include <sys/platform/ppc.h>
 #endif
 
-#if 1 /* TSC */
+#if !defined(LIBXSMM_TIMER_TSC)
+/* 0: off, 1: use, 2/neg: confirm */
+# define LIBXSMM_TIMER_TSC 2
+#endif
+
+#if defined(LIBXSMM_TIMER_TSC) && (0 != (LIBXSMM_TIMER_TSC))
 # if defined(__powerpc64__)
 #   define LIBXSMM_TIMER_RDTSC(CYCLE) { \
       CYCLE = __ppc_get_timebase(); \
@@ -70,8 +75,12 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(int* tsc)
   result = 1000000ULL * t.tv_sec + t.tv_usec;
 #endif
 #if defined(LIBXSMM_TIMER_RDTSC)
+# if (defined(LIBXSMM_TIMER_TSC) && (1 < (LIBXSMM_TIMER_TSC) || 0 > (LIBXSMM_TIMER_TSC)))
   if (0 == libxsmm_ninit) libxsmm_cpuid();
   if (NULL != tsc) *tsc = (0 <= libxsmm_timer_scale ? 1 : 0);
+# else
+  if (NULL != tsc) *tsc = 1;
+# endif
 #else
   if (NULL != tsc) *tsc = 0;
 #endif
@@ -84,9 +93,20 @@ libxsmm_timer_tickint libxsmm_timer_tick(void)
 {
   libxsmm_timer_tickint result;
 #if defined(LIBXSMM_TIMER_RDTSC)
-  LIBXSMM_TIMER_RDTSC(result);
-#else
-  result = libxsmm_timer_tick_rtc(NULL/*tsc*/);
+# if (defined(LIBXSMM_TIMER_TSC) && (1 < (LIBXSMM_TIMER_TSC) || 0 > (LIBXSMM_TIMER_TSC)))
+  if (0 < libxsmm_timer_scale)
+# endif
+  {
+    LIBXSMM_TIMER_RDTSC(result);
+  }
+# if (defined(LIBXSMM_TIMER_TSC) && (1 < (LIBXSMM_TIMER_TSC) || 0 > (LIBXSMM_TIMER_TSC)))
+  else
+# endif
+#endif
+#if (defined(LIBXSMM_TIMER_TSC) && (1 < (LIBXSMM_TIMER_TSC) || 0 > (LIBXSMM_TIMER_TSC))) || !defined(LIBXSMM_TIMER_RDTSC)
+  {
+    result = libxsmm_timer_tick_rtc(NULL/*tsc*/);
+  }
 #endif
   return result;
 }
