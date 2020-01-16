@@ -52,7 +52,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
               ( io_generated_code->arch != LIBXSMM_X86_AVX512_MIC ) && ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) {
     l_vector_length = 16;
     /* some checks as we cannot mask everything */
-    if ( (/*l_xgemm_desc_mod.k % 8 != 0*/ 1 == 1) && (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) {
+    if ( (l_xgemm_desc_mod.k % 8 != 0) && (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
       return;
     } else if (l_xgemm_desc_mod.k % 2 != 0) {
