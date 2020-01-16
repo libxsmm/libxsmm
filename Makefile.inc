@@ -939,7 +939,7 @@ ifneq (Darwin,$(UNAME))
   else # MinGW
     solink = -o "$1" $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
   endif
-else # osx
+else # macOS
   solink = -o "$(call qbname,$1).$2$(call qsuffix,$1)" \
            -install_name $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) \
            -current_version $2.$3.$4 -compatibility_version $5
@@ -1287,7 +1287,7 @@ else # GCC assumed
         endif
         CPEDANTIC += -Wno-long-long
         CXXFLAGS += $(CPEDANTIC)
-      else # Clang may run into ICEs under OSX
+      else # Clang may run into ICEs under macOS
         CSTD = -std=c99
         CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       endif
@@ -1902,7 +1902,7 @@ endif
 ifneq (0,$(BLAS))
   ifneq (Darwin,$(UNAME))
     MKL_PLATFORM = linux
-  else # OSX
+  else # macOS
     MKL_PLATFORM = mac
   endif
 endif
@@ -2088,10 +2088,15 @@ else ifneq (0,$(BLAS)) # generic
       else # static
         BLAS_LDFLAGS += $(BLASLIBFILE)
       endif
+      BLASREF = 1
+    else ifneq (,$(call ctest,$(LD),-framework Accelerate)) # macOS
+      BLAS_LDFLAGS += -framework Accelerate
     else # fallback
       BLAS_LDFLAGS += -lblas
+      BLASREF = 1
     endif
-    ifeq (0,$(OPENBLAS)) # BLAS (reference)
+    BLASREF ?= 0
+    ifneq (0,$(BLASREF)) # BLAS (reference)
       ifneq (0,$(DEPSTATIC))
         ifneq (,$(LIBGFORTRAN))
           BLASTEST += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
@@ -2111,12 +2116,14 @@ else ifneq (0,$(BLAS)) # generic
         endif
       endif
     endif
+    ifneq (,$(filter-out 0,$(OPENBLAS) $(BLASREF))) # OpenBLAS or RefBLAS
     ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
       ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT)))
         BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
       else # common link BLAS/OMP-link flags (all compilers)
         BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
       endif
+    endif
     endif
   else # BLAS library is specified via BLASLIB
     BLAS_FLAGS += -D__BLAS=$(BLAS)
