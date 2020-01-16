@@ -241,7 +241,8 @@ else
 endif
 ifneq (0,$(SPACES))
   apath = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
-    if [ ! -d "$${VAR}" ]; then cd "$$(dirname "$${VAR}" 2>/dev/null)" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}" 2>/dev/null)"; else cd "$${VAR}" 2>/dev/null && pwd -P; fi)
+    if [ ! -d "$${VAR}" ]; then cd "$$(dirname "$${VAR}" 2>/dev/null)" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}" 2>/dev/null)"; \
+    else cd "$${VAR}" 2>/dev/null && pwd -P; fi)
   afile = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
     if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi)
   qapath = $(call quote,$(call apath,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
@@ -682,7 +683,8 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     sysctl -a machdep.cpu.features \
       machdep.cpu.extfeatures \
       machdep.cpu.leaf7_features \
-    | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:]; \
+    | cut -d: -f2- | tr -s "\n" " " \
+    | tr [:upper:] [:lower:]; \
   fi))
 SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX
@@ -874,8 +876,7 @@ else # OSX
 endif
 
 absliblpath = $(strip $(if $1, \
-  $(if $(findstring .$(ILIBEXT),$1),-L"$(call qdir,$(call qapath,$1))", \
-  $(if $(findstring .$(SLIBEXT),$1),$(NULL),-L"$(call qdir,$1)"))))
+  $(if $(findstring .$(ILIBEXT),$1),-L"$(call qdir,$(call qapath,$1))")))
 
 ifneq (0,$(ABSLIBS))
 #ifeq (0,$(DEPSTATIC))
