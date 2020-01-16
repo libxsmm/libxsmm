@@ -239,6 +239,19 @@ ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
 endif
 TGT ?= 0
 
+ifeq (0,$(BLAS))
+ifeq (0,$(STATIC))
+ifneq (0,$(LNKSOFT))
+ifeq (Darwin,$(UNAME))
+  LDFLAGS += $(call linkopt,-U,_dgemm_)
+  LDFLAGS += $(call linkopt,-U,_sgemm_)
+  LDFLAGS += $(call linkopt,-U,_dgemv_)
+  LDFLAGS += $(call linkopt,-U,_sgemv_)
+endif
+endif
+endif
+endif
+
 # target library for a broad range of systems
 ifneq (0,$(JIT))
 ifeq (file,$(origin AVX))
