@@ -10,7 +10,8 @@
 ******************************************************************************/
 #include <libxsmm_timer.h>
 #include <libxsmm_intrinsics_x86.h>
-#include "libxsmm_main.h"
+#include <libxsmm_generator.h>
+#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -20,6 +21,9 @@
 #elif defined(__GNUC__) || defined(__PGI) || defined(_CRAYC)
 # include <sys/time.h>
 # include <time.h>
+#endif
+#if !defined(NDEBUG)
+# include <stdio.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -66,7 +70,8 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(int* tsc)
   result = 1000000ULL * t.tv_sec + t.tv_usec;
 #endif
 #if defined(LIBXSMM_TIMER_RDTSC)
-  if (NULL != tsc) *tsc = 1;
+  if (0 == libxsmm_ninit) libxsmm_cpuid();
+  if (NULL != tsc) *tsc = (0 <= libxsmm_timer_scale ? 1 : 0);
 #else
   if (NULL != tsc) *tsc = 0;
 #endif
@@ -91,7 +96,6 @@ LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_t
 {
   double result = (double)LIBXSMM_DELTA(tick0, tick1);
 #if defined(LIBXSMM_TIMER_RDTSC)
-  LIBXSMM_INIT
   if (0 < libxsmm_timer_scale) {
     result *= libxsmm_timer_scale;
   }

@@ -778,11 +778,9 @@ LIBXSMM_APIVAR(const void* libxsmm_scratch_allocator_context);
 LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
-/** Counts the number of attempts to create an SPMDM-handle */
+/** Counts the number of attempts to create an SPMDM-handle. */
 LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
-/** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
-LIBXSMM_APIVAR(double libxsmm_timer_scale);
-/** Security-enhanced environment */
+/** Security-enhanced environment. */
 LIBXSMM_APIVAR(int libxsmm_se);
 
 #endif /*LIBXSMM_MAIN_H*/

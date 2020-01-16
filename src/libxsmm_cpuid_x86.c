@@ -74,6 +74,10 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
     if (1 <= eax) { /* CPUID max. leaf */
       int feature_cpu = result, feature_os = result;
       unsigned int maxleaf = eax;
+      LIBXSMM_CPUID_X86(0x80000007, 0/*ecx*/, eax, ebx, ecx, edx);
+      if (!LIBXSMM_CPUID_CHECK(edx, 0x00000100)) {
+        libxsmm_timer_scale = -1; /* TSC not constant */
+      }
       LIBXSMM_CPUID_X86(1, 0/*ecx*/, eax, ebx, ecx, edx);
       /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
       if (LIBXSMM_CPUID_CHECK(ecx, 0x00100000)) {

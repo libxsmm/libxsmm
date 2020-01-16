@@ -928,10 +928,10 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         }
       }
       s1 = libxsmm_timer_tick_rtc(&tsc); t1 = libxsmm_timer_tick(); /* final timing */
-      if (t0 != t1) { /* no further check needed aka first-time visit */
+      internal_timer_start = t0; /* determines uptime shown at termination */
+      if (0 != tsc && t0 != t1) { /* no further check needed aka first-time visit */
         const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
         libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / dt;
-        internal_timer_start = t0;
       }
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }

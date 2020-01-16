@@ -239,6 +239,8 @@ void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_gen
 
 /** Initialization counter that can be used to check whether the library is initialized (!=0) or not (==0). */
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_ninit);
+/** Number of seconds per RDTSC-cycle (zero or negative if RDTSC is not constant/available). */
+LIBXSMM_APIVAR_ALIGNED(double libxsmm_timer_scale);
 /** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_verbosity);
 
