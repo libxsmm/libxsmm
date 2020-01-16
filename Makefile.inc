@@ -856,7 +856,7 @@ ifneq (Darwin,$(UNAME))
   XLNKVERBOSE = --verbose
   linkopt = $(if $1,$(XLNKOPT)$(if $2,$1="$2",$1))
   abslibrpath = $(strip $(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$(NULL),$1), \
     $(call linkopt,--rpath,$(call qdir,$(call qapath,$1)))))
   XGROUP_BEGIN = $(call linkopt,--start-group)
   XGROUP_END = $(call linkopt,--end-group)
@@ -871,7 +871,7 @@ else # OSX
   #XLNKVERBOSE = -t
   linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) "$2",$1))
   abslibrpath = $(strip $(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$1), \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$(NULL),$1), \
     $(call linkopt,-rpath,$(call qdir,$(call qapath,$1)))))
 endif
 
@@ -2137,12 +2137,13 @@ else ifneq (0,$(BLAS)) # generic
   endif
 endif
 
-cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+cleanup = $(call uniq,$(foreach flag,$(subst //,/,$1),$(flag)))
 # cleanup eventually duplicated flags and slashes
-cleanld = $(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed \
+cleanld = $(call uniq,$(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed \
   -e "s/[[:space:]]$(XLIB_BEGIN)[[:space:]]$(XLIB_END)/ /g" \
   -e "s/[[:space:]]$(XLIB_END)[[:space:]]$(XLIB_BEGIN)/ /g" \
-  -e "s/\/\//\//g"))
+  -e "s/\/\//\//g")))
 
 # no-BLAS flags: cleanup and extra flags
 NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
