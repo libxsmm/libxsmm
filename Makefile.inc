@@ -310,8 +310,6 @@ ifeq (0,$(STATIC))
   ifeq (Windows_NT,$(UNAME))
     LNKSOFT = 0
   else ifeq (Darwin,$(UNAME))
-    #EXCLUDE_VALUE += -undefined dynamic_lookup
-    #LDFLAGS += -undefined dynamic_lookup
     LNKSOFT = 0
   endif
 endif
@@ -2138,12 +2136,12 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
-cleanup = $(call uniq,$(foreach flag,$(subst //,/,$1),$(flag)))
+cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
 # cleanup eventually duplicated flags and slashes
-cleanld = $(call uniq,$(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed \
+cleanld = $(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed \
   -e "s/[[:space:]]$(XLIB_BEGIN)[[:space:]]$(XLIB_END)/ /g" \
   -e "s/[[:space:]]$(XLIB_END)[[:space:]]$(XLIB_BEGIN)/ /g" \
-  -e "s/\/\//\//g")))
+  -e "s/\/\//\//g"))
 
 # no-BLAS flags: cleanup and extra flags
 NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
@@ -2187,7 +2185,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI ICX \
     GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS \
     OMPTEST BLASTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
-    ldtest which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
+    ldtest which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink uniq \
     ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
