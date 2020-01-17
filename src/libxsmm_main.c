@@ -3774,7 +3774,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM WARNING: attempt to unregister a JIT-kernel!\n");
+        fprintf(stderr, "LIBXSMM WARNING: attempt to unregister JIT-kernel!\n");
       }
 #else
       { /* unregister kernel */

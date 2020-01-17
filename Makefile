@@ -239,6 +239,19 @@ ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
 endif
 TGT ?= 0
 
+ifeq (0,$(BLAS))
+ifeq (0,$(STATIC))
+ifneq (0,$(LNKSOFT))
+ifeq (Darwin,$(UNAME))
+  LDFLAGS += $(call linkopt,-U,_dgemm_)
+  LDFLAGS += $(call linkopt,-U,_sgemm_)
+  LDFLAGS += $(call linkopt,-U,_dgemv_)
+  LDFLAGS += $(call linkopt,-U,_sgemv_)
+endif
+endif
+endif
+endif
+
 # target library for a broad range of systems
 ifneq (0,$(JIT))
 ifeq (file,$(origin AVX))
@@ -754,7 +767,7 @@ EXTCFLAGS = -DLIBXSMM_BUILD_EXT
 ifeq (0,$(OMP))
   ifeq (,$(filter environment% override command%,$(origin OMP)))
     EXTCFLAGS += $(OMPFLAG)
-    EXTLDFLAGS += $(OMPFLAG)
+    EXTLDFLAGS += $(OMPLIB)
   endif
 else # OpenMP
   DFLAGS += -DLIBXSMM_SYNC_OMP
@@ -1618,6 +1631,7 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/SECURITY.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
+	@sed "s/^\"//;s/\\\n\"$$//;/STATIC=/d" $(DIRSTATE)/.state > $(PREFIX)/$(PDOCDIR)/build.txt 2>/dev/null || true
 	@mkdir -p $(PREFIX)/$(LICFDIR)
 ifneq ($(call qapath,$(PREFIX)/$(PDOCDIR)/LICENSE.md),$(call qapath,$(PREFIX)/$(LICFDIR)/$(LICFILE)))
 	@$(MV) $(PREFIX)/$(PDOCDIR)/LICENSE.md $(PREFIX)/$(LICFDIR)/$(LICFILE)
