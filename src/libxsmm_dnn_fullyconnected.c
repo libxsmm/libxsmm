@@ -139,6 +139,9 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           float alpha = 1.0f;
           float beta  = 1.0f;
           float zerobeta  = 0.0f;
+          /* For UPD kernels we consider subtasking... */
+          libxsmm_blasint M = handle->bk/handle->ofm_subtasks;
+          libxsmm_blasint N = handle->bc/handle->ifm_subtasks;
 
           libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
           libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
@@ -155,9 +158,6 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
             handle->gemm_fwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
             handle->gemm_bwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &lda, &ldb, &alpha, &beta, NULL, NULL);
             handle->gemm_bwd2.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &lda, &ldb, &alpha, &zerobeta, NULL, NULL);
-            /* For UPD kernels we consider subtasking... */
-            libxsmm_blasint M = handle->bk/handle->ofm_subtasks;
-            libxsmm_blasint N = handle->bc/handle->ifm_subtasks;
             lda = (libxsmm_blasint)handle->bk;
             ldb = (libxsmm_blasint)handle->bn;
             ldc = (libxsmm_blasint)handle->bk;
