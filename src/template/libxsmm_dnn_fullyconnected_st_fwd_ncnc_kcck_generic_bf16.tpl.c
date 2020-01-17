@@ -81,8 +81,10 @@ for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
 #ifdef STRIDE_BRGEMM
   batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, handle->bc/2, handle->bk, 2),
                       &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-                      &LIBXSMM_VLA_ACCESS(2, out_tmp, 0, 0, handle->bk), &blocks);
+                      &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 #endif
+
+#ifndef STRIDE_BRGEMM
   /* downconvert scratch to bf16 and store to final C */
   for ( img2 = 0; img2 < handle->bn; ++img2 ) {
     for ( ofm2 = 0; ofm2 < handle->bk; ofm2 += 16 ) {
@@ -90,6 +92,7 @@ for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
          _mm512_cvtepi32_epi16( _mm512_srai_epi32( _mm512_castps_si512( _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, out_tmp, img2, ofm2, handle->bk) ) ), 16 ) ) );
     }
   }
+#endif
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
