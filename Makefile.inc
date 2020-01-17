@@ -1428,13 +1428,15 @@ else # GCC assumed
         CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
         CLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
         CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-      else ifneq (Darwin,$(UNAME))
-        ifneq (0,$(CLANG))
-          CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
-          CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+      else
+        ifneq (Darwin,$(UNAME))
+          ifneq (0,$(CLANG))
+            CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+            CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+          endif
+          CXXLDFLAGS += $(OMPFLAG_FORCE)
+          CLDFLAGS += $(OMPFLAG_FORCE)
         endif
-        CXXLDFLAGS += $(OMPFLAG_FORCE)
-        CLDFLAGS += $(OMPFLAG_FORCE)
         CXXFLAGS += $(OMPFLAG_FORCE)
         CFLAGS += $(OMPFLAG_FORCE)
       endif

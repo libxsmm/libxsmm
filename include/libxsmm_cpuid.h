@@ -32,15 +32,18 @@
 #define LIBXSMM_X86_AVX512_CPX   1022
 #define LIBXSMM_X86_ALLFEAT      1999 /* all features supported which are used anywhere in LIBXSMM, this value should never be used to set arch, only for compares */
 
-/**
- * Returns the target architecture and instruction set extensions, but *not* necessarily the
- * code path as used by LIBXSMM. To determine (or manually adjust) the code path in use, one
- * needs to rely on libxsmm_get_target_archid/libxsmm_get_target_arch (to manually adjust
- * the coda path use libxsmm_set_target_archid/libxsmm_set_target_arch).
- */
-LIBXSMM_API int libxsmm_cpuid_x86(void);
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_cpuid_x86_info {
+  int constant_tsc;
+} libxsmm_cpuid_x86_info;
 
-/** Similar to libxsmm_cpuid_x86, but conceptually not x86-specific. */
+/** Returns the target architecture and instruction set extensions. */
+LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info);
+
+/**
+ * Similar to libxsmm_cpuid_x86, but conceptually not x86-specific.
+ * The actual code path (as used by LIBXSMM) is determined by
+ * libxsmm_[get|set]_target_archid/libxsmm_[get|set]_target_arch.
+ */
 LIBXSMM_API int libxsmm_cpuid(void);
 
 /** Names the CPU architecture given by CPUID. */

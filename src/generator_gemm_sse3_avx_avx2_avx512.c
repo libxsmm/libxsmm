@@ -77,8 +77,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R9;
-    l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R10;
-    l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R12;
+    l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R13;
+    l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R14;
   } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) {
     l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
     l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
@@ -86,14 +86,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_a_offset = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_offset = LIBXSMM_X86_GP_REG_R9;
-    l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R10;
-    l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R12;
+    l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R13;
+    l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R14;
   }
 #endif
-  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R11;
-  l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
-  l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
-  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14;
+  l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R10;
+  l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R11;
+  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R12;
+  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_X86_GP_REG_R15;
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -187,14 +187,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
           unsigned int l_corrected_vlen = l_micro_kernel_config.vector_length;
           unsigned int l_mask_count = l_corrected_vlen - ( l_m_blocking % l_corrected_vlen );
 
-          libxsmm_generator_gemm_initialize_avx512_mask( io_generated_code, l_gp_reg_mapping.gp_reg_help_5, i_xgemm_desc, l_mask_count );
+          libxsmm_generator_gemm_initialize_avx512_mask( io_generated_code, l_gp_reg_mapping.gp_reg_help_1, i_xgemm_desc, l_mask_count );
         }
 
         libxsmm_generator_gemm_header_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking );
         libxsmm_generator_gemm_load_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
 
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
-          libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_mloop);
           if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b);
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a);
@@ -375,8 +374,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
             libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
             libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
           }
-
-          libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_mloop );
         }
 
         libxsmm_generator_gemm_store_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
