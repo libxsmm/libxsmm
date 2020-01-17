@@ -15,6 +15,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <string.h>
 #include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -67,19 +68,19 @@
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
+#if !defined(LIBXSMM_PLATFORM_SUPPORTED)
   if (NULL != info) LIBXSMM_MEMZERO127(info);
-#if defined(LIBXSMM_PLATFORM_SUPPORTED)
-  if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* detect CPU-feature only once */
-    unsigned int eax, ebx, ecx, edx;
-    result = LIBXSMM_X86_GENERIC; /* SSE2/64-bit */
-    LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
-    if (1 <= eax) { /* CPUID max. leaf */
-      int feature_cpu = result, feature_os = result;
+#else
+  unsigned int eax, ebx, ecx, edx;
+  LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
+  if (1 <= eax) { /* CPUID max. leaf */
+    if (NULL != info) {
+      LIBXSMM_CPUID_X86(0x80000007, 0/*ecx*/, eax, ebx, ecx, edx);
+      info->constant_tsc = LIBXSMM_CPUID_CHECK(edx, 0x00000100);
+    }
+    if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* detect CPU-feature only once */
+      int feature_cpu = LIBXSMM_X86_GENERIC, feature_os = LIBXSMM_X86_GENERIC;
       unsigned int maxleaf = eax;
-      if (NULL != info) {
-        LIBXSMM_CPUID_X86(0x80000007, 0/*ecx*/, eax, ebx, ecx, edx);
-        info->constant_tsc = LIBXSMM_CPUID_CHECK(edx, 0x00000100);
-      }
       LIBXSMM_CPUID_X86(1, 0/*ecx*/, eax, ebx, ecx, edx);
       /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
       if (LIBXSMM_CPUID_CHECK(ecx, 0x00100000)) {
@@ -133,7 +134,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
           if (LIBXSMM_CPUID_CHECK(eax, 0x00000006)) { /* OS XSAVE 256-bit */
             feature_os = LIBXSMM_MIN(LIBXSMM_X86_AVX2, feature_cpu);
             if (LIBXSMM_X86_AVX512 <= feature_cpu && 7 <= maxleaf
-             && LIBXSMM_CPUID_CHECK(eax, 0x000000E0)) /* OS XSAVE 512-bit */
+              && LIBXSMM_CPUID_CHECK(eax, 0x000000E0)) /* OS XSAVE 512-bit */
             {
               feature_os = feature_cpu; /* unlimited */
             }
@@ -168,6 +169,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
 # endif
     }
   }
+  else result = LIBXSMM_X86_GENERIC;
 #endif
   return result;
 }

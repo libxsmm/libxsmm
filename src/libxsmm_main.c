@@ -922,8 +922,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         int register_termination_proc;
         libxsmm_timer_tickint s1, t1;
         libxsmm_cpuid_x86_info info;
+        internal_init(); /* must be first to initialize verbosity, etc. */
         libxsmm_cpuid_x86(&info);
-        internal_init();
         register_termination_proc = atexit(internal_finalize);
         if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
           if (EXIT_SUCCESS != register_termination_proc) {
