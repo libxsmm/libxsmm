@@ -52,8 +52,6 @@
     <ClInclude Include="..\include\libxsmm_sync.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
-    <ClInclude Include="..\src\generator_gemm_avx512_fsdbcst.h" />
-    <ClInclude Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.h" />
     <ClInclude Include="..\src\generator_packed_aux.h" />
     <ClInclude Include="..\src\generator_packed_gemmnn.h" />
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h" />
@@ -69,7 +67,7 @@
     <ClInclude Include="..\src\generator_common.h" />
     <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_avx2_microkernel.h" />
-    <ClInclude Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.h" />
+    <ClInclude Include="..\src\generator_gemm_avx512_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_avx_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_common.h" />
     <ClInclude Include="..\src\generator_gemm_noarch.h" />
@@ -117,8 +115,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
-    <ClCompile Include="..\src\generator_gemm_avx512_fsdbcst.c" />
-    <ClCompile Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.c" />
     <ClCompile Include="..\src\generator_packed.c" />
     <ClCompile Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_packed_gemm_avx_avx512.c" />
@@ -128,7 +124,7 @@
     <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c" />
     <ClCompile Include="..\src\generator_gemm.c" />
     <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c" />
-    <ClCompile Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.c" />
+    <ClCompile Include="..\src\generator_gemm_avx512_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_avx_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_common.c" />
     <ClCompile Include="..\src\generator_gemm_noarch.c" />
