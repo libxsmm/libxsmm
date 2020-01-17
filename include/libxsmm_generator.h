@@ -116,6 +116,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
                                * >0: error code
                                */
   unsigned int arch;          /* target arch for the current code generation task */
+  unsigned int sf_size;       /* offset of RSP to the beginning of the stack frame
+                               * we track this value to have RBP availbale for general compute
+                               */
 } libxsmm_generated_code;
 
 /** function to translate LIBXSMM Generator error codes to error messages */
