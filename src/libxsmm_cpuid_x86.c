@@ -169,7 +169,10 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
 # endif
     }
   }
-  else result = LIBXSMM_X86_GENERIC;
+  else {
+    if (NULL != info) LIBXSMM_MEMZERO127(info);
+    result = LIBXSMM_X86_GENERIC;
+  }
 #endif
   return result;
 }
