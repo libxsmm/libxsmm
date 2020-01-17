@@ -131,13 +131,13 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16(libxsmm_
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #ifdef ADDRESS_BRGEMM
-    libxsmm_bsmmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.bsmra;
+    libxsmm_bmmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.bmra;
 #endif
 #ifdef OFFSET_BRGEMM
-    libxsmm_bsmmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.bsmro;
+    libxsmm_bmmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.bmro;
 #endif
 #ifdef STRIDE_BRGEMM
-    libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.bsmrs;
+    libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.bmrs;
 #endif
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
   } else {

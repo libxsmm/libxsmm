@@ -34,8 +34,6 @@ int ofm2 = 0;
 LIBXSMM_VLA_DECL(4, element_output_type,       output,  (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,   (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(5, const element_filter_type, filter,  (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc/2, handle->bk, 2);
-float* temp_output = (float*)handle->scratch;
-LIBXSMM_VLA_DECL(2, float,                     out_tmp, temp_output+(ltid*handle->bk*handle->bn), handle->bk );
 
 unsigned long long  blocks = nBlocksIFm;
 #ifdef ADDRESS_BRGEMM
@@ -71,27 +69,17 @@ for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
     A_array[ifm1] = &LIBXSMM_VLA_ACCESS(5, filter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, handle->bc/2, handle->bk, 2);
     B_array[ifm1] = &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1,  0, 0, nBlocksIFm, handle->bn, handle->bc);
   }
-  batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, out_tmp, 0, 0, handle->bk), &blocks);
+  batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 #endif
 #ifdef OFFSET_BRGEMM
   batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, handle->bc/2, handle->bk, 2),
                       &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-                      &LIBXSMM_VLA_ACCESS(2, out_tmp, 0, 0, handle->bk), &blocks, A_offsets, B_offsets);
+                      &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks, A_offsets, B_offsets);
 #endif
 #ifdef STRIDE_BRGEMM
   batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, handle->bc/2, handle->bk, 2),
                       &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
                       &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
-#endif
-
-#ifndef STRIDE_BRGEMM
-  /* downconvert scratch to bf16 and store to final C */
-  for ( img2 = 0; img2 < handle->bn; ++img2 ) {
-    for ( ofm2 = 0; ofm2 < handle->bk; ofm2 += 16 ) {
-      _mm256_storeu_si256( (__m256i *) &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, img2, ofm2, nBlocksOFm, handle->bn, handle->bk),
-         _mm512_cvtepi32_epi16( _mm512_srai_epi32( _mm512_castps_si512( _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, out_tmp, img2, ofm2, handle->bk) ) ), 16 ) ) );
-    }
-  }
 #endif
 }
 

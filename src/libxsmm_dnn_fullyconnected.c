@@ -149,10 +149,10 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
 
           if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #ifdef ADDRESS_BRGEMM
-            handle->gemm_fwd.xgemm.bsmra = libxsmm_bsmmdispatch_reducebatch_addr(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
+            handle->gemm_fwd.xgemm.bmra = libxsmm_bmmdispatch_reducebatch_addr(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
 #endif
 #ifdef OFFSET_BRGEMM
-            handle->gemm_fwd.xgemm.bsmro = libxsmm_bsmmdispatch_reducebatch_offs(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
+            handle->gemm_fwd.xgemm.bmro = libxsmm_bmmdispatch_reducebatch_offs(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
 #endif
 #ifdef STRIDE_BRGEMM
             handle->gemm_fwd.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
