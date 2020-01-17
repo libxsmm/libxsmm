@@ -20,13 +20,13 @@ matrix:
     env: INSTALL=install DBG=1 LIBXSMM_TARGET=sse
     env: LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
   - os: osx
-    osx_image: xcode7.3
-    compiler: clang
-    env: INSTALL=install-artifacts OPT=1 LIBXSMM_SE=1 TEST_TIMER=0
-  - os: osx
     osx_image: xcode11.2
     compiler: clang
-    env: DBG=1 SPACES=0 TEST_TIMER=0
+    env: DBG=1 OPT=1 SPACES=0 TEST_TIMER=0
+  - os: osx
+    osx_image: xcode7.3
+    compiler: clang
+    env: INSTALL=install-artifacts LIBXSMM_SE=1
 
 env:
   global:
