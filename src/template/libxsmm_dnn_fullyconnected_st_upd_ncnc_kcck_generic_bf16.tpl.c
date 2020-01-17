@@ -33,7 +33,7 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-const int BF = ((handle->desc.N == 2048) && (nBlocksMB % 4 == 0)) ? 4 : 1;
+const int BF = 1;//((handle->desc.N == 2048) && (nBlocksMB % 4 == 0)) ? 4 : 1;
 
 /* loop variables */
 int mb1 = 0, ifm1ofm1 = 0, ofm1 = 0, ifm1 = 0, ofm2 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ofm1 = 0, mb1ifm1 = 0, mb2 = 0, jc = 0, jk = 0;
