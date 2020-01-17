@@ -21,7 +21,7 @@
 # define MAX_NSECONDS 16
 #endif
 #if !defined(MAX_TOLPERC)
-# define MAX_TOLPERC 2
+# define MAX_TOLPERC 5
 #endif
 
 #if defined(_WIN32)
@@ -47,7 +47,7 @@ LIBXSMM_INLINE int timer_sleep(unsigned int seconds)
 int main(int argc, char* argv[])
 {
   const int max_nseconds_input = (1 < argc ? atoi(argv[1]) : MAX_NSECONDS);
-  const unsigned int max_nseconds = (unsigned int)LIBXSMM_UP2POT(max_nseconds_input);
+  const unsigned int max_nseconds = (unsigned int)LIBXSMM_UP2POT(LIBXSMM_MAX(max_nseconds_input, 1));
   const char *const env_test = getenv("TEST_TIMER");
   const int nofailure = (NULL == env_test || 0 == *env_test) ? 0 : (0 == atoi(env_test));
   double total = 0, delta = 0, d, t;

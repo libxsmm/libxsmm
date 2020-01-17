@@ -841,9 +841,9 @@ LIBXSMM_API_INTERN void internal_init(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
-    libxsmm_timer_tickint s0, t0, s1, t1; int tsc = 0;
-    libxsmm_timer_tick_rtc(&tsc); libxsmm_timer_tick(); /* warm-up */
-    s0 = libxsmm_timer_tick_rtc(&tsc); t0 = libxsmm_timer_tick(); /* start timing */
+    libxsmm_timer_tickint s0, t0;
+    libxsmm_timer_tick_rtc(); libxsmm_timer_tick_tsc(); /* warm-up */
+    s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick_tsc(); /* start timing */
     /* libxsmm_ninit (1: started, 2: library initialized), invalidate code-TLS */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
 #if (0 != LIBXSMM_SYNC)
@@ -918,20 +918,29 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         if (0 > internal_singleton_handle && 0 <= singleton_handle) close(singleton_handle);
 #endif  /* coverity[leaked_handle] */
       }
-      internal_init(); /* duration used to calibrate timer */
-      if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        if (EXIT_SUCCESS != atexit(internal_finalize)) {
-          fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
+      { /* calibrate timer */
+        libxsmm_timer_tickint s1, t1;
+        libxsmm_cpuid_x86_info info;
+        libxsmm_cpuid_x86(&info);
+        internal_init();
+        if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+          if (EXIT_SUCCESS != atexit(internal_finalize)) {
+            fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
+          }
+          if (0 == info.constant_tsc) {
+            fprintf(stderr, "LIBXSMM WARNING: timer is maybe not cycle-accurate!\n");
+          }
         }
-        if (0 == tsc) {
-          fprintf(stderr, "LIBXSMM WARNING: timer is maybe not cycle-accurate!\n");
+        s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* final timing */
+        /* set timer-scale and determine start of the "uptime" (shown at termination) */
+        if (0 != info.constant_tsc && t0 != t1) { /* no further check needed aka first-time visit */
+          const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
+          libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / dt;
+          internal_timer_start = t0;
         }
-      }
-      s1 = libxsmm_timer_tick_rtc(&tsc); t1 = libxsmm_timer_tick(); /* final timing */
-      internal_timer_start = t0; /* determines uptime shown at termination */
-      if (0 != tsc && t0 != t1) { /* no further check needed aka first-time visit */
-        const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
-        libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / dt;
+        else {
+          internal_timer_start = s0;
+        }
       }
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }

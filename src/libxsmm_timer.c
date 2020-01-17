@@ -10,8 +10,7 @@
 ******************************************************************************/
 #include <libxsmm_timer.h>
 #include <libxsmm_intrinsics_x86.h>
-#include <libxsmm_generator.h>
-#include <libxsmm_sync.h>
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -22,9 +21,6 @@
 # include <sys/time.h>
 # include <time.h>
 #endif
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -34,11 +30,13 @@
 #endif
 
 #if !defined(LIBXSMM_TIMER_TSC)
-/* 0: off, 1: use, 2/neg: confirm */
-# define LIBXSMM_TIMER_TSC 2
+# define LIBXSMM_TIMER_TSC
+#endif
+#if !defined(LIBXSMM_TIMER_WPC)
+# define LIBXSMM_TIMER_WPC
 #endif
 
-#if defined(LIBXSMM_TIMER_TSC) && (0 != (LIBXSMM_TIMER_TSC))
+#if defined(LIBXSMM_TIMER_TSC)
 # if defined(__powerpc64__)
 #   define LIBXSMM_TIMER_RDTSC(CYCLE) { \
       CYCLE = __ppc_get_timebase(); \
@@ -54,16 +52,36 @@
 #endif
 
 
-LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(int* tsc)
+LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
+{
+  double result = (double)LIBXSMM_DELTA(tick0, tick1);
+#if defined(_WIN32)
+# if defined(LIBXSMM_TIMER_WPC)
+  LARGE_INTEGER frequency;
+  QueryPerformanceFrequency(&frequency);
+  result /= (double)frequency.QuadPart;
+# else /* low resolution */
+  result *= 1E-3;
+# endif
+#elif defined(CLOCK_MONOTONIC)
+  result *= 1E-9;
+#else
+  result *= 1E-6;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
 {
   libxsmm_timer_tickint result;
 #if defined(_WIN32)
-# if 1
+# if defined(LIBXSMM_TIMER_WPC)
   LARGE_INTEGER t;
   QueryPerformanceCounter(&t);
   result = (libxsmm_timer_tickint)t.QuadPart;
 # else /* low resolution */
-  result = (libxsmm_timer_tickint)GetTickCount();
+  result = (libxsmm_timer_tickint)GetTickCount64();
 # endif
 #elif defined(CLOCK_MONOTONIC)
   struct timespec t;
@@ -74,39 +92,46 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(int* tsc)
   gettimeofday(&t, 0);
   result = 1000000ULL * t.tv_sec + t.tv_usec;
 #endif
+  return result;
+}
+
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
+libxsmm_timer_tickint libxsmm_timer_tick_tsc(void)
+{
+  libxsmm_timer_tickint result;
 #if defined(LIBXSMM_TIMER_RDTSC)
-# if (defined(LIBXSMM_TIMER_TSC) && (1 < (LIBXSMM_TIMER_TSC) || 0 > (LIBXSMM_TIMER_TSC)))
-  if (0 == libxsmm_ninit) libxsmm_cpuid();
-  if (NULL != tsc) *tsc = (0 <= libxsmm_timer_scale ? 1 : 0);
-# else
-  if (NULL != tsc) *tsc = 1;
-# endif
+  LIBXSMM_TIMER_RDTSC(result);
 #else
-  if (NULL != tsc) *tsc = 0;
+  result = libxsmm_timer_tick_rtc();
 #endif
   return result;
 }
 
 
-LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
-libxsmm_timer_tickint libxsmm_timer_tick(void)
+LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick(void)
 {
   libxsmm_timer_tickint result;
 #if defined(LIBXSMM_TIMER_RDTSC)
-# if (defined(LIBXSMM_TIMER_TSC) && (1 < (LIBXSMM_TIMER_TSC) || 0 > (LIBXSMM_TIMER_TSC)))
-  if (0 < libxsmm_timer_scale)
-# endif
-  {
+  if (0 < libxsmm_timer_scale) {
     LIBXSMM_TIMER_RDTSC(result);
   }
-# if (defined(LIBXSMM_TIMER_TSC) && (1 < (LIBXSMM_TIMER_TSC) || 0 > (LIBXSMM_TIMER_TSC)))
-  else
-# endif
-#endif
-#if (defined(LIBXSMM_TIMER_TSC) && (1 < (LIBXSMM_TIMER_TSC) || 0 > (LIBXSMM_TIMER_TSC))) || !defined(LIBXSMM_TIMER_RDTSC)
-  {
-    result = libxsmm_timer_tick_rtc(NULL/*tsc*/);
+# if !defined(LIBXSMM_INIT_COMPLETED)
+  else if (0 == libxsmm_ninit) {
+    libxsmm_init();
+    if (0 < libxsmm_timer_scale) {
+      LIBXSMM_TIMER_RDTSC(result);
+    }
+    else {
+      result = libxsmm_timer_tick_rtc();
+    }
   }
+# endif
+  else {
+    result = libxsmm_timer_tick_rtc();
+  }
+#else
+  result = libxsmm_timer_tick_rtc();
 #endif
   return result;
 }
@@ -114,27 +139,15 @@ libxsmm_timer_tickint libxsmm_timer_tick(void)
 
 LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
 {
-  double result = (double)LIBXSMM_DELTA(tick0, tick1);
+  double result;
 #if defined(LIBXSMM_TIMER_RDTSC)
   if (0 < libxsmm_timer_scale) {
-    result *= libxsmm_timer_scale;
+    result = (double)LIBXSMM_DELTA(tick0, tick1) * libxsmm_timer_scale;
   }
   else
 #endif
   {
-#if defined(_WIN32)
-# if 1
-    LARGE_INTEGER frequency;
-    QueryPerformanceFrequency(&frequency);
-    result /= (double)frequency.QuadPart;
-# else /* low resolution */
-    result *= 1E-3;
-# endif
-#elif defined(CLOCK_MONOTONIC)
-    result *= 1E-9;
-#else
-    result *= 1E-6;
-#endif
+    result = libxsmm_timer_duration_rtc(tick0, tick1);
   }
   return result;
 }
