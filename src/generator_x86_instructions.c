@@ -4927,7 +4927,6 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
-    char l_gp_reg_name[4];
 
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
@@ -5097,7 +5096,6 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
-    char l_gp_reg_name[4];
 
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
