@@ -519,6 +519,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   } else {
     l_n_accs = 4;
   }
+  if ( l_n_accs > i_k_blocking ) {
+    l_n_accs = i_k_blocking;
+    l_n_accs = (l_n_accs == 0) ? 1 : l_n_accs;
+  }
 
   /* xor additional accumulator, if needed */
   for ( l_k = 1; l_k < l_n_accs; l_k++) {
@@ -1002,6 +1006,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
     l_n_accs = 2;
   } else {
     l_n_accs = 4;
+  }
+  if ( l_n_accs > (i_k_blocking/4) ) {
+    l_n_accs = (i_k_blocking/4);
+    l_n_accs = (l_n_accs == 0) ? 1 : l_n_accs;
   }
 
   /* xor additional accumulator, if needed */
