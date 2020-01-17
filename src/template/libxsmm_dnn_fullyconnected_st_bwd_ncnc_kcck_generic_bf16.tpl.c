@@ -8,6 +8,21 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#if defined(LIBXSMM_DNN_FC_FWD_AVX512_CPX)
+#define LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16(in, out, length) do { \
+  int __i = 0; \
+  for ( __i = 0; __i < length; __i+= 32) { \
+    _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i))); \
+  } \
+} while(0)
+#else
+#define LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16(in, out, length) do { \
+  int __i = 0; \
+  for ( __i = 0; __i < length; __i+= 16) { \
+    _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i) ),16)) ); \
+  } \
+} while(0)
+#endif
 
 /* size variables, all const */
 /* here we assume that input and output blocking is similar */
@@ -37,7 +52,7 @@ const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? 
 const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
 /* loop variables */
-int ofm1 = 0, ofm2 = 0, ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0, mb1 = 0, img2 = 0;
+int ofm1 = 0, ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0, mb1 = 0, ofm2 = 0;
 
 LIBXSMM_VLA_DECL(4, const element_output_type,   doutput, (element_output_type*)handle->grad_output->data, nBlocksOFm, bn, bk);
 LIBXSMM_VLA_DECL(5, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, bc/2, bk, 2);
@@ -47,7 +62,7 @@ float* temp_output = (float*)handle->scratch + (handle->desc.C * handle->desc.K)
 LIBXSMM_VLA_DECL(4,        float,    dinput_f32, (float*) temp_output, nBlocksIFm, bn, bc);
 
 unsigned long long  blocks = nBlocksOFm;
-int KB_BLOCKS = nBlocksOFm, BF = 1, iteri = 0, iterj = 0;
+int KB_BLOCKS = nBlocksOFm, BF = 1;
 
 /* Blocking reduction domain if it is too large */
 if ((handle->desc.C > 1024 && handle->desc.C <= 2048) || (handle->desc.K > 1024 && handle->desc.K <= 2048)) {
@@ -92,24 +107,15 @@ if (BF > 1) {
       mb1  = mb1ifm1%nBlocksMB;
       ifm1 = mb1ifm1/nBlocksMB;
       /* Initialize intermediate f32 tensor */
-      if ( 0 == ofm1 ) {
-        for ( iteri = 0; iteri < bn; ++iteri ) {
-          for ( iterj = 0; iterj < bc; ++iterj ) {
-            LIBXSMM_VLA_ACCESS(4, dinput_f32, mb1, ifm1, iteri, iterj, nBlocksIFm, bn, bc) = 0;
-          }
-        }
+      if ( ofm1 == 0 ) {
+        memset(&LIBXSMM_VLA_ACCESS(4, dinput_f32, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc), 0, bn*bc*sizeof(float));
       }
       batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
           &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
           &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
       /* downconvert intermediate f32 tensor to bf 16 and store to final C */
       if ( ofm1 == BF-1  ) {
-        for ( img2 = 0; img2 < handle->bn; ++img2 ) {
-          for ( ofm2 = 0; ofm2 < handle->bc; ofm2 += 16 ) {
-            _mm256_storeu_si256( (__m256i *) &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, img2, ofm2, nBlocksIFm, bn, bc),
-                _mm512_cvtepi32_epi16( _mm512_srai_epi32( _mm512_castps_si512( _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, img2, ofm2, nBlocksIFm, bn, bc) ) ), 16 ) ) );
-          }
-        }
+         LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
       }
     }
   }
@@ -124,4 +130,7 @@ if (BF > 1) {
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
+
+
+#undef LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16
 
