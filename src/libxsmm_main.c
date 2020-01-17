@@ -919,12 +919,14 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #endif  /* coverity[leaked_handle] */
       }
       { /* calibrate timer */
+        int register_termination_proc;
         libxsmm_timer_tickint s1, t1;
         libxsmm_cpuid_x86_info info;
         libxsmm_cpuid_x86(&info);
         internal_init();
+        register_termination_proc = atexit(internal_finalize);
         if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-          if (EXIT_SUCCESS != atexit(internal_finalize)) {
+          if (EXIT_SUCCESS != register_termination_proc) {
             fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
           }
           if (0 == info.constant_tsc) {

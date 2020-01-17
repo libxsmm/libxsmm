@@ -32,7 +32,7 @@ env:
   global:
   - PEDANTIC_HIGH="PEDANTIC=2"
   - PEDANTIC_TEST="PEDANTIC=1"
-  - LIBXSMM_VERBOSE=2
+  - LIBXSMM_VERBOSE=3
 
 addons:
   apt:
