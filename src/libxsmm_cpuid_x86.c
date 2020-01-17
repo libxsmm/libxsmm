@@ -10,6 +10,7 @@
 ******************************************************************************/
 #include <libxsmm_intrinsics_x86.h>
 #include <libxsmm_generator.h>
+#include <libxsmm_memory.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -66,6 +67,7 @@
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
+  if (NULL != info) LIBXSMM_MEMZERO127(info);
 #if defined(LIBXSMM_PLATFORM_SUPPORTED)
   if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* detect CPU-feature only once */
     unsigned int eax, ebx, ecx, edx;
