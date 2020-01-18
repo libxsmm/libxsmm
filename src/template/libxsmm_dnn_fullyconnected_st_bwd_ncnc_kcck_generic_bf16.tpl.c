@@ -8,18 +8,40 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#if defined(LIBXSMM_DNN_FC_FWD_AVX512_CPX)
-#define LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16(in, out, length) do { \
+#if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
+#define LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(in, out, length) do { \
+  unsigned int full_chunks = length / 32; \
+  unsigned int remainder = length % 32; \
   int __i = 0; \
-  for ( __i = 0; __i < length; __i+= 32) { \
-    _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i))); \
+  if (remainder == 0) { \
+    for ( __i = 0; __i < length; __i+= 32) { \
+      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i))); \
+    } \
+  } else { \
+    unsigned int chunk; \
+    for ( chunk = 0; chunk < full_chunks; chunk++) { \
+      __i = chunk * 32; \
+      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i))); \
+    } \
+    libxsmm_rne_convert_fp32_bf16((float*)in+32*full_chunks, (element_output_type*)out+32*full_chunks, remainder); \
   } \
 } while(0)
 #else
-#define LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16(in, out, length) do { \
+#define LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(in, out, length) do { \
+  unsigned int full_chunks = length / 16; \
+  unsigned int remainder = length % 16; \
   int __i = 0; \
-  for ( __i = 0; __i < length; __i+= 16) { \
-    _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i) ),16)) ); \
+  if (remainder == 0) { \
+    for ( __i = 0; __i < length; __i+= 16) { \
+      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i) ),16)) ); \
+    } \
+  } else { \
+    unsigned int chunk; \
+    for ( chunk = 0; chunk < full_chunks; chunk++) { \
+      __i = chunk * 16; \
+      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i) ),16)) ); \
+    } \
+    libxsmm_rne_convert_fp32_bf16((float*)in+16*full_chunks, (element_output_type*)out+16*full_chunks, remainder); \
   } \
 } while(0)
 #endif
@@ -115,7 +137,7 @@ if (BF > 1) {
           &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
       /* downconvert intermediate f32 tensor to bf 16 and store to final C */
       if ( ofm1 == BF-1  ) {
-         LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
+        LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
       }
     }
   }
@@ -132,5 +154,5 @@ if (BF > 1) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 
-#undef LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16
+#undef LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16
 
