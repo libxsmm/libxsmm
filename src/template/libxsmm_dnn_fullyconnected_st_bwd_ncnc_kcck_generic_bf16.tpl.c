@@ -109,13 +109,20 @@ blocks = KB_BLOCKS;
 libxsmm_barrier_init(handle->barrier, ltid);
 
 /* transpose weight */
-for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-  ofm1 = ifm1ofm1 / nBlocksIFm;
-  ifm1 = ifm1ofm1 % nBlocksIFm;
-  for (ofm2 = 0; ofm2 < bk; ++ofm2) {
-    for (ifm2 = 0; ifm2 < bc; ++ifm2) {
-      LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, ofm2/2, ifm2, ofm2%2, nBlocksOFm, bk/2, bc, 2) =
-        LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, ifm2/2, ofm2, ifm2%2, nBlocksIFm, bc/2, bk, 2);
+if ((bk % 16 == 0) && (bc % 16 == 0)) {
+  for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+    ofm1 = ifm1ofm1 / nBlocksIFm;
+    ifm1 = ifm1ofm1 % nBlocksIFm;
+    bf16_vnni_transpose((element_filter_type*)&LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc/2, bk, 2), (element_filter_type*)&LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk/2, bc, 2), bk, bc, bk, bc);
+  }
+} else {
+  for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+    ofm1 = ifm1ofm1 / nBlocksIFm;
+    ifm1 = ifm1ofm1 % nBlocksIFm;
+    for (ofm2 = 0; ofm2 < bk; ++ofm2) {
+      for (ifm2 = 0; ifm2 < bc; ++ifm2) {
+        LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, ofm2/2, ifm2, ofm2%2, nBlocksOFm, bk/2, bc, 2) = LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, ifm2/2, ofm2, ifm2%2, nBlocksIFm, bc/2, bk, 2);
+      }
     }
   }
 }

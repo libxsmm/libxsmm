@@ -28,6 +28,93 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom_bf16_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_bf16_bf16(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
 
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+void bf16_vnni_transpose_16x16(void* source_void, void* dest_void, int source_stride, int dest_stride)
+{
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
+  libxsmm_bfloat16 *source = (libxsmm_bfloat16*)source_void;
+  libxsmm_bfloat16 *dest = (libxsmm_bfloat16*)dest_void;
+  __m512i zmm0, zmm1, zmm2, zmm3, zmm4, zmm5, zmm6, zmm7;
+  __m512i tmp0, tmp1, tmp2, tmp3;
+  const __m512i abcdefgh_to_abefcdgh = _mm512_set4_epi32(0x0f0e0b0a, 0x0d0c0908, 0x07060302, 0x05040100);
+
+  //load
+  zmm0 = _mm512_load_epi32(source);
+  zmm1 = _mm512_load_epi32(source + source_stride);
+  zmm2 = _mm512_load_epi32(source + source_stride*2);
+  zmm3 = _mm512_load_epi32(source + source_stride*3);
+  zmm4 = _mm512_load_epi32(source + source_stride*4);
+  zmm5 = _mm512_load_epi32(source + source_stride*5);
+  zmm6 = _mm512_load_epi32(source + source_stride*6);
+  zmm7 = _mm512_load_epi32(source + source_stride*7);
+
+  //transpose
+  zmm0 = _mm512_shuffle_epi8(zmm0, abcdefgh_to_abefcdgh);
+  zmm1 = _mm512_shuffle_epi8(zmm1, abcdefgh_to_abefcdgh);
+  zmm2 = _mm512_shuffle_epi8(zmm2, abcdefgh_to_abefcdgh);
+  zmm3 = _mm512_shuffle_epi8(zmm3, abcdefgh_to_abefcdgh);
+  zmm4 = _mm512_shuffle_epi8(zmm4, abcdefgh_to_abefcdgh);
+  zmm5 = _mm512_shuffle_epi8(zmm5, abcdefgh_to_abefcdgh);
+  zmm6 = _mm512_shuffle_epi8(zmm6, abcdefgh_to_abefcdgh);
+  zmm7 = _mm512_shuffle_epi8(zmm7, abcdefgh_to_abefcdgh);
+
+  tmp0 = _mm512_unpacklo_epi64(zmm0, zmm1);
+  tmp1 = _mm512_unpackhi_epi64(zmm0, zmm1);
+  tmp2 = _mm512_unpacklo_epi64(zmm2, zmm3);
+  tmp3 = _mm512_unpackhi_epi64(zmm2, zmm3);
+  zmm0 = _mm512_unpacklo_epi64(zmm4, zmm5);
+  zmm1 = _mm512_unpackhi_epi64(zmm4, zmm5);
+  zmm2 = _mm512_unpacklo_epi64(zmm6, zmm7);
+  zmm3 = _mm512_unpackhi_epi64(zmm6, zmm7);
+
+  zmm4 = _mm512_shuffle_i32x4(tmp0, tmp2, 0x88);
+  zmm6 = _mm512_shuffle_i32x4(tmp0, tmp2, 0xdd);
+  zmm5 = _mm512_shuffle_i32x4(tmp1, tmp3, 0x88);
+  zmm7 = _mm512_shuffle_i32x4(tmp1, tmp3, 0xdd);
+  tmp0 = _mm512_shuffle_i32x4(zmm0, zmm2, 0x88);
+  tmp1 = _mm512_shuffle_i32x4(zmm0, zmm2, 0xdd);
+  tmp2 = _mm512_shuffle_i32x4(zmm1, zmm3, 0x88);
+  tmp3 = _mm512_shuffle_i32x4(zmm1, zmm3, 0xdd);
+
+  zmm0 = _mm512_shuffle_i32x4(zmm4, tmp0, 0x88);
+  zmm1 = _mm512_shuffle_i32x4(zmm5, tmp2, 0x88);
+  zmm2 = _mm512_shuffle_i32x4(zmm6, tmp1, 0x88);
+  zmm3 = _mm512_shuffle_i32x4(zmm7, tmp3, 0x88);
+  zmm4 = _mm512_shuffle_i32x4(zmm4, tmp0, 0xdd);
+  zmm5 = _mm512_shuffle_i32x4(zmm5, tmp2, 0xdd);
+  zmm6 = _mm512_shuffle_i32x4(zmm6, tmp1, 0xdd);
+  zmm7 = _mm512_shuffle_i32x4(zmm7, tmp3, 0xdd);
+
+  //store
+  _mm512_store_epi32(dest, zmm0);
+  _mm512_store_epi32(dest + dest_stride, zmm1);
+  _mm512_store_epi32(dest + dest_stride * 2, zmm2);
+  _mm512_store_epi32(dest + dest_stride * 3, zmm3);
+  _mm512_store_epi32(dest + dest_stride * 4, zmm4);
+  _mm512_store_epi32(dest + dest_stride * 5, zmm5);
+  _mm512_store_epi32(dest + dest_stride * 6, zmm6);
+  _mm512_store_epi32(dest + dest_stride * 7, zmm7);
+#else
+  LIBXSMM_UNUSED(source_void); LIBXSMM_UNUSED(dest_void); LIBXSMM_UNUSED(source_stride); LIBXSMM_UNUSED(dest_stride);
+#endif
+}
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+void bf16_vnni_transpose(libxsmm_bfloat16* src, libxsmm_bfloat16* dst, int M, int N, int ld_in, int ld_out)
+{
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
+  const int _M = M/16, _N = N/16;
+  int i = 0, j = 0;
+  for (i = 0; i < _N; i++) {
+    for (j = 0; j < _M; j++) {
+      bf16_vnni_transpose_16x16((libxsmm_bfloat16*) src+i*16*ld_in+j*32, (libxsmm_bfloat16*) dst+j*16*ld_out+i*32, ld_in*2, ld_out*2);
+    }
+  }
+#else
+  LIBXSMM_UNUSED(src); LIBXSMM_UNUSED(dst); LIBXSMM_UNUSED(M); LIBXSMM_UNUSED(N); LIBXSMM_UNUSED(ld_in); LIBXSMM_UNUSED(ld_out);
+#endif
+}
+
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
 libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom_f32_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid)
 {
