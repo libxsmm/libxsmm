@@ -11,7 +11,6 @@
 ###############################################################################
 
 HERE=$(cd "$(dirname "$0")"; pwd -P)
-ECHO=$(command -v echo)
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
 FILE=cp2k-perf.txt
 
@@ -50,21 +49,21 @@ fi
 cat /dev/null > ${FILE}
 
 NRUN=1
-NMAX=$(${ECHO} ${!RUNS} | wc -w | tr -d " ")
+NMAX=$(echo ${!RUNS} | wc -w | tr -d " ")
 for RUN in ${!RUNS} ; do
-  MVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f1)
-  NVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f2)
-  KVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f3)
-  >&2 ${ECHO} -n "${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})... "
+  MVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f1)
+  NVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f2)
+  KVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f3)
+  >&2 echo -n "${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})... "
   ERROR=$({ CHECK=1 ${HERE}/cp2k ${MVALUE} ${SIZE} 0 ${NVALUE} ${KVALUE} >> ${FILE}; } 2>&1)
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
-    ${ECHO} "FAILED(${RESULT}) ${ERROR}"
+    echo "FAILED(${RESULT}) ${ERROR}"
     exit 1
   else
-    ${ECHO} "OK ${ERROR}"
+    echo "OK ${ERROR}"
   fi
-  ${ECHO} >> ${FILE}
+  echo >> ${FILE}
   NRUN=$((NRUN+1))
 done
 
