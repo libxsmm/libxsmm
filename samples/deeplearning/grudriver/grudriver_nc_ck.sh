@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.), Kunal Banerjee (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname $0)"; pwd -P)
+HERE=$(cd "$(dirname "$0")"; pwd -P)
 NAME=$(basename $0 .sh)
 ECHO=$(command -v echo)
 GREP=$(command -v grep)
