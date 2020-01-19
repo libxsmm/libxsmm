@@ -13,7 +13,6 @@
 SORT=$(command -v sort)
 JOIN=$(command -v join)
 GREP=$(command -v grep)
-ECHO=$(command -v echo)
 CAT=$(command -v cat)
 CUT=$(command -v cut)
 SED=$(command -v sed)
@@ -30,29 +29,29 @@ PERF=$(${GREP} -A2 "${VARIANT}" ${FILE} \
    | ${CUT} -d" " -f2 \
    | ${SORT} -n)
 
-NUM=$(${ECHO} "${PERF}" | wc -l | tr -d " ")
-MIN=$(${ECHO} ${PERF} | ${CUT} -d" " -f1)
-MAX=$(${ECHO} ${PERF} | ${CUT} -d" " -f${NUM})
+NUM=$(echo "${PERF}" | wc -l | tr -d " ")
+MIN=$(echo ${PERF} | ${CUT} -d" " -f1)
+MAX=$(echo ${PERF} | ${CUT} -d" " -f${NUM})
 
-${ECHO} "num=${NUM}"
-${ECHO} "min=${MIN}"
-${ECHO} "max=${MAX}"
+echo "num=${NUM}"
+echo "min=${MIN}"
+echo "max=${MAX}"
 
 BC=$(command -v bc)
 if [ "" != "${BC}" ]; then
-  AVG=$(${ECHO} "$(${ECHO} -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
+  AVG=$(echo "$(echo -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
 
   if [ "0" = "$((NUM % 2))" ]; then
-    A=$(${ECHO} ${PERF} | ${CUT} -d" " -f${NUM2})
-    B=$(${ECHO} ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
-    MED=$(${ECHO} "$(${ECHO} -n "scale=3;(${A} + ${B})/2")" | ${BC})
+    A=$(echo ${PERF} | ${CUT} -d" " -f${NUM2})
+    B=$(echo ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
+    MED=$(echo "$(echo -n "scale=3;(${A} + ${B})/2")" | ${BC})
   else
-    MED=$(${ECHO} ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
+    MED=$(echo ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
   fi
 
-  ${ECHO} "avg=${AVG}"
-  ${ECHO} "med=${MED}"
+  echo "avg=${AVG}"
+  echo "med=${MED}"
 fi
 
 if [ -f /cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot ]; then
@@ -75,6 +74,9 @@ fi
 GNUPLOT_VERSION=$((GNUPLOT_MAJOR * 10000 + GNUPLOT_MINOR * 100))
 
 if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
+  # determine behavior of sort command
+  export LC_ALL=C.UTF-8
+
   if [ "" = "$1" ]; then
     FILENAME=eigen_smm-cp2k.pdf
   else
@@ -103,19 +105,19 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
     -e "N;s/ memory=..*\n..*//" \
     -e "N;s/\n\tperformance:\(..*\) GFLOPS\/s/\1/" \
     -e "N;s/\n\tbandwidth:\(..*\) GB\/s/\1/" \
-  > ${HERE}/eigen_smm-cp2k.dat
+  > "${HERE}/eigen_smm-cp2k.dat"
 
-  if [ -f ${HERE}/eigen_smm-cp2k.set ]; then
-    ${JOIN} \
-      <(${CUT} ${HERE}/eigen_smm-cp2k.set -d" " -f1-3 | ${SORT} -k1) \
-      <(${SORT} -k1 ${HERE}/eigen_smm-cp2k.dat) \
+  if [ -f "${HERE}/eigen_smm-cp2k.set" ]; then
+    ${JOIN} --nocheck-order \
+      <(${CUT} "${HERE}/eigen_smm-cp2k.set" -d" " -f1-3 | ${SORT} -nk1) \
+      <(${SORT} -nk1 "${HERE}/eigen_smm-cp2k.dat") \
     | ${AWK} \
       '{ if ($2==$4 && $3==$5) printf("%s %s %s %s %s %s\n", $1, $2, $3, $6, $7, $8) }' \
     | ${SORT} \
       -b -n -k1 -k2 -k3 \
-    > ${HERE}/eigen_smm-plot-join.dat
+    > "${HERE}/eigen_smm-plot-join.dat"
   else
-    ${RM} ${HERE}/eigen_smm-plot-join.dat
+    ${RM} "${HERE}/eigen_smm-plot-join.dat"
   fi
 
   env \

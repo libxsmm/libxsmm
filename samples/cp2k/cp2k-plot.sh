@@ -30,30 +30,29 @@ PERF=$(${GREP} -A1 -i "${VARIANT}" ${FILE} | \
   ${CUT} -d" " -f2 | \
   ${SORT} -n)
 
-ECHO=$(command -v echo)
-NUM=$(${ECHO} "${PERF}" | wc -l | tr -d " ")
-MIN=$(${ECHO} ${PERF} | ${CUT} -d" " -f1)
-MAX=$(${ECHO} ${PERF} | ${CUT} -d" " -f${NUM})
+NUM=$(echo "${PERF}" | wc -l | tr -d " ")
+MIN=$(echo ${PERF} | ${CUT} -d" " -f1)
+MAX=$(echo ${PERF} | ${CUT} -d" " -f${NUM})
 
-${ECHO} "num=${NUM}"
-${ECHO} "min=${MIN}"
-${ECHO} "max=${MAX}"
+echo "num=${NUM}"
+echo "min=${MIN}"
+echo "max=${MAX}"
 
 BC=$(command -v bc)
 if [ "" != "${BC}" ]; then
-  AVG=$(${ECHO} "$(${ECHO} -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
+  AVG=$(echo "$(echo -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
 
   if [ "0" = "$((NUM % 2))" ]; then
-    A=$(${ECHO} ${PERF} | ${CUT} -d" " -f${NUM2})
-    B=$(${ECHO} ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
-    MED=$(${ECHO} "$(${ECHO} -n "scale=3;(${A} + ${B})/2")" | ${BC})
+    A=$(echo ${PERF} | ${CUT} -d" " -f${NUM2})
+    B=$(echo ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
+    MED=$(echo "$(echo -n "scale=3;(${A} + ${B})/2")" | ${BC})
   else
-    MED=$(${ECHO} ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
+    MED=$(echo ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
   fi
 
-  ${ECHO} "avg=${AVG}"
-  ${ECHO} "med=${MED}"
+  echo "avg=${AVG}"
+  echo "med=${MED}"
 fi
 
 if [ -f /cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot ]; then
@@ -76,8 +75,11 @@ fi
 GNUPLOT_VERSION=$((GNUPLOT_MAJOR * 10000 + GNUPLOT_MINOR * 100))
 
 if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
+  # determine behavior of sort command
+  export LC_ALL=C.UTF-8
+
   if [ "" = "$1" ]; then
-    FILENAME=cp2k-$(${ECHO} ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
+    FILENAME=cp2k-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift
@@ -98,7 +100,7 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   ${SED} \
     -e "N;s/ MB\( (.P)\)*\n\tperformance://g" \
     -e "N;s/ GFLOPS\/s\n\tbandwidth://g" \
-  > ${HERE}/cp2k-perf.dat
+  > "${HERE}/cp2k-perf.dat"
   env \
     GDFONTPATH=/cygdrive/c/Windows/Fonts \
     FILENAME=${FILENAME} \
