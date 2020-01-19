@@ -25,24 +25,30 @@ int main(int argc, char* argv[]) {
 
   unsigned int* l_colptr = NULL;
   unsigned int* l_rowidx = NULL;
+  unsigned int* l_rowptr = NULL;
+  unsigned int* l_colidx = NULL;
   float* l_b_de = (float*)libxsmm_aligned_malloc(sizeof(float) * C * K, 64);
-  float* l_b_sp = NULL;
+  float* l_b_sp_csc = NULL;
+  float* l_b_sp_csr = NULL;
   float* l_a = (float*)libxsmm_aligned_malloc(sizeof(float) * N * C, 64);
   float* l_c = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float* l_c_gold = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
-  float* l_c_asm = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
+  float* l_c_asm_csc = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
+  float* l_c_asm_csr = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float l_max_error = 0.0;
   unsigned int l_k, l_n;
   int l_i, l_j, l_jj;
 
   LIBXSMM_VLA_DECL(2, float, l_p_b_de, l_b_de, C);
   LIBXSMM_VLA_DECL(3, float, l_p_a, l_a, C, 16);
-  LIBXSMM_VLA_DECL(3, float, l_p_c_asm, l_c_asm, K, 16);
+  LIBXSMM_VLA_DECL(3, float, l_p_c_asm_csc, l_c_asm_csc, K, 16);
+  LIBXSMM_VLA_DECL(3, float, l_p_c_asm_csr, l_c_asm_csr, K, 16);
   LIBXSMM_VLA_DECL(3, float, l_p_c_gold, l_c_gold, K, 16);
 
   libxsmm_descriptor_blob l_xgemm_blob;
   const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
-  LIBXSMM_MMFUNCTION_TYPE(float) mykernel = NULL;
+  LIBXSMM_MMFUNCTION_TYPE(float) mykernel_csc = NULL;
+  LIBXSMM_MMFUNCTION_TYPE(float) mykernel_csr = NULL;
 
   unsigned long long l_start, l_end;
   double l_total;
@@ -91,15 +97,16 @@ int main(int argc, char* argv[]) {
     for ( l_j = 0; l_j < K; l_j++) {
       for ( l_k = 0; l_k < nb; l_k++ ) {
         LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb) = (float)0.0;
-        LIBXSMM_VLA_ACCESS(3, l_p_c_asm,  l_i, l_j, l_k, K, nb) = (float)0.0;
+        LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csc,  l_i, l_j, l_k, K, nb) = (float)0.0;
+        LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csr,  l_i, l_j, l_k, K, nb) = (float)0.0;
       }
     }
   }
 
   /* create B, csc */
-  l_colptr = (unsigned int*) libxsmm_aligned_malloc( (K+1)*sizeof(unsigned int), 64 );
-  l_rowidx = (unsigned int*) libxsmm_aligned_malloc( nnz*sizeof(unsigned int),   64 );
-  l_b_sp   = (float*       ) libxsmm_aligned_malloc( nnz*sizeof(float),          64 );
+  l_colptr   = (unsigned int*) libxsmm_aligned_malloc( (K+1)*sizeof(unsigned int), 64 );
+  l_rowidx   = (unsigned int*) libxsmm_aligned_malloc( nnz*sizeof(unsigned int),   64 );
+  l_b_sp_csc = (float*       ) libxsmm_aligned_malloc( nnz*sizeof(float),          64 );
   l_k = 0;
   l_colptr[K] = nnz;
   for ( l_i = 0; l_i < K; l_i++ ) {
@@ -107,7 +114,24 @@ int main(int argc, char* argv[]) {
     for ( l_j = 0; l_j < C; l_j++ ) {
       if ( LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) != 0.0 ) {
         l_rowidx[l_k] = l_j;
-        l_b_sp[l_k] = LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C);
+        l_b_sp_csc[l_k] = LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C);
+        l_k++;
+      }
+    }
+  }
+
+  /* create B, csr */
+  l_rowptr   = (unsigned int*) libxsmm_aligned_malloc( (C+1)*sizeof(unsigned int), 64 );
+  l_colidx   = (unsigned int*) libxsmm_aligned_malloc( nnz*sizeof(unsigned int),   64 );
+  l_b_sp_csr = (float*       ) libxsmm_aligned_malloc( nnz*sizeof(float),          64 );
+  l_k = 0;
+  l_rowptr[C] = nnz;
+  for ( l_j = 0; l_j < C; l_j++ ) {
+    l_rowptr[l_j] = l_k;
+    for ( l_i = 0; l_i < K; l_i++ ) {
+      if ( LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) != 0.0 ) {
+        l_colidx[l_k] = l_i;
+        l_b_sp_csr[l_k] = LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C);
         l_k++;
       }
     }
@@ -140,16 +164,26 @@ int main(int argc, char* argv[]) {
     NB, K, C, C, 0, K, alpha, beta, flags, prefetch);
 
   /* sparse routine */
-  mykernel = libxsmm_create_xcsc_soa(l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp).smm;
+  mykernel_csc = libxsmm_create_xcsc_soa(l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp_csc).smm;
+  mykernel_csr = libxsmm_create_xcsr_soa(l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp_csr).smm;
 
   l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
-    mykernel( l_a, l_b_sp, l_c_asm );
+    mykernel_csc( l_a, l_b_sp_csc, l_c_asm_csc );
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("%fs for sparse (asm)\n", l_total);
-  printf("%f GFLOPS for sparse (asm)\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
+  printf("%fs for sparse (asm, csc)\n", l_total);
+  printf("%f GFLOPS for sparse (asm, csc)\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
+
+  l_start = libxsmm_timer_tick();
+  for ( l_n = 0; l_n < REPS; l_n++) {
+    mykernel_csr( l_a, l_b_sp_csr, l_c_asm_csr );
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("%fs for sparse (asm, csr)\n", l_total);
+  printf("%f GFLOPS for sparse (asm, csr)\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
   /* check for errors */
   l_max_error = (float)0.0;
@@ -157,26 +191,42 @@ int main(int argc, char* argv[]) {
     for ( l_j = 0; l_j < K; l_j++) {
       for ( l_k = 0; l_k < nb; l_k++ ) {
         if (fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb)
-                    - LIBXSMM_VLA_ACCESS(3, l_p_c_asm, l_i, l_j, l_k, K, nb) ) > l_max_error ) {
+                    - LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csc, l_i, l_j, l_k, K, nb) ) > l_max_error ) {
           l_max_error = (float)fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb)
-                                       -LIBXSMM_VLA_ACCESS(3, l_p_c_asm, l_i, l_j, l_k, K, nb) );
+                                       -LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csc, l_i, l_j, l_k, K, nb) );
         }
       }
     }
   }
-  printf("max error: %f\n", l_max_error);
-
-  printf("PERFDUMP,%u,%i,%i,%i,%u,%f,%f,%f\n", REPS, N, C, K, nnz, l_max_error, l_total, ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9) );
+  printf("max error (csc): %f\n", l_max_error);
+  l_max_error = (float)0.0;
+  for ( l_i = 0; l_i < NB; l_i++) {
+    for ( l_j = 0; l_j < K; l_j++) {
+      for ( l_k = 0; l_k < nb; l_k++ ) {
+        if (fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb)
+                    - LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csr, l_i, l_j, l_k, K, nb) ) > l_max_error ) {
+          l_max_error = (float)fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb)
+                                       -LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csr, l_i, l_j, l_k, K, nb) );
+        }
+      }
+    }
+  }
+  printf("max error (csr): %f\n", l_max_error);
 
   /* free */
   libxsmm_free( l_b_de );
   libxsmm_free( l_a );
   libxsmm_free( l_c_gold );
-  libxsmm_free( l_c_asm );
+  libxsmm_free( l_c_asm_csc );
+  libxsmm_free( l_c_asm_csr );
 
-  libxsmm_free( l_b_sp );
+  libxsmm_free( l_b_sp_csc );
   libxsmm_free( l_colptr );
   libxsmm_free( l_rowidx );
+
+  libxsmm_free( l_b_sp_csr );
+  libxsmm_free( l_rowptr );
+  libxsmm_free( l_colidx );
 
   return 0;
 }
