@@ -75,5 +75,8 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   if [ "1" != "${MULTI}" ] && [ "pdf" != "${FILEEXT}" ] && [ "" != "$(command -v mogrify)" ]; then
     ${FIND} . -name "benchmark*.${FILEEXT}" -type f -exec mogrify -trim -transparent-color white {} \;
   fi
+else
+  echo "Error: missing prerequisites!"
+  exit 1
 fi
 
