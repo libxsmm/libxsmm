@@ -54,6 +54,7 @@ const int bc = handle->bc;
 const int nBlocksIFm = handle->desc.C / handle->bc;
 const int nBlocksOFm = handle->desc.K / handle->bk;
 const int nBlocksMB  = handle->desc.N / handle->bn;
+int use_2d_blocking = (handle->desc.threads == 28) ? 1 : 0;
 
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -75,6 +76,7 @@ const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work
 
 /* loop variables */
 int ofm1 = 0, ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0, mb1 = 0, ofm2 = 0;
+int im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
 
 LIBXSMM_VLA_DECL(4, const element_output_type,   doutput, (element_output_type*)handle->grad_output->data, nBlocksOFm, bn, bk);
 LIBXSMM_VLA_DECL(5, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, bc/2, bk, 2);
@@ -102,8 +104,24 @@ if (handle->desc.C > 2048 || handle->desc.K > 2048) {
 if (handle->desc.K == 2048 && handle->desc.C == 1024) {
   BF = 2;
 }
+
 KB_BLOCKS = nBlocksOFm/BF;
 blocks = KB_BLOCKS;
+
+if (use_2d_blocking == 1) {
+  if (handle->desc.threads == 28) {
+    row_teams = 7;
+    column_teams = 4;
+  }
+  my_col_id = ltid % column_teams;
+  my_row_id = ltid / column_teams;
+  im_tasks_per_thread = (nBlocksMB + row_teams-1)/row_teams;
+  in_tasks_per_thread = (nBlocksIFm + column_teams-1)/column_teams;
+  my_im_start = LIBXSMM_MIN( my_row_id * im_tasks_per_thread, nBlocksMB);
+  my_im_end = LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, nBlocksMB);
+  my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksIFm);
+  my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksIFm);
+}
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -130,36 +148,65 @@ if ((bk % 16 == 0) && (bc % 16 == 0)) {
 /* wait for transpose to finish */
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-if (BF > 1) {
-  for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
-    for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
-      mb1  = mb1ifm1%nBlocksMB;
-      ifm1 = mb1ifm1/nBlocksMB;
-      /* Initialize intermediate f32 tensor */
-      if ( ofm1 == 0 ) {
-        memset(&LIBXSMM_VLA_ACCESS(4, dinput_f32, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc), 0, bn*bc*sizeof(float));
+if (use_2d_blocking == 1) {
+  if (BF > 1) {
+    for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
+      for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
+        for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+          /* Initialize intermediate f32 tensor */
+          if ( ofm1 == 0 ) {
+            memset(&LIBXSMM_VLA_ACCESS(4, dinput_f32, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc), 0, bn*bc*sizeof(float));
+          }
+          batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
+              &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
+              &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+          /* downconvert intermediate f32 tensor to bf 16 and store to final C */
+          if ( ofm1 == BF-1  ) {
+            LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
+          }
+        }
       }
-      batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
-          &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
-          &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
-      /* downconvert intermediate f32 tensor to bf 16 and store to final C */
-      if ( ofm1 == BF-1  ) {
-        LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
+    }
+  } else {
+    for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
+      for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+        batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
+            &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
+            &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
       }
     }
   }
 } else {
-  for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
-    mb1  = mb1ifm1%nBlocksMB;
-    ifm1 = mb1ifm1/nBlocksMB;
-    batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
-        &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
-        &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+  if (BF > 1) {
+    for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
+      for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
+        mb1  = mb1ifm1%nBlocksMB;
+        ifm1 = mb1ifm1/nBlocksMB;
+        /* Initialize intermediate f32 tensor */
+        if ( ofm1 == 0 ) {
+          memset(&LIBXSMM_VLA_ACCESS(4, dinput_f32, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc), 0, bn*bc*sizeof(float));
+        }
+        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
+            &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
+            &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+        /* downconvert intermediate f32 tensor to bf 16 and store to final C */
+        if ( ofm1 == BF-1  ) {
+          LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
+        }
+      }
+    }
+  } else {
+    for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
+      mb1  = mb1ifm1%nBlocksMB;
+      ifm1 = mb1ifm1/nBlocksMB;
+      batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
+          &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
+          &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+    }
   }
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
-
 
 #undef LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16
 
