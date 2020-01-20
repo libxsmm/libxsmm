@@ -2078,8 +2078,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_code_pointer code, const libxsmm_descriptor** desc, size_t* code_size)
 {
   const libxsmm_kernel_xinfo* result = NULL;
+  void *const result_address = &result;
   int flags = LIBXSMM_MALLOC_FLAG_X;
-  if (NULL != code.ptr_const && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, code_size, &flags, (void**)&result) && NULL != result) {
+  if (NULL != code.ptr_const && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, code_size, &flags, (void**)result_address) && NULL != result) {
     if (NULL != desc) {
       if (NULL != internal_registry && NULL != internal_registry_keys && result->registered < (LIBXSMM_CAPACITY_REGISTRY)
 #if defined(LIBXSMM_HASH_COLLISION)
@@ -3791,8 +3792,9 @@ LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
   if (NULL != jit_kernel) {
     static int error_once = 0;
     const libxsmm_kernel_xinfo* extra = NULL;
+    void *const extra_address = &extra;
     LIBXSMM_INIT
-    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_kernel, NULL/*size*/, NULL/*flags*/, (void**)&extra) && NULL != extra) {
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_kernel, NULL/*size*/, NULL/*flags*/, (void**)extra_address) && NULL != extra) {
       const unsigned int regindex = extra->registered;
       if ((LIBXSMM_CAPACITY_REGISTRY) <= regindex) {
         libxsmm_xfree(jit_kernel, 0/*no check*/);
