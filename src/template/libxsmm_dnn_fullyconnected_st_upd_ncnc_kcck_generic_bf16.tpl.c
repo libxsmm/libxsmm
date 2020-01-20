@@ -132,23 +132,38 @@ if (use_2d_blocking == 1) {
 libxsmm_barrier_init(handle->barrier, ltid);
 
 /* Required upfront tranposes */
-
-for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
-  mb1 = mb1ofm1/nBlocksOFm;
-  ofm1 = mb1ofm1%nBlocksOFm;
-  for (mb2 = 0; mb2 < bn; mb2++) {
-    for (ofm2 = 0; ofm2 < bk; ofm2++) {
-      LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/2, ofm2, mb2%2, nBlocksMB, bn/2, bk, 2) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
+if (bk % 32 == 0) {
+  for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
+    mb1 = mb1ofm1/nBlocksOFm;
+    ofm1 = mb1ofm1%nBlocksOFm;
+    bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn/2, bk, 2), bk, bn, bk, bn);
+  }
+} else {
+  for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
+    mb1 = mb1ofm1/nBlocksOFm;
+    ofm1 = mb1ofm1%nBlocksOFm;
+    for (mb2 = 0; mb2 < bn; mb2++) {
+      for (ofm2 = 0; ofm2 < bk; ofm2++) {
+        LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/2, ofm2, mb2%2, nBlocksMB, bn/2, bk, 2) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
+      }
     }
   }
 }
 
-for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
-  mb1 = mb1ifm1/nBlocksIFm;
-  ifm1 = mb1ifm1%nBlocksIFm;
-  for (mb2 = 0; mb2 < bn; mb2++) {
-    for (ifm2 = 0; ifm2 < bc; ifm2++) {
-      LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, mb1, ifm2, mb2, nBlocksMB, bc, bn) = LIBXSMM_VLA_ACCESS(4, input, mb1, ifm1, mb2, ifm2, nBlocksIFm, bn, bc);
+if (bc % 32 == 0) {
+  for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
+    mb1 = mb1ifm1/nBlocksIFm;
+    ifm1 = mb1ifm1%nBlocksIFm;
+    bf16_transpose((element_input_type*)&LIBXSMM_VLA_ACCESS(4, input, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, mb1, 0, 0, nBlocksMB, bc, bn), bc, bn, bc, bn);
+  }
+} else {
+  for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
+    mb1 = mb1ifm1/nBlocksIFm;
+    ifm1 = mb1ifm1%nBlocksIFm;
+    for (mb2 = 0; mb2 < bn; mb2++) {
+      for (ifm2 = 0; ifm2 < bc; ifm2++) {
+        LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, mb1, ifm2, mb2, nBlocksMB, bc, bn) = LIBXSMM_VLA_ACCESS(4, input, mb1, ifm1, mb2, ifm2, nBlocksIFm, bn, bc);
+      }
     }
   }
 }
