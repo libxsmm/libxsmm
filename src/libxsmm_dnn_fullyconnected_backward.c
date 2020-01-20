@@ -38,7 +38,6 @@ void bf16_vnni_transpose_16x16(void* source_void, void* dest_void, int source_st
   __m512i tmp0, tmp1, tmp2, tmp3;
   const __m512i abcdefgh_to_abefcdgh = _mm512_set4_epi32(0x0f0e0b0a, 0x0d0c0908, 0x07060302, 0x05040100);
 
-  //load
   zmm0 = _mm512_load_epi32(source);
   zmm1 = _mm512_load_epi32(source + source_stride);
   zmm2 = _mm512_load_epi32(source + source_stride*2);
@@ -48,7 +47,6 @@ void bf16_vnni_transpose_16x16(void* source_void, void* dest_void, int source_st
   zmm6 = _mm512_load_epi32(source + source_stride*6);
   zmm7 = _mm512_load_epi32(source + source_stride*7);
 
-  //transpose
   zmm0 = _mm512_shuffle_epi8(zmm0, abcdefgh_to_abefcdgh);
   zmm1 = _mm512_shuffle_epi8(zmm1, abcdefgh_to_abefcdgh);
   zmm2 = _mm512_shuffle_epi8(zmm2, abcdefgh_to_abefcdgh);
@@ -85,7 +83,6 @@ void bf16_vnni_transpose_16x16(void* source_void, void* dest_void, int source_st
   zmm6 = _mm512_shuffle_i32x4(zmm6, tmp1, 0xdd);
   zmm7 = _mm512_shuffle_i32x4(zmm7, tmp3, 0xdd);
 
-  //store
   _mm512_store_epi32(dest, zmm0);
   _mm512_store_epi32(dest + dest_stride, zmm1);
   _mm512_store_epi32(dest + dest_stride * 2, zmm2);
