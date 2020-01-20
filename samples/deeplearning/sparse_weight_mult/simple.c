@@ -132,15 +132,16 @@ int main(int argc, char* argv[]) {
   l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
     for ( l_i = 0; l_i < N; l_i+= 64 ) {
+#if defined(_OPENMP)
       #pragma omp parallel for private(l_j,l_k)
+#endif
       for ( l_k = 0; l_k < K; l_k++) {
-#if 0
-#if 1
+#if defined(__AVX512F__)
         __m512 c0 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i   ] );
         __m512 c1 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+16] );
         __m512 c2 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+32] );
         __m512 c3 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+48] );
-#else
+#elif defined(__AVX2__)
         __m256 c0 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i   ] );
         __m256 c1 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+ 8] );
         __m256 c2 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+16] );
@@ -150,21 +151,13 @@ int main(int argc, char* argv[]) {
         __m256 c6 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+48] );
         __m256 c7 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+56] );
 #endif
-#endif
         for ( l_j = 0; l_j < l_rowptr[l_k+1] - l_rowptr[l_k]; l_j++) {
-#if 1
-          unsigned int l_ii;
-          LIBXSMM_PRAGMA_SIMD
-          for ( l_ii = 0; l_ii < 64; l_ii++ ) {
-            l_c_asm_csr[(l_k*N)+l_i+l_ii] += l_a_sp_csr[l_rowptr[l_k]+l_j] * l_b[(l_colidx[l_rowptr[l_k]+l_j]*N)+l_i+l_ii];
-          }
-#else
-#if 1
+#if defined(__AVX512F__)
           c0 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i   ] ), c0 );
           c1 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+16] ), c1 );
           c2 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+32] ), c2 );
           c3 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+48] ), c3 );
-#else
+#elif defined(__AVX2__)
           c0 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i   ] ), c0 );
           c1 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+ 8] ), c1 );
           c2 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+16] ), c2 );
@@ -173,7 +166,12 @@ int main(int argc, char* argv[]) {
           c5 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+40] ), c5 );
           c6 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+48] ), c6 );
           c7 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+56] ), c7 );
-#endif
+#else
+          unsigned int l_ii;
+          LIBXSMM_PRAGMA_SIMD
+          for ( l_ii = 0; l_ii < 64; l_ii++ ) {
+            l_c_asm_csr[(l_k*N)+l_i+l_ii] += l_a_sp_csr[l_rowptr[l_k]+l_j] * l_b[(l_colidx[l_rowptr[l_k]+l_j]*N)+l_i+l_ii];
+          }
 #endif
 #if 0
           _mm_prefetch( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+ 64], _MM_HINT_T1 );
@@ -182,13 +180,12 @@ int main(int argc, char* argv[]) {
           _mm_prefetch( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+112], _MM_HINT_T1 );
 #endif
         }
-#if 0
-#if 1
+#if defined(__AVX512F__)
         _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i]   , c0 );
         _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+16], c1 );
         _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+32], c2 );
         _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+48], c3 );
-#else
+#elif defined(__AVX2__)
         _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i]   , c0 );
         _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+ 8], c1 );
         _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+16], c2 );
@@ -197,7 +194,6 @@ int main(int argc, char* argv[]) {
         _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+40], c5 );
         _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+48], c6 );
         _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+56], c7 );
-#endif
 #endif
       }
     }
