@@ -631,7 +631,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_GETRF      = LIBXSMM_KERNEL_KIND_GETRF,
   LIBXSMM_BUILD_KIND_TRMM       = LIBXSMM_KERNEL_KIND_TRMM,
   LIBXSMM_BUILD_KIND_TRSM       = LIBXSMM_KERNEL_KIND_TRSM,
-  LIBXSMM_BUILD_KIND_PGEMMRMAC  = LIBXSMM_KERNEL_KIND_INVALID,
+  LIBXSMM_BUILD_KIND_PGEMMRMAC  = LIBXSMM_KERNEL_UNREGISTERED,
   LIBXSMM_BUILD_KIND_PGEMMRMBC,
   LIBXSMM_BUILD_KIND_SRSOA,
   LIBXSMM_BUILD_KIND_SCSOA,
@@ -743,8 +743,15 @@ LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* val
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
-/** Attempts to receive information about JIT-generated code. */
-LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_pointer code, size_t* size);
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_xinfo {
+  /** Non-zero of kernel is registered. */
+  unsigned int registered;
+  /** Number of FLoating Point OPerationS (FLOPS). */
+  unsigned int nflops;
+} libxsmm_kernel_xinfo;
+
+/** Receive information about JIT-generated code. */
+LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_code_pointer code, const libxsmm_descriptor** desc, size_t* code_size);
 
 /** Calculates duration in seconds from given RTC ticks. */
 LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);

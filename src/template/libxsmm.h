@@ -85,17 +85,17 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void);
 /** Set the default prefetch strategy. */
 LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy);
 
-/** Determine the kind of JIT-kernel. */
-LIBXSMM_API int libxsmm_get_kernel_kind(const void* kernel, libxsmm_kernel_kind* kind);
+/** Receive information about JIT-generated code. */
+LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info* info);
 
 /** Get information about the matrix multiplication kernel. */
-LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mmkernel_info* info, size_t* code_size);
+LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mmkernel_info* info);
 
 /** Get information about the matrix transpose kernel. */
-LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transkernel_info* info, size_t* code_size);
+LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transkernel_info* info);
 
 /** Get information about the matrix copy kernel. */
-LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libxsmm_mcopykernel_info* info, size_t* code_size);
+LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libxsmm_mcopykernel_info* info);
 
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);

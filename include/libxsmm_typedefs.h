@@ -513,7 +513,7 @@ typedef enum libxsmm_kernel_kind {
   /** TRSM kernel kind */
   LIBXSMM_KERNEL_KIND_TRSM    = 6,
   /** Not a JIT kernel */
-  LIBXSMM_KERNEL_KIND_INVALID = 7
+  LIBXSMM_KERNEL_UNREGISTERED = 7
 } libxsmm_kernel_kind;
 
 /** Specialized function for matrix-copy (weak-typed). */
@@ -573,6 +573,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopykernel_info {
   /** Set of flags. */
   int flags;
 } libxsmm_mcopykernel_info;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_info {
+  libxsmm_kernel_kind kind;
+  /** Number of FLoating Point OPerationS (FLOPS). */
+  unsigned int nflops;
+  /** Code size (Bytes). */
+  size_t code_size;
+} libxsmm_kernel_info;
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info {

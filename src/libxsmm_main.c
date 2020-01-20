@@ -1024,7 +1024,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             case LIBXSMM_KERNEL_KIND_TRMM: {
               ++internal_statistic_num_trmm;
             } break;
-            default: if (LIBXSMM_KERNEL_KIND_INVALID <= registry_keys[i].kind) {
+            default: if (LIBXSMM_KERNEL_UNREGISTERED <= registry_keys[i].kind) {
               ++errors;
             }
             else {
@@ -1767,14 +1767,17 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   if  (0 == generated_code.last_error /* no error raised */
     && 0 != generated_code.code_size /*check (tcopy issue?)*/)
   {
+    libxsmm_kernel_xinfo extra;
     char* code_buffer = NULL;
     void* code_buffer_result = &code_buffer;
     LIBXSMM_ASSERT(generated_code.code_size <= LIBXSMM_CODE_MAXSIZE);
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
+    LIBXSMM_MEMZERO127(&extra);
+    extra.registered = regindex;
     /* attempt to create executable buffer */
     result = libxsmm_xmalloc((void**)code_buffer_result, generated_code.code_size, 0/*auto*/,
       /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
-      LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
+      LIBXSMM_MALLOC_FLAG_RWX, &extra, sizeof(extra));
     if (EXIT_SUCCESS == result) { /* check for success */
       LIBXSMM_ASSERT(NULL != code_buffer);
       /* copy temporary buffer into the prepared executable buffer */
@@ -1960,7 +1963,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
           INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.pmm); /* lock the registry entry */
           if (NULL == internal_registry[i].ptr_const) { /* double-check registry after acquiring the lock */
             libxsmm_build_request request; /* setup the code build request */
-            LIBXSMM_ASSERT(desc->kind < LIBXSMM_KERNEL_KIND_INVALID);
+            LIBXSMM_ASSERT(desc->kind < LIBXSMM_KERNEL_UNREGISTERED);
             request.kind = (libxsmm_build_kind)desc->kind;
             request.descriptor.ptr = &desc->gemm.desc;
 #if defined(NDEBUG)
@@ -2072,71 +2075,85 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 }
 
 
-LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_pointer code, size_t* size)
+LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_code_pointer code, const libxsmm_descriptor** desc, size_t* code_size)
 {
-  const libxsmm_descriptor* result;
+  const libxsmm_kernel_xinfo* result = NULL;
   int flags = LIBXSMM_MALLOC_FLAG_X;
-  void* extra = NULL;
-  if (NULL != size) *size = 0;
-  if (NULL != code.ptr_const && NULL != internal_registry && NULL != internal_registry_keys
-    && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, size, &flags, &extra)
-    && NULL != extra && *((const unsigned int*)extra) < (LIBXSMM_CAPACITY_REGISTRY)
+  if (NULL != code.ptr_const && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, code_size, &flags, (void**)&result) && NULL != result) {
+    if (NULL != desc) {
+      if (NULL != internal_registry && NULL != internal_registry_keys && result->registered < (LIBXSMM_CAPACITY_REGISTRY)
 #if defined(LIBXSMM_HASH_COLLISION)
-    && code.uval == (~LIBXSMM_HASH_COLLISION & internal_registry[*((const unsigned int*)extra)].uval)
+        && code.uval == (~LIBXSMM_HASH_COLLISION & internal_registry[result->registered].uval)
 #else
-    && code.ptr_const == internal_registry[*((const unsigned int*)extra)].ptr_const
+        && code.ptr_const == internal_registry[result->registered].ptr_const
 #endif
-    && internal_registry_keys[*((const unsigned int*)extra)].kind < LIBXSMM_KERNEL_KIND_INVALID)
-  {
-    result = internal_registry_keys + *((const unsigned int*)extra);
+        && internal_registry_keys[result->registered].kind < LIBXSMM_KERNEL_UNREGISTERED)
+      {
+        *desc = internal_registry_keys + result->registered;
+      }
+      else *desc = NULL;
+    }
   }
   else {
-    result = NULL;
+    LIBXSMM_ASSERT(NULL == result);
+    if (NULL != code_size) *code_size = 0;
+    if (NULL != desc) *desc = NULL;
   }
   return result;
 }
 
 
-LIBXSMM_API int libxsmm_get_kernel_kind(const void* kernel, libxsmm_kernel_kind* kind)
+LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info* info)
 {
-  const libxsmm_descriptor* info;
-  libxsmm_code_pointer code;
   int result;
+  const libxsmm_kernel_xinfo* xinfo;
+  libxsmm_kernel_info result_info;
+  const libxsmm_descriptor* desc;
+  libxsmm_code_pointer code;
   code.ptr_const = kernel;
-  info = libxsmm_get_kernel_info(code, NULL/*code_size*/);
-  if (NULL != info && NULL != kind) {
-    *kind = (libxsmm_kernel_kind)info->kind;
+  LIBXSMM_MEMZERO127(&result_info);
+  xinfo = libxsmm_get_kernel_xinfo(code, &desc, &result_info.code_size);
+  if (NULL != xinfo) {
+    result_info.kind = (NULL != desc ? ((libxsmm_kernel_kind)desc->kind) : LIBXSMM_KERNEL_UNREGISTERED);
+    result_info.nflops = xinfo->nflops;
+    LIBXSMM_ASSIGN127(info, &result_info);
     result = EXIT_SUCCESS;
   }
   else {
-    if (NULL != kind) *kind = LIBXSMM_KERNEL_KIND_INVALID;
-    result = EXIT_FAILURE;
+    LIBXSMM_ASSERT(NULL == desc);
+    if (NULL != info) {
+      LIBXSMM_ASSIGN127(info, &result_info);
+      result = EXIT_FAILURE;
+    }
+    else {
+      result = EXIT_SUCCESS;
+    }
   }
   return result;
 }
 
 
-LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mmkernel_info* info, size_t* code_size)
+LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mmkernel_info* info)
 {
   libxsmm_code_pointer code;
   static int error_once = 0;
   int result;
   code.xgemm = kernel;
-  if (NULL != info || NULL != code_size) {
-    const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(code, code_size);
-    if (NULL != kernel_info && LIBXSMM_KERNEL_KIND_MATMUL == kernel_info->kind) {
-      if (NULL != info) {
-        info->iprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(kernel_info->gemm.desc.datatype);
-        info->oprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_OUT(kernel_info->gemm.desc.datatype);
-        info->prefetch = (libxsmm_gemm_prefetch_type)kernel_info->gemm.desc.prefetch;
-        info->flags = kernel_info->gemm.desc.flags;
-        info->lda = kernel_info->gemm.desc.lda;
-        info->ldb = kernel_info->gemm.desc.ldb;
-        info->ldc = kernel_info->gemm.desc.ldc;
-        info->m = kernel_info->gemm.desc.m;
-        info->n = kernel_info->gemm.desc.n;
-        info->k = kernel_info->gemm.desc.k;
-      }
+  if (NULL != info) {
+    const libxsmm_descriptor* desc;
+    if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
+        NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == desc->kind)
+    {
+      info->iprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(desc->gemm.desc.datatype);
+      info->oprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_OUT(desc->gemm.desc.datatype);
+      info->prefetch = (libxsmm_gemm_prefetch_type)desc->gemm.desc.prefetch;
+      info->flags = desc->gemm.desc.flags;
+      info->lda = desc->gemm.desc.lda;
+      info->ldb = desc->gemm.desc.ldb;
+      info->ldc = desc->gemm.desc.ldc;
+      info->m = desc->gemm.desc.m;
+      info->n = desc->gemm.desc.n;
+      info->k = desc->gemm.desc.k;
       result = EXIT_SUCCESS;
     }
     else {
@@ -2165,21 +2182,21 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
 }
 
 
-LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transkernel_info* info, size_t* code_size)
+LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transkernel_info* info)
 {
   libxsmm_code_pointer code;
   static int error_once = 0;
   int result;
   code.xtrans = kernel;
-  if (NULL != info || 0 != code_size) {
-    const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(code, code_size);
-    if (NULL != kernel_info && LIBXSMM_KERNEL_KIND_TRANS == kernel_info->kind) {
-      if (NULL != info) {
-        info->typesize = kernel_info->trans.desc.typesize;
-        info->ldo = kernel_info->trans.desc.ldo;
-        info->m = kernel_info->trans.desc.m;
-        info->n = kernel_info->trans.desc.n;
-      }
+  if (NULL != info) {
+    const libxsmm_descriptor* desc;
+    if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
+        NULL != desc && LIBXSMM_KERNEL_KIND_TRANS == desc->kind)
+    {
+      info->typesize = desc->trans.desc.typesize;
+      info->ldo = desc->trans.desc.ldo;
+      info->m = desc->trans.desc.m;
+      info->n = desc->trans.desc.n;
       result = EXIT_SUCCESS;
     }
     else {
@@ -2203,24 +2220,24 @@ LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libx
 }
 
 
-LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libxsmm_mcopykernel_info* info, size_t* code_size)
+LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libxsmm_mcopykernel_info* info)
 {
   libxsmm_code_pointer code;
   static int error_once = 0;
   int result;
   code.xmatcopy = kernel;
-  if (NULL != info || 0 != code_size) {
-    const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(code, code_size);
-    if (NULL != kernel_info && LIBXSMM_KERNEL_KIND_MCOPY == kernel_info->kind) {
-      if (NULL != info) {
-        info->typesize = kernel_info->mcopy.desc.typesize;
-        info->prefetch = kernel_info->mcopy.desc.prefetch;
-        info->flags = kernel_info->mcopy.desc.flags;
-        info->ldi = kernel_info->mcopy.desc.ldi;
-        info->ldo = kernel_info->mcopy.desc.ldo;
-        info->m = kernel_info->mcopy.desc.m;
-        info->n = kernel_info->mcopy.desc.n;
-      }
+  if (NULL != info) {
+    const libxsmm_descriptor* desc;
+    if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
+        NULL != desc && LIBXSMM_KERNEL_KIND_MCOPY == desc->kind)
+    {
+      info->typesize = desc->mcopy.desc.typesize;
+      info->prefetch = desc->mcopy.desc.prefetch;
+      info->flags = desc->mcopy.desc.flags;
+      info->ldi = desc->mcopy.desc.ldi;
+      info->ldo = desc->mcopy.desc.ldo;
+      info->m = desc->mcopy.desc.m;
+      info->n = desc->mcopy.desc.n;
       result = EXIT_SUCCESS;
     }
     else {
@@ -3773,10 +3790,10 @@ LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
 {
   if (NULL != jit_kernel) {
     static int error_once = 0;
-    void* extra = NULL;
+    const libxsmm_kernel_xinfo* extra = NULL;
     LIBXSMM_INIT
-    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_kernel, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {
-      const unsigned int regindex = *((const unsigned int*)extra);
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_kernel, NULL/*size*/, NULL/*flags*/, (void**)&extra) && NULL != extra) {
+      const unsigned int regindex = extra->registered;
       if ((LIBXSMM_CAPACITY_REGISTRY) <= regindex) {
         libxsmm_xfree(jit_kernel, 0/*no check*/);
       }
