@@ -180,7 +180,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 void bf16_transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col, int ld_in, int ld_out)
 {
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
-  __m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;
+  __m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf=LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32();
   __m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;
   const int in_width=ld_in, out_width=ld_out;
   const __m512i idx_lo         = _mm512_set_epi64(13, 12, 5, 4, 9, 8, 1, 0);
@@ -449,7 +449,7 @@ void bf16_transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 void bf16_transpose(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int M, int N, int ld_in, int ld_out){
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
-  int i, j, _j;
+  int i, j;
   int full16_chunks = N/16;
   int remainder_cols = N%16;
   int _N = N - remainder_cols;
@@ -485,7 +485,7 @@ void bf16_vnni_reformat(libxsmm_bfloat16 *_in, libxsmm_bfloat16 *_out, int M, in
   const __m512i idx_hi =  _mm512_or_epi32(selector, offsets_hi);
   const __m512i zero_reg = _mm512_setzero_si512();
   __m512i n0, n1, out_lo, out_hi;
-
+  LIBXSMM_UNUSED(ld_out);
   for (n_pair = 0; n_pair < n_full_pairs; n_pair++) {
     for (m = 0; m < M; m+=32) {
       n0 = _mm512_loadu_si512((libxsmm_bfloat16*)in+m);
