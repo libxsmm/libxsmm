@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  /* create B, csr */
+  /* create A, csr */
   l_rowptr   = (unsigned int*) libxsmm_aligned_malloc( (K+1)*sizeof(unsigned int), 64 );
   l_colidx   = (unsigned int*) libxsmm_aligned_malloc( nnz*sizeof(unsigned int),   64 );
   l_a_sp_csr = (float*       ) libxsmm_aligned_malloc( nnz*sizeof(float),          64 );
@@ -116,9 +116,10 @@ int main(int argc, char* argv[]) {
   l_start = libxsmm_timer_tick();
 #if 1
   for ( l_n = 0; l_n < REPS; l_n++) {
-    for ( l_i = 0; l_i < NB; l_i++) {
-      for ( l_j = 0; l_j < K; l_j++) {
-        for ( l_jj = 0; l_jj < C; l_jj++) {
+    #pragma omp parallel for private(l_j, l_jj, l_i, l_k)
+    for ( l_j = 0; l_j < K; l_j++) {
+      for ( l_jj = 0; l_jj < C; l_jj++) {
+        for ( l_i = 0; l_i < NB; l_i++) {
           LIBXSMM_PRAGMA_SIMD
           for (l_k = 0; l_k < nb; l_k++) {
             LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_j, l_i, l_k, NB, nb)
@@ -135,15 +136,67 @@ int main(int argc, char* argv[]) {
   printf("%fs for dense\n", l_total);
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
-  l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float),
-    K, NB, C, 0, NB, NB, alpha, beta, flags, prefetch);
-
   /* sparse routine */
-  mykernel_csr = libxsmm_create_xcsr_soa(l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_a_sp_csr).smm;
-
   l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
-    mykernel_csr( l_a_sp_csr, l_b, l_c_asm_csr );
+    for ( l_i = 0; l_i < N; l_i+= 64 ) {
+      #pragma omp parallel for private(l_j,l_k)
+      for ( l_k = 0; l_k < K; l_k++) {
+#if 1
+        __m512 c0 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i   ] );
+        __m512 c1 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+16] );
+        __m512 c2 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+32] );
+        __m512 c3 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+48] );
+#else
+        __m256 c0 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i   ] );
+        __m256 c1 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+ 8] );
+        __m256 c2 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+16] );
+        __m256 c3 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+24] );
+        __m256 c4 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+32] );
+        __m256 c5 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+40] );
+        __m256 c6 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+48] );
+        __m256 c7 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+56] );
+#endif
+        for ( l_j = 0; l_j < l_rowptr[l_k+1] - l_rowptr[l_k]; l_j++) {
+#if 1
+          c0 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i   ] ), c0 );
+          c1 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+16] ), c1 );
+          c2 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+32] ), c2 );
+          c3 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+48] ), c3 );
+#else
+          c0 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i   ] ), c0 );
+          c1 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+ 8] ), c1 );
+          c2 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+16] ), c2 );
+          c3 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+24] ), c3 );
+          c4 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+32] ), c4 );
+          c5 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+40] ), c5 );
+          c6 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+48] ), c6 );
+          c7 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+56] ), c7 );
+#endif
+#if 0
+          _mm_prefetch( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+ 64], _MM_HINT_T1 );
+          _mm_prefetch( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+ 80], _MM_HINT_T1 );
+          _mm_prefetch( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+ 96], _MM_HINT_T1 );
+          _mm_prefetch( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+112], _MM_HINT_T1 );
+#endif
+        }
+#if 1
+        _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i]   , c0 );
+        _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+16], c1 );
+        _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+32], c2 );
+        _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+48], c3 );
+#else
+        _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i]   , c0 );
+        _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+ 8], c1 );
+        _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+16], c2 );
+        _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+24], c3 );
+        _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+32], c4 );
+        _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+40], c5 );
+        _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+48], c6 );
+        _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+56], c7 );
+#endif
+      }
+    }
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);

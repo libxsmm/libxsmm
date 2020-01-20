@@ -13,11 +13,11 @@
 #include <libxsmm.h>
 
 int main(int argc, char* argv[]) {
-  int N =             ( argc == 6 ) ? atoi(argv[1]) : 64;
-  int C =             ( argc == 6 ) ? atoi(argv[2]) : 512;
-  int K =             ( argc == 6 ) ? atoi(argv[3]) : 32;
-  unsigned int SPAR = ( argc == 6 ) ? atoi(argv[4]) : 90;
-  unsigned int REPS = ( argc == 6 ) ? atoi(argv[5]) : 1;
+  int N =              ( argc == 6 ) ? atoi(argv[1]) : 64;
+  int C =              ( argc == 6 ) ? atoi(argv[2]) : 512;
+  int K =              ( argc == 6 ) ? atoi(argv[3]) : 32;
+  double sparse_frac = ( argc == 6 ) ? atof(argv[4]) : 0.90;
+  unsigned int REPS  = ( argc == 6 ) ? atoi(argv[5]) : 1;
 
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -54,7 +54,6 @@ int main(int argc, char* argv[]) {
   double l_total;
   int NB, nb;
   int nnz = 0;
-  double sparse_frac = ((double)SPAR/(double)100.0);
 
   if (argc != 6 && argc != 1) {
     fprintf( stderr, "arguments failure\n" );
