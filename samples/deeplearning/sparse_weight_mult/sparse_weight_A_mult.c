@@ -13,9 +13,9 @@
 #include <libxsmm.h>
 
 int main(int argc, char* argv[]) {
-  int N =              ( argc == 6 ) ? atoi(argv[1]) : 64;
-  int C =              ( argc == 6 ) ? atoi(argv[2]) : 512;
-  int K =              ( argc == 6 ) ? atoi(argv[3]) : 32;
+  unsigned int N =     ( argc == 6 ) ? atoi(argv[1]) : 64;
+  unsigned int C =     ( argc == 6 ) ? atoi(argv[2]) : 512;
+  unsigned int K =     ( argc == 6 ) ? atoi(argv[3]) : 32;
   double sparse_frac = ( argc == 6 ) ? atof(argv[4]) : 0.90;
   unsigned int REPS  = ( argc == 6 ) ? atoi(argv[5]) : 1;
 
@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
   float* l_c_asm_csr = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float l_max_error = 0.0;
   unsigned int l_k, l_n;
-  int l_i, l_j, l_jj;
+  unsigned int l_i, l_j, l_jj;
 
   LIBXSMM_VLA_DECL(2, float, l_p_a_de, l_a_de, K);
   LIBXSMM_VLA_DECL(3, float, l_p_b, l_b, N/16, 16);
@@ -46,8 +46,8 @@ int main(int argc, char* argv[]) {
 
   unsigned long long l_start, l_end;
   double l_total;
-  int NB, nb;
-  int nnz = 0;
+  unsigned int NB, nb;
+  unsigned int nnz = 0;
 
   if (argc != 6 && argc != 1) {
     fprintf( stderr, "arguments failure\n" );

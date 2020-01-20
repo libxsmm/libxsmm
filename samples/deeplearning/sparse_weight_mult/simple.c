@@ -13,15 +13,11 @@
 #include <libxsmm.h>
 
 int main(int argc, char* argv[]) {
-  int N =              ( argc == 6 ) ? atoi(argv[1]) : 64;
-  int C =              ( argc == 6 ) ? atoi(argv[2]) : 512;
-  int K =              ( argc == 6 ) ? atoi(argv[3]) : 32;
+  unsigned int N =     ( argc == 6 ) ? atoi(argv[1]) : 64;
+  unsigned int C =     ( argc == 6 ) ? atoi(argv[2]) : 512;
+  unsigned int K =     ( argc == 6 ) ? atoi(argv[3]) : 32;
   double sparse_frac = ( argc == 6 ) ? atof(argv[4]) : 0.90;
   unsigned int REPS  = ( argc == 6 ) ? atoi(argv[5]) : 1;
-
-  const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const float alpha = 1, beta = 1;
 
   unsigned int* l_rowptr = NULL;
   unsigned int* l_colidx = NULL;
@@ -33,29 +29,25 @@ int main(int argc, char* argv[]) {
   float* l_c_asm_csr = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float l_max_error = 0.0;
   unsigned int l_k, l_n;
-  int l_i, l_j, l_jj;
+  unsigned int l_i, l_j, l_jj;
 
   LIBXSMM_VLA_DECL(2, float, l_p_a_de, l_a_de, K);
   LIBXSMM_VLA_DECL(3, float, l_p_b, l_b, N/16, 16);
   LIBXSMM_VLA_DECL(3, float, l_p_c_asm_csr, l_c_asm_csr, N/16, 16);
   LIBXSMM_VLA_DECL(3, float, l_p_c_gold, l_c_gold, N/16, 16);
 
-  libxsmm_descriptor_blob l_xgemm_blob;
-  const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
-  LIBXSMM_MMFUNCTION_TYPE(float) mykernel_csr = NULL;
-
   unsigned long long l_start, l_end;
   double l_total;
-  int NB, nb;
-  int nnz = 0;
+  unsigned int NB, nb;
+  unsigned int nnz = 0;
 
   if (argc != 6 && argc != 1) {
     fprintf( stderr, "arguments failure\n" );
     return -1;
   }
 
-  if ( N % 16 != 0 ) {
-    fprintf( stderr, "N needs to be disable by 16\n" );
+  if ( N % 64 != 0 ) {
+    fprintf( stderr, "N needs to be disable by 64\n" );
     return -1;
   }
 
@@ -142,6 +134,7 @@ int main(int argc, char* argv[]) {
     for ( l_i = 0; l_i < N; l_i+= 64 ) {
       #pragma omp parallel for private(l_j,l_k)
       for ( l_k = 0; l_k < K; l_k++) {
+#if 0
 #if 1
         __m512 c0 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i   ] );
         __m512 c1 = _mm512_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+16] );
@@ -157,7 +150,15 @@ int main(int argc, char* argv[]) {
         __m256 c6 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+48] );
         __m256 c7 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+56] );
 #endif
+#endif
         for ( l_j = 0; l_j < l_rowptr[l_k+1] - l_rowptr[l_k]; l_j++) {
+#if 1
+          unsigned int l_ii;
+          LIBXSMM_PRAGMA_SIMD
+          for ( l_ii = 0; l_ii < 64; l_ii++ ) {
+            l_c_asm_csr[(l_k*N)+l_i+l_ii] += l_a_sp_csr[l_rowptr[l_k]+l_j] * l_b[(l_colidx[l_rowptr[l_k]+l_j]*N)+l_i+l_ii];
+          }
+#else
 #if 1
           c0 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i   ] ), c0 );
           c1 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+16] ), c1 );
@@ -173,6 +174,7 @@ int main(int argc, char* argv[]) {
           c6 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+48] ), c6 );
           c7 = _mm256_fmadd_ps( _mm256_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm256_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+56] ), c7 );
 #endif
+#endif
 #if 0
           _mm_prefetch( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+ 64], _MM_HINT_T1 );
           _mm_prefetch( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+ 80], _MM_HINT_T1 );
@@ -180,6 +182,7 @@ int main(int argc, char* argv[]) {
           _mm_prefetch( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+112], _MM_HINT_T1 );
 #endif
         }
+#if 0
 #if 1
         _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i]   , c0 );
         _mm512_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+16], c1 );
@@ -194,6 +197,7 @@ int main(int argc, char* argv[]) {
         _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+40], c5 );
         _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+48], c6 );
         _mm256_storeu_ps( &l_c_asm_csr[(l_k*N)+l_i+56], c7 );
+#endif
 #endif
       }
     }
