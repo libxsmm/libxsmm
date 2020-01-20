@@ -137,7 +137,8 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16(libxsmm_
     libxsmm_bmmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.bmro;
 #endif
 #ifdef STRIDE_BRGEMM
-    libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.bmrs;
+    libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.bsmrs;
+    libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_zerobeta = handle->gemm_fwd2.xgemm.bmrs;
 #endif
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
   } else {
