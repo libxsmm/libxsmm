@@ -9,6 +9,43 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #define _mm512_cvt2_fp32_bf16(A, B) LIBXSMM_INTRINSICS_MM512_CVT2_FP32_BF16(A, B)
+#if defined(LIBXSMM_DNN_FC_UPD_AVX512_CPX)
+#define LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(in, out, length) do { \
+  unsigned int full_chunks = length / 32; \
+  unsigned int remainder = length % 32; \
+  int __i = 0; \
+  if (remainder == 0) { \
+    for ( __i = 0; __i < length; __i+= 32) { \
+      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i))); \
+    } \
+  } else { \
+    unsigned int chunk; \
+    for ( chunk = 0; chunk < full_chunks; chunk++) { \
+      __i = chunk * 32; \
+      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i))); \
+    } \
+    libxsmm_rne_convert_fp32_bf16((float*)in+32*full_chunks, (element_output_type*)out+32*full_chunks, remainder); \
+  } \
+} while(0)
+#else
+#define LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(in, out, length) do { \
+  unsigned int full_chunks = length / 16; \
+  unsigned int remainder = length % 16; \
+  int __i = 0; \
+  if (remainder == 0) { \
+    for ( __i = 0; __i < length; __i+= 16) { \
+      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i) ),16)) ); \
+    } \
+  } else { \
+    unsigned int chunk; \
+    for ( chunk = 0; chunk < full_chunks; chunk++) { \
+      __i = chunk * 16; \
+      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i) ),16)) ); \
+    } \
+    libxsmm_rne_convert_fp32_bf16((float*)in+16*full_chunks, (element_output_type*)out+16*full_chunks, remainder); \
+  } \
+} while(0)
+#endif
 
 /* size variables, all const */
 const int bn = handle->bn;
@@ -33,7 +70,7 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-const int BF = 1;//((handle->desc.N == 2048) && (nBlocksMB % 4 == 0)) ? 4 : 1;
+int BF = 1;//((handle->desc.N == 2048) && (nBlocksMB % 4 == 0)) ? 4 : 1;
 
 /* loop variables */
 int mb1 = 0, ifm1ofm1 = 0, ofm1 = 0, ifm1 = 0, ofm2 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ofm1 = 0, mb1ifm1 = 0, mb2 = 0, jc = 0, jk = 0;
@@ -66,6 +103,12 @@ const int tr_inp_chunksize = (tr_inp_work % handle->desc.threads == 0) ? (tr_inp
 const int tr_inp_thr_begin = (ltid * tr_inp_chunksize < tr_inp_work) ? (ltid * tr_inp_chunksize) : tr_inp_work;
 const int tr_inp_thr_end = ((ltid + 1) * tr_inp_chunksize < tr_inp_work) ? ((ltid + 1) * tr_inp_chunksize) : tr_inp_work;
 
+/* These are used for the vnni reformatting of the f32 output  */
+__m256i c0, c1;
+__m512 a01, b01;  
+__m512i c01 = LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32();
+const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
+
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
@@ -92,6 +135,7 @@ for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
+BF = 1;
 
 if (BF == 1) {
   for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
@@ -102,16 +146,25 @@ if (BF == 1) {
     batchreduce_kernel_zerobeta(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn/2, bk, 2), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc, ofm2*bbk, bk), &blocks);
     /* TODO: Make this vnni reformating in the kernel...  */
     /* Copy result back to vnni format */
-    for (ii = 0; ii < bbc; ii++) {
-      for (jj = 0; jj < bbk; jj++) {
-        LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/2, ofm2*bbk+jj, (ifm2*bbc+ii)%2, nBlocksIFm, bc/2, bk, 2) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
+    if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
+      for (jc = 0; jc < bbc; jc+=2) {
+        for (jk = 0; jk < bbk; jk+=16) {
+          c1 = _mm256_load_si256((const union __m256i *)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc+1, ofm2*bbk+jk, bk));
+          c0 = _mm256_load_si256((const union __m256i *)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
+          c01 = _mm512_inserti64x4(c01, c0, 0);
+          c01 = _mm512_inserti64x4(c01, c1, 1);
+          _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/2, ofm2*bbk+jk, 0, nBlocksIFm, bc/2, bk, 2), _mm512_permutexvar_epi16(perm_index, c01));
+        }
+      }
+    } else {
+      for (ii = 0; ii < bbc; ii++) {
+        for (jj = 0; jj < bbk; jj++) {
+          LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/2, ofm2*bbk+jj, (ifm2*bbc+ii)%2, nBlocksIFm, bc/2, bk, 2) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
+        }
       }
     }
   }
-} else {
-  __m512 a01, b01;
-  __m512i c01;
-  const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
+} else {  
   for (bfn = 0; bfn < BF; bfn++) {
     for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
       ofm1 = ifm1ofm1 / Cck_work;
@@ -127,14 +180,25 @@ if (BF == 1) {
         }
       }
       batchreduce_kernel(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn/2, bk, 2), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
-      /* Downconvert result to BF16 and vnno format */
+      /* Downconvert result to BF16 and vnni format */
       if (bfn == BF-1) {
-        for (jc = 0; jc < bbc; jc+=2) {
-          for (jk = 0; jk < bbk; jk+=16) {
-            a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc+1, ofm2*bbk+jk, nBlocksIFm, bc, bk));
-            b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk+jk, nBlocksIFm, bc, bk));
-            c01 = _mm512_cvt2_fp32_bf16(a01, b01);
-            _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/2, ofm2*bbk+jk, 0, nBlocksIFm, bc/2, bk, 2), _mm512_permutexvar_epi16(perm_index, c01));
+        if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
+          for (jc = 0; jc < bbc; jc+=2) {
+            for (jk = 0; jk < bbk; jk+=16) {
+              a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc+1, ofm2*bbk+jk, nBlocksIFm, bc, bk));
+              b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk+jk, nBlocksIFm, bc, bk));
+              c01 = _mm512_cvt2_fp32_bf16(a01, b01);
+              _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/2, ofm2*bbk+jk, 0, nBlocksIFm, bc/2, bk, 2), _mm512_permutexvar_epi16(perm_index, c01));
+            }
+          }
+        } else {
+          for (jc = 0; jc < bbc; jc++) {
+            LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk, nBlocksIFm, bc, bk), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk, bk), bbk);
+          }
+          for (ii = 0; ii < bbc; ii++) {
+            for (jj = 0; jj < bbk; jj++) {
+              LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/2, ofm2*bbk+jj, (ifm2*bbc+ii)%2, nBlocksIFm, bc/2, bk, 2) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
+            }
           }
         }
       }
@@ -145,3 +209,5 @@ if (BF == 1) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 #undef _mm512_cvt2_fp32_bf16
+#undef LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16
+
