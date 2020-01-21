@@ -54,7 +54,6 @@ int main(int argc, char* argv[])
   int pad_w_in = 0;       /* padding mode */
   int pad_h_out = 0;      /* padding mode */
   int pad_w_out = 0;      /* padding mode */
-  int norm_type = 0;      /* 0: full batchnorm, 1: batch scaling only */
   int fuse_type = 0;      /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'L';

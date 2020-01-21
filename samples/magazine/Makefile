@@ -11,7 +11,7 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
+IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include"
 
 BLAS = 1
 SYM = 1
@@ -66,7 +66,7 @@ endif
 
 ifneq (,$(BLAZEROOT))
   DFLAGS += -D__BLAZE
-  IFLAGS += -I$(BLAZEROOT)
+  IFLAGS += -I"$(BLAZEROOT)"
   BLAZE ?= 1
   DFLAGS += -DBLAZE_USE_SHARED_MEMORY_PARALLELIZATION=$(shell echo "$$(($(BLAZE)-1))")
 else
@@ -89,7 +89,7 @@ endif
 
 ifneq (,$(EIGENROOT))
   DFLAGS += -D__EIGEN
-  IFLAGS += -I$(EIGENROOT)
+  IFLAGS += -I"$(EIGENROOT)"
   EIGEN ?= 1
   #ifneq (0,$(MKL))
     #DFLAGS += -DEIGEN_USE_MKL_ALL

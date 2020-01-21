@@ -11,7 +11,7 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = -DLIBXSMM_GEMM_CONST
-IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include -I$(DEPDIR)/src
+IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include" -I"$(DEPDIR)/src"
 
 BLAS ?= 1
 OMP ?= 1
@@ -25,22 +25,22 @@ OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
            $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
            $(DEPDIR)/include/libxsmm_source.h
-CPPSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cpp 2>/dev/null | tr "\n" " ")
-CPPSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cpp 2>/dev/null | tr "\n" " ")
-CXXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cxx 2>/dev/null | tr "\n" " ")
-CXXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cxx 2>/dev/null | tr "\n" " ")
-CCXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cc  2>/dev/null | tr "\n" " ")
-CCXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cc  2>/dev/null | tr "\n" " ")
-CSOURCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.c   2>/dev/null | tr "\n" " ")
-CSOURCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.c   2>/dev/null | tr "\n" " ")
-FXXSRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f   2>/dev/null | tr "\n" " ")
-FXXSRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f   2>/dev/null | tr "\n" " ")
-F77SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.F   2>/dev/null | tr "\n" " ")
-F77SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.F   2>/dev/null | tr "\n" " ")
-F90SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f90 2>/dev/null | tr "\n" " ") \
-           $(shell grep -L $(FMAIN) $(SRCDIR)/*.F90 2>/dev/null | tr "\n" " ")
-F90SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f90 2>/dev/null | tr "\n" " ") \
-           $(shell grep -l $(FMAIN) $(SRCDIR)/*.F90 2>/dev/null | tr "\n" " ")
+CPPSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cpp 2>/dev/null | tr -s "\n" " ")
+CPPSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cpp 2>/dev/null | tr -s "\n" " ")
+CXXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cxx 2>/dev/null | tr -s "\n" " ")
+CXXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cxx 2>/dev/null | tr -s "\n" " ")
+CCXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cc  2>/dev/null | tr -s "\n" " ")
+CCXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cc  2>/dev/null | tr -s "\n" " ")
+CSOURCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.c   2>/dev/null | tr -s "\n" " ")
+CSOURCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.c   2>/dev/null | tr -s "\n" " ")
+FXXSRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f   2>/dev/null | tr -s "\n" " ")
+FXXSRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f   2>/dev/null | tr -s "\n" " ")
+F77SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.F   2>/dev/null | tr -s "\n" " ")
+F77SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.F   2>/dev/null | tr -s "\n" " ")
+F90SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f90 2>/dev/null | tr -s "\n" " ") \
+           $(shell grep -L $(FMAIN) $(SRCDIR)/*.F90 2>/dev/null | tr -s "\n" " ")
+F90SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f90 2>/dev/null | tr -s "\n" " ") \
+           $(shell grep -l $(FMAIN) $(SRCDIR)/*.F90 2>/dev/null | tr -s "\n" " ")
 MODULES := $(addsuffix    .mod,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS))) \
            $(addsuffix .modmic,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS)))
 OBJECTS := $(call objname,$(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS))

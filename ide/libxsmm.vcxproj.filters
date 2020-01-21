@@ -108,7 +108,7 @@
     <ClInclude Include="..\src\generator_gemm_avx2_microkernel.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.h">
+    <ClInclude Include="..\src\generator_gemm_avx512_microkernel.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_gemm_common.h">
@@ -236,12 +236,6 @@
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_rng.h">
       <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_avx512_fsdbcst.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.h">
-      <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_diff.h">
       <Filter>src</Filter>
@@ -434,7 +428,7 @@
     <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.c">
+    <ClCompile Include="..\src\generator_gemm_avx512_microkernel.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_common.c">
@@ -637,12 +631,6 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_ck_generic_bf16.tpl.c">
       <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_avx512_fsdbcst.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.c">
-      <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_gru_fwd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>

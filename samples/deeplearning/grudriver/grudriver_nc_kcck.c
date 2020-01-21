@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   double l_total = 0.0;
   double flops = 0.0;
   const double tflops = 12; /* transcendental flops */
-  int j, l, p;
+  int j;
 
   libxsmm_dnn_rnncell_desc grucell_desc;
   libxsmm_dnn_rnncell* libxsmm_handle;

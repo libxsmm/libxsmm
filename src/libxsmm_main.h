@@ -29,7 +29,7 @@
 # endif
 #endif
 /* determines if code relies on LIBXSMM_NTHREADS_MAX */
-#if !defined(LIBXSMM_NTHREADS_USE) && 1
+#if !defined(LIBXSMM_NTHREADS_USE) && 0
 # define LIBXSMM_NTHREADS_USE
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
@@ -637,7 +637,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_GETRF      = LIBXSMM_KERNEL_KIND_GETRF,
   LIBXSMM_BUILD_KIND_TRMM       = LIBXSMM_KERNEL_KIND_TRMM,
   LIBXSMM_BUILD_KIND_TRSM       = LIBXSMM_KERNEL_KIND_TRSM,
-  LIBXSMM_BUILD_KIND_PGEMMRMAC  = LIBXSMM_KERNEL_KIND_INVALID,
+  LIBXSMM_BUILD_KIND_PGEMMRMAC  = LIBXSMM_KERNEL_UNREGISTERED,
   LIBXSMM_BUILD_KIND_PGEMMRMBC,
   LIBXSMM_BUILD_KIND_SRSOA,
   LIBXSMM_BUILD_KIND_SCSOA,
@@ -749,11 +749,22 @@ LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* val
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
-/** Attempts to receive information about JIT-generated code. */
-LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_pointer code, size_t* size);
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_xinfo {
+  /** Non-zero of kernel is registered. */
+  unsigned int registered;
+  /** Number of FLoating Point OPerationS (FLOPS). */
+  unsigned int nflops;
+} libxsmm_kernel_xinfo;
 
-/** Returns the current tick of a (monotonic) platform-specific counter; not necessarily CPU cycles. */
-LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(int* tsc);
+/** Receive information about JIT-generated code. */
+LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_code_pointer code, const libxsmm_descriptor** desc, size_t* code_size);
+
+/** Calculates duration in seconds from given RTC ticks. */
+LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
+/** Returns the current tick of a (monotonic) platform-specific real-time clock. */
+LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
+/** Returns the current tick of a (monotonic) platform-specific counter. */
+LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_tsc(void);
 
 LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_memory_finalize(void);
@@ -784,11 +795,11 @@ LIBXSMM_APIVAR(const void* libxsmm_scratch_allocator_context);
 LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
-/** Counts the number of attempts to create an SPMDM-handle */
+/** Counts the number of attempts to create an SPMDM-handle. */
 LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
-/** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
+/** Number of seconds per RDTSC-cycle (zero or negative if RDTSC is not constant/available). */
 LIBXSMM_APIVAR(double libxsmm_timer_scale);
-/** Security-enhanced environment */
+/** Security-enhanced environment. */
 LIBXSMM_APIVAR(int libxsmm_se);
 
 #endif /*LIBXSMM_MAIN_H*/
