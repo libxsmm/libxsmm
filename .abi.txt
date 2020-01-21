@@ -10,11 +10,13 @@ libxsmm_bigemm_descriptor_init
 libxsmm_blas_dgemm0
 libxsmm_blas_dgemm1
 libxsmm_blas_dgemm2
+libxsmm_blas_dgemm3
 libxsmm_blas_dgemm_
 libxsmm_blas_error
 libxsmm_blas_sgemm0
 libxsmm_blas_sgemm1
 libxsmm_blas_sgemm2
+libxsmm_blas_sgemm3
 libxsmm_blas_sgemm_
 libxsmm_blas_xgemm
 libxsmm_blas_xgemm_
@@ -63,6 +65,7 @@ libxsmm_dgemm
 libxsmm_dgemm0
 libxsmm_dgemm1
 libxsmm_dgemm2
+libxsmm_dgemm3
 libxsmm_dgemm_
 libxsmm_dgemm_batch
 libxsmm_dgemm_batch_omp
@@ -402,6 +405,7 @@ libxsmm_sgemm
 libxsmm_sgemm0
 libxsmm_sgemm1
 libxsmm_sgemm2
+libxsmm_sgemm3
 libxsmm_sgemm_
 libxsmm_sgemm_batch
 libxsmm_sgemm_batch_omp
@@ -488,6 +492,7 @@ libxsmm_wigemm
 libxsmm_wigemm0
 libxsmm_wigemm1
 libxsmm_wigemm2
+libxsmm_wigemm3
 libxsmm_wigemm_
 libxsmm_wigemm_descriptor_init
 libxsmm_wimmavailable
