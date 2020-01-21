@@ -426,10 +426,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kloop( libxs
   unsigned int l_k_blocking = 0;
   unsigned int l_k_threshold = 0;
 
-  /* calculate m_blocking such that we chosse the right AVX512 kernel */
+  /* calculate m_blocking such that we choose the right AVX512 kernel */
   unsigned int l_m_vector = ( i_m_blocking % i_micro_kernel_config->vector_length  == 0 ) ? i_m_blocking/i_micro_kernel_config->vector_length : (i_m_blocking/i_micro_kernel_config->vector_length)+1;
 
-  /* in case of 1d blocking and  KNL/KNM we unroll agressively */
+  /* in case of 1d blocking and KNL/KNM we unroll aggressively */
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_AVX512_KNM ) && ( l_m_vector == 1 ) ) {
     l_k_blocking = 16;
     l_k_threshold = 47;
