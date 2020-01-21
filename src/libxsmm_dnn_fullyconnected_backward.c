@@ -249,6 +249,12 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_bf16_bf16(libxsmm_
 #endif
   return status;
 }
+#else
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  return libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_bf16_bf16_emu( handle, start_thread, tid );
+}
 #endif
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid)
