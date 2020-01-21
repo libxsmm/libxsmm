@@ -24,7 +24,6 @@ int main(int argc, char* argv[]) {
   float* l_a_de = (float*)libxsmm_aligned_malloc(sizeof(float) * C * K, 64);
   float* l_a_sp_csr = NULL;
   float* l_b = (float*)libxsmm_aligned_malloc(sizeof(float) * N * C, 64);
-  float* l_c = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float* l_c_gold = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float* l_c_asm_csr = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float l_max_error = 0.0;

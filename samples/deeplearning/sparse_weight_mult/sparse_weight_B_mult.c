@@ -31,7 +31,6 @@ int main(int argc, char* argv[]) {
   float* l_b_sp_csc = NULL;
   float* l_b_sp_csr = NULL;
   float* l_a = (float*)libxsmm_aligned_malloc(sizeof(float) * N * C, 64);
-  float* l_c = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float* l_c_gold = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float* l_c_asm_csc = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float* l_c_asm_csr = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
