@@ -53,7 +53,7 @@ const int nBlocksOFm = handle->desc.K / handle->bk;
 const int nBlocksMB  = handle->desc.N / handle->bn;
 const int bn = handle->bn;
 const int bk = handle->bk;
-const int bc = handle->bc;
+/* const int bc = handle->bc;*/
 int use_2d_blocking = (handle->desc.threads == 28) ? 1 : 0;
 
 /* computing first logical thread */
