@@ -4265,6 +4265,7 @@ void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code
     buf[i++] = (unsigned char)(0x50 + l_reg0);
 
     io_generated_code->code_size = i;
+    io_generated_code->sf_size += 8;
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -4279,6 +4280,7 @@ void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    io_generated_code->sf_size += 8;
   }
 }
 
@@ -4314,6 +4316,7 @@ void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
     buf[i++] = (unsigned char)(0x50 + l_reg0 + 8);
 
     io_generated_code->code_size = i;
+    io_generated_code->sf_size -= 8;
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -4328,6 +4331,7 @@ void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    io_generated_code->sf_size -= 8;
   }
 }
 
@@ -4851,6 +4855,15 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
 
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_load_arg_to_reg( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_arg_number,
+                                              const unsigned int      i_gp_reg_number ) {
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF,
+                                   0, io_generated_code->sf_size+8+(8*i_arg_number), i_gp_reg_number, 0 );
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                           unsigned int                  i_prefetch) {
@@ -4889,83 +4902,31 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
     }
 
     /* push callee save registers */
-    if ( io_generated_code->arch <= LIBXSMM_X86_AVX2 ) {
-      /* handle m-loop */
-      if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_RBX ) {
-        l_code_buffer[l_code_size++] = 0x53;
-      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R12 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x54;
-      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R13 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x55;
-      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R14 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x56;
-      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R15 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x57;
-      } else {}
-
-      /* handle n-loop */
-      if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_RBX ) {
-        l_code_buffer[l_code_size++] = 0x53;
-      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R12 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x54;
-      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R13 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x55;
-      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R14 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x56;
-      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R15 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x57;
-      } else {}
-
-      /* handle k-loop */
-      if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_RBX ) {
-        l_code_buffer[l_code_size++] = 0x53;
-      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R12 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x54;
-      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R13 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x55;
-      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R14 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x56;
-      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R15 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x57;
-      } else {}
-
-    } else {
-      /* push rbx */
-      l_code_buffer[l_code_size++] = 0x53;
-      /* push r12 */
-      l_code_buffer[l_code_size++] = 0x41;
-      l_code_buffer[l_code_size++] = 0x54;
-      /* push r13 */
-      l_code_buffer[l_code_size++] = 0x41;
-      l_code_buffer[l_code_size++] = 0x55;
-      /* push r14 */
-      l_code_buffer[l_code_size++] = 0x41;
-      l_code_buffer[l_code_size++] = 0x56;
-      /* push r15 */
-      l_code_buffer[l_code_size++] = 0x41;
-      l_code_buffer[l_code_size++] = 0x57;
-    }
+    /* push rbx */
+    l_code_buffer[l_code_size++] = 0x53;
+    /* push r12 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x54;
+    /* push r13 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x55;
+    /* push r14 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x56;
+    /* push r15 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x57;
 
     /* update code length */
     io_generated_code->code_size = l_code_size;
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size += 40;
   } else if ( io_generated_code->code_type == 1 ) {
     /* @TODO this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
-    char l_gp_reg_name[4];
 
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
@@ -4987,34 +4948,23 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
       return;
     }
-    if ( io_generated_code->arch <= LIBXSMM_X86_AVX2 ) {
-      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name, 3 );
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      }
-      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name, 3 );
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      }
-      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name, 3 );
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      }
-    } else {
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rbx\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r12\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r13\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r14\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    }
+    /* push callee save registers */
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rbx\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r12\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r13\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r14\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size += 40;
+
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -5064,9 +5014,10 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name, 3 );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%4, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c_prefetch, l_gp_reg_name, 3 );
+/*    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c_prefetch, l_gp_reg_name, 3 );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%5, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+*/
     } else {}
 
   }
@@ -5117,76 +5068,25 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
     }
 
     /* pop callee save registers */
-    if ( io_generated_code->arch <= LIBXSMM_X86_AVX2 ) {
-      /* handle k-loop */
-      if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_RBX ) {
-        l_code_buffer[l_code_size++] = 0x5b;
-      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R12 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5c;
-      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R13 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5d;
-      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R14 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5e;
-      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R15 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5f;
-      } else {}
+    /* pop r15 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x5f;
+    /* pop r14 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x5e;
+    /* pop r13 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x5d;
+    /* pop r12 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x5c;
+    /* pop rbx */
+    l_code_buffer[l_code_size++] = 0x5b;
 
-      /* handle n-loop */
-      if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_RBX ) {
-        l_code_buffer[l_code_size++] = 0x5b;
-      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R12 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5c;
-      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R13 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5d;
-      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R14 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5e;
-      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R15 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5f;
-      } else {}
+    /* adjust stack frame size */
+    io_generated_code->sf_size -= 40;
 
-      /* handle m-loop */
-      if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_RBX ) {
-        l_code_buffer[l_code_size++] = 0x5b;
-      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R12 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5c;
-      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R13 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5d;
-      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R14 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5e;
-      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R15 ) {
-        l_code_buffer[l_code_size++] = 0x41;
-        l_code_buffer[l_code_size++] = 0x5f;
-      } else {}
-
-    } else {
-      /* pop r15 */
-      l_code_buffer[l_code_size++] = 0x41;
-      l_code_buffer[l_code_size++] = 0x5f;
-      /* pop r14 */
-      l_code_buffer[l_code_size++] = 0x41;
-      l_code_buffer[l_code_size++] = 0x5e;
-      /* pop r13 */
-      l_code_buffer[l_code_size++] = 0x41;
-      l_code_buffer[l_code_size++] = 0x5d;
-      /* pop r12 */
-      l_code_buffer[l_code_size++] = 0x41;
-      l_code_buffer[l_code_size++] = 0x5c;
-      /* pop rbx */
-      l_code_buffer[l_code_size++] = 0x5b;
-      /* retq */
-    }
-
+    /* retq */
     /* @TODO: I don't know if this is the correct placement in the generation process */
     l_code_buffer[l_code_size++] = 0xc3;
 
@@ -5197,36 +5097,6 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
-    char l_gp_reg_name[4];
-
-    if ( io_generated_code->arch <= LIBXSMM_X86_AVX2 ) {
-      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name, 3 );
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      }
-      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name, 3 );
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      }
-      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name, 3 );
-        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      }
-    } else {
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r15\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r14\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r13\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r12\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    }
 
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
@@ -5248,6 +5118,21 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
       return;
     }
+
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r15\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r14\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r13\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r12\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size -= 40;
+
     /* @TODO: I don't know if this is the correct placement in the generation process */
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -5347,6 +5232,9 @@ void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*     
 
     /* update code length */
     io_generated_code->code_size = l_code_size;
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size += 40;
   } else if ( io_generated_code->code_type == 1 ) {
     /* @TODO this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
@@ -5364,6 +5252,13 @@ void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*     
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r14\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size += 40;
+
+    /* @TODO: I don't know if this is the correct placement in the generation process */
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   } else {
     char l_new_code[512];
@@ -5410,8 +5305,6 @@ void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*    
       return;
     }
 
-if ( l_code_size==59 ) printf("Starting wrap-up on byte 59\n");
-
     /* pop r15 */
     l_code_buffer[l_code_size++] = 0x41;
     l_code_buffer[l_code_size++] = 0x5f;
@@ -5428,6 +5321,10 @@ if ( l_code_size==59 ) printf("Starting wrap-up on byte 59\n");
     l_code_buffer[l_code_size++] = 0x5d;
     /* pop rbx */
     l_code_buffer[l_code_size++] = 0x5b;
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size -= 40;
+
     /* retq */
     /* @TODO: I don't know if this is the correct placement in the generation process */
     l_code_buffer[l_code_size++] = 0xc3;
@@ -5453,7 +5350,10 @@ if ( l_code_size==59 ) printf("Starting wrap-up on byte 59\n");
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rbp\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* @TODO: I don't know if this is the correct placement in the generation process */
+    /* adjust stack frame size */
+    io_generated_code->sf_size -= 40;
+
+     /* @TODO: I don't know if this is the correct placement in the generation process */
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   } else {
@@ -5512,6 +5412,9 @@ void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*       
 
     /* update code length */
     io_generated_code->code_size = l_code_size;
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size += 40;
   } else if ( io_generated_code->code_type == 1 ) {
     /* @TODO this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
@@ -5528,6 +5431,9 @@ void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*       
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size += 40;
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -5596,6 +5502,10 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
     l_code_buffer[l_code_size++] = 0x5c;
     /* pop rbx */
     l_code_buffer[l_code_size++] = 0x5b;
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size -= 40;
+
     /* retq */
     /* @TODO: I don't know if this is the correct placement in the generation process */
     l_code_buffer[l_code_size++] = 0xc3;
@@ -5618,6 +5528,9 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+
+    /* adjust stack frame size */
+    io_generated_code->sf_size -= 40;
 
     /* @TODO: I don't know if this is the correct placement in the generation process */
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );

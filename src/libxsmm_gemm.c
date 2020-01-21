@@ -691,16 +691,23 @@ LIBXSMM_API void libxsmm_gemm_dprint2(
 LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
   libxsmm_xmmfunction kernel, const void* a, const void* b, void* c)
 {
-  libxsmm_mmkernel_info info;
+  const libxsmm_descriptor* desc;
+  libxsmm_code_pointer code;
   size_t code_size;
-  if (EXIT_SUCCESS == libxsmm_get_mmkernel_info(kernel, &info, &code_size)) {
-    libxsmm_code_pointer code_pointer;
-    libxsmm_gemm_dprint2(ostream, info.iprecision, info.oprecision,
-      (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & info.flags) ? 'N' : 'T'),
-      (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & info.flags) ? 'N' : 'T'), (libxsmm_blasint)info.m, (libxsmm_blasint)info.n, (libxsmm_blasint)info.k,
-      /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_mmbatch_desc.flags) ? 0 : */1, a, (libxsmm_blasint)info.lda, b, (libxsmm_blasint)info.ldb,
-      0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, c, (libxsmm_blasint)info.ldc);
-    code_pointer.xgemm = kernel; fprintf((FILE*)ostream, " = %p+%u", code_pointer.ptr_const, (unsigned int)code_size);
+  code.xgemm = kernel;
+  if (NULL != libxsmm_get_kernel_xinfo(code, &desc, &code_size) &&
+      NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == desc->kind)
+  {
+    libxsmm_gemm_dprint2(ostream,
+      (libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(desc->gemm.desc.datatype),
+      (libxsmm_gemm_precision)LIBXSMM_GETENUM_OUT(desc->gemm.desc.datatype),
+      (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->gemm.desc.flags) ? 'N' : 'T'),
+      (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->gemm.desc.flags) ? 'N' : 'T'),
+      (libxsmm_blasint)desc->gemm.desc.m, (libxsmm_blasint)desc->gemm.desc.n, (libxsmm_blasint)desc->gemm.desc.k,
+      /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_mmbatch_desc.flags) ? 0 : */1, a,
+      (libxsmm_blasint)desc->gemm.desc.lda, b, (libxsmm_blasint)desc->gemm.desc.ldb,
+      0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, c, (libxsmm_blasint)desc->gemm.desc.ldc);
+    fprintf((FILE*)ostream, " = %p+%u", code.ptr_const, (unsigned int)code_size);
   }
 }
 

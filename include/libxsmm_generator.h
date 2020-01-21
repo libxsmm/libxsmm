@@ -36,6 +36,10 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bigemm_descriptor_init(libxsmm_desc
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   int alpha, int beta, int flags, int prefetch);
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bbgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  int alpha, int beta, int flags, int prefetch);
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
@@ -116,6 +120,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
                                * >0: error code
                                */
   unsigned int arch;          /* target arch for the current code generation task */
+  unsigned int sf_size;       /* offset of RSP to the beginning of the stack frame
+                               * we track this value to have RBP availbale for general compute
+                               */
 } libxsmm_generated_code;
 
 /** function to translate LIBXSMM Generator error codes to error messages */

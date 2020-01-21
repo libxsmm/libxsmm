@@ -552,6 +552,7 @@ int main(int argc, char* argv[])
   io_generated_code.code_size = 0;
   io_generated_code.code_type = 2;
   io_generated_code.last_error = 0;
+  io_generated_code.sf_size = 0;
 #endif
 
   printf("\nUSAGE: %s m n lda nmat layout ntest\n",argv[0]);

@@ -10,9 +10,8 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname $0)"; pwd -P)
+HERE=$(cd "$(dirname "$0")"; pwd -P)
 NAME=$(basename $0 .sh)
-ECHO=$(command -v echo)
 GREP=$(command -v grep)
 ENV=$(command -v env)
 
@@ -28,7 +27,7 @@ else
   elif [ "" != "$(command -v otool)" ]; then
     LDD="otool -L"
   else
-    LDD=${ECHO}
+    LDD=echo
   fi
 fi
 

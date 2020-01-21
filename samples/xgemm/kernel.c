@@ -80,7 +80,7 @@ double run_jit_double( const libxsmm_gemm_descriptor* i_xgemm_desc,
   }
 
   /* receive kernel information */
-  libxsmm_get_mmkernel_info(l_test_jit, &l_info, NULL/*code_size*/);
+  libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
   if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
@@ -131,7 +131,7 @@ double run_jit_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
   }
 
   /* receive kernel information */
-  libxsmm_get_mmkernel_info(l_test_jit, &l_info, NULL/*code_size*/);
+  libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
   if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
@@ -182,7 +182,7 @@ double run_jit_short_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
   }
 
   /* receive kernel information */
-  libxsmm_get_mmkernel_info(l_test_jit, &l_info, NULL/*code_size*/);
+  libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
   if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
@@ -233,7 +233,7 @@ double run_jit_uschar_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
   }
 
   /* receive kernel information */
-  libxsmm_get_mmkernel_info(l_test_jit, &l_info, NULL/*code_size*/);
+  libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
   if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
@@ -284,7 +284,7 @@ double run_jit_suchar_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
   }
 
   /* receive kernel information */
-  libxsmm_get_mmkernel_info(l_test_jit, &l_info, NULL/*code_size*/);
+  libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
   if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
@@ -335,7 +335,7 @@ double run_jit_bfloat16_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
   }
 
   /* receive kernel information */
-  libxsmm_get_mmkernel_info(l_test_jit, &l_info, NULL/*code_size*/);
+  libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
   if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
@@ -386,7 +386,7 @@ double run_jit_bfloat16( const libxsmm_gemm_descriptor* i_xgemm_desc,
   }
 
   /* receive kernel information */
-  libxsmm_get_mmkernel_info(l_test_jit, &l_info, NULL/*code_size*/);
+  libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
   if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {

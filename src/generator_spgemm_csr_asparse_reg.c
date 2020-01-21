@@ -150,16 +150,16 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_R8;
   /* TODO: full support for Windows calling convention */
-  l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R9;
-  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_RDI;
-  l_gp_reg_mapping.gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_RSI;
+  l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+/*  l_gp_reg_mapping.gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_UNDEF;*/
 #else /* match calling convention on Linux */
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
-  l_gp_reg_mapping.gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_R9;
+/*  l_gp_reg_mapping.gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_R9;*/
 #endif
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;

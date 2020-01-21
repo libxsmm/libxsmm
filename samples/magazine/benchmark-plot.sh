@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname $0)"; pwd -P)
+HERE=$(cd "$(dirname "$0")"; pwd -P)
 FIND=$(command -v find)
 SORT=$(command -v sort)
 JOIN=$(command -v join)
@@ -59,10 +59,12 @@ fi
 GNUPLOT_VERSION=$((GNUPLOT_MAJOR * 10000 + GNUPLOT_MINOR * 100))
 
 if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
-  if [ -f ${HERE}/benchmark.set ]; then
-    ${JOIN} \
-      <(${CUT} ${HERE}/benchmark.set -d" " -f1-3 | ${SORT} -k1) \
-      <(${SORT} -k1 benchmark-${KIND}.txt) \
+  if [ -f "${HERE}/benchmark.set" ]; then
+    # determine behavior of sort command
+    export LC_ALL=C.UTF-8
+    ${JOIN} --nocheck-order \
+      <(${CUT} "${HERE}/benchmark.set" -d" " -f1-3 | ${SORT} -nk1) \
+      <(${SORT} -nk1 benchmark-${KIND}.txt) \
     | ${AWK} \
       '{ if ($2==$4 && $3==$5) printf("%s %s %s %s %s\n", $1, $2, $3, $6, $8) }' \
     | ${SORT} \
@@ -71,9 +73,12 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   fi
   env GDFONTPATH=/cygdrive/c/Windows/Fonts \
     FILEEXT=${FILEEXT} KIND=${KIND} MULTI=${MULTI} \
-    "${WGNUPLOT}" ${HERE}/benchmark.plt
+    "${WGNUPLOT}" "${HERE}/benchmark.plt"
   if [ "1" != "${MULTI}" ] && [ "pdf" != "${FILEEXT}" ] && [ "" != "$(command -v mogrify)" ]; then
     ${FIND} . -name "benchmark*.${FILEEXT}" -type f -exec mogrify -trim -transparent-color white {} \;
   fi
+else
+  echo "Error: missing prerequisites!"
+  exit 1
 fi
 

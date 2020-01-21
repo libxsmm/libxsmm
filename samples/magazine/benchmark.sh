@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname $0)"; pwd -P)
+HERE=$(cd "$(dirname "$0")"; pwd -P)
 CAT=$(command -v cat)
 TR=$(command -v tr)
 
