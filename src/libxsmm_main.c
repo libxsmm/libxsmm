@@ -1431,6 +1431,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   const char* target_arch = libxsmm_cpuid_name(libxsmm_target_archid);
   libxsmm_generated_code generated_code;
   char jit_name[256] = { 0 };
+  unsigned int nflops = 0;
 
   /* large enough temporary buffer for generated code */
 # if defined(NDEBUG)
@@ -1460,6 +1461,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
       {
         const unsigned int m = request->descriptor.gemm->m, n = request->descriptor.gemm->n, k = request->descriptor.gemm->k;
+        nflops = 2 * m * n * k;
 # if !defined(LIBXSMM_DENY_RETARGET) /* disable: ECFLAGS=-DLIBXSMM_DENY_RETARGET */
         if (LIBXSMM_X86_AVX2 < libxsmm_target_archid &&
            (LIBXSMM_GEMM_PRECISION_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.gemm->datatype) ||
@@ -1776,7 +1778,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     LIBXSMM_MEMZERO127(&extra);
 # endif
     extra.registered = regindex;
-    extra.nflops = 0;
+    extra.nflops = nflops;
     /* attempt to create executable buffer */
     result = libxsmm_xmalloc((void**)code_buffer_result, generated_code.code_size, 0/*auto*/,
       /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
@@ -2080,7 +2082,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 
 LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_code_pointer code, const libxsmm_descriptor** desc, size_t* code_size)
 {
-  const libxsmm_kernel_xinfo* result = NULL;
+  libxsmm_kernel_xinfo* result = NULL;
   void *const result_address = &result;
   int flags = LIBXSMM_MALLOC_FLAG_X;
   if (NULL != code.ptr_const && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, code_size, &flags, (void**)result_address) && NULL != result) {
@@ -3923,7 +3925,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
 {
   if (NULL != jit_kernel) {
     static int error_once = 0;
-    const libxsmm_kernel_xinfo* extra = NULL;
+    libxsmm_kernel_xinfo* extra = NULL;
     void *const extra_address = &extra;
     LIBXSMM_INIT
     if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_kernel, NULL/*size*/, NULL/*flags*/, (void**)extra_address) && NULL != extra) {
