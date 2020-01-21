@@ -53,7 +53,7 @@
 # define LIBXSMM_DIFF_SIZE LIBXSMM_DESCRIPTOR_SIGSIZE
 #endif
 #if !defined(LIBXSMM_HASH_SIZE)
-# define LIBXSMM_HASH_SIZE LIBXSMM_DESCRIPTOR_SIGSIZE
+# define LIBXSMM_HASH_SIZE 32
 #endif
 #if !defined(LIBXSMM_HASH_SEED)
 # define LIBXSMM_HASH_SEED 25071975
@@ -73,7 +73,7 @@
 #if !defined(LIBXSMM_REGLOCK_TRY) && 0
 # define LIBXSMM_REGLOCK_TRY
 #endif
-#if !defined(LIBXSMM_DIFF_INLINE) && 0
+#if !defined(LIBXSMM_DIFF_INLINE) && 1
 # define LIBXSMM_DIFF_INLINE
 #endif
 #if !defined(LIBXSMM_DESC_INLINE) && 0
