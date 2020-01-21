@@ -182,8 +182,8 @@ if (use_2d_blocking == 1) {
         if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
           for (jc = 0; jc < bbc; jc+=2) {
             for (jk = 0; jk < bbk; jk+=16) {
-              c1 = _mm256_load_si256((const union __m256i *)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc+1, ofm2*bbk+jk, bk));
-              c0 = _mm256_load_si256((const union __m256i *)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
+              c1 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc+1, ofm2*bbk+jk, bk));
+              c0 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
               c01 = _mm512_inserti64x4(c01, c0, 0);
               c01 = _mm512_inserti64x4(c01, c1, 1);
               _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/2, ofm2*bbk+jk, 0, nBlocksIFm, bc/2, bk, 2), _mm512_permutexvar_epi16(perm_index, c01));
@@ -250,8 +250,8 @@ if (use_2d_blocking == 1) {
       if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
         for (jc = 0; jc < bbc; jc+=2) {
           for (jk = 0; jk < bbk; jk+=16) {
-            c1 = _mm256_load_si256((const union __m256i *)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc+1, ofm2*bbk+jk, bk));
-            c0 = _mm256_load_si256((const union __m256i *)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
+            c1 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc+1, ofm2*bbk+jk, bk));
+            c0 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
             c01 = _mm512_inserti64x4(c01, c0, 0);
             c01 = _mm512_inserti64x4(c01, c1, 1);
             _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/2, ofm2*bbk+jk, 0, nBlocksIFm, bc/2, bk, 2), _mm512_permutexvar_epi16(perm_index, c01));
