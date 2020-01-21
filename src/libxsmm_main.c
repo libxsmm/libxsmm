@@ -1489,7 +1489,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           } else {
             br = 0;
           }
-          /* query A/B sign combindations */
+          /* query A/B sign combinations */
           if ( (LIBXSMM_GEMM_FLAG_A_UNSIGNED & request->descriptor.gemm->flags) > 1 ) {
             typesigns = 1;
           } else if ( (LIBXSMM_GEMM_FLAG_B_UNSIGNED & request->descriptor.gemm->flags) > 1 ) {
@@ -1772,8 +1772,11 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     void* code_buffer_result = &code_buffer;
     LIBXSMM_ASSERT(generated_code.code_size <= LIBXSMM_CODE_MAXSIZE);
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
+# if !defined(NDEBUG) /* should not be needed (all members will be initialized below) */
     LIBXSMM_MEMZERO127(&extra);
+# endif
     extra.registered = regindex;
+    extra.nflops = 0;
     /* attempt to create executable buffer */
     result = libxsmm_xmalloc((void**)code_buffer_result, generated_code.code_size, 0/*auto*/,
       /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
