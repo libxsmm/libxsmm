@@ -177,6 +177,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
 
     /* apply m_blocking */
     while (l_m_done != (unsigned int)i_xgemm_desc->m) {
+      if ( l_m_blocking == 0 ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+        return;
+      }
+
       if (l_m_done == 0) {
         /* This is a SeisSol Order 6, HSW, DP performance fix */
         if ( ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
@@ -621,7 +626,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_
     }
   } else if ( ( i_arch <= LIBXSMM_X86_ALLFEAT ) && ( ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )  ||
                                                      ( LIBXSMM_GEMM_PRECISION_I32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )  ||
-                                                     ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )      ) ) {
+                                                     ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )  ||
+                                                     ( LIBXSMM_GEMM_PRECISION_I8   == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )     ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
     /* @TODO check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 64 ) {
@@ -644,7 +650,11 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_
         l_use_masking_a_c = 1;
       }
     }
-  } else { }
+  } else {
+    /* we should never end up here, if we do let the user know */
+    /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return 0;*/
+  }
 
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_arch, i_xgemm_desc, l_use_masking_a_c );
 
@@ -783,7 +793,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_upda
     }
   } else if ( ( i_arch <= LIBXSMM_X86_ALLFEAT ) && ( ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )  ||
                                                      ( LIBXSMM_GEMM_PRECISION_I32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )  ||
-                                                     ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )      ) ) {
+                                                     ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )  ||
+                                                     ( LIBXSMM_GEMM_PRECISION_I8   == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )      ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32 out kernel with the same logic */
     if (i_current_m_blocking == 64) {
       l_m_blocking = i_xgemm_desc->m % 64;
@@ -804,18 +815,11 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_upda
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( ( i_arch <= LIBXSMM_X86_ALLFEAT ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
-    /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32 out kernel with the same logic */
-    if (i_current_m_blocking == 64) {
-      l_m_blocking = i_xgemm_desc->m % 64;
-      if ( l_m_blocking % 16 != 0 ) {
-        l_use_masking_a_c = 1;
-      }
-      libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_arch, i_xgemm_desc, l_use_masking_a_c );
-    } else {
-      /* we are done with m_blocking */
-    }
-  } else { }
+  } else {
+    /* we should never end up here, if we do let the user know */
+    /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return 0;*/
+  }
 
   return l_m_blocking;
 }
