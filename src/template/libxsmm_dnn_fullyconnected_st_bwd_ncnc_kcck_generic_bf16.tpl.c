@@ -125,34 +125,63 @@ if (use_2d_blocking == 1) {
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
-
-/* transpose weight */
-if ((bk % 16 == 0) && (bc % 16 == 0)) {
-  for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-    ofm1 = ifm1ofm1 / nBlocksIFm;
-    ifm1 = ifm1ofm1 % nBlocksIFm;
-    bf16_vnni_transpose((element_filter_type*)&LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc/2, bk, 2), (element_filter_type*)&LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk/2, bc, 2), bk, bc, bk, bc);
-  }
-} else {
-  for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-    ofm1 = ifm1ofm1 / nBlocksIFm;
-    ifm1 = ifm1ofm1 % nBlocksIFm;
-    for (ofm2 = 0; ofm2 < bk; ++ofm2) {
-      for (ifm2 = 0; ifm2 < bc; ++ifm2) {
-        LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, ofm2/2, ifm2, ofm2%2, nBlocksOFm, bk/2, bc, 2) = LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, ifm2/2, ofm2, ifm2%2, nBlocksIFm, bc/2, bk, 2);
+if (handle->desc.K > 1) {
+  /* transpose weight */
+  if ((bk % 16 == 0) && (bc % 16 == 0)) {
+    for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+      ofm1 = ifm1ofm1 / nBlocksIFm;
+      ifm1 = ifm1ofm1 % nBlocksIFm;
+      bf16_vnni_transpose((element_filter_type*)&LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc/2, bk, 2), (element_filter_type*)&LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk/2, bc, 2), bk, bc, bk, bc);
+    }
+  } else {
+    for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+      ofm1 = ifm1ofm1 / nBlocksIFm;
+      ifm1 = ifm1ofm1 % nBlocksIFm;
+      for (ofm2 = 0; ofm2 < bk; ++ofm2) {
+        for (ifm2 = 0; ifm2 < bc; ++ifm2) {
+          LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, ofm2/2, ifm2, ofm2%2, nBlocksOFm, bk/2, bc, 2) = LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, ifm2/2, ofm2, ifm2%2, nBlocksIFm, bc/2, bk, 2);
+        }
       }
     }
   }
-}
 
-/* wait for transpose to finish */
-libxsmm_barrier_wait(handle->barrier, ltid);
+  /* wait for transpose to finish */
+  libxsmm_barrier_wait(handle->barrier, ltid);
 
-if (use_2d_blocking == 1) {
-  if (BF > 1) {
-    for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
+  if (use_2d_blocking == 1) {
+    if (BF > 1) {
+      for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
+        for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
+          for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+            /* Initialize intermediate f32 tensor */
+            if ( ofm1 == 0 ) {
+              memset(&LIBXSMM_VLA_ACCESS(4, dinput_f32, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc), 0, bn*bc*sizeof(float));
+            }
+            batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
+                &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
+                &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+            /* downconvert intermediate f32 tensor to bf 16 and store to final C */
+            if ( ofm1 == BF-1  ) {
+              LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
+            }
+          }
+        }
+      }
+    } else {
       for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
         for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+          batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
+              &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
+              &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+        }
+      }
+    }
+  } else {
+    if (BF > 1) {
+      for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
+        for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
+          mb1  = mb1ifm1%nBlocksMB;
+          ifm1 = mb1ifm1/nBlocksMB;
           /* Initialize intermediate f32 tensor */
           if ( ofm1 == 0 ) {
             memset(&LIBXSMM_VLA_ACCESS(4, dinput_f32, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc), 0, bn*bc*sizeof(float));
@@ -166,10 +195,10 @@ if (use_2d_blocking == 1) {
           }
         }
       }
-    }
-  } else {
-    for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
-      for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+    } else {
+      for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
+        mb1  = mb1ifm1%nBlocksMB;
+        ifm1 = mb1ifm1/nBlocksMB;
         batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
             &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
             &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
@@ -177,32 +206,47 @@ if (use_2d_blocking == 1) {
     }
   }
 } else {
-  if (BF > 1) {
-    for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
-      for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
-        mb1  = mb1ifm1%nBlocksMB;
-        ifm1 = mb1ifm1/nBlocksMB;
-        /* Initialize intermediate f32 tensor */
-        if ( ofm1 == 0 ) {
-          memset(&LIBXSMM_VLA_ACCESS(4, dinput_f32, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc), 0, bn*bc*sizeof(float));
-        }
-        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
-            &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
-            &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
-        /* downconvert intermediate f32 tensor to bf 16 and store to final C */
-        if ( ofm1 == BF-1  ) {
-          LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
-        }
-      }
+  /* Special case when K = 1 */
+  /* number of tasks for doutput copy that could be run in parallel */
+  const int copy_work_output = nBlocksMB * nBlocksOFm;
+  /* compute chunk size */
+  const int copy_chunksize = (copy_work_output % handle->desc.threads == 0) ? (copy_work_output / handle->desc.threads) : ((copy_work_output / handle->desc.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const int copy_thr_begin = (ltid * copy_chunksize < copy_work_output) ? (ltid * copy_chunksize) : copy_work_output;
+  const int copy_thr_end = ((ltid + 1) * copy_chunksize < copy_work_output) ? ((ltid + 1) * copy_chunksize) : copy_work_output;
+  LIBXSMM_VLA_DECL(5,       element_filter_type, filter_tr_padded, (element_filter_type*)handle->scratch, nBlocksOFm, 1, bc, 2);
+  LIBXSMM_VLA_DECL(4,       element_output_type,   doutput_padded, (element_output_type*)handle->scratch + handle->desc.C * 2, nBlocksOFm, bn, 2);
+  int mb1ofm1 = 0, mb2 = 0;
+
+  /* Copy in weights and doutput in a padded buffer */
+  for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+    ofm1 = ifm1ofm1 / nBlocksIFm;
+    ifm1 = ifm1ofm1 % nBlocksIFm;
+    ofm2 = 0;
+    for (ifm2 = 0; ifm2 < bc; ++ifm2) {
+      LIBXSMM_VLA_ACCESS(5, filter_tr_padded, ifm1, ofm1, ofm2/2, ifm2, ofm2%2, nBlocksOFm, 1, bc, 2) = LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, ifm2/2, ofm2, ifm2%2, nBlocksIFm, bc/2, bk, 2);
+      LIBXSMM_VLA_ACCESS(5, filter_tr_padded, ifm1, ofm1, ofm2/2, ifm2, 1, nBlocksOFm, 1, bc, 2) = (element_filter_type)0;
     }
-  } else {
-    for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
-      mb1  = mb1ifm1%nBlocksMB;
-      ifm1 = mb1ifm1/nBlocksMB;
-      batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk/2, bc, 2),
-          &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
-          &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+  }
+
+  for (mb1ofm1 = copy_thr_begin; mb1ofm1 < copy_thr_end; ++mb1ofm1) {
+    mb1 = mb1ofm1 / nBlocksOFm;
+    ofm1 = mb1ofm1 % nBlocksOFm;
+    ofm2 = 0;
+    for (mb2 = 0; mb2 < bn; ++mb2) {
+      LIBXSMM_VLA_ACCESS(4, doutput_padded,   mb1,  ofm1, mb2, 0, nBlocksOFm, bn, 2) = LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  ofm1, mb2, 0, nBlocksOFm, bn, bk);
+      LIBXSMM_VLA_ACCESS(4, doutput_padded,   mb1,  ofm1, mb2, 1, nBlocksOFm, bn, 2) = (element_output_type)0;
     }
+  }
+
+  libxsmm_barrier_wait(handle->barrier, ltid);
+
+  for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
+    mb1  = mb1ifm1%nBlocksMB;
+    ifm1 = mb1ifm1/nBlocksMB;
+    batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(5, filter_tr_padded, ifm1, 0, 0, 0, 0, nBlocksOFm, 1, bc, 2),
+        &LIBXSMM_VLA_ACCESS(4, doutput_padded,   mb1,  0, 0, 0, nBlocksOFm, bn, 2),
+        &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
   }
 }
 
