@@ -502,7 +502,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kloop( libxs
             i_xgemm_desc, i_m_blocking, i_n_blocking, l_k);
         }
       }
-      /* 3. we are large than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
+      /* 3. we are larger than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
     } else {
       unsigned int l_max_blocked_k = ((i_xgemm_desc->k)/l_k_blocking)*l_k_blocking;
       unsigned int l_k;
