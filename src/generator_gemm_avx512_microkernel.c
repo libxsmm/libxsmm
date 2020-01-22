@@ -619,8 +619,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                         (l_k+1)%2,
                                         i_micro_kernel_config->use_masking_a_c, 1, 0 );
       /* current A prefetch, next 8 rows for the current column */
-      if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
-           i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
+      if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          ||
+           i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD    ) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
                                           i_micro_kernel_config->prefetch_instruction,
                                           i_gp_reg_mapping->gp_reg_a,
@@ -630,9 +630,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
     }
 
     /* next A prefetch "same" rows in "same" column, but in a different matrix */
-    if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_JPST ||
-         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST ||
-         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ||
+    if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ||
          i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
                                         i_micro_kernel_config->prefetch_instruction,
@@ -1069,10 +1067,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
     }
 
     /* next A prefetch "same" rows in "same" column, but in a different matrix */
-    if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_JPST ||
-         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST ||
-         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ||
-         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2          ||
+         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C    ) {
       for ( l_z = 0; l_z < l_lcl_k; l_z++ ) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
                                           i_micro_kernel_config->prefetch_instruction,
