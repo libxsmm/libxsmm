@@ -364,6 +364,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
           i_micro_kernel_config->vector_name,
           1+l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
 
+      /* current A prefetch, next rows for the current column */
+      if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ) {
+        libxsmm_x86_instruction_prefetch( io_generated_code,
+            LIBXSMM_X86_INSTR_PREFETCHT1,
+            i_gp_reg_mapping->gp_reg_a,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            ((i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m) + (64 * l_m_blocking) );
+      }
+
+      /* prefetch a different A matrix provided by the prefetch pointers */
       if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
             LIBXSMM_X86_INSTR_PREFETCHT1,
@@ -577,7 +587,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                         i_micro_kernel_config->vector_name,
                                         0,
                                         i_micro_kernel_config->use_masking_a_c, 1, 0 );
-      /* current A prefetch, next 8 rows for the current column */
+      /* current A prefetch, next rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
            i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -597,7 +607,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                           i_micro_kernel_config->vector_name,
                                           1,
                                           i_micro_kernel_config->use_masking_a_c, 1, 0 );
-        /* current A prefetch, next 8 rows for the current column */
+        /* current A prefetch, next rows for the current column */
         if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
              i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -618,7 +628,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                         i_micro_kernel_config->vector_name,
                                         (l_k+1)%2,
                                         i_micro_kernel_config->use_masking_a_c, 1, 0 );
-      /* current A prefetch, next 8 rows for the current column */
+      /* current A prefetch, next rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          ||
            i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD    ) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -1055,14 +1065,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
                                         l_z,
                                         i_micro_kernel_config->use_masking_a_c, 1, 0 );
 
-      /* current A prefetch, next 8 rows for the current column */
+      /* current A prefetch, next rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
            i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
                                           i_micro_kernel_config->prefetch_instruction,
                                           i_gp_reg_mapping->gp_reg_a,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (i_xgemm_desc->lda * (l_k+l_lcl_k+l_z) * i_micro_kernel_config->datatype_size) + 64 );
+                                          (i_xgemm_desc->lda * (l_k+l_z) * i_micro_kernel_config->datatype_size) + 64 );
       }
     }
 
