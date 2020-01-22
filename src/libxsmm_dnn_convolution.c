@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Hans Pabst, Alexander Heinecke, Rajkishore Barik (Intel Corp.)
+/* Hans Pabst, Alexander Heinecke, Evangelos Georganas, Rajkishore Barik (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
@@ -112,6 +112,10 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_pack_input_fwd( libxsmm_dnn
   }
   /* Make sure we don't pack when minibatch is not divisible by number of threads since H is used potentially for parallelism */
   if (handle->desc.N != handle->desc.threads) {
+    result = 0;
+  }
+
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
     result = 0;
   }
   return result;
@@ -730,7 +734,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->code_fwd[2].pmm = 0;
 
   /* Create strided BRGEMMs for i8i32 convolutions  */
-  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
+  if ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) {
     const libxsmm_blasint ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
     const libxsmm_blasint ldA = handle->ofmblock;
     const libxsmm_blasint ldC = handle->ofmblock;
@@ -771,8 +775,41 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
         handle->gemm_fwd2.xgemm.subimrs = libxsmm_subimmdispatch_reducebatch_strd(handle->ofmblock, handle->fwd_ofh_rb*(handle->fwd_ofw_rb-1), handle->ifmblock, stride_A, stride_B, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
       }
     }
+  } else if ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I8)) {
+    const libxsmm_blasint ldx = (libxsmm_blasint)handle->desc.v*handle->ifmblock;
+    const libxsmm_blasint ldA = handle->ofmblock;
+    const libxsmm_blasint ldC = handle->ofmblock;
+    const int beta = 0;
+    int l_flags = ( LIBXSMM_GEMM_FLAGS('N', 'N') ) | handle->fwd_flags;
+    if (handle->desc.R == 1 && handle->desc.S == 1) {
+      const int IFW = handle->ifwp;
+      const int IFH = handle->ifhp;
+      libxsmm_blasint stride_A = handle->ifmblock * handle->ofmblock * sizeof(char);
+      libxsmm_blasint stride_B = handle->ifmblock * IFW * IFH * sizeof(char) ;
+      handle->gemm_fwd.xgemm.sububmrs = libxsmm_sububmmdispatch_reducebatch_strd(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, stride_A, stride_B, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+    } else {
+      const int IFW = handle->ifwp;
+      const int IFH = handle->ifhp;
+      int n_blocks = handle->desc.R * handle->desc.S * handle->blocksifm_blocking;
+      int i = 0, ifm, ki, kj;
+      handle->A_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
+      handle->B_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
+      for (ifm = 0; ifm < handle->blocksifm_blocking; ifm++) {
+        for (kj = 0; kj < handle->desc.R; kj++) {
+          for (ki = 0; ki < handle->desc.S; ki++) {
+            handle->A_offsets[i] = (ifm * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock +
+                  kj * handle->desc.S * handle->ifmblock * handle->ofmblock +
+                  ki * handle->ifmblock * handle->ofmblock) * sizeof(char);
+              handle->B_offsets[i] = (ifm * IFH * IFW * handle->ifmblock +
+                  kj * IFW * handle->ifmblock +
+                  ki * handle->ifmblock) * sizeof(char);
+              i++;
+          }
+        }
+      }
+      handle->gemm_fwd.xgemm.sububmro = libxsmm_sububmmdispatch_reducebatch_offs(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+    }
   }
-
 #if 0
   /* Spit out FWD parameters that are selected...  */
   printf("FWD params...\n");

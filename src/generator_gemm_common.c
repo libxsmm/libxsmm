@@ -1281,6 +1281,15 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         i_micro_kernel_config->vector_name,
         3, 0, 1, 0 );
 
+    /* Zero out register 0 to perform relu */
+    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+        i_micro_kernel_config->instruction_set,
+        i_micro_kernel_config->vxor_instruction,
+        i_micro_kernel_config->vector_name,
+        0,
+        0,
+        0);
+
     /* storing downconverted and rounded C accumulator */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
@@ -1302,6 +1311,15 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
             reg_X,
             3,
             reg_X );
+
+        /* Perform RELU */
+        libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VMAXPS,
+            i_micro_kernel_config->vector_name,
+            reg_X,
+            0,
+            reg_X);
 
         /* Round result to int32  */
         libxsmm_x86_instruction_vec_compute_convert(  io_generated_code,
@@ -1339,9 +1357,9 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       }
 
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_BL2_VIA_C ||
-           i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C ||
-           i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
-           i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST)  {
+          i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C ||
+          i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
+          i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST)  {
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
           /* determining how many prefetches we need in M direction as we just need one prefetch per cache line */
           unsigned int l_m_advance = 64 / ((i_micro_kernel_config->vector_length) * (i_micro_kernel_config->datatype_size)); /* 64: hardcoded cache line length */
@@ -1362,9 +1380,9 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*            io_generated_code,
-                                                    const unsigned int                 i_gp_reg_tmp,
-                                                    const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                    const unsigned int                 i_mask_count ) {
+    const unsigned int                 i_gp_reg_tmp,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+    const unsigned int                 i_mask_count ) {
   unsigned int l_mask;
 
   /* init full mask */
@@ -1379,25 +1397,25 @@ void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*     
 
   /* move mask to GP register */
   libxsmm_x86_instruction_alu_imm( io_generated_code,
-                                   LIBXSMM_X86_INSTR_MOVQ,
-                                   i_gp_reg_tmp,
-                                   l_mask );
+      LIBXSMM_X86_INSTR_MOVQ,
+      i_gp_reg_tmp,
+      l_mask );
 
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
-                                       LIBXSMM_X86_INSTR_KMOVW,
-                                       i_gp_reg_tmp,
-                                       LIBXSMM_X86_AVX512_MASK );
+        LIBXSMM_X86_INSTR_KMOVW,
+        i_gp_reg_tmp,
+        LIBXSMM_X86_AVX512_MASK );
     if ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
-                                         LIBXSMM_X86_INSTR_KMOVD,
-                                         i_gp_reg_tmp,
-                                         2 );
+          LIBXSMM_X86_INSTR_KMOVD,
+          i_gp_reg_tmp,
+          2 );
     } else if ( ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
-                                         LIBXSMM_X86_INSTR_KMOVQ,
-                                         i_gp_reg_tmp,
-                                         2 );
+          LIBXSMM_X86_INSTR_KMOVQ,
+          i_gp_reg_tmp,
+          2 );
     } else {
       /* no addtional mask is needed */
     }
