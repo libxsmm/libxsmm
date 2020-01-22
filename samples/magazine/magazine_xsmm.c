@@ -67,7 +67,11 @@ int main(int argc, char* argv[])
 # else
   const int prefetch = LIBXSMM_PREFETCH_NONE;
 # endif
-  const LIBXSMM_MMFUNCTION_TYPE(TYPE) xmm = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch);
+  union { /* convert between fn.ptr and (data)pointer */
+    LIBXSMM_MMFUNCTION_TYPE(TYPE) fun;
+    const void* ptr;
+  } xmm;
+  xmm.fun = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch);
 #endif
 
   /* initialize data according to touch-first policy */
@@ -115,10 +119,10 @@ int main(int argc, char* argv[])
         &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
          &beta, c + STREAM_C(j * nc), &ldc);
 #elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
-      xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc),
-          a + STREAM_A(p * na), b + STREAM_B(p * nb), c + STREAM_C(p * nc));
+      xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc),
+              a + STREAM_A(p * na), b + STREAM_B(p * nb), c + STREAM_C(p * nc));
 #else
-      xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
+      xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
 #endif
     }
   }
@@ -132,16 +136,17 @@ int main(int argc, char* argv[])
     &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
      &beta, c + STREAM_C(j * nc), &ldc);
 #elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
-  xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc),
-      a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
+  xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc),
+          a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
 #else
-  xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
+  xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
 #endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
   if (0 < duration) {
-    const double gflops = 2.0 * m * n * k * 1E-9;
-    printf("%.1f GFLOPS/s\n", gflops / duration * size);
+    libxsmm_kernel_info info;
+    libxsmm_get_kernel_info(xmm.ptr, &info);
+    printf("%.1f GFLOPS/s\n", (1E-9 * info.nflops) / duration * size);
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
