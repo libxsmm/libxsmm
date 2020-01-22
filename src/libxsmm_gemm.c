@@ -822,7 +822,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     LIBXSMM_INIT
     result.blob = blob;
 #if defined(NDEBUG)
-    result.ptr->copy_a.pmm = result.ptr->copy_b.pmm = result.ptr->copy_i.pmm = result.ptr->copy_o.pmm = NULL;
+    result.ptr->copy_a.ptr = result.ptr->copy_b.ptr = result.ptr->copy_i.ptr = result.ptr->copy_o.ptr = NULL;
 #else
     memset(blob, 0, sizeof(libxsmm_gemm_blob));
 #endif
