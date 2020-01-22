@@ -129,8 +129,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
     } else {
       unsigned int max_n_blocking = libxsmm_generator_gemm_avx512_get_max_n_blocking( i_xgemm_desc, io_generated_code->arch );
       unsigned int init_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc );
-      unsigned int init_m_blocks = ( init_m_blocking % l_micro_kernel_config.vector_length  == 0 ) ? init_m_blocking/l_micro_kernel_config.vector_length : (init_m_blocking/l_micro_kernel_config.vector_length)+1;
-      while (((init_m_blocks * max_n_blocking) + 1 + init_m_blocks) > 32) {
+      unsigned int init_m_blocks = (init_m_blocking + l_micro_kernel_config.vector_length - 1) / l_micro_kernel_config.vector_length;
+      while (((init_m_blocks * max_n_blocking) + 1 + init_m_blocks) > l_micro_kernel_config.vector_reg_count) {
         max_n_blocking--;
       }
       libxsmm_compute_equalized_blocking( i_xgemm_desc->n, max_n_blocking, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
