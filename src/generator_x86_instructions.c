@@ -654,6 +654,39 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_bytes = 5;
           l_wow += 0x20;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVZXWD:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 32;
+          l_ivectype2 += 0x01;
+          l_num3 += 1;
+          l_penultimate += 0x23;
+          l_bytes = 5;
+          l_wow += 0x20;
+          l_wow += 0xE1;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVSXBD:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 16;
+          l_ivectype2 += 0x01;
+          l_num3 += 1;
+          l_penultimate += 0x11;
+          l_bytes = 5;
+          l_wow += 0x20;
+          l_wow += 0xE1;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVZXBD:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 16;
+          l_ivectype2 += 0x01;
+          l_num3 += 1;
+          l_penultimate += 0x21;
+          l_bytes = 5;
+          l_wow += 0x20;
+          l_wow += 0xE1;
+          break;
        case LIBXSMM_X86_INSTR_VMOVUPS:
           if ( l_num == 1 ) l_ivectype3 -= 0x80;
           if ( i_vector_name!='x' ) l_ivectype -= 1; /* single */
@@ -1052,6 +1085,27 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
           l_second = 1;
           l_third = 1;
           l_fifth = 0x10;
+          l_vec0 = i_vec_reg_src_0;
+          l_vec1 = i_vec_reg_dst;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVZXWD:
+          l_second = 1;
+          l_third = 1;
+          l_fifth = 0x20;
+          l_vec0 = i_vec_reg_src_0;
+          l_vec1 = i_vec_reg_dst;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVSXBD:
+          l_second = 1;
+          l_third = 1;
+          l_fifth = 0xE;
+          l_vec0 = i_vec_reg_src_0;
+          l_vec1 = i_vec_reg_dst;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVZXBD:
+          l_second = 1;
+          l_third = 1;
+          l_fifth = 0x1E;
           l_vec0 = i_vec_reg_src_0;
           l_vec1 = i_vec_reg_dst;
           break;
@@ -2289,6 +2343,27 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           l_fpadj2 -= 0x0;
           l_sizereg = 1;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVZXWD:
+          l_bytes = 5;
+          l_second += 0x21;
+          l_fpadj -= 0x26;
+          l_fpadj2 -= 0x0;
+          l_sizereg = 1;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVSXBD:
+          l_bytes = 5;
+          l_second += 0x21;
+          l_fpadj -= 0x38;
+          l_fpadj2 -= 0x0;
+          l_sizereg = 1;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVZXBD:
+          l_bytes = 5;
+          l_second += 0x21;
+          l_fpadj -= 0x28;
+          l_fpadj2 -= 0x0;
+          l_sizereg = 1;
+          break;
        case LIBXSMM_X86_INSTR_VXORPS:
           l_fpadj2 = -1;
           l_fpadj = -2;
@@ -2696,9 +2771,12 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        l_vec_1 = l_vec_0;
        l_vec_0 = 0;
     }
-    if ( i_vec_instr == LIBXSMM_X86_INSTR_VPMOVSXWD )
+    if ( (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVSXWD) ||
+         (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVZXWD) ||
+         (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVSXBD) ||
+         (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVZXBD) )
     {
-       /* We only have 1 vector register input and this is a special case */
+       /* We only have 1 vector register input */
        l_reg2 = i_vec_reg_number_0 % 8;
        l_reg1 = 0;
        l_vec_0 = 0;
@@ -2716,21 +2794,27 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           {
              l_second -= 0x20;
           }
+          if ( i_vector_name == 'z' )
+          {
+             if ( (i_gp_reg_idx < 8) || (i_gp_reg_idx==LIBXSMM_X86_GP_REG_UNDEF) )
+             {
+                l_second += 0xE0;
+             }
+             if ( (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVSXBD) ||
+                  (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVZXBD) )
+             {
+                l_sizereg = 16;
+             } else {
+                l_sizereg = 32;
+             }
+          }
        }
+       if ( i_vector_name == 'z' ) l_third -= 0x80;
     }
     if ( l_vec_0 >= 8 ) { l_third  -= 0x40; }
     if ( l_vec_1 >= 8 ) { l_second -= 0x80; }
-    if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
-    {
-#if 0
-     if ( i_vec_reg_number_0 >= 8 )
-     {
-        if ( l_bytes < 5 ) l_bytes = 5;
-     }
-#endif
-    /* If VPMOVSXWD then FORCE 5 bytes even though it uses ymm */
-    } else if ( i_vec_instr != LIBXSMM_X86_INSTR_VPMOVSXWD) l_bytes = 6;
-
+    if ( (i_vector_name == 'z') || (l_vec_0 > 15) || (l_vec_1 > 15) )
+        l_bytes = 6;
 
     if ( l_bytes == 4 )
     {
