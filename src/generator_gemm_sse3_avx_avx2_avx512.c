@@ -120,14 +120,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* block according to the number of available registers */
-  if ( (i_xgemm_desc->n == 7) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) ) {
+  if ( i_xgemm_desc->n == 7 && io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE && io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
     libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 7, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
   } else {
-    const unsigned int init_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc );
+    const unsigned int init_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, i_xgemm_desc );
     const unsigned int init_m_blocks = (init_m_blocking + l_micro_kernel_config.vector_length - 1) / l_micro_kernel_config.vector_length;
-    unsigned int max_n_blocking = (( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ))
-      ? libxsmm_generator_gemm_avx512_get_max_n_blocking( i_xgemm_desc, io_generated_code->arch )
-      : l_micro_kernel_config.vector_reg_count - 2;
+    unsigned int max_n_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_max_n_blocking( &l_micro_kernel_config, i_xgemm_desc );
     while (((init_m_blocks * max_n_blocking) + init_m_blocks) > l_micro_kernel_config.vector_reg_count) {
       max_n_blocking--;
     }
@@ -168,7 +166,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
     libxsmm_generator_gemm_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n_blocking );
 
     /* define the micro kernel code gen properties, especially m-blocking affects the vector instruction length */
-    l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc );
+    l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, i_xgemm_desc );
 
     /* apply m_blocking */
     while (l_m_done != (unsigned int)i_xgemm_desc->m) {
@@ -402,7 +400,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
       }
 
       /* switch to next smaller m_blocking */
-      l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_update_m_blocking( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, l_m_blocking );
+      l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_update_m_blocking( &l_micro_kernel_config, i_xgemm_desc, l_m_blocking );
     }
     libxsmm_generator_gemm_footer_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n_blocking, l_n_done );
   }
@@ -556,11 +554,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kloop( libxs
 }
 
 
-LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( libxsmm_micro_kernel_config*   io_micro_kernel_config,
-                                                                                                    const unsigned int             i_arch,
-                                                                                                    const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  unsigned int l_m_blocking = 0;
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                                                                    const libxsmm_gemm_descriptor*  i_xgemm_desc ) {
+  const unsigned int i_arch = io_micro_kernel_config->instruction_set;
   unsigned int l_use_masking_a_c = 0;
+  unsigned int l_m_blocking = 0;
 
   if ( ( i_arch <= LIBXSMM_X86_SSE4 )           && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     l_m_blocking = 12;
@@ -657,11 +655,11 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_
 }
 
 LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_update_m_blocking( libxsmm_micro_kernel_config*   io_micro_kernel_config,
-                                                                                               const unsigned int             i_arch,
                                                                                                const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                                                                const unsigned int             i_current_m_blocking ) {
-  unsigned int l_m_blocking = 0;
+  const unsigned int i_arch = io_micro_kernel_config->instruction_set;
   unsigned int l_use_masking_a_c = 0;
+  unsigned int l_m_blocking = 0;
 
   if ( ( i_arch <= LIBXSMM_X86_SSE4 ) && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     if (i_current_m_blocking == 4) {
@@ -820,33 +818,40 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_upda
 }
 
 
-LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_avx512_get_max_n_blocking( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                                  const unsigned int             i_arch ) {
-  /* handle KNM qmadd */
-  if ( ( i_arch == LIBXSMM_X86_AVX512_KNM ) && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    return 28;
-  }
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_max_n_blocking( const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                                                                                const libxsmm_gemm_descriptor*      i_xgemm_desc) {
+  const unsigned int i_arch = i_micro_kernel_config->instruction_set;
 
-  /* handle KNM qvnni */
-  if ( ( i_arch == LIBXSMM_X86_AVX512_KNM ) && ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    return 28;
-  }
+  if ( i_arch >= LIBXSMM_X86_AVX512 && i_arch <= LIBXSMM_X86_ALLFEAT ) {
+    /* handle KNM qmadd */
+    if ( ( i_arch == LIBXSMM_X86_AVX512_KNM ) && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+      return 28;
+    }
 
-  /* handle int16 on SKX */
-  if ( ( i_arch == LIBXSMM_X86_AVX512_CORE ) && ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    return 28;
-  }
+    /* handle KNM qvnni */
+    if ( ( i_arch == LIBXSMM_X86_AVX512_KNM ) && ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+      return 28;
+    }
 
-  /* handle int8 on all AVX512 */
-  if ( ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    return 28;
-  }
+    /* handle int16 on SKX */
+    if ( ( i_arch == LIBXSMM_X86_AVX512_CORE ) && ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+      return 28;
+    }
 
-  /* handle bf16 */
-  if ( ( i_arch < LIBXSMM_X86_AVX512_CPX ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    return 28;
-  }
+    /* handle int8 on all AVX512 */
+    if ( ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+      return 28;
+    }
 
-  return 30;
+    /* handle bf16 */
+    if ( ( i_arch < LIBXSMM_X86_AVX512_CPX ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+      return 28;
+    }
+
+    return 30;
+  }
+  else {
+    return i_micro_kernel_config->vector_reg_count - 2;
+  }
 }
 
