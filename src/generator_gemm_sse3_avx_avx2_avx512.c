@@ -437,8 +437,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kloop( libxs
     l_k_blocking = 16;
     l_k_threshold = 47;
   } else {
-    l_k_blocking = 2;
-    l_k_threshold = 16;
+    l_k_blocking = 4;
+    l_k_threshold = 23;
   }
 
   /* set up architecture dependent compute micro kernel generator */
