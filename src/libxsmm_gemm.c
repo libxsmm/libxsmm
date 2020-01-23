@@ -508,16 +508,6 @@ LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type pref
     case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: return 5;
     case LIBXSMM_GEMM_PREFETCH_AL2:                return 6;
     case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C:       return 7;
-    case LIBXSMM_GEMM_PREFETCH_AL2_JPST:           return 8;
-    case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST:  return 9;
-    /*case LIBXSMM_GEMM_PREFETCH_AL2CL2BL2_VIA_C:    return 10;*/
-    case LIBXSMM_GEMM_PREFETCH_AL1:                return 10;
-    case LIBXSMM_GEMM_PREFETCH_BL1:                return 11;
-    case LIBXSMM_GEMM_PREFETCH_CL1:                return 12;
-    case LIBXSMM_GEMM_PREFETCH_AL1_BL1:            return 13;
-    case LIBXSMM_GEMM_PREFETCH_BL1_CL1:            return 14;
-    case LIBXSMM_GEMM_PREFETCH_AL1_CL1:            return 15;
-    case LIBXSMM_GEMM_PREFETCH_AL1_BL1_CL1:        return 16;
     default: {
       LIBXSMM_ASSERT(LIBXSMM_GEMM_PREFETCH_NONE == prefetch);
       return 0;
@@ -529,23 +519,13 @@ LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type pref
 LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
 {
   switch (uid) {
-    case  1: return LIBXSMM_GEMM_PREFETCH_NONE;                /* nopf */
-    case  2: return LIBXSMM_GEMM_PREFETCH_SIGONLY;             /* pfsigonly */
-    case  3: return LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;           /* BL2viaC */
-    case  4: return LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;           /* curAL2 */
-    case  5: return LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD;  /* curAL2_BL2viaC */
-    case  6: return LIBXSMM_GEMM_PREFETCH_AL2;                 /* AL2 */
-    case  7: return LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;        /* AL2_BL2viaC */
-    case  8: return LIBXSMM_GEMM_PREFETCH_AL2_JPST;            /* AL2jpst */
-    case  9: return LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST;   /* AL2jpst_BL2viaC */
-    /*case 10: return LIBXSMM_GEMM_PREFETCH_AL2CL2BL2_VIA_C;*/     /* AL2_BL2viaC_CL2 */
-    case 10: return LIBXSMM_GEMM_PREFETCH_AL1;
-    case 11: return LIBXSMM_GEMM_PREFETCH_BL1;
-    case 12: return LIBXSMM_GEMM_PREFETCH_CL1;
-    case 13: return LIBXSMM_GEMM_PREFETCH_AL1_BL1;
-    case 14: return LIBXSMM_GEMM_PREFETCH_BL1_CL1;
-    case 15: return LIBXSMM_GEMM_PREFETCH_AL1_CL1;
-    case 16: return LIBXSMM_GEMM_PREFETCH_AL1_BL1_CL1;
+    case 1: return LIBXSMM_GEMM_PREFETCH_NONE;               /* nopf */
+    case 2: return LIBXSMM_GEMM_PREFETCH_SIGONLY;            /* pfsigonly */
+    case 3: return LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;          /* BL2viaC */
+    case 4: return LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;          /* curAL2 */
+    case 5: return LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD; /* curAL2_BL2viaC */
+    case 6: return LIBXSMM_GEMM_PREFETCH_AL2;                /* AL2 */
+    case 7: return LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;       /* AL2_BL2viaC */
     default: {
       if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
         static int error_once = 0;
