@@ -888,7 +888,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3 ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2 ) {
-    if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
+    if ( (i_n_blocking > 4) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
@@ -1085,7 +1085,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3 ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2 ) {
-    if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
+    if ( (i_n_blocking > 4) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
