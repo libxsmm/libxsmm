@@ -44,7 +44,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
   int l_b_offset = 0;
 
   /* check that m_blocking is a multiple of vlen and that n_blocking is valid */
-  if ( (i_n_blocking > 4) || (i_n_blocking < 1) ) {
+  if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
