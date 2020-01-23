@@ -712,9 +712,9 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->avoid_acc_load = libxsmm_dnn_convolution_setup_avoid_acc_load(handle);
   handle->fwd_flags = libxsmm_dnn_convolution_setup_init_fwd_gemm_flags(handle);
   handle->use_fallback_fwd_loops = libxsmm_dnn_convolution_setup_fallback_loops_fwd(handle);
-  handle->code_fwd[0].pmm = 0;
-  handle->code_fwd[1].pmm = 0;
-  handle->code_fwd[2].pmm = 0;
+  handle->code_fwd[0].ptr = 0;
+  handle->code_fwd[1].ptr = 0;
+  handle->code_fwd[2].ptr = 0;
 
 #if 0
   /* Spit out FWD parameters that are selected...  */
@@ -762,9 +762,9 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   printf("Block oj = %d\n", handle->block_bwd_oj);
 #endif
 
-  handle->code_bwd[0].pmm = 0;
-  handle->code_bwd[1].pmm = 0;
-  handle->code_bwd[2].pmm = 0;
+  handle->code_bwd[0].ptr = 0;
+  handle->code_bwd[1].ptr = 0;
+  handle->code_bwd[2].ptr = 0;
   /* Transpose kernel used for filter transpose in bwd pass  */
   tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
   handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
@@ -801,8 +801,8 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   printf("Block upd ifm = %d\n", handle->block_upd_ifm);
 #endif
 
-  handle->code_upd[0].pmm = 0;
-  handle->code_upd[1].pmm = 0;
+  handle->code_upd[0].ptr = 0;
+  handle->code_upd[1].ptr = 0;
 
   /*****************************/
   /* Barrier and scratch setup */
@@ -2380,17 +2380,17 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer*
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           if (handle->code_fwd[0].pmm == 0) {
+                                           if (handle->code_fwd[0].ptr == 0) {
                                              status = LIBXSMM_DNN_WARN_FALLBACK;
                                            }
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-                                           if (handle->code_bwd[0].pmm == 0) {
+                                           if (handle->code_bwd[0].ptr == 0) {
                                              status = LIBXSMM_DNN_WARN_FALLBACK;
                                            }
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
-                                           if (handle->code_upd[0].pmm == 0) {
+                                           if (handle->code_upd[0].ptr == 0) {
                                              status = LIBXSMM_DNN_WARN_FALLBACK;
                                            }
                                          } break;

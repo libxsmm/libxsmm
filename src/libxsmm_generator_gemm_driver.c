@@ -52,9 +52,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    ARCH: noarch, wsm, snb, hsw, knl, knm, skx, clx, cpx\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2,\n"
-         "              AL2jpst, AL2_BL2viaC, curAL2_BL2viaC,\n"
-         "              AL2jpst_BL2viaC, AL1, BL1, CL1,\n"
-         "              AL1_BL1, BL1_CL1, AL1_CL1, AL1_BL1_CL1\n");
+         "              AL2_BL2viaC, curAL2_BL2viaC,\n");
   printf("    PRECISION: I16, SP, DP\n");
   printf("\n\n\n\n");
 }
@@ -165,33 +163,6 @@ int main(int argc, char* argv []) {
   }
   else if (strcmp("AL2_BL2viaC", argv[15]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;
-  }
-  else if (strcmp("AL2jpst", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2_JPST;
-  }
-  else if (strcmp("AL2jpst_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST;
-  }
-  else if (strcmp("AL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1;
-  }
-  else if (strcmp("BL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_BL1;
-  }
-  else if (strcmp("CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_CL1;
-  }
-  else if (strcmp("AL1_BL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_BL1;
-  }
-  else if (strcmp("BL1_CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_BL1_CL1;
-  }
-  else if (strcmp("AL1_CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_CL1;
-  }
-  else if (strcmp("AL1_BL1_CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_BL1_CL1;
   }
   else {
     print_help();

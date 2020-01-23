@@ -803,7 +803,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
 #endif
     for (i = 0; i < max_npargroups; ++i) {
 #if !defined(NDEBUG)
-      kernel[i].pmm = NULL;
+      kernel[i].ptr = NULL;
 # if !defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
       kflags[i] = 0;
 # endif
@@ -840,7 +840,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
             libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, 0 < group_count ? isize : -asize, 1 != max_nthreads);
             kernel[i].xgemm = libxsmm_xmmdispatch(desc);
           }
-          else kernel[i].pmm = NULL;
+          else kernel[i].ptr = NULL;
           if (NULL != kernel[i].ptr_const) {
             if (size < asize) size = asize;
 #if !defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
