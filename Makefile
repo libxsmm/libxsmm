@@ -50,24 +50,16 @@ CACHE ?= 1
 
 # Issue software prefetch instructions (see end of section
 # https://github.com/hfp/libxsmm/#generator-driver)
-# Use the enumerator 1...16, or the exact strategy
-# name pfsigonly...AL1_BL1_CL1.
-#  1: auto-select
-#  2: pfsigonly
-#  3: BL2viaC
-#  4: curAL2
-#  7: curAL2_BL2viaC
-#  5: AL2
-#  6: AL2_BL2viaC
-#  8: AL2jpst
-#  9: AL2jpst_BL2viaC
-# 10: AL1
-# 11: BL1
-# 12: CL1
-# 13: AL1_BL1
-# 14: BL1_CL1
-# 15: AL1_CL1
-# 16: AL1_BL1_CL1
+# Use the enumerator 1...6, or the exact strategy
+# name pfsigonly...AL2_BL2viaC.
+# 0: no prefetch (nopf)
+# 1: auto-select
+# 2: pfsigonly
+# 3: BL2viaC
+# 4: curAL2
+# 7: curAL2_BL2viaC
+# 5: AL2
+# 6: AL2_BL2viaC
 PREFETCH ?= 1
 
 # Preferred precision when registering statically generated code versions
@@ -513,7 +505,7 @@ PREFETCH_UID = 0
 PREFETCH_TYPE = 0
 PREFETCH_SCHEME = nopf
 ifneq (Windows_NT,$(UNAME)) # TODO: full support for Windows calling convention
-  ifneq (0,$(shell echo $$((0 <= $(PREFETCH) && $(PREFETCH) <= 16))))
+  ifneq (0,$(shell echo $$((0 <= $(PREFETCH) && $(PREFETCH) <= 6))))
     PREFETCH_UID = $(PREFETCH)
   else ifneq (0,$(shell echo $$((0 > $(PREFETCH))))) # auto
     PREFETCH_UID = 1
@@ -529,26 +521,7 @@ ifneq (Windows_NT,$(UNAME)) # TODO: full support for Windows calling convention
     PREFETCH_UID = 6
   else ifeq (AL2_BL2viaC,$(PREFETCH))
     PREFETCH_UID = 7
-  else ifeq (AL2jpst,$(PREFETCH))
-    PREFETCH_UID = 8
-  else ifeq (AL2jpst_BL2viaC,$(PREFETCH))
-    PREFETCH_UID = 9
-  else ifeq (AL1,$(PREFETCH))
-    PREFETCH_UID = 10
-  else ifeq (BL1,$(PREFETCH))
-    PREFETCH_UID = 11
-  else ifeq (CL1,$(PREFETCH))
-    PREFETCH_UID = 12
-  else ifeq (AL1_BL1,$(PREFETCH))
-    PREFETCH_UID = 13
-  else ifeq (BL1_CL1,$(PREFETCH))
-    PREFETCH_UID = 14
-  else ifeq (AL1_CL1,$(PREFETCH))
-    PREFETCH_UID = 15
-  else ifeq (AL1_BL1_CL1,$(PREFETCH))
-    PREFETCH_UID = 16
   endif
-
   # Mapping build options to libxsmm_gemm_prefetch_type (see include/libxsmm_typedefs.h)
   ifeq (1,$(PREFETCH_UID))
     # Prefetch "auto" is a pseudo-strategy introduced by the frontend;
@@ -560,46 +533,19 @@ ifneq (Windows_NT,$(UNAME)) # TODO: full support for Windows calling convention
     PREFETCH_TYPE = 1
   else ifeq (3,$(PREFETCH_UID))
     PREFETCH_SCHEME = BL2viaC
-    PREFETCH_TYPE = 8
+    PREFETCH_TYPE = 4
   else ifeq (4,$(PREFETCH_UID))
     PREFETCH_SCHEME = curAL2
-    PREFETCH_TYPE = 16
+    PREFETCH_TYPE = 8
   else ifeq (5,$(PREFETCH_UID))
     PREFETCH_SCHEME = curAL2_BL2viaC
-    PREFETCH_TYPE = $(shell echo $$((8 | 16)))
+    PREFETCH_TYPE = $(shell echo $$((4 | 8)))
   else ifeq (6,$(PREFETCH_UID))
     PREFETCH_SCHEME = AL2
     PREFETCH_TYPE = 2
   else ifeq (7,$(PREFETCH_UID))
     PREFETCH_SCHEME = AL2_BL2viaC
-    PREFETCH_TYPE = $(shell echo $$((8 | 2)))
-  else ifeq (8,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL2jpst
-    PREFETCH_TYPE = 4
-  else ifeq (9,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL2jpst_BL2viaC
-    PREFETCH_TYPE = $(shell echo $$((8 | 4)))
-  else ifeq (10,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL1
-    PREFETCH_TYPE = 32
-  else ifeq (11,$(PREFETCH_UID))
-    PREFETCH_SCHEME = BL1
-    PREFETCH_TYPE = 64
-  else ifeq (12,$(PREFETCH_UID))
-    PREFETCH_SCHEME = CL1
-    PREFETCH_TYPE = 128
-  else ifeq (13,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL1_BL1
-    PREFETCH_TYPE = $(shell echo $$((32 | 64)))
-  else ifeq (14,$(PREFETCH_UID))
-    PREFETCH_SCHEME = BL1_CL1
-    PREFETCH_TYPE = $(shell echo $$((64 | 128)))
-  else ifeq (15,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL1_CL1
-    PREFETCH_TYPE = $(shell echo $$((32 | 128)))
-  else ifeq (16,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL1_BL1_CL1
-    PREFETCH_TYPE = $(shell echo $$((32 | 64 | 128)))
+    PREFETCH_TYPE = $(shell echo $$((4 | 2)))
   endif
 endif
 ifeq (,$(PREFETCH_SCHEME_MIC)) # adopt host scheme

@@ -259,15 +259,15 @@ typedef enum libxsmm_gemm_prefetch_type {
   /** Prefetch PA using accesses to A. */
   LIBXSMM_GEMM_PREFETCH_AL2                = 2,
   /** Prefetch PA (aggressive). */
-  LIBXSMM_GEMM_PREFETCH_BL2_VIA_C          = 8,
+  LIBXSMM_GEMM_PREFETCH_BL2_VIA_C          = 4,
   /** Prefetch A ahead. */
-  LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          = 16,
+  LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          = 8,
   LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2,
   LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2_AHEAD,
   /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C (Eigen library). */
   LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C         = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C,
   /* current B into L1 */
-  LIBXSMM_GEMM_PREFETCH_BL1                = 32
+  LIBXSMM_GEMM_PREFETCH_BL1                = 16
 } libxsmm_gemm_prefetch_type;
 
 /** Flag enumeration which can be binary ORed. */
