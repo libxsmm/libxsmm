@@ -83,11 +83,13 @@ int main(int argc, char **argv) {
     int NB = (argc == 6) ? atoi(argv[4]) : 32;
     int CB = (argc == 6) ? atoi(argv[5]) : 128;
     int KB = (argc == 6) ? atoi(argv[6]) : 128;
+    double sparse_frac = ( argc == 6 ) ? atof(argv[4]) : 0.90;
     unsigned int SPAR = (argc == 6) ? atoi(argv[7]) : 90;
     unsigned int REPS = (argc == 6) ? atoi(argv[8]) : 10;
     assert(K % KB == 0);
     assert(C % CB == 0);
-    double sparse_frac = ((double)SPAR / (double)100.0);
+    assert(N % NB == 0);
+    assert(NB % 16 == 0);
     int nb = 16;
     int l_n, l_c, l_nn, l_cc, l_nnn, l_k, l_kk, blk_idx;
     int i, k, n, c;
