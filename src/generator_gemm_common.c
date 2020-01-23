@@ -989,7 +989,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_C_UNSIGNED) != 0 ) {
             libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
                 i_micro_kernel_config->instruction_set,
-                LIBXSMM_X86_INSTR_VPMOVSXWD/*LIBXSMM_X86_INSTR_VPMOVZXBD*/,
+                LIBXSMM_X86_INSTR_VPMOVZXBD,
                 i_micro_kernel_config->vector_name,
                 0, LIBXSMM_X86_VEC_REG_UNDEF,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
@@ -997,7 +997,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
           } else {
             libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
                 i_micro_kernel_config->instruction_set,
-                LIBXSMM_X86_INSTR_VPMOVSXWD/*LIBXSMM_X86_INSTR_VPMOVSXBD*/,
+                LIBXSMM_X86_INSTR_VPMOVSXBD,
                 i_micro_kernel_config->vector_name,
                 0, LIBXSMM_X86_VEC_REG_UNDEF,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
