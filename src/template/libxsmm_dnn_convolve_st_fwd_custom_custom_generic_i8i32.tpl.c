@@ -9,8 +9,7 @@
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind, ofm11, ki1, kj1, ojj, oii, spread_out = 1;
-int last_ki, last_kj, next_kj;
+int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, ii_use, ij_use, oii, spread_out = 1;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 
@@ -25,19 +24,14 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 int imgofm1ofhofw;
-
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
-int threads_per_image = handle->desc.threads / handle->desc.N;
 int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
 int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
-int my_ofm_start = 0;
-int my_ofm_end = handle->blocksofm;
 int ifmblock_lp =  handle->ifmblock/handle->fm_lp_block;
 /* Batch reduce related variables */
 unsigned long long n_blocks;
 
 /* offset output pointer in case of physical output padding */
-element_output_type *out_ptr;
 element_output_type* out = (element_output_type*)handle->reg_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 element_input_type *input_ptr = (handle->pack_input == 1) ?(element_input_type*)handle->scratch1 + handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock * handle->desc.R * handle->desc.S : (element_input_type*)handle->reg_input->data;
