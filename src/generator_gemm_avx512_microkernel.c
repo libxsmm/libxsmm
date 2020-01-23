@@ -353,7 +353,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
       }
     }
   } else {
-    /* load column vectors of A upront */
+    /* load column vectors of A upfront */
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
@@ -926,7 +926,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                                      i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
           }
         } else {
-          /* shoudn't happen */
+          /* should not happen */
         }
       }
     } else {
