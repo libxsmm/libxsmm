@@ -254,7 +254,11 @@ then
     CONFIGFILE=""
     if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ]; then
       CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
-      CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOST}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
+      if [ "" != "${CONFIGPAT}" ]; then
+        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOST}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
+      else
+        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOST}/${CONFIG}.env 2>/dev/null"))
+      fi
       CONFIGCOUNT=${#CONFIGFILES[@]}
       if [ "0" != "${CONFIGCOUNT}" ]; then
         CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
