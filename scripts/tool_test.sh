@@ -248,9 +248,13 @@ then
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
+    CONFIGFILE=""
     if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ]; then
-      if [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ]; then
-        source ${REPOROOT}/.env/${HOST}/${CONFIG}.env ""
+      CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOST}/${CONFIG}.env 2>/dev/null"))
+      CONFIGCOUNT=${#CONFIGFILES[@]}
+      if [ "0" != "${CONFIGCOUNT}" ]; then
+        CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
+        source "${CONFIGFILE}" ""
       else
         echo "WARNING: configuration \"${CONFIG}\" not found!"
       fi
@@ -280,15 +284,13 @@ then
         echo "set -eo pipefail" >> ${TESTSCRIPT}
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
-        if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-           [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ];
-        then
+        if [ "" != "${CONFIGFILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
           ${MKDIR} -p ${REPOROOT}/licenses
           ${CP} -u /opt/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
           ${CP} -u ${LICSDIR}/licenses/* ${REPOROOT}/licenses 2>/dev/null
           echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
-          echo "source ${REPOROOT}/.env/${HOST}/${CONFIG}.env """ >> ${TESTSCRIPT}
+          echo "source "${CONFIGFILE}" """ >> ${TESTSCRIPT}
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
