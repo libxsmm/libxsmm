@@ -10,7 +10,6 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include <math.h>
-#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -233,10 +232,11 @@ int main(int argc, char **argv) {
         mykernel[blk_idx] =
             libxsmm_create_xcsc_soa(l_xgemm_desc[blk_idx], b_colptr[blk_idx],
                                     b_rowidx[blk_idx],
-                                    (const void *)b_values[blk_idx])
-                .smm;
+                                    (const void *)b_values[blk_idx]).smm;
     }
+#ifdef _OPENMP
 #pragma omp parallel for collapse(2) private(k,n,c)
+#endif
     for (k = 0; k < K / KB; ++k) {
         for (n = 0; n < N / NB; ++n) {
             for (c = 0; c < C / CB; ++c) {
@@ -257,7 +257,9 @@ int main(int argc, char **argv) {
     // check performace
     unsigned long long l_start = libxsmm_timer_tick();
     for (i = 0; i < REPS; ++i) {
+#ifdef _OPENMP
 #pragma omp parallel for collapse(2) private(k,n,c)
+#endif
         for (k = 0; k < K / KB; ++k) {
             for (n = 0; n < N / NB; ++n) {
                 for (c = 0; c < C / CB; ++c) {
