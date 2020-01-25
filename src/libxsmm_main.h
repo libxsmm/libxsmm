@@ -412,6 +412,12 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   void* scratchVk;            /* Winograd weight buffer */
   size_t scratchVk_size;
 
+  libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd2;     /* ability to hoist forward GEMMs */
+
+  unsigned long long *A_offsets;
+  unsigned long long *B_offsets;
+
   /* JIT-generated convolution code */
   libxsmm_code_pointer code_fwd[3];
   libxsmm_code_pointer code_bwd[3];
@@ -495,6 +501,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   int ofmblock;
   int blocksifm;
   int blocksofm;
+  int ifm_subtasks;
+  int ofm_subtasks;
   int fm_lp_block;
   int bn;
   int bk;
@@ -503,7 +511,11 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   void* scratch;
 
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd2;     /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_bwd;     /* ability to hoist backward GEMMs */
+  libxsmm_code_pointer gemm_bwd2;    /* ability to hoist backward GEMMs */
+  libxsmm_code_pointer gemm_upd;     /* ability to hoist update GEMMs */
+  libxsmm_code_pointer gemm_upd2;    /* ability to hoist update GEMMs */
 };
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {

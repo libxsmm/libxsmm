@@ -282,6 +282,66 @@ LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
   }
 }
 
+LIBXSMM_API void libxsmm_dnn_dequantize_int8( char* in_buffer, float* out_buffer, int length, unsigned char scf ) {
+  const float val_exp = libxsmm_sexp2_i8i(-scf);
+  int i = 0;
+#ifdef _OPENMP
+# pragma omp parallel for private(i)
+#endif
+  for ( i = 0; i < length; ++i ) {
+    out_buffer[i] = ((float)in_buffer[i])*val_exp;
+  }
+}
+
+LIBXSMM_API_INLINE float libxsmm_internal_get_max_common( float* in_buffer, int length ) {
+  float absmax_value = LIBXSMM_ABS(in_buffer[0]);
+  int i = 0;
+  for (i = 1; i < length; ++i ) {
+    if (LIBXSMM_ABS(in_buffer[i]) > absmax_value) {
+      absmax_value = LIBXSMM_ABS(in_buffer[i]);
+    }
+  }
+  return absmax_value;
+}
+
+LIBXSMM_INLINE void quantize_buffer_char(float *in_buffer, char *out_buffer, int size, unsigned char add_shift, unsigned char* scf) {
+  int i;
+  const float max_value = libxsmm_internal_get_max_common(in_buffer, size);
+  int maxexp = 0;
+  /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
+  float scfq = LIBXSMM_FREXPF(max_value, &maxexp);
+  maxexp -= (7 - add_shift);
+  scfq = libxsmm_sexp2_i8i(-maxexp);
+  for (i=0; i<size; i++) {
+    out_buffer[i] = (char)LIBXSMM_ROUNDF(in_buffer[i]*scfq);
+  }
+  *scf = (unsigned char)(-maxexp);
+}
+
+LIBXSMM_INLINE void quantize_buffer_uchar(float *in_buffer, unsigned char *out_buffer, int size, unsigned char add_shift, unsigned char* scf) {
+  int i;
+  const float max_value = libxsmm_internal_get_max_common(in_buffer, size);
+  int maxexp = 0;
+  /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
+  float scfq = LIBXSMM_FREXPF(max_value, &maxexp);
+  maxexp -= (7 - add_shift);
+  scfq = libxsmm_sexp2_i8i(-maxexp);
+  for (i=0; i<size; i++) {
+    out_buffer[i] = (unsigned char)LIBXSMM_ROUNDF(in_buffer[i]*scfq);
+  }
+  *scf = (unsigned char)(-maxexp);
+}
+
+LIBXSMM_INLINE void init_buf_range(float* buf, size_t size, float low, float high)
+{
+  int i;
+  float range = high - low;
+  zero_buf(buf, size);
+  for (i = 0; i < (int)size; ++i) {
+    buf[i] = (((float)rand())/RAND_MAX)*range+low;
+  }
+}
+
 LIBXSMM_INLINE void init_buf_int16(short* buf, size_t size, int initPos, int initOne)
 {
   int i;
