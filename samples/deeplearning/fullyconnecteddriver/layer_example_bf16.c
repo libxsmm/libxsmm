@@ -101,6 +101,16 @@ int main(int argc, char* argv[])
   if (argc > i) bk         = atoi(argv[i++]);
   if (argc > i) bc         = atoi(argv[i++]);
 
+  if ( nImg % bn != 0 ) {
+    bn = nImg;
+  }
+  if ( nIFm % bc != 0 ) {
+    bc = nIFm;
+  }
+  if ( nOFm % bk != 0 ) {
+    bk = nOFm;
+  }
+
   if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only)\n");
     return -1;
@@ -306,7 +316,6 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
     }
-#if 0
     if ( (type == 'A' || type == 'B') && LIBXSMM_NEQ(0, check) ) {
       printf("##########################################\n");
       printf("#   Correctness - BWD (custom-Storage)   #\n");
@@ -326,7 +335,7 @@ int main(int argc, char* argv[])
 
       /* copy out data */
       matrix_copy_NCNC_to_NC_bf16( delinput_libxsmm, naive_libxsmm_delinput_bf16, 1, nImg, nIFm, bn, bc );
-      libxsmm_convert_bf16_f32( naive_libxsmm_delinput_bf16, naive_libxsmm_delinput_f32, nIFm*nIFm );
+      libxsmm_convert_bf16_f32( naive_libxsmm_delinput_bf16, naive_libxsmm_delinput_f32, nImg*nIFm );
 
       /* compare */
       libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput_f32, 0, 0);
@@ -339,8 +348,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_bwd);
     }
-#endif
-#if 0
+
     if ( (type == 'A' || type == 'U') && LIBXSMM_NEQ(0, check) ) {
       printf("##########################################\n");
       printf("#   Correctness - UPD (custom-Storage)   #\n");
@@ -373,7 +381,6 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd);
     }
-#endif
     if (type == 'A' || type == 'F') {
       printf("##########################################\n");
       printf("#   Performance - FWD (custom-Storage)   #\n");
@@ -402,10 +409,9 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
       printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
-        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
-        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+          nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+          norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
-#if 0
     if (type == 'A' || type == 'B') {
       printf("##########################################\n");
       printf("#   Performance - BWD (custom-Storage)   #\n");
@@ -434,11 +440,9 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
       printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
-        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
-        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
+          nOFm, ((double)(l_total/iters)), gflop/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+          norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
-#endif
-#if 0
     if (type == 'A' || type == 'U') {
       printf("##########################################\n");
       printf("#   Performance - UPD (custom-Storage)   #\n");
@@ -467,10 +471,9 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
       printf("PERFDUMP,UP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
-        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
-        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
+          nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+          norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
-#endif
     /* clean-up */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_scratch( libxsmm_handle ) );
     libxsmm_free(scratch);
