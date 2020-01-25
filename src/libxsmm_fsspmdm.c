@@ -80,7 +80,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     a_csr_colidx = (unsigned int*)malloc((size_t)a_nnz * sizeof(unsigned int));
   }
 
-  /* udpate flags */
+  /* update flags */
   if ( (beta == 0.0f) && (c_is_nt != 0) ) {
     flags |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
   }
@@ -191,7 +191,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     a_csr_colidx = (unsigned int*)malloc((size_t)a_nnz * sizeof(unsigned int));
   }
 
-  /* udpate flags */
+  /* update flags */
   if ( (beta == 0.0f) && (c_is_nt != 0) ) {
     flags |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
   }

@@ -255,7 +255,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   void (*ptr_fn)(LIBXSMM_VARIADIC);
   const void* ptr_const;
-  void* pmm;
+  void* ptr;
   uintptr_t uval;
   intptr_t ival;
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wimm, or void-function */
@@ -411,6 +411,12 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratchOw_size;
   void* scratchVk;            /* Winograd weight buffer */
   size_t scratchVk_size;
+
+  libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd2;     /* ability to hoist forward GEMMs */
+
+  unsigned long long *A_offsets;
+  unsigned long long *B_offsets;
 
   /* JIT-generated convolution code */
   libxsmm_code_pointer code_fwd[3];

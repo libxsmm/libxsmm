@@ -16,17 +16,12 @@
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
 #if !defined(_WIN32) && !defined(__CYGWIN__) /* TODO: fully support calling convention */
 #if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) \
- || 0 != ((LIBXSMM_PREFETCH) & 4/*AL2_JPST*/) \
- || 0 != ((LIBXSMM_PREFETCH) & 16/*AL2_AHEAD*/) \
- || 0 != ((LIBXSMM_PREFETCH) & 32/*AL1*/)
+ || 0 != ((LIBXSMM_PREFETCH) & 8/*AL2_AHEAD*/)
 # define LIBXSMM_GEMM_PREFETCH_A(EXPR) (EXPR)
 #endif
-#if 0 != ((LIBXSMM_PREFETCH) & 8/*BL2_VIA_C*/) \
- || 0 != ((LIBXSMM_PREFETCH) & 64/*BL1*/)
+#if 0 != ((LIBXSMM_PREFETCH) & 4/*BL2_VIA_C*/) \
+ || 0 != ((LIBXSMM_PREFETCH) & 16/*BL1*/)
 # define LIBXSMM_GEMM_PREFETCH_B(EXPR) (EXPR)
-#endif
-#if 0 != ((LIBXSMM_PREFETCH) & 128/*CL1*/)
-# define LIBXSMM_GEMM_PREFETCH_C(EXPR) (EXPR)
 #endif
 #endif
 /** Secondary helper macros derived from the above group. */
