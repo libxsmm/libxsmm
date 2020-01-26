@@ -237,13 +237,13 @@ BRACE_CLOSE := )
 ifneq (0,$(QUOTED))
   quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//;s/ /\\\ /g;s/\\\\\\\/\\\/g")
 else
-  quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//")
+  quote = $(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
 endif
 ifneq (0,$(SPACES))
-  apath = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
+  apath = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
     if [ ! -d "$${VAR}" ]; then cd "$$(dirname "$${VAR}" 2>/dev/null)" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}" 2>/dev/null)"; \
     else cd "$${VAR}" 2>/dev/null && pwd -P; fi)
-  afile = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && export VAR="$${VAR%$${VAR\#\#*[! ]}}" && \
+  afile = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
     if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi)
   qapath = $(call quote,$(call apath,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qndir = $(call quote,$(call afile,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
