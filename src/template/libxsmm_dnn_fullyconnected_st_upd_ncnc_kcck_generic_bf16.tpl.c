@@ -57,8 +57,8 @@ const int nBlocksMB  = handle->desc.N / bn;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 /* number of tasks that could be run in parallel */
-const int ofm_subtasks = handle->ofm_subtasks; /*(handle->bk == 64 && !(handle->desc.C == 1024 && handle->desc.K == 1024)) ? 2 : 1; */
-const int ifm_subtasks = handle->ifm_subtasks; /* (handle->bc == 64 && (handle->desc.C == 512 && handle->desc.K == 512)) ? 4 : 1; */
+const int ofm_subtasks = handle->ofm_subtasks;
+const int ifm_subtasks = handle->ifm_subtasks;
 const int bbk = bk/ofm_subtasks;
 const int bbc = bc/ifm_subtasks;
 const int work = nBlocksIFm * ifm_subtasks * nBlocksOFm * ofm_subtasks;
@@ -66,7 +66,7 @@ const int Cck_work = nBlocksIFm * ifm_subtasks * ofm_subtasks;
 const int Cc_work = nBlocksIFm * ifm_subtasks;
 
 /* 2D blocking parameters  */
-int use_2d_blocking = ((handle->desc.threads == 28) && (ofm_subtasks == 1) && (ifm_subtasks == 1)) ? 1 : 0;
+int use_2d_blocking = handle->upd_2d_blocking;
 int im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
 
 /* compute chunk size */
@@ -74,7 +74,7 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-int BF = 1; /*((handle->desc.N == 2048) && (nBlocksMB % 4 == 0)) ? 4 : 1;*/
+int BF = handle->upd_bf;
 
 /* loop variables */
 int mb1 = 0, ifm1ofm1 = 0, ofm1 = 0, ifm1 = 0, ofm2 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ofm1 = 0, mb1ifm1 = 0, mb2 = 0, jc = 0, jk = 0;
@@ -114,10 +114,8 @@ __m512i c01 = LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32();
 const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
 
 if (use_2d_blocking == 1) {
-  if (handle->desc.threads == 28) {
-    row_teams = 7;
-    column_teams = 4;
-  }
+  row_teams = handle->upd_row_teams;
+  column_teams = handle->upd_column_teams;
   my_col_id = ltid % column_teams;
   my_row_id = ltid / column_teams;
   im_tasks_per_thread = (nBlocksIFm + row_teams-1)/row_teams;

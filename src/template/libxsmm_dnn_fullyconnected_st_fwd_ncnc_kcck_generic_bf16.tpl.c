@@ -54,7 +54,7 @@ const int nBlocksMB  = handle->desc.N / handle->bn;
 const int bn = handle->bn;
 const int bk = handle->bk;
 /* const int bc = handle->bc;*/
-int use_2d_blocking = (handle->desc.threads == 28) ? 1 : 0;
+int use_2d_blocking = handle->fwd_2d_blocking;
 
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -79,31 +79,13 @@ LIBXSMM_VLA_DECL(4,        float,    output_f32, (float*) temp_output, nBlocksOF
 unsigned long long  blocks = nBlocksIFm;
 int CB_BLOCKS = nBlocksIFm, BF = 1;
 
-/* Blocking reduction domain if it is too large */
-if ((handle->desc.C > 1024 && handle->desc.C <= 2048) || (handle->desc.K > 1024 && handle->desc.K <= 2048)) {
-  BF = 8;
-  while ( (nBlocksIFm % BF != 0) || (nBlocksOFm % BF != 0) ) {
-    BF--;
-  }
-}
-if (handle->desc.C > 2048 || handle->desc.K > 2048) {
-  BF = 16;
-  while ( (nBlocksIFm % BF != 0) || (nBlocksOFm % BF != 0) ) {
-    BF--;
-  }
-}
-if (handle->desc.K == 2048 && handle->desc.C == 1024) {
-  BF = 2;
-}
-
+BF = handle->fwd_bf;
 CB_BLOCKS = nBlocksIFm/BF;
 blocks = CB_BLOCKS;
 
 if (use_2d_blocking == 1) {
-  if (handle->desc.threads == 28) {
-    row_teams = 7;
-    column_teams = 4;
-  }
+  row_teams = handle->fwd_row_teams;
+  column_teams = handle->fwd_column_teams;
   my_col_id = ltid % column_teams;
   my_row_id = ltid / column_teams;
   im_tasks_per_thread = (nBlocksMB + row_teams-1)/row_teams;

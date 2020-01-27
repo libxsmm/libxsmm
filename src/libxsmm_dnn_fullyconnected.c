@@ -57,8 +57,8 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
         }
 
         /* TODO: Consider subtasking parameters here for UPD pass based on input sizes... */
-        handle->ifm_subtasks = 1;
-        handle->ofm_subtasks = 1;
+        handle->ifm_subtasks = atoi(getenv("IFM_SUBTASKS"));
+        handle->ofm_subtasks = atoi(getenv("OFM_SUBTASKS"));
       } else {
         /* we need to compute the memory layout given the */
         if ( (handle->desc.C % 16 == 0) && (handle->desc.K % 16 == 0) ) {

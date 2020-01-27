@@ -501,8 +501,22 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   int ofmblock;
   int blocksifm;
   int blocksofm;
+  /* Parameters to tune/specialize FC algorithms */
+  int fwd_2d_blocking;
+  int bwd_2d_blocking;
+  int upd_2d_blocking;
+  int fwd_bf;
+  int bwd_bf;
+  int upd_bf;
+  int fwd_row_teams;
+  int fwd_column_teams;
+  int bwd_row_teams;
+  int bwd_column_teams;
+  int upd_row_teams;
+  int upd_column_teams;
   int ifm_subtasks;
   int ofm_subtasks;
+
   int fm_lp_block;
   int bn;
   int bk;
