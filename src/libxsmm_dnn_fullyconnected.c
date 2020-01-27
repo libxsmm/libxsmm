@@ -55,10 +55,22 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           handle->bk = handle->desc.K;
           *status = LIBXSMM_DNN_WARN_FC_SUBOPTIMAL_K_BLOCKING;
         }
-
-        /* TODO: Consider subtasking parameters here for UPD pass based on input sizes... */
-        handle->ifm_subtasks = atoi(getenv("IFM_SUBTASKS"));
-        handle->ofm_subtasks = atoi(getenv("OFM_SUBTASKS"));
+        if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) )  {
+          handle->fwd_bf = atoi(getenv("FWD_BF"));
+          handle->bwd_bf = atoi(getenv("BWD_BF"));
+          handle->upd_bf = atoi(getenv("UPD_BF"));
+          handle->fwd_2d_blocking = atoi(getenv("FWD_2D_BLOCKING"));
+          handle->bwd_2d_blocking = atoi(getenv("BWD_2D_BLOCKING"));
+          handle->upd_2d_blocking = atoi(getenv("UPD_2D_BLOCKING"));
+          handle->fwd_row_teams = atoi(getenv("FWD_ROW_TEAMS"));
+          handle->fwd_column_teams = atoi(getenv("FWD_COLUMN_TEAMS"));
+          handle->bwd_row_teams = atoi(getenv("BWD_ROW_TEAMS"));
+          handle->bwd_column_teams = atoi(getenv("BWD_COLUMN_TEAMS"));
+          handle->upd_row_teams = atoi(getenv("UPD_ROW_TEAMS"));
+          handle->upd_column_teams = atoi(getenv("UPD_COLUMN_TEAMS"));
+          handle->ifm_subtasks = atoi(getenv("IFM_SUBTASKS"));
+          handle->ofm_subtasks = atoi(getenv("OFM_SUBTASKS"));
+        }
       } else {
         /* we need to compute the memory layout given the */
         if ( (handle->desc.C % 16 == 0) && (handle->desc.K % 16 == 0) ) {
