@@ -273,7 +273,7 @@ For development and experiments, one may clone a [fork](https://github.com/hfp/t
 git clone https://github.com/hfp/tensorflow.git
 ```
 
-To get nicely named JIT-kernels when profiling a workload, LIBXSMM's support for [JIT-profiling](libxsmm_prof) can be leveraged. In case of TensorFlow, the following flags can be added to Bazel's build line (Intel VTune Amplifier 2018):
+To get nicely named JIT-kernels when profiling a workload, LIBXSMM's support for [JIT-profiling](libxsmm_prof.md) can be leveraged. In case of TensorFlow, the following flags can be added to Bazel's build line (Intel VTune Amplifier 2018):
 
 ```bash
 --copt=-DLIBXSMM_VTUNE=2 --linkopt=${VTUNE_AMPLIFIER_2018_DIR}/lib64/libjitprofiling.a
