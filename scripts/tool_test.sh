@@ -262,6 +262,7 @@ then
       CONFIGCOUNT=${#CONFIGFILES[@]}
       if [ "0" != "${CONFIGCOUNT}" ]; then
         CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
+        CONFIG=$(${BASENAME} ${CONFIGFILE} .env)
         source "${CONFIGFILE}" ""
       else
         echo "WARNING: configuration \"${CONFIG}\" not found!"
