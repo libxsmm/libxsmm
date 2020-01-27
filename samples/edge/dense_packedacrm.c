@@ -88,7 +88,10 @@ int main(int argc, char* argv[]) {
   double max_error = 0.0;
   double gflops_ref = 0.0;
   double gflops_opt = 0.0;
+  double gflops_opt2 = 0.0;
   unsigned int i = 0;
+  unsigned long long l_libxsmmflops;
+  libxsmm_kernel_info l_kinfo;
 
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
     c1[i] = (REALTYPE)libxsmm_rng_f64();
@@ -159,12 +162,16 @@ int main(int argc, char* argv[]) {
   }
   l_end = libxsmm_timer_tick();
   l_total_opt = libxsmm_timer_duration(l_start, l_end);
+  libxsmm_get_kernel_info( mykernel, &l_kinfo);
+  l_libxsmmflops = l_kinfo.nflops;
 
-  gflops_ref = (flops/l_total_ref)/1e9;
-  gflops_opt = (flops/l_total_opt)/1e9;
+  gflops_ref  = (flops/l_total_ref)/1e9;
+  gflops_opt  = (flops/l_total_opt)/1e9;
+  gflops_opt2 = (((double)l_libxsmmflops)/l_total_opt)/1e9;
 
   printf("GFLOPS ref: %f\n", gflops_ref);
-  printf("GFLOPS opt: %f\n", gflops_opt);
+  printf("GFLOPS opt, calculated: %f\n", gflops_opt);
+  printf("GFLOPS opt, libxsmm:    %f\n", gflops_opt2);
 
   libxsmm_free( a );
   libxsmm_free( b );
