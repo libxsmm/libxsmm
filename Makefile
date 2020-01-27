@@ -190,9 +190,12 @@ endif
 # Kind of documentation (internal key)
 DOCEXT = pdf
 
+# Timeout when downloading documentation parts
+TIMEOUT = 30
+
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = \
-  DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR \
+  DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR TIMEOUT \
   PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR \
   SRCDIR TEST VERSION_STRING DEPSTATIC ALIAS_% BLAS %_TARGET %ROOT MPSS KNC
 
@@ -1292,6 +1295,7 @@ $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/\[\[..*\](..*)\]//g' \
 		-e "s/](${DOCDIR}\//](/g" \
+		-e 'N;/^\n$$/d;P;D' \
 		> $@
 
 $(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md \
@@ -1315,9 +1319,9 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		iconv -t utf-8 libxsmm_be.md && echo && \
 		echo "# Appendix" && \
 		echo "## Compatibility" && \
-		wget -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Compatibility.md 2>/dev/null && echo && \
+		wget -T $(TIMEOUT) -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Compatibility.md 2>/dev/null && echo && \
 		echo "## Validation" && \
-		wget -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Validation.md 2>/dev/null; ) \
+		wget -T $(TIMEOUT) -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Validation.md 2>/dev/null; ) \
 	| sed \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
@@ -1762,12 +1766,12 @@ deb:
 		echo "Architecture: amd64" >> control; \
 		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >> control; \
 		echo "Description: Matrix operations and deep learning primitives" >> control; \
-		wget -qO- https://api.github.com/repos/hfp/libxsmm \
+		wget -T $(TIMEOUT) -qO- https://api.github.com/repos/hfp/libxsmm \
 		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
 		| fold -s -w 79 | sed -e 's/^/ /' -e 's/[[:space:]][[:space:]]*$$//' >> control; \
 		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
-		wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
+		wget -T $(TIMEOUT) -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
 		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
 		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
 		| sed -n 's/^\* \(..*\)/\* \1/p' \
