@@ -101,6 +101,22 @@ int main(int argc, char* argv[])
   if (argc > i) bk         = atoi(argv[i++]);
   if (argc > i) bc         = atoi(argv[i++]);
 
+  /* These are tuning parameters to be attached to the perfdump string  */
+  int fwd_bf = atoi(getenv("FWD_BF"));
+  int bwd_bf = atoi(getenv("BWD_BF"));
+  int upd_bf = atoi(getenv("UPD_BF"));
+  int fwd_2d_blocking = atoi(getenv("FWD_2D_BLOCKING"));
+  int bwd_2d_blocking = atoi(getenv("BWD_2D_BLOCKING"));
+  int upd_2d_blocking = atoi(getenv("UPD_2D_BLOCKING"));
+  int fwd_row_teams = atoi(getenv("FWD_ROW_TEAMS"));
+  int fwd_column_teams = atoi(getenv("FWD_COLUMN_TEAMS"));
+  int bwd_row_teams = atoi(getenv("BWD_ROW_TEAMS"));
+  int bwd_column_teams = atoi(getenv("BWD_COLUMN_TEAMS"));
+  int upd_row_teams = atoi(getenv("UPD_ROW_TEAMS"));
+  int upd_column_teams = atoi(getenv("UPD_COLUMN_TEAMS"));
+  int ifm_subtasks = atoi(getenv("IFM_SUBTASKS"));
+  int ofm_subtasks = atoi(getenv("OFM_SUBTASKS"));
+
   if ( nImg % bn != 0 ) {
     bn = nImg;
   }
@@ -408,7 +424,10 @@ int main(int argc, char* argv[])
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
-      printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
+      char tune_string_fwd[1000];
+      sprintf(tune_string_fwd,"threads=%d_2D=%d_rows=%d_cols=%d_BN=%d_BK=%d_BC=%d_BFACCUM=%d",nThreads, fwd_2d_blocking, fwd_row_teams, fwd_column_teams, bn, bk, bc, fwd_bf);
+
+      printf("PERFDUMP,%s,FP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n",tune_string_fwd, LIBXSMM_VERSION, nThreads, nImg, nIFm,
           nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
           norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
@@ -439,7 +458,9 @@ int main(int argc, char* argv[])
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
-      printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
+      char tune_string_bwd[1000];
+      sprintf(tune_string_bwd,"threads=%d_2D=%d_rows=%d_cols=%d_BN=%d_BK=%d_BC=%d_BFACCUM=%d",nThreads, bwd_2d_blocking, bwd_row_teams, bwd_column_teams, bn, bk, bc, bwd_bf);
+      printf("PERFDUMP,%s,BP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", tune_string_bwd , LIBXSMM_VERSION, nThreads, nImg, nIFm,
           nOFm, ((double)(l_total/iters)), gflop/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
           norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
@@ -470,7 +491,9 @@ int main(int argc, char* argv[])
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
-      printf("PERFDUMP,UP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
+      char tune_string_upd[1000];
+      sprintf(tune_string_upd,"threads=%d_2D=%d_rows=%d_cols=%d_BN=%d_BK=%d_BC=%d_BFACCUM=%d_IFMSUBTASK=%d_OFMSUBTASK=%d",nThreads, upd_2d_blocking, upd_row_teams, upd_column_teams, bn, bk, bc, upd_bf, ifm_subtasks, ofm_subtasks);
+      printf("PERFDUMP,%s,UP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", tune_string_upd , LIBXSMM_VERSION, nThreads, nImg, nIFm,
           nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
           norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
