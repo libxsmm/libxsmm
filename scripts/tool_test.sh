@@ -276,14 +276,14 @@ then
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ] || [ "none" != "${ENV}" ]; then
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
           if [ "" != "${ENVVAL}" ]; then
-            echo "+++ TEST ${TESTID} (${PARTITION}/${ENVVAL})"
+            echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG}/${ENVVAL})"
           else
-            echo "+++ TEST ${TESTID} (${PARTITION})"
+            echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG})"
           fi
         elif [ "" != "${ENVVAL}" ]; then
-          echo "+++ TEST ${TESTID} (${ENVVAL})"
+          echo "+++ TEST ${TESTID} (${CONFIG}/${ENVVAL})"
         else
-          echo "+++ TEST ${TESTID}"
+          echo "+++ TEST ${TESTID} (${CONFIG})"
         fi
       fi
       # prepare temporary script for remote environment/execution
