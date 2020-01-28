@@ -163,7 +163,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_cache_entry_type {
   libxsmm_descriptor keys[LIBXSMM_CACHE_MAXSIZE];
   libxsmm_code_pointer code[LIBXSMM_CACHE_MAXSIZE];
-# if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
+# if (!defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR))
   unsigned int id; /* to invalidate */
 # endif
   unsigned char size, hit;
@@ -672,6 +672,17 @@ LIBXSMM_API_INTERN void internal_init(void)
     /* clear error status (dummy condition: it does not matter if MPI_Init or MPI_Abort) */
     const char *const dlsymname = (NULL == dlerror() ? "MPI_Init" : "MPI_Abort");
     const void *const dlsymbol = dlsym(RTLD_NEXT, dlsymname);
+#endif
+    /* setup verbosity as early as possible since below code may rely on verbose output */
+    if (NULL != env_verbose && 0 != *env_verbose) {
+      libxsmm_verbosity = atoi(env_verbose);
+    }
+#if !defined(NDEBUG)
+    else {
+      libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
+    }
+#endif
+#if defined(LIBXSMM_INTERCEPT_DYNAMIC)
     /* MPI: non-user affinity can slow-down unrelated jobs, e.g., CP2K regtests */
     if (NULL == dlerror() && NULL == dlsymbol)
 #endif
@@ -685,17 +696,11 @@ LIBXSMM_API_INTERN void internal_init(void)
       {
         static char affinity[] = "OMP_PROC_BIND=TRUE";
         LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(affinity));
+        if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
+          fprintf(stderr, "LIBXSMM: prepared to pin threads.\n");
+        }
       }
     }
-    /* setup verbosity as early as possible since below code may rely on verbose output */
-    if (NULL != env_verbose && 0 != *env_verbose) {
-      libxsmm_verbosity = atoi(env_verbose);
-    }
-#if !defined(NDEBUG)
-    else {
-      libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
-    }
-#endif
     LIBXSMM_ASSERT(NULL == internal_registry_keys); /* should never happen */
 #if !defined(_WIN32) && 0
     umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
@@ -814,6 +819,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       { /* commit the registry buffer and enable global visibility */
         void *const pv_registry = &internal_registry;
         LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
+        LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_RELAXED); /* invalidate code cache (TLS) */
       }
     }
     else {
@@ -993,6 +999,12 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     if (NULL != registry) {
       libxsmm_descriptor *const registry_keys = internal_registry_keys;
       unsigned int rest = 0, errors = 0;
+      /* make internal registry and keys globally unavailable */
+      LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
+      internal_registry_keys = NULL;
+#if !defined(NDEBUG)
+      internal_registry = NULL;
+#endif
       internal_registry_nbytes = 0;
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         /*const*/ libxsmm_code_pointer code = registry[i];
@@ -1068,12 +1080,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       libxsmm_gemm_finalize();
       libxsmm_xcopy_finalize();
       libxsmm_dnn_finalize();
-      /* make internal registry globally unavailable */
-      LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
-      internal_registry_keys = NULL;
-#if !defined(NDEBUG)
-      internal_registry = NULL;
-#endif
+      /* release memory of registry and keys */
       libxsmm_xfree(registry_keys, 0/*no check*/);
       libxsmm_xfree(registry, 0/*no check*/);
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
@@ -1881,7 +1888,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
     LIBXSMM_MIN(size, LIBXSMM_DIFF_SIZE), LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
 # endif
   if (
-# if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
+# if (!defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR))
     cache->entry.id == libxsmm_ninit &&
 # endif
     cache_index < cache->entry.size)
@@ -2055,7 +2062,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     if (NULL != flux_entry.ptr_const) { /* keep code version on record (cache) */
       LIBXSMM_ASSERT(0 == diff);
-# if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
+# if (!defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR))
       if (cache->entry.id == libxsmm_ninit) /* maintain cache */
 # endif
       {
@@ -2064,11 +2071,15 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
           LIBXSMM_ASSERT(cache->entry.size <= LIBXSMM_CACHE_MAXSIZE);
         }
         else { /* evict */
+          LIBXSMM_ASSERT(cache->entry.hit < cache->entry.size);
           INTERNAL_FIND_CODE_CACHE_EVICT(cache_index, cache->entry.size, cache->entry.hit);
         }
       }
-# if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
+# if (!defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR))
       else { /* reset cache */
+# if !defined(NDEBUG)
+        LIBXSMM_MEMZERO127(cache->entry.keys);
+# endif
         cache->entry.id = libxsmm_ninit;
         cache->entry.size = 1;
         cache_index = 0;
