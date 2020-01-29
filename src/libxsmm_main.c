@@ -995,10 +995,21 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #endif
     regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
     registry = (libxsmm_code_pointer*)regptr;
-
     if (NULL != registry) {
       libxsmm_descriptor *const registry_keys = internal_registry_keys;
       unsigned int rest = 0, errors = 0;
+#if defined(LIBXSMM_TRACE)
+      i = libxsmm_trace_finalize();
+      if (EXIT_SUCCESS != i && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+        fprintf(stderr, "LIBXSMM ERROR: failed to finalize trace (error #%i)!\n", i);
+      }
+#endif
+#if defined(LIBXSMM_PERF)
+      libxsmm_perf_finalize();
+#endif
+      libxsmm_gemm_finalize();
+      libxsmm_xcopy_finalize();
+      libxsmm_dnn_finalize();
       /* make internal registry and keys globally unavailable */
       LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
       internal_registry_keys = NULL;
@@ -1068,18 +1079,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
           }
         }
       }
-#if defined(LIBXSMM_TRACE)
-      i = libxsmm_trace_finalize();
-      if (EXIT_SUCCESS != i && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        fprintf(stderr, "LIBXSMM ERROR: failed to finalize trace (error #%i)!\n", i);
-      }
-#endif
-#if defined(LIBXSMM_PERF)
-      libxsmm_perf_finalize();
-#endif
-      libxsmm_gemm_finalize();
-      libxsmm_xcopy_finalize();
-      libxsmm_dnn_finalize();
       /* release memory of registry and keys */
       libxsmm_xfree(registry_keys, 0/*no check*/);
       libxsmm_xfree(registry, 0/*no check*/);
@@ -1089,7 +1088,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       internal_cache_buffer = NULL;
 # endif
 #endif
-      }
+    }
 #if (0 != LIBXSMM_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
 # if (1 < INTERNAL_REGLOCK_MAXN)
     for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, &internal_reglock[i].state);
