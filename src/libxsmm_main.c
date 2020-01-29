@@ -819,7 +819,6 @@ LIBXSMM_API_INTERN void internal_init(void)
       { /* commit the registry buffer and enable global visibility */
         void *const pv_registry = &internal_registry;
         LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
-        LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_RELAXED); /* invalidate code cache (TLS) */
       }
     }
     else {
@@ -828,9 +827,16 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       libxsmm_xfree(internal_cache_buffer, 0/*no check*/);
+# if !defined(NDEBUG)
+      internal_cache_buffer = NULL;
+# endif
 #endif
       libxsmm_xfree(internal_registry_keys, 0/*no check*/);
       libxsmm_xfree(new_registry, 0/*no check*/);
+# if !defined(NDEBUG)
+      internal_registry_keys = NULL;
+      internal_registry = NULL;
+# endif
     }
   }
 #if (0 != LIBXSMM_SYNC) /* release locks */
@@ -996,7 +1002,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
     registry = (libxsmm_code_pointer*)regptr;
     if (NULL != registry) {
-      libxsmm_descriptor *const registry_keys = internal_registry_keys;
       unsigned int rest = 0, errors = 0;
 #if defined(LIBXSMM_TRACE)
       i = libxsmm_trace_finalize();
@@ -1007,23 +1012,17 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_finalize();
 #endif
-      libxsmm_gemm_finalize();
       libxsmm_xcopy_finalize();
+      libxsmm_gemm_finalize();
       libxsmm_dnn_finalize();
-      /* make internal registry and keys globally unavailable */
-      LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
-      internal_registry_keys = NULL;
-#if !defined(NDEBUG)
-      internal_registry = NULL;
-#endif
       internal_registry_nbytes = 0;
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         /*const*/ libxsmm_code_pointer code = registry[i];
         if (NULL != code.ptr_const) {
           /* check if the registered entity is a GEMM kernel */
-          switch (registry_keys[i].kind) {
+          switch (internal_registry_keys[i].kind) {
             case LIBXSMM_KERNEL_KIND_MATMUL: {
-              const libxsmm_gemm_descriptor *const desc = &registry_keys[i].gemm.desc;
+              const libxsmm_gemm_descriptor *const desc = &internal_registry_keys[i].gemm.desc;
               if (1 < desc->m && 1 < desc->n) {
                 const unsigned int njit = (0 == (LIBXSMM_CODE_STATIC & code.uval) ? 1 : 0);
                 const unsigned int nsta = (0 != (LIBXSMM_CODE_STATIC & code.uval) ? 1 : 0);
@@ -1047,7 +1046,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             case LIBXSMM_KERNEL_KIND_TRMM: {
               ++internal_statistic_num_trmm;
             } break;
-            default: if (LIBXSMM_KERNEL_UNREGISTERED <= registry_keys[i].kind) {
+            default: if (LIBXSMM_KERNEL_UNREGISTERED <= internal_registry_keys[i].kind) {
               ++errors;
             }
             else {
@@ -1072,6 +1071,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             code.uval &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
             if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, &size, NULL/*flags*/, &buffer)) {
+#if !defined(NDEBUG)
+              registry[i].ptr = NULL;
+#endif
               libxsmm_xfree(code.ptr_const, 0/*no check*/);
               /* round-up size (it is fine to assume 4 KB pages since it is likely more accurate than not rounding up) */
               internal_registry_nbytes += (unsigned int)LIBXSMM_UP2(size + (((char*)code.ptr_const) - (char*)buffer), 4096/*4KB*/);
@@ -1079,15 +1081,23 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
           }
         }
       }
-      /* release memory of registry and keys */
-      libxsmm_xfree(registry_keys, 0/*no check*/);
-      libxsmm_xfree(registry, 0/*no check*/);
+      { /* release and reset buffers (registry, keys, cache) */
+        libxsmm_descriptor *const registry_keys = internal_registry_keys;
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-      libxsmm_xfree(internal_cache_buffer, 0/*no check*/);
+        internal_cache_type *const cache_buffer = internal_cache_buffer;
 # if !defined(NDEBUG)
-      internal_cache_buffer = NULL;
+        internal_cache_buffer = NULL;
 # endif
 #endif
+        internal_registry_keys = NULL; /* make registry keys unavailable */
+        LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_RELAXED); /* invalidate code cache (TLS) */
+        LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
+#if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
+        libxsmm_xfree(cache_buffer, 0/*no check*/);
+#endif
+        libxsmm_xfree(registry_keys, 0/*no check*/);
+        libxsmm_xfree(registry, 0/*no check*/);
+      }
     }
 #if (0 != LIBXSMM_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
 # if (1 < INTERNAL_REGLOCK_MAXN)
