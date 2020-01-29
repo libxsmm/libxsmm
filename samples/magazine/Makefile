@@ -113,24 +113,24 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/$(OUTNAME)_xsmm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(LIBDEP) $(EXTDEP) $(NOBLASDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(call cleanld,$(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/$(OUTNAME)_batch: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_batch-c.o $(LIBDEP) $(EXTDEP) $(NOBLASDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_batch-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_batch-c.o $(call cleanld,$(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/$(OUTNAME)_blas: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blas-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blas-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blas-c.o $(call cleanld,$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 ifneq (,$(BLAZEROOT))
 $(OUTDIR)/$(OUTNAME)_blaze: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blaze-cpp.o
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blaze-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blaze-cpp.o $(call cleanld,$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)_blaze
 endif
 
 ifneq (,$(EIGENROOT))
 $(OUTDIR)/$(OUTNAME)_eigen: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_eigen-cpp.o
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_eigen-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_eigen-cpp.o $(call cleanld,$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)_eigen
 endif

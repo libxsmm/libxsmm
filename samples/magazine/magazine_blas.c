@@ -24,9 +24,6 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
   const float*, const float*, const int*, const float*, const int*,
   const float*, float*, const int*);
 #endif
-#if defined(_OPENMP) && !defined(SYNC)
-# include <omp.h>
-#endif
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -101,14 +98,12 @@ int main(int argc, char* argv[])
 #if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   if (NULL != jitter) {
 # if !defined(_OPENMP) || defined(SYNC)
-#   if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-    duration = dsecnd();
-#   endif
+    duration = seconds();
 # else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
 #     pragma omp single
-      duration = omp_get_wtime();
+      duration = seconds();
 #     pragma omp for private(i)
 # endif
       for (i = 0; i < size; ++i) {
@@ -116,10 +111,8 @@ int main(int argc, char* argv[])
       }
 # if defined(_OPENMP) && !defined(SYNC)
     }
-    duration = omp_get_wtime() - duration;
-# elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-    duration = dsecnd() - duration;
 # endif
+    duration = seconds() - duration;
   }
   else
 # if defined(NOFALLBACK)
@@ -128,14 +121,12 @@ int main(int argc, char* argv[])
 #endif
   {
 #if !defined(_OPENMP) || defined(SYNC)
-# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-    duration = dsecnd();
-# endif
+    duration = seconds();
 #else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
 #     pragma omp single
-      duration = omp_get_wtime();
+      duration = seconds();
 #     pragma omp for private(i)
 #endif
       for (i = 0; i < size; ++i) {
@@ -145,10 +136,8 @@ int main(int argc, char* argv[])
       }
 #if defined(_OPENMP) && !defined(SYNC)
     }
-    duration = omp_get_wtime() - duration;
-#elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-    duration = dsecnd() - duration;
 #endif
+    duration = seconds() - duration;
   }
 
   if (0 < duration) {

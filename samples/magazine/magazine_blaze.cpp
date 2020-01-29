@@ -80,11 +80,11 @@ int main(int argc, char* argv[])
 # pragma omp parallel
 #endif
   {
-#if !defined(_OPENMP) || defined(SYNC)
-    timer.start();
-#else /* OpenMP thread pool is already populated (parallel region) */
+#if defined(_OPENMP) && !defined(SYNC)
 #   pragma omp single
+#endif
     timer.start();
+#if defined(_OPENMP) && !defined(SYNC)
 #   pragma omp for
 #endif
     for (int i = 0; i < size; ++i) {

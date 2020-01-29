@@ -12,6 +12,14 @@
 #define MAGAZINE_H
 
 #include <stdio.h>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
+#if defined(_WIN32)
+# include <Windows.h>
+#else
+# include <sys/time.h>
+#endif
 
 #if !defined(TYPE)
 # define TYPE double
@@ -71,6 +79,22 @@ static double norm(const TYPE* src, int nrows, int ncols, int ld) {
     }
   }
   return result;
+}
+
+
+static double seconds(void) {
+#if defined(_OPENMP)
+  return omp_get_wtime();
+#elif defined(_WIN32)
+  LARGE_INTEGER t, f;
+  QueryPerformanceCounter(&t);
+  QueryPerformanceFrequency(&f);
+  return (double)t.QuadPart / f.QuadPart;
+#else
+  struct timeval t;
+  gettimeofday(&t, 0);
+  return 1E-6 * (1000000ULL * t.tv_sec + t.tv_usec);
+#endif
 }
 
 #endif /*MAGAZINE_H*/

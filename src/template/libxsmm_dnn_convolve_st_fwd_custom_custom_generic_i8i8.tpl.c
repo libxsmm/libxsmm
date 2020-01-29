@@ -23,8 +23,8 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 /* Batch reduce related variables */
-unsigned long long n_blocks = handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
-/* Calclate scaling factor here for output... */
+unsigned long long n_blocks = (unsigned long long)handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
+/* Calculate scaling factor here for output... */
 float _scf = libxsmm_sexp2_i8i(-(handle->reg_filter->scf + handle->reg_input->scf - handle->reg_output->scf));
 /* offset output pointer in case of physical output padding */
 LIBXSMM_VLA_DECL(5, element_output_type, output, (element_output_type*)handle->reg_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);

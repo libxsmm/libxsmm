@@ -113,7 +113,7 @@ if (handle->avoid_fmas_in_rim == 1) {
   }
 } else {
   /* Strided based BRGEMM  */
-  n_blocks = handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
+  n_blocks = (unsigned long long)handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
   if (handle->desc.R == 1 && handle->desc.S == 1) {
     for (imgofm1ofhofw = thr_begin; imgofm1ofhofw < thr_end; ++imgofm1ofhofw) {
       img = imgofm1ofhofw / work_KHW;
