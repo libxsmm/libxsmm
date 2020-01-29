@@ -364,7 +364,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       const unsigned int minsize = (batchscale * env_bu + (LIBXSMM_GEMM_BATCHSCALE) - 1) / (LIBXSMM_GEMM_BATCHSCALE);
       const unsigned int batchsize = LIBXSMM_MAX(env_bu, minsize);
       const void *const extra = NULL;
-      LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_MMBATCH_SCALE));
+      LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_MMBATCH_SCALE) && NULL == libxsmm_mmbatch_array);
       if (EXIT_SUCCESS == libxsmm_xmalloc(&libxsmm_mmbatch_array, (size_t)batchsize * (LIBXSMM_GEMM_BATCHSCALE), 0/*auto-alignment*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE /*| LIBXSMM_MALLOC_FLAG_SCRATCH*/, &extra, sizeof(extra)))
       {
@@ -467,6 +467,9 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
       if (NULL != flush) flush();
     }
     libxsmm_xfree(libxsmm_mmbatch_array, 0/*no check*/);
+#if !defined(NDEBUG)
+    libxsmm_mmbatch_array = NULL;
+#endif
     LIBXSMM_LOCK_DESTROY(LIBXSMM_GEMM_LOCK, &libxsmm_mmbatch_lock);
   }
 #endif
