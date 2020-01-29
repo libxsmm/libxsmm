@@ -62,6 +62,17 @@ for THREADS in 20 24; do
             for BFACC in 1 2 3 6 9 10 15 30 45 90; do
               export ${PASS}_BF=${BFACC}
               ./layer_example_bf16 ${ITERS} ${MB} ${IFM} ${OFM} 0 ${PASS_ARG} B ${BFN} ${BFM} 50 >> ${PASS}_TUNING_${MB}_${IFM}_${OFM}_threads_${THREADS}
+            done
+          done
+        done
+      done
+      for IFMSUBTASKS in 1; do
+        export IFM_SUBTASKS=${IFMSUBTASKS}
+        for OFMSUBTASKS in 1 2; do
+          export OFM_SUBTASKS=${OFMSUBTASKS}
+          for BFM in 32 64; do
+            for BFACC in 1 2 3 6 9 10 15 30 45 90; do
+              export ${PASS}_BF=${BFACC}
               ./layer_example_bf16 ${ITERS} ${MB} ${IFM} ${OFM} 0 ${PASS_ARG} B ${BFN} ${BFM} 100 >> ${PASS}_TUNING_${MB}_${IFM}_${OFM}_threads_${THREADS}
             done
           done
@@ -178,7 +189,7 @@ for THREADS in 20 24; do
     then
       for IFMSUBTASKS in 1 2; do
         export IFM_SUBTASKS=${IFMSUBTASKS}
-        for OFMSUBTASKS in 1 2; do
+        for OFMSUBTASKS in 1; do
           export OFM_SUBTASKS=${OFMSUBTASKS}
           for BFM in 16 32 64; do
             for BFACC in 1 2 3 6 9 10 15 30 45 90; do
