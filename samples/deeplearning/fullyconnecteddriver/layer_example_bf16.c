@@ -102,6 +102,7 @@ int main(int argc, char* argv[])
   if (argc > i) bc         = atoi(argv[i++]);
 
   /* These are tuning parameters to be attached to the perfdump string  */
+#if 0
   int fwd_bf = atoi(getenv("FWD_BF"));
   int bwd_bf = atoi(getenv("BWD_BF"));
   int upd_bf = atoi(getenv("UPD_BF"));
@@ -116,6 +117,21 @@ int main(int argc, char* argv[])
   int upd_column_teams = atoi(getenv("UPD_COLUMN_TEAMS"));
   int ifm_subtasks = atoi(getenv("IFM_SUBTASKS"));
   int ofm_subtasks = atoi(getenv("OFM_SUBTASKS"));
+#endif
+  int fwd_bf = 1;
+  int bwd_bf = 1;
+  int upd_bf = 1;
+  int fwd_2d_blocking = 1;
+  int bwd_2d_blocking = 1;
+  int upd_2d_blocking = 1;
+  int fwd_row_teams = 1;
+  int fwd_column_teams = 1;
+  int bwd_row_teams = 1;
+  int bwd_column_teams = 1;
+  int upd_row_teams = 1;
+  int upd_column_teams = 1;
+  int ifm_subtasks = 1;
+  int ofm_subtasks = 1;
 
   if ( nImg % bn != 0 ) {
     bn = nImg;
