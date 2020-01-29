@@ -10,6 +10,7 @@ include/libxsmm.f
 include/libxsmm.h
 build
 lib/libxsmm*
+lib/module
 ide/GPUCache
 ide/_vs*-*.bat
 ide/.vs
@@ -23,6 +24,7 @@ samples/*/*.pdf
 samples/*/*.png
 inspector*
 python
+html
 site
 bin
 tmp
