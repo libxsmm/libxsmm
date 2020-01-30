@@ -11,16 +11,15 @@
 ###############################################################################
 
 MKTEMP=$(command -v mktemp)
-ECHO=$(command -v echo)
 MV=$(command -v mv)
 
-if [ "" != "${MKTEMP}" ] && [ "" != "${ECHO}" ] && [ "" != "${MV}" ]; then
+if [ "" != "${MKTEMP}" ] && [ "" != "${MV}" ]; then
   TEMPLATE=${1/XXXXXX/}.XXXXXX
   TMPFILE=$(${MKTEMP} ${TEMPLATE})
   EXTFILE=${TMPFILE: -6}
   NEWFILE=${1/XXXXXX/${EXTFILE}}
   ${MV} ${TMPFILE} ${NEWFILE}
-  ${ECHO} "${NEWFILE}"
+  echo "${NEWFILE}"
 else
   touch $1
 fi
