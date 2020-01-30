@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -18,8 +18,12 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${MV}" ]; then
   TMPFILE=$(${MKTEMP} ${TEMPLATE})
   EXTFILE=${TMPFILE: -6}
   NEWFILE=${1/XXXXXX/${EXTFILE}}
-  ${MV} ${TMPFILE} ${NEWFILE}
-  echo "${NEWFILE}"
+  if [ "$1" != "${NEWFILE}" ]; then
+    ${MV} ${TMPFILE} ${NEWFILE}
+    echo "${NEWFILE}"
+  else
+    echo "${TMPFILE}"
+  fi
 else
   touch $1
 fi
