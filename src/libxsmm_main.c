@@ -807,6 +807,12 @@ LIBXSMM_API_INTERN void internal_init(void)
         }
       }
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) ((libxsmm_code_pointer*)new_registry)[i].ptr = NULL;
+      LIBXSMM_ASSERT(NULL == internal_registry && NULL == internal_registry_keys);
+#if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
+      LIBXSMM_ASSERT(NULL == internal_cache_buffer);
+      internal_cache_buffer = (internal_cache_type*)new_cache;
+#endif
+      internal_registry_keys = (libxsmm_descriptor*)new_keys; /* prior to registering static kernels */
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_DEFAULT_CONFIG)
 #     include <libxsmm_dispatch.h>
 #endif
@@ -821,12 +827,6 @@ LIBXSMM_API_INTERN void internal_init(void)
 #endif
       { /* commit the registry buffer and enable global visibility */
         void *const pv_registry = &internal_registry;
-        /*LIBXSMM_ASSERT(NULL == internal_registry && NULL == internal_registry_keys);*/
-#if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-        /*LIBXSMM_ASSERT(NULL == internal_cache_buffer);*/
-        internal_cache_buffer = (internal_cache_type*)new_cache;
-#endif
-        internal_registry_keys = (libxsmm_descriptor*)new_keys;
         LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
       }
     }
@@ -1023,7 +1023,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       libxsmm_xcopy_finalize();
       libxsmm_gemm_finalize();
       libxsmm_dnn_finalize();
-      /* reset buffers (registry, keys, cache) */
+      /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_RELAXED); /* invalidate code cache (TLS) */
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       internal_cache_buffer = NULL;
