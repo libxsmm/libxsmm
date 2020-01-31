@@ -863,6 +863,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       libxsmm_timer_tickint s0 = libxsmm_timer_tick_rtc(); /* warm-up */
       libxsmm_timer_tickint t0 = libxsmm_timer_tick_tsc(); /* warm-up */
       s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick_tsc(); /* start timing */
+      LIBXSMM_ASSERT(0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST));
+      LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
       gid = tid; /* protect initialization */
       { /* construct and initialize locks */
 #if (0 != LIBXSMM_SYNC)
@@ -964,12 +966,12 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           internal_timer_start = s0;
         }
       }
-      LIBXSMM_ASSERT(0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED));
+      LIBXSMM_ASSERT(1 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST));
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
 #if (0 != LIBXSMM_SYNC)
     else if (gid != tid) { /* avoid recursion */
-      while (0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) {
+      while (2 > LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) {
 # if 1
         LIBXSMM_SYNC_YIELD();
 # else
@@ -977,7 +979,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 # endif
       }
     }
-    if (0 != LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED))
+    if (2 <= LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED))
 #endif /*0 != LIBXSMM_SYNC*/
     internal_init();
   }
