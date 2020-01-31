@@ -31,19 +31,23 @@
 #endif
 
 #define LIBXSMM_MHD_MINMAX(TYPE, DATA, NELEMENTS, PMIN_INOUT, PMAX_INOUT) { \
-  size_t libxsmm_mhd_minmax_index_; \
   LIBXSMM_ASSERT(NULL != (PMIN_INOUT) && NULL != (PMAX_INOUT)); \
-  for (libxsmm_mhd_minmax_index_ = 0; libxsmm_mhd_minmax_index_ < (NELEMENTS); ++libxsmm_mhd_minmax_index_) { \
-    TYPE libxsmm_mhd_minmax_value_; \
-    LIBXSMM_ASSERT(NULL != (DATA)); \
-    libxsmm_mhd_minmax_value_ = ((const TYPE*)DATA)[libxsmm_mhd_minmax_index_]; \
-    if (libxsmm_mhd_minmax_value_ < *((const TYPE*)PMIN_INOUT)) { \
-      *((TYPE*)PMIN_INOUT) = libxsmm_mhd_minmax_value_; \
-    } \
-    else if (libxsmm_mhd_minmax_value_ > *((const TYPE*)PMAX_INOUT)) { \
-      *((TYPE*)PMAX_INOUT) = libxsmm_mhd_minmax_value_; \
-    } \
+  if (0 < (NELEMENTS)) { \
+    size_t libxsmm_mhd_minmax_index_ = 0; \
+    do { \
+      TYPE libxsmm_mhd_minmax_value_; \
+      LIBXSMM_ASSERT(NULL != (DATA)); \
+      libxsmm_mhd_minmax_value_ = ((const TYPE*)DATA)[libxsmm_mhd_minmax_index_]; \
+      if (libxsmm_mhd_minmax_value_ < *((const TYPE*)PMIN_INOUT)) { \
+        *((TYPE*)PMIN_INOUT) = libxsmm_mhd_minmax_value_; \
+      } \
+      else if (libxsmm_mhd_minmax_value_ > *((const TYPE*)PMAX_INOUT)) { \
+        *((TYPE*)PMAX_INOUT) = libxsmm_mhd_minmax_value_; \
+      } \
+      ++libxsmm_mhd_minmax_index_; \
+    } while (libxsmm_mhd_minmax_index_ < (NELEMENTS)); \
   } \
+  else *((TYPE*)PMIN_INOUT) = *((TYPE*)PMAX_INOUT) = 0; \
 }
 
 #define LIBXSMM_MHD_TYPE_PROMOTE(DST_TYPE, SRC_TYPE) \
@@ -523,7 +527,7 @@ LIBXSMM_API_INLINE int internal_mhd_minmax(const void* data, size_t nelements,
   libxsmm_mhd_elemtype type, const void* minval, const void* maxval)
 {
   int result;
-  if ((NULL != data || 0 < nelements) && NULL != minval && NULL != maxval) {
+  if ((NULL != data || 0 == nelements) && NULL != minval && NULL != maxval) {
     result = EXIT_SUCCESS;
     switch (type) {
       case LIBXSMM_MHD_ELEMTYPE_F64: {
