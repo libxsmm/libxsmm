@@ -855,65 +855,71 @@ LIBXSMM_API_INTERN void internal_init(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
-    libxsmm_timer_tickint s0, t0;
-    libxsmm_timer_tick_rtc(); libxsmm_timer_tick_tsc(); /* warm-up */
-    s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick_tsc(); /* start timing */
-    /* libxsmm_ninit (1: started, 2: library initialized), invalidate code-TLS */
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+    const unsigned int tid = 1 + libxsmm_get_tid();
+    static unsigned int ninit = 0, gid = 0;
+    LIBXSMM_ASSERT(0 < tid);
+    /* libxsmm_ninit (1: initialization started, 2: library initialized, higher: to invalidate code-TLS) */
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+      libxsmm_timer_tickint s0 = libxsmm_timer_tick_rtc(); /* warm-up */
+      libxsmm_timer_tickint t0 = libxsmm_timer_tick_tsc(); /* warm-up */
+      s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick_tsc(); /* start timing */
+      gid = tid; /* protect initialization */
+      { /* construct and initialize locks */
 #if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_REGLOCK_TRY)
-      const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
+        const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
 # endif
-      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) attr_global;
+        LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) attr_global;
 # if (1 < INTERNAL_REGLOCK_MAXN)
-      int i;
-      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REGLOCK) attr;
-      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REGLOCK, &attr);
+        int i;
+        LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REGLOCK) attr;
+        LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REGLOCK, &attr);
 # elif defined(LIBXSMM_UNIFY_LOCKS)
-      internal_reglock_ptr = &libxsmm_lock_global;
+        internal_reglock_ptr = &libxsmm_lock_global;
 # else
-      static LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK) internal_reglock;
-      internal_reglock_ptr = &internal_reglock;
-      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REGLOCK) attr;
-      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REGLOCK, &attr);
-      LIBXSMM_LOCK_INIT(LIBXSMM_REGLOCK, internal_reglock_ptr, &attr);
-      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGLOCK, &attr);
+        static LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK) internal_reglock;
+        internal_reglock_ptr = &internal_reglock;
+        LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REGLOCK) attr;
+        LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REGLOCK, &attr);
+        LIBXSMM_LOCK_INIT(LIBXSMM_REGLOCK, internal_reglock_ptr, &attr);
+        LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGLOCK, &attr);
 # endif
-      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK, &attr_global);
-      LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &attr_global);
-      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
-      /* control number of locks needed; LIBXSMM_TRYLOCK implies only 1 lock */
+        LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK, &attr_global);
+        LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &attr_global);
+        LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
+        /* control number of locks needed; LIBXSMM_TRYLOCK implies only 1 lock */
 # if defined(LIBXSMM_REGLOCK_TRY)
-      if (NULL == env_trylock || 0 == *env_trylock)
+        if (NULL == env_trylock || 0 == *env_trylock)
 # endif
-      { /* no LIBXSMM_TRYLOCK */
+        { /* no LIBXSMM_TRYLOCK */
 # if defined(LIBXSMM_VTUNE)
-        internal_reglock_count = 1; /* avoid duplicated kernels */
+          internal_reglock_count = 1; /* avoid duplicated kernels */
 # elif (1 < INTERNAL_REGLOCK_MAXN)
-        const char *const env_nlocks = getenv("LIBXSMM_NLOCKS");
-        const int reglock_count = (NULL == env_nlocks || 0 == *env_nlocks || 1 > atoi(env_nlocks))
-          ? (INTERNAL_REGLOCK_MAXN) : LIBXSMM_MIN(atoi(env_nlocks), INTERNAL_REGLOCK_MAXN);
-        internal_reglock_count = LIBXSMM_LO2POT(reglock_count);
+          const char *const env_nlocks = getenv("LIBXSMM_NLOCKS");
+          const int reglock_count = (NULL == env_nlocks || 0 == *env_nlocks || 1 > atoi(env_nlocks))
+            ? (INTERNAL_REGLOCK_MAXN) : LIBXSMM_MIN(atoi(env_nlocks), INTERNAL_REGLOCK_MAXN);
+          internal_reglock_count = LIBXSMM_LO2POT(reglock_count);
 # else
-        internal_reglock_count = 0;
+          internal_reglock_count = 0;
 # endif
-      }
+        }
 # if defined(LIBXSMM_REGLOCK_TRY)
-      else { /* LIBXSMM_TRYLOCK environment variable specified */
-        internal_reglock_count = (0 != atoi(env_trylock) ? 1
+        else { /* LIBXSMM_TRYLOCK environment variable specified */
+          internal_reglock_count = (0 != atoi(env_trylock) ? 1
 #   if (1 < INTERNAL_REGLOCK_MAXN)
-          : INTERNAL_REGLOCK_MAXN);
+            : INTERNAL_REGLOCK_MAXN);
 #   else
-          : 0);
+            : 0);
 #   endif
-      }
+        }
 # endif
 # if (1 < INTERNAL_REGLOCK_MAXN)
-      LIBXSMM_ASSERT(1 <= internal_reglock_count);
-      for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGLOCK, &internal_reglock[i].state, &attr);
-      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGLOCK, &attr);
+        LIBXSMM_ASSERT(1 <= internal_reglock_count);
+        for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGLOCK, &internal_reglock[i].state, &attr);
+        LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGLOCK, &attr);
 # endif
 #endif
+      }
       { /* determine whether this instance is unique or not */
 #if defined(_WIN32)
         internal_singleton_handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
@@ -958,23 +964,22 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           internal_timer_start = s0;
         }
       }
+      LIBXSMM_ASSERT(0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED));
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
 #if (0 != LIBXSMM_SYNC)
-    else while (1) {
-      if (1 < LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) {
-        internal_init();
-        break;
-      }
+    else if (gid != tid) { /* avoid recursion */
+      while (0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) {
 # if 1
-      else LIBXSMM_SYNC_YIELD();
+        LIBXSMM_SYNC_YIELD();
 # else
-      else LIBXSMM_SYNC_PAUSE;
+        LIBXSMM_SYNC_PAUSE;
 # endif
+      }
     }
-#else
-    internal_init();
+    if (0 != LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED))
 #endif /*0 != LIBXSMM_SYNC*/
+    internal_init();
   }
 }
 
