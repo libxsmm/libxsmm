@@ -124,6 +124,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
 # if !defined(LIBXSMM_INTRINSICS_DEBUG)
       LIBXSMM_ASSERT_MSG(LIBXSMM_STATIC_TARGET_ARCH <= LIBXSMM_MAX(LIBXSMM_X86_SSE3, feature_cpu),
         /* TODO: confirm SSE3 */"missed detecting ISA extensions");
+      /* coverity[dead_error_line] */
       if (LIBXSMM_STATIC_TARGET_ARCH > feature_cpu) feature_cpu = LIBXSMM_STATIC_TARGET_ARCH;
 # endif
       /* XSAVE/XGETBV(0x04000000), OSXSAVE(0x08000000) */
