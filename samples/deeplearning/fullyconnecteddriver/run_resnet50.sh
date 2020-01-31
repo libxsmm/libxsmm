@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 UNAME=$(command -v uname)
 SORT=$(command -v sort)

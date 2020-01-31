@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 SRCDIR=../src
 GREP=$(command -v grep)

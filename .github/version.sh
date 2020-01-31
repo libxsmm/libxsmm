@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -10,7 +10,6 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-ECHO=$(command -v echo)
 CUT=$(command -v cut)
 GIT=$(command -v git)
 
@@ -18,4 +17,4 @@ NAME=$(${GIT} name-rev --name-only HEAD)
 MAIN=$(${GIT} describe --tags --abbrev=0)
 REVC=$(${GIT} describe --tags | ${CUT} -d- -f2)
 
-${ECHO} ${NAME}-${MAIN}-${REVC}
+echo "${NAME}-${MAIN}-${REVC}"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 LIB_PATH=/swtools/caffe_deps/lib
 export LD_LIBRARY_PATH=${LIB_PATH}:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=`pwd`/build/lib:$LD_LIBRARY_PATH

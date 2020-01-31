@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #----------------------------------------------------
 # Sample SLURM job script
 #   for TACC Stampede2 KNL nodes

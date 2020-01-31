@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #SBATCH --partition=clx
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=112

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 # launch.sh [ARCH] [NUM_NODES] [TOPOLOGY] [MLSL_VER]
 # for example: launch.sh knl 2 googlenet ep
