@@ -855,9 +855,12 @@ LIBXSMM_API_INTERN void internal_init(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
+    static unsigned int ninit = 0;
+#if (0 != LIBXSMM_SYNC)
+    static unsigned int gid = 0;
     const unsigned int tid = 1 + libxsmm_get_tid();
-    static unsigned int ninit = 0, gid = 0;
     LIBXSMM_ASSERT(0 < tid);
+#endif
     /* libxsmm_ninit (1: initialization started, 2: library initialized, higher: to invalidate code-TLS) */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
       libxsmm_timer_tickint s0 = libxsmm_timer_tick_rtc(); /* warm-up */
@@ -866,9 +869,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_ASSERT(0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST));
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
+#if (0 != LIBXSMM_SYNC)
       gid = tid; /* protect initialization */
       { /* construct and initialize locks */
-#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_REGLOCK_TRY)
         const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
 # endif
@@ -921,8 +924,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGLOCK, &internal_reglock[i].state, &attr);
         LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGLOCK, &attr);
 # endif
-#endif
       }
+#endif
       { /* determine whether this instance is unique or not */
 #if defined(_WIN32)
         internal_singleton_handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
