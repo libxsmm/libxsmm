@@ -750,9 +750,13 @@ PGI ?= 0
 LD = $(CC)
 XLD = $(CXX)
 
+ctest = $(if $(shell echo "int main(void) { return 0; }" \
+             | $1 $2 -xc /dev/stdin -o /dev/null 2>/dev/null >/dev/null && echo "OK"),$2)
+ldlib = $(call ctest,$1,$2,-l$3)
+
 ifneq (Windows_NT,$(UNAME))
 ifneq (,$(strip $(PIC)))
-  ifneq (,$(shell echo "int main(void) { return 0; }" | $(CC) -f$(PIC) -E -xc -c /dev/stdin 2>&1 >/dev/null))
+  ifneq (,$(call ctest,$(CC),-f$(PIC)))
     PIC := PIC
   endif
   PICFLAG = -f$(PIC)
@@ -888,11 +892,8 @@ ifneq (0,$(ABSLIBS))
 endif
 abslibpath ?= $(call absliblpath,$1)
 
-ctest = $(if $1,$(if $(shell $1 -E $2 /dev/null 2>/dev/null >/dev/null && echo "OK"),$2))
-ldtest = $(if $3,$(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL),-l$3))
-
 libpath = $(strip $(if $1, \
-  $(if $(call ldtest,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
+  $(if $(call ldlib,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(CHAR_CLOSE)]\).*/:\1/" \
     | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)[[:space:]]..*/\1/p" \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
@@ -1454,15 +1455,15 @@ else # GCC assumed
       FLDFLAGS += -fopenmp
       FCFLAGS += -fopenmp
     else # mixed toolchain
-      OMPTEST = $(call ldtest,$(FLD),$(SLDFLAGS),$(OMPRT))
+      OMPTEST = $(call ldlib,$(FLD),$(SLDFLAGS),$(OMPRT))
       ifneq (,$(OMPTEST))
         FLDFLAGS += $(OMPTEST)
       else
-        OMPTEST = $(call ldtest,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))
+        OMPTEST = $(call ldlib,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))
         ifneq (,$(OMPTEST))
           FLDFLAGS += $(addprefix -L,$(LIBFIND)) $(OMPTEST)
         else # last try
-          OMPTEST = $(call ldtest,$(FLD),$(SLDFLAGS),gomp)
+          OMPTEST = $(call ldlib,$(FLD),$(SLDFLAGS),gomp)
           ifneq (,$(OMPTEST))
             FLDFLAGS += $(OMPTEST)
           endif
@@ -2204,7 +2205,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI ICX \
     GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS \
     SUITE OMPTEST BLASTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
-    ldtest which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink uniq \
+    ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink uniq \
     ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
