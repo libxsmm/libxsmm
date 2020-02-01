@@ -115,7 +115,7 @@
   LIBXSMM_LOCK_ATTR_TYPE(LOCK_KIND) attr; \
   LIBXSMM_LOCK_TYPE(LOCK_KIND) lock; \
   LIBXSMM_ASSERT(0 < nt); \
-  fprintf(stdout, "Latency and throughput of %s (%s) for nthreads=%i wratio=%i%% work_r=%i work_w=%i nlat=%i ntpt=%i\n", \
+  printf("Latency and throughput of \"%s\" (%s) for nthreads=%i wratio=%i%% work_r=%i work_w=%i nlat=%i ntpt=%i\n", \
     LIBXSMM_STRINGIFY(LOCK_KIND), IMPL, NTHREADS, WRATIOPERC, WORK_R, WORK_W, NREPEAT_LAT, NREPEAT_TPT); \
   LIBXSMM_LOCK_ATTR_INIT(LOCK_KIND, &attr); \
   LIBXSMM_LOCK_INIT(LOCK_KIND, &lock, &attr); \
@@ -155,6 +155,14 @@ int main(int argc, char* argv[])
   const int work_w = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : (10 * work_r), 1);
   const int nlat = LIBXSMM_MAX(5 < argc ? atoi(argv[5]) : 2000000, 1);
   const int ntpt = LIBXSMM_MAX(6 < argc ? atoi(argv[6]) : 10000, 1);
+
+  libxsmm_init();
+  printf("LIBXSMM: default lock-kind \"%s\" (%s)\n\n", LIBXSMM_STRINGIFY(LIBXSMM_LOCK_DEFAULT),
+#if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
+    "OS-native");
+#else
+    "LIBXSMM");
+#endif
 
 #if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
   BENCHMARK(LIBXSMM_LOCK_SPINLOCK, "OS-native", nthreads, work_r, work_w, wratioperc, nlat, ntpt);
