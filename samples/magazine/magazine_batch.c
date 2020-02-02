@@ -9,16 +9,14 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "magazine.h"
-#include <libxsmm.h>
+#if !defined(SHUFFLE)
+# include <libxsmm.h>
+#endif
 
 #if defined(_OPENMP)
 # define USEOMP(FUNCTION) LIBXSMM_USEOMP(FUNCTION)
 #else
 # define USEOMP(FUNCTION) (FUNCTION)
-#endif
-
-#if 0 /* process batch of A, B, and C in "random" order */
-# define SHUFFLE
 #endif
 
 

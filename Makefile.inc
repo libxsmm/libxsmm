@@ -2104,6 +2104,7 @@ else ifneq (0,$(BLAS)) # generic
       BLASREF = 1
     else ifneq (,$(call ctest,$(LD),-framework Accelerate)) # macOS
       BLAS_LDFLAGS += -framework Accelerate
+      BLAS_FLAGS += -D__CBLAS
     else # fallback
       BLAS_LDFLAGS += -lblas
       BLASREF = 1

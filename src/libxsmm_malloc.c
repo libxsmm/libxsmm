@@ -920,7 +920,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (
 # if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    2 <= libxsmm_ninit &&
+    1 < libxsmm_ninit &&
 # endif
     NULL != internal_malloc.memalign.ptr)
   {
@@ -947,7 +947,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
 # if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (
 #   if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    2 <= libxsmm_ninit &&
+    1 < libxsmm_ninit &&
 #   endif
     NULL != internal_malloc.malloc.ptr)
   {
@@ -973,7 +973,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (
 # if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    2 <= libxsmm_ninit &&
+    1 < libxsmm_ninit &&
 # endif
     NULL != internal_malloc.calloc.ptr)
   {
@@ -999,7 +999,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (
 # if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    2 <= libxsmm_ninit &&
+    1 < libxsmm_ninit &&
 # endif
     NULL != internal_malloc.realloc.ptr)
   {
@@ -1024,7 +1024,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
     if (
 # if defined(LIBXSMM_MALLOC_HOOK_INIT)
-      2 <= libxsmm_ninit &&
+      1 < libxsmm_ninit &&
 # endif
       NULL != internal_malloc.free.ptr)
     {

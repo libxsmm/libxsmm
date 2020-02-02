@@ -43,10 +43,22 @@
 # define SYNC
 #endif
 
-#if 1 /* PAD (alignment) must be power of two */
+/**
+ * Permuting the data introduces a dependency to LIBXSMM
+ * even for the Eigen/Blaze/Blas based sample code.
+ */
+#if 0 /* process batch of A, B, and C in "random" order */
+# define SHUFFLE
+#endif
+
+#if 0 /* PAD (alignment) must be power of two */
 # define PAD 64
 #else
 # define PAD 1
+#endif
+
+#if defined(SHUFFLE)
+# include <libxsmm_source.h>
 #endif
 
 

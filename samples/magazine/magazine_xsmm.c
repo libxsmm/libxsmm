@@ -9,11 +9,10 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "magazine.h"
-#include <libxsmm.h>
-
-#if 0 /* process batch of A, B, and C in "random" order */
-# define SHUFFLE
+#if !defined(SHUFFLE)
+# include <libxsmm.h>
 #endif
+
 #if 0 /* auto-dispatch SMM kernel */
 # define AUTO
 #endif
