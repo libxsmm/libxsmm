@@ -273,6 +273,9 @@
     <ClInclude Include="..\src\libxsmm_dnn_fusedgroupnorm_forward.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_spgemm_csc_csparse_soa.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -772,6 +775,9 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_fusedgroupnorm_forward.c">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_csc_csparse_soa.c">
+      <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
