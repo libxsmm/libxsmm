@@ -88,6 +88,74 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           handle->ifm_subtasks = 1;
           handle->ofm_subtasks = 1;
 
+          if (handle->desc.C == 100 && handle->desc.K == 1024 && handle->desc.threads == 28) {
+            handle->fwd_bf = ((handle->desc.C/handle->bc) % 1 == 0) ? 1 : 1;
+            handle->fwd_2d_blocking = 1;
+            handle->fwd_row_teams = 14;
+            handle->fwd_column_teams = 2;
+            handle->bwd_bf = ((handle->desc.K/handle->bk) % 1 == 0) ? 1 : 1;
+            handle->bwd_2d_blocking = 0;
+            handle->bwd_row_teams = 1;
+            handle->bwd_column_teams = 1;
+            handle->upd_bf = ((handle->desc.N/handle->bn) % 14 == 0) ? 14 : 1;
+            handle->upd_2d_blocking = 0;
+            handle->upd_row_teams = 1;
+            handle->upd_column_teams = 1;
+            handle->ifm_subtasks = ((handle->bc % 1 == 0) && (handle->upd_2d_blocking == 0)) ? 1 : 1;
+            handle->ofm_subtasks = ((handle->bk % 1 == 0) && (handle->upd_2d_blocking == 0)) ? 1 : 1;
+          }
+
+          if (handle->desc.C == 1024 && handle->desc.K == 1024 && handle->desc.threads == 28) {
+            handle->fwd_bf = ((handle->desc.C/handle->bc) % 1 == 0) ? 1 : 1;
+            handle->fwd_2d_blocking = 1;
+            handle->fwd_row_teams = 7;
+            handle->fwd_column_teams = 4;
+            handle->bwd_bf = ((handle->desc.K/handle->bk) % 8 == 0) ? 8 : 1;
+            handle->bwd_2d_blocking = 0;
+            handle->bwd_row_teams = 7;
+            handle->bwd_column_teams = 4;
+            handle->upd_bf = ((handle->desc.N/handle->bn) % 14 == 0) ? 14 : 1;
+            handle->upd_2d_blocking = 0;
+            handle->upd_row_teams = 7;
+            handle->upd_column_teams = 4;
+            handle->ifm_subtasks = ((handle->bc % 2 == 0) && (handle->upd_2d_blocking == 0)) ? 2 : 1;
+            handle->ofm_subtasks = ((handle->bk % 1 == 0) && (handle->upd_2d_blocking == 0)) ? 1 : 1;
+          }
+
+          if (handle->desc.C == 512 && handle->desc.K == 512 && handle->desc.threads == 28) {
+            handle->fwd_bf = ((handle->desc.C/handle->bc) % 1 == 0) ? 1 : 1;
+            handle->fwd_2d_blocking = 0;
+            handle->fwd_row_teams = 1;
+            handle->fwd_column_teams = 1;
+            handle->bwd_bf = ((handle->desc.K/handle->bk) % 4 == 0) ? 4 : 1;
+            handle->bwd_2d_blocking = 0;
+            handle->bwd_row_teams = 1;
+            handle->bwd_column_teams = 1;
+            handle->upd_bf = ((handle->desc.N/handle->bn) % 14 == 0) ? 14 : 1;
+            handle->upd_2d_blocking = 0;
+            handle->upd_row_teams = 1;
+            handle->upd_column_teams = 1;
+            handle->ifm_subtasks = ((handle->bc % 2 == 0) && (handle->upd_2d_blocking == 0)) ? 2 : 1;
+            handle->ofm_subtasks = ((handle->bk % 1 == 0) && (handle->upd_2d_blocking == 0)) ? 1 : 1;
+          }
+
+          if (handle->desc.C == 1024 && handle->desc.K == 1 && handle->desc.threads == 28) {
+            handle->fwd_bf = ((handle->desc.C/handle->bc) % 1 == 0) ? 1 : 1;
+            handle->fwd_2d_blocking = 0;
+            handle->fwd_row_teams = 1;
+            handle->fwd_column_teams = 1;
+            handle->bwd_bf = ((handle->desc.K/handle->bk) % 1 == 0) ? 1 : 1;
+            handle->bwd_2d_blocking = 1;
+            handle->bwd_row_teams = 14;
+            handle->bwd_column_teams = 2;
+            handle->upd_bf = ((handle->desc.N/handle->bn) % 2 == 0) ? 2 : 1;
+            handle->upd_2d_blocking = 0;
+            handle->upd_row_teams = 1;
+            handle->upd_column_teams = 1;
+            handle->ifm_subtasks = ((handle->bc % 2 == 0) && (handle->upd_2d_blocking == 0)) ? 2 : 1;
+            handle->ofm_subtasks = ((handle->bk % 1 == 0) && (handle->upd_2d_blocking == 0)) ? 1 : 1;
+          }
+
           if (handle->desc.C == 1024 && handle->desc.K == 1024 && handle->desc.threads == 20) {
             handle->fwd_bf = ((handle->desc.C/handle->bc) % 1 == 0) ? 1 : 1;
             handle->fwd_2d_blocking = 0;
