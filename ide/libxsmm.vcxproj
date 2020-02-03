@@ -61,6 +61,7 @@
     <ClInclude Include="..\src\generator_packed_trmm_avx_avx512.h" />
     <ClInclude Include="..\src\generator_packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h" />
+    <ClInclude Include="..\src\generator_spgemm_csc_csparse_soa.h" />
     <ClInclude Include="..\src\libxsmm_blocked_gemm_types.h" />
     <ClInclude Include="..\src\libxsmm_diff.h" />
     <ClInclude Include="..\src\libxsmm_dnn_elementwise.h" />
@@ -136,6 +137,7 @@
     <ClCompile Include="..\src\generator_spgemm_csc_asparse.c" />
     <ClCompile Include="..\src\generator_spgemm_csc_bsparse.c" />
     <ClCompile Include="..\src\generator_spgemm_csc_bsparse_soa.c" />
+    <ClCompile Include="..\src\generator_spgemm_csc_csparse_soa.c" />
     <ClCompile Include="..\src\generator_spgemm_csc_reader.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_asparse.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c" />
