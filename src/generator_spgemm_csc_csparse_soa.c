@@ -46,16 +46,6 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_single( libxsmm_generat
   libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_kloop, 1 );
 
-  /* load a */
-  libxsmm_x86_instruction_vec_move( io_generated_code,
-                                    i_micro_kernel_config->instruction_set,
-                                    LIBXSMM_X86_INSTR_VMOVUPS,
-                                    i_gp_reg_mapping->gp_reg_a,
-                                    LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                    i_micro_kernel_config->datatype_size*i_soa_width*i_row_idx[i_column_idx[i_n]+i_m],
-                                    i_micro_kernel_config->vector_name,
-                                    0, 0, 1, 0 );
-
   /* load b */
   libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_micro_kernel_config->instruction_set,
@@ -64,14 +54,19 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_single( libxsmm_generat
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
                                     i_micro_kernel_config->datatype_size*i_soa_width*i_n,
                                     i_micro_kernel_config->vector_name,
-                                    1, 0, 1, 0 );
+                                    0, 0, 1, 0 );
 
-  /* FMA */
-  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+  /* FMA with fused load of a */
+  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VFMADD231PS,
+                                           0,
+                                           i_gp_reg_mapping->gp_reg_a,
+                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                           i_micro_kernel_config->datatype_size*i_soa_width*i_row_idx[i_column_idx[i_n]+i_m],
                                            i_micro_kernel_config->vector_name,
-                                           0, 1, 31 );
+                                           0,
+                                           31 );
 
   /* advance a and b pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, i_micro_kernel_config->datatype_size*i_soa_width*i_xgemm_desc->lda );
