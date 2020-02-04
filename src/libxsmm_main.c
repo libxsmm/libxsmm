@@ -468,12 +468,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       libxsmm_scratch_info scratch_info; size_t size_scratch = 0, size_private = 0;
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
-        if (0 == libxsmm_se) {
-          fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
-        }
-        else {
-          fprintf(stderr, "\nLIBXSMM_TARGET: %s*\n", target_arch);
-        }
+        fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
       }
       if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info)) {
         size_private = scratch_info.internal;
