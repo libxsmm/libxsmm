@@ -8,10 +8,15 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+#if !defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#if defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm.h>
+#endif
 
 #if !defined(USE_NOINIT)
 # define USE_NOINIT
