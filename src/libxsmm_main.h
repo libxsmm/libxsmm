@@ -21,6 +21,10 @@
 # define LIBXSMM_CAPACITY_CACHE 16
 #endif
 
+#if !defined(LIBXSMM_PAGE_MINSIZE)
+# define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
+#endif
+
 #if !defined(LIBXSMM_NTHREADS_MAX)
 # if (0 != LIBXSMM_SYNC)
 #   define LIBXSMM_NTHREADS_MAX 1024
