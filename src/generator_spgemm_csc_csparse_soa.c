@@ -220,7 +220,7 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                              i_micro_kernel_config->datatype_size*i_soa_width*i_row_idx[i_column_idx[i_n]+l_i],
                                              i_micro_kernel_config->vector_name,
                                              31,
-                                             l_i );
+                                             l_i%16 );
   }
 
   /* advance a and b pointer */
@@ -242,13 +242,13 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           0, 4, 16, 0x44 );
+                                           4, 0, 16, 0x44 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           0, 4, 17, 0xee );
+                                           4, 0, 17, 0xee );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -256,37 +256,39 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->vector_name,
                                            16, 17, 0 );
 
-  /* zmm8/zmm12; cccc cccc cccc cccc / 8888 8888 8888 8888 -> zmm8: cccc cccc 8888 8888 */
-  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
-                                           i_micro_kernel_config->vector_name,
-                                           8, 12, 16, 0x44 );
+  if ( i_m_blocking > 7 ) {
+    /* zmm8/zmm12; cccc cccc cccc cccc / 8888 8888 8888 8888 -> zmm8: cccc cccc 8888 8888 */
+    libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                             i_micro_kernel_config->vector_name,
+                                             12, 8, 16, 0x44 );
 
-  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
-                                           i_micro_kernel_config->vector_name,
-                                           8, 12, 17, 0xee );
+    libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                             i_micro_kernel_config->vector_name,
+                                             12, 8, 17, 0xee );
 
-  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VADDPS,
-                                           i_micro_kernel_config->vector_name,
-                                           16, 17, 8 );
+    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VADDPS,
+                                             i_micro_kernel_config->vector_name,
+                                             16, 17, 8 );
+  }
 
   /* zmm1/zmm5; 5555 5555 5555 5555 / 1111 1111 1111 1111 -> zmm1: 5555 5555 1111 1111 */
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           1, 5, 16, 0x44 );
+                                           5, 1, 16, 0x44 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           1, 5, 17, 0xee );
+                                           5, 1, 17, 0xee );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -294,37 +296,39 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->vector_name,
                                            16, 17, 1 );
 
-  /* zmm9/zmm13; dddd dddd dddd dddd / 9999 9999 9999 9999 -> zmm9: dddd dddd 9999 9999 */
-  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
-                                           i_micro_kernel_config->vector_name,
-                                           9, 13, 16, 0x44 );
+  if ( i_m_blocking > 8 ) {
+    /* zmm9/zmm13; dddd dddd dddd dddd / 9999 9999 9999 9999 -> zmm9: dddd dddd 9999 9999 */
+    libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                             i_micro_kernel_config->vector_name,
+                                             13, 9, 16, 0x44 );
 
-  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
-                                           i_micro_kernel_config->vector_name,
-                                           9, 13, 17, 0xee );
+    libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                             i_micro_kernel_config->vector_name,
+                                             13, 9, 17, 0xee );
 
-  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VADDPS,
-                                           i_micro_kernel_config->vector_name,
-                                           16, 17, 9 );
+    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VADDPS,
+                                             i_micro_kernel_config->vector_name,
+                                             16, 17, 9 );
+  }
 
   /* zmm2/zmm6; 6666 6666 6666 6666 / 2222 2222 2222 2222 -> zmm2: 6666 6666 2222 2222 */
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           2, 6, 16, 0x44 );
+                                           6, 2, 16, 0x44 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           2, 6, 17, 0xee );
+                                           6, 2, 17, 0xee );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -332,37 +336,39 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->vector_name,
                                            16, 17, 2 );
 
-  /* zmm10/zmm14; eeee eeee eeee eeee / aaaa aaaa aaaa aaaa -> zmm10: eeee eeee aaaa aaaa */
-  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
-                                           i_micro_kernel_config->vector_name,
-                                           10, 14, 16, 0x44 );
+  if ( i_m_blocking > 9 ) {
+    /* zmm10/zmm14; eeee eeee eeee eeee / aaaa aaaa aaaa aaaa -> zmm10: eeee eeee aaaa aaaa */
+    libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                             i_micro_kernel_config->vector_name,
+                                             14, 10, 16, 0x44 );
 
-  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
-                                           i_micro_kernel_config->vector_name,
-                                           10, 14, 17, 0xee );
+    libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                             i_micro_kernel_config->vector_name,
+                                             14, 10, 17, 0xee );
 
-  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VADDPS,
-                                           i_micro_kernel_config->vector_name,
-                                           16, 17, 10 );
+    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VADDPS,
+                                             i_micro_kernel_config->vector_name,
+                                             16, 17, 10 );
+  }
 
   /* zmm3/zmm7; 7777 7777 7777 7777 / 3333 3333 3333 3333  -> zmm3: 7777 7777 3333 3333 */
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           3, 7, 16, 0x44 );
+                                           7, 3, 16, 0x44 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           3, 7, 17, 0xee );
+                                           7, 3, 17, 0xee );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -370,24 +376,26 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->vector_name,
                                            16, 17, 3 );
 
-  /* zmm11/zmm15; ffff ffff ffff ffff / bbbb bbbb bbbb bbbb  -> zmm11: ffff ffff bbbb bbbb */
-  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
-                                           i_micro_kernel_config->vector_name,
-                                           11, 15, 16, 0x44 );
+  if ( i_m_blocking > 10 ) {
+    /* zmm11/zmm15; ffff ffff ffff ffff / bbbb bbbb bbbb bbbb  -> zmm11: ffff ffff bbbb bbbb */
+    libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                             i_micro_kernel_config->vector_name,
+                                             15, 11, 16, 0x44 );
 
-  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
-                                           i_micro_kernel_config->vector_name,
-                                           11, 15, 17, 0xee );
+    libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                             i_micro_kernel_config->vector_name,
+                                             15, 11, 17, 0xee );
 
-  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VADDPS,
-                                           i_micro_kernel_config->vector_name,
-                                           16, 17, 11 );
+    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                             i_micro_kernel_config->instruction_set,
+                                             LIBXSMM_X86_INSTR_VADDPS,
+                                             i_micro_kernel_config->vector_name,
+                                             16, 17, 11 );
+  }
 
   /* 2nd stage */
   /* zmm0/zmm8; 4444 4444 0000 0000 / cccc cccc 8888 8888  -> zmm0: cccc 8888 4444 0000 */
@@ -395,13 +403,13 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           0, 8, 16, 0x88 );
+                                           8, 0, 16, 0x88 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           0, 8, 17, 0xdd );
+                                           8, 0, 17, 0xdd );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -414,13 +422,13 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           1, 9, 16, 0x88 );
+                                           9, 1, 16, 0x88 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           1, 9, 17, 0xdd );
+                                           9, 1, 17, 0xdd );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -433,13 +441,13 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           2, 10, 16, 0x88 );
+                                           10, 2, 16, 0x88 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           2, 10, 17, 0xdd );
+                                           10, 2, 17, 0xdd );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -452,13 +460,13 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           3, 11, 16, 0x88 );
+                                           11, 3, 16, 0x88 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           3, 11, 17, 0xdd );
+                                           11, 3, 17, 0xdd );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -472,13 +480,13 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFPS,
                                            i_micro_kernel_config->vector_name,
-                                           0, 1, 16, 0x44 );
+                                           1, 0, 16, 0x44 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFPS,
                                            i_micro_kernel_config->vector_name,
-                                           0, 1, 17, 0xee );
+                                           1, 0, 17, 0xee );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -491,13 +499,13 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFPS,
                                            i_micro_kernel_config->vector_name,
-                                           2, 3, 16, 0x44 );
+                                           3, 2, 16, 0x44 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFPS,
                                            i_micro_kernel_config->vector_name,
-                                           2, 3, 17, 0xee );
+                                           3, 2, 17, 0xee );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -511,13 +519,13 @@ void libxsmm_genertaor_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFPS,
                                            i_micro_kernel_config->vector_name,
-                                           0, 2, 16, 0x88 );
+                                           2, 0, 16, 0x88 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFPS,
                                            i_micro_kernel_config->vector_name,
-                                           0, 2, 17, 0xdd );
+                                           2, 0, 17, 0xdd );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,

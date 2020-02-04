@@ -15,7 +15,7 @@
 
 int main(int argc, char* argv[]) {
   unsigned int N =     ( argc == 6 ) ? atoi(argv[1]) : 64;
-  unsigned int C =     ( argc == 6 ) ? atoi(argv[2]) : 128;
+  unsigned int C =     ( argc == 6 ) ? atoi(argv[2]) : 512;
   unsigned int K =     ( argc == 6 ) ? atoi(argv[3]) : 32;
   double sparse_frac = ( argc == 6 ) ? atof(argv[4]) : 0.9;
   unsigned int REPS  = ( argc == 6 ) ? atoi(argv[5]) : 1;
