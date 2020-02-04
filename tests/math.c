@@ -1,7 +1,22 @@
-#include <libxsmm.h>
+/******************************************************************************
+* Copyright (c) Intel Corporation - All rights reserved.                      *
+* This file is part of the LIBXSMM library.                                   *
+*                                                                             *
+* For information on the license, see the LICENSE file.                       *
+* Further information: https://github.com/hfp/libxsmm/                        *
+* SPDX-License-Identifier: BSD-3-Clause                                       *
+******************************************************************************/
+/* Hans Pabst (Intel Corp.)
+******************************************************************************/
+#if !defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#if defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm.h>
+#endif
 
 #define N 1000000
 

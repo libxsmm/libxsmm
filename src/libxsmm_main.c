@@ -962,7 +962,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
           const double scale = libxsmm_timer_duration_rtc(s0, s1) / dt;
           const double diff = LIBXSMM_DELTA(libxsmm_timer_scale, scale) / scale;
-          if (15E-6 > diff) {
+          if (20E-6 > diff) {
             libxsmm_timer_scale = scale;
             internal_timer_start = t0;
           }
