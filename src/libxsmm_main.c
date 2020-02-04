@@ -866,7 +866,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       libxsmm_timer_tickint s0 = libxsmm_timer_tick_rtc(); /* warm-up */
       libxsmm_timer_tickint t0 = libxsmm_timer_tick_tsc(); /* warm-up */
       s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick_tsc(); /* start timing */
-      LIBXSMM_ASSERT(0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST));
+      assert(0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST)); /* !LIBXSMM_ASSERT */
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
 #if (0 != LIBXSMM_SYNC)
@@ -986,7 +986,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           }
         }
       }
-      LIBXSMM_ASSERT(1 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST));
+      assert(1 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST)); /* !LIBXSMM_ASSERT */
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
