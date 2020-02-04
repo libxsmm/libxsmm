@@ -602,11 +602,15 @@ ifneq (,$(CCAR))
   endif
 endif
 
+ctest = $(if $(shell echo "int main(void) { return 0; }" \
+             | $1 $2 -xc /dev/stdin -o /dev/null 2>/dev/null >/dev/null && echo "OK"),$2)
+ldlib = $(call ctest,$1,$2,-l$3)
+
 ifneq (,$(FORCE_CXX))
 ifneq (0,$(FORCE_CXX))
   override CC = $(CXX)
-  ifeq (0,$(shell $(CC) -E -x c++ /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-    override CC += -x c++
+  ifneq (,$(call ctest,$(CC),-xc++))
+    override CC += -xc++
   endif
 endif
 endif
@@ -750,10 +754,6 @@ PGI ?= 0
 LD = $(CC)
 XLD = $(CXX)
 
-ctest = $(if $(shell echo "int main(void) { return 0; }" \
-             | $1 $2 -xc /dev/stdin -o /dev/null 2>/dev/null >/dev/null && echo "OK"),$2)
-ldlib = $(call ctest,$1,$2,-l$3)
-
 ifneq (Windows_NT,$(UNAME))
 ifneq (,$(strip $(PIC)))
   ifneq (,$(call ctest,$(CC),-f$(PIC)))
@@ -895,7 +895,7 @@ abslibpath ?= $(call absliblpath,$1)
 libpath = $(strip $(if $1, \
   $(if $(call ldlib,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(CHAR_CLOSE)]\).*/:\1/" \
-    | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)[[:space:]]..*/\1/p" \
+    | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)\([[:space:]]..*\)*/\1/p" \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
@@ -1419,8 +1419,8 @@ else # GCC assumed
   endif
   OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
   ifeq (,$(OMPLIBFILE))
-  ifeq (0,$(shell echo "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }" \
-    | $(LD) -xc $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) /dev/stdin -o /dev/null 2>&1 >/dev/null; echo "$$?"))
+  ifneq (,$(shell printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" \
+    | $(LD) -xc $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) /dev/stdin -o /dev/null 2>/dev/null >/dev/null && echo "OK"))
     LDFLAGS += $(addprefix -L,$(LIBFIND))
     OMPLIBFILE = -l$(OMPRT)
   endif
