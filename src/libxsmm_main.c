@@ -82,7 +82,7 @@
 #if !defined(LIBXSMM_DESC_PAD) && 1
 # define LIBXSMM_DESC_PAD
 #endif
-#if !defined(LIBXSMM_AUTOPIN) && 0
+#if !defined(LIBXSMM_AUTOPIN) && 1
 # define LIBXSMM_AUTOPIN
 #endif
 
