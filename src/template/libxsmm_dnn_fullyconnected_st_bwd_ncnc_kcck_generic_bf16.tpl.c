@@ -208,7 +208,7 @@ if (handle->desc.K > 1) {
     ifm1 = ifm1ofm1 % nBlocksIFm;
     ofm2 = 0;
     for (ifm2 = 0; ifm2 < bc; ++ifm2) {
-      LIBXSMM_VLA_ACCESS(5, filter_tr_padded, ifm1, ofm1, ofm2/lpb, ifm2, ofm2%lpb, nBlocksOFm, 1, bc, lpb) = LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, ifm2/lpb, ofm2, ifm2%lpb, nBlocksIFm, bc/lpb, bk, lpb);
+      LIBXSMM_VLA_ACCESS(5, filter_tr_padded, ifm1, ofm1, ofm2/lpb, ifm2, ofm2%lpb, nBlocksOFm, 1, bc, lpb) = LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, ifm2/lpb, ofm2, ifm2%lpb, nBlocksIFm, bc_lp, bk, lpb);
       LIBXSMM_VLA_ACCESS(5, filter_tr_padded, ifm1, ofm1, ofm2/lpb, ifm2, 1, nBlocksOFm, 1, bc, lpb) = (element_filter_type)0;
     }
   }
