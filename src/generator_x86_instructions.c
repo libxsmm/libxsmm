@@ -3470,6 +3470,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
     int l_2or3grp0;
     int l_2or3grp1;
     int l_2or3grp2;
+    int l_third = 0, l_fifth = 0;
 
     if ( l_maxsize - i < 20 )
     {
