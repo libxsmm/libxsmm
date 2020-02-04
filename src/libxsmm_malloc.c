@@ -53,6 +53,11 @@
 # else
 #   define LIBXSMM_MAP_ANONYMOUS MAP_ANON
 # endif
+# if defined(MAP_SHARED) && 0
+#   define LIBXSMM_MAP_SHARED MAP_SHARED
+# else
+#   define LIBXSMM_MAP_SHARED 0
+# endif
 #endif
 #if !defined(LIBXSMM_MALLOC_FALLBACK)
 # define LIBXSMM_MALLOC_FINAL 3
@@ -1669,10 +1674,10 @@ LIBXSMM_API_INLINE void* internal_xmalloc_xmap(const char* dir, size_t size, int
     i = mkstemp(filename);
     if (0 <= i) {
       if (0 == unlink(filename) && 0 == ftruncate(i, size)) {
-        void *const xmap = mmap(*rx, size, PROT_READ | PROT_EXEC, flags | MAP_SHARED /*| LIBXSMM_MAP_ANONYMOUS*/, i, 0/*offset*/);
+        void *const xmap = mmap(*rx, size, PROT_READ | PROT_EXEC, flags | LIBXSMM_MAP_SHARED, i, 0/*offset*/);
         if (MAP_FAILED != xmap) {
           LIBXSMM_ASSERT(NULL != xmap);
-          result = mmap(NULL, size, PROT_READ | PROT_WRITE, flags | MAP_SHARED /*| LIBXSMM_MAP_ANONYMOUS*/, i, 0/*offset*/);
+          result = mmap(NULL, size, PROT_READ | PROT_WRITE, flags | LIBXSMM_MAP_SHARED, i, 0/*offset*/);
           if (MAP_FAILED != result) {
             LIBXSMM_ASSERT(NULL != result);
             internal_xmalloc_mhint(xmap, size);
