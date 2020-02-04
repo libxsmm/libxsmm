@@ -1906,8 +1906,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           }
         }
 # endif
-        alloc_alignment = (NULL == info ? libxsmm_alignment(size, alignment) : alignment);
-        alloc_size = size + extra_size + sizeof(internal_malloc_info_type) + alloc_alignment - 1;
+        /* make allocated size at least a multiple of the smallest page-size to avoid split-pages (unmap!) */
+        alloc_alignment = libxsmm_lcm(0 == alignment ? libxsmm_alignment(size, alignment) : alignment, 4096);
+        alloc_size = LIBXSMM_UP2(size + extra_size + sizeof(internal_malloc_info_type) + alloc_alignment - 1, alloc_alignment);
         alloc_failed = MAP_FAILED;
         if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* anonymous and non-executable */
 # if 0
