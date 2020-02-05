@@ -724,21 +724,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 
-#if (0 == LIBXSMM_SYNC)
-# define LIBXSMM_FLOCK(FILE)
-# define LIBXSMM_FUNLOCK(FILE)
-#elif defined(_WIN32)
-# include <windows.h>
-# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
-# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
-#else
-# include <pthread.h>
-# if !defined(__CYGWIN__)
-#   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
-#   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
-# else /* Only available with __CYGWIN__ *and* C++0x. */
-#   define LIBXSMM_FLOCK(FILE)
-#   define LIBXSMM_FUNLOCK(FILE)
+#if (0 != LIBXSMM_SYNC)
+# if defined(_WIN32)
+#   include <windows.h>
+# else
+#   include <pthread.h>
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT)
@@ -792,9 +782,6 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_THROW
 #endif
-/** Synchronize console output */
-#define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
-#define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
 
 /* block must be after including above header files */
 #if (defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__) < LIBXSMM_VERSION2(2, 26)) \

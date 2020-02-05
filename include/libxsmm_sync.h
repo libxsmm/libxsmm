@@ -700,6 +700,28 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_LOCK_RELREAD(KIND, LOCK) LIBXSMM_LOCK_RELEASE(KIND, LOCK)
 #endif
 
+#if (0 == LIBXSMM_SYNC)
+# define LIBXSMM_FLOCK(FILE)
+# define LIBXSMM_FUNLOCK(FILE)
+#elif defined(_WIN32)
+# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
+# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
+#else
+# if !defined(__CYGWIN__)
+#   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
+#   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
+    LIBXSMM_EXTERN void flockfile(FILE*);
+    LIBXSMM_EXTERN void funlockfile(FILE*);
+# else /* Only available with __CYGWIN__ *and* C++0x. */
+#   define LIBXSMM_FLOCK(FILE)
+#   define LIBXSMM_FUNLOCK(FILE)
+# endif
+#endif
+
+/** Synchronize console output */
+#define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
+#define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
+
 
 /** Opaque type which represents a barrier. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_barrier libxsmm_barrier;
