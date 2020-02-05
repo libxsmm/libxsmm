@@ -82,6 +82,7 @@
 #define LIBXSMM_X86_INSTR_MOVSS          10014
 #define LIBXSMM_X86_INSTR_MOVDDUP        10015
 #define LIBXSMM_X86_INSTR_SHUFPS         10016
+#define LIBXSMM_X86_INSTR_SHUFPD         10017
 
 /* Gather/Scatter instructions */
 #define LIBXSMM_X86_INSTR_VGATHERDPS     11000

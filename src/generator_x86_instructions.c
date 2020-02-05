@@ -3502,12 +3502,31 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0 =1;
           if ( (i_vec_reg_number_1>=8) && (i_vec_reg_number_1<=15) ) l_vecgrp1 =1;
           if ( (l_vecgrp0 >= 1) || (l_vecgrp1 >= 1) )     {
-             int i_extra_byte = 0;
-             if ( l_vecgrp0 >= 1 ) i_extra_byte += 1;
-             if ( l_vecgrp1 >= 1 ) i_extra_byte += 4;
-             buf[i++] = (unsigned char)(0x40 + i_extra_byte);
+             if ( l_vecgrp0 >= 1 ) l_extra_byte += 1;
+             if ( l_vecgrp1 >= 1 ) l_extra_byte += 4;
+             buf[i++] = (unsigned char)(0x40 + l_extra_byte);
           }
-          buf[i++] = (unsigned char)(0x0f + l_oddgrp0 * 0x00);
+          buf[i++] = (unsigned char)(0x0f);
+          buf[i++] = (unsigned char)(0xc6);
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval1*8);
+          break;
+       case LIBXSMM_X86_INSTR_SHUFPD:
+          if ( (i_vector_name!='x') && (i_vector_name!='X') )
+          {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: SHUFPD only works for xmm\n");
+             exit(-1);
+          }
+          l_vecgrp0 = 0;
+          l_vecgrp1 = 0;
+          if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0 =1;
+          if ( (i_vec_reg_number_1>=8) && (i_vec_reg_number_1<=15) ) l_vecgrp1 =1;
+          if ( (l_vecgrp0 >= 1) || (l_vecgrp1 >= 1) )     {
+             buf[i++] = (unsigned char)(0x66);
+             l_extra_byte = 0x22;
+             if ( l_vecgrp0 >= 1 ) l_extra_byte += 3;
+          }
+          buf[i++] = (unsigned char)(0x66 - l_extra_byte);
+          buf[i++] = (unsigned char)(0x0f);
           buf[i++] = (unsigned char)(0xc6);
           buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval1*8);
           break;
