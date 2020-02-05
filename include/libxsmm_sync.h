@@ -710,8 +710,8 @@ typedef enum libxsmm_atomic_kind {
 # if !defined(__CYGWIN__)
 #   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
 #   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
-    LIBXSMM_EXTERN void flockfile(FILE*);
-    LIBXSMM_EXTERN void funlockfile(FILE*);
+    LIBXSMM_EXTERN void flockfile(FILE*) LIBXSMM_THROW;
+    LIBXSMM_EXTERN void funlockfile(FILE*) LIBXSMM_THROW;
 # else /* Only available with __CYGWIN__ *and* C++0x. */
 #   define LIBXSMM_FLOCK(FILE)
 #   define LIBXSMM_FUNLOCK(FILE)
