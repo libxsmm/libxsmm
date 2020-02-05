@@ -602,8 +602,10 @@ ifneq (,$(CCAR))
   endif
 endif
 
-ctest = $(if $(shell echo "int main(void) { return 0; }" \
-             | $1 $2 -xc /dev/stdin -o /dev/null 2>/dev/null >/dev/null && echo "OK"),$2)
+ctest = $(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
+  echo "int main(void) { return 0; }" > $${INFILE} && \
+  $1 $2 $${INFILE} -o /dev/null 2>/dev/null >/dev/null && echo "OK"; \
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null),$2)
 ldlib = $(call ctest,$1,$2,-l$3)
 
 ifneq (,$(FORCE_CXX))
@@ -825,15 +827,15 @@ DYNAMIC ?= 0
 
 # CCE: resolve linker issue
 ifneq (0,$(DYNAMIC))
-ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
-  echo "int main(void) { return 0; }" > $${INFILE}; \
-  RESULT=$$($(CC) -dynamic $${INFILE} -o $${INFILE}.exe 2>&1); \
-  if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-    EXCLUDE_VALUE += -dynamic
-    XLD := $(XLD) -dynamic
-    FLD := $(FLD) -dynamic
-    LD := $(LD) -dynamic
+ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
+    echo "int main(void) { return 0; }" > $${INFILE} && \
+    RESULT=$$($(CC) -dynamic $${INFILE} -o $${INFILE}.exe 2>&1); \
+    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+  EXCLUDE_VALUE += -dynamic
+  XLD := $(XLD) -dynamic
+  FLD := $(FLD) -dynamic
+  LD := $(LD) -dynamic
 endif
 endif
 
@@ -1419,8 +1421,10 @@ else # GCC assumed
   endif
   OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
   ifeq (,$(OMPLIBFILE))
-  ifneq (,$(shell printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" \
-    | $(LD) -xc $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) /dev/stdin -o /dev/null 2>/dev/null >/dev/null && echo "OK"))
+  ifneq (,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
+      printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" > $${INFILE} && \
+      $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) $${INFILE} -o /dev/null 2>/dev/null >/dev/null && echo "OK"; \
+      rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
     LDFLAGS += $(addprefix -L,$(LIBFIND))
     OMPLIBFILE = -l$(OMPRT)
   endif
@@ -1623,23 +1627,22 @@ endif
 
 ifneq (,$(call ctest,$(CC),$(CTARGET)))
   # check target flags by feeding an ad-hoc C program into the compiler
-  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
-    echo "int main(void) { return 0; }" > $${INFILE}; \
-    RESULT=$$($(CC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
-    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-      CTARGET = $(NULL)
+  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
+      echo "int main(void) { return 0; }" > $${INFILE} && \
+      RESULT=$$($(CC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
+      if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+      rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+    CTARGET = $(NULL)
   endif
   ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
   # INFILE cannot start with a leading dot when used with certain compiler
-  ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f); \
-    echo "      PROGRAM test" > $${INFILE}; \
-    echo "      END PROGRAM" >> $${INFILE}; \
-    RESULT=$$($(FC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
-    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.* 2>/dev/null))
-      # inherit CTARGET flags
-      FTARGET = $(CTARGET)
+  ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
+      printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && \
+      RESULT=$$($(FC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
+      if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+      rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.* 2>/dev/null))
+    # inherit CTARGET flags
+    FTARGET = $(CTARGET)
   endif
   endif
 else # revoke target flags
@@ -1842,15 +1845,11 @@ ifeq (Darwin,$(UNAME))
   FCFLAGS += -Wa,-q
 endif
 
-ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
-  echo "$(CHAR_HASH)include <features.h>" > $${INFILE}; \
-  echo "$(CHAR_HASH)if !defined(__GNU_LIBRARY__) && !defined(__GLIBC__)" >> $${INFILE}; \
-  echo "0" >> $${INFILE}; \
-  echo "$(CHAR_HASH)endif" >> $${INFILE}; \
-  RESULT=$$($(CC) -c $${INFILE} -o $${INFILE}.o 2>&1); \
-  if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-    GLIBC = 1
+ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
+    printf "$(CHAR_HASH)include <features.h>\n$(CHAR_HASH)if !defined(__GNU_LIBRARY__) && !defined(__GLIBC__)\n0\n$(CHAR_HASH)endif\n" > $${INFILE} && \
+    RESULT=$$($(CC) -c $${INFILE} -o $${INFILE}.o 2>&1); if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+  GLIBC = 1
 endif
 GLIBC ?= 0
 
@@ -1860,15 +1859,11 @@ ifneq (,$(strip $(OMPLIBFILE)))
 endif
 
 ifneq (,$(OMPFLAG_FORCE))
-ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
-  echo "$(CHAR_HASH)if defined(_OPENMP)" > $${INFILE}; \
-  echo "$(CHAR_HASH) include <omp.h>" >> $${INFILE}; \
-  echo "int main() { return 0; }" >> $${INFILE}; \
-  echo "$(CHAR_HASH)endif" >> $${INFILE}; \
-  RESULT=$$($(CC) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1); \
-  if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-    OMPFLAG = $(OMPFLAG_FORCE)
+ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
+    printf "$(CHAR_HASH)if defined(_OPENMP)\n$(CHAR_HASH) include <omp.h>\nint main() { return 0; }\n$(CHAR_HASH)endif\n" > $${INFILE} && \
+    RESULT=$$($(CC) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1); if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+  OMPFLAG = $(OMPFLAG_FORCE)
 endif
 endif
 ifeq (0,$(OMP))
