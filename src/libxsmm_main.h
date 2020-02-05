@@ -59,6 +59,21 @@
 # define LIBXSMM_INTERCEPT_DYNAMIC
 #endif
 
+#if defined(LIBXSMM_INTERCEPT_DYNAMIC)
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+# endif
+# include <dlfcn.h>
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(pop)
+# endif
+# if !defined(RTLD_NEXT)
+#   define LIBXSMM_RTLD_NEXT ((void*)-1l)
+# else
+#   define LIBXSMM_RTLD_NEXT RTLD_NEXT
+# endif
+#endif
+
 #if !defined(LIBXSMM_VERBOSITY_HIGH)
 # define LIBXSMM_VERBOSITY_HIGH 3 /* secondary warning or info-verbosity */
 #endif

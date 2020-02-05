@@ -33,9 +33,6 @@
 #if defined(_WIN32)
 # include <Windows.h>
 #else
-# if defined(LIBXSMM_INTERCEPT_DYNAMIC)
-#   include <dlfcn.h>
-# endif
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
@@ -580,7 +577,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* messag
   if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
     union { const void* dlsym; void (*ptr)(const char*, int, int); } stop;
     dlerror(); /* clear an eventual error status */
-    stop.dlsym = dlsym(RTLD_NEXT, "_gfortran_stop_string");
+    stop.dlsym = dlsym(LIBXSMM_RTLD_NEXT, "_gfortran_stop_string");
     if (NULL != stop.dlsym) {
       stop.ptr(message, len, quiet);
     }
@@ -595,7 +592,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* message, int l
   if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
     union { const void* dlsym; void (*ptr)(const char*, int); } stop;
     dlerror(); /* clear an eventual error status */
-    stop.dlsym = dlsym(RTLD_NEXT, "for_stop_core");
+    stop.dlsym = dlsym(LIBXSMM_RTLD_NEXT, "for_stop_core");
     if (NULL != stop.dlsym) {
       stop.ptr(message, len);
     }
@@ -610,7 +607,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void)
   if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
     union { const void* dlsym; void (*ptr)(void); } stop;
     dlerror(); /* clear an eventual error status */
-    stop.dlsym = dlsym(RTLD_NEXT, "for_stop_core_quiet");
+    stop.dlsym = dlsym(LIBXSMM_RTLD_NEXT, "for_stop_core_quiet");
     if (NULL != stop.dlsym) {
       stop.ptr();
     }
@@ -672,7 +669,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC) && defined(LIBXSMM_AUTOPIN)
     /* clear error status (dummy condition: it does not matter if MPI_Init or MPI_Abort) */
     const char *const dlsymname = (NULL == dlerror() ? "MPI_Init" : "MPI_Abort");
-    const void *const dlsymbol = dlsym(RTLD_NEXT, dlsymname);
+    const void *const dlsymbol = dlsym(LIBXSMM_RTLD_NEXT, dlsymname);
 #endif
     /* setup verbosity as early as possible since below code may rely on verbose output */
     if (NULL != env_verbose && 0 != *env_verbose) {

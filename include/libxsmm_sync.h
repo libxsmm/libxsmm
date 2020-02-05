@@ -356,13 +356,15 @@ typedef enum libxsmm_atomic_kind {
 
 #if (0 != LIBXSMM_SYNC) /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
-# if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
+# if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) /*&& defined(LIBXSMM_SYNC_SYSTEM)*/ && \
+    (!defined(__linux__) || defined(__USE_XOPEN2K))
 #   define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && (defined(LIBXSMM_SYNC_SYSTEM) || !defined(_MSC_VER))
 #   define LIBXSMM_LOCK_SYSTEM_MUTEX
 # endif
-# if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
+# if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) /*&& defined(LIBXSMM_SYNC_SYSTEM)*/ && \
+    (!defined(__linux__) || defined(__USE_XOPEN2K) || defined(__USE_UNIX98))
 #   define LIBXSMM_LOCK_SYSTEM_RWLOCK
 # endif
   /* Lock type, initialization, destruction, (try-)lock, unlock, etc */
