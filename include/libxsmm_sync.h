@@ -466,7 +466,7 @@ typedef enum libxsmm_atomic_kind {
 #   else
 #     define LIBXSMM_PTHREAD_FN(FN) FN
 #     if defined(__BSD_VISIBLE)
-      LIBXSMM_EXTERN void pthread_yield(void);
+      LIBXSMM_EXTERN void pthread_yield(void) LIBXSMM_THROW;
 #     elif !defined(__USE_GNU)
       LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_THROW;
 #     endif
