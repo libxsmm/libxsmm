@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -114,6 +114,9 @@ then
     else
       CONFIGS=none
     fi
+  elif [ "" != "${CONFIG}" ]; then
+    # singular CONFIG replaces set of CONFIGS
+    CONFIGS=${CONFIG}
   fi
   # setup ENVS (multiple environments)
   if [ "" = "${ENVS}" ]; then
@@ -248,9 +251,19 @@ then
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
+    CONFIGFILE=""
     if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ]; then
-      if [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ]; then
-        source ${REPOROOT}/.env/${HOST}/${CONFIG}.env ""
+      CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
+      if [ "" != "${CONFIGPAT}" ]; then
+        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOST}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
+      else
+        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOST}/${CONFIG}.env 2>/dev/null"))
+      fi
+      CONFIGCOUNT=${#CONFIGFILES[@]}
+      if [ "0" != "${CONFIGCOUNT}" ]; then
+        CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
+        CONFIG=$(${BASENAME} ${CONFIGFILE} .env)
+        source "${CONFIGFILE}" ""
       else
         echo "WARNING: configuration \"${CONFIG}\" not found!"
       fi
@@ -264,31 +277,29 @@ then
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ] || [ "none" != "${ENV}" ]; then
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
           if [ "" != "${ENVVAL}" ]; then
-            echo "+++ TEST ${TESTID} (${PARTITION}/${ENVVAL})"
+            echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG}/${ENVVAL})"
           else
-            echo "+++ TEST ${TESTID} (${PARTITION})"
+            echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG})"
           fi
         elif [ "" != "${ENVVAL}" ]; then
-          echo "+++ TEST ${TESTID} (${ENVVAL})"
+          echo "+++ TEST ${TESTID} (${CONFIG}/${ENVVAL})"
         else
-          echo "+++ TEST ${TESTID}"
+          echo "+++ TEST ${TESTID} (${CONFIG})"
         fi
       fi
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
-        echo "#!/bin/bash" > ${TESTSCRIPT}
+        echo "#!/usr/bin/env bash" > ${TESTSCRIPT}
         echo "set -eo pipefail" >> ${TESTSCRIPT}
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
-        if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-           [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ];
-        then
+        if [ "" != "${CONFIGFILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
           ${MKDIR} -p ${REPOROOT}/licenses
           ${CP} -u /opt/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
           ${CP} -u ${LICSDIR}/licenses/* ${REPOROOT}/licenses 2>/dev/null
           echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
-          echo "source ${REPOROOT}/.env/${HOST}/${CONFIG}.env """ >> ${TESTSCRIPT}
+          echo "source "${CONFIGFILE}" """ >> ${TESTSCRIPT}
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then

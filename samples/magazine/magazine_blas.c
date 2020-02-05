@@ -24,9 +24,6 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
   const float*, const float*, const int*, const float*, const int*,
   const float*, float*, const int*);
 #endif
-#if defined(_OPENMP) && !defined(SYNC)
-# include <omp.h>
-#endif
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -61,6 +58,9 @@ int main(int argc, char* argv[])
   const size_t nc = ((sizeof(TYPE) * ldc * n + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE);
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? (int)((2ULL << 30/*2 GB*/) / (sizeof(TYPE) * (na + nb + nc))) : batchsize);
+#if defined(SHUFFLE)
+  const size_t shuffle = libxsmm_shuffle((unsigned int)size);
+#endif
   /* allocate A, B, and C matrix buffers */
   void *const va = malloc(sizeof(TYPE) * na * size + PAD - 1);
   void *const vb = malloc(sizeof(TYPE) * nb * size + PAD - 1);
@@ -91,35 +91,41 @@ int main(int argc, char* argv[])
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
-    init(25 + i, a + i * na, m, k, lda, scale);
-    init(75 + i, b + i * nb, k, n, ldb, scale);
+#if defined(SHUFFLE)
+    const int j = (i * shuffle) % size;
+#else
+    const int j = i;
+#endif
+    init(25 + i, a + j * na, m, k, lda, scale);
+    init(75 + i, b + j * nb, k, n, ldb, scale);
     if (0 != beta) { /* no need to initialize for beta=0 */
-      init(42 + i, c + i * nc, m, n, ldc, scale);
+      init(42 + i, c + j * nc, m, n, ldc, scale);
     }
   }
 
 #if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   if (NULL != jitter) {
 # if !defined(_OPENMP) || defined(SYNC)
-#   if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-    duration = dsecnd();
-#   endif
+    duration = seconds();
 # else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
 #     pragma omp single
-      duration = omp_get_wtime();
+      duration = seconds();
 #     pragma omp for private(i)
 # endif
       for (i = 0; i < size; ++i) {
-        kernel(jitter, a + STREAM_A(i * na), b + STREAM_B(i * nb), c + STREAM_C(i * nc));
+#if defined(SHUFFLE)
+        const int j = (i * shuffle) % size;
+#else
+        const int j = i;
+#endif
+        kernel(jitter, a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
       }
 # if defined(_OPENMP) && !defined(SYNC)
     }
-    duration = omp_get_wtime() - duration;
-# elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-    duration = dsecnd() - duration;
 # endif
+    duration = seconds() - duration;
   }
   else
 # if defined(NOFALLBACK)
@@ -128,27 +134,28 @@ int main(int argc, char* argv[])
 #endif
   {
 #if !defined(_OPENMP) || defined(SYNC)
-# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-    duration = dsecnd();
-# endif
+    duration = seconds();
 #else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
 #     pragma omp single
-      duration = omp_get_wtime();
+      duration = seconds();
 #     pragma omp for private(i)
 #endif
       for (i = 0; i < size; ++i) {
+#if defined(SHUFFLE)
+        const int j = (i * shuffle) % size;
+#else
+        const int j = i;
+#endif
         GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, a + STREAM_A(i * na), &lda, b + STREAM_B(i * nb), &ldb,
-           &beta, c + STREAM_C(i * nc), &ldc);
+          &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
+           &beta, c + STREAM_C(j * nc), &ldc);
       }
 #if defined(_OPENMP) && !defined(SYNC)
     }
-    duration = omp_get_wtime() - duration;
-#elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-    duration = dsecnd() - duration;
 #endif
+    duration = seconds() - duration;
   }
 
   if (0 < duration) {

@@ -64,7 +64,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <InterproceduralOptimization>true</InterproceduralOptimization>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <PlatformToolset>v142</PlatformToolset>
@@ -89,7 +88,6 @@
     <VCToolsVersion />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|x64'" Label="Configuration">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <InterproceduralOptimization>true</InterproceduralOptimization>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>

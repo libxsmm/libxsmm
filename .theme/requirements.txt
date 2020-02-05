@@ -1,2 +1,4 @@
-mkdocs>=1.0
-
+sphinx-rtd-theme
+recommonmark
+mkdocs>=1.0.4
+m2r

@@ -52,6 +52,9 @@ int main(int argc, char* argv[])
   const size_t nc = ((sizeof(T) * ldc * n + PAD - 1) & ~(PAD - 1)) / sizeof(T);
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? static_cast<int>((2ULL << 30/*2 GB*/) / (sizeof(T) * (na + nb + nc))) : batchsize);
+#if defined(SHUFFLE)
+  const size_t shuffle = libxsmm_shuffle((unsigned int)size);
+#endif
   size_t sa = sizeof(T) * na * size + PAD - 1;
   size_t sb = sizeof(T) * nb * size + PAD - 1;
   size_t sc = sizeof(T) * nc * size + PAD - 1;
@@ -69,10 +72,15 @@ int main(int argc, char* argv[])
 # pragma omp parallel for
 #endif
   for (int i = 0; i < size; ++i) {
-    init(25 + i, pa + i * na, m, k, lda, scale);
-    init(75 + i, pb + i * nb, k, n, ldb, scale);
+#if defined(SHUFFLE)
+    const int j = (i * shuffle) % size;
+#else
+    const int j = i;
+#endif
+    init(25 + i, pa + j * na, m, k, lda, scale);
+    init(75 + i, pb + j * nb, k, n, ldb, scale);
     if (0 != beta) { /* no need to initialize for beta=0 */
-      init(42 + i, pc + i * nc, m, n, ldc, scale);
+      init(42 + i, pc + j * nc, m, n, ldc, scale);
     }
   }
 
@@ -80,17 +88,22 @@ int main(int argc, char* argv[])
 # pragma omp parallel
 #endif
   {
-#if !defined(_OPENMP) || defined(SYNC)
-    timer.start();
-#else /* OpenMP thread pool is already populated (parallel region) */
+#if defined(_OPENMP) && !defined(SYNC)
 #   pragma omp single
+#endif
     timer.start();
+#if defined(_OPENMP) && !defined(SYNC)
 #   pragma omp for
 #endif
     for (int i = 0; i < size; ++i) {
-      const matrix_type a(pa + STREAM_A(i * na), m, k, lda);
-      const matrix_type b(pb + STREAM_B(i * nb), k, n, ldb);
-            matrix_type c(pc + STREAM_C(i * nc), m, n, ldc);
+#if defined(SHUFFLE)
+      const int j = (i * shuffle) % size;
+#else
+      const int j = i;
+#endif
+      const matrix_type a(pa + STREAM_A(j * na), m, k, lda);
+      const matrix_type b(pb + STREAM_B(j * nb), k, n, ldb);
+            matrix_type c(pc + STREAM_C(j * nc), m, n, ldc);
       /**
        * Expression templates attempt to delay evaluation until the sequence point
        * is reached, or an "expression object" goes out of scope and hence must

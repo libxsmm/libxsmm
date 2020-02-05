@@ -18,6 +18,7 @@
 #include "generator_spgemm_csr_bsparse_soa.h"
 #include "generator_spgemm_csr_asparse_soa.h"
 #include "generator_spgemm_csc_bsparse_soa.h"
+#include "generator_spgemm_csc_csparse_soa.h"
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -216,6 +217,21 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
       return;
     }
     libxsmm_generator_spgemm_csc_bsparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
+  /* C matrix is sparse */
+  } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc == 0) ) {
+#if 0
+    /* check LDA */
+    if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
+      return;
+    }
+#endif
+    /* check LDB */
+    if ( i_xgemm_desc->ldb < i_xgemm_desc->n ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
+      return;
+    }
+    libxsmm_generator_spgemm_csc_csparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   } else {
     /* something bad happened... */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );

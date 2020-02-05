@@ -23,6 +23,9 @@ int main(int argc, char* argv[])
   const int elsize = (0 >= insize ? LIBXSMM_DESCRIPTOR_SIGSIZE : insize);
   const int stride = (0 >= incrmt ? LIBXSMM_MAX(LIBXSMM_DESCRIPTOR_MAXSIZE, elsize) : LIBXSMM_MAX(incrmt, elsize));
   const size_t n = (0 >= nelems ? (((size_t)2 << 30/*2 GB*/) / stride) : ((size_t)nelems));
+  const char *const env_strided = getenv("STRIDED"), *const env_check = getenv("CHECK");
+  const int strided = (NULL == env_strided || 0 == *env_strided) ? 0/*default*/ : atoi(env_strided);
+  const int check = (NULL == env_check || 0 == *env_check) ? 0/*default*/ : atoi(env_check);
   int result = EXIT_SUCCESS;
   size_t nbytes, size, nrpt;
   unsigned char *a, *b;
@@ -47,8 +50,8 @@ int main(int argc, char* argv[])
     /* initialize the data */
     libxsmm_rng_seq(a, (libxsmm_blasint)nbytes);
     memcpy(b, a, nbytes); /* same content */
-
-    if (elsize < 256) { /* benchmark libxsmm_diff */
+    /* benchmark libxsmm_diff (always strided) */
+    if (elsize < 256) {
       size_t diff = 0, i, j;
       const libxsmm_timer_tickint start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
@@ -71,7 +74,7 @@ int main(int argc, char* argv[])
       memcpy(b, a, nbytes); /* same content */
       start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
-        if (stride == elsize) {
+        if (stride == elsize && 0 == strided) {
           diff += libxsmm_memcmp(a, b, nbytes);
         }
         else {
@@ -95,7 +98,7 @@ int main(int argc, char* argv[])
       memcpy(b, a, nbytes); /* same content */
       start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
-        if (stride == elsize) {
+        if (stride == elsize && 0 == strided) {
           diff += (0 != memcmp(a, b, nbytes));
         }
         else {
@@ -117,8 +120,8 @@ int main(int argc, char* argv[])
         (int)LIBXSMM_ROUND((2.0 * nrpt * nbytes) / ((1024.0 * 1024.0) * duration)));
       result += (int)diff * ((int)stride / ((int)stride + 1)); /* ignore result */
     }
-#if 1
-    { /* validation */
+
+    if (0 != check) { /* validation */
       size_t diff = 0, i, j, k;
       for (i = 0; i < nrpt; ++i) {
         for (j = 0; j < nbytes; j += stride) {
@@ -155,7 +158,6 @@ int main(int argc, char* argv[])
         result = EXIT_FAILURE;
       }
     }
-#endif
   }
   else {
     result = EXIT_FAILURE;

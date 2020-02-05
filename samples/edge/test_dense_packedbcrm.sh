@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Arguments M N K beta reps
 # l_r is fixed to 16, when we FP32

@@ -11,9 +11,6 @@
 #include "libxsmm_trace.h"
 #include <libxsmm_sync.h>
 
-#if !defined(LIBXSMM_TRACE_DLINFO) && defined(_GNU_SOURCE) /*&& !defined(__STATIC)*/
-# define LIBXSMM_TRACE_DLINFO
-#endif
 #if !defined(LIBXSMM_TRACE_MINDEPTH) || 0 > (LIBXSMM_TRACE_MINDEPTH)
 # undef LIBXSMM_TRACE_MINDEPTH
 # define LIBXSMM_TRACE_MINDEPTH 1
@@ -25,6 +22,9 @@
 #if !defined(LIBXSMM_TRACE_SYMBOLSIZE) || 0 >= (LIBXSMM_TRACE_SYMBOLSIZE)
 # undef LIBXSMM_TRACE_SYMBOLSIZE
 # define LIBXSMM_TRACE_SYMBOLSIZE 256
+#endif
+#if !defined(LIBXSMM_TRACE_DLINFO) && defined(__USE_GNU)
+# define LIBXSMM_TRACE_DLINFO
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

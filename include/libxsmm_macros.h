@@ -535,9 +535,9 @@
  */
 #if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && !defined(__PGI) && ( \
     (defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || \
-    (defined(__GNUC__) && LIBXSMM_VERSION2(5, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus)) /*|| \
+    (defined(__GNUC__) && LIBXSMM_VERSION2(5, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus)) || \
     (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) && !defined(__cplusplus)) || \
-    (defined(__INTEL_COMPILER) && !defined(_WIN32))*/)
+    (defined(__INTEL_COMPILER) && !defined(_WIN32)))
 # define LIBXSMM_VLA
 #endif
 
@@ -659,39 +659,6 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_MKTEMP_PATTERN "XXXXXX"
 #endif
 
-#if defined(_WIN32) && 0
-# define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
-#elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
-# define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
-#else
-# define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
-#endif
-#if defined(_WIN32)
-# define LIBXSMM_PUTENV _putenv
-# define LIBXSMM_SETENV(NAME, VALUE, OVERWRITE) \
-    if (NULL == getenv(NAME) || (OVERWRITE)) LIBXSMM_PUTENV(NAME "=" VALUE)
-#else
-# define LIBXSMM_PUTENV putenv
-# define LIBXSMM_SETENV setenv
-#endif
-#if (0 == LIBXSMM_SYNC)
-# define LIBXSMM_FLOCK(FILE)
-# define LIBXSMM_FUNLOCK(FILE)
-#elif defined(_WIN32)
-# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
-# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
-#elif !defined(__CYGWIN__)
-# define LIBXSMM_FLOCK(FILE) flockfile(FILE)
-# define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
-#else /* Only available with __CYGWIN__ *and* C++0x. */
-# define LIBXSMM_FLOCK(FILE)
-# define LIBXSMM_FUNLOCK(FILE)
-#endif
-
-/** Synchronize console output */
-#define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
-#define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
-
 /** Below group is to fix-up some platform/compiler specifics. */
 #if defined(_WIN32)
 # if !defined(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES)
@@ -721,7 +688,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
-#if !defined(_GNU_SOURCE) /*&& defined(__GNUC__)*/
+#if !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
 #if !defined(__STDC_FORMAT_MACROS)
@@ -756,6 +723,24 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+
+#if (0 == LIBXSMM_SYNC)
+# define LIBXSMM_FLOCK(FILE)
+# define LIBXSMM_FUNLOCK(FILE)
+#elif defined(_WIN32)
+# include <windows.h>
+# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
+# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
+#else
+# include <pthread.h>
+# if !defined(__CYGWIN__)
+#   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
+#   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
+# else /* Only available with __CYGWIN__ *and* C++0x. */
+#   define LIBXSMM_FLOCK(FILE)
+#   define LIBXSMM_FUNLOCK(FILE)
+# endif
+#endif
 #if !defined(LIBXSMM_ASSERT)
 # include <assert.h>
 # if defined(NDEBUG)
@@ -785,11 +770,39 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_EXPECT_DEBUG LIBXSMM_EXPECT_ELIDE
 #endif
+#if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
+# include <omp.h>
+#endif
 #include <stddef.h>
 #include <stdint.h>
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+
+#if defined(_WIN32) && 0
+# define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
+#elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
+# define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
+#else
+# define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
+#endif
+#if defined(_WIN32)
+# define LIBXSMM_PUTENV _putenv
+# define LIBXSMM_SETENV(NAME, VALUE, OVERWRITE) \
+    if (NULL == getenv(NAME) || (OVERWRITE)) LIBXSMM_PUTENV(NAME "=" VALUE)
+#else
+# define LIBXSMM_PUTENV putenv
+# define LIBXSMM_SETENV setenv
+#endif
+#if defined(__THROW) && defined(__cplusplus)
+# define LIBXSMM_THROW __THROW
+#else
+# define LIBXSMM_THROW
+#endif
+/** Synchronize console output */
+#define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
+#define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
 
 /* block must be after including above header files */
 #if (defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__) < LIBXSMM_VERSION2(2, 26)) \

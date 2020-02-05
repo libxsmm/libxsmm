@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #SBATCH -J allconv_f32_ppad_skx_01_07thr
 #SBATCH --get-user-env

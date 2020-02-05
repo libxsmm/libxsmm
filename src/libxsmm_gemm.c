@@ -364,7 +364,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       const unsigned int minsize = (batchscale * env_bu + (LIBXSMM_GEMM_BATCHSCALE) - 1) / (LIBXSMM_GEMM_BATCHSCALE);
       const unsigned int batchsize = LIBXSMM_MAX(env_bu, minsize);
       const void *const extra = NULL;
-      LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_MMBATCH_SCALE));
+      LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_MMBATCH_SCALE) && NULL == libxsmm_mmbatch_array);
       if (EXIT_SUCCESS == libxsmm_xmalloc(&libxsmm_mmbatch_array, (size_t)batchsize * (LIBXSMM_GEMM_BATCHSCALE), 0/*auto-alignment*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE /*| LIBXSMM_MALLOC_FLAG_SCRATCH*/, &extra, sizeof(extra)))
       {
@@ -461,12 +461,15 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
 #endif
 #if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_WRAP)
   if (NULL != libxsmm_mmbatch_array) {
-    void* extra = NULL;
-    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_mmbatch_array, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {
+    void *extra = NULL, *const mmbatch_array = libxsmm_mmbatch_array;
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(mmbatch_array, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {
       const libxsmm_mmbatch_flush_function flush = *(libxsmm_mmbatch_flush_function*)extra;
       if (NULL != flush) flush();
     }
-    libxsmm_xfree(libxsmm_mmbatch_array, 0/*no check*/);
+#if !defined(NDEBUG)
+    libxsmm_mmbatch_array = NULL;
+#endif
+    libxsmm_xfree(mmbatch_array, 0/*no check*/);
     LIBXSMM_LOCK_DESTROY(LIBXSMM_GEMM_LOCK, &libxsmm_mmbatch_lock);
   }
 #endif

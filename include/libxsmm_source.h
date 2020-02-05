@@ -54,6 +54,7 @@
 #include "../src/generator_spgemm_csc_asparse.c"
 #include "../src/generator_spgemm_csc_bsparse.c"
 #include "../src/generator_spgemm_csc_bsparse_soa.c"
+#include "../src/generator_spgemm_csc_csparse_soa.c"
 #include "../src/generator_spgemm_csc_reader.c"
 #include "../src/generator_spgemm_csr_asparse.c"
 #include "../src/generator_spgemm_csr_asparse_reg.c"

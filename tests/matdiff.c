@@ -8,8 +8,13 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_source.h>
+#if !defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm_source.h>
+#endif
 #include <float.h>
+#if defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm_source.h>
+#endif
 
 #if !defined(ITYPE)
 # define ITYPE double

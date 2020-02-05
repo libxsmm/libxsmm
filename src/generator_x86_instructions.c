@@ -3470,6 +3470,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
     int l_2or3grp0;
     int l_2or3grp1;
     int l_2or3grp2;
+    int l_third = 0, l_fifth = 0;
 
     if ( l_maxsize - i < 20 )
     {
@@ -3501,36 +3502,113 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0 =1;
           if ( (i_vec_reg_number_1>=8) && (i_vec_reg_number_1<=15) ) l_vecgrp1 =1;
           if ( (l_vecgrp0 >= 1) || (l_vecgrp1 >= 1) )     {
-             int i_extra_byte = 0;
-             if ( l_vecgrp0 >= 1 ) i_extra_byte += 1;
-             if ( l_vecgrp1 >= 1 ) i_extra_byte += 4;
-             buf[i++] = (unsigned char)(0x40 + i_extra_byte);
+             if ( l_vecgrp0 >= 1 ) l_extra_byte += 1;
+             if ( l_vecgrp1 >= 1 ) l_extra_byte += 4;
+             buf[i++] = (unsigned char)(0x40 + l_extra_byte);
           }
-          buf[i++] = (unsigned char)(0x0f + l_oddgrp0 * 0x00);
+          buf[i++] = (unsigned char)(0x0f);
+          buf[i++] = (unsigned char)(0xc6);
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval1*8);
+          break;
+       case LIBXSMM_X86_INSTR_SHUFPD:
+          if ( (i_vector_name!='x') && (i_vector_name!='X') )
+          {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: SHUFPD only works for xmm\n");
+             exit(-1);
+          }
+          l_vecgrp0 = 0;
+          l_vecgrp1 = 0;
+          if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0 =1;
+          if ( (i_vec_reg_number_1>=8) && (i_vec_reg_number_1<=15) ) l_vecgrp1 =1;
+          if ( (l_vecgrp0 >= 1) || (l_vecgrp1 >= 1) )     {
+             buf[i++] = (unsigned char)(0x66);
+             l_extra_byte = 0x22;
+             if ( l_vecgrp0 >= 1 ) l_extra_byte += 3;
+          }
+          buf[i++] = (unsigned char)(0x66 - l_extra_byte);
+          buf[i++] = (unsigned char)(0x0f);
           buf[i++] = (unsigned char)(0xc6);
           buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval1*8);
           break;
        case LIBXSMM_X86_INSTR_VSHUFPS:
-          if ( (i_vector_name!='y') && (i_vector_name!='Y') )
+          if ( (i_vector_name=='x') || (i_vector_name=='X') )
           {
-             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: VSHUFPS only works for ymm\n");
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: VSHUFPS not working for xmm\n");
              exit(-1);
           }
-          if ( l_vecgrp0 >= 1 )
+          if ( (i_vector_name=='y') || (i_vector_name=='Y') )
           {
-             buf[i++] = (unsigned char)(0xc4);
-             if ( l_vecgrp2 >= 1 )
+             if ( l_vecgrp0 >= 1 )
              {
-                 l_extra_byte = 0x84;
-                 l_extra_offset = 0x80;
-             } else {
-                 l_extra_byte = 0x04;
+                buf[i++] = (unsigned char)(0xc4);
+                if ( l_vecgrp2 >= 1 )
+                {
+                    l_extra_byte = 0x84;
+                    l_extra_offset = 0x80;
+                } else {
+                    l_extra_byte = 0x04;
+                }
              }
+             buf[i++] = (unsigned char)(0xc5 - l_extra_byte);
+             buf[i++] = (unsigned char)(0xfc - l_extra_offset - l_oddgrp0 * 0x80 - l_oddgrp1 * 0x40 - l_oddgrp2 * 0x80 - l_vecval1*8);
+             buf[i++] = (unsigned char)(0xc6);
+             buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
+          } else if ( (i_vector_name=='z') || (i_vector_name=='Z') )
+          {
+             l_2or3grp0 = (l_vecgrp0>=2);
+             l_2or3grp1 = (l_vecgrp1>=2);
+             l_2or3grp2 = (l_vecgrp2>=2);
+             buf[i++] = (unsigned char)(0x62);
+             buf[i++] = (unsigned char)(0xf1 - l_oddgrp0 * 0x20 - l_oddgrp2 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp2 * 0x10);
+             buf[i++] = (unsigned char)(0x7c - l_oddgrp1 * 0x40 - l_vecval1*8);
+             buf[i++] = (unsigned char)(0x48 - l_2or3grp1 * 0x08);
+             buf[i++] = (unsigned char)(0xc6);
+             buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
+          } else {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: unknown i_vector_name=%c for VSHUFPS\n",i_vector_name);
+             exit(-1);
           }
-          buf[i++] = (unsigned char)(0xc5 - l_extra_byte);
-          buf[i++] = (unsigned char)(0xfc - l_extra_offset - l_oddgrp0 * 0x80 - l_oddgrp1 * 0x40 - l_oddgrp2 * 0x80 - l_vecval1*8);
-          buf[i++] = (unsigned char)(0xc6);
-          buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
+          break;
+       case LIBXSMM_X86_INSTR_VSHUFPD:
+          if ( (i_vector_name=='x') || (i_vector_name=='X') )
+          {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: VSHUFPD not working for xmm\n");
+             exit(-1);
+          }
+          if ( (i_vector_name=='y') || (i_vector_name=='Y') )
+          {
+             if ( l_vecgrp0 >= 1 )
+             {
+                buf[i++] = (unsigned char)(0xc4);
+                if ( l_vecgrp2 >= 1 )
+                {
+                    l_extra_byte = 0x84;
+                    l_extra_offset = 0x80;
+                } else {
+                    l_extra_byte = 0x04;
+                }
+             }
+             buf[i++] = (unsigned char)(0xc5 - l_extra_byte);
+             /* Only differs from VSHUFS on the 2nd byte here */
+             buf[i++] = (unsigned char)(0xfd - l_extra_offset - l_oddgrp0 * 0x80 - l_oddgrp1 * 0x40 - l_oddgrp2 * 0x80 - l_vecval1*8);
+             buf[i++] = (unsigned char)(0xc6);
+             buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
+          } else if ( (i_vector_name=='z') || (i_vector_name=='Z') )
+          {
+             l_2or3grp0 = (l_vecgrp0>=2);
+             l_2or3grp1 = (l_vecgrp1>=2);
+             l_2or3grp2 = (l_vecgrp2>=2);
+             buf[i++] = (unsigned char)(0x62);
+             buf[i++] = (unsigned char)(0xf1 - l_oddgrp0 * 0x20 - l_oddgrp2 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp2 * 0x10);
+             /* Only differs from VSHUFS on the 3rd byte here */
+             buf[i++] = (unsigned char)(0xfd - l_oddgrp1 * 0x40 - l_vecval1*8);
+             buf[i++] = (unsigned char)(0x48 - l_2or3grp1 * 0x08);
+             buf[i++] = (unsigned char)(0xc6);
+             buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
+          } else {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: unknown i_vector_name=%c for VSHUFPD\n",i_vector_name);
+             exit(-1);
+          }
           break;
        case LIBXSMM_X86_INSTR_VPSRAD:
           if ( i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF ) {
@@ -3581,19 +3659,25 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           buf[i++] = (unsigned char)(0xd0 + l_vecval0);
           break;
        case LIBXSMM_X86_INSTR_VSHUFF64X2:
+       case LIBXSMM_X86_INSTR_VSHUFF32X4:
+       case LIBXSMM_X86_INSTR_VSHUFI32X4:
+       case LIBXSMM_X86_INSTR_VSHUFI64X2:
           l_2or3grp0 = (l_vecgrp0>=2);
           l_2or3grp1 = (l_vecgrp1>=2);
           l_2or3grp2 = (l_vecgrp2>=2);
+          if ( (i_vec_instr == LIBXSMM_X86_INSTR_VSHUFF32X4) || (i_vec_instr == LIBXSMM_X86_INSTR_VSHUFI32X4) ) l_third = -0x80;
+          if ( (i_vec_instr == LIBXSMM_X86_INSTR_VSHUFI32X4) || (i_vec_instr == LIBXSMM_X86_INSTR_VSHUFI64X2) ) l_fifth = 0x20;
+
           if ( (i_vector_name!='z') && (i_vector_name!='Z') )
           {
-             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: VSHUFF64X2 only works for zmm\n");
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: VSHUF[IF][36][24]X[24] only works for zmm\n");
              exit(-1);
           }
           buf[i++] = (unsigned char)(0x62);
           buf[i++] = (unsigned char)(0xf3 - l_oddgrp0 * 0x20 - l_oddgrp2 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp2 * 0x10);
-          buf[i++] = (unsigned char)(0xfd - l_oddgrp1 * 0x40 - l_vecval1*8);
+          buf[i++] = (unsigned char)(0xfd + l_third - l_oddgrp1 * 0x40 - l_vecval1*8);
           buf[i++] = (unsigned char)(0x48 - l_2or3grp1 * 0x08);
-          buf[i++] = (unsigned char)(0x23);
+          buf[i++] = (unsigned char)(0x23 + l_fifth);
           buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
           break;
        case LIBXSMM_X86_INSTR_VEXTRACTF32X8:

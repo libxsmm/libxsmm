@@ -8,14 +8,18 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+#if !defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm.h>
+#endif
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
 #if defined(_OPENMP)
 # include <omp.h>
+#endif
+#if defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm.h>
 #endif
 
 #if !defined(MAX_NKERNELS)

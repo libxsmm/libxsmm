@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 TESTFILE1=$(mktemp -p .)
 TESTFILE2=$(mktemp -p .)

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #

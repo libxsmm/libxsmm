@@ -21,6 +21,10 @@
 # define LIBXSMM_CAPACITY_CACHE 16
 #endif
 
+#if !defined(LIBXSMM_PAGE_MINSIZE)
+# define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
+#endif
+
 #if !defined(LIBXSMM_NTHREADS_MAX)
 # if (0 != LIBXSMM_SYNC)
 #   define LIBXSMM_NTHREADS_MAX 1024
@@ -28,8 +32,8 @@
 #   define LIBXSMM_NTHREADS_MAX 1
 # endif
 #endif
-/* determines if code relies on LIBXSMM_NTHREADS_MAX */
-#if !defined(LIBXSMM_NTHREADS_USE) && 0
+/* code relies on LIBXSMM_NTHREADS_MAX or v/forks */
+#if !defined(LIBXSMM_NTHREADS_USE) && 1
 # define LIBXSMM_NTHREADS_USE
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
@@ -412,6 +416,12 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   void* scratchVk;            /* Winograd weight buffer */
   size_t scratchVk_size;
 
+  libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd2;     /* ability to hoist forward GEMMs */
+
+  unsigned long long *A_offsets;
+  unsigned long long *B_offsets;
+
   /* JIT-generated convolution code */
   libxsmm_code_pointer code_fwd[3];
   libxsmm_code_pointer code_bwd[3];
@@ -495,6 +505,22 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   int ofmblock;
   int blocksifm;
   int blocksofm;
+  /* Parameters to tune/specialize FC algorithms */
+  int fwd_2d_blocking;
+  int bwd_2d_blocking;
+  int upd_2d_blocking;
+  int fwd_bf;
+  int bwd_bf;
+  int upd_bf;
+  int fwd_row_teams;
+  int fwd_column_teams;
+  int bwd_row_teams;
+  int bwd_column_teams;
+  int upd_row_teams;
+  int upd_column_teams;
+  int ifm_subtasks;
+  int ofm_subtasks;
+
   int fm_lp_block;
   int bn;
   int bk;
@@ -503,7 +529,11 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   void* scratch;
 
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd2;     /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_bwd;     /* ability to hoist backward GEMMs */
+  libxsmm_code_pointer gemm_bwd2;    /* ability to hoist backward GEMMs */
+  libxsmm_code_pointer gemm_upd;     /* ability to hoist update GEMMs */
+  libxsmm_code_pointer gemm_upd2;    /* ability to hoist update GEMMs */
 };
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {

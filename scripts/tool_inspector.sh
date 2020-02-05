@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -15,7 +15,6 @@ KIND=mi1
 
 BASENAME=$(command -v basename)
 TOOL=$(command -v inspxe-cl)
-ECHO=$(command -v echo)
 GREP=$(command -v grep)
 SED=$(command -v sed)
 TR=$(command -v tr)
@@ -24,7 +23,7 @@ RM=$(command -v rm)
 if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
   if [ "" != "$1" ]    && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] && \
      [ "" != "${TR}" ] && [ "" != "${GREP}" ]     && [ "" != "${SED}" ]  && \
-                          [ "" != "${ECHO}" ]     && [ "" != "${RM}" ];
+     [ "" != "${RM}" ];
   then
     HERE=$(cd "$(dirname "$0")"; pwd -P)
     if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
@@ -59,8 +58,8 @@ if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
         YFLT=$(echo "${TOOL_FILTER}" | ${TR} -s " " | ${TR} " " "|")
         MATCH=${FN}
 
-        if [ "" != "${XFLT}" ]; then MATCH=$(${ECHO} "${MATCH}" | ${GREP} -Ev ${XFLT}); fi
-        if [ "" = "${YFLT}" ] || [ "" != "$(${ECHO} "${MATCH}" | ${GREP} -E ${YFLT})" ]; then
+        if [ "" != "${XFLT}" ]; then MATCH=$(echo "${MATCH}" | ${GREP} -Ev ${XFLT}); fi
+        if [ "" = "${YFLT}" ]  || [ "" != "$(echo "${MATCH}" | ${GREP} -E  ${YFLT})" ]; then
           RESULT=${RESULT2}
         fi
       fi

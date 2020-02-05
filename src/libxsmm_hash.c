@@ -117,15 +117,16 @@ LIBXSMM_APIVAR_PRIVATE(libxsmm_hash_function internal_hash_function);
 
 LIBXSMM_API_INLINE unsigned int internal_crc32_u8(unsigned int seed, const void* value)
 {
-  const uint8_t u8 = *(const uint8_t*)value;
-  LIBXSMM_ASSERT(NULL != internal_crc32_table);
-  return internal_crc32_table[0][(seed^u8) & 0xFF] ^ (seed >> 8);
+  const uint8_t *const pu8 = (const uint8_t*)value;
+  LIBXSMM_ASSERT(NULL != pu8 && NULL != internal_crc32_table);
+  return internal_crc32_table[0][(seed^(*pu8)) & 0xFF] ^ (seed >> 8);
 }
 
 
 LIBXSMM_API_INLINE unsigned int internal_crc32_u16(unsigned int seed, const void* value)
 {
   const uint8_t *const pu8 = (const uint8_t*)value;
+  LIBXSMM_ASSERT(NULL != pu8);
   seed = internal_crc32_u8(seed, pu8 + 0);
   seed = internal_crc32_u8(seed, pu8 + 1);
   return seed;
@@ -134,13 +135,14 @@ LIBXSMM_API_INLINE unsigned int internal_crc32_u16(unsigned int seed, const void
 
 LIBXSMM_API_INLINE unsigned int internal_crc32_u32(unsigned int seed, const void* value, ...)
 {
-  const uint32_t u32 = *(const uint32_t*)value, s = seed ^ u32;
-  uint32_t c0, c1, c2, c3;
-  LIBXSMM_ASSERT(NULL != internal_crc32_table);
+  const uint32_t *const pu32 = (const uint32_t*)value;
+  uint32_t c0, c1, c2, c3, s;
+  LIBXSMM_ASSERT(NULL != pu32 && NULL != internal_crc32_table);
+  s = seed ^ (*pu32);
   c0 = internal_crc32_table[0][(s >> 24) & 0xFF];
   c1 = internal_crc32_table[1][(s >> 16) & 0xFF];
   c2 = internal_crc32_table[2][(s >> 8) & 0xFF];
-  c3 = internal_crc32_table[3][s & 0xFF];
+  c3 = internal_crc32_table[3][(s & 0xFF)];
   return (c0 ^ c1) ^ (c2 ^ c3);
 }
 
@@ -159,6 +161,7 @@ unsigned int internal_crc32_u32_sse4(unsigned int seed, const void* value, ...)
 LIBXSMM_API_INLINE unsigned int internal_crc32_u64(unsigned int seed, const void* value, ...)
 {
   const uint32_t *const pu32 = (const uint32_t*)value;
+  LIBXSMM_ASSERT(NULL != pu32);
   seed = internal_crc32_u32(seed, pu32 + 0);
   seed = internal_crc32_u32(seed, pu32 + 1);
   return seed;
@@ -179,6 +182,7 @@ unsigned int internal_crc32_u64_sse4(unsigned int seed, const void* value, ...)
 LIBXSMM_API_INLINE unsigned int internal_crc32_u128(unsigned int seed, const void* value, ...)
 {
   const uint64_t *const pu64 = (const uint64_t*)value;
+  LIBXSMM_ASSERT(NULL != pu64);
   seed = internal_crc32_u64(seed, pu64 + 0);
   seed = internal_crc32_u64(seed, pu64 + 1);
   return seed;
@@ -190,7 +194,8 @@ unsigned int internal_crc32_u128_sse4(unsigned int seed, const void* value, ...)
 {
 #if defined(LIBXSMM_INTRINSICS_SSE4)
   const uint64_t *const pu64 = (const uint64_t*)value;
-  seed = (unsigned int)LIBXSMM_HASH_CRC32_U64(seed, pu64);
+  LIBXSMM_ASSERT(NULL != pu64);
+  seed = (unsigned int)LIBXSMM_HASH_CRC32_U64(seed, pu64 + 0);
   seed = (unsigned int)LIBXSMM_HASH_CRC32_U64(seed, pu64 + 1);
 #else
   seed = internal_crc32_u128(seed, value);
@@ -202,6 +207,7 @@ unsigned int internal_crc32_u128_sse4(unsigned int seed, const void* value, ...)
 LIBXSMM_API_INLINE unsigned int internal_crc32_u256(unsigned int seed, const void* value, ...)
 {
   const uint8_t *const pu8 = (const uint8_t*)value;
+  LIBXSMM_ASSERT(NULL != pu8);
   seed = internal_crc32_u128(seed, pu8 + 0x00);
   seed = internal_crc32_u128(seed, pu8 + 0x10);
   return seed;
@@ -213,6 +219,7 @@ unsigned int internal_crc32_u256_sse4(unsigned int seed, const void* value, ...)
 {
 #if defined(LIBXSMM_INTRINSICS_SSE4)
   const uint8_t *const pu8 = (const uint8_t*)value;
+  LIBXSMM_ASSERT(NULL != pu8);
   seed = internal_crc32_u128_sse4(seed, pu8 + 0x00);
   seed = internal_crc32_u128_sse4(seed, pu8 + 0x10);
   return seed;
@@ -225,6 +232,7 @@ unsigned int internal_crc32_u256_sse4(unsigned int seed, const void* value, ...)
 LIBXSMM_API_INLINE unsigned int internal_crc32_u384(unsigned int seed, const void* value, ...)
 {
   const uint8_t *const pu8 = (const uint8_t*)value;
+  LIBXSMM_ASSERT(NULL != pu8);
   seed = internal_crc32_u256(seed, pu8 + 0x00);
   seed = internal_crc32_u128(seed, pu8 + 0x20);
   return seed;
@@ -236,6 +244,7 @@ unsigned int internal_crc32_u384_sse4(unsigned int seed, const void* value, ...)
 {
 #if defined(LIBXSMM_INTRINSICS_SSE4)
   const uint8_t *const pu8 = (const uint8_t*)value;
+  LIBXSMM_ASSERT(NULL != pu8);
   seed = internal_crc32_u256_sse4(seed, pu8 + 0x00);
   seed = internal_crc32_u128_sse4(seed, pu8 + 0x20);
   return seed;
@@ -248,6 +257,7 @@ unsigned int internal_crc32_u384_sse4(unsigned int seed, const void* value, ...)
 LIBXSMM_API_INLINE unsigned int internal_crc32_u512(unsigned int seed, const void* value, ...)
 {
   const uint8_t *const pu8 = (const uint8_t*)value;
+  LIBXSMM_ASSERT(NULL != pu8);
   seed = internal_crc32_u256(seed, pu8 + 0x00);
   seed = internal_crc32_u256(seed, pu8 + 0x20);
   return seed;
@@ -259,6 +269,7 @@ unsigned int internal_crc32_u512_sse4(unsigned int seed, const void* value, ...)
 {
 #if defined(LIBXSMM_INTRINSICS_SSE4)
   const uint8_t *const pu8 = (const uint8_t*)value;
+  LIBXSMM_ASSERT(NULL != pu8);
   seed = internal_crc32_u256_sse4(seed, pu8 + 0x00);
   seed = internal_crc32_u256_sse4(seed, pu8 + 0x20);
   return seed;

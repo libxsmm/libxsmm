@@ -577,7 +577,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopykernel_info {
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_info {
   libxsmm_kernel_kind kind;
-  /** Number of FLoating Point OPerationS (FLOPS). */
+  /** Number of FLoating Point OperationS (FLOPS). */
   unsigned int nflops;
   /** Code size (Bytes). */
   size_t code_size;

@@ -8,10 +8,15 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+#if !defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#if defined(INCLUDE_LIBXSMM_LAST)
+# include <libxsmm.h>
+#endif
 
 #if !defined(USE_NOINIT)
 # define USE_NOINIT
@@ -48,8 +53,8 @@ int main(int argc, char* argv[])
 {
   const int max_nseconds_input = (1 < argc ? atoi(argv[1]) : MAX_NSECONDS);
   const unsigned int max_nseconds = (unsigned int)LIBXSMM_UP2POT(LIBXSMM_MAX(max_nseconds_input, 1));
-  const char *const env_test = getenv("TEST_TIMER");
-  const int nofailure = (NULL == env_test || 0 == *env_test) ? 0 : (0 == atoi(env_test));
+  const char *const env_delta = getenv("TIMER_DELTA");
+  const int max_delta = (NULL == env_delta || 0 == *env_delta) ? 0 : atoi(env_delta);
   double total = 0, delta = 0, d, t;
   unsigned int n = max_nseconds;
   libxsmm_timer_tickint start;
@@ -86,7 +91,7 @@ int main(int argc, char* argv[])
   if ((MAX_TOLPERC) >= result) {
     result = EXIT_SUCCESS;
   }
-  else if (0 != nofailure) {
+  else if (0 > max_delta || result <= max_delta) {
     fprintf(stderr, "delta=%i%%\n", result);
     result = EXIT_SUCCESS;
   }
