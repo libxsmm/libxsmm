@@ -47,8 +47,10 @@
 #   define LIBXSMM_MAP_ANONYMOUS __MAP_ANONYMOUS
 # elif defined(MAP_ANONYMOUS)
 #   define LIBXSMM_MAP_ANONYMOUS MAP_ANONYMOUS
-# else
+# elif defined(MAP_ANON)
 #   define LIBXSMM_MAP_ANONYMOUS MAP_ANON
+# else
+#  define LIBXSMM_MAP_ANONYMOUS 0x20
 # endif
 # if defined(MAP_SHARED) && 0
 #   define LIBXSMM_MAP_SHARED MAP_SHARED
