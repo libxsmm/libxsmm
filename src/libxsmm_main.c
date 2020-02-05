@@ -84,7 +84,7 @@
 #endif
 
 #if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
-extern int putenv(char*);
+LIBXSMM_EXTERN int putenv(char*);
 #endif
 
 /* flag fused into the memory address of a code version in case of non-JIT */
