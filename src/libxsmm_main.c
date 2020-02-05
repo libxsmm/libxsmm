@@ -693,8 +693,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         && (NULL == kmp_affinity || 0 == *kmp_affinity)
         && (NULL == omp_proc_bind || 0 == *omp_proc_bind))
       {
-        static char affinity[] = "OMP_PROC_BIND=TRUE";
-        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(affinity));
+        LIBXSMM_SETENV("OMP_PROC_BIND", "TRUE", 0/*overwrite*/);
         if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
           fprintf(stderr, "LIBXSMM: prepared to pin threads.\n");
         }

@@ -43,7 +43,9 @@
 # include <sys/types.h>
 # include <unistd.h>
 # include <errno.h>
-# if defined(MAP_ANONYMOUS)
+# if defined(__MAP_ANONYMOUS)
+#   define LIBXSMM_MAP_ANONYMOUS __MAP_ANONYMOUS
+# elif defined(MAP_ANONYMOUS)
 #   define LIBXSMM_MAP_ANONYMOUS MAP_ANONYMOUS
 # else
 #   define LIBXSMM_MAP_ANONYMOUS MAP_ANON

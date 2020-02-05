@@ -788,12 +788,10 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
 #endif
 #if defined(_WIN32)
-# define LIBXSMM_PUTENV _putenv
 # define LIBXSMM_SETENV(NAME, VALUE, OVERWRITE) \
-    if (NULL == getenv(NAME) || (OVERWRITE)) LIBXSMM_PUTENV(NAME "=" VALUE)
+    if (NULL == getenv(NAME) || (OVERWRITE)) LIBXSMM_EXPECT(EXIT_SUCCESS, _putenv(NAME "=" VALUE))
 #else
-# define LIBXSMM_PUTENV putenv
-# define LIBXSMM_SETENV setenv
+# define LIBXSMM_SETENV(NAME, VALUE, OVERWRITE) LIBXSMM_EXPECT(EXIT_SUCCESS, setenv(NAME, VALUE, OVERWRITE))
 #endif
 #if defined(__THROW) && defined(__cplusplus)
 # define LIBXSMM_THROW __THROW
