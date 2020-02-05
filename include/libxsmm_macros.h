@@ -688,7 +688,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
-#if !defined(_GNU_SOURCE)
+#if !defined(_GNU_SOURCE) && 0
 # define _GNU_SOURCE
 #endif
 #if !defined(__STDC_FORMAT_MACROS)
