@@ -51,6 +51,9 @@
 const int bn = handle->bn;
 const int bk = handle->bk;
 const int bc = handle->bc;
+const int lpb = 2;
+const int bn_lp = bn/lpb;
+const int bc_lp = bc/lpb;
 const int nBlocksIFm = handle->desc.C / bc;
 const int nBlocksOFm = handle->desc.K / bk;
 const int nBlocksMB  = handle->desc.N / bn;
@@ -84,7 +87,7 @@ unsigned long long  blocks = nBlocksMB/BF;
 
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,    (element_input_type* )handle->reg_input->data, nBlocksIFm, bn, bc);
 LIBXSMM_VLA_DECL(4, const element_output_type, doutput,  (element_output_type*)handle->grad_output->data, nBlocksOFm, bn, bk);
-LIBXSMM_VLA_DECL(5,       element_filter_type, dfilter,  (element_filter_type*)handle->grad_filter->data, nBlocksIFm, bc/2, bk, 2);
+LIBXSMM_VLA_DECL(5,       element_filter_type, dfilter,  (element_filter_type*)handle->grad_filter->data, nBlocksIFm, bc_lp, bk, lpb);
 
 /* Set up tensors for transposing/scratch before vnni reformatting dfilter */
 element_output_type *tr_out_ptr = (element_output_type*)handle->scratch;
@@ -93,7 +96,7 @@ float               *dfilter_f32_ptr = (float*) ((element_input_type*)tr_inp_ptr
 element_filter_type *dfilter_scratch = (element_filter_type*) ((float*)dfilter_f32_ptr + handle->desc.C * handle->desc.K) + ltid * bc * bk;
 
 LIBXSMM_VLA_DECL(4, element_input_type,  input_tr,    (element_input_type*)tr_inp_ptr, nBlocksMB, bc, bn);
-LIBXSMM_VLA_DECL(5, element_output_type, doutput_tr,  (element_output_type*)tr_out_ptr, nBlocksMB, bn/2, bk, 2);
+LIBXSMM_VLA_DECL(5, element_output_type, doutput_tr,  (element_output_type*)tr_out_ptr, nBlocksMB, bn_lp, bk, lpb);
 LIBXSMM_VLA_DECL(4,       float, dfilter_f32,  (float*)dfilter_f32_ptr, nBlocksIFm, bc, bk);
 LIBXSMM_VLA_DECL(2, element_filter_type, dfilter_block,  (element_filter_type*)dfilter_scratch, bk);
 
@@ -152,7 +155,7 @@ if (bk % 32 == 0) {
   for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
     mb1 = mb1ofm1%nBlocksMB;
     ofm1 = mb1ofm1/nBlocksMB;
-    bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn/2, bk, 2), bk, bn, bk, bn);
+    bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), bk, bn, bk, bn);
   }
 } else {
   for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
@@ -160,7 +163,7 @@ if (bk % 32 == 0) {
     ofm1 = mb1ofm1/nBlocksMB;
     for (mb2 = 0; mb2 < bn; mb2++) {
       for (ofm2 = 0; ofm2 < bk; ofm2++) {
-        LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/2, ofm2, mb2%2, nBlocksMB, bn/2, bk, 2) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
+        LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/lpb, ofm2, mb2%lpb, nBlocksMB, bn_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
       }
     }
   }
@@ -174,7 +177,7 @@ if (use_2d_blocking == 1) {
   if (BF == 1) {
     for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
       for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
-        batchreduce_kernel_zerobeta(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn/2, bk, 2), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc, ofm2*bbk, bk), &blocks);
+        batchreduce_kernel_zerobeta(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc, ofm2*bbk, bk), &blocks);
         /* TODO: Make this vnni reformating in the kernel...  */
         /* Copy result back to vnni format */
         if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
@@ -184,13 +187,13 @@ if (use_2d_blocking == 1) {
               c0 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
               c01 = _mm512_inserti64x4(c01, c0, 0);
               c01 = _mm512_inserti64x4(c01, c1, 1);
-              _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/2, ofm2*bbk+jk, 0, nBlocksIFm, bc/2, bk, 2), _mm512_permutexvar_epi16(perm_index, c01));
+              _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
             }
           }
         } else {
           for (ii = 0; ii < bbc; ii++) {
             for (jj = 0; jj < bbk; jj++) {
-              LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/2, ofm2*bbk+jj, (ifm2*bbc+ii)%2, nBlocksIFm, bc/2, bk, 2) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
+              LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/lpb, ofm2*bbk+jj, (ifm2*bbc+ii)%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
             }
           }
         }
@@ -208,7 +211,7 @@ if (use_2d_blocking == 1) {
               }
             }
           }
-          batchreduce_kernel(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn/2, bk, 2), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+          batchreduce_kernel(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
           /* Downconvert result to BF16 and vnni format */
           if (bfn == BF-1) {
             if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
@@ -217,7 +220,7 @@ if (use_2d_blocking == 1) {
                   a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc+1, ofm2*bbk+jk, nBlocksIFm, bc, bk));
                   b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk+jk, nBlocksIFm, bc, bk));
                   c01 = _mm512_cvt2_fp32_bf16(a01, b01);
-                  _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/2, ofm2*bbk+jk, 0, nBlocksIFm, bc/2, bk, 2), _mm512_permutexvar_epi16(perm_index, c01));
+                  _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
                 }
               }
             } else {
@@ -226,7 +229,7 @@ if (use_2d_blocking == 1) {
               }
               for (ii = 0; ii < bbc; ii++) {
                 for (jj = 0; jj < bbk; jj++) {
-                  LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/2, ofm2*bbk+jj, (ifm2*bbc+ii)%2, nBlocksIFm, bc/2, bk, 2) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
+                  LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/lpb, ofm2*bbk+jj, (ifm2*bbc+ii)%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
                 }
               }
             }
@@ -242,7 +245,7 @@ if (use_2d_blocking == 1) {
       ofm2 = (ifm1ofm1 % Cck_work) / Cc_work;
       ifm1 = ((ifm1ofm1 % Cck_work) % Cc_work) / ifm_subtasks;
       ifm2 = ((ifm1ofm1 % Cck_work) % Cc_work) % ifm_subtasks;
-      batchreduce_kernel_zerobeta(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn/2, bk, 2), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc, ofm2*bbk, bk), &blocks);
+      batchreduce_kernel_zerobeta(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc, ofm2*bbk, bk), &blocks);
       /* TODO: Make this vnni reformating in the kernel...  */
       /* Copy result back to vnni format */
       if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
@@ -252,13 +255,13 @@ if (use_2d_blocking == 1) {
             c0 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
             c01 = _mm512_inserti64x4(c01, c0, 0);
             c01 = _mm512_inserti64x4(c01, c1, 1);
-            _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/2, ofm2*bbk+jk, 0, nBlocksIFm, bc/2, bk, 2), _mm512_permutexvar_epi16(perm_index, c01));
+            _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
           }
         }
       } else {
         for (ii = 0; ii < bbc; ii++) {
           for (jj = 0; jj < bbk; jj++) {
-            LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/2, ofm2*bbk+jj, (ifm2*bbc+ii)%2, nBlocksIFm, bc/2, bk, 2) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
+            LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/lpb, ofm2*bbk+jj, (ifm2*bbc+ii)%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
           }
         }
       }
@@ -278,7 +281,7 @@ if (use_2d_blocking == 1) {
             }
           }
         }
-        batchreduce_kernel(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn/2, bk, 2), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+        batchreduce_kernel(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
         /* Downconvert result to BF16 and vnni format */
         if (bfn == BF-1) {
           if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
@@ -287,7 +290,7 @@ if (use_2d_blocking == 1) {
                 a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc+1, ofm2*bbk+jk, nBlocksIFm, bc, bk));
                 b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk+jk, nBlocksIFm, bc, bk));
                 c01 = _mm512_cvt2_fp32_bf16(a01, b01);
-                _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/2, ofm2*bbk+jk, 0, nBlocksIFm, bc/2, bk, 2), _mm512_permutexvar_epi16(perm_index, c01));
+                _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
               }
             }
           } else {
@@ -296,7 +299,7 @@ if (use_2d_blocking == 1) {
             }
             for (ii = 0; ii < bbc; ii++) {
               for (jj = 0; jj < bbk; jj++) {
-                LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/2, ofm2*bbk+jj, (ifm2*bbc+ii)%2, nBlocksIFm, bc/2, bk, 2) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
+                LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/lpb, ofm2*bbk+jj, (ifm2*bbc+ii)%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
               }
             }
           }
