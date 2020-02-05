@@ -83,6 +83,10 @@
 # define LIBXSMM_AUTOPIN
 #endif
 
+#if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
+extern int putenv(char*);
+#endif
+
 /* flag fused into the memory address of a code version in case of non-JIT */
 #define LIBXSMM_CODE_STATIC (1ULL << (8 * sizeof(void*) - 1))
 /* flag fused into the memory address of a code version in case of collision */
@@ -693,7 +697,12 @@ LIBXSMM_API_INTERN void internal_init(void)
         && (NULL == kmp_affinity || 0 == *kmp_affinity)
         && (NULL == omp_proc_bind || 0 == *omp_proc_bind))
       {
-        LIBXSMM_SETENV("OMP_PROC_BIND", "TRUE", 0/*overwrite*/);
+        static char affinity[] = "OMP_PROC_BIND=TRUE";
+#if defined(_WIN32)
+        LIBXSMM_EXPECT(EXIT_SUCCESS, _putenv(affinity));
+#else
+        LIBXSMM_EXPECT(EXIT_SUCCESS, putenv(affinity));
+#endif
         if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
           fprintf(stderr, "LIBXSMM: prepared to pin threads.\n");
         }
