@@ -688,7 +688,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
-#if !defined(_GNU_SOURCE) /*&& defined(__GNUC__)*/
+#if !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
 #if !defined(__STDC_FORMAT_MACROS)
@@ -794,6 +794,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_PUTENV putenv
 # define LIBXSMM_SETENV setenv
+#endif
+#if defined(__THROW) && defined(__cplusplus)
+# define LIBXSMM_THROW __THROW
+#else
+# define LIBXSMM_THROW
 #endif
 /** Synchronize console output */
 #define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)

@@ -30,11 +30,6 @@
 #   define LIBXSMM_MALLOC_GLIBC 6
 # endif
 #endif
-#if defined(__THROW) && defined(__cplusplus)
-# define LIBXSMM_THROW __THROW
-#else
-# define LIBXSMM_THROW
-#endif
 #if defined(_WIN32)
 # include <windows.h>
 # include <malloc.h>
