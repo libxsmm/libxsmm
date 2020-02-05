@@ -463,7 +463,9 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_PTHREAD_FN(FN) LIBXSMM_CONCATENATE(FN, _np)
 #   else
 #     define LIBXSMM_PTHREAD_FN(FN) FN
-#     if !defined(__USE_GNU)
+#     if defined(__BSD_VISIBLE)
+      extern void pthread_yield(void);
+#     elif !defined(__USE_GNU)
       extern int pthread_yield(void) LIBXSMM_THROW;
 #     endif
 #   endif
