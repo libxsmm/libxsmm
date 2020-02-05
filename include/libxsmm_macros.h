@@ -729,6 +729,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   include <windows.h>
 # else
 #   include <pthread.h>
+#   include <stdio.h>
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT)
