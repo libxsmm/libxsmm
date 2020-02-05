@@ -354,9 +354,6 @@ typedef enum libxsmm_atomic_kind {
     LIBXSMM_SYNC_CYCLE_ELSE(DST_PTR, EXP_STATE, NPAUSE, /*else*/;)
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if (0 != LIBXSMM_SYNC) /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
 # if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
@@ -401,7 +398,6 @@ typedef enum libxsmm_atomic_kind {
 #   endif
 # endif
 # if defined(LIBXSMM_WIN32_THREADS)
-#   include <windows.h>
 #   define LIBXSMM_LOCK_SPINLOCK spin
 #   define LIBXSMM_LOCK_MUTEX mutex
 #   define LIBXSMM_LOCK_RWLOCK rwlock
@@ -463,7 +459,6 @@ typedef enum libxsmm_atomic_kind {
 #   endif
 #   define LIBXSMM_SYNC_YIELD YieldProcessor
 # else
-#   include <pthread.h>
 #   if defined(__APPLE__) && defined(__MACH__)
 #     define LIBXSMM_PTHREAD_FN(FN) LIBXSMM_CONCATENATE(FN, _np)
 #   else
@@ -546,9 +541,6 @@ typedef enum libxsmm_atomic_kind {
 /* OpenMP based locks need to stay disabled unless both
  * libxsmm and libxsmmext are built with OpenMP support.
  */
-# if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
-#   include <omp.h>
-# endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
 #   if 1 /* directly based on atomic primitives */
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 1
@@ -699,9 +691,6 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_LOCK_TRYREAD(KIND, LOCK) LIBXSMM_LOCK_TRYLOCK(KIND, LOCK)
 # define LIBXSMM_LOCK_ACQREAD(KIND, LOCK) LIBXSMM_LOCK_ACQUIRE(KIND, LOCK)
 # define LIBXSMM_LOCK_RELREAD(KIND, LOCK) LIBXSMM_LOCK_RELEASE(KIND, LOCK)
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 
