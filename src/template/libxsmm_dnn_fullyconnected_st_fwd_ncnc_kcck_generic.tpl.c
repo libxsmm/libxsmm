@@ -28,7 +28,7 @@ LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)han
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
-LIBXSMM_VLA_DECL(2, const float,               bias,   (float*)              handle->reg_bias->data,   nBlocksOFm,           , handle->bk);
+LIBXSMM_VLA_DECL(2, const float,               bias,   (float*)              handle->reg_bias->data,                           handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
 LIBXSMM_VLA_DECL(4, unsigned char,           relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
