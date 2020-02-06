@@ -2177,7 +2177,9 @@ LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
   }
   else if (NULL != memory) {
 #if 1
-    __real_free((void*)memory);
+    union { const void* const_ptr; void* ptr; } cast;
+    cast.const_ptr = memory; /* C-cast still warns */
+    __real_free(cast.ptr);
 #endif
 #if (!defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)) || defined(_DEBUG)
     if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
