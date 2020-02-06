@@ -12,6 +12,12 @@
 #define LIBXSMM_MAIN_H
 
 #include <libxsmm.h>
+/**
+ * TF includes src/libxsmm_main.h and uses LIBXSMM's sync primitives
+ * without including libxsmm_sync. However, libxsmm_sync.h shall be
+ * an explicit include separate from including libxsmm.h.
+ */
+#include "libxsmm_sync.h"
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
@@ -57,6 +63,21 @@
   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
     LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 # define LIBXSMM_INTERCEPT_DYNAMIC
+#endif
+
+#if defined(LIBXSMM_INTERCEPT_DYNAMIC)
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+# endif
+# include <dlfcn.h>
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(pop)
+# endif
+# if !defined(RTLD_NEXT)
+#   define LIBXSMM_RTLD_NEXT ((void*)-1l)
+# else
+#   define LIBXSMM_RTLD_NEXT RTLD_NEXT
+# endif
 #endif
 
 #if !defined(LIBXSMM_VERBOSITY_HIGH)

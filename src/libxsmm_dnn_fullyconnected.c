@@ -12,15 +12,8 @@
 #include "libxsmm_dnn_fullyconnected_backward.h"
 #include "libxsmm_dnn_fullyconnected_forward.h"
 #include "libxsmm_main.h"
-#define STRIDE_BRGEMM
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <string.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
+#define STRIDE_BRGEMM
 
 
 LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsmm_dnn_fullyconnected_desc fullyconnected_desc, libxsmm_dnn_err_t* status) {

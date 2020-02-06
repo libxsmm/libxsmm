@@ -12,15 +12,6 @@
 #include <libxsmm_generator.h>
 #include <libxsmm_memory.h>
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <string.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 #if defined(LIBXSMM_PLATFORM_SUPPORTED)
 /* XGETBV: receive results (EAX, EDX) for eXtended Control Register (XCR). */
 /* CPUID, receive results (EAX, EBX, ECX, EDX) for requested FUNCTION/SUBFN. */
@@ -154,7 +145,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
         ++warnings;
 # endif
         if (NULL != compiler_support) {
-          fprintf(stderr, "LIBXSMM WARNING: missing support for %soptimized non-JIT code paths!\n", compiler_support);
+          fprintf(stderr, "LIBXSMM WARNING: %soptimized non-JIT code paths are limited to \"%s\"!\n",
+            compiler_support, libxsmm_cpuid_name(LIBXSMM_MAX_STATIC_TARGET_ARCH));
           ++warnings;
         }
         if (LIBXSMM_STATIC_TARGET_ARCH < feature_cpu && feature_os < feature_cpu) {

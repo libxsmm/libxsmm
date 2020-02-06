@@ -688,7 +688,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
-#if !defined(_GNU_SOURCE)
+#if !defined(_GNU_SOURCE) && 0
 # define _GNU_SOURCE
 #endif
 #if !defined(__STDC_FORMAT_MACROS)
@@ -724,21 +724,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 
-#if (0 == LIBXSMM_SYNC)
-# define LIBXSMM_FLOCK(FILE)
-# define LIBXSMM_FUNLOCK(FILE)
-#elif defined(_WIN32)
-# include <windows.h>
-# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
-# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
-#else
-# include <pthread.h>
-# if !defined(__CYGWIN__)
-#   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
-#   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
-# else /* Only available with __CYGWIN__ *and* C++0x. */
-#   define LIBXSMM_FLOCK(FILE)
-#   define LIBXSMM_FUNLOCK(FILE)
+#if (0 != LIBXSMM_SYNC)
+# if defined(_WIN32)
+#   include <windows.h>
+# else
+#   include <pthread.h>
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT)
@@ -773,8 +763,12 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
 # include <omp.h>
 #endif
-#include <stddef.h>
+#include <inttypes.h>
 #include <stdint.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -787,22 +781,18 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
 #endif
-#if defined(_WIN32)
-# define LIBXSMM_PUTENV _putenv
-# define LIBXSMM_SETENV(NAME, VALUE, OVERWRITE) \
-    if (NULL == getenv(NAME) || (OVERWRITE)) LIBXSMM_PUTENV(NAME "=" VALUE)
-#else
-# define LIBXSMM_PUTENV putenv
-# define LIBXSMM_SETENV setenv
-#endif
 #if defined(__THROW) && defined(__cplusplus)
 # define LIBXSMM_THROW __THROW
-#else
+#endif
+#if !defined(LIBXSMM_THROW)
 # define LIBXSMM_THROW
 #endif
-/** Synchronize console output */
-#define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
-#define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
+#if defined(__GNUC__) && LIBXSMM_VERSION2(4, 2) == LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) && \
+  !defined(__clang__) && !defined(__PGI) && !defined(__INTEL_COMPILER) && !defined(_CRAYC)
+# define LIBXSMM_NOTHROW LIBXSMM_THROW
+#else
+# define LIBXSMM_NOTHROW
+#endif
 
 /* block must be after including above header files */
 #if (defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__) < LIBXSMM_VERSION2(2, 26)) \

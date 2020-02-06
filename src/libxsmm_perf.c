@@ -9,17 +9,14 @@
 /* Maciej Debski (Google Inc.)
 ******************************************************************************/
 #include "libxsmm_perf.h"
+#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include "perf_jitdump.h"
-#include <inttypes.h>
-#include <stdlib.h>
-#include <stdio.h>
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
 # include <sys/mman.h>
-# include <string.h>
 # include <sys/types.h>
 # include <sys/types.h>
 # include <sys/stat.h>

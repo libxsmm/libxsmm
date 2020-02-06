@@ -18,24 +18,16 @@
 # include "libxsmm_perf.h"
 #endif
 #include "generator_common.h"
-#include <libxsmm_intrinsics_x86.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-/* mute warning about target attribute; KNC/native plus JIT is disabled below! */
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
 #if defined(_WIN32)
 # include <Windows.h>
 #else
-# if defined(LIBXSMM_INTERCEPT_DYNAMIC)
-#   include <dlfcn.h>
-# endif
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
@@ -84,6 +76,10 @@
 #endif
 #if !defined(LIBXSMM_AUTOPIN) && 1
 # define LIBXSMM_AUTOPIN
+#endif
+
+#if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
+LIBXSMM_EXTERN int putenv(char*) LIBXSMM_THROW;
 #endif
 
 /* flag fused into the memory address of a code version in case of non-JIT */
@@ -580,7 +576,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* messag
   if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
     union { const void* dlsym; void (*ptr)(const char*, int, int); } stop;
     dlerror(); /* clear an eventual error status */
-    stop.dlsym = dlsym(RTLD_NEXT, "_gfortran_stop_string");
+    stop.dlsym = dlsym(LIBXSMM_RTLD_NEXT, "_gfortran_stop_string");
     if (NULL != stop.dlsym) {
       stop.ptr(message, len, quiet);
     }
@@ -595,7 +591,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* message, int l
   if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
     union { const void* dlsym; void (*ptr)(const char*, int); } stop;
     dlerror(); /* clear an eventual error status */
-    stop.dlsym = dlsym(RTLD_NEXT, "for_stop_core");
+    stop.dlsym = dlsym(LIBXSMM_RTLD_NEXT, "for_stop_core");
     if (NULL != stop.dlsym) {
       stop.ptr(message, len);
     }
@@ -610,7 +606,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void)
   if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
     union { const void* dlsym; void (*ptr)(void); } stop;
     dlerror(); /* clear an eventual error status */
-    stop.dlsym = dlsym(RTLD_NEXT, "for_stop_core_quiet");
+    stop.dlsym = dlsym(LIBXSMM_RTLD_NEXT, "for_stop_core_quiet");
     if (NULL != stop.dlsym) {
       stop.ptr();
     }
@@ -672,7 +668,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC) && defined(LIBXSMM_AUTOPIN)
     /* clear error status (dummy condition: it does not matter if MPI_Init or MPI_Abort) */
     const char *const dlsymname = (NULL == dlerror() ? "MPI_Init" : "MPI_Abort");
-    const void *const dlsymbol = dlsym(RTLD_NEXT, dlsymname);
+    const void *const dlsymbol = dlsym(LIBXSMM_RTLD_NEXT, dlsymname);
 #endif
     /* setup verbosity as early as possible since below code may rely on verbose output */
     if (NULL != env_verbose && 0 != *env_verbose) {
@@ -697,7 +693,11 @@ LIBXSMM_API_INTERN void internal_init(void)
         && (NULL == omp_proc_bind || 0 == *omp_proc_bind))
       {
         static char affinity[] = "OMP_PROC_BIND=TRUE";
-        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(affinity));
+#if defined(_WIN32)
+        LIBXSMM_EXPECT(EXIT_SUCCESS, _putenv(affinity));
+#else
+        LIBXSMM_EXPECT(EXIT_SUCCESS, putenv(affinity));
+#endif
         if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
           fprintf(stderr, "LIBXSMM: prepared to pin threads.\n");
         }

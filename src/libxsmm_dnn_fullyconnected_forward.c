@@ -9,18 +9,9 @@
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_fullyconnected_forward.h"
-#include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
-#include <libxsmm.h>
-#define STRIDE_BRGEMM
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <string.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
+#define STRIDE_BRGEMM
 
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom_f32_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);

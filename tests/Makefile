@@ -13,6 +13,8 @@ CFLAGS = $(NULL)
 DFLAGS = -DLIBXSMM_GEMM_CONST
 IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include" -I"$(DEPDIR)/src"
 
+# PEDANTIC=2: OpenBLAS headers can cause warnings
+override PEDANTIC = 1
 BLAS ?= 1
 OMP ?= 1
 SYM ?= 1

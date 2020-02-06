@@ -356,13 +356,15 @@ typedef enum libxsmm_atomic_kind {
 
 #if (0 != LIBXSMM_SYNC) /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
-# if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
+# if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) /*&& defined(LIBXSMM_SYNC_SYSTEM)*/ && \
+    (!defined(__linux__) || defined(__USE_XOPEN2K))
 #   define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && (defined(LIBXSMM_SYNC_SYSTEM) || !defined(_MSC_VER))
 #   define LIBXSMM_LOCK_SYSTEM_MUTEX
 # endif
-# if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
+# if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) /*&& defined(LIBXSMM_SYNC_SYSTEM)*/ && \
+    (!defined(__linux__) || defined(__USE_XOPEN2K) || defined(__USE_UNIX98))
 #   define LIBXSMM_LOCK_SYSTEM_RWLOCK
 # endif
   /* Lock type, initialization, destruction, (try-)lock, unlock, etc */
@@ -463,8 +465,10 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_PTHREAD_FN(FN) LIBXSMM_CONCATENATE(FN, _np)
 #   else
 #     define LIBXSMM_PTHREAD_FN(FN) FN
-#     if !defined(__USE_GNU)
-      extern int pthread_yield(void) LIBXSMM_THROW;
+#     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
+      LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_THROW;
+#     else
+      LIBXSMM_EXTERN void pthread_yield(void);
 #     endif
 #   endif
 #   define LIBXSMM_SYNC_YIELD LIBXSMM_PTHREAD_FN(pthread_yield)
@@ -695,6 +699,28 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_LOCK_ACQREAD(KIND, LOCK) LIBXSMM_LOCK_ACQUIRE(KIND, LOCK)
 # define LIBXSMM_LOCK_RELREAD(KIND, LOCK) LIBXSMM_LOCK_RELEASE(KIND, LOCK)
 #endif
+
+#if (0 == LIBXSMM_SYNC)
+# define LIBXSMM_FLOCK(FILE)
+# define LIBXSMM_FUNLOCK(FILE)
+#elif defined(_WIN32)
+# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
+# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
+#else
+# if !defined(__CYGWIN__)
+#   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
+#   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
+    LIBXSMM_EXTERN void flockfile(FILE*) LIBXSMM_THROW;
+    LIBXSMM_EXTERN void funlockfile(FILE*) LIBXSMM_THROW;
+# else /* Only available with __CYGWIN__ *and* C++0x. */
+#   define LIBXSMM_FLOCK(FILE)
+#   define LIBXSMM_FUNLOCK(FILE)
+# endif
+#endif
+
+/** Synchronize console output */
+#define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
+#define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
 
 
 /** Opaque type which represents a barrier. */

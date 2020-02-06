@@ -11,16 +11,6 @@
 #include "libxsmm_xcopy.h"
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 #if !defined(LIBXSMM_XCOPY_JIT)
 # if (defined(_WIN32) || defined(__CYGWIN__))
 /* only enable matcopy code generation (workaround issue with taking GP registers correctly) */

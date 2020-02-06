@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_PERF_H
 #define LIBXSMM_PERF_H
 
-#include <libxsmm.h>
+#include <libxsmm_macros.h>
 
 
 LIBXSMM_API_INTERN void libxsmm_perf_init(void);
