@@ -8,20 +8,9 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_gemm_avx2_microkernel.h"
 #include "generator_x86_instructions.h"
 #include "libxsmm_main.h"
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*             io_generated_code,

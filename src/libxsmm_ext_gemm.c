@@ -12,14 +12,6 @@
 #include "libxsmm_gemm.h"
 #include "libxsmm_ext.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <string.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 #if defined(LIBXSMM_WRAP) && defined(LIBXSMM_BUILD_EXT)
 # include "libxsmm_trace.h"
 #endif

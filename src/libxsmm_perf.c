@@ -15,11 +15,8 @@
 #endif
 #include "perf_jitdump.h"
 #include <inttypes.h>
-#include <stdlib.h>
-#include <stdio.h>
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
 # include <sys/mman.h>
-# include <string.h>
 # include <sys/types.h>
 # include <sys/types.h>
 # include <sys/stat.h>

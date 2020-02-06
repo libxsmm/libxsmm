@@ -11,16 +11,6 @@
 #include "libxsmm_dnn_fusedgroupnorm_backward.h"
 #include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
-#include <libxsmm.h>
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <string.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 
 #if 0
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedgroupnorm_st_bwd_custom_f32_f32_c16(libxsmm_dnn_fusedgroupnorm* handle, int start_thread, int tid);

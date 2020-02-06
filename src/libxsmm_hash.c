@@ -11,14 +11,6 @@
 #include "libxsmm_hash.h"
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 #if !defined(LIBXSMM_HASH_ALIGNMENT)
 # define LIBXSMM_HASH_ALIGNMENT 8
 #endif

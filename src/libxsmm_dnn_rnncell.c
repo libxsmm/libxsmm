@@ -8,9 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-
-#include <libxsmm.h>
-
 #include "libxsmm_dnn_rnncell_forward.h"
 #include "libxsmm_dnn_rnncell_backward_weight_update.h"
 #include "libxsmm_dnn_elementwise.h"
@@ -20,7 +17,6 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <math.h>
-#include <string.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif

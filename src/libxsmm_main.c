@@ -23,10 +23,6 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-/* mute warning about target attribute; KNC/native plus JIT is disabled below! */
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif

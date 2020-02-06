@@ -729,8 +729,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   include <windows.h>
 # else
 #   include <pthread.h>
-#   include <stdio.h>
 # endif
+# include <stdio.h>
 #endif
 #if !defined(LIBXSMM_ASSERT)
 # include <assert.h>
@@ -766,6 +766,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -778,7 +780,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
 #endif
-#if defined(__THROW) && defined(__cplusplus)
+#if defined(__THROW)
 # define LIBXSMM_THROW __THROW
 #else
 # define LIBXSMM_THROW

@@ -12,13 +12,6 @@
 #define LIBXSMM_TRACE_H
 
 #include <libxsmm_macros.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #if (defined(__TRACE) || defined(LIBXSMM_BUILD) || !defined(_WIN32))
 # define LIBXSMM_TRACE
@@ -27,8 +20,9 @@
 # define LIBXSMM_TRACE_CALLERID_MAXDEPTH 8
 #endif
 #if !defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && \
-  ((!defined(_WIN32) || defined(__MINGW32__) || (defined(_MSC_VER) && defined(__clang__))) && (defined(__GNUC__) || defined(__clang__)) && \
-   (!defined(__PGI) || LIBXSMM_VERSION3(19, 0, 0) <= LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__)))
+  ((!defined(_WIN32) || defined(__MINGW32__) || (defined(_MSC_VER) && defined(__clang__))) && \
+   (!defined(__PGI) || LIBXSMM_VERSION2(19, 0) <= LIBXSMM_VERSION2(__PGIC__, __PGIC_MINOR__)) && \
+    (defined(__GNUC__) || defined(__clang__)))
 # define LIBXSMM_TRACE_CALLERID_GCCBUILTIN
 #endif
 

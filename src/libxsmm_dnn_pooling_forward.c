@@ -11,12 +11,10 @@
 #include "libxsmm_dnn_pooling_forward.h"
 #include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
-#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <string.h>
 #include <float.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)

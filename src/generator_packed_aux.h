@@ -16,17 +16,6 @@
 
 #include <libxsmm_intrinsics_x86.h>
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 
 LIBXSMM_API_INLINE void compact_load_parameter_ (
      libxsmm_generated_code* io_code,

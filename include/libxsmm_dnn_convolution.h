@@ -15,17 +15,6 @@
 #include "libxsmm_dnn_tensor.h"
 #include "libxsmm_dnn_fusedbatchnorm.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 /** Opaque handles which represents convolutions and LIBXSMM datatypes */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer libxsmm_dnn_layer;
 

@@ -16,9 +16,6 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <inttypes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #if defined(LIBXSMM_GLIBC)
 # include <features.h>
 # include <malloc.h>
@@ -58,7 +55,7 @@
 #   define LIBXSMM_MAP_SHARED 0
 # endif
 LIBXSMM_EXTERN int ftruncate(int, __off_t) LIBXSMM_THROW;
-LIBXSMM_EXTERN int mkstemp(char*);
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_THROW;
 #endif
 #if !defined(LIBXSMM_MALLOC_FALLBACK)
 # define LIBXSMM_MALLOC_FINAL 3

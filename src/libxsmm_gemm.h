@@ -20,7 +20,6 @@
 # define LIBXSMM_BLAS_WRAP_DYNAMIC
 #endif
 #include <limits.h>
-#include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
