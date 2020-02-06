@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_sync.h>
 #include <libxsmm.h>
-#include <stdio.h>
 
 #if defined(_OPENMP)
 # include <omp.h>
