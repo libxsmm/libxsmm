@@ -783,8 +783,14 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 #if defined(__THROW) && defined(__cplusplus)
 # define LIBXSMM_THROW __THROW
-#else
+#endif
+#if !defined(LIBXSMM_THROW)
 # define LIBXSMM_THROW
+#endif
+#if LIBXSMM_VERSION2(4, 2) == LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+# define LIBXSMM_NOTHROW LIBXSMM_THROW
+#else
+# define LIBXSMM_NOTHROW
 #endif
 
 /* block must be after including above header files */
