@@ -27,11 +27,13 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
+#ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
 LIBXSMM_VLA_DECL(2, const float,               bias,   (float*)              handle->reg_bias->data,                           handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
 LIBXSMM_VLA_DECL(4, unsigned char,           relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
+#endif
 #endif
 unsigned long long blocks = nBlocksIFm;
 int iteri = 0, iterj = 0, ifm1 = 0, ifm2 = 0, BF = 1;
@@ -243,3 +245,4 @@ unsigned long long  B_offsets[1024];
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
+
