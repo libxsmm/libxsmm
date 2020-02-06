@@ -781,8 +781,14 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
 #endif
 #if defined(__THROW)
+# if defined(__cplusplus)
+#   define LIBXSMM_NOTHROW __THROW
+# else
+#   define LIBXSMM_NOTHROW
+# endif
 # define LIBXSMM_THROW __THROW
 #else
+# define LIBXSMM_NOTHROW
 # define LIBXSMM_THROW
 #endif
 
