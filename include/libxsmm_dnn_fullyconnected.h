@@ -18,8 +18,13 @@
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected libxsmm_dnn_fullyconnected;
 
 typedef enum libxsmm_dnn_fullyconnected_fuse_op {
-  /* the fuse order is: 1. BN, 2. eltwise 3. RELU */
-  LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE = 0
+  /* the fuse order is: 1. BIAS, 2. Actitvation */
+  LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE = 0,
+  LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS = 1,
+  LIBXSMM_DNN_FULLYCONNECTED_FUSE_RELU = 2,
+  LIBXSMM_DNN_FULLYCONNECTED_FUSE_SIGMOID = 4,
+  LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_RELU = 3,
+  LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID = 5
 } libxsmm_dnn_fullyconnected_fuse_op;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected_desc {

@@ -590,7 +590,12 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_f32_f32(libxsmm_dn
   element_input_type beta = (element_input_type)0;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 
-  if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+  if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE)         ||
+       (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS)         ||
+       (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_RELU)         ||
+       (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_SIGMOID)      ||
+       (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_RELU)    ||
+       (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID)    ) {
     libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
 #   include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
   } else {
@@ -778,7 +783,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck
       element_input_type beta = (element_input_type)0;
       int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 
-      if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+      if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE)         ||
+           (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS)         ||
+           (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_RELU)         ||
+           (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_SIGMOID)      ||
+           (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_RELU)    ||
+           (handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID)    ) {
         libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
 #       include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
       } else {

@@ -27,7 +27,12 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
-
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+LIBXSMM_VLA_DECL(2, const float,               bias,   (float*)              handle->reg_bias->data,   nBlocksOFm,           , handle->bk);
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+LIBXSMM_VLA_DECL(4, unsigned char,           relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
+#endif
 unsigned long long blocks = nBlocksIFm;
 int iteri = 0, iterj = 0, ifm1 = 0, ifm2 = 0, BF = 1;
 int CB_BLOCKS = nBlocksIFm, perform_2d_decomp = 0;
@@ -135,6 +140,27 @@ if (perform_2d_decomp) {
                             &LIBXSMM_VLA_ACCESS(4, input,  in, ifm1*CB_BLOCKS,  0, 0, nBlocksIFm, handle->bn, handle->bc),
                             &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
 #endif
+#ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
+        if ( ifm1 == BF-1) {
+          for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+            for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+              float l_cur_out = LIBXSMM_VLA_ACCESS(4, output, in, ik, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+              l_cur_out += LIBXSMM_VLA_ACCESS( 2, bias, ik, iterj, handle->bk );
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+              LIBXSMM_VLA_ACCESS(4, relumask, in, ik, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = ( l_cur_out > 0.0 ) ? 1 : 0;
+              l_cur_out = (l_cur_out > (element_output_type)0) ? l_cur_out : (element_output_type)0;
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+              /* we ar using Pade 7/8 approximation */
+              l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
+#endif
+              LIBXSMM_VLA_ACCESS(4, output, in, ik, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+            }
+          }
+        }
+#endif
       }
     }
   }
@@ -190,6 +216,27 @@ unsigned long long  B_offsets[1024];
       batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bc, handle->bk),
                           &LIBXSMM_VLA_ACCESS(4, input,  mb1,  ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bn, handle->bc),
                           &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
+#endif
+#ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
+      if ( ifm1 == BF-1) {
+        for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+          for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+            float l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+            l_cur_out += LIBXSMM_VLA_ACCESS( 2, bias, ofm1, iterj, handle->bk );
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+            LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = ( l_cur_out > (element_output_type)0 ) ? 1 : 0;
+            l_cur_out = (l_cur_out > (element_output_type)0) ? l_cur_out : (element_output_type)0;
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+            /* we ar using Pade 7/8 approximation */
+            l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
+#endif
+            LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+          }
+        }
+      }
 #endif
     }
   }
