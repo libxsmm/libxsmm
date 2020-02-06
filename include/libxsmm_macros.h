@@ -787,7 +787,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #if !defined(LIBXSMM_THROW)
 # define LIBXSMM_THROW
 #endif
-#if LIBXSMM_VERSION2(4, 2) == LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+#if defined(__GNUC__) && LIBXSMM_VERSION2(4, 2) == LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) && \
+  !defined(__clang__) && !defined(__PGI) && !defined(__INTEL_COMPILER) && !defined(_CRAYC)
 # define LIBXSMM_NOTHROW LIBXSMM_THROW
 #else
 # define LIBXSMM_NOTHROW
