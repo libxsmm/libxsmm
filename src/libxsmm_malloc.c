@@ -53,7 +53,7 @@
 # else
 #   define LIBXSMM_MAP_SHARED 0
 # endif
-LIBXSMM_EXTERN int ftruncate(int, __off_t) LIBXSMM_THROW;
+LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_THROW;
 LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
 #endif
 #if !defined(LIBXSMM_MALLOC_FALLBACK)
