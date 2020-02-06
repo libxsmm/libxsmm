@@ -8,16 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm_source.h>
-#endif
-#include <stdlib.h>
-#if defined(_DEBUG)
-# include <stdio.h>
-#endif
-#if defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm_source.h>
-#endif
+#include <libxsmm_source.h>
 
 
 int main(void)

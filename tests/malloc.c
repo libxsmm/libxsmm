@@ -8,13 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-#endif
-#include <stdlib.h>
-#if defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-#endif
+#include <libxsmm.h>
 
 #if !defined(CHECK_SETUP) && 1
 # define CHECK_SETUP

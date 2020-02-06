@@ -11,6 +11,7 @@
 #include "libxsmm_trace.h"
 #include "libxsmm_main.h"
 #include "libxsmm_hash.h"
+#include <libxsmm_intrinsics_x86.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -54,8 +55,8 @@
 # else
 #   define LIBXSMM_MAP_SHARED 0
 # endif
-LIBXSMM_EXTERN int ftruncate(int, __off_t) LIBXSMM_NOTHROW;
-LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
+LIBXSMM_EXTERN int ftruncate(int, __off_t) LIBXSMM_THROW;
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_THROW;
 #endif
 #if !defined(LIBXSMM_MALLOC_FALLBACK)
 # define LIBXSMM_MALLOC_FINAL 3

@@ -8,18 +8,12 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm_source.h>
-#endif
-#include <stdlib.h>
+#include <libxsmm_source.h>
+
 #if defined(_DEBUG)
-# include <stdio.h>
 # define FPRINTF(STREAM, ...) fprintf(STREAM, __VA_ARGS__)
 #else
 # define FPRINTF(STREAM, ...)
-#endif
-#if defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm_source.h>
 #endif
 
 #if !defined(ELEM_TYPE)
