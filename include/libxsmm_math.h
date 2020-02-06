@@ -124,7 +124,7 @@ static float libxsmm_stanh_pade78( float i_x ) {
   const float x2         = i_x * i_x;
   const float t1_nom     = (l_c3 * x2) + l_c2;
   const float t2_nom     = (t1_nom * x2) + l_c1;
-  const float t3_nom     = (t2_nom * x2) + l_c0;;
+  const float t3_nom     = (t2_nom * x2) + l_c0;
   const float nom        = t3_nom * i_x;
   const float t1_denom   = x2 + l_c3_d;
   const float t2_denom   = (t1_denom * x2) + l_c2_d;
