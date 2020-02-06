@@ -764,8 +764,9 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
 # include <omp.h>
 #endif
-#include <stddef.h>
+#include <inttypes.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 

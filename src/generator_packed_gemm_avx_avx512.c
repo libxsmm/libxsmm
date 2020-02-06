@@ -15,8 +15,6 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
-#include <libxsmm_intrinsics_x86.h>
-
 #if 0
 # define GENERATOR_PACKED_GEMM_DEBUG
 #endif

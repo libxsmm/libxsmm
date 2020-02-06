@@ -9,7 +9,6 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_fusedbatchnorm_backward.h"
-#include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 
 

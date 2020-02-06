@@ -11,12 +11,10 @@
 #include "libxsmm_trace.h"
 #include "libxsmm_main.h"
 #include "libxsmm_hash.h"
-#include <libxsmm_intrinsics_x86.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <inttypes.h>
 #if defined(LIBXSMM_GLIBC)
 # include <features.h>
 # include <malloc.h>

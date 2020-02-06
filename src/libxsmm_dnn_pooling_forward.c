@@ -9,7 +9,6 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_pooling_forward.h"
-#include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

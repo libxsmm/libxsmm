@@ -9,7 +9,6 @@
 /* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_forward.h"
-#include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 
 

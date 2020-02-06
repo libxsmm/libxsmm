@@ -13,7 +13,6 @@
 
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-
 #include <libxsmm_intrinsics_x86.h>
 
 

@@ -9,7 +9,6 @@
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_fullyconnected_backward.h"
-#include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 
 #define STRIDE_BRGEMM

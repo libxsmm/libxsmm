@@ -9,7 +9,6 @@
 /* Rajkishore Barik, Alexander Heinecke, Ankush Mandal, Jason Sewall (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_weight_update.h"
-#include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 
 

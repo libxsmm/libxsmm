@@ -15,7 +15,6 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include "perf_jitdump.h"
-#include <inttypes.h>
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
 # include <sys/mman.h>
 # include <sys/types.h>
