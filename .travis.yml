@@ -30,7 +30,6 @@ matrix:
 
 env:
   global:
-  - TESTS_DISABLED="headeronly"
   - PEDANTIC_HIGH="PEDANTIC=2"
   - PEDANTIC_TEST="PEDANTIC=1"
   - LIBXSMM_VERBOSE=3
