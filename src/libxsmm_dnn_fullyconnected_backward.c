@@ -212,7 +212,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_f32_f32(libxsmm_dn
   } else {
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
-#undef LIBXSMM_DNN_FC_FWD_USE_AVX512
+#undef LIBXSMM_DNN_FC_BWD_USE_AVX512
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
