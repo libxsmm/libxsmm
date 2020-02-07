@@ -143,7 +143,7 @@ if (perform_2d_decomp) {
                             &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
 #endif
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
-        if ( ifm1 == BF-1) {
+        if ( ifm1 == (BF-1) ) {
           for ( iteri = 0; iteri < handle->bn; ++iteri ) {
             for ( iterj = 0; iterj < handle->bk; ++iterj ) {
               float l_cur_out = LIBXSMM_VLA_ACCESS(4, output, in, ik, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
@@ -220,7 +220,7 @@ unsigned long long  B_offsets[1024];
                           &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
 #endif
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
-      if ( ifm1 == BF-1) {
+      if ( ifm1 == (BF-1) ) {
         for ( iteri = 0; iteri < handle->bn; ++iteri ) {
           for ( iterj = 0; iterj < handle->bk; ++iterj ) {
             float l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
