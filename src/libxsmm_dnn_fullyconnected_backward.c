@@ -207,8 +207,8 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_f32_f32(libxsmm_dn
 #define LIBXSMM_DNN_FC_BWD_FUSE_BIAS
 #define LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
 # include "template/libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_generic.tpl.c"
-#define LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
-#define LIBXSMM_DNN_FC_BWD_FUSE_BIAS
+#undef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
+#undef LIBXSMM_DNN_FC_BWD_FUSE_BIAS
   } else {
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
@@ -430,8 +430,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck
 #define LIBXSMM_DNN_FC_BWD_FUSE_BIAS
 #define LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
 # include "template/libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_generic.tpl.c"
-#define LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
-#define LIBXSMM_DNN_FC_BWD_FUSE_BIAS
+#undef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
+#undef LIBXSMM_DNN_FC_BWD_FUSE_BIAS
       } else {
         status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
       }

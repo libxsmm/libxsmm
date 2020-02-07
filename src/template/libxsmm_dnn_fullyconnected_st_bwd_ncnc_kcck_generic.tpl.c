@@ -62,13 +62,11 @@ LIBXSMM_VLA_DECL(4,       element_output_type,   doutput, (element_output_type*)
 LIBXSMM_VLA_DECL(4, const element_filter_type,    filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, bc, bk);
 LIBXSMM_VLA_DECL(4,        element_input_type,    dinput, (element_input_type* )handle->grad_input->data, nBlocksIFm, bn, bc);
 LIBXSMM_VLA_DECL(4,       element_filter_type, filter_tr, (element_filter_type*)handle->scratch, nBlocksOFm, bk, bc);
-#ifndef LIBXSMM_DNN_FC_BWD_FUSE_NONE
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_BIAS
 LIBXSMM_VLA_DECL(2,       float,                   dbias, (float*)              handle->grad_bias->data,                          handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
 LIBXSMM_VLA_DECL(4, unsigned char,              relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
-#endif
 #endif
 /* Batch reduce related variables */
 #ifdef ADDRESS_BRGEMM
@@ -124,10 +122,10 @@ for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
   for ( iteri = 0; iteri < handle->bn; ++iteri ) {
     for ( iterj = 0; iterj < handle->bk; ++iterj ) {
       float l_cur_out = LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
-#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
       l_cur_out = (LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0;
 #endif
-#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
       l_cur_out = l_cur_out*(1.0f - l_cur_out);
 #endif
       LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
