@@ -290,13 +290,21 @@ LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned ch
   return internal_diff_avx512(a, b, size);
 # elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return internal_diff_avx2(a, b, size);
-# elif defined(LIBXSMM_INIT_COMPLETED) /* pointer based function call */
+# elif (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+# if (LIBXSMM_X86_AVX2 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
+  return internal_diff_sse3(a, b, size);
+# else /* pointer based function call */
+# if defined(LIBXSMM_INIT_COMPLETED)
   LIBXSMM_ASSERT(NULL != internal_diff_function);
   return internal_diff_function(a, b, size);
 # else
   return (unsigned char)(NULL != internal_diff_function
     ? internal_diff_function(a, b, size)
-    : internal_diff_sw(a, b, size));
+    : internal_diff_sse3(a, b, size));
+# endif
+# endif
+# else
+  return internal_diff_sw(a, b, size);
 # endif
 #endif
 }
@@ -357,14 +365,20 @@ LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size)
 # elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return internal_memcmp_avx2(a, b, size);
 # elif (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+# if (LIBXSMM_X86_AVX2 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
   return internal_memcmp_sse3(a, b, size);
-# elif defined(LIBXSMM_INIT_COMPLETED) /* pointer based function call */
+# else /* pointer based function call */
+# if defined(LIBXSMM_INIT_COMPLETED)
   LIBXSMM_ASSERT(NULL != internal_memcmp_function);
   return internal_memcmp_function(a, b, size);
 # else
   return NULL != internal_memcmp_function
     ? internal_memcmp_function(a, b, size)
-    : internal_memcmp_sw(a, b, size);
+    : internal_memcmp_sse3(a, b, size);
+# endif
+# endif
+# else
+  return internal_memcmp_sw(a, b, size);
 # endif
 #endif
 }
