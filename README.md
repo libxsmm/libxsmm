@@ -1,6 +1,7 @@
 # LIBXSMM
 
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg)](LICENSE.md) [![Travis CI](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/wiki/Status) [![Coverity](https://scan.coverity.com/projects/7405/badge.svg "Coverity Scan Build Status")](https://scan.coverity.com/projects/hfp-libxsmm) [![ReadtheDocs](https://readthedocs.org/projects/libxsmm/badge/?version=latest "Read the Docs")](https://libxsmm.readthedocs.io/)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fhfp%2Flibxsmm.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fhfp%2Flibxsmm?ref=badge_shield)
 
 LIBXSMM is a library for specialized dense and sparse matrix operations as well as for deep learning primitives such as small convolutions. The library is targeting Intel Architecture with Intel&#160;SSE, Intel&#160;AVX, Intel&#160;AVX2, Intel&#160;AVX&#8209;512 (with VNNI and Bfloat16). Code generation is mainly based on Just&#8209;In&#8209;Time (JIT) code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and deep learning). LIBXSMM is suitable for "build once and deploy everywhere" i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `bfloat16`, `int16`, and `int8`.
 
@@ -347,3 +348,7 @@ Please note that comparing performance results depends on whether the operands o
 
 **\[7]&#160;[https://software.intel.com/en-us/articles/intel-xeon-phi-delivers-competitive-performance-for-deep-learning-and-getting-better-fast](https://software.intel.com/en-us/articles/intel-xeon-phi-delivers-competitive-performance-for-deep-learning-and-getting-better-fast)**: Intel Xeon&#160;Phi Delivers Competitive Performance For Deep Learning - And Getting Better Fast. Article mentioning LIBXSMM's performance of convolution kernels with [DeepBench](https://github.com/baidu-research/DeepBench/tree/master/code/intel/convolution/libxsmm_conv). Intel Corporation, 2016.
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fhfp%2Flibxsmm.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fhfp%2Flibxsmm?ref=badge_large)
