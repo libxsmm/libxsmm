@@ -210,12 +210,6 @@ LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_npargroups);
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_taskgrain);
 /** Determines if OpenMP tasks are used. */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_tasks);
-
-/** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
-/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
-
 /**
  * Intercepted GEMM
  * - [>=1 and  odd]: sequential and non-tiled (small problem sizes only)
@@ -225,6 +219,11 @@ LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
  * - [0]: disabled
  */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_wrap);
+
+/** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
+/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 
 #endif /*LIBXSMM_GEMM_H*/
 

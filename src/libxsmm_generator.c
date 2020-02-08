@@ -15,6 +15,12 @@
 #endif
 
 
+/* definition of corresponding variables (no comma) */
+LIBXSMM_APIVAR_DEFINE(unsigned int libxsmm_ninit)
+LIBXSMM_APIVAR_DEFINE(int libxsmm_target_archid)
+LIBXSMM_APIVAR_DEFINE(int libxsmm_verbosity)
+
+
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   double alpha, double beta, int flags, int prefetch)

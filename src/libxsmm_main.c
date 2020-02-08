@@ -154,6 +154,11 @@ LIBXSMM_APIVAR(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 #endif
 
 
+/* definition of corresponding variables (no comma) */
+LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global)
+LIBXSMM_APIVAR_DEFINE(int libxsmm_nosync)
+
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;
 } internal_statistic_type;

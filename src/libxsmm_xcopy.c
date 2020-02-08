@@ -24,6 +24,13 @@
 #endif
 
 
+/* definition of corresponding variables (no comma) */
+LIBXSMM_APIVAR_DEFINE(int libxsmm_trans_jit)
+LIBXSMM_APIVAR_DEFINE(float libxsmm_trans_tile_stretch)
+LIBXSMM_APIVAR_DEFINE(unsigned int* libxsmm_trans_mtile)
+LIBXSMM_APIVAR_DEFINE(int libxsmm_trans_taskscale)
+
+
 LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_XCOPY_M, LIBXSMM_XCOPY_N) */

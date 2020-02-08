@@ -246,6 +246,8 @@ void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_gen
 
 /** Initialization counter that can be used to check whether the library is initialized (!=0) or not (==0). */
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_ninit);
+/** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
+LIBXSMM_APIVAR_ALIGNED(int libxsmm_target_archid);
 /** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_verbosity);
 

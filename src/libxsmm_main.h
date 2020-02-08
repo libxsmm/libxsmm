@@ -822,8 +822,6 @@ LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
-/** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_target_archid);
 /** Determines whether a threaded implementation is synchronized or not. */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_nosync);
 

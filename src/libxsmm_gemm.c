@@ -72,6 +72,23 @@ LIBXSMM_APIVAR_ARRAY(internal_gemm_locktype internal_gemm_lock, LIBXSMM_GEMM_MAX
 LIBXSMM_APIVAR(unsigned int internal_gemm_nlocks); /* populated number of locks */
 #endif
 
+/* definition of corresponding variables (no comma) */
+LIBXSMM_APIVAR_DEFINE(/*volatile*/libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch_function)
+LIBXSMM_APIVAR_DEFINE(/*volatile*/libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch_function)
+LIBXSMM_APIVAR_DEFINE(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function)
+LIBXSMM_APIVAR_DEFINE(/*volatile*/libxsmm_sgemm_function libxsmm_original_sgemm_function)
+LIBXSMM_APIVAR_DEFINE(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv_function)
+LIBXSMM_APIVAR_DEFINE(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function)
+/* definition of corresponding variables (no comma) */
+LIBXSMM_APIVAR_DEFINE(libxsmm_gemm_descriptor libxsmm_mmbatch_desc)
+LIBXSMM_APIVAR_DEFINE(void* libxsmm_mmbatch_array)
+LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_lock)
+LIBXSMM_APIVAR_DEFINE(unsigned int libxsmm_mmbatch_size)
+LIBXSMM_APIVAR_DEFINE(unsigned int libxsmm_gemm_npargroups)
+LIBXSMM_APIVAR_DEFINE(unsigned int libxsmm_gemm_taskgrain)
+LIBXSMM_APIVAR_DEFINE(int libxsmm_gemm_tasks)
+LIBXSMM_APIVAR_DEFINE(int libxsmm_gemm_wrap)
+
 /** Prefetch strategy for tiled GEMM. */
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type internal_gemm_tiled_prefetch);
 /** Vector width used for GEMM. */
