@@ -268,14 +268,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck(libxsmm
       if ( handle->desc.N % 2 != 0 ) {
         status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
       } else {
-        if (  libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE && libxsmm_target_archid < LIBXSMM_X86_AVX512_CPX ) {
-          status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16_emu( handle, kind, start_thread, tid );
-        } else {
 #if defined(LIBXSMM_INTRINSICS_AVX512_CPX) /*__AVX512F__,__AVX512BW__,__AVX512DQ__,__AVX512BF16__*/
-          status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16( handle, kind, start_thread, tid );
-#else
+        if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE && libxsmm_target_archid < LIBXSMM_X86_AVX512_CPX ) {
           status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16_emu( handle, kind, start_thread, tid );
+        } else if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_CPX ) {
+          status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16( handle, kind, start_thread, tid );
+        }
+#else
+        if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE ) {
+          status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16_emu( handle, kind, start_thread, tid );
+        }
 #endif
+        else {
+          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+          return status;
         }
       }
     }
@@ -342,14 +348,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_kcck(libxs
       if ( handle->desc.N % 2 != 0 ) {
         status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
       } else {
+#if defined(LIBXSMM_INTRINSICS_AVX512_CPX) /*__AVX512F__,__AVX512BW__,__AVX512DQ__,__AVX512BF16__*/
         if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE && libxsmm_target_archid < LIBXSMM_X86_AVX512_CPX ) {
           status = libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_bf16_bf16_emu( handle, kind, start_thread, tid );
-        } else {
-#if defined(LIBXSMM_INTRINSICS_AVX512_CPX) /*__AVX512F__,__AVX512BW__,__AVX512DQ__,__AVX512BF16__*/
+        } else if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_CPX ) {
           status = libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_bf16_bf16( handle, kind, start_thread, tid );
+        }
 #else
+        if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE ) {
           status = libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_bf16_bf16_emu( handle, kind, start_thread, tid );
+        }
 #endif
+        else {
+          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+          return status;
         }
       }
     }
