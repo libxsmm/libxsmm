@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_HASH_H
 #define LIBXSMM_HASH_H
 
-#include <libxsmm.h>
+#include <libxsmm_macros.h>
 
 /* Map number of Bits to corresponding routine. */
 #define LIBXSMM_CRC32U(N) LIBXSMM_CONCATENATE(libxsmm_crc32_u, N)
