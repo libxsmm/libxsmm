@@ -65,10 +65,6 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
   unsigned int eax, ebx, ecx, edx;
   LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID max. leaf */
-    if (NULL != info) {
-      LIBXSMM_CPUID_X86(0x80000007, 0/*ecx*/, eax, ebx, ecx, edx);
-      info->constant_tsc = LIBXSMM_CPUID_CHECK(edx, 0x00000100);
-    }
     if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* detect CPU-feature only once */
       int feature_cpu = LIBXSMM_X86_GENERIC, feature_os = LIBXSMM_X86_GENERIC;
       unsigned int maxleaf = eax;
@@ -160,6 +156,10 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
 # else /* opportunistic */
       result = feature_cpu;
 # endif
+    }
+    if (NULL != info) {
+      LIBXSMM_CPUID_X86(0x80000007, 0/*ecx*/, eax, ebx, ecx, edx);
+      info->constant_tsc = LIBXSMM_CPUID_CHECK(edx, 0x00000100);
     }
   }
   else {
