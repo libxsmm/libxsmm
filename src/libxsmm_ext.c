@@ -131,8 +131,6 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void sgemm_batch(
 
 #elif (0 != LIBXSMM_NO_BLAS) /* no-BLAS library */
 
-LIBXSMM_APIVAR(int internal_noblas_nerror);
-
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE void internal_noblas_sink(LIBXSMM_VARIADIC);
 LIBXSMM_API_INTERN void internal_noblas_sink(LIBXSMM_VARIADIC)
 {
@@ -142,6 +140,7 @@ LIBXSMM_API_INTERN void internal_noblas_sink(LIBXSMM_VARIADIC)
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE libxsmm_sink_function internal_noblas_error(const char* /*symbol*/);
 LIBXSMM_API_INTERN libxsmm_sink_function internal_noblas_error(const char* symbol)
 {
+  static int internal_noblas_nerror = 0;
   LIBXSMM_BLAS_ERROR(symbol, &internal_noblas_nerror);
   return internal_noblas_sink;
 }
