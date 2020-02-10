@@ -807,10 +807,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_xinfo {
 /** Receive information about JIT-generated code. */
 LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_code_pointer code, const libxsmm_descriptor** desc, size_t* code_size);
 
-/** Calculates duration in seconds from given RTC ticks (public symbol but no prototype exposed). */
-LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
-/** Returns the current tick of platform-specific real-time clock (public symbol but no prototype exposed). */
-LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
+/** Calculates duration in seconds from given RTC ticks. */
+LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
+/** Returns the current tick of platform-specific real-time clock. */
+LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
 /** Returns the current tick of a (monotonic) platform-specific counter. */
 LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_tsc(void);
 

@@ -36,10 +36,6 @@
 #endif
 
 
-libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
-double libxsmm_timer_duration_rtc(libxsmm_timer_tickint, libxsmm_timer_tickint);
-
-
 LIBXSMM_INLINE int timer_sleep(unsigned int seconds)
 {
   int result;
@@ -65,8 +61,8 @@ int main(int argc, char* argv[])
     ? 0
 #endif
     : atoi(env_delta);
-  libxsmm_timer_tickint begin, start, rbegin, rend;
   unsigned int n = max_nseconds, ninterrupts = 0;
+  libxsmm_timer_tickint begin, start;
   double total = 0, delta = 0, d, t;
   int result;
 
@@ -74,7 +70,6 @@ int main(int argc, char* argv[])
   libxsmm_init();
 #endif
 
-  rbegin = libxsmm_timer_tick_rtc();
   start = begin = libxsmm_timer_tick();
   for (n >>= 1; 0 < n; n >>= 1) {
     if (EXIT_SUCCESS == timer_sleep(n)) {
@@ -102,19 +97,17 @@ int main(int argc, char* argv[])
     total += 1.0;
   }
   start = libxsmm_timer_tick();
-  rend = libxsmm_timer_tick_rtc();
 
   d = LIBXSMM_DELTA(total, (double)max_nseconds);
   if (delta < d) delta = d;
 
   result = (int)LIBXSMM_ROUND(100.0 * delta);
   if (0 > max_delta || result <= max_delta) {
-    const double r = libxsmm_timer_duration_rtc(rbegin, rend);
     libxsmm_cpuid_x86_info info;
     libxsmm_cpuid_x86(&info);
     d = libxsmm_timer_duration(begin, start);
-    fprintf(stderr, "seconds=%f..%f delta=%s%i%% interrupted=%u tsc=%sconstant\n",
-      r, d, 0 == result ? "" : (total <= d ? "+" : "-"), result, ninterrupts,
+    fprintf(stderr, "seconds=%f delta=%s%i%% interrupted=%u tsc=%sconstant\n",
+      d, 0 == result ? "" : (total <= d ? "+" : "-"), result, ninterrupts,
       info.constant_tsc ? "" : "non-");
     result = EXIT_SUCCESS;
   }

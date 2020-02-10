@@ -51,8 +51,7 @@
 #endif
 
 
-/* public symbol but no prototype exposed */
-LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
+LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
 {
   double result = (double)LIBXSMM_DELTA(tick0, tick1);
 #if defined(_WIN32)
@@ -72,8 +71,7 @@ LIBXSMM_API double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxs
 }
 
 
-/* public symbol but no prototype exposed */
-LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
+LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
 {
   libxsmm_timer_tickint result;
 #if defined(_WIN32)
