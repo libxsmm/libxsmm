@@ -10,10 +10,12 @@
 ******************************************************************************/
 #if !defined(INCLUDE_LIBXSMM_LAST)
 # include <libxsmm.h>
+# include <libxsmm_cpuid.h>
 #endif
 #include <math.h>
 #if defined(INCLUDE_LIBXSMM_LAST)
 # include <libxsmm.h>
+# include <libxsmm_cpuid.h>
 #endif
 
 #if !defined(USE_NOINIT)

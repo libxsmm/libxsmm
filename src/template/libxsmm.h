@@ -37,6 +37,7 @@
  * The following interfaces shall be explicitly included,
  * i.e., separate from libxsmm.h:
  * - libxsmm_intrinsics_x86.h
+ * - libxsmm_cpuid.h
  * - libxsmm_sync.h
  * - libxsmm_mhd.h
 */
