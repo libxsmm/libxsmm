@@ -298,24 +298,24 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*internal_realloc_fun)(void
 /* Scratch pool, which supports up to MAX_NSCRATCH allocation sites. */
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
 /* LIBXSMM_ALIGNED appears to contradict LIBXSMM_APIVAR, and causes multiple defined symbols (if below is seen in multiple translation units) */
-LIBXSMM_APIVAR_ARRAY(char internal_malloc_pool_buffer, (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) * sizeof(internal_malloc_pool_type) + (LIBXSMM_MALLOC_SCRATCH_PADDING) - 1);
+LIBXSMM_APIVAR_DEFINE(char internal_malloc_pool_buffer[(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)*sizeof(internal_malloc_pool_type)+(LIBXSMM_MALLOC_SCRATCH_PADDING)-1]);
 #endif
 /* Interval of bytes that permit interception (internal_malloc_kind) */
-LIBXSMM_APIVAR_ARRAY(size_t internal_malloc_limit, 2);
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_limit[2]);
 /* Maximum total size of the scratch memory domain. */
-LIBXSMM_APIVAR(size_t internal_malloc_scratch_limit);
-LIBXSMM_APIVAR(size_t internal_malloc_scratch_nmallocs);
-LIBXSMM_APIVAR(size_t internal_malloc_private_max);
-LIBXSMM_APIVAR(size_t internal_malloc_private_cur);
-LIBXSMM_APIVAR(size_t internal_malloc_public_max);
-LIBXSMM_APIVAR(size_t internal_malloc_public_cur);
-LIBXSMM_APIVAR(size_t internal_malloc_local_max);
-LIBXSMM_APIVAR(size_t internal_malloc_local_cur);
-LIBXSMM_APIVAR(int internal_malloc_recursive);
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_scratch_limit);
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_scratch_nmallocs);
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_private_max);
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_private_cur);
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_public_max);
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_public_cur);
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_local_max);
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_local_cur);
+LIBXSMM_APIVAR_DEFINE(int internal_malloc_recursive);
 /** 0: regular, 1/odd: intercept/scratch, otherwise: all/scratch */
-LIBXSMM_APIVAR(int internal_malloc_kind);
+LIBXSMM_APIVAR_DEFINE(int internal_malloc_kind);
 #if (0 != LIBXSMM_SYNC) && defined(LIBXSMM_MALLOC_SCRATCH_JOIN)
-LIBXSMM_APIVAR(int internal_malloc_join);
+LIBXSMM_APIVAR_DEFINE(int internal_malloc_join);
 #endif
 
 
@@ -884,7 +884,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_struct {
 # endif
   union { const void* dlsym; libxsmm_free_fun ptr;          } free;
 } internal_malloc_struct;
-LIBXSMM_APIVAR(internal_malloc_struct internal_malloc);
+LIBXSMM_APIVAR_DEFINE(internal_malloc_struct internal_malloc);
 
 #if defined(LIBXSMM_MALLOC_HOOK_QKMALLOC)
 LIBXSMM_API_INTERN void* internal_memalign_malloc(size_t /*alignment*/, size_t /*size*/);

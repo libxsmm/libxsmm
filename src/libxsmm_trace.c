@@ -43,9 +43,9 @@
 # if defined(_MSC_VER)
 #   pragma warning(pop)
 # endif
-LIBXSMM_APIVAR(volatile LONG internal_trace_initialized);
+LIBXSMM_APIVAR_DEFINE(volatile LONG internal_trace_initialized);
 #else
-LIBXSMM_APIVAR(volatile int internal_trace_initialized);
+LIBXSMM_APIVAR_DEFINE(volatile int internal_trace_initialized);
 # include <execinfo.h>
 # if defined(LIBXSMM_TRACE_DLINFO)
 #   include <dlfcn.h>
@@ -56,7 +56,7 @@ LIBXSMM_APIVAR(volatile int internal_trace_initialized);
 #   include <pthread.h>
 #   include <fcntl.h>
 #   if (0 != LIBXSMM_SYNC)
-LIBXSMM_APIVAR(pthread_key_t internal_trace_key);
+LIBXSMM_APIVAR_DEFINE(pthread_key_t internal_trace_key);
 #   endif
 LIBXSMM_API_INLINE void internal_delete(void* value)
 {
@@ -108,9 +108,9 @@ LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
 #endif
 
 
-LIBXSMM_APIVAR(int internal_trace_mindepth);
-LIBXSMM_APIVAR(int internal_trace_threadid);
-LIBXSMM_APIVAR(int internal_trace_maxnsyms);
+LIBXSMM_APIVAR_DEFINE(int internal_trace_mindepth);
+LIBXSMM_APIVAR_DEFINE(int internal_trace_threadid);
+LIBXSMM_APIVAR_DEFINE(int internal_trace_maxnsyms);
 
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE int libxsmm_trace_init(int /*filter_threadid*/, int /*filter_mindepth*/, int /*filter_maxnsyms*/);

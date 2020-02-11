@@ -24,11 +24,11 @@
 #endif
 
 
-/* definition of corresponding variables (no comma) */
-LIBXSMM_APIVAR_DEFINE(int libxsmm_trans_jit)
-LIBXSMM_APIVAR_DEFINE(float libxsmm_trans_tile_stretch)
-LIBXSMM_APIVAR_DEFINE(unsigned int* libxsmm_trans_mtile)
-LIBXSMM_APIVAR_DEFINE(int libxsmm_trans_taskscale)
+/* definition of corresponding variables */
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_trans_jit);
+LIBXSMM_APIVAR_PUBLIC_DEF(float libxsmm_trans_tile_stretch);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int* libxsmm_trans_mtile);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_trans_taskscale);
 
 
 LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)

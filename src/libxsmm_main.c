@@ -77,6 +77,9 @@
 #if !defined(LIBXSMM_AUTOPIN) && 1
 # define LIBXSMM_AUTOPIN
 #endif
+#if !defined(INTERNAL_DELIMS)
+# define INTERNAL_DELIMS ";,:"
+#endif
 
 #if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
 LIBXSMM_EXTERN int putenv(char*) LIBXSMM_THROW;
@@ -124,7 +127,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
   LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK) state;
 } internal_reglocktype;
 #   endif
-LIBXSMM_APIVAR_ARRAY(internal_reglocktype internal_reglock, INTERNAL_REGLOCK_MAXN);
+LIBXSMM_APIVAR_DEFINE(internal_reglocktype internal_reglock[INTERNAL_REGLOCK_MAXN]);
 # else /* RW-lock */
 #   if !defined(LIBXSMM_CACHE_MAXSIZE)
 #     define LIBXSMM_CACHE_MAXSIZE LIBXSMM_CAPACITY_CACHE
@@ -140,7 +143,7 @@ LIBXSMM_APIVAR_ARRAY(internal_reglocktype internal_reglock, INTERNAL_REGLOCK_MAX
 #       define LIBXSMM_REGLOCK LIBXSMM_LOCK_DEFAULT
 #     endif
 #   endif
-LIBXSMM_APIVAR(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
+LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 # endif
 #elif !defined(LIBXSMM_CACHE_MAXSIZE)
 # define LIBXSMM_CACHE_MAXSIZE LIBXSMM_CAPACITY_CACHE
@@ -151,72 +154,6 @@ LIBXSMM_APIVAR(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
     RESULT_INDEX = CACHE_SIZE; CACHE_SIZE = (unsigned char)(0 != (CACHE_SIZE) ? ((CACHE_SIZE) << 1) : 1)
 # define INTERNAL_FIND_CODE_CACHE_EVICT(RESULT_INDEX, CACHE_SIZE, CACHE_HIT) \
     RESULT_INDEX = (unsigned char)LIBXSMM_MOD2((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
-#endif
-
-
-/* definition of corresponding variables (no comma) */
-LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global)
-LIBXSMM_APIVAR_DEFINE(int libxsmm_nosync)
-
-
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
-  unsigned int ntry, ncol, njit, nsta;
-} internal_statistic_type;
-
-#if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_cache_entry_type {
-  libxsmm_descriptor keys[LIBXSMM_CACHE_MAXSIZE];
-  libxsmm_code_pointer code[LIBXSMM_CACHE_MAXSIZE];
-# if (!defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR))
-  unsigned int id; /* to invalidate */
-# endif
-  unsigned char size, hit;
-} internal_cache_entry_type;
-
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_cache_type {
-# if defined(LIBXSMM_CACHE_PAD)
-  char pad[LIBXSMM_UP2(sizeof(internal_cache_entry_type),LIBXSMM_CACHELINE)];
-# endif
-  internal_cache_entry_type entry;
-} internal_cache_type;
-
-# if defined(LIBXSMM_NTHREADS_USE)
-LIBXSMM_APIVAR(internal_cache_type* internal_cache_buffer);
-# endif
-#endif /*defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))*/
-
-/** Determines the try-lock property (1<N: disabled, N=1: enabled [N=0: disabled in case of RW-lock]). */
-LIBXSMM_APIVAR(int internal_reglock_count);
-LIBXSMM_APIVAR(size_t internal_registry_nbytes);
-LIBXSMM_APIVAR(unsigned int internal_registry_nleaks);
-LIBXSMM_APIVAR(libxsmm_descriptor* internal_registry_keys);
-LIBXSMM_APIVAR(libxsmm_code_pointer* internal_registry);
-LIBXSMM_APIVAR_ARRAY(internal_statistic_type internal_statistic[2/*DP/SP*/], 4/*sml/med/big/xxx*/);
-LIBXSMM_APIVAR(unsigned int internal_statistic_sml);
-LIBXSMM_APIVAR(unsigned int internal_statistic_med);
-LIBXSMM_APIVAR(unsigned int internal_statistic_mnk);
-LIBXSMM_APIVAR(unsigned int internal_statistic_num_gemv);
-LIBXSMM_APIVAR(unsigned int internal_statistic_num_mcopy);
-LIBXSMM_APIVAR(unsigned int internal_statistic_num_tcopy);
-LIBXSMM_APIVAR(unsigned int internal_statistic_num_trsm);
-LIBXSMM_APIVAR(unsigned int internal_statistic_num_trmm);
-LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
-LIBXSMM_APIVAR(const char* internal_build_state);
-
-/** Time stamp (startup time of library). */
-LIBXSMM_APIVAR(libxsmm_timer_tickint internal_timer_start);
-
-#if !defined(INTERNAL_DELIMS)
-# define INTERNAL_DELIMS ";,:"
-#endif
-
-#if defined(_WIN32)
-# define INTERNAL_SINGLETON(HANDLE) (NULL != (HANDLE))
-LIBXSMM_APIVAR(HANDLE internal_singleton_handle);
-#else
-# define INTERNAL_SINGLETON(HANDLE) (0 <= (HANDLE) && 0 != *internal_singleton_fname)
-LIBXSMM_APIVAR_ARRAY(char internal_singleton_fname, 64);
-LIBXSMM_APIVAR(int internal_singleton_handle);
 #endif
 
 #if (0 == LIBXSMM_SYNC)
@@ -252,6 +189,78 @@ LIBXSMM_APIVAR(int internal_singleton_handle);
 #   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr); }
 # endif
 #endif
+
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
+  unsigned int ntry, ncol, njit, nsta;
+} internal_statistic_type;
+
+#if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_cache_entry_type {
+  libxsmm_descriptor keys[LIBXSMM_CACHE_MAXSIZE];
+  libxsmm_code_pointer code[LIBXSMM_CACHE_MAXSIZE];
+# if (!defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR))
+  unsigned int id; /* to invalidate */
+# endif
+  unsigned char size, hit;
+} internal_cache_entry_type;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_cache_type {
+# if defined(LIBXSMM_CACHE_PAD)
+  char pad[LIBXSMM_UP2(sizeof(internal_cache_entry_type),LIBXSMM_CACHELINE)];
+# endif
+  internal_cache_entry_type entry;
+} internal_cache_type;
+
+# if defined(LIBXSMM_NTHREADS_USE)
+LIBXSMM_APIVAR_DEFINE(internal_cache_type* internal_cache_buffer);
+# endif
+#endif /*defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))*/
+
+/** Determines the try-lock property (1<N: disabled, N=1: enabled [N=0: disabled in case of RW-lock]). */
+LIBXSMM_APIVAR_DEFINE(int internal_reglock_count);
+LIBXSMM_APIVAR_DEFINE(size_t internal_registry_nbytes);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_registry_nleaks);
+LIBXSMM_APIVAR_DEFINE(libxsmm_descriptor* internal_registry_keys);
+LIBXSMM_APIVAR_DEFINE(libxsmm_code_pointer* internal_registry);
+LIBXSMM_APIVAR_DEFINE(internal_statistic_type internal_statistic[2/*DP/SP*/][4/*sml/med/big/xxx*/]);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_sml);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_med);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_mnk);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_gemv);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_mcopy);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_tcopy);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_trsm);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_trmm);
+LIBXSMM_APIVAR_DEFINE(int internal_gemm_auto_prefetch_locked);
+LIBXSMM_APIVAR_DEFINE(const char* internal_build_state);
+/** Time stamp (startup time of library). */
+LIBXSMM_APIVAR_DEFINE(libxsmm_timer_tickint internal_timer_start);
+
+#if defined(_WIN32)
+# define INTERNAL_SINGLETON(HANDLE) (NULL != (HANDLE))
+LIBXSMM_APIVAR_DEFINE(HANDLE internal_singleton_handle);
+#else
+# define INTERNAL_SINGLETON(HANDLE) (0 <= (HANDLE) && 0 != *internal_singleton_fname)
+LIBXSMM_APIVAR_DEFINE(char internal_singleton_fname[64]);
+LIBXSMM_APIVAR_DEFINE(int internal_singleton_handle);
+#endif
+
+/* definition of corresponding variables */
+LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_malloc_function libxsmm_default_malloc_fn);
+LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
+LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_free_function libxsmm_default_free_fn);
+LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_free_function libxsmm_scratch_free_fn);
+LIBXSMM_APIVAR_PRIVATE_DEF(const void* libxsmm_default_allocator_context);
+LIBXSMM_APIVAR_PRIVATE_DEF(const void* libxsmm_scratch_allocator_context);
+LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_scratch_pools);
+LIBXSMM_APIVAR_PRIVATE_DEF(double libxsmm_scratch_scale);
+LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_statistic_num_spmdm);
+LIBXSMM_APIVAR_PRIVATE_DEF(double libxsmm_timer_scale);
+LIBXSMM_APIVAR_PRIVATE_DEF(int libxsmm_se);
+/* definition of corresponding variables */
+LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_nosync);
 
 
 LIBXSMM_API_INLINE void internal_update_mmstatistic(const libxsmm_gemm_descriptor* desc,

@@ -821,32 +821,32 @@ LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
 
 /** Global lock; create an own lock for an independent domain. */
-LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
+LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
 /** Determines whether a threaded implementation is synchronized or not. */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_nosync);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_nosync);
 
 /** Function used to allocate default memory. */
-LIBXSMM_APIVAR(libxsmm_malloc_function libxsmm_default_malloc_fn);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_function libxsmm_default_malloc_fn);
 /** Function used to allocate scratch memory. */
-LIBXSMM_APIVAR(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
 /** Function used to release default memory. */
-LIBXSMM_APIVAR(libxsmm_free_function libxsmm_default_free_fn);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_free_function libxsmm_default_free_fn);
 /** Function used to release scratch memory. */
-LIBXSMM_APIVAR(libxsmm_free_function libxsmm_scratch_free_fn);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_free_function libxsmm_scratch_free_fn);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR(const void* libxsmm_default_allocator_context);
+LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_default_allocator_context);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR(const void* libxsmm_scratch_allocator_context);
+LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_scratch_allocator_context);
 /** Number of scratch memory pools used; clamped against internal maximum. */
-LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
+LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_scratch_pools);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
-LIBXSMM_APIVAR(double libxsmm_scratch_scale);
+LIBXSMM_APIVAR_PRIVATE(double libxsmm_scratch_scale);
 /** Counts the number of attempts to create an SPMDM-handle. */
-LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
+LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
 /** Number of seconds per RDTSC-cycle (zero or negative if RDTSC is not constant/available). */
-LIBXSMM_APIVAR(double libxsmm_timer_scale);
+LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 /** Security-enhanced environment. */
-LIBXSMM_APIVAR(int libxsmm_se);
+LIBXSMM_APIVAR_PRIVATE(int libxsmm_se);
 
 #endif /*LIBXSMM_MAIN_H*/
 

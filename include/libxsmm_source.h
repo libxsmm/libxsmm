@@ -17,9 +17,6 @@
 #if defined(LIBXSMM_BUILD)
 # error LIBXSMM_BUILD cannot be defined for the header-only LIBXSMM!
 #endif
-#if !defined(LIBXSMM_API)
-# define LIBXSMM_API LIBXSMM_API_INLINE
-#endif
 
 /**
  * This header is intentionally called "libxsmm_source.h" since the followings block

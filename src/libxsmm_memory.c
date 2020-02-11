@@ -22,8 +22,8 @@
 
 
 #if !defined(LIBXSMM_MEMORY_SW)
-LIBXSMM_APIVAR_PRIVATE(unsigned char (*internal_diff_function)(const void*, const void*, unsigned char));
-LIBXSMM_APIVAR_PRIVATE(int (*internal_memcmp_function)(const void*, const void*, size_t));
+LIBXSMM_APIVAR_DEFINE(unsigned char (*internal_diff_function)(const void*, const void*, unsigned char));
+LIBXSMM_APIVAR_DEFINE(int (*internal_memcmp_function)(const void*, const void*, size_t));
 #endif
 
 

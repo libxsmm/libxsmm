@@ -52,10 +52,10 @@
 #endif
 
 
-LIBXSMM_APIVAR(FILE* internal_perf_fp);
+LIBXSMM_APIVAR_DEFINE(FILE* internal_perf_fp);
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
-LIBXSMM_APIVAR(void* internal_perf_marker);
-LIBXSMM_APIVAR(int internal_perf_codeidx);
+LIBXSMM_APIVAR_DEFINE(void* internal_perf_marker);
+LIBXSMM_APIVAR_DEFINE(int internal_perf_codeidx);
 #endif
 
 
