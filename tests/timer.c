@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
   if (delta < d) delta = d;
 
   result = (int)LIBXSMM_ROUND(100.0 * delta);
-  if (0 > max_delta || result <= max_delta) {
+  if (0 != max_delta && (0 > max_delta || result <= max_delta)) {
     libxsmm_cpuid_x86_info info;
     libxsmm_cpuid_x86(&info);
     d = libxsmm_timer_duration(begin, start);
