@@ -28,14 +28,6 @@ LIBXSMM_APIVAR_DEFINE(unsigned int internal_rng_state1[16]);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_rng_state2[16]);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_rng_state3[16]);
 
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-/* definition of corresponding variables */
-LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state0[16]);
-LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state1[16]);
-LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
-LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
-#endif
-
 
 LIBXSMM_API_INLINE void internal_rng_float_jump(uint32_t* state0, uint32_t* state1, uint32_t* state2, uint32_t* state3)
 {
