@@ -174,7 +174,7 @@ LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* 
     case LIBXSMM_MHD_ELEMTYPE_U8:   { size = 1; mhd_typename = "MET_UCHAR";  c_typename = "unsigned char";      } break;
     default: size = libxsmm_typesize((libxsmm_datatype)type); /* fall-back */
   }
-  assert(size <= LIBXSMM_MHD_MAX_ELEMSIZE);
+  LIBXSMM_ASSERT(size <= LIBXSMM_MHD_MAX_ELEMSIZE);
   if (NULL != ctypename) *ctypename = c_typename;
   if (NULL != typesize) *typesize = size;
   return mhd_typename;
@@ -227,7 +227,7 @@ LIBXSMM_API_INLINE int internal_mhd_readline(char buffer[], char split, size_t* 
 
   if (0 != isplit) {
     char* i = isplit;
-    assert(0 != key_end && 0 != value_begin);
+    LIBXSMM_ASSERT(0 != key_end && 0 != value_begin);
     while (buffer != i) { --i;  if (0 == isspace((int)(*i))) break; }
     *key_end = i - buffer + 1;
     i = isplit;
@@ -319,7 +319,7 @@ LIBXSMM_API int libxsmm_mhd_read_header(const char header_filename[], size_t fil
             const size_t len = strlen(header_filename);
             if (0 <= file_position && len < filename_max_length) {
               memcpy(filename, header_filename, len + 1);
-              assert(0 == filename[len]);
+              LIBXSMM_ASSERT(0 == filename[len]);
               *header_size = ftell(file);
             }
             else {
@@ -332,7 +332,7 @@ LIBXSMM_API int libxsmm_mhd_read_header(const char header_filename[], size_t fil
           const size_t len = strlen(value);
           if (len < filename_max_length) {
             memcpy(filename, value, len + 1);
-            assert(0 == filename[len]);
+            LIBXSMM_ASSERT(0 == filename[len]);
           }
           else {
             result = EXIT_FAILURE;
@@ -566,7 +566,7 @@ LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data, const size_t si
   int result = EXIT_SUCCESS;
   size_t typesize_stored;
 
-  assert(0 != pitch && 0 != typesize);
+  LIBXSMM_ASSERT(0 != pitch && 0 != typesize);
   if (0 != libxsmm_mhd_typename(type_stored, &typesize_stored, NULL/*ctypename*/)) {
     if (1 < ndims) {
       if (size[0] <= pitch[0]) {
@@ -688,7 +688,7 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
           pitch1 *= shape[i];
           size1 *= size[i];
         }
-        assert(size1 <= pitch1);
+        LIBXSMM_ASSERT(size1 <= pitch1);
         if (size1 != pitch1 && 0 == handle_element) {
           memset(data, 0, pitch1 * ncomponents * typesize);
         }
@@ -704,6 +704,7 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
       if (0 != header_size) result = fseek(file, (long)header_size, SEEK_SET); /* set file position to data section */
       if (EXIT_SUCCESS == result && datatype != type_stored) { /* conversion needed */
         if (1 == fread(minmax, typesize, 1, file)) {
+          LIBXSMM_ASSERT(typesize <= (LIBXSMM_MHD_MAX_ELEMSIZE));
           LIBXSMM_MEMCPY127(minmax + (LIBXSMM_MHD_MAX_ELEMSIZE), minmax, typesize);
           result = fseek(file, (long)header_size, SEEK_SET); /* reset file position */
           if (EXIT_SUCCESS == result) {
@@ -747,7 +748,7 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data, const si
 {
   int result = EXIT_SUCCESS;
 
-  assert(0 != pitch);
+  LIBXSMM_ASSERT(0 != pitch);
   if (1 < ndims) {
     if (size[0] <= pitch[0]) {
       const size_t d = ndims - 1;
