@@ -18,10 +18,15 @@ override PEDANTIC = 1
 BLAS ?= 1
 OMP ?= 1
 SYM ?= 1
-MIX ?= 1
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
+
+ifneq (0,$(shell echo "$$((100000>$(GCC_VERSION)))"))
+  MIX ?= 1
+else
+  MIX ?= 0
+endif
 
 OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
