@@ -819,10 +819,10 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 
 /** 2048-bit state for xoshiro128+ RNG */
 #define LIBXSMM_INTRINSICS_MM512_RNG_STATE(INDEX) (*(__m512i*)LIBXSMM_CONCATENATE(libxsmm_intrinsics_mm512_rng_state, INDEX))
-LIBXSMM_APIVAR_DEFPUB(unsigned int libxsmm_intrinsics_mm512_rng_state0[16]);
-LIBXSMM_APIVAR_DEFPUB(unsigned int libxsmm_intrinsics_mm512_rng_state1[16]);
-LIBXSMM_APIVAR_DEFPUB(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
-LIBXSMM_APIVAR_DEFPUB(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_intrinsics_mm512_rng_state0[16]);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_intrinsics_mm512_rng_state1[16]);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
 
 /** Generate random number in the interval [0, 1); not thread-safe.
  *  this is based on xoshiro128+ 1.0, e.g. http://prng.di.unimi.it/xoshiro128plus.c */

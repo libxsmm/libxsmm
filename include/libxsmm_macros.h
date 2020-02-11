@@ -302,8 +302,6 @@
 #define LIBXSMM_APIVAR_PRIVATE_DEF(DECL) LIBXSMM_ALIGNED(LIBXSMM_APIVAR(DECL, INTERN, LIBXSMM_API_NONE), LIBXSMM_CONFIG_CACHELINE)
 /** Private variable (declaration and definition) located in source file. */
 #define LIBXSMM_APIVAR_DEFINE(DECL) LIBXSMM_APIVAR_PRIVATE(DECL); LIBXSMM_APIVAR_PRIVATE_DEF(DECL)
-/** Public variable (declaration and definition) located in header file. */
-#define LIBXSMM_APIVAR_DEFPUB(DECL) LIBXSMM_APIVAR_PRIVATE(DECL); LIBXSMM_APIVAR_PRIVATE_DEF(DECL)
 /** Function decoration used for private functions. */
 #define LIBXSMM_API_INTERN LIBXSMM_API_EXTERN LIBXSMM_API_TARGET LIBXSMM_API_VISIBILITY(INTERN)
 /** Function decoration used for public functions of LIBXSMMext library. */
