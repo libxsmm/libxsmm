@@ -154,7 +154,11 @@
 
 /* LIBXSMM_ATTRIBUTE_USED: mark library functions as used to avoid warning */
 #if defined(__GNUC__) || defined(__clang__) || (defined(__INTEL_COMPILER) && !defined(_WIN32))
-# define LIBXSMM_ATTRIBUTE_COMMON LIBXSMM_ATTRIBUTE(common)
+# if defined(__cplusplus)
+#   define LIBXSMM_ATTRIBUTE_COMMON LIBXSMM_ATTRIBUTE(common)
+# else
+#   define LIBXSMM_ATTRIBUTE_COMMON
+# endif
 # define LIBXSMM_ATTRIBUTE_MALLOC LIBXSMM_ATTRIBUTE(malloc)
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
 # define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
