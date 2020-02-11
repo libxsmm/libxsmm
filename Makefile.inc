@@ -787,7 +787,8 @@ else # fallback
 endif
 endif
 
-COMMON ?= 1
+# COMMON ?= 1
+ifneq (,$(COMMON))
 ifneq (0,$(COMMON))
   ifneq (,$(call ctest,$(LD),-fcommon))
     CFLAGS += -fcommon
@@ -796,6 +797,7 @@ else
   ifneq (,$(call ctest,$(LD),-fno-common))
     CFLAGS += -fno-common
   endif
+endif
 endif
 
 FREEFORM ?= 1
