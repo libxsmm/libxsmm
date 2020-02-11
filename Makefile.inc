@@ -787,6 +787,17 @@ else # fallback
 endif
 endif
 
+COMMON ?= 1
+ifneq (0,$(COMMON))
+  ifneq (,$(call ctest,$(LD),-fcommon))
+    CFLAGS += -fcommon
+  endif
+else
+  ifneq (,$(call ctest,$(LD),-fno-common))
+    CFLAGS += -fno-common
+  endif
+endif
+
 FREEFORM ?= 1
 ifeq (,$(strip $(GFC)))
   ifneq (0,$(INTEL))
@@ -1039,7 +1050,9 @@ ifneq (0,$(INTEL))
   CPEDANTIC += -diag-disable 177,1419,1572,2547,10382
   CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
-    CSTD = -std=c99
+    ifeq (0,$(FORCE_CXX))
+      CSTD = -std=c99
+    endif
     CFLAGS += $(CSTD)
     ifeq (,$(strip $(GFC)))
       FSTD = -std03
@@ -1281,7 +1294,9 @@ else # GCC assumed
     endif
     FPEDANTIC += $(FWARNEXTRA)
     ifeq (1,$(PEDANTIC))
-      CSTD = -std=c99
+      ifeq (0,$(FORCE_CXX))
+        CSTD = -std=c99
+      endif
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       #CXXFLAGS += -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
@@ -1301,7 +1316,9 @@ else # GCC assumed
         CPEDANTIC += -Wno-long-long
         CXXFLAGS += $(CPEDANTIC)
       else # Clang may run into ICEs under macOS
-        CSTD = -std=c99
+        ifeq (0,$(FORCE_CXX))
+          CSTD = -std=c99
+        endif
         CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       endif
       #CXXFLAGS += -Wno-missing-field-initializers #-Wzero-as-null-pointer-constant

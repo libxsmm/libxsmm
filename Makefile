@@ -211,6 +211,9 @@ endif
 # avoid to link with C++ standard library
 FORCE_CXX = 0
 
+# GCC-10 style linkage (error for duplicate symbols)
+COMMON = 0
+
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
