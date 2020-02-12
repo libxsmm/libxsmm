@@ -1524,12 +1524,14 @@ ifeq (undefined,$(origin TARGET))
     ifeq (,$(filter Windows_NT Darwin,$(UNAME)))
     ifeq (,$(SPACK_ENV_PATH)) # not under Spack
     ifeq (3,$(GCC)) # pure GNU toolchain
+    ifneq (0,$(shell echo "$$((60000<=$(GCC_VERSION)))"))
     ifeq (0,$(DEPSTATIC))
       MAINTAINER = 1
     else ifneq (0,$(SHARED))
       ifneq (,$(SHARED))
         MAINTAINER = 1
       endif
+    endif
     endif
     endif
     endif
@@ -1897,16 +1899,16 @@ ifneq (,$(TBBROOT))
     TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(ILIBEXT))
     ifeq (,$(TBBLIB_MALLOC))
       ifneq (0,$(TBB_OLDRTL))
-        TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | head -n1)
+        TBB_LIBDIRGCC = $(shell ls -1 "$(TBB_LIBDIR)" | head -n1)
       else
-        TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tail -n1)
+        TBB_LIBDIRGCC = $(shell ls -1 "$(TBB_LIBDIR)" | tail -n1)
       endif
-      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(ILIBEXT))
+      TBB_LIBMALLOC = $(wildcard $(TBB_LIBDIR)/$(TBB_LIBDIRGCC)/libtbbmalloc.$(ILIBEXT))
     endif
-    ifneq (,$(TBBLIB_MALLOC))
+    ifneq (,$(TBB_LIBMALLOC))
       IFLAGS += -I"$(TBBROOT)/include"
       DFLAGS += -D__TBB
-      LDFLAGS += $(XLIB_BEGIN) $(call abslib,$(TBBLIB_MALLOC)) $(XLIB_END)
+      LDFLAGS += $(XLIB_BEGIN) $(call abslib,$(TBB_LIBMALLOC)) $(XLIB_END)
     endif
   else # TODO: Windows support
   endif
@@ -2216,12 +2218,13 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION% \
     CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR DFLAGS FINFO \
     ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE DLIBEXT DYNAMIC FLOCK LIBEXT \
-    ILIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS \
+    ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS FLDFLAGS \
     FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI ICX \
     GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS \
     SUITE OMPTEST BLASTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
     ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink uniq \
     ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
+    MKL_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
 
