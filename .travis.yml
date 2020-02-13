@@ -22,7 +22,7 @@ jobs:
   - os: osx
     osx_image: xcode11.2
     compiler: clang
-    env: DBG=1 OPT=1 SPACES=0 TIMER_DELTA=20
+    env: DBG=1 OPT=1 SPACES=0 TIMER_DELTA=-1
   - os: osx
     osx_image: xcode7.3
     compiler: clang
