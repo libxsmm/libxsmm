@@ -1025,12 +1025,6 @@ endif
 
 ifneq (0,$(INTEL))
   AR ?= xiar
-  CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
-  FCLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
-  ifneq (0,$(FORCE_CXX))
-    FCLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  endif
   ifneq (0,$(shell echo "$$((200000<=$(CXX_VERSION)))"))
     CXXFLAGS += -std=c++14
   else ifneq (0,$(COMPATIBLE))
@@ -1064,7 +1058,7 @@ ifneq (0,$(INTEL))
   CPEDANTIC += -diag-disable 177,1419,1572,2547,10382
   CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
-    ifeq (0,$(FORCE_CXX))
+    ifeq (,$(filter-out 0,$(FORCE_CXX)))
       CSTD = -std=c99
     endif
     CFLAGS += $(CSTD)
@@ -1079,7 +1073,7 @@ ifneq (0,$(INTEL))
     endif
   else ifneq (0,$(PEDANTIC))
     ifneq (,$(filter 0 1,$(ICX)))
-    ifeq (0,$(FORCE_CXX))
+    ifeq (,$(filter-out 0,$(FORCE_CXX)))
       CSTD = -std=c89
     endif
     endif
@@ -1097,7 +1091,7 @@ ifneq (0,$(INTEL))
     endif
   else
     ifneq (,$(filter 0 1,$(ICX)))
-    ifeq (0,$(FORCE_CXX))
+    ifeq (,$(filter-out 0,$(FORCE_CXX)))
       CSTD = -std=c89
     endif
     endif
@@ -1254,13 +1248,7 @@ ifneq (0,$(INTEL))
     CFLAGS += -D_Float128=__float128
   endif
 else # GCC assumed
-  FCLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
-  CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   LDFLAGS += $(XLIB_BEGIN) -lm $(XLIB_END)
-  ifneq (0,$(FORCE_CXX))
-    FCLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  endif
   ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
     ifneq (0,$(shell echo "$$((50000<=$(GCC_VERSION)))"))
       CXXFLAGS += -std=c++14
@@ -1308,7 +1296,7 @@ else # GCC assumed
     endif
     FPEDANTIC += $(FWARNEXTRA)
     ifeq (1,$(PEDANTIC))
-      ifeq (0,$(FORCE_CXX))
+      ifeq (,$(filter-out 0,$(FORCE_CXX)))
         CSTD = -std=c99
       endif
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long
@@ -1318,19 +1306,19 @@ else # GCC assumed
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
     else ifneq (0,$(PEDANTIC))
       ifneq (Darwin,$(UNAME))
-        ifeq (0,$(FORCE_CXX))
+        ifeq (,$(filter-out 0,$(FORCE_CXX)))
           CSTD = -std=c89
         endif
         CPEDANTIC += -Wno-long-long
         CXXFLAGS += $(CPEDANTIC)
       else ifneq (0,$(GCC))
-        ifeq (0,$(FORCE_CXX))
+        ifeq (,$(filter-out 0,$(FORCE_CXX)))
           CSTD = -std=c89
         endif
         CPEDANTIC += -Wno-long-long
         CXXFLAGS += $(CPEDANTIC)
       else # Clang may run into ICEs under macOS
-        ifeq (0,$(FORCE_CXX))
+        ifeq (,$(filter-out 0,$(FORCE_CXX)))
           CSTD = -std=c99
         endif
         CXXFLAGS += $(CPEDANTIC) -Wno-long-long
@@ -1341,7 +1329,7 @@ else # GCC assumed
     else ifeq (0,$(COMPATIBLE))
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
       FCFLAGS += $(FFORM_FLAG)
-      ifeq (0,$(FORCE_CXX))
+      ifeq (,$(filter-out 0,$(FORCE_CXX)))
         CSTD = -std=c89
       endif
     endif
@@ -1831,15 +1819,6 @@ else
 endif
 CINFO = C / C++ target: $(if $(CTARGET),$(CTARGET),<compiler default>)
 
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
-  LIBRT = -lrt
-endif
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -ldl 2>&1 | grep -q "\-ldl"; echo "$$?"))
-  LIBDL = -ldl
-endif
-ifneq (,$(strip $(LIBRT) $(LIBDL)))
-  LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
-endif
 ifeq (Darwin,$(UNAME))
   # avoid Homebrew based GCC AS; apply the flag only to the non-GCC components
   ifneq (0,$(GCC))
@@ -1851,6 +1830,26 @@ ifeq (Darwin,$(UNAME))
   endif
   FLDFLAGS += -Wa,-q
   FCFLAGS += -Wa,-q
+endif
+
+# (default) runtime library dependencies
+FCLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),c) $(XLIB_END)
+CXXLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),c) $(XLIB_END)
+ifneq (0,$(FORCE_CXX)) # incl. undefined
+  FCLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),stdc++) $(XLIB_END)
+  CLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),stdc++) $(XLIB_END)
+endif
+
+# LIBRT = $(call ldlib,$(LD),$(SLDFLAGS),rt)
+ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
+  LIBRT = -lrt
+endif
+# LIBDL = $(call ldlib,$(LD),$(SLDFLAGS),dl)
+ifneq (0,$(shell $(LD) $(SLDFLAGS) -ldl 2>&1 | grep -q "\-ldl"; echo "$$?"))
+  LIBDL = -ldl
+endif
+ifneq (,$(strip $(LIBRT) $(LIBDL)))
+  LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
 endif
 
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
@@ -2122,9 +2121,9 @@ else ifneq (0,$(BLAS)) # generic
         endif
       endif
       ifeq (0,$(PGI))
-        QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
-        ifneq (0,$(QUADMATH))
-          BLASTEST += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+        QUADMATH = $(call ldlib,$(LD),$(SLDFLAGS),quadmath)
+        ifneq (,$(QUADMATH))
+          BLASTEST += $(XLIB_BEGIN) $(QUADMATH) $(call ldlib,$(LD),$(SLDFLAGS),m) $(XLIB_END)
         endif
         ifneq (3,$(GCC))
           BLAS_LDFLAGS += $(BLASTEST)
@@ -2208,7 +2207,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS FLDFLAGS \
     FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI ICX \
     GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS \
-    SUITE OMPTEST BLASTEST PEDANTIC LIBDL CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
+    SUITE OMPTEST BLASTEST PEDANTIC LIBDL CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE QUADMATH \
     ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink uniq \
     ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
     MKL_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
