@@ -17,11 +17,12 @@ TR=$(command -v tr)
 
 if [ "" != "${MKDIR}" ] && [ "" != "${DIFF}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
   HERE=$(cd "$(dirname "$0")"; pwd -P)
-  if [ "$1" = "" ]; then
+  if [ "" = "$1" ]; then
     STATEFILE=${HERE}/.state
   else
     ${MKDIR} -p "$1"
     STATEFILE=$1/.state
+    shift
   fi
 
   STATE=$(${TR} '?' '\n' | ${TR} '"' \' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')
@@ -34,12 +35,17 @@ if [ "" != "${MKDIR}" ] && [ "" != "${DIFF}" ] && [ "" != "${SED}" ] && [ "" != 
     # only needed to execute body of .state-rule
     if [ "" != "${TOUCH}" ]; then ${TOUCH} $0; fi
   else # difference must be determined
-    STATE_DIFF=$(echo "${STATE}" | ${DIFF} --new-line-format="" --unchanged-line-format="" "${STATEFILE}" - 2>/dev/null)
+    if [ "$@" ]; then
+      EXCLUDE="-e /\($(echo "$@" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")\)/d"
+    fi
+    STATE_DIFF=$(echo "${STATE}" \
+               | ${DIFF} --new-line-format="" --unchanged-line-format="" "${STATEFILE}" - 2>/dev/null \
+               | ${SED} -e 's/=..*$//' -e 's/\"//g' -e '/^$/d' ${EXCLUDE})
     if [ "0" != "$?" ] || [ "" != "${STATE_DIFF}" ]; then
       if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
         printf "%s\n" "${STATE}" > "${STATEFILE}"
       fi
-      echo "$0 $(echo "${STATE_DIFF}" | ${SED} -e 's/=..*$//' -e 's/\"//g' -e '/^$/d')"
+      echo "$0 $(echo "${STATE_DIFF}")"
       # only needed to execute body of .state-rule
       if [ "" != "${TOUCH}" ]; then ${TOUCH} $0; fi
     fi
