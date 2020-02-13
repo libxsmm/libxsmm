@@ -10,12 +10,10 @@
 ******************************************************************************/
 #if !defined(INCLUDE_LIBXSMM_LAST)
 # include <libxsmm.h>
-# include <libxsmm_cpuid.h>
 #endif
 #include <math.h>
 #if defined(INCLUDE_LIBXSMM_LAST)
 # include <libxsmm.h>
-# include <libxsmm_cpuid.h>
 #endif
 
 #if !defined(USE_NOINIT)
@@ -64,6 +62,7 @@ int main(int argc, char* argv[])
   unsigned int n = max_nseconds, ninterrupts = 0;
   libxsmm_timer_tickint begin, start;
   double total = 0, delta = 0, d, t;
+  libxsmm_timer_info info;
   int result;
 
 #if !defined(USE_NOINIT)
@@ -74,7 +73,7 @@ int main(int argc, char* argv[])
   for (n >>= 1; 0 < n; n >>= 1) {
     if (EXIT_SUCCESS == timer_sleep(n)) {
       t = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      d = LIBXSMM_DELTA(t, (double)n);
+      d = 100.0 * LIBXSMM_DELTA(t, (double)n) / n;
       if (delta < d) delta = d;
       total += t;
     }
@@ -88,7 +87,7 @@ int main(int argc, char* argv[])
   start = libxsmm_timer_tick();
   if (EXIT_SUCCESS == timer_sleep(1)) {
     t = libxsmm_timer_duration(start, libxsmm_timer_tick());
-    d = LIBXSMM_DELTA(t, 1.0);
+    d = 100.0 * LIBXSMM_DELTA(t, 1.0);
     if (delta < d) delta = d;
     total += t;
   }
@@ -98,21 +97,22 @@ int main(int argc, char* argv[])
   }
   start = libxsmm_timer_tick();
 
-  d = LIBXSMM_DELTA(total, (double)max_nseconds);
+  d = 100.0 * LIBXSMM_DELTA(total, (double)max_nseconds) / max_nseconds;
   if (delta < d) delta = d;
 
-  result = (int)LIBXSMM_ROUND(100.0 * delta);
-  if (0 != max_delta && (0 > max_delta || result <= max_delta)) {
-    libxsmm_cpuid_x86_info info;
-    libxsmm_cpuid_x86(&info);
-    d = libxsmm_timer_duration(begin, start);
-    fprintf(stderr, "seconds=%f delta=%s%i%% interrupted=%u tsc=%sconstant\n",
-      d, 0 == result ? "" : (total <= d ? "+" : "-"), result, ninterrupts,
-      info.constant_tsc ? "" : "non-");
-    result = EXIT_SUCCESS;
-  }
-  else if ((MAX_TOLPERC) >= result) {
-    result = EXIT_SUCCESS;
+  result = libxsmm_get_timer_info(&info);
+  if (EXIT_SUCCESS == result) {
+    result = (int)LIBXSMM_ROUND(delta);
+    if ((0 != max_delta || 0 == info.tsc) && (0 > max_delta || result <= max_delta)) {
+      d = libxsmm_timer_duration(begin, start);
+      fprintf(stderr, "seconds=%f delta=%s%i%% interrupted=%u tsc=%s\n",
+        d, 0 == result ? "" : (total <= d ? "+" : "-"), result,
+        ninterrupts, 0 != info.tsc ? "true" : "false");
+      result = EXIT_SUCCESS;
+    }
+    else if ((MAX_TOLPERC) >= result) {
+      result = EXIT_SUCCESS;
+    }
   }
 
   return result;

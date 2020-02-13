@@ -16,6 +16,14 @@
 
 typedef unsigned long long libxsmm_timer_tickint;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_timer_info {
+  int tsc;
+} libxsmm_timer_info;
+
+
+/** Query timer properties. */
+LIBXSMM_API int libxsmm_get_timer_info(libxsmm_timer_info* info);
+
 /**
  * Returns the current clock tick of a monotonic timer source with
  * platform-specific resolution (not necessarily CPU cycles).
