@@ -206,7 +206,6 @@ LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
 # if defined(LIBXSMM_INTRINSICS_AVX512) /* __AVX512F__ */
   if ((LIBXSMM_RNG_SIMD_MIN << 4) <= count) { /* SIMD code path */
     internal_rng_f32_seq(rngs, count); /* pointer based function call */
-    return;
   }
   else /* scalar code path */
 # endif
