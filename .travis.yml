@@ -1,3 +1,4 @@
+os: linux # default
 language: cpp
 
 branches:
@@ -6,7 +7,7 @@ branches:
   - results
   - wip
 
-matrix:
+jobs:
   fast_finish: true
   include:
   - os: linux
@@ -17,12 +18,11 @@ matrix:
     env: INSTALL=install DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0 ANALYZE=1
   - os: linux
     compiler: clang
-    env: INSTALL=install DBG=1 LIBXSMM_TARGET=sse
-    env: LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
+    env: INSTALL=install DBG=1 LIBXSMM_TARGET=sse LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
   - os: osx
     osx_image: xcode11.2
     compiler: clang
-    env: DBG=1 OPT=1 SPACES=0 TIMER_DELTA=-1
+    env: DBG=1 OPT=1 SPACES=0 #TIMER_DELTA=-1
   - os: osx
     osx_image: xcode7.3
     compiler: clang

@@ -24,7 +24,7 @@
 # define MAX_NSECONDS 16
 #endif
 #if !defined(MAX_TOLPERC)
-# define MAX_TOLPERC 5
+# define MAX_TOLPERC 10
 #endif
 
 #if defined(_WIN32)
