@@ -685,6 +685,18 @@ else
   GCC_VERSION = 0
 endif
 
+MAINTAINER ?= 0
+# detect maintainer build and limit to SSE3
+ifeq (,$(filter Windows_NT Darwin,$(UNAME)))
+ifeq (,$(SPACK_ENV_PATH)) # not under Spack
+ifeq (3,$(GCC)) # pure GNU toolchain
+ifneq (0,$(shell echo "$$((60000<=$(GCC_VERSION)))"))
+  MAINTAINER = 1
+endif
+endif
+endif
+endif
+
 # Select code path (if not selected otherwise)
 CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
@@ -1517,26 +1529,8 @@ ifeq (undefined,$(origin TARGET))
     undefine CTARGET
   endif
   endif
-  MAINTAINER ?= 0
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
-    # detect maintainer build and limit to SSE3
-    ifeq (,$(filter Windows_NT Darwin,$(UNAME)))
-    ifeq (,$(SPACK_ENV_PATH)) # not under Spack
-    ifeq (3,$(GCC)) # pure GNU toolchain
-    ifneq (0,$(shell echo "$$((60000<=$(GCC_VERSION)))"))
-    ifeq (0,$(DEPSTATIC))
-      MAINTAINER = 1
-    else ifneq (0,$(SHARED))
-      ifneq (,$(SHARED))
-        MAINTAINER = 1
-      endif
-    endif
-    endif
-    endif
-    endif
-    endif
-    ifeq (,$(CTARGET))
     ifeq (3,$(AVX))
     ifneq (0,$(shell echo "$$(((0!=$(GCC) && 60000<=$(GCC_VERSION)) || \
           (0!=$(CLANG) && (40000<=$(CC_VERSION) || 0==$(CC_VERSION))) || \
@@ -1561,7 +1555,6 @@ ifeq (undefined,$(origin TARGET))
     endif
     endif
     endif
-    endif
     ifeq (,$(CTARGET)) # fallback to AVX2
     ifneq (,$(filter 2 3,$(AVX)))
       ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || (40800<=$(GCC_VERSION) && 0==$(PGI)) || 0==$(CC_VERSION)))"))
@@ -1579,15 +1572,26 @@ ifeq (undefined,$(origin TARGET))
     endif
     endif
     ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
-      ifeq (,$(CTARGET)) # SSE-4.2
-        ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX)))
+      ifeq (,$(CTARGET)) # SSE-4.2 or default-SSE
+        ifneq (,$(filter 01 02 03 10 11 12 13 40 41 42 43,$(SSE)$(AVX)))
           ifneq (0,$(GCC))
             ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
               ifeq (0,$(MAINTAINER))
                 CTARGET = -msse4.2
-              else
-                TARGET = -msse4.2
-                CTARGET = -msse3
+              else # maintainer build
+                ifeq (0,$(DEPSTATIC))
+                  TARGET = -msse4.2
+                  CTARGET = -msse3
+                else ifneq (0,$(SHARED))
+                  ifneq (,$(SHARED))
+                    TARGET = -msse4.2
+                    CTARGET = -msse3
+                  else
+                    CTARGET = -msse4.2
+                  endif
+                else
+                  CTARGET = -msse4.2
+                endif
               endif
             else
               CTARGET = -msse3
@@ -1607,24 +1611,7 @@ ifeq (undefined,$(origin TARGET))
         endif
       endif
       endif
-      # SSE=2 is implicitly present (64-bit ABI)
-      ifeq (,$(CTARGET)) # default SSE
-      ifneq (,$(filter 01 02 03 10 11 12 13,$(SSE)$(AVX)))
-        ifneq (0,$(GCC))
-          ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
-            ifeq (0,$(MAINTAINER))
-              CTARGET = -msse4.2
-            else
-              TARGET = -msse4.2
-              CTARGET = -msse3
-            endif
-          else
-            CTARGET = -msse3
-          endif
-        endif
-        CTARGET ?= -msse4.2
-      endif
-      endif
+      # stop here as SSE=2 is implicitly present (64-bit ABI)
     else ifneq (0,$(AVX))
       CTARGET = -march=native
     endif
@@ -1672,7 +1659,7 @@ else # revoke target flags
 endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
-  TARGET = $(CTARGET)
+  TARGET ?= $(CTARGET)
 endif
 
 ifeq (0,$(COMPATIBLE))
@@ -2221,7 +2208,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS FLDFLAGS \
     FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% MAINLIB LIBRT PGI ICX \
     GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS \
-    SUITE OMPTEST BLASTEST PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
+    SUITE OMPTEST BLASTEST PEDANTIC LIBDL CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED %STATE AVX SSE \
     ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink uniq \
     ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
     MKL_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
@@ -2230,10 +2217,13 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 
 DIRSTATE ?= .
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
+
 $(DIRSTATE)/.state: $(firstword $(PRESTATE))
-ifneq (0,$(STATIC))
 ifneq (STATIC2,$(word 2,$(PRESTATE))$(words $(PRESTATE)))
+ifneq (0,$(STATIC))
 	@rm -f $(OUTDIR)/lib*.$(DLIBEXT) $(OUTDIR)/lib*.$(DLIBEXT).*
+else # shared build
+	@rm -f $(OUTDIR)/lib*.$(SLIBEXT) $(OUTDIR)/lib*.$(SLIBEXT).*
 endif
 endif
 
