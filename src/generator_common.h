@@ -306,6 +306,8 @@
 #define LIBXSMM_ERR_JMPLBL_USED           90054
 #define LIBXSMM_ERR_TRANS_B               90055
 #define LIBXSMM_ERR_LDB_TRANS             90056
+#define LIBXSMM_ERR_VNNI_A                90057
+#define LIBXSMM_ERR_VNNI_B                90058
 
 #if defined(LIBXSMM_HANDLE_ERROR_QUIET)
 # define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE)
