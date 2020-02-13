@@ -37,7 +37,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_cpuid_x86_info {
 } libxsmm_cpuid_x86_info;
 
 /** Returns the target architecture and instruction set extensions. */
+#if defined(__cplusplus) /* note: stay compatible with TF */
+LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info = NULL);
+#else
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info);
+#endif
 
 /**
  * Similar to libxsmm_cpuid_x86, but conceptually not x86-specific.
