@@ -14,11 +14,11 @@
 #include <libxsmm.h>
 
 int main(int argc, char* argv[]) {
-  unsigned int N =     ( argc == 6 ) ? atoi(argv[1]) : 64;
-  unsigned int C =     ( argc == 6 ) ? atoi(argv[2]) : 512;
-  unsigned int K =     ( argc == 6 ) ? atoi(argv[3]) : 32;
-  double sparse_frac = ( argc == 6 ) ? atof(argv[4]) : 0.90;
-  unsigned int REPS  = ( argc == 6 ) ? atoi(argv[5]) : 1;
+  int N =     ( argc > 1 ) ? atoi(argv[1]) : 64;
+  int C =     ( argc > 2 ) ? atoi(argv[2]) : 512;
+  int K =     ( argc > 3 ) ? atoi(argv[3]) : 32;
+  double sparse_frac = ( argc > 4 ) ? atof(argv[4]) : 0.90;
+  unsigned int REPS  = ( argc > 5 ) ? atoi(argv[5]) : 1;
 
   unsigned int* l_rowptr = NULL;
   unsigned int* l_colidx = NULL;
@@ -28,8 +28,8 @@ int main(int argc, char* argv[]) {
   float* l_c_gold = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float* l_c_asm_csr = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float l_max_error = 0.0;
-  unsigned int l_k, l_n;
-  unsigned int l_i, l_j, l_jj;
+  int l_i, l_j, l_k, l_jj;
+  unsigned int l_n;
 
   LIBXSMM_VLA_DECL(2, float, l_p_a_de, l_a_de, K);
   LIBXSMM_VLA_DECL(3, float, l_p_b, l_b, N/16, 16);
@@ -38,8 +38,8 @@ int main(int argc, char* argv[]) {
 
   unsigned long long l_start, l_end;
   double l_total;
-  unsigned int NB, nb;
-  unsigned int nnz = 0;
+  int NB, nb;
+  int nnz = 0;
 
   if (argc != 6 && argc != 1) {
     fprintf( stderr, "arguments failure\n" );
@@ -66,9 +66,9 @@ int main(int argc, char* argv[]) {
   /* touch dense A */
   for ( l_i = 0; l_i < K; l_i++ ) {
     for ( l_j = 0; l_j < C; l_j++ ) {
-      double tmp = libxsmm_rng_f64();
+      float tmp = (float)libxsmm_rng_f64();
       if ( tmp < sparse_frac ) {
-        tmp = (double)0;
+        tmp = 0;
       } else {
         nnz++;
       }
@@ -81,8 +81,8 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < K; l_i++) {
     for ( l_j = 0; l_j < NB; l_j++) {
       for ( l_k = 0; l_k < nb; l_k++ ) {
-        LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, NB, nb) = (float)0.0;
-        LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csr,  l_i, l_j, l_k, NB, nb) = (float)0.0;
+        LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, NB, nb) = 0.f;
+        LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csr,  l_i, l_j, l_k, NB, nb) = 0.f;
       }
     }
   }
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
   l_start = libxsmm_timer_tick();
 #if 1
   for ( l_n = 0; l_n < REPS; l_n++) {
-    #pragma omp parallel for private(l_j, l_jj, l_i, l_k)
+#   pragma omp parallel for private(l_j, l_jj, l_i, l_k)
     for ( l_j = 0; l_j < K; l_j++) {
       for ( l_jj = 0; l_jj < C; l_jj++) {
         for ( l_i = 0; l_i < NB; l_i++) {
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
   for ( l_n = 0; l_n < REPS; l_n++) {
     for ( l_i = 0; l_i < N; l_i+= 64 ) {
 #if defined(_OPENMP)
-      #pragma omp parallel for private(l_j,l_k)
+#     pragma omp parallel for private(l_j,l_k)
 #endif
       for ( l_k = 0; l_k < K; l_k++) {
 #if defined(__AVX512F__)
@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
         __m256 c6 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+48] );
         __m256 c7 = _mm256_loadu_ps( &l_c_asm_csr[(l_k*N)+l_i+56] );
 #endif
-        for ( l_j = 0; l_j < l_rowptr[l_k+1] - l_rowptr[l_k]; l_j++) {
+        for ( l_j = 0; l_j < (int)(l_rowptr[l_k+1] - l_rowptr[l_k]); l_j++) {
 #if defined(__AVX512F__)
           c0 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i   ] ), c0 );
           c1 = _mm512_fmadd_ps( _mm512_set1_ps( l_a_sp_csr[l_rowptr[l_k] + l_j] ), _mm512_loadu_ps( &l_b[(l_colidx[l_rowptr[l_k] + l_j]*N) + l_i+16] ), c1 );
@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
   printf("%f GFLOPS for sparse (asm, csr)\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
   /* check for errors */
-  l_max_error = (float)0.0;
+  l_max_error = 0.f;
   for ( l_i = 0; l_i < NB; l_i++) {
     for ( l_j = 0; l_j < K; l_j++) {
       for ( l_k = 0; l_k < nb; l_k++ ) {

@@ -14,11 +14,11 @@
 #include <libxsmm.h>
 
 int main(int argc, char* argv[]) {
-  unsigned int N =     ( argc == 6 ) ? atoi(argv[1]) : 64;
-  unsigned int C =     ( argc == 6 ) ? atoi(argv[2]) : 512;
-  unsigned int K =     ( argc == 6 ) ? atoi(argv[3]) : 32;
-  double sparse_frac = ( argc == 6 ) ? atof(argv[4]) : 0.9;
-  unsigned int REPS  = ( argc == 6 ) ? atoi(argv[5]) : 1;
+  unsigned int N =     ( argc > 1 ) ? atoi(argv[1]) : 64;
+  unsigned int C =     ( argc > 2 ) ? atoi(argv[2]) : 512;
+  unsigned int K =     ( argc > 3 ) ? atoi(argv[3]) : 32;
+  double sparse_frac = ( argc > 4 ) ? atof(argv[4]) : 0.9;
+  unsigned int REPS  = ( argc > 5 ) ? atoi(argv[5]) : 1;
 
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
   printf("%f GFLOPS for sparse (asm, csc)\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
   /* check for errors */
-  l_max_error = (float)0.0;
+  l_max_error = 0.f;
   for ( l_i = 0; l_i < K; l_i++) {
     for ( l_j = 0; l_j < l_colptr[l_i+1]-l_colptr[l_i]; l_j++ ) {
 #if 0
