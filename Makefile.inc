@@ -606,7 +606,7 @@ ctest = $(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   echo "int main(void) { return 0; }" > $${INFILE} && \
   $1 $2 $${INFILE} -o /dev/null 2>/dev/null >/dev/null && echo "OK"; \
   rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null),$2)
-ldlib = $(call ctest,$1,$2,-l$3)
+ldlib = $(call ctest,$1 $2,-l$3)
 
 ifneq (,$(FORCE_CXX))
 ifneq (0,$(FORCE_CXX))
@@ -1840,14 +1840,8 @@ ifneq (0,$(FORCE_CXX)) # incl. undefined
   CLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),stdc++) $(XLIB_END)
 endif
 
-# LIBRT = $(call ldlib,$(LD),$(SLDFLAGS),rt)
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
-  LIBRT = -lrt
-endif
-# LIBDL = $(call ldlib,$(LD),$(SLDFLAGS),dl)
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -ldl 2>&1 | grep -q "\-ldl"; echo "$$?"))
-  LIBDL = -ldl
-endif
+LIBRT = $(call ldlib,$(LD),$(SLDFLAGS),rt)
+LIBDL = $(call ldlib,$(LD),$(SLDFLAGS),dl)
 ifneq (,$(strip $(LIBRT) $(LIBDL)))
   LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
 endif
