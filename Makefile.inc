@@ -1029,11 +1029,11 @@ ifneq (,$(strip $(LIBRT) $(LIBDL)))
   LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
 endif
 
-LIBGFORTRAN = $(call libpath,$(FC),$(SLDFLAGS),gfortran)
+LIBGFORTRAN = $(call libpath,$(FLD),$(SLDFLAGS),gfortran)
 ifneq (,$(strip $(LIBGFORTRAN)))
 ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
   FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
-  LIB_FLD = $(LIB_LD)
+  #LIB_FLD = $(LIB_LD)
   #FLD = $(LD)
 endif
 endif
