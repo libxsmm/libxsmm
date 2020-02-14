@@ -495,13 +495,17 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_ACQREAD_mutex(LOCK) LIBXSMM_LOCK_ACQUIRE_mutex(LOCK)
 #     define LIBXSMM_LOCK_RELREAD_mutex(LOCK) LIBXSMM_LOCK_RELEASE_mutex(LOCK)
 #     define LIBXSMM_LOCK_ATTR_TYPE_mutex pthread_mutexattr_t
+#if !defined(__linux__) || defined(__USE_UNIX98) || defined(__USE_XOPEN2K8)
 #     if defined(_DEBUG)
 #       define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) (LIBXSMM_EXPECT(0, pthread_mutexattr_init(ATTR)), \
-                      LIBXSMM_EXPECT(0, pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_ERRORCHECK)))
+                LIBXSMM_EXPECT(0, pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_ERRORCHECK)))
 #     else
 #       define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) (pthread_mutexattr_init(ATTR), \
-                          pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_NORMAL))
+                pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_NORMAL))
 #     endif
+#else
+#     define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) pthread_mutexattr_init(ATTR)
+#endif
 #     define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_EXPECT(0, pthread_mutexattr_destroy(ATTR))
 #   endif
 #   if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
