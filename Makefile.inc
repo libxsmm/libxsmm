@@ -269,14 +269,17 @@ ifneq (0,$(PYMOD))
     PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
     PYROOT = $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
     PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
+    PYLIB = $(call ldlib,$(LD),$(SLDFLAGS),python$(PYVERSION))
     ifneq (,$(PYINC))
-      LDFLAGS += -lpython$(PYVERSION)
+    ifneq (,$(PYLIB))
+      LDFLAGS += $(PYLIB)
       IFLAGS += -I"$(call qdir,$(PYINC))"
       DFLAGS += -D__PYTHON
       # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
       ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
         NOBLAS = 1
       endif
+    endif
     endif
   endif
   # Enable shared library (req. for Python module)
@@ -602,6 +605,8 @@ ifneq (,$(CCAR))
   endif
 endif
 
+uniqadd = $(filter-out $($2),$($1)) $(if $3,$3,$($2))
+uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
 ctest = $(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   echo "int main(void) { return 0; }" > $${INFILE} && \
   $1 $2 $${INFILE} -o /dev/null 2>/dev/null >/dev/null && echo "OK"; \
@@ -1014,37 +1019,35 @@ else
   endif
 endif
 
-# (default) runtime library dependencies
-FCLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),c) $(XLIB_END)
-CXXLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),c) $(XLIB_END)
-ifneq (0,$(FORCE_CXX)) # incl. undefined
-  FCLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),stdc++) $(XLIB_END)
-  CLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),stdc++) $(XLIB_END)
+LIBATOMIC ?= 0
+ifneq (0,$(THREADS))
+ifneq (0,$(LIBATOMIC))
+ifneq (,$(call ldlib,$(LD),$(SLDFLAGS),atomic))
+  LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),atomic)
+  DFLAGS += -DLIBXSMM_LIBATOMIC
 endif
-
-LIBRT = $(call ldlib,$(LD),$(SLDFLAGS),rt)
-LIBDL = $(call ldlib,$(LD),$(SLDFLAGS),dl)
-LIBM = $(call ldlib,$(LD),$(SLDFLAGS),m)
-ifneq (,$(strip $(LIBRT) $(LIBDL)))
-  LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
+endif
 endif
 
 LIBGFORTRAN = $(call libpath,$(FLD),$(SLDFLAGS),gfortran)
 ifneq (,$(strip $(LIBGFORTRAN)))
 ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
   FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
-  #LIB_FLD = $(LIB_LD)
-  #FLD = $(LD)
 endif
 endif
 
-LIBATOMIC ?= 0
-ifneq (0,$(THREADS))
-ifneq (0,$(LIBATOMIC))
-  DFLAGS += -DLIBXSMM_LIBATOMIC
-  LDFLAGS += -latomic
+LIBCPP = $(call ldlib,$(LD),$(SLDFLAGS),stdc++)
+LIBRT = $(call ldlib,$(LD),$(SLDFLAGS),rt)
+LIBDL = $(call ldlib,$(LD),$(SLDFLAGS),dl)
+LIBM = $(call ldlib,$(LD),$(SLDFLAGS),m)
+
+# (default) runtime library dependencies
+ifneq (0,$(FORCE_CXX)) # incl. undefined
+  FCLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),stdc++) $(XLIB_END)
+  CLDFLAGS += $(XLIB_BEGIN) $(LIBCPP) $(XLIB_END)
 endif
-endif
+FCLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),c) $(XLIB_END)
+CXXLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),c) $(XLIB_END)
 
 ifneq (0,$(INTEL))
   AR ?= xiar
@@ -1243,7 +1246,7 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(OMPFLAG_FORCE)
     CFLAGS += $(OMPFLAG_FORCE)
     ifneq (,$(strip $(GFC)))
-      LDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
+      LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),$(OMPRT)) $(XLIB_END)
     else
       LDFLAGS += $(OMPFLAG_FORCE)
     endif
@@ -1271,7 +1274,6 @@ ifneq (0,$(INTEL))
     CFLAGS += -D_Float128=__float128
   endif
 else # GCC assumed
-  LDFLAGS += $(XLIB_BEGIN) $(LIBM) $(XLIB_END)
   ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
     ifneq (0,$(shell echo "$$((50000<=$(GCC_VERSION)))"))
       CXXFLAGS += -std=c++14
@@ -1399,9 +1401,9 @@ else # GCC assumed
     endif
   endif
   ifeq (Windows_NT,$(UNAME))
-    LDFLAGS += $(XLIB_BEGIN) -ldbghelp $(XLIB_END)
+    LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),dbghelp) $(XLIB_END)
   else ifeq (FreeBSD,$(UNAME))
-    LDFLAGS += $(XLIB_BEGIN) -lexecinfo $(XLIB_END)
+    LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),execinfo) $(XLIB_END)
   endif
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
@@ -1412,7 +1414,7 @@ else # GCC assumed
       CXXFLAGS := -g $(CXXFLAGS) -fsanitize=thread -fno-omit-frame-pointer
       CFLAGS := -g $(CFLAGS) -fsanitize=thread -fno-omit-frame-pointer
       FCFLAGS := -g $(FCFLAGS) -fsanitize=thread -fno-omit-frame-pointer
-      LDFLAGS := -g $(LDFLAGS) -fsanitize=thread -ltsan -fno-omit-frame-pointer
+      LDFLAGS := -g $(LDFLAGS) -fsanitize=thread $(call ldlib,$(LD),$(SLDFLAGS),tsan) -fno-omit-frame-pointer
       #ELDFLAGS := -pie
     else
       ifneq (,$(filter 2 3,$(GCC)))
@@ -1981,7 +1983,7 @@ ifeq (1,$(MKL)) # sequential
   MKL_THREADS = sequential
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
-    BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(LIBM)"
+    BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(LIBM) $(LIBDL)"
   endif
   endif
 else ifneq (0,$(MKL)) # multi-threaded
@@ -1991,17 +1993,17 @@ else ifneq (0,$(MKL)) # multi-threaded
     ifneq (gnu,$(MKL_OMPRTL))
       BLAS_LDFLAGS += $(OMPLIB)
     else
-      BLAS_LDFLAGS += -lgomp
+      BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),gomp)
     endif
   else ifeq (gnu,$(OMPLIB)$(MKL_OMPRTL))
-    BLAS_LDFLAGS += -lgomp
+    BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),gomp)
   endif
   ifneq (0,$(THREADS))
-    BLAS_LDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
+    BLAS_LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),pthread) $(XLIB_END)
   endif
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
-    BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(LIBM)"
+    BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(LIBM) $(LIBDL)"
     ifeq (0,$(OMP))
       BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(OMPLIB)"
     endif
@@ -2014,7 +2016,6 @@ ifneq (0,$(MKL))
   else
     BLAS_IFLAGS += -I"$(call qdir,$(MKL_INCFILE))"
   endif
-  BLAS_LDFLAGS += $(XLIB_BEGIN) $(LIBM) $(XLIB_END)
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
       $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(ILIBEXT)) \
@@ -2097,7 +2098,7 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -framework Accelerate
       BLAS_FLAGS += -D__CBLAS
     else # fallback
-      BLAS_LDFLAGS += -lblas
+      BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),blas)
       BLASREF = 1
     endif
     BLASREF ?= 0
@@ -2106,7 +2107,7 @@ else ifneq (0,$(BLAS)) # generic
         ifneq (,$(LIBGFORTRAN))
           BLASTEST += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(LIBM) $(XLIB_END)
         else ifeq (3,$(GCC))
-          BLASTEST += $(XLIB_BEGIN) -lgfortran $(LIBM) $(XLIB_END)
+          BLASTEST += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
         endif
       endif
       ifeq (0,$(PGI))
@@ -2142,7 +2143,7 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_LDFLAGS += $(call abslib,$(if $(call qsuffix,$(BLASLIB)),$(BLASLIB),$(BLASLIB).$(BLASLIBEXT)))
       endif
     else # fallback
-      BLAS_LDFLAGS += -l$(BLASLIB)
+      BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),$(BLASLIB))
     endif
   endif
 endif
@@ -2175,6 +2176,17 @@ LDFLAGS := $(call cleanld,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
 CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
 FLDFLAGS := $(call cleanld,$(FLDFLAGS))
 
+LDFLAGS := $(call uniqmov,LDFLAGS,LIBCPP,$(XLIB_BEGIN) $(LIBCPP) $(XLIB_END))
+ifeq (0,$(INTEL))
+  LDFLAGS := $(call uniqadd,LDFLAGS,LIBM,$(XLIB_BEGIN) $(LIBM) $(XLIB_END))
+endif
+ifneq (0,$(MKL))
+  LDFLAGS := $(call uniqadd,LDFLAGS,LIBM,$(XLIB_BEGIN) $(LIBM) $(XLIB_END))
+endif
+LDFLAGS := $(call uniqadd,LDFLAGS,LIBRT,$(XLIB_BEGIN) $(LIBRT) $(XLIB_END))
+LDFLAGS := $(call uniqadd,LDFLAGS,LIBDL,$(XLIB_BEGIN) $(LIBDL) $(XLIB_END))
+LDFLAGS := $(call cleanld,$(LDFLAGS))
+
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
            %/.make
@@ -2197,7 +2209,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% DNOBLAS MAINLIB FLDFLAGS \
     GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND LIBDL LIBRT LIBM FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CSTD PGI ICX \
     SUITE OMPTEST BLASTEST PEDANTIC CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG FORTLIB UNUSED %STATE AVX SSE QUADMATH \
-    ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
+    uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
     ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
     MKL_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
