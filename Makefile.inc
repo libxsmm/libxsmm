@@ -2155,6 +2155,17 @@ cleanld = $(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | 
   -e "s/[[:space:]]$(XLIB_END)[[:space:]]$(XLIB_BEGIN)/ /g" \
   -e "s/\/\//\//g"))
 
+# common runtime libraries
+LDFLAGS := $(call uniqmov,LDFLAGS,LIBCPP,$(XLIB_BEGIN) $(LIBCPP) $(XLIB_END))
+ifeq (0,$(INTEL))
+  LDFLAGS := $(call uniqadd,LDFLAGS,LIBM,$(XLIB_BEGIN) $(LIBM) $(XLIB_END))
+endif
+ifneq (0,$(MKL))
+  LDFLAGS := $(call uniqadd,LDFLAGS,LIBM,$(XLIB_BEGIN) $(LIBM) $(XLIB_END))
+endif
+LDFLAGS := $(call uniqadd,LDFLAGS,LIBRT,$(XLIB_BEGIN) $(LIBRT) $(XLIB_END))
+LDFLAGS := $(call uniqadd,LDFLAGS,LIBDL,$(XLIB_BEGIN) $(LIBDL) $(XLIB_END))
+
 # no-BLAS flags: cleanup and extra flags
 NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
 NOBLAS_FCFLAGS := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
@@ -2165,27 +2176,15 @@ NOBLAS_LDFLAGS := $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
 NOBLAS_CLDFLAGS := $(call cleanld,$(CLDFLAGS))
 
 # regular flags: cleanup
-CXXFLAGS := $(call cleanup,$(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
-FCFLAGS := $(call cleanup,$(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
-CFLAGS := $(call cleanup,$(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
-DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
-IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
-CLDFLAGS := $(call cleanld,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
-#LDFLAGS := $(call cleanld,$(BLAS_LDFLAGS) $(NOBLAS_LDFLAGS))
-LDFLAGS := $(call cleanld,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
+CXXFLAGS := $(call cleanup,$(BLAS_CXXFLAGS) $(NOBLAS_CXXFLAGS))
+FCFLAGS := $(call cleanup,$(BLAS_FCFLAGS) $(NOBLAS_FCFLAGS))
+CFLAGS := $(call cleanup,$(BLAS_CFLAGS) $(NOBLAS_CFLAGS))
+DFLAGS := $(call cleanup,$(BLAS_FLAGS) $(NOBLAS_FLAGS))
+IFLAGS := $(call cleanup,$(BLAS_IFLAGS) $(NOBLAS_IFLAGS))
+CLDFLAGS := $(call cleanld,$(BLAS_CLDFLAGS) $(NOBLAS_CLDFLAGS))
+LDFLAGS := $(call cleanld,$(BLAS_LDFLAGS) $(NOBLAS_LDFLAGS))
 CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
 FLDFLAGS := $(call cleanld,$(FLDFLAGS))
-
-LDFLAGS := $(call uniqmov,LDFLAGS,LIBCPP,$(XLIB_BEGIN) $(LIBCPP) $(XLIB_END))
-ifeq (0,$(INTEL))
-  LDFLAGS := $(call uniqadd,LDFLAGS,LIBM,$(XLIB_BEGIN) $(LIBM) $(XLIB_END))
-endif
-ifneq (0,$(MKL))
-  LDFLAGS := $(call uniqadd,LDFLAGS,LIBM,$(XLIB_BEGIN) $(LIBM) $(XLIB_END))
-endif
-LDFLAGS := $(call uniqadd,LDFLAGS,LIBRT,$(XLIB_BEGIN) $(LIBRT) $(XLIB_END))
-LDFLAGS := $(call uniqadd,LDFLAGS,LIBDL,$(XLIB_BEGIN) $(LIBDL) $(XLIB_END))
-LDFLAGS := $(call cleanld,$(LDFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
