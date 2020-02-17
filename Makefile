@@ -1,6 +1,3 @@
-# Export all variables to sub-make processes.
-#.EXPORT_ALL_VARIABLES: #export
-
 # ROOTDIR avoid abspath to match Makefile targets
 ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
 INCDIR = include
@@ -30,7 +27,6 @@ CFLAGS = $(RPM_OPT_FLAGS)
 CXXFLAGS = $(RPM_OPT_FLAGS)
 FCFLAGS = $(RPM_OPT_FLAGS)
 DFLAGS = -DLIBXSMM_BUILD
-IFLAGS = -I"$(INCDIR)" -I"$(BLDDIR)" -I"$(ROOTDIR)/$(SRCDIR)"
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS
 # A value of zero (0) populates a default threshold
@@ -217,6 +213,11 @@ COMMON = 0
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
+# necessary include directories
+IFLAGS += -I$(call quote,$(INCDIR))
+IFLAGS += -I$(call quote,$(BLDDIR))
+IFLAGS += -I$(call quote,$(ROOTDIR)/$(SRCDIR))
+
 # Version numbers according to interface (version.txt)
 ifneq (,$(PYTHON))
   VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
@@ -381,7 +382,7 @@ ifeq (,$(filter Darwin,$(UNAME)))
       LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
       OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
       DFLAGS += -DLIBXSMM_VTUNE
-      IFLAGS += -I"$(VTUNEROOT)/include"
+      IFLAGS += -I$(call quote,$(VTUNEROOT)/include)
       ifneq (0,$(INTEL))
         CXXFLAGS += -diag-disable 271
         CFLAGS += -diag-disable 271
