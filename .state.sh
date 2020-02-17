@@ -20,12 +20,12 @@ if [ "" != "${MKDIR}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
    [ "" != "${DIFF}" ] && [ "" != "${UNIQ}" ];
 then
   HERE=$(cd "$(dirname "$0")"; pwd -P)
-  if [ "" = "$1" ]; then
-    STATEFILE=${HERE}/.state
-  else
-    ${MKDIR} -p "$1"
+  if [ "" != "$1" ]; then
     STATEFILE=$1/.state
+    ${MKDIR} -p "$1"
     shift
+  else
+    STATEFILE=.state
   fi
 
   STATE=$(${TR} '?' '\n' | ${TR} '"' \' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')

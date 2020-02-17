@@ -2220,6 +2220,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 
 DIRSTATE ?= .
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
+$(DIRSTATE)/.state: $(firstword $(PRESTATE))
 
 %/.make:
 	@mkdir -p "$(call qbname,$@)"
