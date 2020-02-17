@@ -615,7 +615,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_custom_f32_f32(libxsmm_dn
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
 #else /* should not happen */
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(kind); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -651,7 +651,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_custom_bf16_f32(libxsmm_d
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
 #else /* should not happen */
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(kind); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -718,7 +718,7 @@ libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_bwd = handle->gemm_bwd.x
   }
 #undef LIBXSMM_DNN_FC_BWD_USE_AVX512
 #else /* should not happen */
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(kind); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -742,7 +742,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_bf16_bf16_emu(l
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
 #else /* should not happen */
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(kind); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -771,7 +771,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_bf16_bf16(libxs
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
 #else /* should not happen */
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(kind); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -790,6 +790,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_custom
 
   /* check if all required tensors are bound */
   if (handle->grad_input == 0 || handle->grad_output == 0 ||
+      handle->reg_input  == 0 || handle->grad_filter == 0 ||
       handle->reg_filter == 0 || handle->scratch == 0         ) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
@@ -875,6 +876,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_k
 
   /* check if all required tensors are bound */
   if (handle->grad_input == 0 || handle->grad_output == 0 ||
+      handle->reg_input  == 0 || handle->grad_filter == 0 ||
       handle->reg_filter == 0 || handle->scratch == 0         ) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
@@ -976,6 +978,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_nhwc(l
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
   LIBXSMM_UNUSED( handle );
+  LIBXSMM_UNUSED( kind );
   LIBXSMM_UNUSED( start_thread );
   LIBXSMM_UNUSED( tid );
   return status;
