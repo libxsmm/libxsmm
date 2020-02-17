@@ -105,8 +105,8 @@ int main(int argc, char* argv[])
   if (argc > i) bk         = atoi(argv[i++]);
   if (argc > i) bc         = atoi(argv[i++]);
 
-  if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
-    printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only)\n");
+  if (type != 'A' && type != 'F' && type != 'B' && type != 'U' && type != 'M') {
+    printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only). 'M' (BPUP-fused only)\n");
     return -1;
   }
   if ( (fuse_type < 0) || (fuse_type > 5) ) {
@@ -185,10 +185,10 @@ int main(int argc, char* argv[])
     if (type == 'A' || type == 'F') {
       naive_fullyconnected_fused_fp(&naive_param, naive_input, naive_output, naive_filter, naive_bias);
     }
-    if (type == 'A' || type == 'B') {
+    if (type == 'A' || type == 'B' || type == 'M') {
       naive_fullyconnected_fused_bp(&naive_param, naive_delinput, naive_deloutput, naive_filter, naive_delbias, naive_output);
     }
-    if (type == 'A' || type == 'U') {
+    if (type == 'A' || type == 'U' || type == 'M') {
       naive_fullyconnected_wu(&naive_param, naive_input, naive_deloutput, naive_delfilter);
     }
     printf("##########################################\n");
@@ -446,6 +446,64 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &norms_upd);
     }
 
+    if ( (type == 'A' || type == 'M') && LIBXSMM_NEQ(0, check) ) {
+      printf("##########################################\n");
+      printf("# Correctness - BWDUPD (custom-Storage)  #\n");
+      printf("##########################################\n");
+
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid ) );
+      }
+
+      /* copy out data */
+      if ( format == 'L' ) {
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delinput,     (void*)naive_libxsmm_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delfilter,    (void*)naive_libxsmm_delfilter,    LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+      } else {
+        matrix_copy_NCNC_to_NC( delinput_libxsmm, naive_libxsmm_delinput, 1, nImg, nIFm, bn, bc );
+        matrix_copy_KCCK_to_KC( delfilter_libxsmm, naive_libxsmm_delfilter, nIFm, nOFm, bc, bk );
+      }
+
+      /* compare */
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput, 0, 0);
+      printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_bwd);
+      if ( (fuse_type == 1) || (fuse_type == 4) || (fuse_type == 5) ) {
+        libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nOFm, 1, naive_delbias, delbias_libxsmm, 0, 0);
+        printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+        printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+        printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+        printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+        printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+        printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+        printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+        libxsmm_matdiff_reduce(&diff, &norms_bwd);
+      }
+      libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter, 0, 0);
+      printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_upd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_upd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_upd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_upd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_upd);
+    }
+
     if (type == 'A' || type == 'F') {
       printf("##########################################\n");
       printf("#   Performance - FWD (custom-Storage)   #\n");
@@ -532,6 +590,38 @@ int main(int argc, char* argv[])
       l_total = libxsmm_timer_duration(l_start, l_end);
 
       gflop = (2.0*(double)nImg*(double)nIFm*(double)nOFm*(double)iters) / (1000*1000*1000);
+
+      printf("GFLOP  = %.5g\n", gflop/(double)iters);
+      printf("fp time = %.5g\n", ((double)(l_total/iters)));
+      printf("GFLOPS  = %.5g\n", gflop/l_total);
+
+      printf("PERFDUMP,UP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
+          nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+          norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
+    }
+
+    if (type == 'A' || type == 'M') {
+      printf("##########################################\n");
+      printf("# Performance - BWDUPD (custom-Storage)  #\n");
+      printf("##########################################\n");
+      l_start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#     pragma omp parallel private(i)
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+        for (i = 0; i < iters; ++i) {
+          libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
+        }
+      }
+      l_end = libxsmm_timer_tick();
+      l_total = libxsmm_timer_duration(l_start, l_end);
+
+      gflop = (4.0*(double)nImg*(double)nIFm*(double)nOFm*(double)iters) / (1000*1000*1000);
 
       printf("GFLOP  = %.5g\n", gflop/(double)iters);
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
