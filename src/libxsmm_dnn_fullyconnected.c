@@ -812,7 +812,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fullyconnected_create_ten
         layout->format = handle->desc.buffer_format;
         layout->tensor_type = LIBXSMM_DNN_RELU_MASK;
 
-        if ( (handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) > 0) {
+        if ( ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) || ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) > 0) ) {
           layout->datatype = LIBXSMM_DNN_DATATYPE_I8;
           layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(1*sizeof(libxsmm_dnn_tensor_dimtype));
           layout->dim_size = (unsigned int*) malloc(1*sizeof(unsigned int));
