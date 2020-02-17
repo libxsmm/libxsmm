@@ -2168,13 +2168,13 @@ LDFLAGS := $(call uniqadd,LDFLAGS,LIBRT,$(XLIB_BEGIN) $(LIBRT) $(XLIB_END))
 LDFLAGS := $(call uniqadd,LDFLAGS,LIBDL,$(XLIB_BEGIN) $(LIBDL) $(XLIB_END))
 
 # no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_FLAGS := $(call cleanup,$(DFLAGS))
-NOBLAS_IFLAGS := $(call cleanup,$(IFLAGS))
-NOBLAS_LDFLAGS := $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS := $(call cleanld,$(CLDFLAGS))
+NOBLAS_CXXFLAGS = $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS = $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS = $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_FLAGS = $(call cleanup,$(DFLAGS))
+NOBLAS_IFLAGS = $(call cleanup,$(IFLAGS))
+NOBLAS_LDFLAGS = $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS = $(call cleanld,$(CLDFLAGS))
 
 # regular flags: cleanup
 CXXFLAGS := $(call cleanup,$(BLAS_CXXFLAGS) $(NOBLAS_CXXFLAGS))
