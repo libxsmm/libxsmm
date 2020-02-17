@@ -43,7 +43,8 @@ endif
 MAKEINC = $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST)))
 
 ifeq (d,$(filter d,$(MAKEFLAGS)))
-  SHELL = bash -xv
+  #SHELL = bash -xv
+  SHELL += -xv
 endif
 
 ifeq (Windows_NT,$(OS))
@@ -225,9 +226,6 @@ SONAMELNK ?= 2
 # utilities to handle paths with spaces
 SPACES ?= 1
 
-# spaces are quoted
-QUOTED ?= 0
-
 REVERSION0 := [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*
 REVERSION1 := s/..* \($(REVERSION0)\)[ \S]*.*/\1/
 REVERSION2 := s/..* \([0-9]\{5\}[0-9]*\)[ \S]*.*/\1/
@@ -235,26 +233,25 @@ CHAR_OPEN := (
 CHAR_CLOSE := )
 CHAR_HASH := \#
 
-ifneq (0,$(QUOTED))
-  quote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/  *$$//;s/ /\\\ /g;s/\\\\\\\/\\\/g")
-else
-  quote = $(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
-endif
 ifneq (0,$(SPACES))
-  apath = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
+  quote = $(strip $(if $(filter 0 1,$(words $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})), \
+             $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}, \
+    "$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})"))
+  apath = $(shell export VAR=""$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})"" && \
     if [ ! -d "$${VAR}" ]; then cd "$$(dirname "$${VAR}" 2>/dev/null)" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}" 2>/dev/null)"; \
     else cd "$${VAR}" 2>/dev/null && pwd -P; fi)
-  afile = $(shell export VAR="$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
+  afile = $(shell export VAR=""$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})"" && \
     if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi)
   qapath = $(call quote,$(call apath,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qndir = $(call quote,$(call afile,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qdir = $(call quote,$(shell dirname "$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x" 2>/dev/null)/)
 else
+  quote = $(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
   qapath = $(abspath $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qndir = $(notdir $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qdir = $(dir $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 endif
-qsuffix = $(suffix $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+qsuffix = $(suffix $(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qbname = $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qname = $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
 
@@ -273,7 +270,7 @@ ifneq (0,$(PYMOD))
     ifneq (,$(PYINC))
     ifneq (,$(PYLIB))
       LDFLAGS += $(PYLIB)
-      IFLAGS += -I"$(call qdir,$(PYINC))"
+      IFLAGS += -I$(call qdir,$(PYINC))
       DFLAGS += -D__PYTHON
       # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
       ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
@@ -893,7 +890,7 @@ ifneq (Darwin,$(UNAME))
     XLNKOPT = -Wl,
   endif
   XLNKVERBOSE = --verbose
-  linkopt = $(if $1,$(XLNKOPT)$(if $2,$1="$2",$1))
+  linkopt = $(if $1,$(XLNKOPT)$(if $2,$1=$(call quote,$2),$1))
   abslibrpath = $(strip $(if \
     $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$(NULL),$1), \
     $(call linkopt,--rpath,$(call qdir,$(call qapath,$1)))))
@@ -908,14 +905,14 @@ else # OSX
     XLNKOPT = -Xlinker
   endif
   #XLNKVERBOSE = -t
-  linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) "$2",$1))
+  linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) $(call quote,$2),$1))
   abslibrpath = $(strip $(if \
     $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$(NULL),$1), \
     $(call linkopt,-rpath,$(call qdir,$(call qapath,$1)))))
 endif
 
 absliblpath = $(strip $(if $1, \
-  $(if $(findstring .$(ILIBEXT),$1),-L"$(call qdir,$(call qapath,$1))")))
+  $(if $(findstring .$(ILIBEXT),$1),-L$(call qdir,$(call qapath,$1)))))
 
 ifneq (0,$(ABSLIBS))
 #ifeq (0,$(DEPSTATIC))
@@ -934,12 +931,12 @@ ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
        -l$(patsubst lib%,%,$(call qname,$(call qndir,$1)))), \
-    $(if $(filter $(call qndir,$1),$(call qapath,$1)),"$(call qapath,$1)",$1)))
+    $(if $(filter $(call qndir,$1),$(call qapath,$1)),$(call qapath,$1),$1)))
 else # Cygwin/MinGW (static)
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(call qname,$(call qndir,$1)), \
        -l$(call qname,$(call qndir,$1))), \
-    $(if $(filter $(call qndir,$1),$(call qapath,$1)),"$(call qapath,$1)",$1)))
+    $(if $(filter $(call qndir,$1),$(call qapath,$1)),$(call qapath,$1),$1)))
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
@@ -966,22 +963,22 @@ ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
     solink = -o "$1.$2.$3.$4" $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
     ifneq (0,$(SONAMELNK))
-      solink += $(shell cd "$(call qdir,$1)" 2>/dev/null && \
+      solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
         ln -fs $(call qndir,$1.$2.$3.$4) $(call qndir,$1.$5))
     endif
     ifneq (0,$(shell echo "$$((1<$(SONAMELNK) || 0>$(SONAMELNK)))"))
-      solink += $(shell cd "$(call qdir,$1)" 2>/dev/null && \
+      solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
         ln -fs $(call qndir,$1.$5) $(call qndir,$1))
     endif
   else # MinGW
-    solink = -o "$1" $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
+    solink = -o $(call quote,$1) $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
   endif
 else # macOS
-  solink = -o "$(call qbname,$1).$2$(call qsuffix,$1)" \
+  solink = -o $(call qbname,$1).$2$(call qsuffix,$1) \
            -install_name $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) \
            -current_version $2.$3.$4 -compatibility_version $5
   ifneq (0,$(SONAMELNK))
-    solink += $(shell cd "$(call qdir,$1)" 2>/dev/null && \
+    solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
       ln -fs $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) $(call qndir,$1))
   endif
 endif
@@ -1876,14 +1873,14 @@ ifneq (,$(TBBROOT))
     TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(ILIBEXT))
     ifeq (,$(TBBLIB_MALLOC))
       ifneq (0,$(TBB_OLDRTL))
-        TBB_LIBDIRGCC = $(shell ls -1 "$(TBB_LIBDIR)" | head -n1)
+        TBB_LIBDIRGCC = $(shell ls -1 $(call quote,$(TBB_LIBDIR)) | head -n1)
       else
-        TBB_LIBDIRGCC = $(shell ls -1 "$(TBB_LIBDIR)" | tail -n1)
+        TBB_LIBDIRGCC = $(shell ls -1 $(call quote,$(TBB_LIBDIR)) | tail -n1)
       endif
       TBB_LIBMALLOC = $(wildcard $(TBB_LIBDIR)/$(TBB_LIBDIRGCC)/libtbbmalloc.$(ILIBEXT))
     endif
     ifneq (,$(TBB_LIBMALLOC))
-      IFLAGS += -I"$(TBBROOT)/include"
+      IFLAGS += -I$(call quote,$(TBBROOT)/include)
       DFLAGS += -D__TBB
       LDFLAGS += $(XLIB_BEGIN) $(call abslib,$(TBB_LIBMALLOC)) $(XLIB_END)
     endif
@@ -2012,9 +2009,9 @@ else ifneq (0,$(MKL)) # multi-threaded
 endif
 ifneq (0,$(MKL))
   ifeq (,$(MKL_INCFILE))
-    BLAS_IFLAGS += -I"$(MKLROOT)/include"
+    BLAS_IFLAGS += -I$(call quote,$(MKLROOT)/include)
   else
-    BLAS_IFLAGS += -I"$(call qdir,$(MKL_INCFILE))"
+    BLAS_IFLAGS += -I$(call qdir,$(MKL_INCFILE))
   endif
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
@@ -2066,6 +2063,9 @@ else ifneq (0,$(BLAS)) # generic
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
     ifeq (0,$(PGI))
       OPENBLAS := $(if $(BLASLIBFILE),1,0)
+    #else ifeq (Darwin,$(UNAME)) # Apple
+      #OPENBLAS := 0
+      #BLASREF = 0
     else # PGI
       OPENBLAS := 0
     endif
@@ -2073,13 +2073,13 @@ else ifneq (0,$(BLAS)) # generic
       # OpenBLAS also carries the CBLAS bits
       BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
       ifneq (,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
-        BLAS_FLAGS += -D__OPENBLAS77 -I"$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT)))))"
+        BLAS_FLAGS += -D__OPENBLAS77 -I$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT)))))
       else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
-        BLAS_FLAGS += -D__OPENBLAS77 -I"$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT)))))"
+        BLAS_FLAGS += -D__OPENBLAS77 -I$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT)))))
       else ifneq (,$(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))
-        BLAS_FLAGS += -D__OPENBLAS77 -I"$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT)))))"
+        BLAS_FLAGS += -D__OPENBLAS77 -I$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT)))))
       endif
-    else # BLAS (reference)
+    else ifneq (0,$(filter 0,$(BLASREF))) # BLAS (reference)
       BLAS_FLAGS += -D__BLAS
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
         BLASLIBFILE = $(call libpath,$(LD),$(BLASTEST),blas$(BLAS_BITS).dll)
@@ -2093,13 +2093,14 @@ else ifneq (0,$(BLAS)) # generic
       else # static
         BLAS_LDFLAGS += $(BLASLIBFILE)
       endif
-      BLASREF = 1
+      BLASREF ?= 1
     else ifneq (,$(call ctest,$(LD),-framework Accelerate)) # macOS
+      #EXCLUDE_VALUE += -framework Accelerate
       BLAS_LDFLAGS += -framework Accelerate
       BLAS_FLAGS += -D__CBLAS
     else # fallback
       BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),blas)
-      BLASREF = 1
+      BLASREF ?= 1
     endif
     BLASREF ?= 0
     ifneq (0,$(BLASREF)) # BLAS (reference)
@@ -2155,27 +2156,7 @@ cleanld = $(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | 
   -e "s/[[:space:]]$(XLIB_END)[[:space:]]$(XLIB_BEGIN)/ /g" \
   -e "s/\/\//\//g"))
 
-# no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_FLAGS := $(call cleanup,$(DFLAGS))
-NOBLAS_IFLAGS := $(call cleanup,$(IFLAGS))
-NOBLAS_LDFLAGS := $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS := $(call cleanld,$(CLDFLAGS))
-
-# regular flags: cleanup
-CXXFLAGS := $(call cleanup,$(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
-FCFLAGS := $(call cleanup,$(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
-CFLAGS := $(call cleanup,$(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
-DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
-IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
-CLDFLAGS := $(call cleanld,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
-#LDFLAGS := $(call cleanld,$(BLAS_LDFLAGS) $(NOBLAS_LDFLAGS))
-LDFLAGS := $(call cleanld,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
-CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
-FLDFLAGS := $(call cleanld,$(FLDFLAGS))
-
+# common runtime libraries
 LDFLAGS := $(call uniqmov,LDFLAGS,LIBCPP,$(XLIB_BEGIN) $(LIBCPP) $(XLIB_END))
 ifeq (0,$(INTEL))
   LDFLAGS := $(call uniqadd,LDFLAGS,LIBM,$(XLIB_BEGIN) $(LIBM) $(XLIB_END))
@@ -2185,7 +2166,26 @@ ifneq (0,$(MKL))
 endif
 LDFLAGS := $(call uniqadd,LDFLAGS,LIBRT,$(XLIB_BEGIN) $(LIBRT) $(XLIB_END))
 LDFLAGS := $(call uniqadd,LDFLAGS,LIBDL,$(XLIB_BEGIN) $(LIBDL) $(XLIB_END))
-LDFLAGS := $(call cleanld,$(LDFLAGS))
+
+# no-BLAS flags: cleanup and extra flags
+NOBLAS_CXXFLAGS = $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS = $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS = $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_FLAGS = $(call cleanup,$(DFLAGS))
+NOBLAS_IFLAGS = $(call cleanup,$(IFLAGS))
+NOBLAS_LDFLAGS = $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS = $(call cleanld,$(CLDFLAGS))
+
+# regular flags: cleanup
+CXXFLAGS := $(call cleanup,$(BLAS_CXXFLAGS) $(NOBLAS_CXXFLAGS))
+FCFLAGS := $(call cleanup,$(BLAS_FCFLAGS) $(NOBLAS_FCFLAGS))
+CFLAGS := $(call cleanup,$(BLAS_CFLAGS) $(NOBLAS_CFLAGS))
+DFLAGS := $(call cleanup,$(BLAS_FLAGS) $(NOBLAS_FLAGS))
+IFLAGS := $(call cleanup,$(BLAS_IFLAGS) $(NOBLAS_IFLAGS))
+CLDFLAGS := $(call cleanld,$(BLAS_CLDFLAGS) $(NOBLAS_CLDFLAGS))
+LDFLAGS := $(call cleanld,$(BLAS_LDFLAGS) $(NOBLAS_LDFLAGS))
+CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
+FLDFLAGS := $(call cleanld,$(FLDFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
@@ -2202,13 +2202,13 @@ objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION% \
-    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR DFLAGS FINFO \
-    ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE DLIBEXT DYNAMIC FLOCK LIBEXT \
-    ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS CWARNEXTRA \
-    FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% DNOBLAS MAINLIB FLDFLAGS \
-    GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP LIBFIND LIBDL LIBRT LIBM FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CSTD PGI ICX \
-    SUITE OMPTEST BLASTEST PEDANTIC CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG FORTLIB UNUSED %STATE AVX SSE QUADMATH \
+  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% %STATE MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% UNUSED AVX \
+    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR DFLAGS FINFO SSE \
+    ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE DLIBEXT DYNAMIC FLOCK LIBEXT ICX \
+    ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS LIBGFORTRAN PGI \
+    FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS \
+    LIBDEP LIBFIND LIBDL LIBRT LIBM GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CSTD CWARNEXTRA OMPTEST QUADMATH \
+    BLASDIR BLASLIBEXT BLASTEST BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN FMAIN CPEDANTIC FREEFORM FFORM_FLAG FORTLIB \
     uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
     ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
     MKL_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
@@ -2217,18 +2217,10 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 
 DIRSTATE ?= .
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
-
 $(DIRSTATE)/.state: $(firstword $(PRESTATE))
-ifneq (STATIC2,$(word 2,$(PRESTATE))$(words $(PRESTATE)))
-ifneq (0,$(STATIC))
-	@rm -f $(OUTDIR)/lib*.$(DLIBEXT) $(OUTDIR)/lib*.$(DLIBEXT).*
-else # shared build
-	@rm -f $(OUTDIR)/lib*.$(SLIBEXT) $(OUTDIR)/lib*.$(SLIBEXT).*
-endif
-endif
 
 %/.make:
-	@mkdir -p "$(call qbname,$@)"
+	@mkdir -p $(call qbname,$@)
 	@touch $@
 
 .make:

@@ -1,6 +1,3 @@
-# Export all variables to sub-make processes.
-#.EXPORT_ALL_VARIABLES: #export
-
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ..
 SRCDIR = .
@@ -11,7 +8,6 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = -DLIBXSMM_GEMM_CONST
-IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include" -I"$(DEPDIR)/src"
 
 # PEDANTIC=2: OpenBLAS headers can cause warnings
 override PEDANTIC = 1
@@ -21,6 +17,11 @@ SYM ?= 1
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
+
+# necessary include directories
+IFLAGS += -I$(call quote,$(INCDIR))
+IFLAGS += -I$(call quote,$(DEPDIR)/include)
+#IFLAGS += -I$(call quote,$(DEPDIR)/src)
 
 ifneq (0,$(shell echo "$$((100000>$(GCC_VERSION)))"))
   MIX ?= 1
