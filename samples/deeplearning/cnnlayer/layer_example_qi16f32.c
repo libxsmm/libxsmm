@@ -47,6 +47,8 @@
 int main(int argc, char* argv[])
 {
   float *naive_input, *naive_output, *naive_output_save, *naive_filter, *naive_filter_wu, *naive_output_bp, *naive_output_wu, *naive_libxsmm_output;
+  float *naive_input_tmp, *naive_output_tmp, *naive_output_bp_tmp, *naive_output_wu_tmp;
+
   float *naive_libxsmm_input, *naive_libxsmm_filter, *naive_input_save, *naive_filter_save;
   float *naive_bias, *naive_dbias, *dbias_libxsmm;
   float *output_libxsmm, *dinput_libxsmm, *dfilter_libxsmm, *bias_libxsmm;
@@ -272,7 +274,7 @@ int main(int argc, char* argv[])
   dbias_libxsmm         = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
 
   /* initialize data */
-  float *naive_input_tmp           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_input_tmp           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   if (padding_mode == 0 ) {
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
   } else {
@@ -291,8 +293,8 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  float *naive_output_bp_tmp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  float *naive_output_wu_tmp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_bp_tmp = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_wu_tmp = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   if (padding_mode == 0 ) {
     init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
     init_buf(naive_output_wu,      nImg*nOfm*ofhp*ofwp, 0, 0);
@@ -309,7 +311,7 @@ int main(int argc, char* argv[])
   copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
   zero_buf(naive_output_save,    nImg*nOfm*ofhp*ofwp);
 
-  float *naive_output_tmp          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_tmp          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   if (padding_mode == 0 ) {
     init_buf(naive_output,       nImg*nOfm*ofhp*ofwp, 0, 0);
   } else {

@@ -27,7 +27,7 @@
 
 int main(int argc, char* argv[])
 {
-  short *naive_input, *naive_filter;
+  short *naive_input, *naive_filter, *naive_input_tmp;
   int *naive_output_fp;
   int  *naive_libxsmm_output;
   short *input_libxsmm, *filter_libxsmm;
@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
   output_libxsmm        = (int*) libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(int), 2097152);
 
   /* initialize data */
-  short  *naive_input_tmp  = (short*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(short), 2097152);
+  naive_input_tmp  = (short*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(short), 2097152);
   zero_buf_int16(naive_input, nImg*nIfm*ifhp*ifwp);
   if (padding_mode == 0 ) {
     init_buf_int16(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
