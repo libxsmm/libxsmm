@@ -2221,15 +2221,6 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 DIRSTATE ?= .
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
 
-$(DIRSTATE)/.state: $(firstword $(PRESTATE))
-ifneq (STATIC2,$(word 2,$(PRESTATE))$(words $(PRESTATE)))
-ifneq (0,$(STATIC))
-	@rm -f $(OUTDIR)/lib*.$(DLIBEXT) $(OUTDIR)/lib*.$(DLIBEXT).*
-else # shared build
-	@rm -f $(OUTDIR)/lib*.$(SLIBEXT) $(OUTDIR)/lib*.$(SLIBEXT).*
-endif
-endif
-
 %/.make:
 	@mkdir -p "$(call qbname,$@)"
 	@touch $@
