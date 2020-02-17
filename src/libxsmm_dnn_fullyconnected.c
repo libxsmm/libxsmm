@@ -8,8 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Sasikanth Avancha (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_dnn_fullyconnected_weight_update.h"
-#include "libxsmm_dnn_fullyconnected_backward.h"
+#include "libxsmm_dnn_fullyconnected_backward_weight_update.h"
 #include "libxsmm_dnn_fullyconnected_forward.h"
 #include "libxsmm_main.h"
 
@@ -1074,20 +1073,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
                                              status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
                                            }
                                          } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+      case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+                                         {
                                            if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
-                                             status = libxsmm_dnn_fullyconnected_st_bwd_custom( handle, start_thread, tid );
+                                             status = libxsmm_dnn_fullyconnected_st_bwdupd_custom( handle, kind, start_thread, tid );
                                            } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) ) {
-                                             status = libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck( handle, start_thread, tid );
-                                           } else {
-                                             status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
-                                           }
-                                         } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
-                                           if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
-                                             status = libxsmm_dnn_fullyconnected_st_upd_custom( handle, start_thread, tid );
-                                           } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) ) {
-                                             status = libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck( handle, start_thread, tid );
+                                             status = libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck( handle, kind, start_thread, tid );
                                            } else {
                                              status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
                                            }
