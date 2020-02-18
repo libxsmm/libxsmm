@@ -237,10 +237,10 @@ ifneq (0,$(SPACES))
   quote = $(strip $(if $(filter 0 1,$(words $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})), \
              $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}, \
     "$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})"))
-  apath = $(shell export VAR=""$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})"" && \
+  apath = $(shell export "VAR=$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
     if [ ! -d "$${VAR}" ]; then cd "$$(dirname "$${VAR}" 2>/dev/null)" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}" 2>/dev/null)"; \
     else cd "$${VAR}" 2>/dev/null && pwd -P; fi)
-  afile = $(shell export VAR=""$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})"" && \
+  afile = $(shell export "VAR=$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
     if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi)
   qapath = $(call quote,$(call apath,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qndir = $(call quote,$(call afile,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
@@ -854,11 +854,7 @@ DYNAMIC ?= 0
 
 # CCE: resolve linker issue
 ifneq (0,$(DYNAMIC))
-ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
-    echo "int main(void) { return 0; }" > $${INFILE} && \
-    RESULT=$$($(CC) -dynamic $${INFILE} -o $${INFILE}.exe 2>&1); \
-    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+ifneq (,$(call ctest,$(LD),-dynamic))
   EXCLUDE_VALUE += -dynamic
   XLD := $(XLD) -dynamic
   FLD := $(FLD) -dynamic
