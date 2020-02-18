@@ -45,7 +45,9 @@ const int dbias_thr_end = ((ltid + 1) * dbias_chunksize < dbias_work) ? ((ltid +
 int ofm1 = 0, mb1 = 0, iteri = 0, iterj = 0;
 
 LIBXSMM_VLA_DECL(4, const element_output_type, doutput,   (element_output_type*)handle->grad_output->data,                        nBlocksOFm, bn, bk);
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
 LIBXSMM_VLA_DECL(4,       element_output_type, doutput2, ((element_output_type*)handle->scratch)+(handle->desc.C*handle->desc.K), nBlocksOFm, bn, bk);
+#endif
 
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_BIAS
 LIBXSMM_VLA_DECL(2,       float,                   dbias, (float*)              handle->grad_bias->data,                          handle->bk);
@@ -228,8 +230,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
 }
 
 if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
-  /* computing first logical thread */
-  const int ltid = tid - start_thread;
   /* number of tasks that could be run in parallel */
   const int work = nBlocksIFm * nBlocksOFm;
   /* compute chunk size */

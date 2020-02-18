@@ -25,7 +25,9 @@ void libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_single( libxsmm_generat
                                                                  const unsigned int                 i_n,
                                                                  const unsigned int                 i_m ) {
   /* compute packed loop trip count */
+#if 0
   unsigned int l_simd_packed_remainder = 0;
+#endif
   unsigned int l_simd_packed_iters = 0;
   unsigned int l_simd_packed_width = 0;
 
@@ -43,7 +45,9 @@ void libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_single( libxsmm_generat
       l_simd_packed_width = 8;
     }
   }
+#if 0
   l_simd_packed_remainder = i_packed_width % l_simd_packed_width;
+#endif
   l_simd_packed_iters = i_packed_width/l_simd_packed_width;
 
   /* set c accumulator to 0 */
@@ -216,7 +220,9 @@ void libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
   /* some helper variables */
   unsigned int l_i, l_max_m, l_mask_reg, l_mask_val;
   /* compute packed loop trip count */
+#if 0
   unsigned int l_simd_packed_remainder = 0;
+#endif
   unsigned int l_simd_packed_iters = 0;
   unsigned int l_simd_packed_width = 0;
 
@@ -234,7 +240,9 @@ void libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
       l_simd_packed_width = 8;
     }
   }
+#if 0
   l_simd_packed_remainder = i_packed_width % l_simd_packed_width;
+#endif
   l_simd_packed_iters = i_packed_width/l_simd_packed_width;
 
   /* we only generated for AVX512 for now, max m is 16; max_m is used for init and reduction */
