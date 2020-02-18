@@ -977,7 +977,8 @@ else # static
 	$(AR) -rs $@ $(NOBLAS_HST)
 endif
 
-DIRS_SAMPLES = $(call qdir,$(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
+# use dir not qdir to avoid quotes; also $(ROOTDIR)/$(SPLDIR) is relative
+DIRS_SAMPLES = $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
 	| grep -v /edge/repro/ \
