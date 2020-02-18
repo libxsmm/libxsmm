@@ -234,26 +234,25 @@ CHAR_CLOSE := )
 CHAR_HASH := \#
 
 ifneq (0,$(SPACES))
+  unquote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed -e 's/^[" ][" ]*//' -e 's/[" ][" ]*$$//')
   quote = $(strip $(if $(filter 0 1,$(words $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})), \
-             $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}, \
-    "$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})"))
-  apath = $(shell export "VAR=$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
+                                            $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}, \
+                            "$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})"))
+  qapath = $(call quote,$(shell export "VAR=$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
     if [ ! -d "$${VAR}" ]; then cd "$$(dirname "$${VAR}" 2>/dev/null)" 2>/dev/null && echo "$$(pwd -P)/$$(basename "$${VAR}" 2>/dev/null)"; \
-    else cd "$${VAR}" 2>/dev/null && pwd -P; fi)
-  afile = $(shell export "VAR=$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
-    if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi)
-  qapath = $(call quote,$(call apath,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qndir = $(call quote,$(call afile,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qdir = $(call quote,$(shell dirname "$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x" 2>/dev/null)/)
+    else cd "$${VAR}" 2>/dev/null && pwd -P; fi))
+  qndir = $(call quote,$(shell export "VAR=$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
+    if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi))
+  qdir = $(call quote,$(shell dirname "$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x" 2>/dev/null)/)
 else
-  quote = $(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
+  quote =  $(strip                $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
   qapath = $(abspath $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qndir = $(notdir $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qdir = $(dir $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qndir =  $(notdir  $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qdir =   $(dir     $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 endif
-qsuffix = $(suffix $(strip $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-qbname = $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-qname = $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
+qsuffix = $(suffix   $(strip      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+qbname =  $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+qname =   $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
 
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
@@ -2207,7 +2206,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN FMAIN \
     CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST \
     uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
-    ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
+    ctest applyif extname objname unquote quote qapath qndir qdir qsuffix qbname qname abslib \
     MKL_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
