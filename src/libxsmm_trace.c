@@ -399,6 +399,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         }
         else {
           char filename[] = "/tmp/.libxsmm_map." LIBXSMM_MKTEMP_PATTERN;
+          /* coverity[secure_temp] */
           fd = mkstemp(filename);
           if (0 <= fd) {
             if (0 == unlink(filename) && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
