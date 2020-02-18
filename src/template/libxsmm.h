@@ -466,7 +466,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descr
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor* descriptor,
-   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values);
+   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values, const unsigned int packed_width);
 
 /**
  * Code generation routine for row-major format B matrix which is multiplied by a dense packed matrix (each element holds a SIMD-width

@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
         mykernel[blk_idx] =
             libxsmm_create_xcsc_soa(l_xgemm_desc[blk_idx], b_colptr[blk_idx],
                                     b_rowidx[blk_idx],
-                                    (const void *)b_values[blk_idx]).smm;
+                                    (const void *)b_values[blk_idx], nb).smm;
     }
 #ifdef _OPENMP
 #   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c)

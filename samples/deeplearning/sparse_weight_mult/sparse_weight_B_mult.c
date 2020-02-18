@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
     NB, K, C, C, 0, K, alpha, beta, flags, prefetch);
 
   /* sparse routine */
-  mykernel_csc = libxsmm_create_xcsc_soa(l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp_csc).smm;
+  mykernel_csc = libxsmm_create_xcsc_soa(l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp_csc, 16).smm;
   mykernel_csr = libxsmm_create_xcsr_soa(l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp_csr).smm;
 
   l_start = libxsmm_timer_tick();

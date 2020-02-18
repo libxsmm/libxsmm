@@ -199,7 +199,8 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
                                               const char*                    i_arch,
                                               const unsigned int*            i_row_idx,
                                               const unsigned int*            i_column_idx,
-                                              const void*                    i_values );
+                                              const void*                    i_values,
+                                              const unsigned int             i_packed_width );
 
 /* @TODO change int based architecture value */
 LIBXSMM_API void libxsmm_generator_packed_gemm_ac_rm( libxsmm_generated_code*         io_generated_code,
