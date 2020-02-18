@@ -16,10 +16,6 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <inttypes.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #if !defined(LIBXSMM_NO_LIBM)
 # include <math.h>
 #endif
@@ -48,9 +44,9 @@
 #define LIBXSMM_GEMM_BATCHSCALE ((unsigned int)LIBXSMM_ROUND(sizeof(libxsmm_mmbatch_item) * (LIBXSMM_GEMM_MMBATCH_SCALE)))
 #endif
 #if defined(LIBXSMM_BUILD)
-# define LIBXSMM_GEMM_WEAK LIBXSMM_API_EXPORT LIBXSMM_ATTRIBUTE_WEAK
+# define LIBXSMM_GEMM_WEAK LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK
 #else
-# define LIBXSMM_GEMM_WEAK LIBXSMM_API_EXPORT
+# define LIBXSMM_GEMM_WEAK LIBXSMM_API
 #endif
 
 #if (0 != LIBXSMM_SYNC) /** Locks for the batch interface (duplicated C indexes). */
@@ -72,22 +68,43 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
   LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) state;
 } internal_gemm_locktype;
 # endif
-LIBXSMM_APIVAR_ARRAY(internal_gemm_locktype internal_gemm_lock, LIBXSMM_GEMM_MAXNLOCKS);
-LIBXSMM_APIVAR(unsigned int internal_gemm_nlocks); /* populated number of locks */
+LIBXSMM_APIVAR_DEFINE(internal_gemm_locktype internal_gemm_lock[LIBXSMM_GEMM_MAXNLOCKS]);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_gemm_nlocks); /* populated number of locks */
 #endif
 
+/* definition of corresponding variables */
+LIBXSMM_APIVAR_PUBLIC_DEF(/*volatile*/libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch_function);
+LIBXSMM_APIVAR_PUBLIC_DEF(/*volatile*/libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch_function);
+LIBXSMM_APIVAR_PUBLIC_DEF(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function);
+LIBXSMM_APIVAR_PUBLIC_DEF(/*volatile*/libxsmm_sgemm_function libxsmm_original_sgemm_function);
+LIBXSMM_APIVAR_PUBLIC_DEF(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv_function);
+LIBXSMM_APIVAR_PUBLIC_DEF(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function);
+/* definition of corresponding variables */
+LIBXSMM_APIVAR_PUBLIC_DEF(libxsmm_gemm_descriptor libxsmm_mmbatch_desc);
+LIBXSMM_APIVAR_PUBLIC_DEF(void* libxsmm_mmbatch_array);
+LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_lock);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_mmbatch_size);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_npargroups);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_taskgrain);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_tasks);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_wrap);
+
+LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
+/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
+
 /** Prefetch strategy for tiled GEMM. */
-LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type internal_gemm_tiled_prefetch);
+LIBXSMM_APIVAR_DEFINE(libxsmm_gemm_prefetch_type internal_gemm_tiled_prefetch);
 /** Vector width used for GEMM. */
-LIBXSMM_APIVAR(unsigned int internal_gemm_vwidth);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_gemm_vwidth);
 /** Limit the M-extent of the tile. */
-LIBXSMM_APIVAR(unsigned int internal_gemm_mlimit);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_gemm_mlimit);
 /** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR(float internal_gemm_nstretch);
+LIBXSMM_APIVAR_DEFINE(float internal_gemm_nstretch);
 /** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR(float internal_gemm_kstretch);
+LIBXSMM_APIVAR_DEFINE(float internal_gemm_kstretch);
 /** Determines if batch-reduce is enabled */
-LIBXSMM_APIVAR(int internal_gemm_batchreduce);
+LIBXSMM_APIVAR_DEFINE(int internal_gemm_batchreduce);
 
 
 #if defined(LIBXSMM_BUILD)

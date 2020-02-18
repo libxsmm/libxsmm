@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+#include <libxsmm_intrinsics_x86.h>
 
 /*#define DISABLE_NONTEMPORAL_STORES*/
 

@@ -76,15 +76,15 @@ void BlockSpMatStep2(int K, int C, int KB, int CB, unsigned int *colptr,
 }
 
 int main(int argc, char **argv) {
-    int N = (argc == 6) ? atoi(argv[1]) : 2048;
-    int C = (argc == 6) ? atoi(argv[2]) : 512;
-    int K = (argc == 6) ? atoi(argv[3]) : 512;
-    int NB = (argc == 6) ? atoi(argv[4]) : 32;
-    int CB = (argc == 6) ? atoi(argv[5]) : 128;
-    int KB = (argc == 6) ? atoi(argv[6]) : 128;
-    double sparse_frac = ( argc == 6 ) ? atof(argv[4]) : 0.90;
-    unsigned int SPAR = (argc == 6) ? atoi(argv[7]) : 90;
-    unsigned int REPS = (argc == 6) ? atoi(argv[8]) : 10;
+    int N = (argc > 1) ? atoi(argv[1]) : 2048;
+    int C = (argc > 2) ? atoi(argv[2]) : 512;
+    int K = (argc > 3) ? atoi(argv[3]) : 512;
+    int NB = (argc > 4) ? atoi(argv[4]) : 32;
+    int CB = (argc > 5) ? atoi(argv[5]) : 128;
+    int KB = (argc > 6) ? atoi(argv[6]) : 128;
+    double sparse_frac = (argc > 7) ? atof(argv[7]) : 0.90;
+    /*unsigned int SPAR = (argc > 8) ? atoi(argv[8]) : 90;*/
+    unsigned int REPS = (argc > 9) ? atoi(argv[9]) : 10;
     assert(K % KB == 0);
     assert(C % CB == 0);
     assert(N % NB == 0);
@@ -215,7 +215,7 @@ int main(int argc, char **argv) {
             }
         }
     }
-    // FWD
+    /* FWD */
     float alpha = 1.0;
     float beta = 1.0;
     libxsmm_descriptor_blob l_xgemm_blob;
@@ -232,10 +232,10 @@ int main(int argc, char **argv) {
         mykernel[blk_idx] =
             libxsmm_create_xcsc_soa(l_xgemm_desc[blk_idx], b_colptr[blk_idx],
                                     b_rowidx[blk_idx],
-                                    (const void *)b_values[blk_idx]).smm;
+                                    (const void *)b_values[blk_idx], nb).smm;
     }
 #ifdef _OPENMP
-#pragma omp parallel for collapse(2) private(k,n,c)
+#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c)
 #endif
     for (k = 0; k < K / KB; ++k) {
         for (n = 0; n < N / NB; ++n) {
@@ -246,7 +246,7 @@ int main(int argc, char **argv) {
             }
         }
     }
-    // check error
+    /* check error */
     float l_max_error = 0.0f;
     for (i = 0; i < N * K; ++i) {
         if (fabs(l_C[i] - l_C_gold[i]) > l_max_error) {
@@ -254,11 +254,11 @@ int main(int argc, char **argv) {
         }
     }
     printf("max error = %f\n", l_max_error);
-    // check performace
+    /* check performace */
     unsigned long long l_start = libxsmm_timer_tick();
     for (i = 0; i < REPS; ++i) {
 #ifdef _OPENMP
-#pragma omp parallel for collapse(2) private(k,n,c)
+#       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c)
 #endif
         for (k = 0; k < K / KB; ++k) {
             for (n = 0; n < N / NB; ++n) {
@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
     printf("%f GFLOPS for sparse (asm)\n",
            ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) /
                (l_total * 1.0e9));
-    // clean up
+    /* clean up */
     libxsmm_free(l_A);
     libxsmm_free(l_B);
     libxsmm_free(l_C);

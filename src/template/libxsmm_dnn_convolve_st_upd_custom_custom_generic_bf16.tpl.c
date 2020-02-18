@@ -145,7 +145,7 @@ libxsmm_blasint LDA = handle->ofmblock;
 libxsmm_blasint LDB = handle->input_pixels;
 libxsmm_blasint LDC = handle->ofmblock;
 int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
-int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
 
 const int img_work = handle->desc.N;
 const int img_chunksize = (img_work % handle->desc.threads == 0) ? (img_work / handle->desc.threads) : (img_work / handle->desc.threads) + 1;
@@ -270,7 +270,7 @@ if (handle->upd_linearized_pixels == 0) {
     LDB = handle->ifhp*handle->ifwp_extended;
     LDC = handle->ofmblock;
     prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
-    l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+    l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
     n_blocks = handle->batchreduce_h_pixels;
     br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
 
@@ -339,7 +339,7 @@ if (handle->upd_linearized_pixels == 0) {
     LDB = handle->ifhp*handle->ifwp_extended;
     LDC = handle->ofmblock;
     prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
-    l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+    l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
     n_blocks = handle->batchreduce_h_pixels;
     br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
 
@@ -448,7 +448,7 @@ if (handle->upd_linearized_pixels == 0) {
   LDB = handle->input_pixels;
   LDC = handle->ofmblock;
   prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
-  l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
 
   if (handle->use_hybrid_imgofm_parallelization == 1) {
     /* Here we are using batch-reduce kernel and hybrid minibatch/FM parallelization */

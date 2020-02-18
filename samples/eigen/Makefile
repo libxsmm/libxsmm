@@ -1,6 +1,3 @@
-# Export all variables to sub-make processes.
-#.EXPORT_ALL_VARIABLES: #export
-
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
 SRCDIR = .
@@ -11,7 +8,6 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = -DLIBXSMM_GEMM_CONST
-IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include"
 
 BLAS = 1
 OMP = 1
@@ -22,6 +18,10 @@ SSE = 0
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
+
+# necessary include directories
+IFLAGS += -I$(call quote,$(INCDIR))
+IFLAGS += -I$(call quote,$(DEPDIR)/include)
 
 OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
@@ -67,7 +67,7 @@ endif
 
 ifneq (,$(EIGENROOT))
   DFLAGS += -D__EIGEN
-  IFLAGS += -I"$(EIGENROOT)"
+  IFLAGS += -I$(call quote,$(EIGENROOT))
   EIGEN ?= 1
   ifneq (0,$(MKL))
     DFLAGS += -DEIGEN_USE_MKL_ALL

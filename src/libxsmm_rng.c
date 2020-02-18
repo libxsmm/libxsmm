@@ -8,18 +8,8 @@
 ******************************************************************************/
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-
 #include "libxsmm_rng.h"
 #include "libxsmm_main.h"
-#include <libxsmm_intrinsics_x86.h>
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #if !defined(LIBXSMM_RNG_DRAND48) && (!defined(_WIN32) && !defined(__CYGWIN__) && (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE)))
 # define LIBXSMM_RNG_DRAND48
@@ -31,12 +21,12 @@
 
 /* dispatched RNG functions (separate typedef for legacy Cray C++ needed) */
 typedef void (*internal_rng_f32_seq_fn)(float*, libxsmm_blasint);
-LIBXSMM_APIVAR(internal_rng_f32_seq_fn internal_rng_f32_seq);
+LIBXSMM_APIVAR_DEFINE(internal_rng_f32_seq_fn internal_rng_f32_seq);
 /* 2048-bit state for RNG */
-LIBXSMM_APIVAR_ARRAY(unsigned int internal_rng_state0, 16);
-LIBXSMM_APIVAR_ARRAY(unsigned int internal_rng_state1, 16);
-LIBXSMM_APIVAR_ARRAY(unsigned int internal_rng_state2, 16);
-LIBXSMM_APIVAR_ARRAY(unsigned int internal_rng_state3, 16);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_rng_state0[16]);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_rng_state1[16]);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_rng_state2[16]);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_rng_state3[16]);
 
 
 LIBXSMM_API_INLINE void internal_rng_float_jump(uint32_t* state0, uint32_t* state1, uint32_t* state2, uint32_t* state3)
@@ -216,7 +206,6 @@ LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
 # if defined(LIBXSMM_INTRINSICS_AVX512) /* __AVX512F__ */
   if ((LIBXSMM_RNG_SIMD_MIN << 4) <= count) { /* SIMD code path */
     internal_rng_f32_seq(rngs, count); /* pointer based function call */
-    return;
   }
   else /* scalar code path */
 # endif

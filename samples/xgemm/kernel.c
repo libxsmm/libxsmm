@@ -1010,6 +1010,7 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
+      l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_I32,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
@@ -1102,7 +1103,7 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_flags |= LIBXSMM_GEMM_FLAG_A_UNSIGNED;
+      l_flags |= LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_I8, LIBXSMM_GEMM_PRECISION_I32,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
@@ -1195,7 +1196,7 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED;
+      l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_I8, LIBXSMM_GEMM_PRECISION_I32,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
@@ -1288,7 +1289,7 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_C_UNSIGNED;
+      l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_C_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_I8, LIBXSMM_GEMM_PRECISION_I8,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
@@ -1386,6 +1387,7 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
+      l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_BF16, LIBXSMM_GEMM_PRECISION_F32,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
@@ -1487,6 +1489,7 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
+      l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_BF16, LIBXSMM_GEMM_PRECISION_BF16,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);

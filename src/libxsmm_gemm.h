@@ -19,11 +19,7 @@
 #if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && (!defined(__BLAS) || (0 != __BLAS))
 # define LIBXSMM_BLAS_WRAP_DYNAMIC
 #endif
-#if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
-# include <dlfcn.h>
-#endif
 #include <limits.h>
-#include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -91,9 +87,9 @@
     dlerror(); /* clear an eventual error status */ \
     libxsmm_blas_wrapper_dynamic_.chain = NEXT; \
     libxsmm_blas_wrapper_dynamic_.pfin = ((NULL == libxsmm_blas_wrapper_dynamic_.pfin) ? \
-      dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))) : NULL); \
+      dlsym(LIBXSMM_RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))) : NULL); \
     if (NULL == libxsmm_blas_wrapper_dynamic_.pfout || NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.chain()) { \
-      libxsmm_blas_wrapper_dynamic_.pfin = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
+      libxsmm_blas_wrapper_dynamic_.pfin = dlsym(LIBXSMM_RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
       /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pfout, LIBXSMM_ATOMIC_RELAXED);*/ \
       ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pfout : NULL); \
     } \
@@ -201,25 +197,19 @@ LIBXSMM_API_INTERN void libxsmm_smmbatch_blas(const char* transa, const char* tr
 LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** auto-batch descriptor (filter). */
-LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_descriptor libxsmm_mmbatch_desc);
+LIBXSMM_APIVAR_PUBLIC(libxsmm_gemm_descriptor libxsmm_mmbatch_desc);
 /** Records a batch of SMMs or is used for batch-reduce. */
-LIBXSMM_APIVAR_ALIGNED(void* libxsmm_mmbatch_array);
+LIBXSMM_APIVAR_PUBLIC(void* libxsmm_mmbatch_array);
 /** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */
-LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_lock);
+LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_lock);
 /** Maximum size of the recorded batch. */
-LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_mmbatch_size);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_mmbatch_size);
 /** Maximum number of parallelized batch-groups. */
-LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_npargroups);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_npargroups);
 /** Minimum batchsize per thread/task. */
-LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_taskgrain);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_taskgrain);
 /** Determines if OpenMP tasks are used. */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_tasks);
-
-/** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
-/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
-
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_tasks);
 /**
  * Intercepted GEMM
  * - [>=1 and  odd]: sequential and non-tiled (small problem sizes only)
@@ -228,7 +218,12 @@ LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
  * - [>=4 and even]: GEMV is intercepted; all problem sizes
  * - [0]: disabled
  */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_wrap);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_wrap);
+
+/** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_APIVAR_PRIVATE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
+/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_APIVAR_PRIVATE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 
 #endif /*LIBXSMM_GEMM_H*/
 

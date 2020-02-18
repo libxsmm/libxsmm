@@ -8,14 +8,12 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_sync.h>
 #include <libxsmm_mhd.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #if defined(_WIN32)
 # include <io.h>
 # if !defined(F_OK)

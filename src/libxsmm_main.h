@@ -12,6 +12,12 @@
 #define LIBXSMM_MAIN_H
 
 #include <libxsmm.h>
+/**
+ * TF includes src/libxsmm_main.h and uses LIBXSMM's sync primitives
+ * without including libxsmm_sync. However, libxsmm_sync.h shall be
+ * an explicit include separate from including libxsmm.h.
+ */
+#include "libxsmm_sync.h"
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
@@ -57,6 +63,21 @@
   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
     LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 # define LIBXSMM_INTERCEPT_DYNAMIC
+#endif
+
+#if defined(LIBXSMM_INTERCEPT_DYNAMIC)
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+# endif
+# include <dlfcn.h>
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(pop)
+# endif
+# if !defined(RTLD_NEXT)
+#   define LIBXSMM_RTLD_NEXT ((void*)-1l)
+# else
+#   define LIBXSMM_RTLD_NEXT RTLD_NEXT
+# endif
 #endif
 
 #if !defined(LIBXSMM_VERBOSITY_HIGH)
@@ -237,6 +258,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const unsigned int* column_ptr;
   const unsigned int* row_idx;
   const void* values;
+  unsigned int packed_width;
 } libxsmm_csc_soa_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
@@ -500,6 +522,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_dnn_tensor* grad_output;    /* grad output tensor */
   libxsmm_dnn_tensor* reg_filter;     /* filter tensor */
   libxsmm_dnn_tensor* grad_filter;    /* grad filter tensor */
+  libxsmm_dnn_tensor* reg_bias;       /* bias tensor */
+  libxsmm_dnn_tensor* grad_bias;      /* grad bais tensor */
+  libxsmm_dnn_tensor* relumask;       /* relumask */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
   int ofmblock;
@@ -785,7 +810,7 @@ LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_
 
 /** Calculates duration in seconds from given RTC ticks. */
 LIBXSMM_API_INTERN double libxsmm_timer_duration_rtc(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
-/** Returns the current tick of a (monotonic) platform-specific real-time clock. */
+/** Returns the current tick of platform-specific real-time clock. */
 LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
 /** Returns the current tick of a (monotonic) platform-specific counter. */
 LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_tsc(void);
@@ -797,34 +822,32 @@ LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
 
 /** Global lock; create an own lock for an independent domain. */
-LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
-/** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_target_archid);
+LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
 /** Determines whether a threaded implementation is synchronized or not. */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_nosync);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_nosync);
 
 /** Function used to allocate default memory. */
-LIBXSMM_APIVAR(libxsmm_malloc_function libxsmm_default_malloc_fn);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_function libxsmm_default_malloc_fn);
 /** Function used to allocate scratch memory. */
-LIBXSMM_APIVAR(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
 /** Function used to release default memory. */
-LIBXSMM_APIVAR(libxsmm_free_function libxsmm_default_free_fn);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_free_function libxsmm_default_free_fn);
 /** Function used to release scratch memory. */
-LIBXSMM_APIVAR(libxsmm_free_function libxsmm_scratch_free_fn);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_free_function libxsmm_scratch_free_fn);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR(const void* libxsmm_default_allocator_context);
+LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_default_allocator_context);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR(const void* libxsmm_scratch_allocator_context);
+LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_scratch_allocator_context);
 /** Number of scratch memory pools used; clamped against internal maximum. */
-LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
+LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_scratch_pools);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
-LIBXSMM_APIVAR(double libxsmm_scratch_scale);
+LIBXSMM_APIVAR_PRIVATE(double libxsmm_scratch_scale);
 /** Counts the number of attempts to create an SPMDM-handle. */
-LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
+LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
 /** Number of seconds per RDTSC-cycle (zero or negative if RDTSC is not constant/available). */
-LIBXSMM_APIVAR(double libxsmm_timer_scale);
+LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 /** Security-enhanced environment. */
-LIBXSMM_APIVAR(int libxsmm_se);
+LIBXSMM_APIVAR_PRIVATE(int libxsmm_se);
 
 #endif /*LIBXSMM_MAIN_H*/
 

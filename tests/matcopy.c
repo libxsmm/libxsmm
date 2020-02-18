@@ -8,17 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-#endif
-#include <stdlib.h>
-#include <assert.h>
-#if defined(_DEBUG)
-# include <stdio.h>
-#endif
-#if defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-#endif
+#include <libxsmm.h>
 
 #if !defined(ELEM_TYPE)
 # define ELEM_TYPE float

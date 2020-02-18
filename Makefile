@@ -1,6 +1,3 @@
-# Export all variables to sub-make processes.
-#.EXPORT_ALL_VARIABLES: #export
-
 # ROOTDIR avoid abspath to match Makefile targets
 ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
 INCDIR = include
@@ -30,7 +27,6 @@ CFLAGS = $(RPM_OPT_FLAGS)
 CXXFLAGS = $(RPM_OPT_FLAGS)
 FCFLAGS = $(RPM_OPT_FLAGS)
 DFLAGS = -DLIBXSMM_BUILD
-IFLAGS = -I"$(INCDIR)" -I"$(BLDDIR)" -I"$(ROOTDIR)/$(SRCDIR)"
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS
 # A value of zero (0) populates a default threshold
@@ -211,8 +207,16 @@ endif
 # avoid to link with C++ standard library
 FORCE_CXX = 0
 
+# GCC-10 style linkage (error for duplicate symbols)
+COMMON = 0
+
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
+
+# necessary include directories
+IFLAGS += -I$(call quote,$(INCDIR))
+IFLAGS += -I$(call quote,$(BLDDIR))
+IFLAGS += -I$(call quote,$(ROOTDIR)/$(SRCDIR))
 
 # Version numbers according to interface (version.txt)
 ifneq (,$(PYTHON))
@@ -331,8 +335,8 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_dnn_fusedbatchnorm.c libxsmm_dnn_fusedbatchnorm_forward.c libxsmm_dnn_fusedbatchnorm_backward.c \
           libxsmm_dnn_fusedgroupnorm.c libxsmm_dnn_fusedgroupnorm_forward.c libxsmm_dnn_fusedgroupnorm_backward.c \
           libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c libxsmm_dnn_pooling_backward.c libxsmm_dnn_convolution_forward.c \
-          libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c libxsmm_dnn_fullyconnected_backward.c \
-          libxsmm_dnn_fullyconnected_weight_update.c libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c)
+          libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c libxsmm_dnn_fullyconnected_backward_weight_update.c \
+          libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c)
 SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
           libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c)
 
@@ -378,7 +382,7 @@ ifeq (,$(filter Darwin,$(UNAME)))
       LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
       OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
       DFLAGS += -DLIBXSMM_VTUNE
-      IFLAGS += -I"$(VTUNEROOT)/include"
+      IFLAGS += -I$(call quote,$(VTUNEROOT)/include)
       ifneq (0,$(INTEL))
         CXXFLAGS += -diag-disable 271
         CFLAGS += -diag-disable 271
@@ -399,8 +403,8 @@ information = \
 	$(info $(CINFO)) \
 	$(if $(strip $(FC)),$(info $(FINFO)),$(NULL)) \
 	$(if $(strip $(FC)),$(NULL), \
-	$(if $(strip $(FC_VERSION_STRING)), \
-	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
+	$(if $(strip $(FC_VERSION)), \
+	$(info Fortran Compiler $(FC_VERSION) is outdated!), \
 	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
 	$(info --------------------------------------------------------------------------------)
 endif
@@ -579,6 +583,13 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(DIRSTATE)/.state $(ROOTDIR)/$(SRCD
 		$(ROOTDIR)/.github/install.sh; \
 	fi
 	@$(CP) $(filter $(ROOTDIR)/include/%.h,$(HEADERS)) $(INCDIR) 2>/dev/null || true
+ifneq (,$(filter-out 0 1 2 STATIC,$(words $(PRESTATE)) $(word 2,$(PRESTATE))))
+ifneq (0,$(STATIC)) # static
+	@rm -f $(OUTDIR)/libxsmm*.$(DLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT).*
+else # shared/dynamic
+	@rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(SLIBEXT).*
+endif
+endif
 ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
@@ -626,7 +637,7 @@ endif
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
 ifneq (,$(PYTHON))
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py
-	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py "$(call qapath,$(DIRSTATE)/.state)" $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+	@$(PYTHON) $(call quote,$(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py) $(call qapath,$(DIRSTATE)/.state) $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 else
 .PHONY: $(BLDDIR)/libxsmm_dispatch.h
 endif
@@ -836,7 +847,7 @@ build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB) $(OUTDIR)/module
 ifeq (0,$(STATIC))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(OBJFILES_GEN_LIB) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)) $(LIBRT)
+		$(OBJFILES_GEN_LIB) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 else # static
 	@rm -f $@
 	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
@@ -966,7 +977,8 @@ else # static
 	$(AR) -rs $@ $(NOBLAS_HST)
 endif
 
-DIRS_SAMPLES = $(call qdir,$(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
+# use dir not qdir to avoid quotes; also $(ROOTDIR)/$(SPLDIR) is relative
+DIRS_SAMPLES = $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
 	| grep -v /edge/repro/ \

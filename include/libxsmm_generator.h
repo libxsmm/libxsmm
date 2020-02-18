@@ -199,7 +199,8 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
                                               const char*                    i_arch,
                                               const unsigned int*            i_row_idx,
                                               const unsigned int*            i_column_idx,
-                                              const void*                    i_values );
+                                              const void*                    i_values,
+                                              const unsigned int             i_packed_width );
 
 /* @TODO change int based architecture value */
 LIBXSMM_API void libxsmm_generator_packed_gemm_ac_rm( libxsmm_generated_code*         io_generated_code,
@@ -245,9 +246,11 @@ void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_gen
                                          int                              i_arch );
 
 /** Initialization counter that can be used to check whether the library is initialized (!=0) or not (==0). */
-LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_ninit);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_ninit);
+/** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_target_archid);
 /** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_verbosity);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_verbosity);
 
 #endif /*LIBXSMM_GENERATOR_H*/
 

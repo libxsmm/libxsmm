@@ -30,10 +30,6 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <inttypes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
@@ -47,9 +43,9 @@
 # if defined(_MSC_VER)
 #   pragma warning(pop)
 # endif
-LIBXSMM_APIVAR(volatile LONG internal_trace_initialized);
+LIBXSMM_APIVAR_DEFINE(volatile LONG internal_trace_initialized);
 #else
-LIBXSMM_APIVAR(volatile int internal_trace_initialized);
+LIBXSMM_APIVAR_DEFINE(volatile int internal_trace_initialized);
 # include <execinfo.h>
 # if defined(LIBXSMM_TRACE_DLINFO)
 #   include <dlfcn.h>
@@ -60,7 +56,7 @@ LIBXSMM_APIVAR(volatile int internal_trace_initialized);
 #   include <pthread.h>
 #   include <fcntl.h>
 #   if (0 != LIBXSMM_SYNC)
-LIBXSMM_APIVAR(pthread_key_t internal_trace_key);
+LIBXSMM_APIVAR_DEFINE(pthread_key_t internal_trace_key);
 #   endif
 LIBXSMM_API_INLINE void internal_delete(void* value)
 {
@@ -105,15 +101,16 @@ LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 #   endif
 # endif
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
 
-LIBXSMM_APIVAR(int internal_trace_mindepth);
-LIBXSMM_APIVAR(int internal_trace_threadid);
-LIBXSMM_APIVAR(int internal_trace_maxnsyms);
+LIBXSMM_APIVAR_DEFINE(int internal_trace_mindepth);
+LIBXSMM_APIVAR_DEFINE(int internal_trace_threadid);
+LIBXSMM_APIVAR_DEFINE(int internal_trace_maxnsyms);
 
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE int libxsmm_trace_init(int /*filter_threadid*/, int /*filter_mindepth*/, int /*filter_maxnsyms*/);
@@ -402,6 +399,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         }
         else {
           char filename[] = "/tmp/.libxsmm_map." LIBXSMM_MKTEMP_PATTERN;
+          /* coverity[secure_temp] */
           fd = mkstemp(filename);
           if (0 <= fd) {
             if (0 == unlink(filename) && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {

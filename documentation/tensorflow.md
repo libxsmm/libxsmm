@@ -247,15 +247,17 @@ bazel-bin/tensorflow/core/kernels/sparse_matmul_op_test
 bazel run <all-build-flags-used-to-build-the-wheel> //tensorflow/python/kernel_tests:sparse_matmul_op_test
 ```
 
-As suggested in the overview, it is still possible to exercise TensorFlow with LIBXSMM as a compute engine for a very limited set of operators (2d forward/backward direct convolutions), which may be desired for testing and development purpose. To enable LIBXSMM's convolutions, the flags `--define tensorflow_xsmm_convolutions=1` and/or `--define tensorflow_xsmm_backward_convolutions=1` are supplied in addition to `--define tensorflow_xsmm=1`. It might be even possible to `--define eigen_xsmm=1` if not implied by the afore mentioned flags.
+As suggested in the overview, it is still possible to exercise TensorFlow with LIBXSMM as a compute engine for a very limited set of operators (2d forward/backward direct convolutions), which may be desired for testing and development purpose. To enable LIBXSMM's convolutions, the flags `--define tensorflow_xsmm_convolutions=1` and/or `--define tensorflow_xsmm_backward_convolutions=1` are supplied in addition to `--define tensorflow_xsmm=1`. It might be even possible to `--define eigen_xsmm=1` if not implied by the afore mentioned flags. Configuring MKL-DNN (`--config=mkl`) may take precedence over LIBXSMM, hence it is omitted.
 
 ```bash
-bazel build --config=mkl -c opt --copt=-O2 \
+bazel build -c opt --copt=-O2 \
   --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=0 --copt=-fopenmp-simd \
   --define tensorflow_xsmm_convolutions=1 \
   --define tensorflow_xsmm_backward_convolutions=1 \
   --define tensorflow_xsmm=1 --copt=-mfma --copt=-mavx2 \
-  //tensorflow/tools/pip_package:build_pip_package
+  //tensorflow/tools/pip_package:build_pip_package \
+  //tensorflow/core/kernels:sparse_matmul_op_test \
+  //tensorflow/core/kernels:conv_ops_test
 ```
 
 To build and test the CNN routines:

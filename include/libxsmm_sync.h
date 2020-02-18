@@ -38,7 +38,7 @@
 #endif
 
 #if !defined(LIBXSMM_GCC_BASELINE) && !defined(LIBXSMM_SYNC_LEGACY) && ((defined(_WIN32) && defined(__clang__)) || \
-    (defined(__GNUC__) && LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)))
+    (defined(__GNUC__) && LIBXSMM_VERSION2(4, 7) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)))
 # define LIBXSMM_GCC_BASELINE
 #endif
 
@@ -56,11 +56,12 @@
 # define LIBXSMM_SYNC_PAUSE
 #endif
 
-#if !defined(LIBXSMM_SYNC_SYSTEM) && ( \
+/* permit thread-unsafe */
+#if !defined(LIBXSMM_SYNC_NONE) && ( \
   (defined(__PGI) && (!defined(LIBXSMM_LIBATOMIC) || !defined(__STATIC))) || \
   (defined(_CRAYC) && !defined(__GNUC__)) || \
   (defined(__MINGW32__)))
-# define LIBXSMM_SYNC_SYSTEM
+# define LIBXSMM_SYNC_NONE
 #endif
 
 #if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP) && 0
@@ -70,7 +71,11 @@
 # define LIBXSMM_ATOMIC_ZERO_STORE
 #endif
 #if !defined(LIBXSMM_ATOMIC_LOCKTYPE)
-# define LIBXSMM_ATOMIC_LOCKTYPE char
+# if !defined(_WIN32) || 1
+#   define LIBXSMM_ATOMIC_LOCKTYPE char
+# else /* Windows */
+#   define LIBXSMM_ATOMIC_LOCKTYPE int
+# endif
 #endif
 
 typedef enum libxsmm_atomic_kind {
@@ -107,7 +112,7 @@ typedef enum libxsmm_atomic_kind {
           LIBXSMM_ASSERT_MSG(0 == *(DST_PTR), "LIBXSMM_NONATOMIC_RELEASE"); }
 #define LIBXSMM_NONATOMIC_SYNC(KIND) LIBXSMM_UNUSED(KIND)
 
-#if (0 == LIBXSMM_SYNC)
+#if (0 == LIBXSMM_SYNC) || defined(LIBXSMM_SYNC_NONE)
 # define LIBXSMM_ATOMIC(FN, BITS) FN
 # define LIBXSMM_ATOMIC_LOAD LIBXSMM_NONATOMIC_LOAD
 # define LIBXSMM_ATOMIC_STORE LIBXSMM_NONATOMIC_STORE
@@ -122,217 +127,199 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_ATOMIC_ACQUIRE LIBXSMM_NONATOMIC_ACQUIRE
 # define LIBXSMM_ATOMIC_RELEASE LIBXSMM_NONATOMIC_RELEASE
 # define LIBXSMM_ATOMIC_SYNC LIBXSMM_NONATOMIC_SYNC
-# define LIBXSMM_SYNC_CYCLE(DST_PTR, EXP_STATE, NPAUSE)
 # if !defined(LIBXSMM_SYNC_NPAUSE)
 #   define LIBXSMM_SYNC_NPAUSE 0
 # endif
-#else
-# if !defined(LIBXSMM_SYNC_SYSTEM) && (defined(LIBXSMM_GCC_BASELINE) || defined(LIBXSMM_LIBATOMIC) /* GNU's libatomic required */ \
-  || (defined(__GNUC__) && LIBXSMM_VERSION3(4, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)))
-#   if defined(LIBXSMM_LIBATOMIC)
-#     define LIBXSMM_ATOMIC(FN, BITS) LIBXSMM_CONCATENATE(LIBXSMM_ATOMIC, BITS)(FN)
-#     define LIBXSMM_ATOMIC8(FN) LIBXSMM_CONCATENATE(FN, 8)
-#     define LIBXSMM_ATOMIC16(FN) LIBXSMM_CONCATENATE(FN, 16)
-#     define LIBXSMM_ATOMIC32(FN) FN/*default*/
-#     define LIBXSMM_ATOMIC64(FN) LIBXSMM_CONCATENATE(FN, 64)
-#     if defined(__PGI)
-#       define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND)
-#       define LIBXSMM_ATOMIC_LOAD8(SRC_PTR, KIND) LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND)
-#       define LIBXSMM_ATOMIC_LOAD16(SRC_PTR, KIND) LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND)
-#       define LIBXSMM_ATOMIC_LOAD64(SRC_PTR, KIND) LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND)
-#       define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND)
-#       define LIBXSMM_ATOMIC_STORE8(DST_PTR, VALUE, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND)
-#       define LIBXSMM_ATOMIC_STORE16(DST_PTR, VALUE, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND)
-#       define LIBXSMM_ATOMIC_STORE64(DST_PTR, VALUE, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND)
-#     else
-#       define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_4(SRC_PTR, KIND)
-#       define LIBXSMM_ATOMIC_LOAD8(SRC_PTR, KIND) __atomic_load_1(SRC_PTR, KIND)
-#       define LIBXSMM_ATOMIC_LOAD16(SRC_PTR, KIND) __atomic_load_2(SRC_PTR, KIND)
-#       define LIBXSMM_ATOMIC_LOAD64(SRC_PTR, KIND) __atomic_load_8(SRC_PTR, KIND)
-#       define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_4(DST_PTR, (unsigned int)(VALUE), KIND)
-#       define LIBXSMM_ATOMIC_STORE8(DST_PTR, VALUE, KIND) __atomic_store_1(DST_PTR, (unsigned char)(VALUE), KIND)
-#       define LIBXSMM_ATOMIC_STORE16(DST_PTR, VALUE, KIND) __atomic_store_2(DST_PTR, (unsigned short)(VALUE), KIND)
-#       define LIBXSMM_ATOMIC_STORE64(DST_PTR, VALUE, KIND) __atomic_store_8(DST_PTR, (unsigned long long)(VALUE), KIND)
-#     endif
-#     define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) __atomic_fetch_or_4(DST_PTR, (unsigned int)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_OR8(DST_PTR, VALUE, KIND) __atomic_fetch_or_1(DST_PTR, (unsigned char)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_OR16(DST_PTR, VALUE, KIND) __atomic_fetch_or_2(DST_PTR, (unsigned short)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_OR64(DST_PTR, VALUE, KIND) __atomic_fetch_or_8(DST_PTR, (unsigned long long)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) __atomic_add_fetch_4(DST_PTR, (int)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_ADD_FETCH8(DST_PTR, VALUE, KIND) __atomic_add_fetch_1(DST_PTR, (signed char)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_ADD_FETCH16(DST_PTR, VALUE, KIND) __atomic_add_fetch_2(DST_PTR, (short)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_ADD_FETCH64(DST_PTR, VALUE, KIND) __atomic_add_fetch_8(DST_PTR, (long long)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) __atomic_sub_fetch_4(DST_PTR, (int)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_SUB_FETCH8(DST_PTR, VALUE, KIND) __atomic_sub_fetch_1(DST_PTR, (signed char)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_SUB_FETCH16(DST_PTR, VALUE, KIND) __atomic_sub_fetch_2(DST_PTR, (short)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_SUB_FETCH64(DST_PTR, VALUE, KIND) __atomic_sub_fetch_8(DST_PTR, (long long)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) __atomic_fetch_add_4(DST_PTR, (int)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_ADD8(DST_PTR, VALUE, KIND) __atomic_fetch_add_1(DST_PTR, (signed char)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, VALUE, KIND) __atomic_fetch_add_2(DST_PTR, (short)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) __atomic_fetch_add_8(DST_PTR, (long long)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) __atomic_fetch_sub_4(DST_PTR, (int)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_SUB8(DST_PTR, VALUE, KIND) __atomic_fetch_sub_1(DST_PTR, (signed char)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_SUB16(DST_PTR, VALUE, KIND) __atomic_fetch_sub_2(DST_PTR, (short)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) __atomic_fetch_sub_8(DST_PTR, (long long)(VALUE), KIND)
-#     define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) \
-              __atomic_compare_exchange_4(DST_PTR, &(OLDVAL), (NEWVAL), 0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
-#     define LIBXSMM_ATOMIC_CMPSWP8(DST_PTR, OLDVAL, NEWVAL, KIND) \
-              __atomic_compare_exchange_1(DST_PTR, &(OLDVAL), (NEWVAL), 0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
-#     define LIBXSMM_ATOMIC_CMPSWP16(DST_PTR, OLDVAL, NEWVAL, KIND) \
-              __atomic_compare_exchange_2(DST_PTR, &(OLDVAL), (NEWVAL), 0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
-#     define LIBXSMM_ATOMIC_CMPSWP64(DST_PTR, OLDVAL, NEWVAL, KIND) \
-              __atomic_compare_exchange_8(DST_PTR, &(OLDVAL), (NEWVAL), 0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
-#     if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
-#       define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (!__atomic_test_and_set(DST_PTR, KIND))
-#     endif
-#     if defined(__PGI)
-#       define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
-                LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND); } /* matches bit-width of LIBXSMM_ATOMIC_LOCKTYPE */
-#     else
-#       define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
-                __atomic_clear(DST_PTR, KIND); }
-#     endif
-#     define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
-#     if !defined(LIBXSMM_ATOMIC_ZERO_STORE)
-#       define LIBXSMM_ATOMIC_ZERO_STORE
-#     endif
-#   elif defined(LIBXSMM_GCC_BASELINE)
-#     define LIBXSMM_ATOMIC(FN, BITS) FN
-#     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)
-#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_n(DST_PTR, VALUE, KIND)
-#     if !defined(LIBXSMM_ATOMIC_ZERO_STORE)
-#       define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) do {} while (__atomic_and_fetch(DST_PTR, 0, KIND))
-#     endif
-#     define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) __atomic_fetch_or(DST_PTR, VALUE, KIND)
-#     define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) __atomic_add_fetch(DST_PTR, VALUE, KIND)
-#     define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) __atomic_sub_fetch(DST_PTR, VALUE, KIND)
-#     define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) __atomic_fetch_add(DST_PTR, VALUE, KIND)
-#     define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) __atomic_fetch_sub(DST_PTR, VALUE, KIND)
-#     define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
-#     if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
-#       define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (!__atomic_test_and_set(DST_PTR, KIND))
-#     endif
-#     define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
-              __atomic_clear(DST_PTR, KIND); }
-#     if 0 /* __atomic_thread_fence: incorrect behavior in libxsmm_barrier (even with LIBXSMM_ATOMIC_SEQ_CST) */
-#       define LIBXSMM_ATOMIC_SYNC(KIND) __atomic_thread_fence(KIND)
-#     else
-#       define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
-#     endif
-#   else /* GCC legacy atomics */
-#     define LIBXSMM_ATOMIC(FN, BITS) FN
-#     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
-#     if (LIBXSMM_X86_GENERIC <= LIBXSMM_STATIC_TARGET_ARCH)
-#       define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) { \
-                __asm__ __volatile__("" ::: "memory"); *(DST_PTR) = (VALUE); \
-                __asm__ __volatile__("" ::: "memory"); }
-#     else
-#       define LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND)
-#       define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) *(DST_PTR) = (VALUE)
-#     endif
-#     if !defined(LIBXSMM_ATOMIC_ZERO_STORE)
-#       define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) do {} while (__sync_and_and_fetch(DST_PTR, 0))
-#     endif
-#     define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) __sync_fetch_and_or(DST_PTR, VALUE)
-#     define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) __sync_add_and_fetch(DST_PTR, VALUE)
-#     define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) __sync_sub_and_fetch(DST_PTR, VALUE)
-#     define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) __sync_fetch_and_add(DST_PTR, VALUE)
-#     define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) __sync_fetch_and_sub(DST_PTR, VALUE)
-#     define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
-#     if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
-#       define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (0 == __sync_lock_test_and_set(DST_PTR, 1))
-#     endif
-#     define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
-              __sync_lock_release(DST_PTR); }
-#     define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
-#   endif
-#   if defined(LIBXSMM_ATOMIC_ZERO_STORE)
-#     define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
-#     define LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, 8)(DST_PTR, 0, KIND)
-#     define LIBXSMM_ATOMIC_STORE_ZERO16(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, 16)(DST_PTR, 0, KIND)
-#     define LIBXSMM_ATOMIC_STORE_ZERO64(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, 64)(DST_PTR, 0, KIND)
-#   endif
-#   if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
-#     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) /* matches bit-width of LIBXSMM_ATOMIC_LOCKTYPE */ \
-              (0 == LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(DST_PTR, 1, KIND))
-#   endif
-#   define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) \
-            LIBXSMM_ASSERT(1 == sizeof(LIBXSMM_ATOMIC_LOCKTYPE)); LIBXSMM_ASSERT(0 == LIBXSMM_MOD2((uintptr_t)(DST_PTR), 4)); \
-            while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(DST_PTR, 0/*free*/, NPAUSE); \
-            LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE")
-#   if !defined(LIBXSMM_SYNC_NPAUSE)
-#     define LIBXSMM_SYNC_NPAUSE 4096
-#   endif
-# elif defined(_WIN32) && !defined(LIBXSMM_SYNC_SYSTEM)
+#elif (defined(LIBXSMM_GCC_BASELINE) || defined(LIBXSMM_LIBATOMIC) /* GNU's libatomic required */ || \
+      (defined(__GNUC__) && LIBXSMM_VERSION2(4, 1) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)))
+# if defined(LIBXSMM_LIBATOMIC)
 #   define LIBXSMM_ATOMIC(FN, BITS) LIBXSMM_CONCATENATE(LIBXSMM_ATOMIC, BITS)(FN)
 #   define LIBXSMM_ATOMIC8(FN) LIBXSMM_CONCATENATE(FN, 8)
 #   define LIBXSMM_ATOMIC16(FN) LIBXSMM_CONCATENATE(FN, 16)
 #   define LIBXSMM_ATOMIC32(FN) FN/*default*/
 #   define LIBXSMM_ATOMIC64(FN) LIBXSMM_CONCATENATE(FN, 64)
-#   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) InterlockedOr((volatile LONG*)(SRC_PTR), 0)
-#   define LIBXSMM_ATOMIC_LOAD8(SRC_PTR, KIND) _InterlockedOr8((volatile char*)(SRC_PTR), 0)
-#   define LIBXSMM_ATOMIC_LOAD64(SRC_PTR, KIND) InterlockedOr64((volatile LONGLONG*)(SRC_PTR), 0)
-#   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) InterlockedExchange((volatile LONG*)(DST_PTR), (LONG)(VALUE))
-#   define LIBXSMM_ATOMIC_STORE8(DST_PTR, VALUE, KIND) InterlockedExchange8((volatile char*)(DST_PTR), (LONGLONG)(VALUE))
-#   define LIBXSMM_ATOMIC_STORE64(DST_PTR, VALUE, KIND) InterlockedExchange64((volatile LONGLONG*)(DST_PTR), (LONGLONG)(VALUE))
-#   if defined(LIBXSMM_ATOMIC_ZERO_STORE)
-#     define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
-#     define LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE8(DST_PTR, 0, KIND)
-#     define LIBXSMM_ATOMIC_STORE_ZERO64(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE64(DST_PTR, 0, KIND)
+#   if defined(__PGI)
+#     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_LOAD8(SRC_PTR, KIND) LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_LOAD16(SRC_PTR, KIND) LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_LOAD64(SRC_PTR, KIND) LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_STORE8(DST_PTR, VALUE, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_STORE16(DST_PTR, VALUE, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_STORE64(DST_PTR, VALUE, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, VALUE, KIND)
 #   else
-#     define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) InterlockedAnd((volatile LONG*)(DST_PTR), 0)
-#     define LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND) InterlockedAnd8((volatile char*)(DST_PTR), 0)
-#     define LIBXSMM_ATOMIC_STORE_ZERO64(DST_PTR, KIND) InterlockedAnd64((volatile LONGLONG*)(DST_PTR), 0)
+#     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_4(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_LOAD8(SRC_PTR, KIND) __atomic_load_1(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_LOAD16(SRC_PTR, KIND) __atomic_load_2(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_LOAD64(SRC_PTR, KIND) __atomic_load_8(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_4(DST_PTR, (unsigned int)(VALUE), KIND)
+#     define LIBXSMM_ATOMIC_STORE8(DST_PTR, VALUE, KIND) __atomic_store_1(DST_PTR, (unsigned char)(VALUE), KIND)
+#     define LIBXSMM_ATOMIC_STORE16(DST_PTR, VALUE, KIND) __atomic_store_2(DST_PTR, (unsigned short)(VALUE), KIND)
+#     define LIBXSMM_ATOMIC_STORE64(DST_PTR, VALUE, KIND) __atomic_store_8(DST_PTR, (unsigned long long)(VALUE), KIND)
 #   endif
-#   define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) InterlockedOr((volatile LONG*)(DST_PTR), VALUE)
-#   define LIBXSMM_ATOMIC_FETCH_OR8(DST_PTR, VALUE, KIND) _InterlockedOr8((volatile char*)(DST_PTR), VALUE)
-#   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) + (VALUE))
-#   define LIBXSMM_ATOMIC_ADD_FETCH64(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) + (VALUE))
-#   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) ((size_t)LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) - ((size_t)VALUE))
-#   define LIBXSMM_ATOMIC_SUB_FETCH64(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) - (VALUE))
-#   define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) InterlockedExchangeAdd((volatile LONG*)(DST_PTR), VALUE)
-#   define LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) InterlockedExchangeAdd64((volatile LONGLONG*)(DST_PTR), VALUE)
-#   define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, -1 * (VALUE), KIND)
-#   define LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, -1 * (VALUE), KIND)
-#   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) (((LONG)(OLDVAL)) == InterlockedCompareExchange((volatile LONG*)(DST_PTR), NEWVAL, OLDVAL))
-#   define LIBXSMM_ATOMIC_CMPSWP8(DST_PTR, OLDVAL, NEWVAL, KIND) ((OLDVAL) == _InterlockedCompareExchange8((volatile char*)(DST_PTR), NEWVAL, OLDVAL))
+#   define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) __atomic_fetch_or_4(DST_PTR, (unsigned int)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_OR8(DST_PTR, VALUE, KIND) __atomic_fetch_or_1(DST_PTR, (unsigned char)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_OR16(DST_PTR, VALUE, KIND) __atomic_fetch_or_2(DST_PTR, (unsigned short)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_OR64(DST_PTR, VALUE, KIND) __atomic_fetch_or_8(DST_PTR, (unsigned long long)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) __atomic_add_fetch_4(DST_PTR, (int)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_ADD_FETCH8(DST_PTR, VALUE, KIND) __atomic_add_fetch_1(DST_PTR, (signed char)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_ADD_FETCH16(DST_PTR, VALUE, KIND) __atomic_add_fetch_2(DST_PTR, (short)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_ADD_FETCH64(DST_PTR, VALUE, KIND) __atomic_add_fetch_8(DST_PTR, (long long)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) __atomic_sub_fetch_4(DST_PTR, (int)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_SUB_FETCH8(DST_PTR, VALUE, KIND) __atomic_sub_fetch_1(DST_PTR, (signed char)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_SUB_FETCH16(DST_PTR, VALUE, KIND) __atomic_sub_fetch_2(DST_PTR, (short)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_SUB_FETCH64(DST_PTR, VALUE, KIND) __atomic_sub_fetch_8(DST_PTR, (long long)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) __atomic_fetch_add_4(DST_PTR, (int)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_ADD8(DST_PTR, VALUE, KIND) __atomic_fetch_add_1(DST_PTR, (signed char)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, VALUE, KIND) __atomic_fetch_add_2(DST_PTR, (short)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) __atomic_fetch_add_8(DST_PTR, (long long)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) __atomic_fetch_sub_4(DST_PTR, (int)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_SUB8(DST_PTR, VALUE, KIND) __atomic_fetch_sub_1(DST_PTR, (signed char)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_SUB16(DST_PTR, VALUE, KIND) __atomic_fetch_sub_2(DST_PTR, (short)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) __atomic_fetch_sub_8(DST_PTR, (long long)(VALUE), KIND)
+#   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) \
+            __atomic_compare_exchange_4(DST_PTR, &(OLDVAL), (NEWVAL), 0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
+#   define LIBXSMM_ATOMIC_CMPSWP8(DST_PTR, OLDVAL, NEWVAL, KIND) \
+            __atomic_compare_exchange_1(DST_PTR, &(OLDVAL), (NEWVAL), 0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
+#   define LIBXSMM_ATOMIC_CMPSWP16(DST_PTR, OLDVAL, NEWVAL, KIND) \
+            __atomic_compare_exchange_2(DST_PTR, &(OLDVAL), (NEWVAL), 0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
+#   define LIBXSMM_ATOMIC_CMPSWP64(DST_PTR, OLDVAL, NEWVAL, KIND) \
+            __atomic_compare_exchange_8(DST_PTR, &(OLDVAL), (NEWVAL), 0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
 #   if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
-#     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_CMPSWP, 8)(DST_PTR, 0, 1, KIND)
+#     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (!__atomic_test_and_set(DST_PTR, KIND))
+#   endif
+#   if defined(__PGI)
+#     define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
+              LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND); } /* matches bit-width of LIBXSMM_ATOMIC_LOCKTYPE */
 #   else
-#     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (0 == LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(DST_PTR, 1, KIND))
+#     define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
+              __atomic_clear(DST_PTR, KIND); }
 #   endif
-#   define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) \
-            LIBXSMM_ASSERT(1 == sizeof(LIBXSMM_ATOMIC_LOCKTYPE)); LIBXSMM_ASSERT(0 == LIBXSMM_MOD2((uintptr_t)(DST_PTR), 4)); \
-            while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(DST_PTR, 0/*free*/, NPAUSE); \
-            LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE")
-#   define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { \
-            LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
-            LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, 8)(DST_PTR, KIND); }
-#   define LIBXSMM_ATOMIC_SYNC(KIND) _ReadWriteBarrier()
-#   if !defined(LIBXSMM_SYNC_NPAUSE)
-#     define LIBXSMM_SYNC_NPAUSE 4096
+#   define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
+#   if !defined(LIBXSMM_ATOMIC_ZERO_STORE)
+#     define LIBXSMM_ATOMIC_ZERO_STORE
 #   endif
-# elif defined(LIBXSMM_SYNC_SYSTEM) /* fall-back */
+# elif defined(LIBXSMM_GCC_BASELINE)
 #   define LIBXSMM_ATOMIC(FN, BITS) FN
-#   define LIBXSMM_ATOMIC_LOAD LIBXSMM_NONATOMIC_LOAD
-#   define LIBXSMM_ATOMIC_STORE LIBXSMM_NONATOMIC_STORE
-#   define LIBXSMM_ATOMIC_STORE_ZERO LIBXSMM_NONATOMIC_STORE_ZERO
-#   define LIBXSMM_ATOMIC_FETCH_OR LIBXSMM_NONATOMIC_FETCH_OR
-#   define LIBXSMM_ATOMIC_ADD_FETCH LIBXSMM_NONATOMIC_ADD_FETCH
-#   define LIBXSMM_ATOMIC_SUB_FETCH LIBXSMM_NONATOMIC_SUB_FETCH
-#   define LIBXSMM_ATOMIC_FETCH_ADD LIBXSMM_NONATOMIC_FETCH_ADD
-#   define LIBXSMM_ATOMIC_FETCH_SUB LIBXSMM_NONATOMIC_FETCH_SUB
-#   define LIBXSMM_ATOMIC_CMPSWP LIBXSMM_NONATOMIC_CMPSWP
-#   define LIBXSMM_ATOMIC_TRYLOCK LIBXSMM_NONATOMIC_TRYLOCK
-#   define LIBXSMM_ATOMIC_ACQUIRE LIBXSMM_NONATOMIC_ACQUIRE
-#   define LIBXSMM_ATOMIC_RELEASE LIBXSMM_NONATOMIC_RELEASE
-#   define LIBXSMM_ATOMIC_SYNC LIBXSMM_NONATOMIC_SYNC
-#   if !defined(LIBXSMM_SYNC_NPAUSE)
-#     define LIBXSMM_SYNC_NPAUSE 0
+#   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)
+#   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_n(DST_PTR, VALUE, KIND)
+#   if !defined(LIBXSMM_ATOMIC_ZERO_STORE)
+#     define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) do {} while (__atomic_and_fetch(DST_PTR, 0, KIND))
 #   endif
-# else /* consider to enable LIBXSMM_SYNC_SYSTEM */
-#   error LIBXSMM is missing atomic compiler builtins!
+#   define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) __atomic_fetch_or(DST_PTR, VALUE, KIND)
+#   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) __atomic_add_fetch(DST_PTR, VALUE, KIND)
+#   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) __atomic_sub_fetch(DST_PTR, VALUE, KIND)
+#   define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) __atomic_fetch_add(DST_PTR, VALUE, KIND)
+#   define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) __atomic_fetch_sub(DST_PTR, VALUE, KIND)
+#   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
+#   if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
+#     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (!__atomic_test_and_set(DST_PTR, KIND))
+#   endif
+#   define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
+            __atomic_clear(DST_PTR, KIND); }
+#   if 0 /* __atomic_thread_fence: incorrect behavior in libxsmm_barrier (even with LIBXSMM_ATOMIC_SEQ_CST) */
+#     define LIBXSMM_ATOMIC_SYNC(KIND) __atomic_thread_fence(KIND)
+#   else
+#     define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
+#   endif
+# else /* GCC legacy atomics */
+#   define LIBXSMM_ATOMIC(FN, BITS) FN
+#   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
+#   if (LIBXSMM_X86_GENERIC <= LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) { \
+              __asm__ __volatile__("" ::: "memory"); *(DST_PTR) = (VALUE); \
+              __asm__ __volatile__("" ::: "memory"); }
+#   else
+#     define LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND)
+#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) *(DST_PTR) = (VALUE)
+#   endif
+#   if !defined(LIBXSMM_ATOMIC_ZERO_STORE)
+#     define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) do {} while (__sync_and_and_fetch(DST_PTR, 0))
+#   endif
+#   define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) __sync_fetch_and_or(DST_PTR, VALUE)
+#   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) __sync_add_and_fetch(DST_PTR, VALUE)
+#   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) __sync_sub_and_fetch(DST_PTR, VALUE)
+#   define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) __sync_fetch_and_add(DST_PTR, VALUE)
+#   define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) __sync_fetch_and_sub(DST_PTR, VALUE)
+#   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
+#   if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
+#     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (0 == __sync_lock_test_and_set(DST_PTR, 1))
+#   endif
+#   define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
+            __sync_lock_release(DST_PTR); }
+#   define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
 # endif
+# if defined(LIBXSMM_ATOMIC_ZERO_STORE)
+#   define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
+#   define LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, 8)(DST_PTR, 0, KIND)
+#   define LIBXSMM_ATOMIC_STORE_ZERO16(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, 16)(DST_PTR, 0, KIND)
+#   define LIBXSMM_ATOMIC_STORE_ZERO64(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, 64)(DST_PTR, 0, KIND)
+# endif
+# if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
+#   define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) /* matches bit-width of LIBXSMM_ATOMIC_LOCKTYPE */ \
+            (0 == LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(DST_PTR, 1, KIND))
+# endif
+# define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) \
+          LIBXSMM_ASSERT(1 == sizeof(LIBXSMM_ATOMIC_LOCKTYPE)); LIBXSMM_ASSERT(0 == LIBXSMM_MOD2((uintptr_t)(DST_PTR), 4)); \
+          while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(DST_PTR, 0/*free*/, NPAUSE); \
+          LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE")
+# if !defined(LIBXSMM_SYNC_NPAUSE)
+#   define LIBXSMM_SYNC_NPAUSE 4096
+# endif
+#elif defined(_WIN32)
+# define LIBXSMM_ATOMIC(FN, BITS) LIBXSMM_CONCATENATE(LIBXSMM_ATOMIC, BITS)(FN)
+# define LIBXSMM_ATOMIC8(FN) LIBXSMM_CONCATENATE(FN, 8)
+# define LIBXSMM_ATOMIC16(FN) LIBXSMM_CONCATENATE(FN, 16)
+# define LIBXSMM_ATOMIC32(FN) FN/*default*/
+# define LIBXSMM_ATOMIC64(FN) LIBXSMM_CONCATENATE(FN, 64)
+# define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) InterlockedOr((volatile LONG*)(SRC_PTR), 0)
+# define LIBXSMM_ATOMIC_LOAD8(SRC_PTR, KIND) _InterlockedOr8((volatile char*)(SRC_PTR), 0)
+# define LIBXSMM_ATOMIC_LOAD64(SRC_PTR, KIND) InterlockedOr64((volatile LONGLONG*)(SRC_PTR), 0)
+# define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) InterlockedExchange((volatile LONG*)(DST_PTR), (LONG)(VALUE))
+# define LIBXSMM_ATOMIC_STORE8(DST_PTR, VALUE, KIND) InterlockedExchange8((volatile char*)(DST_PTR), (LONGLONG)(VALUE))
+# define LIBXSMM_ATOMIC_STORE64(DST_PTR, VALUE, KIND) InterlockedExchange64((volatile LONGLONG*)(DST_PTR), (LONGLONG)(VALUE))
+# if defined(LIBXSMM_ATOMIC_ZERO_STORE)
+#   define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
+#   define LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE8(DST_PTR, 0, KIND)
+#   define LIBXSMM_ATOMIC_STORE_ZERO64(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE64(DST_PTR, 0, KIND)
+# else
+#   define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) InterlockedAnd((volatile LONG*)(DST_PTR), 0)
+#   define LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND) InterlockedAnd8((volatile char*)(DST_PTR), 0)
+#   define LIBXSMM_ATOMIC_STORE_ZERO64(DST_PTR, KIND) InterlockedAnd64((volatile LONGLONG*)(DST_PTR), 0)
+# endif
+# define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) InterlockedOr((volatile LONG*)(DST_PTR), VALUE)
+# define LIBXSMM_ATOMIC_FETCH_OR8(DST_PTR, VALUE, KIND) _InterlockedOr8((volatile char*)(DST_PTR), VALUE)
+# define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) + (VALUE))
+# define LIBXSMM_ATOMIC_ADD_FETCH64(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) + (VALUE))
+# define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) ((size_t)LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) - ((size_t)VALUE))
+# define LIBXSMM_ATOMIC_SUB_FETCH64(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) - (VALUE))
+# define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) InterlockedExchangeAdd((volatile LONG*)(DST_PTR), VALUE)
+# define LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) InterlockedExchangeAdd64((volatile LONGLONG*)(DST_PTR), VALUE)
+# define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, -1 * (VALUE), KIND)
+# define LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, -1 * (VALUE), KIND)
+# define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) (((LONG)(OLDVAL)) == InterlockedCompareExchange((volatile LONG*)(DST_PTR), NEWVAL, OLDVAL))
+# define LIBXSMM_ATOMIC_CMPSWP8(DST_PTR, OLDVAL, NEWVAL, KIND) ((OLDVAL) == _InterlockedCompareExchange8((volatile char*)(DST_PTR), NEWVAL, OLDVAL))
+# if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
+#   define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_CMPSWP, 8)(DST_PTR, 0, 1, KIND)
+# else
+#   define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (0 == LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(DST_PTR, 1, KIND))
+# endif
+# define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) \
+          /*LIBXSMM_ASSERT(1 == sizeof(LIBXSMM_ATOMIC_LOCKTYPE)); LIBXSMM_ASSERT(0 == LIBXSMM_MOD2((uintptr_t)(DST_PTR), 4));*/ \
+          while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(DST_PTR, 0/*free*/, NPAUSE); \
+          LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE")
+# define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { \
+          LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
+          LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, 8)(DST_PTR, KIND); }
+# define LIBXSMM_ATOMIC_SYNC(KIND) _ReadWriteBarrier()
+# if !defined(LIBXSMM_SYNC_NPAUSE)
+#   define LIBXSMM_SYNC_NPAUSE 4096
+# endif
+#else /* consider to permit LIBXSMM_SYNC_NONE */
+# error LIBXSMM is missing atomic compiler builtins!
+#endif
+
+#if !defined(LIBXSMM_SYNC_CYCLE)
 # if (0 < LIBXSMM_SYNC_NPAUSE)
 #   define LIBXSMM_SYNC_CYCLE_ELSE(DST_PTR, EXP_STATE, NPAUSE, ELSE) do { int libxsmm_sync_cycle_npause_ = 1; \
       do { int libxsmm_sync_cycle_counter_ = 0; \
@@ -354,15 +341,17 @@ typedef enum libxsmm_atomic_kind {
     LIBXSMM_SYNC_CYCLE_ELSE(DST_PTR, EXP_STATE, NPAUSE, /*else*/;)
 #endif
 
-#if (0 != LIBXSMM_SYNC) /** Default lock-kind */
+#if (0 != LIBXSMM_SYNC)
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
-# if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
+# if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)) && \
+    (!defined(__linux__) || defined(__USE_XOPEN2K)) && 0/*disabled*/
 #   define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 # endif
-# if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && (defined(LIBXSMM_SYNC_SYSTEM) || !defined(_MSC_VER))
+# if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
 #   define LIBXSMM_LOCK_SYSTEM_MUTEX
 # endif
-# if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
+# if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)) && \
+    (!defined(__linux__) || defined(__USE_XOPEN2K) || defined(__USE_UNIX98))
 #   define LIBXSMM_LOCK_SYSTEM_RWLOCK
 # endif
   /* Lock type, initialization, destruction, (try-)lock, unlock, etc */
@@ -399,12 +388,15 @@ typedef enum libxsmm_atomic_kind {
 # endif
 # if defined(LIBXSMM_WIN32_THREADS)
 #   define LIBXSMM_LOCK_SPINLOCK spin
-#   define LIBXSMM_LOCK_MUTEX mutex
-#   define LIBXSMM_LOCK_RWLOCK rwlock
-#   if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) || !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
-#     define LIBXSMM_LOCK_ACQUIRED_spin TRUE
+#   if ((LIBXSMM_WIN32_THREADS) & 0x0600)
+#     define LIBXSMM_LOCK_MUTEX rwlock
+#     define LIBXSMM_LOCK_RWLOCK rwlock
+#   else /* mutex exposes high latency */
+#     define LIBXSMM_LOCK_MUTEX mutex
+#     define LIBXSMM_LOCK_RWLOCK mutex
 #   endif
-#   if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
+#   if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
+#     define LIBXSMM_LOCK_ACQUIRED_spin TRUE
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
 #     define LIBXSMM_LOCK_TYPE_spin CRITICAL_SECTION
 #     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); InitializeCriticalSection(LOCK); }
@@ -419,10 +411,8 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) LIBXSMM_UNUSED(ATTR)
 #     define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
 #   endif
-#   if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX) || !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
+#   if defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
 #     define LIBXSMM_LOCK_ACQUIRED_mutex WAIT_OBJECT_0
-#   endif
-#   if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
 #     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
 #     define LIBXSMM_LOCK_TYPE_mutex HANDLE
@@ -438,10 +428,8 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) (*(ATTR) = NULL)
 #     define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
 #   endif
-#   if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) || !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
+#   if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
 #     define LIBXSMM_LOCK_ACQUIRED_rwlock TRUE
-#   endif
-#   if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 1
 #     define LIBXSMM_LOCK_TYPE_ISRW_rwlock 1
 #     define LIBXSMM_LOCK_TYPE_rwlock SRWLOCK
@@ -460,27 +448,24 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_SYNC_YIELD YieldProcessor
 # else
 #   if defined(__APPLE__) && defined(__MACH__)
-#     define LIBXSMM_PTHREAD_FN(FN) LIBXSMM_CONCATENATE(FN, _np)
+#     define LIBXSMM_SYNC_YIELD pthread_yield_np
 #   else
-#     define LIBXSMM_PTHREAD_FN(FN) FN
-#     if !defined(__USE_GNU)
-      extern int pthread_yield(void) LIBXSMM_THROW;
+#     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
+      LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_THROW;
+#     else
+      LIBXSMM_EXTERN void pthread_yield(void);
 #     endif
+#     define LIBXSMM_SYNC_YIELD pthread_yield
 #   endif
-#   define LIBXSMM_SYNC_YIELD LIBXSMM_PTHREAD_FN(pthread_yield)
-#   if defined(__APPLE__) && defined(__MACH__) && \
-       defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && \
-     !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
+#   if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && defined(__APPLE__) && defined(__MACH__)
 #     define LIBXSMM_LOCK_SPINLOCK mutex
 #   else
 #     define LIBXSMM_LOCK_SPINLOCK spin
 #   endif
 #   define LIBXSMM_LOCK_MUTEX mutex
 #   define LIBXSMM_LOCK_RWLOCK rwlock
-#   if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) || !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
+#   if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
 #     define LIBXSMM_LOCK_ACQUIRED_spin 0
-#   endif
-#   if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
 #     define LIBXSMM_LOCK_TYPE_ISRW_spin 0
 #     define LIBXSMM_LOCK_TYPE_spin pthread_spinlock_t
@@ -496,10 +481,8 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) (*(ATTR) = 0)
 #     define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
 #   endif
-#   if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX) || !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
+#   if defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
 #     define LIBXSMM_LOCK_ACQUIRED_mutex 0
-#   endif
-#   if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
 #     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
 #     define LIBXSMM_LOCK_TYPE_mutex pthread_mutex_t
@@ -512,19 +495,21 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_ACQREAD_mutex(LOCK) LIBXSMM_LOCK_ACQUIRE_mutex(LOCK)
 #     define LIBXSMM_LOCK_RELREAD_mutex(LOCK) LIBXSMM_LOCK_RELEASE_mutex(LOCK)
 #     define LIBXSMM_LOCK_ATTR_TYPE_mutex pthread_mutexattr_t
+#if !defined(__linux__) || defined(__USE_UNIX98) || defined(__USE_XOPEN2K8)
 #     if defined(_DEBUG)
 #       define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) (LIBXSMM_EXPECT(0, pthread_mutexattr_init(ATTR)), \
-                      LIBXSMM_EXPECT(0, pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_ERRORCHECK)))
+                LIBXSMM_EXPECT(0, pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_ERRORCHECK)))
 #     else
 #       define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) (pthread_mutexattr_init(ATTR), \
-                          pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_NORMAL))
+                pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_NORMAL))
 #     endif
+#else
+#     define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) pthread_mutexattr_init(ATTR)
+#endif
 #     define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_EXPECT(0, pthread_mutexattr_destroy(ATTR))
 #   endif
-#   if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) || !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
+#   if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
 #     define LIBXSMM_LOCK_ACQUIRED_rwlock 0
-#   endif
-#   if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && !(defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
 #     define LIBXSMM_LOCK_TYPE_ISRW_rwlock 1
 #     define LIBXSMM_LOCK_TYPE_rwlock pthread_rwlock_t
@@ -544,8 +529,79 @@ typedef enum libxsmm_atomic_kind {
 /* OpenMP based locks need to stay disabled unless both
  * libxsmm and libxsmmext are built with OpenMP support.
  */
-# if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
-#   if 1 /* directly based on atomic primitives */
+# if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
+#   if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
+#     define LIBXSMM_LOCK_ACQUIRED_spin 1
+#     define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_spin 0
+#     define LIBXSMM_LOCK_TYPE_spin omp_lock_t
+#     define LIBXSMM_LOCK_DESTROY_spin(LOCK) omp_destroy_lock(LOCK)
+#     define LIBXSMM_LOCK_TRYLOCK_spin(LOCK) omp_test_lock(LOCK)
+#     define LIBXSMM_LOCK_ACQUIRE_spin(LOCK) omp_set_lock(LOCK)
+#     define LIBXSMM_LOCK_RELEASE_spin(LOCK) omp_unset_lock(LOCK)
+#     define LIBXSMM_LOCK_TRYREAD_spin(LOCK) LIBXSMM_LOCK_TRYLOCK_spin(LOCK)
+#     define LIBXSMM_LOCK_ACQREAD_spin(LOCK) LIBXSMM_LOCK_ACQUIRE_spin(LOCK)
+#     define LIBXSMM_LOCK_RELREAD_spin(LOCK) LIBXSMM_LOCK_RELEASE_spin(LOCK)
+#     if (201811/*OpenMP 5.0*/ <= _OPENMP)
+#       define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) omp_init_lock_with_hint(LOCK, *(ATTR))
+#       define LIBXSMM_LOCK_ATTR_TYPE_spin omp_lock_hint_t
+#       define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) (*(ATTR) = omp_lock_hint_none)
+#     else
+#       define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
+#       define LIBXSMM_LOCK_ATTR_TYPE_spin const void*
+#       define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) LIBXSMM_UNUSED(ATTR)
+#     endif
+#     define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
+#   endif
+#   if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
+#     define LIBXSMM_LOCK_ACQUIRED_mutex 1
+#     define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
+#     define LIBXSMM_LOCK_TYPE_mutex omp_lock_t
+#     define LIBXSMM_LOCK_DESTROY_mutex(LOCK) omp_destroy_lock(LOCK)
+#     define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) omp_test_lock(LOCK)
+#     define LIBXSMM_LOCK_ACQUIRE_mutex(LOCK) omp_set_lock(LOCK)
+#     define LIBXSMM_LOCK_RELEASE_mutex(LOCK) omp_unset_lock(LOCK)
+#     define LIBXSMM_LOCK_TRYREAD_mutex(LOCK) LIBXSMM_LOCK_TRYLOCK_mutex(LOCK)
+#     define LIBXSMM_LOCK_ACQREAD_mutex(LOCK) LIBXSMM_LOCK_ACQUIRE_mutex(LOCK)
+#     define LIBXSMM_LOCK_RELREAD_mutex(LOCK) LIBXSMM_LOCK_RELEASE_mutex(LOCK)
+#     if (201811/*OpenMP 5.0*/ <= _OPENMP)
+#       define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) omp_init_lock_with_hint(LOCK, *(ATTR))
+#       define LIBXSMM_LOCK_ATTR_TYPE_mutex omp_lock_hint_t
+#       define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) (*(ATTR) = omp_lock_hint_none)
+#     else
+#       define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
+#       define LIBXSMM_LOCK_ATTR_TYPE_mutex const void*
+#       define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
+#     endif
+#     define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
+#   endif
+#   if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
+#     define LIBXSMM_LOCK_ACQUIRED_rwlock 1
+#     define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_rwlock 0
+#     define LIBXSMM_LOCK_TYPE_rwlock omp_lock_t
+#     define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) omp_destroy_lock(LOCK)
+#     define LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK) omp_test_lock(LOCK)
+#     define LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK) omp_set_lock(LOCK)
+#     define LIBXSMM_LOCK_RELEASE_rwlock(LOCK) omp_unset_lock(LOCK)
+#     define LIBXSMM_LOCK_TRYREAD_rwlock(LOCK) LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK)
+#     define LIBXSMM_LOCK_ACQREAD_rwlock(LOCK) LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK)
+#     define LIBXSMM_LOCK_RELREAD_rwlock(LOCK) LIBXSMM_LOCK_RELEASE_rwlock(LOCK)
+#     if (201811/*OpenMP 5.0*/ <= _OPENMP)
+#       define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) omp_init_lock_with_hint(LOCK, *(ATTR))
+#       define LIBXSMM_LOCK_ATTR_TYPE_rwlock omp_lock_hint_t
+#       define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) (*(ATTR) = omp_lock_hint_none)
+#     else
+#       define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
+#       define LIBXSMM_LOCK_ATTR_TYPE_rwlock const void*
+#       define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
+#     endif
+#     define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
+#   endif
+# elif !defined(LIBXSMM_SYNC_NONE) /* based on atomic primitives */
+#   if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
+#     define LIBXSMM_LOCK_ACQUIRED_spin 0
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 1
 #     define LIBXSMM_LOCK_TYPE_ISRW_spin 0
 #     define LIBXSMM_LOCK_TYPE_spin volatile LIBXSMM_ATOMIC_LOCKTYPE
@@ -560,7 +616,44 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_ATTR_TYPE_spin int
 #     define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) LIBXSMM_UNUSED(ATTR)
 #     define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
-#   else /* rely on LIBXSMM's portable locks */
+#   endif
+#   if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
+#     define LIBXSMM_LOCK_ACQUIRED_mutex 0
+#     define LIBXSMM_LOCK_TYPE_ISPOD_mutex 1
+#     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
+#     define LIBXSMM_LOCK_TYPE_mutex volatile LIBXSMM_ATOMIC_LOCKTYPE
+#     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = 0); }
+#     define LIBXSMM_LOCK_DESTROY_mutex(LOCK) LIBXSMM_UNUSED(LOCK)
+#     define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) (LIBXSMM_LOCK_ACQUIRED_mutex + !LIBXSMM_ATOMIC_TRYLOCK(LOCK, LIBXSMM_ATOMIC_RELAXED))
+#     define LIBXSMM_LOCK_ACQUIRE_mutex(LOCK) LIBXSMM_ATOMIC_ACQUIRE(LOCK, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED)
+#     define LIBXSMM_LOCK_RELEASE_mutex(LOCK) LIBXSMM_ATOMIC_RELEASE(LOCK, LIBXSMM_ATOMIC_RELAXED)
+#     define LIBXSMM_LOCK_TRYREAD_mutex(LOCK) LIBXSMM_LOCK_TRYLOCK_mutex(LOCK)
+#     define LIBXSMM_LOCK_ACQREAD_mutex(LOCK) LIBXSMM_LOCK_ACQUIRE_mutex(LOCK)
+#     define LIBXSMM_LOCK_RELREAD_mutex(LOCK) LIBXSMM_LOCK_RELEASE_mutex(LOCK)
+#     define LIBXSMM_LOCK_ATTR_TYPE_mutex int
+#     define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
+#     define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
+#   endif
+#   if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
+#     define LIBXSMM_LOCK_ACQUIRED_rwlock 0
+#     define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 1
+#     define LIBXSMM_LOCK_TYPE_ISRW_rwlock 0
+#     define LIBXSMM_LOCK_TYPE_rwlock volatile LIBXSMM_ATOMIC_LOCKTYPE
+#     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = 0); }
+#     define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) LIBXSMM_UNUSED(LOCK)
+#     define LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK) (LIBXSMM_LOCK_ACQUIRED_rwlock + !LIBXSMM_ATOMIC_TRYLOCK(LOCK, LIBXSMM_ATOMIC_RELAXED))
+#     define LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK) LIBXSMM_ATOMIC_ACQUIRE(LOCK, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED)
+#     define LIBXSMM_LOCK_RELEASE_rwlock(LOCK) LIBXSMM_ATOMIC_RELEASE(LOCK, LIBXSMM_ATOMIC_RELAXED)
+#     define LIBXSMM_LOCK_TRYREAD_rwlock(LOCK) LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK)
+#     define LIBXSMM_LOCK_ACQREAD_rwlock(LOCK) LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK)
+#     define LIBXSMM_LOCK_RELREAD_rwlock(LOCK) LIBXSMM_LOCK_RELEASE_rwlock(LOCK)
+#     define LIBXSMM_LOCK_ATTR_TYPE_rwlock int
+#     define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
+#     define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
+#   endif
+# else /* experimental */
+#   if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
+#     define LIBXSMM_LOCK_ACQUIRED_spin 0
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
 #     define LIBXSMM_LOCK_TYPE_ISRW_spin 0
 #     define LIBXSMM_LOCK_TYPE_spin libxsmm_spinlock*
@@ -576,106 +669,42 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) LIBXSMM_UNUSED(ATTR)
 #     define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
 #   endif
-# elif defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
-#   define LIBXSMM_LOCK_ACQUIRED_spin 1
-#   define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
-#   define LIBXSMM_LOCK_TYPE_ISRW_spin 0
-#   define LIBXSMM_LOCK_TYPE_spin omp_lock_t
-#   define LIBXSMM_LOCK_DESTROY_spin(LOCK) omp_destroy_lock(LOCK)
-#   define LIBXSMM_LOCK_TRYLOCK_spin(LOCK) omp_test_lock(LOCK)
-#   define LIBXSMM_LOCK_ACQUIRE_spin(LOCK) omp_set_lock(LOCK)
-#   define LIBXSMM_LOCK_RELEASE_spin(LOCK) omp_unset_lock(LOCK)
-#   define LIBXSMM_LOCK_TRYREAD_spin(LOCK) LIBXSMM_LOCK_TRYLOCK_spin(LOCK)
-#   define LIBXSMM_LOCK_ACQREAD_spin(LOCK) LIBXSMM_LOCK_ACQUIRE_spin(LOCK)
-#   define LIBXSMM_LOCK_RELREAD_spin(LOCK) LIBXSMM_LOCK_RELEASE_spin(LOCK)
-#   if (201811/*OpenMP 5.0*/ <= _OPENMP)
-#     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) omp_init_lock_with_hint(LOCK, *(ATTR))
-#     define LIBXSMM_LOCK_ATTR_TYPE_spin omp_lock_hint_t
-#     define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) (*(ATTR) = omp_lock_hint_none)
-#   else
-#     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
-#     define LIBXSMM_LOCK_ATTR_TYPE_spin const void*
-#     define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) LIBXSMM_UNUSED(ATTR)
-#   endif
-#   define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
-# endif
-# if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
-#   define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
-#   define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
-#   define LIBXSMM_LOCK_TYPE_mutex libxsmm_mutex*
-#   define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_mutex_create()); }
-#   define LIBXSMM_LOCK_DESTROY_mutex(LOCK) libxsmm_mutex_destroy(*(LOCK))
-#   define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) libxsmm_mutex_trylock(*(LOCK))
-#   define LIBXSMM_LOCK_ACQUIRE_mutex(LOCK) libxsmm_mutex_acquire(*(LOCK))
-#   define LIBXSMM_LOCK_RELEASE_mutex(LOCK) libxsmm_mutex_release(*(LOCK))
-#   define LIBXSMM_LOCK_TRYREAD_mutex(LOCK) LIBXSMM_LOCK_TRYLOCK_mutex(LOCK)
-#   define LIBXSMM_LOCK_ACQREAD_mutex(LOCK) LIBXSMM_LOCK_ACQUIRE_mutex(LOCK)
-#   define LIBXSMM_LOCK_RELREAD_mutex(LOCK) LIBXSMM_LOCK_RELEASE_mutex(LOCK)
-#   define LIBXSMM_LOCK_ATTR_TYPE_mutex int
-#   define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
-#   define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
-# elif defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
-#   define LIBXSMM_LOCK_ACQUIRED_mutex 1
-#   define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
-#   define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
-#   define LIBXSMM_LOCK_TYPE_mutex omp_lock_t
-#   define LIBXSMM_LOCK_DESTROY_mutex(LOCK) omp_destroy_lock(LOCK)
-#   define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) omp_test_lock(LOCK)
-#   define LIBXSMM_LOCK_ACQUIRE_mutex(LOCK) omp_set_lock(LOCK)
-#   define LIBXSMM_LOCK_RELEASE_mutex(LOCK) omp_unset_lock(LOCK)
-#   define LIBXSMM_LOCK_TRYREAD_mutex(LOCK) LIBXSMM_LOCK_TRYLOCK_mutex(LOCK)
-#   define LIBXSMM_LOCK_ACQREAD_mutex(LOCK) LIBXSMM_LOCK_ACQUIRE_mutex(LOCK)
-#   define LIBXSMM_LOCK_RELREAD_mutex(LOCK) LIBXSMM_LOCK_RELEASE_mutex(LOCK)
-#   if (201811/*OpenMP 5.0*/ <= _OPENMP)
-#     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) omp_init_lock_with_hint(LOCK, *(ATTR))
-#     define LIBXSMM_LOCK_ATTR_TYPE_mutex omp_lock_hint_t
-#     define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) (*(ATTR) = omp_lock_hint_none)
-#   else
-#     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
-#     define LIBXSMM_LOCK_ATTR_TYPE_mutex const void*
+#   if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
+#     define LIBXSMM_LOCK_ACQUIRED_mutex 0
+#     define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
+#     define LIBXSMM_LOCK_TYPE_mutex libxsmm_mutex*
+#     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_mutex_create()); }
+#     define LIBXSMM_LOCK_DESTROY_mutex(LOCK) libxsmm_mutex_destroy(*(LOCK))
+#     define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) libxsmm_mutex_trylock(*(LOCK))
+#     define LIBXSMM_LOCK_ACQUIRE_mutex(LOCK) libxsmm_mutex_acquire(*(LOCK))
+#     define LIBXSMM_LOCK_RELEASE_mutex(LOCK) libxsmm_mutex_release(*(LOCK))
+#     define LIBXSMM_LOCK_TRYREAD_mutex(LOCK) LIBXSMM_LOCK_TRYLOCK_mutex(LOCK)
+#     define LIBXSMM_LOCK_ACQREAD_mutex(LOCK) LIBXSMM_LOCK_ACQUIRE_mutex(LOCK)
+#     define LIBXSMM_LOCK_RELREAD_mutex(LOCK) LIBXSMM_LOCK_RELEASE_mutex(LOCK)
+#     define LIBXSMM_LOCK_ATTR_TYPE_mutex int
 #     define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
+#     define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
 #   endif
-#   define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
-# endif
-# if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
-#   define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
-#   define LIBXSMM_LOCK_TYPE_ISRW_rwlock 1
-#   define LIBXSMM_LOCK_TYPE_rwlock libxsmm_rwlock*
-#   define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_rwlock_create()); }
-#   define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) libxsmm_rwlock_destroy(*(LOCK))
-#   define LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK) libxsmm_rwlock_trylock(*(LOCK))
-#   define LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK) libxsmm_rwlock_acquire(*(LOCK))
-#   define LIBXSMM_LOCK_RELEASE_rwlock(LOCK) libxsmm_rwlock_release(*(LOCK))
-#   define LIBXSMM_LOCK_TRYREAD_rwlock(LOCK) libxsmm_rwlock_tryread(*(LOCK))
-#   define LIBXSMM_LOCK_ACQREAD_rwlock(LOCK) libxsmm_rwlock_acqread(*(LOCK))
-#   define LIBXSMM_LOCK_RELREAD_rwlock(LOCK) libxsmm_rwlock_relread(*(LOCK))
-#   define LIBXSMM_LOCK_ATTR_TYPE_rwlock int
-#   define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
-#   define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
-# elif defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
-#   define LIBXSMM_LOCK_ACQUIRED_rwlock 1
-#   define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
-#   define LIBXSMM_LOCK_TYPE_ISRW_rwlock 0
-#   define LIBXSMM_LOCK_TYPE_rwlock omp_lock_t
-#   define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) omp_destroy_lock(LOCK)
-#   define LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK) omp_test_lock(LOCK)
-#   define LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK) omp_set_lock(LOCK)
-#   define LIBXSMM_LOCK_RELEASE_rwlock(LOCK) omp_unset_lock(LOCK)
-#   define LIBXSMM_LOCK_TRYREAD_rwlock(LOCK) LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK)
-#   define LIBXSMM_LOCK_ACQREAD_rwlock(LOCK) LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK)
-#   define LIBXSMM_LOCK_RELREAD_rwlock(LOCK) LIBXSMM_LOCK_RELEASE_rwlock(LOCK)
-#   if (201811/*OpenMP 5.0*/ <= _OPENMP)
-#     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) omp_init_lock_with_hint(LOCK, *(ATTR))
-#     define LIBXSMM_LOCK_ATTR_TYPE_rwlock omp_lock_hint_t
-#     define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) (*(ATTR) = omp_lock_hint_none)
-#   else
-#     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
-#     define LIBXSMM_LOCK_ATTR_TYPE_rwlock const void*
+#   if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
+#     define LIBXSMM_LOCK_ACQUIRED_rwlock 0
+#     define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_rwlock 1
+#     define LIBXSMM_LOCK_TYPE_rwlock libxsmm_rwlock*
+#     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_rwlock_create()); }
+#     define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) libxsmm_rwlock_destroy(*(LOCK))
+#     define LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK) libxsmm_rwlock_trylock(*(LOCK))
+#     define LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK) libxsmm_rwlock_acquire(*(LOCK))
+#     define LIBXSMM_LOCK_RELEASE_rwlock(LOCK) libxsmm_rwlock_release(*(LOCK))
+#     define LIBXSMM_LOCK_TRYREAD_rwlock(LOCK) libxsmm_rwlock_tryread(*(LOCK))
+#     define LIBXSMM_LOCK_ACQREAD_rwlock(LOCK) libxsmm_rwlock_acqread(*(LOCK))
+#     define LIBXSMM_LOCK_RELREAD_rwlock(LOCK) libxsmm_rwlock_relread(*(LOCK))
+#     define LIBXSMM_LOCK_ATTR_TYPE_rwlock int
 #     define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
+#     define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 #   endif
-#   define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 # endif
-#else
+#else /* no synchronization */
 # define LIBXSMM_LOCK_SPINLOCK spinlock_dummy
 # define LIBXSMM_LOCK_MUTEX mutex_dummy
 # define LIBXSMM_LOCK_RWLOCK rwlock_dummy
@@ -695,6 +724,28 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_LOCK_ACQREAD(KIND, LOCK) LIBXSMM_LOCK_ACQUIRE(KIND, LOCK)
 # define LIBXSMM_LOCK_RELREAD(KIND, LOCK) LIBXSMM_LOCK_RELEASE(KIND, LOCK)
 #endif
+
+#if (0 == LIBXSMM_SYNC)
+# define LIBXSMM_FLOCK(FILE)
+# define LIBXSMM_FUNLOCK(FILE)
+#elif defined(_WIN32)
+# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
+# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
+#else
+# if !defined(__CYGWIN__)
+#   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
+#   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
+    LIBXSMM_EXTERN void flockfile(FILE*) LIBXSMM_THROW;
+    LIBXSMM_EXTERN void funlockfile(FILE*) LIBXSMM_THROW;
+# else /* Only available with __CYGWIN__ *and* C++0x. */
+#   define LIBXSMM_FLOCK(FILE)
+#   define LIBXSMM_FUNLOCK(FILE)
+# endif
+#endif
+
+/** Synchronize console output */
+#define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
+#define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
 
 
 /** Opaque type which represents a barrier. */

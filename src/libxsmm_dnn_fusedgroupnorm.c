@@ -12,14 +12,6 @@
 #include "libxsmm_dnn_fusedgroupnorm_forward.h"
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <string.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 
 LIBXSMM_API libxsmm_dnn_fusedgroupnorm* libxsmm_dnn_create_fusedgroupnorm(libxsmm_dnn_fusedgroupnorm_desc fusedgroupnorm_desc, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_fusedgroupnorm* handle = 0;

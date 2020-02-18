@@ -8,13 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm_source.h>
-#endif
-#include <stdlib.h>
-#if defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm_source.h>
-#endif
+#include <libxsmm_source.h>
 
 /* must match definitions in headeronly_aux.c */
 #if !defined(ITYPE)
@@ -25,7 +19,7 @@
 #endif
 
 
-LIBXSMM_EXTERN LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) mmdispatch(int m, int n, int k);
+LIBXSMM_EXTERN_C LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) mmdispatch(int m, int n, int k);
 
 
 int main(void)

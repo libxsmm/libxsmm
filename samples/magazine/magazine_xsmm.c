@@ -144,7 +144,11 @@ int main(int argc, char* argv[])
 
   if (0 < duration) {
     libxsmm_kernel_info info;
+#if defined(AUTO) /* no explicit kernel hence no query */
+    info.nflops = 2 * m * n * k;
+#else
     libxsmm_get_kernel_info(xmm.ptr, &info);
+#endif
     printf("%.1f GFLOPS/s\n", (1E-9 * info.nflops) / duration * size);
   }
   printf("%.1f ms\n", 1000.0 * duration);

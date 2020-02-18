@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke, Evangelos Georganas, Rajkishore Barik (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
 #include <libxsmm_sync.h>
 #include "libxsmm_main.h"
 #include "libxsmm_dnn_convolution_forward.h"
@@ -18,19 +17,13 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
-
 
 #define MIXED 0
 #define KHWC 1
@@ -739,7 +732,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
     const libxsmm_blasint ldA = handle->ofmblock;
     const libxsmm_blasint ldC = handle->ofmblock;
     const int beta = (handle->avoid_acc_load) ? 0 : 1;
-    int l_flags = ( LIBXSMM_GEMM_FLAGS('N', 'N') ) | handle->fwd_flags;
+    int l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | handle->fwd_flags;
     if (handle->desc.R == 1 && handle->desc.S == 1) {
       const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
       const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
@@ -780,7 +773,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
     const libxsmm_blasint ldA = handle->ofmblock;
     const libxsmm_blasint ldC = handle->ofmblock;
     const int beta = 0;
-    int l_flags = ( LIBXSMM_GEMM_FLAGS('N', 'N') ) | handle->fwd_flags;
+    int l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | handle->fwd_flags;
     if (handle->desc.R == 1 && handle->desc.S == 1) {
       const int IFW = handle->ifwp;
       const int IFH = handle->ifhp;

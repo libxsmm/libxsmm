@@ -17,9 +17,6 @@
 #if defined(LIBXSMM_BUILD)
 # error LIBXSMM_BUILD cannot be defined for the header-only LIBXSMM!
 #endif
-#if !defined(LIBXSMM_API)
-# define LIBXSMM_API LIBXSMM_EXTERN_C LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-#endif
 
 /**
  * This header is intentionally called "libxsmm_source.h" since the followings block
@@ -73,9 +70,8 @@
 #include "../src/libxsmm_dnn_convolution_weight_update.c"
 #include "../src/libxsmm_dnn_elementwise.c"
 #include "../src/libxsmm_dnn_fullyconnected.c"
-#include "../src/libxsmm_dnn_fullyconnected_backward.c"
+#include "../src/libxsmm_dnn_fullyconnected_backward_weight_update.c"
 #include "../src/libxsmm_dnn_fullyconnected_forward.c"
-#include "../src/libxsmm_dnn_fullyconnected_weight_update.c"
 #include "../src/libxsmm_dnn_fusedbatchnorm.c"
 #include "../src/libxsmm_dnn_fusedbatchnorm_backward.c"
 #include "../src/libxsmm_dnn_fusedbatchnorm_forward.c"

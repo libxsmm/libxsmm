@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_XCOPY_H
 #define LIBXSMM_XCOPY_H
 
-#include <libxsmm.h>
+#include <libxsmm_typedefs.h>
 
 #if !defined(LIBXSMM_XCOPY_CHECK) && !defined(NDEBUG)
 # define LIBXSMM_XCOPY_CHECK
@@ -185,13 +185,13 @@ LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
   unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel);
 
 /** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_trans_jit);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_trans_jit);
 /** M-factor shaping the N-extent (tile shape). */
-LIBXSMM_APIVAR_ALIGNED(float libxsmm_trans_tile_stretch);
+LIBXSMM_APIVAR_PUBLIC(float libxsmm_trans_tile_stretch);
 /** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR_ALIGNED(unsigned int* libxsmm_trans_mtile);
+LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_trans_mtile);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_trans_taskscale);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_trans_taskscale);
 
 #endif /*LIBXSMM_XCOPY_H*/
 

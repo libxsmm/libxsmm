@@ -8,11 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 
 LIBXSMM_INLINE void print_help(void) {

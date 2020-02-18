@@ -9,18 +9,7 @@
 /* Nadathur Satish, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_spmdm.h>
-#include <libxsmm.h>
 #include "libxsmm_main.h"
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 /* Enable/disable specific code paths */
 #if defined(LIBXSMM_INTRINSICS_AVX) && !defined(LIBXSMM_SPMDM_AVX)
@@ -38,17 +27,17 @@
 
 /* function pointer for the CPUID-dispatched implementation (separate typedef for legacy Cray C++ needed) */
 typedef void (*internal_spmdm_createSparseSlice_fp32_thread_fn)(const libxsmm_spmdm_handle*, char, const float*, libxsmm_CSR_sparseslice*, int, int, int);
-LIBXSMM_APIVAR(internal_spmdm_createSparseSlice_fp32_thread_fn internal_spmdm_createSparseSlice_fp32_thread);
+LIBXSMM_APIVAR_DEFINE(internal_spmdm_createSparseSlice_fp32_thread_fn internal_spmdm_createSparseSlice_fp32_thread);
 typedef void (*internal_spmdm_createSparseSlice_bfloat16_thread_fn)(const libxsmm_spmdm_handle*, char, const libxsmm_bfloat16*, libxsmm_CSR_sparseslice*, int, int, int);
-LIBXSMM_APIVAR(internal_spmdm_createSparseSlice_bfloat16_thread_fn internal_spmdm_createSparseSlice_bfloat16_thread);
+LIBXSMM_APIVAR_DEFINE(internal_spmdm_createSparseSlice_bfloat16_thread_fn internal_spmdm_createSparseSlice_bfloat16_thread);
 typedef void (*internal_spmdm_compute_fp32_thread_fn)(const libxsmm_spmdm_handle*, char, char, const float*, libxsmm_CSR_sparseslice*, const float*, char, const float*, float*, int, int, int);
-LIBXSMM_APIVAR(internal_spmdm_compute_fp32_thread_fn internal_spmdm_compute_fp32_thread);
+LIBXSMM_APIVAR_DEFINE(internal_spmdm_compute_fp32_thread_fn internal_spmdm_compute_fp32_thread);
 typedef void (*internal_spmdm_compute_bfloat16_thread_fn)(const libxsmm_spmdm_handle*, char, char, const libxsmm_bfloat16*, libxsmm_CSR_sparseslice*, const libxsmm_bfloat16*, char, const libxsmm_bfloat16*, float*, int, int, int);
-LIBXSMM_APIVAR(internal_spmdm_compute_bfloat16_thread_fn internal_spmdm_compute_bfloat16_thread);
+LIBXSMM_APIVAR_DEFINE(internal_spmdm_compute_bfloat16_thread_fn internal_spmdm_compute_bfloat16_thread);
 
 #if defined(LIBXSMM_SPMDM_AVX)
-LIBXSMM_APIVAR(__m256i* internal_spmdm_shufmasks_32);
-LIBXSMM_APIVAR(__m256i* internal_spmdm_shufmasks_16);
+LIBXSMM_APIVAR_DEFINE(__m256i* internal_spmdm_shufmasks_32);
+LIBXSMM_APIVAR_DEFINE(__m256i* internal_spmdm_shufmasks_16);
 #endif
 
 
@@ -246,8 +235,8 @@ void libxsmm_spmdm_createSparseSlice_fp32_thread(
   /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
 #if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_SPMDM_AVX512_CORE)
   internal_spmdm_createSparseSlice_fp32_thread_avx512_core(handle, transa, a, libxsmm_output_csr_a, block_id, tid, nthreads);
-#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) && /* eventually no need for an indirect call */ \
-      (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) && /* no need for an indirect call */ \
+      (LIBXSMM_X86_AVX512_CORE > LIBXSMM_MAX_STATIC_TARGET_ARCH)
   internal_spmdm_createSparseSlice_fp32_thread_avx2(handle, transa, a, libxsmm_output_csr_a, block_id, tid, nthreads);
 #else /* pointer based function call */
   LIBXSMM_ASSERT(0 != internal_spmdm_createSparseSlice_fp32_thread);
@@ -323,8 +312,8 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_thread(
   /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
 #if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_SPMDM_AVX512_CORE)
   internal_spmdm_createSparseSlice_bfloat16_thread_avx512_core(handle, transa, a, libxsmm_output_csr_a, block_id, tid, nthreads);
-#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) && /* eventually no need for an indirect call */ \
-      (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) && /* no need for an indirect call */ \
+      (LIBXSMM_X86_AVX512_CORE > LIBXSMM_MAX_STATIC_TARGET_ARCH)
   internal_spmdm_createSparseSlice_bfloat16_thread_avx2(handle, transa, a, libxsmm_output_csr_a, block_id, tid, nthreads);
 #else /* pointer based function call */
   LIBXSMM_ASSERT(0 != internal_spmdm_createSparseSlice_fp32_thread);
@@ -420,8 +409,8 @@ void libxsmm_spmdm_compute_fp32_thread(
   /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
 #if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_SPMDM_AVX512_CORE)
   internal_spmdm_compute_fp32_thread_avx512_core(handle, transa, transb, alpha, a_sparse, b, transc, beta, c, block_id, tid, nthreads);
-#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) && /* eventually no need for an indirect call */ \
-      (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) && /* no need for an indirect call */ \
+      (LIBXSMM_X86_AVX512_CORE > LIBXSMM_MAX_STATIC_TARGET_ARCH)
   internal_spmdm_compute_fp32_thread_avx2(handle, transa, transb, alpha, a_sparse, b, transc, beta, c, block_id, tid, nthreads);
 #else /* pointer based function call */
   LIBXSMM_ASSERT(0 != internal_spmdm_compute_fp32_thread);
@@ -517,8 +506,8 @@ void libxsmm_spmdm_compute_bfloat16_thread(
   /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
 #if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_SPMDM_AVX512_CORE)
   internal_spmdm_compute_bfloat16_thread_avx512_core(handle, transa, transb, alpha, a_sparse, b, transc, beta, c, block_id, tid, nthreads);
-#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) && /* eventually no need for an indirect call */ \
-      (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) && /* no need for an indirect call */ \
+      (LIBXSMM_X86_AVX512_CORE > LIBXSMM_MAX_STATIC_TARGET_ARCH)
   internal_spmdm_compute_bfloat16_thread_avx2(handle, transa, transb, alpha, a_sparse, b, transc, beta, c, block_id, tid, nthreads);
 #else /* pointer based function call */
   LIBXSMM_ASSERT(0 != internal_spmdm_compute_bfloat16_thread);

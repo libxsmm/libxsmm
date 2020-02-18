@@ -33,23 +33,31 @@
 #define LIBXSMM_VERSION_UPDATE LIBXSMM_CONFIG_VERSION_UPDATE
 #define LIBXSMM_VERSION_PATCH  LIBXSMM_CONFIG_VERSION_PATCH
 
+/**
+ * The following interfaces shall be explicitly included,
+ * i.e., separate from libxsmm.h:
+ * - libxsmm_intrinsics_x86.h
+ * - libxsmm_cpuid.h
+ * - libxsmm_sync.h
+ * - libxsmm_mhd.h
+*/
 #include "libxsmm_dnn_convolution.h"
 #include "libxsmm_dnn_fullyconnected.h"
 #include "libxsmm_dnn_fusedbatchnorm.h"
 #include "libxsmm_dnn_fusedgroupnorm.h"
 #include "libxsmm_dnn_pooling.h"
 #include "libxsmm_dnn_rnncell.h"
+#include "libxsmm_blocked_gemm.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
 #include "libxsmm_fsspmdm.h"
 #include "libxsmm_malloc.h"
-#include "libxsmm_blocked_gemm.h"
 #include "libxsmm_spmdm.h"
 #include "libxsmm_cpuid.h"
 #include "libxsmm_timer.h"
 #include "libxsmm_math.h"
-#include "libxsmm_sync.h"
 #include "libxsmm_rng.h"
+
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_API void libxsmm_init(void);
@@ -458,7 +466,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descr
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor* descriptor,
-   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values);
+   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values, const unsigned int packed_width);
 
 /**
  * Code generation routine for row-major format B matrix which is multiplied by a dense packed matrix (each element holds a SIMD-width

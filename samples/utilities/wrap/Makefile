@@ -1,6 +1,3 @@
-# Export all variables to sub-make processes.
-#.EXPORT_ALL_VARIABLES: #export
-
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../../..
 SRCDIR = .
@@ -11,7 +8,6 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I"$(INCDIR)" -I"$(DEPDIR)/include"
 
 BLAS = 2
 OMP = 1
@@ -21,6 +17,10 @@ BLAS_STATIC = 0
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
+
+# necessary include directories
+IFLAGS += -I$(call quote,$(INCDIR))
+IFLAGS += -I$(call quote,$(DEPDIR)/include)
 
 ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
   DEPSTATIC = 1

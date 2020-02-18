@@ -105,7 +105,6 @@ then
     fi
   fi
   export PARTITIONS
-  export PARTITION
 
   # setup CONFIGS (multiple configurations)
   if [ "" = "${CONFIGS}" ]; then

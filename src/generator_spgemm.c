@@ -21,17 +21,6 @@
 #include "generator_spgemm_csc_csparse_soa.h"
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 LIBXSMM_API
 void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_generated_code,
                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
@@ -203,7 +192,8 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
                                               const char*                    i_arch,
                                               const unsigned int*            i_row_idx,
                                               const unsigned int*            i_column_idx,
-                                              const void*                    i_values ) {
+                                              const void*                    i_values,
+                                              const unsigned int             i_packed_width ) {
   /* B matrix is sparse */
   if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
@@ -231,7 +221,7 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
       return;
     }
-    libxsmm_generator_spgemm_csc_csparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
+    libxsmm_generator_spgemm_csc_csparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values, i_packed_width );
   } else {
     /* something bad happened... */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
@@ -333,7 +323,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       if (i_is_csr == 0) {
         libxsmm_generator_spgemm_csc_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
       } else if (i_is_csr == 10) {
-        libxsmm_generator_spgemm_csc_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
+        libxsmm_generator_spgemm_csc_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values, 16 );
       } else {
         assert(0/*should not happen*/);
       }

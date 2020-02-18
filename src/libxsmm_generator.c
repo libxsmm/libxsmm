@@ -10,18 +10,22 @@
 ******************************************************************************/
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <string.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 #if !defined(LIBXSMM_PRODUCT_LIMIT)
 # define LIBXSMM_PRODUCT_LIMIT 1024
 #endif
+
+
+#if defined(LIBXSMM_INTRINSICS_AVX512)
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state0[16]);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state1[16]);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
+#endif
+
+/* definition of corresponding variables */
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_ninit);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_target_archid);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_verbosity);
 
 
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,

@@ -11,16 +11,6 @@
 #include "libxsmm_xcopy.h"
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 #if !defined(LIBXSMM_XCOPY_JIT)
 # if (defined(_WIN32) || defined(__CYGWIN__))
 /* only enable matcopy code generation (workaround issue with taking GP registers correctly) */
@@ -32,6 +22,13 @@
 #if !defined(LIBXSMM_XCOPY_JIT_TINY) && 0
 # define LIBXSMM_XCOPY_JIT_TINY
 #endif
+
+
+/* definition of corresponding variables */
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_trans_jit);
+LIBXSMM_APIVAR_PUBLIC_DEF(float libxsmm_trans_tile_stretch);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int* libxsmm_trans_mtile);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_trans_taskscale);
 
 
 LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)

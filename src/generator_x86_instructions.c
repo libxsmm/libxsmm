@@ -10,18 +10,6 @@
 ******************************************************************************/
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include <libxsmm_intrinsics_x86.h>
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <inttypes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 
 /**
@@ -2042,17 +2030,19 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
     libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
 
     if ( i_mask_reg_number != 0 ) {
+      /* avoid format-truncation warning due to unsigned int (theoretically) exceeding length of string (l_masking) */
+      LIBXSMM_ASSERT_MSG(i_mask_reg_number < 8, "Invalid mask register");
       if ( i_use_zero_masking == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
-          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}", i_mask_reg_number );
+          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%hd%%}", (unsigned short)i_mask_reg_number);
         } else {
-          LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}", i_mask_reg_number );
+          LIBXSMM_SNPRINTF(l_masking, 16, "{k%hd}", (unsigned short)i_mask_reg_number);
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}%%{z%%}", i_mask_reg_number );
+          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%hd%%}%%{z%%}", (unsigned short)i_mask_reg_number);
         } else {
-          LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}{z}", i_mask_reg_number );
+          LIBXSMM_SNPRINTF(l_masking, 16, "{k%hd}{z}", (unsigned short)i_mask_reg_number);
         }
       }
     }
@@ -3211,17 +3201,19 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
     }
 
     if ( i_mask_reg_number != 0 ) {
+      /* avoid format-truncation warning due to unsigned int (theoretically) exceeding length of string (l_masking) */
+      LIBXSMM_ASSERT_MSG(i_mask_reg_number < 8, "Invalid mask register");
       if ( i_use_zero_masking == 0) {
         if ( io_generated_code->code_type == 0 ) {
-          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}", i_mask_reg_number );
+          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%hd%%}", (unsigned short)i_mask_reg_number);
         } else {
-          LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}", i_mask_reg_number );
+          LIBXSMM_SNPRINTF(l_masking, 16, "{k%hd}", (unsigned short)i_mask_reg_number);
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}%%{z%%}", i_mask_reg_number );
+          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%hd%%}%%{z%%}", (unsigned short)i_mask_reg_number);
         } else {
-          LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}{z}", i_mask_reg_number );
+          LIBXSMM_SNPRINTF(l_masking, 16, "{k%hd}{z}", (unsigned short)i_mask_reg_number);
         }
       }
     }

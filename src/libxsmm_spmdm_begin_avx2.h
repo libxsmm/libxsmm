@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Nadathur Satish, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-
 #if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
 # error "libxsmm_intrinsics_x86.h not included!"
 #endif
