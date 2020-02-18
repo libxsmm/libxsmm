@@ -403,8 +403,8 @@ information = \
 	$(info $(CINFO)) \
 	$(if $(strip $(FC)),$(info $(FINFO)),$(NULL)) \
 	$(if $(strip $(FC)),$(NULL), \
-	$(if $(strip $(FC_VERSION_STRING)), \
-	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
+	$(if $(strip $(FC_VERSION)), \
+	$(info Fortran Compiler $(FC_VERSION) is outdated!), \
 	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
 	$(info --------------------------------------------------------------------------------)
 endif

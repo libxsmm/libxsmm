@@ -390,38 +390,38 @@ else
   endif
 endif
 
-CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
-ifeq (,$(CXX_VERSION_STRING))
-  CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
+CXX_VERSION = $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+ifeq (,$(CXX_VERSION))
+  CXX_VERSION = $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
 endif
-CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d. -f1)
-CXX_VERSION_MINOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d. -f2)
-CXX_VERSION_PATCH = $(shell echo "$(CXX_VERSION_STRING)" | cut -d. -f3)
+CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION)" | cut -d. -f1)
+CXX_VERSION_MINOR = $(shell echo "$(CXX_VERSION)" | cut -d. -f2)
+CXX_VERSION_PATCH = $(shell echo "$(CXX_VERSION)" | cut -d. -f3)
 ifeq (3,$(words $(CXX_VERSION_MAJOR) $(CXX_VERSION_MINOR) $(CXX_VERSION_PATCH)))
-  CXX_VERSION = $(shell echo "$$(($(CXX_VERSION_MAJOR)*10000+$(CXX_VERSION_MINOR)*100+$(CXX_VERSION_PATCH)))")
+  CXX_VERSION_NUM = $(shell echo "$$(($(CXX_VERSION_MAJOR)*10000+$(CXX_VERSION_MINOR)*100+$(CXX_VERSION_PATCH)))")
 else ifeq (2,$(words $(CXX_VERSION_MAJOR) $(CXX_VERSION_MINOR)))
-  CXX_VERSION = $(shell echo "$$(($(CXX_VERSION_MAJOR)*10000+$(CXX_VERSION_MINOR)*100))")
+  CXX_VERSION_NUM = $(shell echo "$$(($(CXX_VERSION_MAJOR)*10000+$(CXX_VERSION_MINOR)*100))")
   CXX_VERSION_PATCH = 0
 else
-  CXX_VERSION_STRING = $(NULL)
-  CXX_VERSION = 0
+  CXX_VERSION = $(NULL)
+  CXX_VERSION_NUM = 0
 endif
 
-CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
-ifeq (,$(CC_VERSION_STRING))
-  CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
+CC_VERSION = $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+ifeq (,$(CC_VERSION))
+  CC_VERSION = $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
 endif
-CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | cut -d. -f1)
-CC_VERSION_MINOR = $(shell echo "$(CC_VERSION_STRING)" | cut -d. -f2)
-CC_VERSION_PATCH = $(shell echo "$(CC_VERSION_STRING)" | cut -d. -f3)
+CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION)" | cut -d. -f1)
+CC_VERSION_MINOR = $(shell echo "$(CC_VERSION)" | cut -d. -f2)
+CC_VERSION_PATCH = $(shell echo "$(CC_VERSION)" | cut -d. -f3)
 ifeq (3,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR) $(CC_VERSION_PATCH)))
-  CC_VERSION = $(shell echo "$$(($(CC_VERSION_MAJOR)*10000+$(CC_VERSION_MINOR)*100+$(CC_VERSION_PATCH)))")
+  CC_VERSION_NUM = $(shell echo "$$(($(CC_VERSION_MAJOR)*10000+$(CC_VERSION_MINOR)*100+$(CC_VERSION_PATCH)))")
 else ifeq (2,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR)))
-  CC_VERSION = $(shell echo "$$(($(CC_VERSION_MAJOR)*10000+$(CC_VERSION_MINOR)*100))")
+  CC_VERSION_NUM = $(shell echo "$$(($(CC_VERSION_MAJOR)*10000+$(CC_VERSION_MINOR)*100))")
   CC_VERSION_PATCH = 0
 else
-  CC_VERSION_STRING = $(NULL)
-  CC_VERSION = 0
+  CC_VERSION = $(NULL)
+  CC_VERSION_NUM = 0
 endif
 
 # disable Fortran per user-request
@@ -455,42 +455,42 @@ endif
 endif
 
 ifneq (,$(strip $(FC)))
-  FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
-  ifeq (,$(FC_VERSION_STRING))
-    FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
+  FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+  ifeq (,$(FC_VERSION))
+    FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
   endif
-  FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f1)
-  FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f2)
-  FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f3)
+  FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION)" | cut -d. -f1)
+  FC_VERSION_MINOR = $(shell echo "$(FC_VERSION)" | cut -d. -f2)
+  FC_VERSION_PATCH = $(shell echo "$(FC_VERSION)" | cut -d. -f3)
   ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-    FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
+    FC_VERSION_NUM = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
   else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-    FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
+    FC_VERSION_NUM = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
     FC_VERSION_PATCH = 0
   else
-    FC_VERSION_STRING = $(NULL)
-    FC_VERSION = 0
+    FC_VERSION = $(NULL)
+    FC_VERSION_NUM = 0
   endif
   ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | cut -d" " -f1))
-    ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((40500>$(FC_VERSION_NUM)))"))
       ifneq (gfortran,$(call qndir,$(FC)))
         FC = gfortran
-        FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
-        ifeq (,$(FC_VERSION_STRING))
-          FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
+        FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+        ifeq (,$(FC_VERSION))
+          FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
         endif
-        FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f1)
-        FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f2)
-        FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d. -f3)
+        FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION)" | cut -d. -f1)
+        FC_VERSION_MINOR = $(shell echo "$(FC_VERSION)" | cut -d. -f2)
+        FC_VERSION_PATCH = $(shell echo "$(FC_VERSION)" | cut -d. -f3)
         ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
+          FC_VERSION_NUM = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
         else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
+          FC_VERSION_NUM = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
           FC_VERSION_PATCH = 0
         else
-          FC_VERSION = 0
+          FC_VERSION_NUM = 0
         endif
-        ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
+        ifneq (0,$(shell echo "$$((40500>$(FC_VERSION_NUM)))"))
           override FC = $(NULL)
         endif
       else
@@ -498,7 +498,7 @@ ifneq (,$(strip $(FC)))
       endif
     endif
   else ifneq (0,$(INTEL))
-    ifneq (0,$(shell echo "$$((130000>$(FC_VERSION) && 0<$(FC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((130000>$(FC_VERSION_NUM) && 0<$(FC_VERSION_NUM)))"))
       override FC = $(NULL)
     endif
   endif
@@ -506,8 +506,8 @@ endif
 
 ifeq (,$(strip $(FC)))
   ifeq (0,$(FORTRAN))
-    FC_VERSION_STRING = $(NULL)
-  else # keep FC_VERSION_STRING for message about outdated compiler
+    FC_VERSION = $(NULL)
+  else # keep FC_VERSION for message about outdated compiler
     FORTRAN = 0
   endif
 endif
@@ -664,27 +664,27 @@ CLANG ?= 0
 
 # Make GCC version number available even when not using GCC
 ifneq (0,$(GCC))
-  GCC_VERSION_STRING = $(CXX_VERSION_STRING)
+  GCC_VERSION = $(CXX_VERSION)
   GCC_VERSION_MAJOR = $(CXX_VERSION_MAJOR)
   GCC_VERSION_MINOR = $(CXX_VERSION_MINOR)
   GCC_VERSION_PATCH = $(CXX_VERSION_PATCH)
 else ifeq (0,$(CLANG))
   GCCBIN = $(call qndir,$(call which,gcc))
   ifneq (,$(strip $(GCCBIN)))
-    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
-    GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d. -f1)
-    GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d. -f2)
-    GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | cut -d. -f3)
+    GCC_VERSION = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+    GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION)" | cut -d. -f1)
+    GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION)" | cut -d. -f2)
+    GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION)" | cut -d. -f3)
   endif
 endif
 ifeq (3,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR) $(GCC_VERSION_PATCH)))
-  GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR)*10000+$(GCC_VERSION_MINOR)*100+$(GCC_VERSION_PATCH)))")
+  GCC_VERSION_NUM = $(shell echo "$$(($(GCC_VERSION_MAJOR)*10000+$(GCC_VERSION_MINOR)*100+$(GCC_VERSION_PATCH)))")
 else ifeq (2,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR)))
-  GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR)*10000+$(GCC_VERSION_MINOR)*100))")
+  GCC_VERSION_NUM = $(shell echo "$$(($(GCC_VERSION_MAJOR)*10000+$(GCC_VERSION_MINOR)*100))")
   GCC_VERSION_PATCH = 0
 else
-  GCC_VERSION_STRING = $(NULL)
-  GCC_VERSION = 0
+  GCC_VERSION = $(NULL)
+  GCC_VERSION_NUM = 0
 endif
 
 MAINTAINER ?= 0
@@ -692,7 +692,7 @@ MAINTAINER ?= 0
 ifeq (,$(filter Windows_NT Darwin,$(UNAME)))
 ifeq (,$(SPACK_ENV_PATH)) # not under Spack
 ifeq (3,$(GCC)) # pure GNU toolchain
-ifneq (0,$(shell echo "$$((60000<=$(GCC_VERSION)))"))
+ifneq (0,$(shell echo "$$((60000<=$(GCC_VERSION_NUM)))"))
   MAINTAINER = 1
 endif
 endif
@@ -1044,12 +1044,12 @@ CXXLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),c) $(XLIB_END)
 
 ifneq (0,$(INTEL))
   AR ?= xiar
-  ifneq (0,$(shell echo "$$((200000<=$(CXX_VERSION)))"))
+  ifneq (0,$(shell echo "$$((200000<=$(CXX_VERSION_NUM)))"))
     CXXFLAGS += -std=c++14
   else ifneq (0,$(COMPATIBLE))
-    ifneq (0,$(shell echo "$$((170000<=$(CXX_VERSION)))"))
+    ifneq (0,$(shell echo "$$((170000<=$(CXX_VERSION_NUM)))"))
       CXXFLAGS += -std=c++14
-    else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION)))"))
+    else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION_NUM)))"))
       CXXFLAGS += -std=c++11
     endif
   endif
@@ -1098,7 +1098,7 @@ ifneq (0,$(INTEL))
     endif
     CXXFLAGS += $(CPEDANTIC)
     CFLAGS += $(CSTD) $(CPEDANTIC)
-    ifneq (990000,$(CC_VERSION))
+    ifneq (990000,$(CC_VERSION_NUM))
       CFLAGS += $(CWARNEXTRA)
     else ifneq (2,$(PEDANTIC))
       CFLAGS += $(CWARNEXTRA)
@@ -1149,7 +1149,7 @@ ifneq (0,$(INTEL))
     ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
       #FCFLAGS += -qoverride_limits #-fp-model fast=2
-      ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
+      ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION_NUM)))"))
         FCFLAGS += -align array64byte
       endif
       ifneq (0,$(IPO))
@@ -1245,7 +1245,7 @@ ifneq (0,$(INTEL))
     endif
   endif
   ifneq (0,$(SIMD))
-  ifneq (0,$(shell echo "$$((150000<=$(CXX_VERSION)))"))
+  ifneq (0,$(shell echo "$$((150000<=$(CXX_VERSION_NUM)))"))
     DFLAGS += -DLIBXSMM_OPENMP_SIMD
     CXXFLAGS += -qopenmp-simd
     CFLAGS += -qopenmp-simd
@@ -1263,14 +1263,14 @@ ifneq (0,$(INTEL))
   endif
   endif
   # workaround for certain bits introduced by GCC 7.0
-  ifneq (0,$(shell echo "$$(((180000<=$(CC_VERSION) && 180001>$(CC_VERSION)) || (170006>$(CC_VERSION) && 0!=$(CC_VERSION))))"))
+  ifneq (0,$(shell echo "$$(((180000<=$(CC_VERSION_NUM) && 180001>$(CC_VERSION_NUM)) || (170006>$(CC_VERSION_NUM) && 0!=$(CC_VERSION_NUM))))"))
     CFLAGS += -D_Float128=__float128
   endif
 else # GCC assumed
   ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
-    ifneq (0,$(shell echo "$$((50000<=$(GCC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((50000<=$(GCC_VERSION_NUM)))"))
       CXXFLAGS += -std=c++14
-    else ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION)))"))
+    else ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION_NUM)))"))
       CXXFLAGS += -std=c++11
     endif
     CXXFLAGS += -Wall
@@ -1281,16 +1281,16 @@ else # GCC assumed
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wintrinsics-std \
                  -Wimplicit-interface -Wimplicit-procedure
-    ifneq (0,$(shell echo "$$((40200<=$(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((40200<=$(CC_VERSION_NUM)))"))
       CPEDANTIC += -Wno-overlength-strings
     else ifneq (0,$(CLANG))
       CPEDANTIC += -Wno-overlength-strings
     endif
-    ifneq (0,$(shell echo "$$((40500<=$(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((40500<=$(CC_VERSION_NUM)))"))
       CPEDANTIC += -Wshadow
     endif
     ifneq (,$(strip $(FC)))
-    ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION_NUM)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
                    -Wrealloc-lhs -Wrealloc-lhs-all \
                    -Wreal-q-constant -Wconversion-extra
@@ -1382,7 +1382,7 @@ else # GCC assumed
       CFLAGS += -finstrument-functions
       FCFLAGS += -finstrument-functions
       # e.g. clang does not need/understand below flag
-      ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION)))"))
+      ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION_NUM)))"))
         CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
         ifneq (,$(filter 2 3,$(GCC)))
           CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
@@ -1431,7 +1431,7 @@ else # GCC assumed
     else ifneq (0,$(GCC))
       OMPFLAG_FORCE = -fopenmp
     else ifneq (Darwin,$(UNAME))
-      ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION)))"))
+      ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION_NUM)))"))
         OMPFLAG_FORCE = -fopenmp
         OMPRT = omp
       endif
@@ -1532,9 +1532,9 @@ ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifeq (3,$(AVX))
-    ifneq (0,$(shell echo "$$(((0!=$(GCC) && 60000<=$(GCC_VERSION)) || \
-          (0!=$(CLANG) && (40000<=$(CC_VERSION) || 0==$(CC_VERSION))) || \
-          (0!=$(PGI) && 190000<=$(CC_VERSION))))"))
+    ifneq (0,$(shell echo "$$(((0!=$(GCC) && 60000<=$(GCC_VERSION_NUM)) || \
+          (0!=$(CLANG) && (40000<=$(CC_VERSION_NUM) || 0==$(CC_VERSION_NUM))) || \
+          (0!=$(PGI) && 190000<=$(CC_VERSION_NUM))))"))
     ifneq (,$(call ctest,$(CC),-mfma -mavx512f -mavx512cd))
       CTARGET = -mfma -mavx512f -mavx512cd
       ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
@@ -1548,7 +1548,7 @@ ifeq (undefined,$(origin TARGET))
         else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
           CTARGET += -mavx512dq -mavx512bw -mavx512vl
           #CTARGET += -mavx512ifma -mavx512vbmi
-        else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION)))"))
+        else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION_NUM)))"))
           CTARGET += -mavx512dq -mavx512bw -mavx512vl
         endif
       endif
@@ -1557,7 +1557,7 @@ ifeq (undefined,$(origin TARGET))
     endif
     ifeq (,$(CTARGET)) # fallback to AVX2
     ifneq (,$(filter 2 3,$(AVX)))
-      ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || (40800<=$(GCC_VERSION) && 0==$(PGI)) || 0==$(CC_VERSION)))"))
+      ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || (40800<=$(GCC_VERSION_NUM) && 0==$(PGI)) || 0==$(CC_VERSION_NUM)))"))
         CTARGET ?= -march=core-avx2
       else
         CTARGET ?= -mavx2 -mfma
@@ -1566,7 +1566,7 @@ ifeq (undefined,$(origin TARGET))
     endif
     ifeq (,$(CTARGET)) # fallback to AVX
     ifneq (,$(filter 1 2 3,$(AVX)))
-      ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+      ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || 40400<=$(GCC_VERSION_NUM) || 0==$(CC_VERSION_NUM)))"))
         CTARGET ?= -mavx
       endif
     endif
@@ -1575,7 +1575,7 @@ ifeq (undefined,$(origin TARGET))
       ifeq (,$(CTARGET)) # SSE-4.2 or default-SSE
         ifneq (,$(filter 01 02 03 10 11 12 13 40 41 42 43,$(SSE)$(AVX)))
           ifneq (0,$(GCC))
-            ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
+            ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION_NUM)))"))
               ifeq (0,$(MAINTAINER))
                 CTARGET = -msse4.2
               else # maintainer build
@@ -1668,15 +1668,15 @@ ifeq (0,$(COMPATIBLE))
     ifneq (0,$(SIMD))
       ifneq (0,$(GCC))
         ifneq (,$(CTARGET))
-        ifneq (0,$(shell echo "$$((40900<=$(CC_VERSION)))"))
+        ifneq (0,$(shell echo "$$((40900<=$(CC_VERSION_NUM)))"))
           DFLAGS += -DLIBXSMM_OPENMP_SIMD
           CFLAGS += -fopenmp-simd
           ifneq (1,$(GCC))
-          ifneq (0,$(shell echo "$$((40900<=$(CXX_VERSION)))"))
+          ifneq (0,$(shell echo "$$((40900<=$(CXX_VERSION_NUM)))"))
             CXXFLAGS += -fopenmp-simd
             ifneq (,$(FTARGET))
             ifneq (2,$(GCC))
-            ifneq (0,$(shell echo "$$((40900<=$(FC_VERSION)))"))
+            ifneq (0,$(shell echo "$$((40900<=$(FC_VERSION_NUM)))"))
               FCFLAGS += -fopenmp-simd
               SIMD ?= 1
             endif
@@ -1690,13 +1690,13 @@ ifeq (0,$(COMPATIBLE))
         ifneq (,$(strip $(SIMD))) # explicit
         ifneq (Darwin,$(UNAME))
         ifneq (,$(CTARGET))
-        ifneq (0,$(shell echo "$$((60000<=$(CC_VERSION) && 60000<=$(CXX_VERSION)))"))
+        ifneq (0,$(shell echo "$$((60000<=$(CC_VERSION_NUM) && 60000<=$(CXX_VERSION_NUM)))"))
           DFLAGS += -DLIBXSMM_OPENMP_SIMD
           CXXFLAGS += -fopenmp-simd
           CFLAGS += -fopenmp-simd
           ifneq (,$(FTARGET))
           ifneq (,$(strip $(FC)))
-          ifneq (0,$(shell echo "$$((40900<=$(FC_VERSION)))"))
+          ifneq (0,$(shell echo "$$((40900<=$(FC_VERSION_NUM)))"))
             FCFLAGS += -fopenmp-simd
             SIMD ?= 1
           endif
@@ -1727,7 +1727,7 @@ ifeq (0,$(COMPATIBLE))
   ifneq (Darwin,$(UNAME))
     ifneq (0,$(HARDEN)) # not defined: enabled
       ifneq (,$(strip $(HARDEN))) # explicit
-        ifneq (0,$(shell echo "$$((40900<=$(FC_VERSION)))"))
+        ifneq (0,$(shell echo "$$((40900<=$(FC_VERSION_NUM)))"))
           CXXFLAGS += -fstack-protector-strong
           CFLAGS += -fstack-protector-strong
         else
@@ -1792,10 +1792,10 @@ endif
 
 # Information which can be displayed by the actual Makefile
 ifneq (,$(strip $(FC)))
-  GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
+  GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION)), $(strip $(CXX_NAME) $(CXX_VERSION)), and $(strip $(FC_NAME) $(FC_VERSION))
   FINFO = Fortran target: $(if $(FTARGET),$(FTARGET),<compiler default>)
 else
-  GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(CXX_NAME) $(CXX_VERSION_STRING))
+  GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION)), and $(strip $(CXX_NAME) $(CXX_VERSION))
   FINFO = Fortran: <none>
 endif
 CINFO = C / C++ target: $(if $(CTARGET),$(CTARGET),<compiler default>)
@@ -1925,7 +1925,7 @@ ifneq (,$(strip $(MKLROOT)))
   ifeq (0,$(PGI))
     MKL ?= $(BLAS)
     ifneq (,$(strip $(FC)))
-      ifneq (0,$(shell echo "$$((0==$(GCC) || 40600<=$(GCC_VERSION)))"))
+      ifneq (0,$(shell echo "$$((0==$(GCC) || 40600<=$(GCC_VERSION_NUM)))"))
         MKL_DIRECT ?= 0
       else
         MKL_DIRECT = 0
@@ -2200,12 +2200,12 @@ objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% %STATE MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% UNUSED AVX \
-    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR DFLAGS FINFO SSE \
-    ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE DLIBEXT DYNAMIC FLOCK LIBEXT ICX \
-    ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE SHARED GNU CCAR CLDFLAGS LIBGFORTRAN PGI \
-    FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS \
-    LIBDEP LIBFIND LIBDL LIBRT LIBM GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CSTD CWARNEXTRA OMPTEST QUADMATH \
-    BLASDIR BLASLIBEXT BLASTEST BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN FMAIN CPEDANTIC FREEFORM FFORM_FLAG FORTLIB \
+    COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO SSE ENV EXTDEP FORTDEP FSTD GINFO TESTSIZE \
+    DLIBEXT DYNAMIC FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE SHARED \
+    CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% PYMOD \
+    GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW \
+    NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN FMAIN \
+    CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST \
     uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
     ctest applyif extname objname quote qapath qndir qdir qsuffix qbname qname apath afile abslib \
     MKL_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \

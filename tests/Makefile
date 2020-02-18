@@ -23,7 +23,7 @@ IFLAGS += -I$(call quote,$(INCDIR))
 IFLAGS += -I$(call quote,$(DEPDIR)/include)
 #IFLAGS += -I$(call quote,$(DEPDIR)/src)
 
-ifneq (0,$(shell echo "$$((100000>$(GCC_VERSION)))"))
+ifneq (0,$(shell echo "$$((100000>$(GCC_VERSION_NUM)))"))
   MIX ?= 1
 else
   MIX ?= 0

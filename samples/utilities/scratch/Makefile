@@ -54,7 +54,7 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-ifneq (0,$(shell echo "$$((0!=$(INTEL) && 190001<=$(CC_VERSION)))"))
+ifneq (0,$(shell echo "$$((0!=$(INTEL) && 190001<=$(CC_VERSION_NUM)))"))
   QKMALLOC ?= 1
 else
   QKMALLOC ?= 0
