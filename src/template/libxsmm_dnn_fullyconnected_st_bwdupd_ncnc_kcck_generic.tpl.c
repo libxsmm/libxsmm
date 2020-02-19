@@ -129,14 +129,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   LIBXSMM_VLA_DECL(4,        element_input_type,    dinput, (element_input_type* )handle->grad_input->data, nBlocksIFm, bn, bc);
   LIBXSMM_VLA_DECL(4,       element_filter_type, filter_tr, (element_filter_type*)handle->scratch, nBlocksOFm, bk, bc);
  /* Batch reduce related variables */
-#ifdef ADDRESS_BRGEMM
-  const element_filter_type *A_array[1024];
-  const element_output_type *B_array[1024];
-#endif
-#ifdef OFFSET_BRGEMM
-  unsigned long long  A_offsets[1024];
-  unsigned long long  B_offsets[1024];
-#endif
   unsigned long long  blocks = nBlocksOFm;
   int KB_BLOCKS = nBlocksOFm, BF = 1;
 
@@ -173,13 +165,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
-#ifdef OFFSET_BRGEMM
-    /* Hoist here the offset preparation */
-    for ( ofm2 = 0; ofm2 < KB_BLOCKS; ++ofm2 ) {
-      A_offsets[ofm2] = (ofm2 + ofm1*KB_BLOCKS) * handle->bc * handle->bk * sizeof(element_filter_type);
-      B_offsets[ofm2] = (ofm2 + ofm1*KB_BLOCKS) * handle->bn * handle->bc * sizeof(element_output_type);
-    }
-#endif
     for ( mb1ifm1 = thr_begin; mb1ifm1 < thr_end; ++mb1ifm1 ) {
       mb1  = mb1ifm1%nBlocksMB;
       ifm1 = mb1ifm1/nBlocksMB;
@@ -191,30 +176,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
           }
         }
       }
-
       blocks = KB_BLOCKS;
-#ifdef ADDRESS_BRGEMM
-      /* prepare arguments for batch-reduce call  */
-      for ( ofm2 = 0; ofm2 < KB_BLOCKS; ++ofm2 ) {
-        A_array[ofm2] = &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm2 + ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bk, bc);
-#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
-        B_array[ofm2] = &LIBXSMM_VLA_ACCESS(4, doutput2,   mb1,  ofm2 + ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk);
-#else
-        B_array[ofm2] = &LIBXSMM_VLA_ACCESS(4, doutput,    mb1,  ofm2 + ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk);
-#endif
-      }
-      batchreduce_kernel_bwd(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dinput, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
-#endif
-#ifdef OFFSET_BRGEMM
-      batchreduce_kernel_bwd( &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bk, bc),
-#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
-                              &LIBXSMM_VLA_ACCESS(4, doutput2,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
-#else
-                              &LIBXSMM_VLA_ACCESS(4, doutput,    mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
-#endif
-                              &LIBXSMM_VLA_ACCESS(4, dinput,     mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks, A_offsets, B_offsets);
-#endif
-#ifdef STRIDE_BRGEMM
       batchreduce_kernel_bwd( &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bk, bc),
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
                               &LIBXSMM_VLA_ACCESS(4, doutput2,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
@@ -222,7 +184,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
                               &LIBXSMM_VLA_ACCESS(4, doutput,    mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
 #endif
                               &LIBXSMM_VLA_ACCESS(4, dinput,     mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
-#endif
     }
   }
 
