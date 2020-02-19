@@ -984,6 +984,7 @@ DIRS_SAMPLES = $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /edge/repro/ \
 	| grep -v /packed/ \
 	| grep -v /pyfr/ \
+	| grep -v /cp2k/ \
 	$(NULL)))
 
 .PHONY: samples $(DIRS_SAMPLES)
