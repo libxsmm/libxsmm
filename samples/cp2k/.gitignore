@@ -1,4 +1,5 @@
 cp2k-perf.sh
 cp2k-perf.txt
 cp2k-test.txt
-cp2k
+cp2k-collocate
+cp2k-dbcsr
