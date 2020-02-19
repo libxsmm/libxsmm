@@ -143,16 +143,16 @@ int main(int argc, char* argv[])
     bk = nOFm;
   }
 
-  if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
-    printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only)\n");
+  if (type != 'A' && type != 'F' && type != 'B' && type != 'U' && type != 'M') {
+    printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only). 'M' (BPUP-fused only)\n");
     return -1;
   }
-  if ( fuse_type != 0 ) {
-    printf("fuse type needs to be 0\n");
+  if ( (fuse_type < 0) || (fuse_type > 5) ) {
+    printf("fuse type needs to be 0 (None), 1 (Bias), 2 (ReLU), 3 (Sigmoid), 4 (Bias+ReLU), 5 (Bias+Sigmoid)\n");
     return -1;
   }
-  if (format != 'B') {
-    printf("format needs to be 'B' (for locked NCNC KCCK)\n");
+  if (format != 'L' && format != 'B') {
+    printf("format needs to be 'L' (libxsmm) or 'B' (for locked NCNC KCCK)\n");
     return -1;
   }
 
