@@ -73,6 +73,9 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor*  libxsmm_deloutput;
   libxsmm_dnn_tensor*  libxsmm_filter;
   libxsmm_dnn_tensor*  libxsmm_delfilter;
+  libxsmm_dnn_tensor*  libxsmm_bias;
+  libxsmm_dnn_tensor*  libxsmm_delbias;
+  libxsmm_dnn_tensor*  libxsmm_relumask;
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
@@ -426,7 +429,10 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &norms_bwd);
 
       if ( (fuse_type == 1) || (fuse_type == 4) || (fuse_type == 5) ) {
-        libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nOFm, 1, naive_delbias, delbias_libxsmm, 0, 0);
+      /* copy out data */
+      matrix_copy_NCNC_to_NC_bf16( delbias_libxsmm, naive_libxsmm_delbias_bf16, 1, 1, nOFm, 1, nOFm );
+      libxsmm_convert_bf16_f32( naive_libxsmm_delbias_bf16, naive_libxsmm_delbias_f32, nOFm );
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nOFm, 1, naive_delbias, naive_libxsmm_delbias_f32, 0, 0);
         printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
         printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
         printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -436,7 +442,6 @@ int main(int argc, char* argv[])
         printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
         libxsmm_matdiff_reduce(&diff, &norms_bwd);
       }
-
     }
 
     if ( (type == 'A' || type == 'U') && LIBXSMM_NEQ(0, check) ) {
