@@ -99,7 +99,7 @@ float* temp_output = (float*)handle->scratch;
 LIBXSMM_VLA_DECL(4,        float,    output_f32, (float*) temp_output, nBlocksOFm, bn, bk);
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
-LIBXSMM_VLA_DECL(2, const element_input_type,               bias,   (float*)              handle->reg_bias->data,                           handle->bk);
+LIBXSMM_VLA_DECL(2, const element_input_type,               bias,   (element_input_type*)              handle->reg_bias->data,                           handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
 LIBXSMM_VLA_DECL(4, unsigned char,           relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
