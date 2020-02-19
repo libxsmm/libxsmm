@@ -434,7 +434,6 @@ int main(int argc, char* argv[])
       matrix_copy_NCNC_to_NC_bf16( delbias_libxsmm, naive_libxsmm_delbias_bf16, 1, 1, nOFm, 1, nOFm );
       libxsmm_convert_bf16_f32( naive_libxsmm_delbias_bf16, naive_libxsmm_delbias_f32, nOFm );
       libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nOFm, 1, naive_delbias, naive_libxsmm_delbias_f32, 0, 0);
-        printf("\nDelbias Norms\n");
         printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
         printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
         printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -478,6 +477,70 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd);
     }
+
+    if ( (type == 'A' || type == 'M') && LIBXSMM_NEQ(0, check) ) {
+      printf("##########################################\n");
+      printf("# Correctness - BWDUPD (custom-Storage)  #\n");
+      printf("##########################################\n");
+
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid ) );
+      }
+
+      /* copy out data */
+      matrix_copy_NCNC_to_NC_bf16( delinput_libxsmm, naive_libxsmm_delinput_bf16, 1, nImg, nIFm, bn, bc );
+      libxsmm_convert_bf16_f32( naive_libxsmm_delinput_bf16, naive_libxsmm_delinput_f32, nImg*nIFm );
+
+      /* compare */
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput_f32, 0, 0);
+      printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_bwd);
+
+      if ( (fuse_type == 1) || (fuse_type == 4) || (fuse_type == 5) ) {
+      /* copy out data */
+      matrix_copy_NCNC_to_NC_bf16( delbias_libxsmm, naive_libxsmm_delbias_bf16, 1, 1, nOFm, 1, nOFm );
+      libxsmm_convert_bf16_f32( naive_libxsmm_delbias_bf16, naive_libxsmm_delbias_f32, nOFm );
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nOFm, 1, naive_delbias, naive_libxsmm_delbias_f32, 0, 0);
+        printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+        printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+        printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+        printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+        printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+        printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+        printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+        libxsmm_matdiff_reduce(&diff, &norms_bwd);
+      }
+
+      /* copy out data */
+      matrix_copy_KCCK_to_KC_bf16( delfilter_libxsmm, naive_libxsmm_delfilter_bf16, nIFm, nOFm, bc, bk );
+      libxsmm_convert_bf16_f32( naive_libxsmm_delfilter_bf16, naive_libxsmm_delfilter_f32, nIFm*nOFm );
+
+      /* compare */
+      libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter_f32, 0, 0);
+      printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_upd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_upd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_upd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_upd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_upd);
+     }
+
     if (type == 'A' || type == 'F') {
       printf("##########################################\n");
       printf("#   Performance - FWD (custom-Storage)   #\n");
@@ -578,6 +641,39 @@ int main(int argc, char* argv[])
           nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
           norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
+
+    if (type == 'A' || type == 'M') {
+      printf("##########################################\n");
+      printf("# Performance - BWDUPD (custom-Storage)  #\n");
+      printf("##########################################\n");
+      l_start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#     pragma omp parallel private(i)
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+        for (i = 0; i < iters; ++i) {
+          libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
+        }
+      }
+      l_end = libxsmm_timer_tick();
+      l_total = libxsmm_timer_duration(l_start, l_end);
+
+      gflop = (4.0*(double)nImg*(double)nIFm*(double)nOFm*(double)iters) / (1000*1000*1000);
+
+      printf("GFLOP  = %.5g\n", gflop/(double)iters);
+      printf("fp time = %.5g\n", ((double)(l_total/iters)));
+      printf("GFLOPS  = %.5g\n", gflop/l_total);
+
+      printf("PERFDUMP,UP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
+          nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+          norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
+    }
+
     /* clean-up */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_scratch( libxsmm_handle ) );
     libxsmm_free(scratch);
@@ -587,6 +683,10 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle, LIBXSMM_DNN_RELU_MASK ) );
+
 
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_delinput ) );
@@ -594,6 +694,9 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_deloutput ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_filter ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_delfilter ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_delbias ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_relumask ) );
 
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_fullyconnected( libxsmm_handle ) );
   }
@@ -623,6 +726,15 @@ int main(int argc, char* argv[])
   libxsmm_free(deloutput_libxsmm);
   libxsmm_free(filter_libxsmm);
   libxsmm_free(delfilter_libxsmm);
+  libxsmm_free(naive_bias);
+  libxsmm_free(naive_delbias);
+  libxsmm_free(naive_bias_bf16);
+  libxsmm_free(naive_delbias_bf16);
+  libxsmm_free(naive_libxsmm_delbias_bf16);
+  libxsmm_free(naive_libxsmm_delbias_f32);
+  libxsmm_free(relumask_libxsmm);
+  libxsmm_free(bias_libxsmm);
+  libxsmm_free(delbias_libxsmm);
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
