@@ -11,8 +11,6 @@
 #include "libxsmm_dnn_fullyconnected_backward_weight_update.h"
 #include "libxsmm_main.h"
 
-#define STRIDE_BRGEMM
-
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_custom_f32_f32(libxsmm_dnn_fullyconnected* handle, libxsmm_dnn_compute_kind kind, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_f32_f32(libxsmm_dnn_fullyconnected* handle, libxsmm_dnn_compute_kind kind, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_custom_bf16_f32(libxsmm_dnn_fullyconnected* handle, libxsmm_dnn_compute_kind kind, int start_thread, int tid);
@@ -667,15 +665,8 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_f32_f32(libxsmm
   typedef float element_output_type;
   typedef float element_filter_type;
   /* backward GEMM */
-#ifdef ADDRESS_BRGEMM
-  libxsmm_smmfunction_reducebatch_addr batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.smra;
-#endif
-#ifdef OFFSET_BRGEMM
-  libxsmm_smmfunction_reducebatch_offs batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.smro;
-#endif
-#ifdef STRIDE_BRGEMM
-libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.smrs;
-#endif
+  libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.smrs;
+
   /* update GEMM */
   libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
   libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
@@ -962,15 +953,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_k
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-#ifdef ADDRESS_BRGEMM
-      libxsmm_smmfunction_reducebatch_addr batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.smra;
-#endif
-#ifdef OFFSET_BRGEMM
-      libxsmm_smmfunction_reducebatch_offs batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.smro;
-#endif
-#ifdef STRIDE_BRGEMM
       libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.smrs;
-#endif
+
       libxsmm_blasint lda_upd = (libxsmm_blasint)handle->bk;
       libxsmm_blasint ldb_upd = (libxsmm_blasint)handle->bc;
       libxsmm_blasint ldc_upd = (libxsmm_blasint)handle->bk;

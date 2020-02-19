@@ -11,9 +11,6 @@
 #include "libxsmm_dnn_fullyconnected_forward.h"
 #include "libxsmm_main.h"
 
-#define STRIDE_BRGEMM
-
-
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom_f32_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom_bf16_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_f32_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
@@ -88,15 +85,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_f32_f32(libxsmm_dn
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-#ifdef ADDRESS_BRGEMM
-  libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.smra;
-#endif
-#ifdef OFFSET_BRGEMM
-  libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.smro;
-#endif
-#ifdef STRIDE_BRGEMM
   libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.smrs;
-#endif
 
 #define LIBXSMM_DNN_FC_FWD_USE_AVX512
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
@@ -351,15 +340,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-#ifdef ADDRESS_BRGEMM
-      libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.smra;
-#endif
-#ifdef OFFSET_BRGEMM
-      libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.smro;
-#endif
-#ifdef STRIDE_BRGEMM
       libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.smrs;
-#endif
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #define LIBXSMM_DNN_FC_FWD_FUSE_NONE
