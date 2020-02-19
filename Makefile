@@ -1057,7 +1057,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k-dbcsr.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
