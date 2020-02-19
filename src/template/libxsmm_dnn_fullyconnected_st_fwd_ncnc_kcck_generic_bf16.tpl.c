@@ -60,7 +60,7 @@
       __i = chunk * 16; \
       _mm512_storeu_ps( (float*)out+__i, _mm512_castsi512_ps(_mm512_slli_epi32( _mm512_cvtepi16_epi32( _mm256_loadu_si256((__m256i*)((libxsmm_bfloat16*)in+__i))), 16 )) ); \
     } \
-    libxsmm_convert_bf16_fp32((libxsmm_bfloat16*)in+16*full_chunks, (float*)out+16*full_chunks, remainder); \
+    libxsmm_convert_bf16_f32((libxsmm_bfloat16*)in+16*full_chunks, (float*)out+16*full_chunks, remainder); \
   } \
 } while(0)
 
@@ -87,9 +87,11 @@ const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* loop variables */
-int mb1ofm1 = 0, mb1 = 0, ofm1 = 0, ifm1 = 0, mb2 = 0, ofm2 = 0;
+int mb1ofm1 = 0, mb1 = 0, ofm1 = 0, ifm1 = 0;
 int im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
-
+#ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
+int mb2 = 0, ofm2 = 0;
+#endif
 LIBXSMM_VLA_DECL(4, element_output_type,       output,  (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,   (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(5, const element_filter_type, filter,  (element_filter_type*)handle->reg_filter->data, nBlocksIFm, bc_lp, handle->bk, lpb);
