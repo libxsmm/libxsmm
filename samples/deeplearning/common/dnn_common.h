@@ -1899,7 +1899,7 @@ LIBXSMM_INLINE void naive_fullyconnected_fused_bp(naive_fullyconnected_t* param,
           dbias += LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm);
         }
       }
-      delbias_ptr[nOFm] = dbias;
+      delbias_ptr[ofm] = dbias;
     }
   }
 

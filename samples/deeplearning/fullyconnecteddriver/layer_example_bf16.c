@@ -165,6 +165,7 @@ int main(int argc, char* argv[])
   naive_param.C = nIFm;
   naive_param.K = nOFm;
   naive_param.fuse_type = fuse_type;
+
 #if defined(__SSE3__)
   _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
   _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
@@ -433,6 +434,7 @@ int main(int argc, char* argv[])
       matrix_copy_NCNC_to_NC_bf16( delbias_libxsmm, naive_libxsmm_delbias_bf16, 1, 1, nOFm, 1, nOFm );
       libxsmm_convert_bf16_f32( naive_libxsmm_delbias_bf16, naive_libxsmm_delbias_f32, nOFm );
       libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nOFm, 1, naive_delbias, naive_libxsmm_delbias_f32, 0, 0);
+        printf("\nDelbias Norms\n");
         printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
         printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
         printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
