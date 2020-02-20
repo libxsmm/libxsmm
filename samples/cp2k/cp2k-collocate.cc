@@ -33,7 +33,7 @@ template<typename T> void collocate_core(const int length_[3],
   timer.stop("init");
 
   if (co.size(0) > 1) {
-    timer.start("dgemm");
+    timer.start("gemm");
 // we can batch this easily
     for (int a1 = 0; a1 < static_cast<int>(co.size(0)); a1++) {
       // we need to replace this with libxsmm
@@ -84,7 +84,7 @@ template<typename T> void collocate_core(const int length_[3],
           0.0,
           Vtmp.template at<CPU>(0, 0, 0),
           Vtmp.ld());
-    timer.stop("dgemm");
+    timer.stop("gemm");
   } else {
     for (int z1 = 0; z1 < length_[0]; z1++) {
       const T tz = co(0, 0, 0) * p_alpha_beta_reduced_(0, 0, z1);
@@ -273,8 +273,12 @@ template <typename T> bool test_collocate_core(const int i, const int j, const i
 // }
 
 
-int main(int /*argc*/, char* /*argv*/[])
+int main(int argc, char* argv[])
 {
+  const int n1in = (1 < argc ? atoi(argv[1]) : 32), n1 = std::max(n1in, 1);
+  const int n2in = (2 < argc ? atoi(argv[2]) : n1), n2 = (0 < n2in ? n2in : n1);
+  const int n3in = (3 < argc ? atoi(argv[3]) : n1), n3 = (0 < n3in ? n3in : n1);
+  const int lmin = (4 < argc ? atoi(argv[4]) : 6), lmax = (0 < lmin ? lmin : 6);
 #if (defined(HAVE_MKL) || defined(__MKL)) && 0
   mkl_set_threading_layer(MKL_THREADING_SEQUENTIAL);
 #endif
@@ -282,16 +286,20 @@ int main(int /*argc*/, char* /*argv*/[])
 
   // The three first numbers are the grid size
   // the last one can be anything
-
-  test_collocate_core<double>(27, 31, 23, 3);
-  test_collocate_core<double>(13, 35, 13, 7);
-  test_collocate_core<double>(15, 11, 23, 9);
-  test_collocate_core<double>(13, 19, 17, 5);
-  test_collocate_core<double>(9, 11, 19, 3);
-  test_collocate_core<double>(19, 17, 25, 5);
-  test_collocate_core<double>(23, 19, 27, 1);
-  test_collocate_core<double>(25, 23, 31, 11);
-  test_collocate_core<double>(27, 31, 23, 13);
+  if (0 == n1in) {
+    test_collocate_core<double>(27, 31, 23, 3);
+    test_collocate_core<double>(13, 35, 13, 7);
+    test_collocate_core<double>(15, 11, 23, 9);
+    test_collocate_core<double>(13, 19, 17, 5);
+    test_collocate_core<double>(9, 11, 19, 3);
+    test_collocate_core<double>(19, 17, 25, 5);
+    test_collocate_core<double>(23, 19, 27, 1);
+    test_collocate_core<double>(25, 23, 31, 11);
+    test_collocate_core<double>(27, 31, 23, 13);
+  }
+  else {
+    test_collocate_core<double>(n1, n2, n3, lmax);
+  }
   timer.stop("test_collocate_core");
 
   // process timings
