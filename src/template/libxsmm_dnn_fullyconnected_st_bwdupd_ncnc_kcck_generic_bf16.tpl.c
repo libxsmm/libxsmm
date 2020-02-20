@@ -9,6 +9,13 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
+#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+#if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
+#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),(__m256i)_mm512_cvtneps_pbh((B)))
+#else
+#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((B)),16)))
+#endif
+
 #if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
 #define LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(in, out, length) do { \
   unsigned int full_chunks = length / 32; \
@@ -136,24 +143,49 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
 
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_BIAS)
-for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
-  for ( iterj = 0; iterj < handle->bk; ++iterj ) {
-    LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ) = (libxsmm_bfloat16) 0;
+if (handle->bk % 16 == 0) {
+  /* Accumulation of bias happens in f32 */
+  float *scratch_dbias = (float*) ((element_output_type*)handle->scratch + handle->desc.N * (handle->desc.K + handle->desc.C) + ltid * bk * 2);
+  __m512 zero_reg = _mm512_setzero_ps();
+  __m512 doutput_reg = _mm512_setzero_ps();
+  __m512 dbias_reg = _mm512_setzero_ps();
+  for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
+    for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
+      _mm512_store_ps(scratch_dbias+iterj, zero_reg);
+    }
+    for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
+      for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+        for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
+          doutput_reg = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
+          dbias_reg = _mm512_load_ps(scratch_dbias+iterj);
+          dbias_reg = _mm512_add_ps(dbias_reg, doutput_reg);
+          _mm512_store_ps(scratch_dbias+iterj, dbias_reg);
+        }
+      }
+    }
+    for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
+      _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), _mm512_load_ps(scratch_dbias+iterj));
+    }
   }
-
-  for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
-    for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-      for ( iterj = 0; iterj < handle->bk; ++iterj ) {
-        float doutput_f32 = 0;
-        float dbias_f32 = 0;
-        libxsmm_bfloat16_hp tmp;
-        tmp.i[0] = 0;
-        tmp.i[1] = LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
-        doutput_f32 = tmp.f;
-        tmp.i[1] = LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk );
-        dbias_f32 = tmp.f;
-        dbias_f32 += doutput_f32;
-        libxsmm_rne_convert_fp32_bf16(&dbias_f32, &LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), 1);
+} else {
+  for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
+    for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+      LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ) = (libxsmm_bfloat16) 0;
+    }
+    for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
+      for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+        for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+          float doutput_f32 = 0;
+          float dbias_f32 = 0;
+          libxsmm_bfloat16_hp tmp;
+          tmp.i[0] = 0;
+          tmp.i[1] = LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+          doutput_f32 = tmp.f;
+          tmp.i[1] = LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk );
+          dbias_f32 = tmp.f;
+          dbias_f32 += doutput_f32;
+          libxsmm_rne_convert_fp32_bf16(&dbias_f32, &LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), 1);
+        }
       }
     }
   }
@@ -163,7 +195,7 @@ for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
 
-if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
+if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ){
   int use_2d_blocking = handle->bwd_2d_blocking;
 
   /* number of tasks that could be run in parallel */
@@ -627,6 +659,9 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
+#undef _mm512_loadcvt_bf16_fp32
+#undef _mm512_storecvt_fp32_bf16
 #undef _mm512_cvt2_fp32_bf16
 #undef LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16
+
 
