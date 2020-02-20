@@ -664,18 +664,10 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_f32_f32(libxsmm
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-  /* backward GEMM */
   libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.smrs;
-
-  /* update GEMM */
-  libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
-  libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
-  libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
-  element_input_type alpha = (element_input_type)1;
-  element_input_type beta = (element_input_type)0;
-  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
-
-  libxsmm_smmfunction_reducebatch_addr batchreduce_kernel_upd = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
+  libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_bwd_zerobeta = handle->gemm_bwd2.xgemm.smrs;
+  libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_upd = handle->gemm_upd.xgemm.smrs;
+  libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_upd_zerobeta = handle->gemm_upd2.xgemm.smrs;
 
 #define LIBXSMM_DNN_FC_BWD_USE_AVX512
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
@@ -727,6 +719,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_bf16_bf16_emu(l
   libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_bwd_zerobeta = handle->gemm_bwd2.xgemm.bmrs;
   libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_upd = handle->gemm_upd.xgemm.bsmrs;
   libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_upd_zerobeta = handle->gemm_upd2.xgemm.bmrs;
+
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 # include "template/libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_generic_bf16.tpl.c"
   } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS ) {
@@ -776,6 +769,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_bf16_bf16(libxs
   libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_bwd_zerobeta = handle->gemm_bwd2.xgemm.bmrs;
   libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_upd = handle->gemm_upd.xgemm.bsmrs;
   libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_upd_zerobeta = handle->gemm_upd2.xgemm.bmrs;
+
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 # include "template/libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_generic_bf16.tpl.c"
   } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS ) {
@@ -954,14 +948,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_k
       typedef float element_output_type;
       typedef float element_filter_type;
       libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.smrs;
-
-      libxsmm_blasint lda_upd = (libxsmm_blasint)handle->bk;
-      libxsmm_blasint ldb_upd = (libxsmm_blasint)handle->bc;
-      libxsmm_blasint ldc_upd = (libxsmm_blasint)handle->bk;
-      element_input_type alpha = (element_input_type)1;
-      element_input_type beta = (element_input_type)0;
-      int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
-      libxsmm_smmfunction_reducebatch_addr batchreduce_kernel_upd = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bc, handle->bn, &lda_upd, &ldb_upd, &ldc_upd, &alpha, &beta, &l_flags, NULL);
+      libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_bwd_zerobeta = handle->gemm_bwd2.xgemm.smrs;
+      libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_upd = handle->gemm_upd.xgemm.smrs;
+      libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_upd_zerobeta = handle->gemm_upd2.xgemm.smrs;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 # include "template/libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_generic.tpl.c"

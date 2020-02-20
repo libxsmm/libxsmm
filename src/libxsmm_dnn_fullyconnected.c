@@ -574,6 +574,11 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           /* beta is set to 1 for ncnc kcck format because ifm is split into 2 blocks */
           float beta  = 1.0f;
           float zerobeta  = 0.0f;
+          int updflags = LIBXSMM_GEMM_FLAGS( 'N', 'T' );
+          /* For UPD kernels we consider subtasking... */
+          libxsmm_blasint M = handle->bk/handle->ofm_subtasks;
+          libxsmm_blasint N = handle->bc/handle->ifm_subtasks;
+
           libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
           libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
           libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
@@ -582,6 +587,12 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           handle->gemm_fwd2.xgemm.smrs = libxsmm_smmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(float), handle->bc*handle->bn*sizeof(float), &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
           handle->gemm_bwd.xgemm.smrs = libxsmm_smmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(float), handle->bk*handle->bn*sizeof(float), &ldb, &lda, &ldb, &alpha, &beta, NULL, NULL);
           handle->gemm_bwd2.xgemm.smrs = libxsmm_smmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(float), handle->bk*handle->bn*sizeof(float), &ldb, &lda, &ldb, &alpha, &zerobeta, NULL, NULL);
+          /* update has different LDs */
+          lda = (libxsmm_blasint)handle->bk;
+          ldb = (libxsmm_blasint)handle->bc;
+          ldc = (libxsmm_blasint)handle->bk;
+          handle->gemm_upd.xgemm.smrs = libxsmm_smmdispatch_reducebatch_strd(M, N, handle->bn, handle->desc.K*handle->bn*sizeof(float), handle->desc.C*handle->bn*sizeof(float), &lda, &ldb, &ldc, &alpha, &beta, &updflags, NULL);
+          handle->gemm_upd2.xgemm.smrs = libxsmm_smmdispatch_reducebatch_strd(M, N, handle->bn, handle->desc.K*handle->bn*sizeof(float), handle->desc.C*handle->bn*sizeof(float), &lda, &ldb, &ldc, &alpha, &zerobeta, &updflags, NULL);
         } else if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
           float alpha = 1.0f;
           float beta  = 1.0f;
