@@ -114,8 +114,10 @@ for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
   for ( iteri = 0; iteri < handle->bn; ++iteri ) {
     for ( iterj = 0; iterj < handle->bk; ++iterj ) {
       element_output_type l_cur_out = LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
       float l_cur_out_f32 = 0;
       libxsmm_bfloat16_hp tmp;
+#endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
       l_cur_out = (LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0;
 #endif
