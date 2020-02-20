@@ -248,7 +248,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   int BF = handle->upd_bf;
 
   /* loop variables */
-  int ifm1ofm1 = 0, ifm1 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ofm1 = 0, mb1ifm1 = 0, jc = 0, jk = 0;
+  int ifm1ofm1 = 0, ifm1 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0;
 
   /* Batch reduce related variables */
   unsigned long long  blocks = nBlocksMB/BF;
