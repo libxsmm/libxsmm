@@ -59,7 +59,11 @@ const int bn_lp = bn/lpb;
 const int nBlocksIFm = handle->desc.C / handle->bc;
 const int nBlocksOFm = handle->desc.K / handle->bk;
 const int nBlocksMB  = handle->desc.N / handle->bn;
-int _mb1ofm1 = 0, iteri = 0, iterj = 0, mb1 = 0, ofm1 = 0;
+int mb1ofm1 = 0, mb1 = 0, ofm1 = 0;
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID) || defined(LIBXSMM_DNN_FC_BWD_FUSE_BIAS)
+int iteri = 0, iterj = 0;
+#endif
+
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 
@@ -103,15 +107,17 @@ libxsmm_barrier_init(handle->barrier, ltid);
 
 /* Apply to doutput potential fusions */
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
-for ( _mb1ofm1 = eltwise_thr_begin; _mb1ofm1 < eltwise_thr_end; ++_mb1ofm1 ) {
-  mb1  = _mb1ofm1%nBlocksMB;
-  ofm1 = _mb1ofm1/nBlocksMB;
+for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
+  mb1  = mb1ofm1%nBlocksMB;
+  ofm1 = mb1ofm1/nBlocksMB;
 
   for ( iteri = 0; iteri < handle->bn; ++iteri ) {
     for ( iterj = 0; iterj < handle->bk; ++iterj ) {
       element_output_type l_cur_out = LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
       float l_cur_out_f32 = 0;
       libxsmm_bfloat16_hp tmp;
+#endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
       l_cur_out = (LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0;
 #endif
@@ -296,7 +302,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
     const int copy_thr_end = ((ltid + 1) * copy_chunksize < copy_work_output) ? ((ltid + 1) * copy_chunksize) : copy_work_output;
     LIBXSMM_VLA_DECL(5,       element_filter_type, filter_tr_padded, (element_filter_type*)handle->scratch, nBlocksOFm, 1, bc, lpb);
     LIBXSMM_VLA_DECL(4,       element_output_type,   doutput_padded, (element_output_type*)handle->scratch + handle->desc.C * 2, nBlocksOFm, bn, lpb);
-    int mb1ofm1 = 0, mb2 = 0;
+    int mb2 = 0;
 
     /* Copy in weights and doutput in a padded buffer */
     for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
@@ -396,7 +402,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   int BF = handle->upd_bf;
 
   /* loop variables */
-  int ifm1ofm1 = 0, ifm1 = 0, ofm2 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ofm1 = 0, mb1ifm1 = 0, mb2 = 0, jc = 0, jk = 0;
+  int ifm1ofm1 = 0, ifm1 = 0, ofm2 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ifm1 = 0, mb2 = 0, jc = 0, jk = 0;
 
   /* Batch reduce related variables */
   unsigned long long  blocks = nBlocksMB/BF;
