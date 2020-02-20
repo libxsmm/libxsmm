@@ -66,10 +66,11 @@ const int bn_lp = bn/lpb;
 const int nBlocksIFm = handle->desc.C / handle->bc;
 const int nBlocksOFm = handle->desc.K / handle->bk;
 const int nBlocksMB  = handle->desc.N / handle->bn;
-int mb1ofm1 = 0, mb1 = 0, ofm1 = 0;
+int mb1ofm1 = 0, mb1 = 0, ofm1 = 0, mb2 = 0, ofm2 = 0;
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID) || defined(LIBXSMM_DNN_FC_BWD_FUSE_BIAS)
 int iteri = 0, iterj = 0;
 #endif
+int performed_doutput_transpose = 0;
 
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -103,41 +104,89 @@ LIBXSMM_VLA_DECL(4, unsigned char,              relumask, (unsigned char*)      
 
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
 element_output_type *grad_output_ptr = (element_output_type*)((char*)handle->scratch + handle->doutput_scratch_mark);
+element_output_type *tr_doutput_ptr = (element_output_type*)grad_output_ptr + handle->desc.N * handle->desc.K;
 LIBXSMM_VLA_DECL(4, const element_output_type,   doutput_orig, (element_output_type*)handle->grad_output->data, nBlocksOFm, bn, bk);
 #else
 element_output_type *grad_output_ptr = (element_output_type*)handle->grad_output->data;
+element_output_type *tr_doutput_ptr = (element_output_type*)handle->scratch;
 #endif
 LIBXSMM_VLA_DECL(4, element_output_type,   doutput, grad_output_ptr, nBlocksOFm, bn, bk);
+LIBXSMM_VLA_DECL(5, element_output_type, doutput_tr, tr_doutput_ptr, nBlocksMB, bn_lp, bk, lpb);
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
 /* Apply to doutput potential fusions */
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
-for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
-  mb1  = mb1ofm1%nBlocksMB;
-  ofm1 = mb1ofm1/nBlocksMB;
+if (bk % 32 == 0) {
+  for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
+    mb1  = mb1ofm1%nBlocksMB;
+    ofm1 = mb1ofm1/nBlocksMB;
 
-  for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-    for ( iterj = 0; iterj < handle->bk; ++iterj ) {
-      element_output_type l_cur_out = LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+    for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+      for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+        element_output_type l_cur_out = LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
-      float l_cur_out_f32 = 0;
-      libxsmm_bfloat16_hp tmp;
+        float l_cur_out_f32 = 0;
+        libxsmm_bfloat16_hp tmp;
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
-      l_cur_out = (LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0;
+        l_cur_out = (LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0;
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
-      tmp.i[0] = 0;
-      tmp.i[1] = l_cur_out;
-      l_cur_out_f32 = tmp.f;
-      l_cur_out_f32 = l_cur_out_f32*(1.0f - l_cur_out_f32);
-      libxsmm_rne_convert_fp32_bf16(&l_cur_out_f32, &l_cur_out, 1);
+        tmp.i[0] = 0;
+        tmp.i[1] = l_cur_out;
+        l_cur_out_f32 = tmp.f;
+        l_cur_out_f32 = l_cur_out_f32*(1.0f - l_cur_out_f32);
+        libxsmm_rne_convert_fp32_bf16(&l_cur_out_f32, &l_cur_out, 1);
 #endif
-      LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+        LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+      }
+    }
+
+    /* If in UPD pass, also perform transpose of doutput  */
+    if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
+      bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), bk, bn, bk, bn);
     }
   }
+} else {
+  for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
+    mb1  = mb1ofm1%nBlocksMB;
+    ofm1 = mb1ofm1/nBlocksMB;
+
+    for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+      for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+        element_output_type l_cur_out = LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
+        float l_cur_out_f32 = 0;
+        libxsmm_bfloat16_hp tmp;
+#endif
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
+        l_cur_out = (LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0;
+#endif
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
+        tmp.i[0] = 0;
+        tmp.i[1] = l_cur_out;
+        l_cur_out_f32 = tmp.f;
+        l_cur_out_f32 = l_cur_out_f32*(1.0f - l_cur_out_f32);
+        libxsmm_rne_convert_fp32_bf16(&l_cur_out_f32, &l_cur_out, 1);
+#endif
+        LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+      }
+    }
+
+    /* If in UPD pass, also perform transpose of doutput  */
+    if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
+      for (mb2 = 0; mb2 < bn; mb2++) {
+        for (ofm2 = 0; ofm2 < bk; ofm2++) {
+          LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/lpb, ofm2, mb2%lpb, nBlocksMB, bn_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
+        }
+      }
+    }
+  }
+}
+if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
+  performed_doutput_transpose = 1;
 }
 libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
@@ -215,7 +264,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
   /* loop variables */
-  int ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0, ofm2 = 0;
+  int ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0;
   int im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
 
   LIBXSMM_VLA_DECL(5, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, bc_lp, bk, lpb);
@@ -334,7 +383,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
     const int copy_thr_end = ((ltid + 1) * copy_chunksize < copy_work_output) ? ((ltid + 1) * copy_chunksize) : copy_work_output;
     LIBXSMM_VLA_DECL(5,       element_filter_type, filter_tr_padded, (element_filter_type*)handle->scratch, nBlocksOFm, 1, bc, lpb);
     LIBXSMM_VLA_DECL(4,       element_output_type,   doutput_padded, (element_output_type*)handle->scratch + handle->desc.C * 2, nBlocksOFm, bn, lpb);
-    int mb2 = 0;
 
     /* Copy in weights and doutput in a padded buffer */
     for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
@@ -434,7 +482,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   int BF = handle->upd_bf;
 
   /* loop variables */
-  int ifm1ofm1 = 0, ifm1 = 0, ofm2 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ifm1 = 0, mb2 = 0, jc = 0, jk = 0;
+  int ifm1ofm1 = 0, ifm1 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ifm1 = 0, jc = 0, jk = 0;
 
   /* Batch reduce related variables */
   unsigned long long  blocks = nBlocksMB/BF;
@@ -443,13 +491,11 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   LIBXSMM_VLA_DECL(5,       element_filter_type, dfilter,  (element_filter_type*)handle->grad_filter->data, nBlocksIFm, bc_lp, bk, lpb);
 
   /* Set up tensors for transposing/scratch before vnni reformatting dfilter */
-  element_output_type *tr_out_ptr = (element_output_type*)handle->scratch;
-  element_input_type  *tr_inp_ptr = (element_input_type*) ((element_output_type*)tr_out_ptr + handle->desc.N * handle->desc.K);
+  element_input_type  *tr_inp_ptr = (element_input_type*) ((element_output_type*)handle->scratch + handle->desc.N * handle->desc.K);
   float               *dfilter_f32_ptr = (float*) ((element_input_type*)tr_inp_ptr + handle->desc.N * handle->desc.C);
   element_filter_type *dfilter_scratch = (element_filter_type*) ((float*)dfilter_f32_ptr + handle->desc.C * handle->desc.K) + ltid * bc * bk;
 
   LIBXSMM_VLA_DECL(4, element_input_type,  input_tr,    (element_input_type*)tr_inp_ptr, nBlocksMB, bc, bn);
-  LIBXSMM_VLA_DECL(5, element_output_type, doutput_tr,  (element_output_type*)tr_out_ptr, nBlocksMB, bn_lp, bk, lpb);
   LIBXSMM_VLA_DECL(4,       float, dfilter_f32,  (float*)dfilter_f32_ptr, nBlocksIFm, bc, bk);
   LIBXSMM_VLA_DECL(2, element_filter_type, dfilter_block,  (element_filter_type*)dfilter_scratch, bk);
 
@@ -501,19 +547,21 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
     }
   }
 
-  if (bk % 32 == 0) {
-    for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
-      mb1 = mb1ofm1%nBlocksMB;
-      ofm1 = mb1ofm1/nBlocksMB;
-      bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), bk, bn, bk, bn);
-    }
-  } else {
-    for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
-      mb1 = mb1ofm1%nBlocksMB;
-      ofm1 = mb1ofm1/nBlocksMB;
-      for (mb2 = 0; mb2 < bn; mb2++) {
-        for (ofm2 = 0; ofm2 < bk; ofm2++) {
-          LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/lpb, ofm2, mb2%lpb, nBlocksMB, bn_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
+  if (performed_doutput_transpose == 0) {
+    if (bk % 32 == 0) {
+      for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
+        mb1 = mb1ofm1%nBlocksMB;
+        ofm1 = mb1ofm1/nBlocksMB;
+        bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), bk, bn, bk, bn);
+      }
+    } else {
+      for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
+        mb1 = mb1ofm1%nBlocksMB;
+        ofm1 = mb1ofm1/nBlocksMB;
+        for (mb2 = 0; mb2 < bn; mb2++) {
+          for (ofm2 = 0; ofm2 < bk; ofm2++) {
+            LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/lpb, ofm2, mb2%lpb, nBlocksMB, bn_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
+          }
         }
       }
     }
