@@ -1043,6 +1043,18 @@ CXXLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),c) $(XLIB_END)
 
 ifneq (0,$(INTEL))
   AR ?= xiar
+  ifneq (0,$(SYM))
+    ifeq (1,$(SYM))
+      CXXFLAGS += -g
+      CFLAGS += -g
+    else
+      CXXFLAGS += -g3 -debug inline-debug-info
+      CFLAGS += -g3 -debug inline-debug-info
+    endif
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -g -traceback
+    endif
+  endif
   ifneq (0,$(shell echo "$$((200000<=$(CXX_VERSION_NUM)))"))
     CXXFLAGS += -std=c++14
   else ifneq (0,$(COMPATIBLE))
@@ -1217,18 +1229,6 @@ ifneq (0,$(INTEL))
       CTARGET = -march=core-avx2
     endif
   endif
-  ifneq (0,$(SYM))
-    ifeq (1,$(SYM))
-      CXXFLAGS := -g $(CXXFLAGS)
-      CFLAGS := -g $(CFLAGS)
-    else
-      CXXFLAGS := -g3 -debug inline-debug-info $(CXXFLAGS)
-      CFLAGS := -g3 -debug inline-debug-info $(CFLAGS)
-    endif
-    ifeq (,$(strip $(GFC)))
-      FCFLAGS := -g -traceback $(FCFLAGS)
-    endif
-  endif
   OMPFLAG_FORCE = -fopenmp
   ifeq (,$(strip $(OMPRT)))
     OMPRT = iomp5
@@ -1266,6 +1266,31 @@ ifneq (0,$(INTEL))
     CFLAGS += -D_Float128=__float128
   endif
 else # GCC assumed
+  ifneq (0,$(SYM))
+    ifeq (1,$(SYM))
+      CXXFLAGS += -g
+      CFLAGS += -g
+      FCFLAGS += -g
+    else ifeq (2,$(SYM))
+      CXXFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
+      CFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
+      FCFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
+      LDFLAGS += -g -fsanitize=thread $(call ldlib,$(LD),$(SLDFLAGS),tsan) -fno-omit-frame-pointer
+    else
+      ifneq (,$(filter 2 3,$(GCC)))
+        CXXFLAGS += -g3
+        CFLAGS += -g3
+      else
+        CXXFLAGS += -g
+        CFLAGS += -g
+      endif
+      ifeq (3,$(GCC))
+        FCFLAGS += -g3
+      else
+        FCFLAGS += -g
+      endif
+    endif
+  endif
   ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
     ifneq (0,$(shell echo "$$((50000<=$(GCC_VERSION_NUM)))"))
       CXXFLAGS += -std=c++14
@@ -1397,32 +1422,6 @@ else # GCC assumed
   else ifeq (FreeBSD,$(UNAME))
     LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),execinfo) $(XLIB_END)
   endif
-  ifneq (0,$(SYM))
-    ifeq (1,$(SYM))
-      CXXFLAGS := -g $(CXXFLAGS)
-      CFLAGS := -g $(CFLAGS)
-      FCFLAGS := -g $(FCFLAGS)
-    else ifeq (2,$(SYM))
-      CXXFLAGS := -g $(CXXFLAGS) -fsanitize=thread -fno-omit-frame-pointer
-      CFLAGS := -g $(CFLAGS) -fsanitize=thread -fno-omit-frame-pointer
-      FCFLAGS := -g $(FCFLAGS) -fsanitize=thread -fno-omit-frame-pointer
-      LDFLAGS := -g $(LDFLAGS) -fsanitize=thread $(call ldlib,$(LD),$(SLDFLAGS),tsan) -fno-omit-frame-pointer
-      #ELDFLAGS := -pie
-    else
-      ifneq (,$(filter 2 3,$(GCC)))
-        CXXFLAGS := -g3 $(CXXFLAGS)
-        CFLAGS := -g3 $(CFLAGS)
-      else
-        CXXFLAGS := -g $(CXXFLAGS)
-        CFLAGS := -g $(CFLAGS)
-      endif
-      ifeq (3,$(GCC))
-        FCFLAGS := -g3 $(FCFLAGS)
-      else
-        FCFLAGS := -g $(FCFLAGS)
-      endif
-    endif
-  endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(PGI))
       OMPFLAG_FORCE = -mp
@@ -1445,7 +1444,7 @@ else # GCC assumed
     endif
   else ifeq (FreeBSD,$(UNAME))
     # avoid include path at begin of compile line
-    OMPFLAG_FORCE := -I/usr/local/include $(OMPFLAG_FORCE)
+    OMPFLAG_FORCE += -I/usr/local/include
   endif
   # account for missing TLS/OMP
   ifeq (,$(OMPFLAG_FORCE))
@@ -1461,7 +1460,7 @@ else # GCC assumed
       printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" > $${INFILE} && \
       $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) $${INFILE} -o /dev/null 2>/dev/null >/dev/null && echo "OK"; \
       rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-    LDFLAGS := $(addprefix -L,$(LIBFIND)) $(LDFLAGS)
+    LDFLAGS += $(addprefix -L,$(LIBFIND))
     OMPLIBFILE = -l$(OMPRT)
   endif
   endif
