@@ -228,10 +228,10 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
 
 if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
   /* number of tasks that could be run in parallel */
-  const int ofm_subtasks = handle->ofm_subtasks;
-  const int ifm_subtasks = handle->ifm_subtasks;
-  const int bbk = bk/ofm_subtasks;
-  const int bbc = bc/ifm_subtasks;
+  const int ofm_subtasks = (handle->upd_2d_blocking == 1) ? 1 : handle->ofm_subtasks;
+  const int ifm_subtasks = (handle->upd_2d_blocking == 1) ? 1 : handle->ifm_subtasks;
+  const int bbk = (handle->upd_2d_blocking == 1) ? bk : bk/ofm_subtasks;
+  const int bbc = (handle->upd_2d_blocking == 1) ? bc : bc/ifm_subtasks;
   const int work = nBlocksIFm * ifm_subtasks * nBlocksOFm * ofm_subtasks;
   const int Cck_work = nBlocksIFm * ifm_subtasks * ofm_subtasks;
   const int Cc_work = nBlocksIFm * ifm_subtasks;
@@ -270,14 +270,12 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   }
 
   if (use_2d_blocking == 1) {
-    ifm2 = 0;
-    ofm2 = 0;
     if (BF == 1) {
       for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
         for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
-          batchreduce_kernel_upd_zerobeta(&LIBXSMM_VLA_ACCESS(4, doutput, 0, ofm1, 0, ofm2*bbk, nBlocksOFm, bn, bk),
-                                          &LIBXSMM_VLA_ACCESS(4, input,   0, ifm1, 0, ifm2*bbc, nBlocksIFm, bn, bc),
-                                          &LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+          batchreduce_kernel_upd_zerobeta(&LIBXSMM_VLA_ACCESS(4, doutput, 0, ofm1, 0, 0, nBlocksOFm, bn, bk),
+                                          &LIBXSMM_VLA_ACCESS(4, input,   0, ifm1, 0, 0, nBlocksIFm, bn, bc),
+                                          &LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &blocks);
         }
       }
     } else {
@@ -286,15 +284,15 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
           for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
             /* initialize current work task to zero */
             if (bfn == 0) {
-              for (ii = 0; ii<bbc; ii++) {
-                for (jj = 0; jj<bbk; jj++) {
-                  LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, ifm2*bbc+ii, ofm2*bbk+jj, nBlocksIFm, bc, bk) = (element_filter_type)0;
+              for (ii = 0; ii<bc; ii++) {
+                for (jj = 0; jj<bk; jj++) {
+                  LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, ii, jj, nBlocksIFm, bc, bk) = (element_filter_type)0;
                 }
               }
             }
-            batchreduce_kernel_upd( &LIBXSMM_VLA_ACCESS(4, doutput, bfn*blocks, ofm1, 0, ofm2*bbk, nBlocksOFm, bn, bk),
-                                    &LIBXSMM_VLA_ACCESS(4, input,   bfn*blocks, ifm1, 0, ifm2*bbc, nBlocksIFm, bn, bc),
-                                    &LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+            batchreduce_kernel_upd( &LIBXSMM_VLA_ACCESS(4, doutput, bfn*blocks, ofm1, 0, 0, nBlocksOFm, bn, bk),
+                                    &LIBXSMM_VLA_ACCESS(4, input,   bfn*blocks, ifm1, 0, 0, nBlocksIFm, bn, bc),
+                                    &LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &blocks);
           }
         }
       }
