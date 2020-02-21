@@ -193,7 +193,7 @@ if (use_2d_blocking == 1) {
             libxsmm_bfloat16 l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
             LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (unsigned char)(( (l_cur_out & 0x8000) > 0 ) ? 0 : 1);
-            l_cur_out = ( (l_cur_out & 0x8000) > 0 ) ? (libxsmm_bfloat16)0 : l_cur_out;
+            l_cur_out = (libxsmm_bfloat16)(( (l_cur_out & 0x8000) > 0 ) ? 0 : l_cur_out);
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
             /* we ar using Pade 7/8 approximation */
@@ -277,7 +277,7 @@ if (use_2d_blocking == 1) {
           libxsmm_bfloat16 l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
           LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (unsigned char)(( (l_cur_out & 0x8000) > 0 ) ? 0 : 1);
-          l_cur_out = ( (l_cur_out & 0x8000) > 0 ) ? (libxsmm_bfloat16)0 : l_cur_out;
+          l_cur_out = (libxsmm_bfloat16)(( (l_cur_out & 0x8000) > 0 ) ? 0 : l_cur_out);
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
           /* we ar using Pade 7/8 approximation */
