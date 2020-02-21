@@ -325,7 +325,7 @@ class XsmmLSTMCellOp : public OpKernel {
     //for(int i = 0; i < t->NumElements(); i++)
     //  printf("DUMP:    %-10s %6d %12g\n", name, i, p[i]);
   }
-  
+
   T *get_tensor_ptr(Tensor* t) { return t->flat<T>().data(); }
   const T *get_tensor_ptr(const Tensor* t) { return t->flat<T>().data(); }
 };
@@ -623,7 +623,7 @@ class XsmmLSTMCellGradOp : public OpKernel {
     print_tensor_ptr("dxt", x_grad_tensor);
     print_tensor_ptr("dw", w_grad_tensor);
     print_tensor_ptr("db", b_grad_tensor);
- 
+
     //printf("w_tensor = %p, wT_tensor = %p\n", get_tensor_ptr(w_tensor), get_tensor_ptr(wT_tensor));
     int w_in_trans = (get_tensor_ptr(w_tensor) != get_tensor_ptr(wT_tensor));
 
@@ -651,7 +651,7 @@ class XsmmLSTMCellGradOp : public OpKernel {
 
 #if 0
     lstm_bwd(batch_size, input_size, cell_size, 1,
-        xt,    
+        xt,
         csp,
         hp,
         0,
@@ -998,7 +998,7 @@ class XsmmFusedLSTMOp : public OpKernel {
         xsmm_handle = nullptr;
       }
       //printf("Creating new libxsmm handle NCKT = (%d %d %d %d) nThreads = %d\n", batch_size, input_size, cell_size, timelen, nThreads);
-      xsmm_handle = lstm_fwd_create( batch_size, input_size, cell_size, timelen, nThreads, forget_bias_, 0, 
+      xsmm_handle = lstm_fwd_create( batch_size, input_size, cell_size, timelen, nThreads, forget_bias_, 0,
           xt,
           csp,
           hp,
@@ -1132,7 +1132,7 @@ class XsmmFusedLSTMOp : public OpKernel {
     //for(int i = 0; i < t->NumElements(); i++)
     //  printf("DUMP:    %-10s %6d %12g\n", name, i, p[i]);
   }
-  
+
   T *get_tensor_ptr(Tensor* t) { return t->flat<T>().data(); }
   const T *get_tensor_ptr(const Tensor* t) { return t->flat<T>().data(); }
 
@@ -1542,7 +1542,7 @@ class XsmmFusedLSTMGradOp : public OpKernel {
     //for(int i = 0; i < t->NumElements(); i++)
     //  printf("DUMP:    %-10s %6d %12g\n", name, i, p[i]);
   }
-  
+
   T *get_tensor_ptr(Tensor* t) { return t->flat<T>().data(); }
   const T *get_tensor_ptr(const Tensor* t) { return t->flat<T>().data(); }
 
