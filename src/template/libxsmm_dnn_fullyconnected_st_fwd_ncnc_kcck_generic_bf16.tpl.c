@@ -8,6 +8,13 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+#if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
+#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),(__m256i)_mm512_cvtneps_pbh((B)))
+#else
+#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((B)),16)))
+#endif
+
 #if defined(LIBXSMM_DNN_FC_FWD_AVX512_CPX)
 #define LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16(in, out, length) do { \
   unsigned int full_chunks = length / 32; \
@@ -101,6 +108,7 @@ LIBXSMM_VLA_DECL(2, const element_input_type,               bias,   (element_inp
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
 LIBXSMM_VLA_DECL(4, unsigned char,           relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
+LIBXSMM_VLA_DECL(4, unsigned char,           relubitmask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk/8);
 #endif
 #endif
 unsigned long long  blocks = nBlocksIFm;
@@ -147,18 +155,52 @@ if (use_2d_blocking == 1) {
           /* downconvert intermediate f32 tensor to bf 16 and store to final C */
           if ( ifm1 == BF-1  ) {
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
-            for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
-              for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
-                float l_cur_out = LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+            if (handle->bk % 32 == 0) {
+              __m512 cur_out_0 = _mm512_setzero_ps();
+              __m512 cur_out_1 = _mm512_setzero_ps();
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
-                LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = ( l_cur_out > 0.0 ) ? 1 : 0;
-                l_cur_out = (l_cur_out > (float)0) ? l_cur_out : (float)0;
+              __mmask16 relumask0;
+              __mmask16 relumask1;
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
-                /* we ar using Pade 7/8 approximation */
-                l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
+              __m512 ones = _mm512_set1_ps(1.0);
+              __m512 halves = _mm512_set1_ps(0.5);
 #endif
-                LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+              for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+                for ( ofm2 = 0; ofm2 < handle->bk; ofm2 += 32 ) {
+                  cur_out_0 = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk));
+                  cur_out_1 = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk));
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+                  relumask0 = _mm512_cmp_ps_mask( cur_out_0, _mm512_setzero_ps(), _CMP_GT_OQ );
+                  relumask1 = _mm512_cmp_ps_mask( cur_out_1, _mm512_setzero_ps(), _CMP_GT_OQ );
+                  cur_out_0 = _mm512_mask_blend_ps( relumask0, _mm512_setzero_ps(), cur_out_0 );
+                  cur_out_1 = _mm512_mask_blend_ps( relumask1, _mm512_setzero_ps(), cur_out_1 );
+                  LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8, nBlocksOFm, handle->bn, handle->bk/8), relumask0 );
+                  LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8+2, nBlocksOFm, handle->bn, handle->bk/8), relumask1 );
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+                  /* we ar using Pade 7/8 approximation */
+                  cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
+                  cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
+#endif
+                  _mm512_store_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk), cur_out_0);
+                  _mm512_store_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk), cur_out_1);
+                }
+              }
+            } else {
+              for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+                for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+                  float l_cur_out = LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+                  LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = ( l_cur_out > 0.0 ) ? 1 : 0;
+                  l_cur_out = (l_cur_out > (float)0) ? l_cur_out : (float)0;
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+                  /* we ar using Pade 7/8 approximation */
+                  l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
+#endif
+                  LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+                }
               }
             }
 #endif
@@ -185,24 +227,58 @@ if (use_2d_blocking == 1) {
             &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 #endif
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
-        for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
-          for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
-#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
-            libxsmm_bfloat16_hp t;
-#endif
-            libxsmm_bfloat16 l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+        if (handle->bk % 32 == 0) {
+          __m512 cur_out_0 = _mm512_setzero_ps();
+          __m512 cur_out_1 = _mm512_setzero_ps();
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
-            LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = ( (l_cur_out & 0x8000) > 0 ) ? 0 : 1;
-            l_cur_out = ( (l_cur_out & 0x8000) > 0 ) ? 0 : l_cur_out;
+          __mmask16 relumask0;
+          __mmask16 relumask1;
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
-            /* we ar using Pade 7/8 approximation */
-            t.i[1] = l_cur_out;
-            t.i[0] = 0;
-            t.f = (libxsmm_stanh_pade78( t.f / 2.0f ) + 1.0f) / 2.0f;
-            l_cur_out = t.i[1];
+          __m512 ones = _mm512_set1_ps(1.0);
+          __m512 halves = _mm512_set1_ps(0.5);
 #endif
-            LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+          for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+            for ( ofm2 = 0; ofm2 < handle->bk; ofm2 += 32 ) {
+              cur_out_0 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk));
+              cur_out_1 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk));
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+              relumask0 = _mm512_cmp_ps_mask( cur_out_0, _mm512_setzero_ps(), _CMP_GT_OQ );
+              relumask1 = _mm512_cmp_ps_mask( cur_out_1, _mm512_setzero_ps(), _CMP_GT_OQ );
+              cur_out_0 = _mm512_mask_blend_ps( relumask0, _mm512_setzero_ps(), cur_out_0 );
+              cur_out_1 = _mm512_mask_blend_ps( relumask1, _mm512_setzero_ps(), cur_out_1 );
+              LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8, nBlocksOFm, handle->bn, handle->bk/8), relumask0 );
+              LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8+2, nBlocksOFm, handle->bn, handle->bk/8), relumask1 );
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+              /* we ar using Pade 7/8 approximation */
+              cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
+              cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
+#endif
+              _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk), cur_out_0);
+              _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk), cur_out_1);
+            }
+          }
+        } else {
+          for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+            for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+              libxsmm_bfloat16_hp t;
+#endif
+              libxsmm_bfloat16 l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+              LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = ( (l_cur_out & 0x8000) > 0 ) ? 0 : 1;
+              l_cur_out = ( (l_cur_out & 0x8000) > 0 ) ? 0 : l_cur_out;
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+              /* we ar using Pade 7/8 approximation */
+              t.i[1] = l_cur_out;
+              t.i[0] = 0;
+              t.f = (libxsmm_stanh_pade78( t.f / 2.0f ) + 1.0f) / 2.0f;
+              l_cur_out = t.i[1];
+#endif
+              LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+            }
           }
         }
 #endif
@@ -231,18 +307,52 @@ if (use_2d_blocking == 1) {
         /* downconvert intermediate f32 tensor to bf 16 and store to final C */
         if ( ifm1 == BF-1  ) {
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
-          for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
-            for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
-              float l_cur_out = LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+          if (handle->bk % 32 == 0) {
+            __m512 cur_out_0 = _mm512_setzero_ps();
+            __m512 cur_out_1 = _mm512_setzero_ps();
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
-              LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = ( l_cur_out > 0.0 ) ? 1 : 0;
-              l_cur_out = (l_cur_out > (float)0) ? l_cur_out : (float)0;
+            __mmask16 relumask0;
+            __mmask16 relumask1;
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
-              /* we ar using Pade 7/8 approximation */
-              l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
+            __m512 ones = _mm512_set1_ps(1.0);
+            __m512 halves = _mm512_set1_ps(0.5);
 #endif
-              LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+            for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+              for ( ofm2 = 0; ofm2 < handle->bk; ofm2 += 32 ) {
+                cur_out_0 = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk));
+                cur_out_1 = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk));
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+                relumask0 = _mm512_cmp_ps_mask( cur_out_0, _mm512_setzero_ps(), _CMP_GT_OQ );
+                relumask1 = _mm512_cmp_ps_mask( cur_out_1, _mm512_setzero_ps(), _CMP_GT_OQ );
+                cur_out_0 = _mm512_mask_blend_ps( relumask0, _mm512_setzero_ps(), cur_out_0 );
+                cur_out_1 = _mm512_mask_blend_ps( relumask1, _mm512_setzero_ps(), cur_out_1 );
+                LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8, nBlocksOFm, handle->bn, handle->bk/8), relumask0 );
+                LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8+2, nBlocksOFm, handle->bn, handle->bk/8), relumask1 );
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+                /* we ar using Pade 7/8 approximation */
+                cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
+                cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
+#endif
+                _mm512_store_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk), cur_out_0);
+                _mm512_store_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk), cur_out_1);
+              }
+            }
+          } else {
+            for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+              for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+                float l_cur_out = LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+                LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = ( l_cur_out > 0.0 ) ? 1 : 0;
+                l_cur_out = (l_cur_out > (float)0) ? l_cur_out : (float)0;
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+                /* we ar using Pade 7/8 approximation */
+                l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
+#endif
+                LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+              }
             }
           }
 #endif
@@ -269,26 +379,61 @@ if (use_2d_blocking == 1) {
           &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 #endif
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
-      for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
-        for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
-#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
-          libxsmm_bfloat16_hp t;
-#endif
-          libxsmm_bfloat16 l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+      if (handle->bk % 32 == 0) {
+        __m512 cur_out_0 = _mm512_setzero_ps();
+        __m512 cur_out_1 = _mm512_setzero_ps();
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
-          LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = ( (l_cur_out & 0x8000) > 0 ) ? 0 : 1;
-          l_cur_out = ( (l_cur_out & 0x8000) > 0 ) ? 0 : l_cur_out;
+        __mmask16 relumask0;
+        __mmask16 relumask1;
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
-          /* we ar using Pade 7/8 approximation */
-          t.i[1] = l_cur_out;
-          t.i[0] = 0;
-          t.f = (libxsmm_stanh_pade78( t.f / 2.0f ) + 1.0f) / 2.0f;
-          l_cur_out = t.i[1];
+        __m512 ones = _mm512_set1_ps(1.0);
+        __m512 halves = _mm512_set1_ps(0.5);
 #endif
-          LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+        for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+          for ( ofm2 = 0; ofm2 < handle->bk; ofm2 += 32 ) {
+            cur_out_0 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk));
+            cur_out_1 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk));
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+            relumask0 = _mm512_cmp_ps_mask( cur_out_0, _mm512_setzero_ps(), _CMP_GT_OQ );
+            relumask1 = _mm512_cmp_ps_mask( cur_out_1, _mm512_setzero_ps(), _CMP_GT_OQ );
+            cur_out_0 = _mm512_mask_blend_ps( relumask0, _mm512_setzero_ps(), cur_out_0 );
+            cur_out_1 = _mm512_mask_blend_ps( relumask1, _mm512_setzero_ps(), cur_out_1 );
+            LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8, nBlocksOFm, handle->bn, handle->bk/8), relumask0 );
+            LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8+2, nBlocksOFm, handle->bn, handle->bk/8), relumask1 );
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+            /* we ar using Pade 7/8 approximation */
+            cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
+            cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
+#endif
+            _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk), cur_out_0);
+            _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk), cur_out_1);
+          }
+        }
+      } else {
+        for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+          for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+            libxsmm_bfloat16_hp t;
+#endif
+            libxsmm_bfloat16 l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+            LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = ( (l_cur_out & 0x8000) > 0 ) ? 0 : 1;
+            l_cur_out = ( (l_cur_out & 0x8000) > 0 ) ? 0 : l_cur_out;
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+            /* we ar using Pade 7/8 approximation */
+            t.i[1] = l_cur_out;
+            t.i[0] = 0;
+            t.f = (libxsmm_stanh_pade78( t.f / 2.0f ) + 1.0f) / 2.0f;
+            l_cur_out = t.i[1];
+#endif
+            LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+          }
         }
       }
+
 #endif
     }
   }
@@ -296,5 +441,7 @@ if (use_2d_blocking == 1) {
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
+#undef _mm512_loadcvt_bf16_fp32
+#undef _mm512_storecvt_fp32_bf16
 #undef LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16
 #undef LIBXSMM_DNN_FC_FWD_CONVERT_BF16_F32
