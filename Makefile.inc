@@ -863,18 +863,18 @@ endif
 
 # enable MKL (if available)
 ifeq (,$(strip $(MKLROOT)))
-  MKL_INCFILE = $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
-  ifneq (,$(MKL_INCFILE))
-    MKLROOT = $(call qapath,$(call qdir,$(MKL_INCFILE))/..)
+  BLAS_INCFILE = $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
+  ifneq (,$(BLAS_INCFILE))
+    MKLROOT = $(call qapath,$(call qdir,$(BLAS_INCFILE))/..)
   endif
 endif
 ifeq (,$(strip $(MKLROOT)))
-  MKL_INCFILE = $(strip $(wildcard /usr/include/mkl/mkl.h))
-  ifneq (,$(MKL_INCFILE))
-    MKLROOT = $(call qapath,$(call qdir,$(MKL_INCFILE))/../..)
+  BLAS_INCFILE = $(strip $(wildcard /usr/include/mkl/mkl.h))
+  ifneq (,$(BLAS_INCFILE))
+    MKLROOT = $(call qapath,$(call qdir,$(BLAS_INCFILE))/../..)
   endif
 endif
-ifneq (,$(MKL_INCFILE))
+ifneq (,$(BLAS_INCFILE))
   #BLAS_STATIC = 0
   ABSLIBS = 1
 endif
@@ -1296,6 +1296,8 @@ else # GCC assumed
       CXXFLAGS += -std=c++14
     else ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION_NUM)))"))
       CXXFLAGS += -std=c++11
+    else ifneq (0,$(CLANG))
+      CXXFLAGS += -std=c++14
     endif
     CXXFLAGS += -Wall
     CFLAGS += -Wall
@@ -2002,10 +2004,10 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
 endif
 ifneq (0,$(MKL))
-  ifeq (,$(MKL_INCFILE))
+  ifeq (,$(BLAS_INCFILE))
     BLAS_IFLAGS += -I$(call quote,$(MKLROOT)/include)
   else
-    BLAS_IFLAGS += -I$(call qdir,$(MKL_INCFILE))
+    BLAS_IFLAGS += -I$(call qdir,$(BLAS_INCFILE))
   endif
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
@@ -2089,6 +2091,10 @@ else ifneq (0,$(BLAS)) # generic
       endif
       BLASREF ?= 1
     else ifneq (,$(call ctest,$(LD),-framework Accelerate)) # macOS
+      BLAS_INCFILE = $(shell $(LD) $(call linkopt,-v) 2>&1 | grep -i frameworks 2>/dev/null | xargs -I {} find {} -name cblas.h 2>/dev/null | head -n1)
+      ifneq (,$(BLAS_INCFILE))
+        BLAS_FLAGS += -I$(call qapath,$(call qdir,$(BLAS_INCFILE)))
+      endif
       #EXCLUDE_VALUE += -framework Accelerate
       BLAS_LDFLAGS += -framework Accelerate
       BLAS_FLAGS += -D__CBLAS
@@ -2206,7 +2212,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST \
     uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
     ctest applyif extname objname unquote quote qapath qndir qdir qsuffix qbname qname abslib \
-    MKL_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
+    BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
 

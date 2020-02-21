@@ -26,12 +26,14 @@
 
 #if defined(HAVE_MKL) || defined(__MKL)
 # include <mkl.h>
-#else
-# if defined(OPENBLAS) || defined(__OPENBLAS)
-#   include <openblas/cblas.h>
-# else
+#elif defined(OPENBLAS) || defined(__OPENBLAS)
+# include <openblas/cblas.h>
+#elif defined(__CBLAS)
 # include <cblas.h>
-# endif
+#endif
+
+#if !defined(CBLAS_LAYOUT)
+# define CBLAS_LAYOUT int
 #endif
 
 #ifdef NDEBUG
