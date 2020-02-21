@@ -59,7 +59,7 @@
 const int bn = handle->bn;
 const int bk = handle->bk;
 const int bc = handle->bc;
-const int lpb = 2;
+int lpb = 2;
 const int bc_lp = bc/lpb;
 const int bk_lp = bk/lpb;
 const int bn_lp = bn/lpb;
@@ -165,7 +165,7 @@ if (bk % 32 == 0) {
         libxsmm_bfloat16_hp tmp;
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
-        l_cur_out = (LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0;
+        l_cur_out = (element_output_type)((LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0);
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
         tmp.i[0] = 0;
@@ -196,47 +196,49 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_BIAS)
 /* Accumulation of bias happens in f32 */
-float *scratch_dbias = (float*) ((element_output_type*)handle->scratch + handle->desc.N * (handle->desc.K + handle->desc.C) + ltid * bk * 2);
-if (handle->bk % 16 == 0) {
-  __m512 zero_reg = _mm512_setzero_ps();
-  __m512 doutput_reg = _mm512_setzero_ps();
-  __m512 dbias_reg = _mm512_setzero_ps();
-  for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
-    for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-      _mm512_store_ps(scratch_dbias+iterj, zero_reg);
-    }
-    for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
-      for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-        for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-          doutput_reg = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
-          dbias_reg = _mm512_load_ps(scratch_dbias+iterj);
-          dbias_reg = _mm512_add_ps(dbias_reg, doutput_reg);
-          _mm512_store_ps(scratch_dbias+iterj, dbias_reg);
+{
+  float *scratch_dbias = (float*) ((element_output_type*)handle->scratch + handle->desc.N * (handle->desc.K + handle->desc.C) + ltid * bk * 2);
+  if (handle->bk % 16 == 0) {
+    __m512 zero_reg = _mm512_setzero_ps();
+    __m512 doutput_reg = _mm512_setzero_ps();
+    __m512 dbias_reg = _mm512_setzero_ps();
+    for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
+      for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
+        _mm512_store_ps(scratch_dbias+iterj, zero_reg);
+      }
+      for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
+        for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+          for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
+            doutput_reg = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
+            dbias_reg = _mm512_load_ps(scratch_dbias+iterj);
+            dbias_reg = _mm512_add_ps(dbias_reg, doutput_reg);
+            _mm512_store_ps(scratch_dbias+iterj, dbias_reg);
+          }
         }
       }
-    }
-    for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-      _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), _mm512_load_ps(scratch_dbias+iterj));
-    }
-  }
-} else {
-  for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
-    for ( iterj = 0; iterj < handle->bk; ++iterj ) {
-      scratch_dbias[iterj] = 0.0;
-    }
-    for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
-      for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-        for ( iterj = 0; iterj < handle->bk; ++iterj ) {
-          float doutput_f32 = 0;
-          libxsmm_bfloat16_hp tmp;
-          tmp.i[0] = 0;
-          tmp.i[1] = LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
-          doutput_f32 = tmp.f;
-          scratch_dbias[iterj] += doutput_f32;
-        }
+      for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), _mm512_load_ps(scratch_dbias+iterj));
       }
     }
-    libxsmm_rne_convert_fp32_bf16(scratch_dbias, &LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, 0, handle->bk ), handle->bk);
+  } else {
+    for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
+      for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+        scratch_dbias[iterj] = 0.0;
+      }
+      for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
+        for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+          for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+            float doutput_f32 = 0;
+            libxsmm_bfloat16_hp tmp;
+            tmp.i[0] = 0;
+            tmp.i[1] = LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+            doutput_f32 = tmp.f;
+            scratch_dbias[iterj] += doutput_f32;
+          }
+        }
+      }
+      libxsmm_rne_convert_fp32_bf16(scratch_dbias, &LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, 0, handle->bk ), handle->bk);
+    }
   }
 }
 

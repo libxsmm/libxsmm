@@ -32,7 +32,7 @@
   __m512 _vdout, _vdh, _vo, _vt1, _vt2, _vco, _vdcs, _vdcp, _vii, _vci, _vdci, _vdi, _vcps, _vf, _vdf, _vdp;
   const __m512 _neg_ones = _mm512_set1_ps( (float)-1.0 );
   const __m512 _ones = _mm512_set1_ps( (float)1.0 );
-  const int _lpb = 2;
+  int _lpb = 2;
 
   if (j == t-1) {
     for ( _j = 0; _j < bn; ++_j ) {
