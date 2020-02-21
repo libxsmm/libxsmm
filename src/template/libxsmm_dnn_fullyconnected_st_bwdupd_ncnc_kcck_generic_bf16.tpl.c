@@ -194,7 +194,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_BIAS)
 /* Accumulation of bias happens in f32 */
 float *scratch_dbias = (float*) ((element_output_type*)handle->scratch + handle->desc.N * (handle->desc.K + handle->desc.C) + ltid * bk * 2);
-if (handle->bk % 17 == 0) {
+if (handle->bk % 16 == 0) {
   __m512 zero_reg = _mm512_setzero_ps();
   __m512 doutput_reg = _mm512_setzero_ps();
   __m512 dbias_reg = _mm512_setzero_ps();
