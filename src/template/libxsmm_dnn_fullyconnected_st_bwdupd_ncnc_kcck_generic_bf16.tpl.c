@@ -59,7 +59,7 @@
 const int bn = handle->bn;
 const int bk = handle->bk;
 const int bc = handle->bc;
-const int lpb = 2;
+int lpb = 2;
 const int bc_lp = bc/lpb;
 const int bk_lp = bk/lpb;
 const int bn_lp = bn/lpb;
