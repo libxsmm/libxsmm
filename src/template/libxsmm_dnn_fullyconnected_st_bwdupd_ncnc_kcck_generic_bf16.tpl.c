@@ -133,7 +133,7 @@ if (bk % 32 == 0) {
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
         __m512i zero_reg = _mm512_setzero_si512();
-        __mmask32 relumask = _load_mask32 ((__mmask32*) &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, iteri, iterj/8, nBlocksOFm, handle->bn, handle->bk/8));
+        __mmask32 relumask = LIBXSMM_INTRINSICS_MM512_LOAD_MASK32 ((__mmask32*) &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, iteri, iterj/8, nBlocksOFm, handle->bn, handle->bk/8));
         cur_out_reg = _mm512_mask_blend_epi16 (relumask, zero_reg, cur_out_reg);
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
