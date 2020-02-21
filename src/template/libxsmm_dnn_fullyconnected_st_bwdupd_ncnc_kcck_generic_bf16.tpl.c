@@ -131,7 +131,7 @@ if (bk % 32 == 0) {
         libxsmm_bfloat16_hp tmp;
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
-        l_cur_out = (LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0;
+        l_cur_out = (element_output_type)((LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0);
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
         tmp.i[0] = 0;
@@ -162,7 +162,7 @@ if (bk % 32 == 0) {
         libxsmm_bfloat16_hp tmp;
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
-        l_cur_out = (LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0;
+        l_cur_out = (element_output_type)((LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0);
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
         tmp.i[0] = 0;
