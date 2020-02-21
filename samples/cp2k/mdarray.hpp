@@ -30,6 +30,9 @@
 # include <openblas/cblas.h>
 #elif defined(__CBLAS)
 # include <cblas.h>
+#else
+# define CblasRowMajor 101
+# define CblasColMajor 102
 #endif
 
 #if !defined(CBLAS_LAYOUT)
