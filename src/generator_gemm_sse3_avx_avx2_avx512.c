@@ -102,6 +102,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libx
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R11;
   l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_X86_GP_REG_R15;
+  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_X86_GP_REG_RBX;
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
