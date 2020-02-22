@@ -11,10 +11,10 @@
 #include "mdarray.hpp"
 #include "rt_graph.hpp"
 
-#if !defined(XSMM)
+#if !defined(XSMM) && 1
 # define XSMM
 #endif
-#if !defined(SCRATCH)
+#if !defined(SCRATCH) && 1
 # define SCRATCH
 #endif
 #if !defined(NAIVE2) && 0
@@ -32,10 +32,10 @@ template<typename T> void collocate_core(const int length_[3],
 {
   timer.start("init");
 #if defined(XSMM) && defined(SCRATCH)
-  T *const Cdata = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * length_[1] * co.size(1) * co.size(0), 0/*auto-alignment*/));
-  T *const xyz_data = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * length_[1] * length_[0] * co.size(0), 0/*auto-alignment*/));
-  LIBXSMM_VLA_DECL(3, T, C, Cdata, co.size(1), co.size(0));
-  LIBXSMM_VLA_DECL(3, T, xyz_alpha_beta, xyz_data, length_[0], co.size(0));
+  T *const Cdata = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * co.size(1) * length_[1], 0/*auto-alignment*/));
+  T *const xyz_data = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * length_[0] * length_[1], 0/*auto-alignment*/));
+  LIBXSMM_VLA_DECL(3, T, C, Cdata, co.size(1), length_[1]);
+  LIBXSMM_VLA_DECL(3, T, xyz_alpha_beta, xyz_data, length_[0], length_[1]);
 #else
   mdarray<T, 3, CblasRowMajor> C(co.size(0), co.size(1), length_[1]);
   mdarray<T, 3, CblasRowMajor> xyz_alpha_beta(co.size(0), length_[0], length_[1]);
@@ -63,7 +63,7 @@ template<typename T> void collocate_core(const int length_[3],
       xmm1(
         p_alpha_beta_reduced_.template at<CPU>(1, 0, 0),
         co.template at<CPU>(a1, 0, 0),
-        &LIBXSMM_VLA_ACCESS(3, C, 0, 0, a1, co.size(1), co.size(0)));
+        &LIBXSMM_VLA_ACCESS(3, C, a1, 0, 0, co.size(1), length_[1]));
 # else
       xmm1(
         p_alpha_beta_reduced_.template at<CPU>(1, 0, 0),
@@ -88,9 +88,9 @@ template<typename T> void collocate_core(const int length_[3],
 #if defined(XSMM)
 # if defined(SCRATCH)
       xmm2(
-        &LIBXSMM_VLA_ACCESS(3, C, 0, 0, a1, co.size(1), co.size(0)),
+        &LIBXSMM_VLA_ACCESS(3, C, a1, 0, 0, co.size(1), length_[1]),
         p_alpha_beta_reduced_.template at<CPU>(0, 0, 0),
-        &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, a1, length_[0], co.size(0)));
+        &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, a1, 0, 0, length_[0], length_[1]));
 # else
       xmm2(
         C.template at<CPU>(a1, 0, 0),
@@ -115,7 +115,7 @@ template<typename T> void collocate_core(const int length_[3],
 # if defined(SCRATCH)
     xmm3(
       p_alpha_beta_reduced_.template at<CPU>(2, 0, 0),
-      &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, 0, length_[0], co.size(0)),
+      &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, 0, length_[0], length_[1]),
       Vtmp.template at<CPU>(0, 0, 0));
 # else
     xmm3(
