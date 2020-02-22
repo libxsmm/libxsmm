@@ -20,7 +20,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa( libxsmm_generated_code*         i
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
-                                               const void*                     i_values ) {
+                                               const void*                     i_values,
+                                               const unsigned int              i_packed_width ) {
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "knm") == 0 ||
        strcmp(i_arch, "skx") == 0 ||
@@ -50,7 +51,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa( libxsmm_generated_code*         i
                                                          i_xgemm_desc,
                                                          i_row_idx,
                                                          i_column_idx,
-                                                         i_values );
+                                                         i_values,
+                                                         i_packed_width );
   } else {
     fprintf( stderr, "CSC + SOA is only available for AVX/AVX2/AVX512 at this point\n" );
     exit(-1);
@@ -62,7 +64,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                           const unsigned int*             i_row_idx,
                                                           const unsigned int*             i_column_idx,
-                                                          const void*                     i_values ) {
+                                                          const void*                     i_values,
+                                                          const unsigned int              i_packed_width ) {
   unsigned int l_n = 0;
   unsigned int l_k = 0;
   unsigned int l_soa_width = 0;
@@ -71,14 +74,13 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
   unsigned int l_n_limit = 0;
   unsigned int l_n_chunks = 0;
   unsigned int l_n_chunksize = 0;
-  unsigned int l_found_mul = 0;
   unsigned int l_max_reg_block = 0;
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
-  LIBXSMM_UNUSED(i_values);
+  LIBXSMM_UNUSED( i_packed_width );
 
   /* select soa width */
   if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
@@ -159,232 +161,17 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
 #if 0
     printf("l_max_cols: %i, l_n_processed: %i, l_n_limit: %i\n", l_max_cols, l_n_processed, l_n_limit);
 #endif
-    /* load C accumulator */
-    for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
-      if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                 l_micro_kernel_config.instruction_set,
-                                                 l_micro_kernel_config.vxor_instruction,
-                                                 l_micro_kernel_config.vector_name,
-                                                 l_n, l_n, l_n );
-      } else {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-                                          l_micro_kernel_config.instruction_set,
-                                          l_micro_kernel_config.c_vmove_instruction,
-                                          l_gp_reg_mapping.gp_reg_c,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (l_n_processed + l_n)*l_soa_width*l_micro_kernel_config.datatype_size,
-                                          l_micro_kernel_config.vector_name,
-                                          l_n, 0, 1, 0 );
-      }
-    }
-
-    /* do dense soa times sparse multiplication */
-    for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
-      unsigned int l_found_qmadd = 0;
-      unsigned int l_col_k = 0;
-      unsigned int l_column_active[28];
-      int l_nnz_idx[28][4];
-
-      /* reset helpers */
-      for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
-        l_column_active[l_n] = 0;
-        l_nnz_idx[l_n][0] = -1; l_nnz_idx[l_n][1] = -1; l_nnz_idx[l_n][2] = -1; l_nnz_idx[l_n][3] = -1;
-      }
-      l_found_mul = 0;
-
-      /* let's figure out if we can apply qmadd when being sin F32 setting and on KNM */
-      if ( (l_k < ((unsigned int)i_xgemm_desc->k - 3))                       &&
-           (l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM) &&
-           (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) )               ) {
-        /* loop over the columns of B/C */
-        for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
-          unsigned int l_found = 0;
-          unsigned int l_acol_k = 0;
-          unsigned int l_col_elements = i_column_idx[l_n_processed+l_n+1] - i_column_idx[l_n_processed+l_n];
-          unsigned int l_cur_column = i_column_idx[l_n_processed+l_n];
-
-          for ( l_col_k = 0; l_col_k < l_col_elements; l_col_k++ ) {
-            for ( l_acol_k = l_found; l_acol_k < 4; l_acol_k++ ) {
-              if ( (l_k + l_acol_k) == i_row_idx[l_cur_column + l_col_k] ) {
-                l_nnz_idx[l_n][l_acol_k] = l_cur_column + l_col_k;
-                l_found = l_acol_k+1;
-              }
-              if (l_found == 4) {
-                l_col_k = l_col_elements;
-              }
-            }
-          }
-          /* let's check if we can apply qmadd in col l_n */
-          if ( (l_nnz_idx[l_n][0] != -1) && (l_nnz_idx[l_n][1] != -1) && (l_nnz_idx[l_n][2] != -1) && (l_nnz_idx[l_n][3] != -1) ) {
-            l_column_active[l_n] = 2;
-            l_found_qmadd = 1;
-            l_found_mul = 1;
-          } else {
-            /* let's check if we have at least one entry in the column that matches one of the four entries */
-            if ( (l_nnz_idx[l_n][0] != -1) || (l_nnz_idx[l_n][1] != -1) || (l_nnz_idx[l_n][2] != -1) || (l_nnz_idx[l_n][3] != -1) ) {
-              l_column_active[l_n] = 1;
-              l_found_mul = 1;
-            } else {
-              l_column_active[l_n] = 0;
-            }
-          }
-        }
-      }
-
-      if ( l_found_qmadd == 0 ) {
-        /* loop over the columns of B/C */
-        for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
-          unsigned int l_col_elements = i_column_idx[l_n_processed+l_n+1] - i_column_idx[l_n_processed+l_n];
-          unsigned int l_cur_column = i_column_idx[l_n_processed+l_n];
-          /* search for entries matching that k */
-          for ( l_col_k = 0; l_col_k < l_col_elements; l_col_k++ ) {
-            if ( l_k == i_row_idx[l_cur_column + l_col_k] ) {
-              l_nnz_idx[l_n][0] = l_cur_column + l_col_k;
-              l_col_k = l_col_elements;
-            }
-          }
-          /* let's check if we have an entry in the column that matches the k from A */
-          if ( (l_nnz_idx[l_n][0] != -1) ) {
-            l_column_active[l_n] = 1;
-            l_found_mul = 1;
-          } else {
-            l_column_active[l_n] = 0;
-          }
-        }
-      }
-
-      /* First case: we can use qmadd */
-      if ( l_found_qmadd != 0 ) {
-        unsigned int l_lcl_k = 0;
-        for ( l_lcl_k = 0; l_lcl_k < 4; l_lcl_k++ ) {
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-                                            l_micro_kernel_config.instruction_set,
-                                            l_micro_kernel_config.a_vmove_instruction,
-                                            l_gp_reg_mapping.gp_reg_a,
-                                            LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            (l_k+l_lcl_k)*l_soa_width*l_micro_kernel_config.datatype_size,
-                                            l_micro_kernel_config.vector_name,
-                                            l_max_reg_block+l_lcl_k, 0, 1, 0 );
-        }
-
-        /* loop over the columns of B/C */
-        for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
-          /* issue a qmadd */
-          if ( l_column_active[l_n] == 2 ) {
-            libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
-                                                      l_micro_kernel_config.instruction_set,
-                                                      LIBXSMM_X86_INSTR_V4FMADDPS,
-                                                      l_gp_reg_mapping.gp_reg_b,
-                                                      LIBXSMM_X86_GP_REG_UNDEF,
-                                                      0,
-                                                      l_nnz_idx[l_n][0] * l_micro_kernel_config.datatype_size,
-                                                      l_micro_kernel_config.vector_name,
-                                                      l_max_reg_block,
-                                                      l_n );
-          } else if ( l_column_active[l_n] == 1 ) {
-            for ( l_lcl_k = 0; l_lcl_k < 4; l_lcl_k++ ) {
-              if ( l_nnz_idx[l_n][l_lcl_k] != -1 ) {
-                libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                         l_micro_kernel_config.instruction_set,
-                                                         l_micro_kernel_config.vmul_instruction,
-                                                         1,
-                                                         l_gp_reg_mapping.gp_reg_b,
-                                                         LIBXSMM_X86_GP_REG_UNDEF,
-                                                         0,
-                                                         l_nnz_idx[l_n][l_lcl_k] * l_micro_kernel_config.datatype_size,
-                                                         l_micro_kernel_config.vector_name,
-                                                         l_max_reg_block+l_lcl_k,
-                                                         l_n );
-              }
-            }
-          }
-        }
-        /* increment by additional 3 columns */
-        l_k += 3;
-      } else if ( l_found_mul != 0 ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-                                          l_micro_kernel_config.instruction_set,
-                                          l_micro_kernel_config.a_vmove_instruction,
-                                          l_gp_reg_mapping.gp_reg_a,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          l_k*l_soa_width*l_micro_kernel_config.datatype_size,
-                                          l_micro_kernel_config.vector_name,
-                                          l_max_reg_block, 0, 1, 0 );
-        /* loop over the columns of B/C */
-        for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
-          if ( l_nnz_idx[l_n][0] != -1 ) {
-            if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       l_micro_kernel_config.instruction_set,
-                                                       l_micro_kernel_config.vmul_instruction,
-                                                       1,
-                                                       l_gp_reg_mapping.gp_reg_b,
-                                                       LIBXSMM_X86_GP_REG_UNDEF,
-                                                       0,
-                                                       l_nnz_idx[l_n][0] * l_micro_kernel_config.datatype_size,
-                                                       l_micro_kernel_config.vector_name,
-                                                       l_max_reg_block,
-                                                       l_n );
-            } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
-              libxsmm_x86_instruction_vec_move( io_generated_code,
-                                                l_micro_kernel_config.instruction_set,
-                                                l_micro_kernel_config.b_vmove_instruction,
-                                                l_gp_reg_mapping.gp_reg_b,
-                                                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                l_nnz_idx[l_n][0] * l_micro_kernel_config.datatype_size,
-                                                l_micro_kernel_config.vector_name,
-                                                15, 0, 1, 0 );
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       l_micro_kernel_config.instruction_set,
-                                                       l_micro_kernel_config.vmul_instruction,
-                                                       l_micro_kernel_config.vector_name,
-                                                       l_max_reg_block,
-                                                       15,
-                                                       l_n );
-            } else if ( io_generated_code->arch == LIBXSMM_X86_AVX ) {
-              libxsmm_x86_instruction_vec_move( io_generated_code,
-                                                l_micro_kernel_config.instruction_set,
-                                                l_micro_kernel_config.b_vmove_instruction,
-                                                l_gp_reg_mapping.gp_reg_b,
-                                                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                l_nnz_idx[l_n][0] * l_micro_kernel_config.datatype_size,
-                                                l_micro_kernel_config.vector_name,
-                                                15, 0, 1, 0 );
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       l_micro_kernel_config.instruction_set,
-                                                       l_micro_kernel_config.vmul_instruction,
-                                                       l_micro_kernel_config.vector_name,
-                                                       l_max_reg_block,
-                                                       15,
-                                                       15 );
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       l_micro_kernel_config.instruction_set,
-                                                       l_micro_kernel_config.vadd_instruction,
-                                                       l_micro_kernel_config.vector_name,
-                                                       15,
-                                                       l_n,
-                                                       l_n );
-            } else {
-            }
-          }
-        }
-      } else {
-        /* shouldn't happen */
-      }
-    }
-
-    /* store C accumulator */
-    for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
-      libxsmm_x86_instruction_vec_move( io_generated_code,
-                                        l_micro_kernel_config.instruction_set,
-                                        l_micro_kernel_config.c_vmove_instruction,
-                                        l_gp_reg_mapping.gp_reg_c,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        (l_n_processed + l_n)*l_soa_width*l_micro_kernel_config.datatype_size,
-                                        l_micro_kernel_config.vector_name,
-                                        l_n, 0, 0, 1 );
-    }
+    libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512_kloop( io_generated_code,
+                                                               &l_gp_reg_mapping,
+                                                               &l_micro_kernel_config,
+                                                               i_xgemm_desc,
+                                                               i_row_idx,
+                                                               i_column_idx,
+                                                               i_values,
+                                                               l_n_processed,
+                                                               l_n_limit,
+                                                               l_max_reg_block,
+                                                               l_soa_width );
 
     /* adjust n progression */
     l_n_processed += l_n_chunksize;
@@ -405,5 +192,251 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
 
   /* close asm */
   libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512_kloop( libxsmm_generated_code*            io_generated_code,
+                                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                const unsigned int*                i_row_idx,
+                                                                const unsigned int*                i_column_idx,
+                                                                const void*                        i_values,
+                                                                const unsigned int                 i_n_processed,
+                                                                const unsigned int                 i_n_limit,
+                                                                const unsigned int                 i_max_reg_block,
+                                                                const unsigned int                 i_packed_width ) {
+  unsigned int l_n = 0;
+  unsigned int l_k = 0;
+  unsigned int l_found_mul = 0;
+
+  LIBXSMM_UNUSED(i_values);
+
+  /* load C accumulator */
+  for ( l_n = 0; l_n < i_n_limit - i_n_processed; l_n++ ) {
+    if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                               i_micro_kernel_config->instruction_set,
+                                               i_micro_kernel_config->vxor_instruction,
+                                               i_micro_kernel_config->vector_name,
+                                               l_n, l_n, l_n );
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+                                        i_micro_kernel_config->instruction_set,
+                                        i_micro_kernel_config->c_vmove_instruction,
+                                        i_gp_reg_mapping->gp_reg_c,
+                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                        (i_n_processed + l_n)*i_packed_width*i_micro_kernel_config->datatype_size,
+                                        i_micro_kernel_config->vector_name,
+                                        l_n, 0, 1, 0 );
+    }
+  }
+
+  /* do dense soa times sparse multiplication */
+  for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
+    unsigned int l_found_qmadd = 0;
+    unsigned int l_col_k = 0;
+    unsigned int l_column_active[28];
+    int l_nnz_idx[28][4];
+
+    /* reset helpers */
+    for ( l_n = 0; l_n < i_n_limit - i_n_processed; l_n++ ) {
+      l_column_active[l_n] = 0;
+      l_nnz_idx[l_n][0] = -1; l_nnz_idx[l_n][1] = -1; l_nnz_idx[l_n][2] = -1; l_nnz_idx[l_n][3] = -1;
+    }
+    l_found_mul = 0;
+
+    /* let's figure out if we can apply qmadd when being sin F32 setting and on KNM */
+    if ( (l_k < ((unsigned int)i_xgemm_desc->k - 3))                       &&
+         (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) &&
+         (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) )               ) {
+      /* loop over the columns of B/C */
+      for ( l_n = 0; l_n < i_n_limit - i_n_processed; l_n++ ) {
+        unsigned int l_found = 0;
+        unsigned int l_acol_k = 0;
+        unsigned int l_col_elements = i_column_idx[i_n_processed+l_n+1] - i_column_idx[i_n_processed+l_n];
+        unsigned int l_cur_column = i_column_idx[i_n_processed+l_n];
+
+        for ( l_col_k = 0; l_col_k < l_col_elements; l_col_k++ ) {
+          for ( l_acol_k = l_found; l_acol_k < 4; l_acol_k++ ) {
+            if ( (l_k + l_acol_k) == i_row_idx[l_cur_column + l_col_k] ) {
+              l_nnz_idx[l_n][l_acol_k] = l_cur_column + l_col_k;
+              l_found = l_acol_k+1;
+            }
+            if (l_found == 4) {
+              l_col_k = l_col_elements;
+            }
+          }
+        }
+        /* let's check if we can apply qmadd in col l_n */
+        if ( (l_nnz_idx[l_n][0] != -1) && (l_nnz_idx[l_n][1] != -1) && (l_nnz_idx[l_n][2] != -1) && (l_nnz_idx[l_n][3] != -1) ) {
+          l_column_active[l_n] = 2;
+          l_found_qmadd = 1;
+          l_found_mul = 1;
+        } else {
+          /* let's check if we have at least one entry in the column that matches one of the four entries */
+          if ( (l_nnz_idx[l_n][0] != -1) || (l_nnz_idx[l_n][1] != -1) || (l_nnz_idx[l_n][2] != -1) || (l_nnz_idx[l_n][3] != -1) ) {
+            l_column_active[l_n] = 1;
+            l_found_mul = 1;
+          } else {
+            l_column_active[l_n] = 0;
+          }
+        }
+      }
+    }
+
+    if ( l_found_qmadd == 0 ) {
+      /* loop over the columns of B/C */
+      for ( l_n = 0; l_n < i_n_limit - i_n_processed; l_n++ ) {
+        unsigned int l_col_elements = i_column_idx[i_n_processed+l_n+1] - i_column_idx[i_n_processed+l_n];
+        unsigned int l_cur_column = i_column_idx[i_n_processed+l_n];
+        /* search for entries matching that k */
+        for ( l_col_k = 0; l_col_k < l_col_elements; l_col_k++ ) {
+          if ( l_k == i_row_idx[l_cur_column + l_col_k] ) {
+            l_nnz_idx[l_n][0] = l_cur_column + l_col_k;
+            l_col_k = l_col_elements;
+          }
+        }
+        /* let's check if we have an entry in the column that matches the k from A */
+        if ( (l_nnz_idx[l_n][0] != -1) ) {
+          l_column_active[l_n] = 1;
+          l_found_mul = 1;
+        } else {
+          l_column_active[l_n] = 0;
+        }
+      }
+    }
+
+    /* First case: we can use qmadd */
+    if ( l_found_qmadd != 0 ) {
+      unsigned int l_lcl_k = 0;
+      for ( l_lcl_k = 0; l_lcl_k < 4; l_lcl_k++ ) {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+                                          i_micro_kernel_config->instruction_set,
+                                          i_micro_kernel_config->a_vmove_instruction,
+                                          i_gp_reg_mapping->gp_reg_a,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          (l_k+l_lcl_k)*i_packed_width*i_micro_kernel_config->datatype_size,
+                                          i_micro_kernel_config->vector_name,
+                                          i_max_reg_block+l_lcl_k, 0, 1, 0 );
+      }
+
+      /* loop over the columns of B/C */
+      for ( l_n = 0; l_n < i_n_limit - i_n_processed; l_n++ ) {
+        /* issue a qmadd */
+        if ( l_column_active[l_n] == 2 ) {
+          libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
+                                                    i_micro_kernel_config->instruction_set,
+                                                    LIBXSMM_X86_INSTR_V4FMADDPS,
+                                                    i_gp_reg_mapping->gp_reg_b,
+                                                    LIBXSMM_X86_GP_REG_UNDEF,
+                                                    0,
+                                                    l_nnz_idx[l_n][0] * i_micro_kernel_config->datatype_size,
+                                                    i_micro_kernel_config->vector_name,
+                                                    i_max_reg_block,
+                                                    l_n );
+        } else if ( l_column_active[l_n] == 1 ) {
+          for ( l_lcl_k = 0; l_lcl_k < 4; l_lcl_k++ ) {
+            if ( l_nnz_idx[l_n][l_lcl_k] != -1 ) {
+              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                       i_micro_kernel_config->instruction_set,
+                                                       i_micro_kernel_config->vmul_instruction,
+                                                       1,
+                                                       i_gp_reg_mapping->gp_reg_b,
+                                                       LIBXSMM_X86_GP_REG_UNDEF,
+                                                       0,
+                                                       l_nnz_idx[l_n][l_lcl_k] * i_micro_kernel_config->datatype_size,
+                                                       i_micro_kernel_config->vector_name,
+                                                       i_max_reg_block+l_lcl_k,
+                                                       l_n );
+            }
+          }
+        }
+      }
+      /* increment by additional 3 columns */
+      l_k += 3;
+    } else if ( l_found_mul != 0 ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+                                        i_micro_kernel_config->instruction_set,
+                                        i_micro_kernel_config->a_vmove_instruction,
+                                        i_gp_reg_mapping->gp_reg_a,
+                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                        l_k*i_packed_width*i_micro_kernel_config->datatype_size,
+                                        i_micro_kernel_config->vector_name,
+                                        i_max_reg_block, 0, 1, 0 );
+      /* loop over the columns of B/C */
+      for ( l_n = 0; l_n < i_n_limit - i_n_processed; l_n++ ) {
+        if ( l_nnz_idx[l_n][0] != -1 ) {
+          if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+            libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                     i_micro_kernel_config->instruction_set,
+                                                     i_micro_kernel_config->vmul_instruction,
+                                                     1,
+                                                     i_gp_reg_mapping->gp_reg_b,
+                                                     LIBXSMM_X86_GP_REG_UNDEF,
+                                                     0,
+                                                     l_nnz_idx[l_n][0] * i_micro_kernel_config->datatype_size,
+                                                     i_micro_kernel_config->vector_name,
+                                                     i_max_reg_block,
+                                                     l_n );
+          } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                                              i_micro_kernel_config->instruction_set,
+                                              i_micro_kernel_config->b_vmove_instruction,
+                                              i_gp_reg_mapping->gp_reg_b,
+                                              LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                              l_nnz_idx[l_n][0] * i_micro_kernel_config->datatype_size,
+                                              i_micro_kernel_config->vector_name,
+                                              15, 0, 1, 0 );
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                     i_micro_kernel_config->instruction_set,
+                                                     i_micro_kernel_config->vmul_instruction,
+                                                     i_micro_kernel_config->vector_name,
+                                                     i_max_reg_block,
+                                                     15,
+                                                     l_n );
+          } else if ( io_generated_code->arch == LIBXSMM_X86_AVX ) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                                              i_micro_kernel_config->instruction_set,
+                                              i_micro_kernel_config->b_vmove_instruction,
+                                              i_gp_reg_mapping->gp_reg_b,
+                                              LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                              l_nnz_idx[l_n][0] * i_micro_kernel_config->datatype_size,
+                                              i_micro_kernel_config->vector_name,
+                                              15, 0, 1, 0 );
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                     i_micro_kernel_config->instruction_set,
+                                                     i_micro_kernel_config->vmul_instruction,
+                                                     i_micro_kernel_config->vector_name,
+                                                     i_max_reg_block,
+                                                     15,
+                                                     15 );
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                     i_micro_kernel_config->instruction_set,
+                                                     i_micro_kernel_config->vadd_instruction,
+                                                     i_micro_kernel_config->vector_name,
+                                                     15,
+                                                     l_n,
+                                                     l_n );
+          } else {
+          }
+        }
+      }
+    } else {
+      /* shouldn't happen */
+    }
+  }
+
+  /* store C accumulator */
+  for ( l_n = 0; l_n < i_n_limit - i_n_processed; l_n++ ) {
+    libxsmm_x86_instruction_vec_move( io_generated_code,
+                                      i_micro_kernel_config->instruction_set,
+                                      i_micro_kernel_config->c_vmove_instruction,
+                                      i_gp_reg_mapping->gp_reg_c,
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                      (i_n_processed + l_n)*i_packed_width*i_micro_kernel_config->datatype_size,
+                                      i_micro_kernel_config->vector_name,
+                                      l_n, 0, 0, 1 );
+  }
 }
 
