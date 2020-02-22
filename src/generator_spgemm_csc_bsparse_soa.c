@@ -67,7 +67,6 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                                                           const void*                     i_values,
                                                           const unsigned int              i_packed_width ) {
   unsigned int l_n = 0;
-  unsigned int l_k = 0;
   unsigned int l_soa_width = 0;
   unsigned int l_max_cols = 0;
   unsigned int l_n_processed = 0;
