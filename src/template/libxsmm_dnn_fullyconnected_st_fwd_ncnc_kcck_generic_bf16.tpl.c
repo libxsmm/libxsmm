@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+
 #define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
 #define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),(__m256i)_mm512_cvtneps_pbh((B)))
@@ -107,8 +108,8 @@ LIBXSMM_VLA_DECL(4,        float,    output_f32, (float*) temp_output, nBlocksOF
 LIBXSMM_VLA_DECL(2, const element_input_type,               bias,   (element_input_type*)              handle->reg_bias->data,                           handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
-LIBXSMM_VLA_DECL(4, unsigned char,           relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
-LIBXSMM_VLA_DECL(4, unsigned char,           relubitmask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk/8);
+LIBXSMM_VLA_DECL(4, unsigned char, relumask, (unsigned char*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk);
+LIBXSMM_VLA_DECL(4, __mmask16,  relubitmask,     (__mmask16*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/8);
 #endif
 #endif
 unsigned long long  blocks = nBlocksIFm;
@@ -445,3 +446,4 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 #undef _mm512_storecvt_fp32_bf16
 #undef LIBXSMM_DNN_FC_FWD_CONVERT_F32_BF16
 #undef LIBXSMM_DNN_FC_FWD_CONVERT_BF16_F32
+

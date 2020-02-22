@@ -99,8 +99,8 @@ const int dbias_thr_end = ((ltid + 1) * dbias_chunksize < dbias_work) ? ((ltid +
 LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dbias, (libxsmm_bfloat16*) handle->grad_bias->data, handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
-LIBXSMM_VLA_DECL(4, unsigned char,              relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
-LIBXSMM_VLA_DECL(4, unsigned char,              relubitmask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk/8);
+LIBXSMM_VLA_DECL(4, unsigned char,    relumask, (unsigned char*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk);
+LIBXSMM_VLA_DECL(4,     __mmask32, relubitmask,     (__mmask32*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/8);
 #endif
 
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
@@ -133,7 +133,7 @@ if (bk % 32 == 0) {
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
         __m512i zero_reg = _mm512_setzero_si512();
-        __mmask32 relumask = LIBXSMM_INTRINSICS_MM512_LOAD_MASK32 ((__mmask32*) &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, iteri, iterj/8, nBlocksOFm, handle->bn, handle->bk/8));
+        __mmask32 relumask = LIBXSMM_INTRINSICS_MM512_LOAD_MASK32 (&LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, iteri, iterj/8, nBlocksOFm, handle->bn, handle->bk/8));
         cur_out_reg = _mm512_mask_blend_epi16 (relumask, zero_reg, cur_out_reg);
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
@@ -713,5 +713,4 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
 #undef _mm512_storecvt_fp32_bf16
 #undef _mm512_cvt2_fp32_bf16
 #undef LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16
-
 
