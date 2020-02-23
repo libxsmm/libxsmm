@@ -75,7 +75,6 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
   unsigned int l_simd_packed_width = 0;
   unsigned int l_packed_done = 0;
   unsigned int l_packed_count = 0;
-  unsigned int l_n_reg_block = 0;
   unsigned int l_packed_reg_block[2] = {0,0};
   unsigned int l_packed_reg_range[2] = {0,0};
   unsigned int l_col_reg_block[2][2] = {0};
@@ -260,6 +259,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512_kloop( libxsmm_generate
   unsigned int l_n_blocking = i_n_limit - i_n_processed;
 
   LIBXSMM_UNUSED(i_values);
+  LIBXSMM_UNUSED(i_packed_remainder);
 
   /* packed loop */
   if ( i_packed_range/i_packed_blocking > 1 ) {
