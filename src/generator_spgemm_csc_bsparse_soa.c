@@ -77,8 +77,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
   unsigned int l_packed_count = 0;
   unsigned int l_packed_reg_block[2] = {0,0};
   unsigned int l_packed_reg_range[2] = {0,0};
-  unsigned int l_col_reg_block[2][2] = {{0}};
-  unsigned int l_col_reg_range[2][2] = {{0}};
+  unsigned int l_col_reg_block[2][2] = { {0,0}, {0,0} };
+  unsigned int l_col_reg_range[2][2] = { {0,0}, {0,0} };
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -296,7 +296,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512_kloop( libxsmm_generate
     unsigned int l_found_qmadd = 0;
     unsigned int l_col_k = 0;
     unsigned int l_column_active[28] = {0};
-    int l_nnz_idx[28][4] = {{0}};
+    int l_nnz_idx[28][4] = {0};
 
     /* reset helpers */
     for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
