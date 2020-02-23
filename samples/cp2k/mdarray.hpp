@@ -905,9 +905,9 @@ class mdarray : public mdarray_base<T, N, format>
         this->label_  = label__;
         this->layout_ = format;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1, d2});
+            this->init_dimensions({{d0, d1, d2}});
         else
-            this->init_dimensions({d2, d1, d0});
+            this->init_dimensions({{d2, d1, d0}});
         this->allocate(memory__);
     }
 
