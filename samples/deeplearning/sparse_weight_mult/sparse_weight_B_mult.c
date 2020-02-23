@@ -61,11 +61,6 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  if ( N % 16 != 0 ) {
-    fprintf( stderr, "N needs to be disable by 16\n" );
-    return -1;
-  }
-
   NB = N / nb;
 
   /* touch A */
