@@ -1293,7 +1293,11 @@ else # GCC assumed
     else ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION_NUM)))"))
       CXXFLAGS += -std=c++11
     else ifneq (0,$(CLANG))
-      CXXFLAGS += -std=c++14
+      ifneq (0,$(shell echo "$$((40000<=$(CXX_VERSION_NUM)))"))
+        CXXFLAGS += -std=c++14
+      else
+        CXXFLAGS += -std=c++11
+      endif
     else ifneq (,$(filter-out 2 3,$(GCC)))
       CXXFLAGS += -std=c++11
     endif
