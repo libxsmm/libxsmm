@@ -1294,7 +1294,7 @@ else # GCC assumed
       CXXFLAGS += -std=c++11
     else ifneq (0,$(CLANG))
       CXXFLAGS += -std=c++14
-    else
+    else ifneq (,$(filter-out 2 3,$(GCC)))
       CXXFLAGS += -std=c++11
     endif
   endif
