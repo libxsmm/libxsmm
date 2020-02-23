@@ -326,7 +326,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512_kloop( libxsmm_generate
     unsigned int l_found_qmadd = 0;
     unsigned int l_col_k = 0;
     unsigned int l_column_active[28] = {0};
-    int l_nnz_idx[28][4] = {0};
+    int l_nnz_idx[28][4] = { {0}, {0} };
 
     /* reset helpers */
     for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
