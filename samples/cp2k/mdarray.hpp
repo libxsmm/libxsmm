@@ -243,7 +243,7 @@ class mdarray_base
         size_t i = offsets_[0] + idx__[0];
         for (int d = 0; d < idx__.size(); d++)
             i += idx__[d] * offsets_[d];
-        mdarray_assert(i >= 0 && i < size());
+        mdarray_assert(/*i >= 0 &&*/ i < size());
         return i;
     }
 
@@ -252,7 +252,7 @@ class mdarray_base
         static_assert(N == 1, "wrong number of dimensions");
         mdarray_assert(i0 >= dims_[0].begin() && i0 <= dims_[0].end());
         size_t i = offsets_[0] + i0;
-        mdarray_assert(i >= 0 && i < size());
+        mdarray_assert(/*i >= 0 &&*/ i < size());
         return i;
     }
 
@@ -262,7 +262,7 @@ class mdarray_base
         mdarray_assert(i0 >= dims_[0].begin() && i0 <= dims_[0].end());
         mdarray_assert(i1 >= dims_[1].begin() && i1 <= dims_[1].end());
         size_t i = offsets_[0] + i0 + i1 * offsets_[1];
-        mdarray_assert(i >= 0 && i < size());
+        mdarray_assert(/*i >= 0 &&*/ i < size());
         return i;
     }
 
@@ -274,7 +274,7 @@ class mdarray_base
         mdarray_assert(i1 >= dims_[1].begin() && i1 <= dims_[1].end());
         mdarray_assert(i2 >= dims_[2].begin() && i2 <= dims_[2].end());
         size_t i = offsets_[0] + i0 + i1 * offsets_[1] + i2 * offsets_[2];
-        mdarray_assert(i >= 0 && i < size());
+        mdarray_assert(/*i >= 0 &&*/ i < size());
         return i;
     }
 
@@ -288,7 +288,7 @@ class mdarray_base
         mdarray_assert(i3 >= dims_[3].begin() && i3 <= dims_[3].end());
         size_t i = offsets_[0] + i0 + i1 * offsets_[1] + i2 * offsets_[2] +
                    i3 * offsets_[3];
-        mdarray_assert(i >= 0 && i < size());
+        mdarray_assert(/*i >= 0 &&*/ i < size());
         return i;
     }
 
@@ -303,7 +303,7 @@ class mdarray_base
         mdarray_assert(i4 >= dims_[4].begin() && i4 <= dims_[4].end());
         size_t i = offsets_[0] + i0 + i1 * offsets_[1] + i2 * offsets_[2] +
                    i3 * offsets_[3] + i4 * offsets_[4];
-        mdarray_assert(i >= 0 && i < size());
+        mdarray_assert(/*i >= 0 &&*/ i < size());
         return i;
     }
 
@@ -572,13 +572,13 @@ class mdarray_base
 
     inline T& operator[](size_t const idx__)
     {
-        mdarray_assert(idx__ >= 0 && idx__ < size());
+        mdarray_assert(/*idx__ >= 0 &&*/ idx__ < size());
         return raw_ptr_[idx__];
     }
 
     inline T const& operator[](size_t const idx__) const
     {
-        assert(idx__ >= 0 && idx__ < size());
+        assert(/*idx__ >= 0 &&*/ idx__ < size());
         return raw_ptr_[idx__];
     }
 
@@ -1115,3 +1115,4 @@ std::ostream& operator<<(std::ostream& out, mdarray<T, N>& v)
 }
 
 #endif // __MDARRAY_HPP__
+
