@@ -31,7 +31,7 @@ template<typename T> void collocate_core(const int length_[3],
                      mdarray<T, 3, CblasRowMajor> &Vtmp)
 {
   timer.start("init");
-#if defined(XSMM) && defined(SCRATCH)
+#if defined(SCRATCH)
   T *const Cdata = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * co.size(1) * length_[1], 0/*auto-alignment*/));
   T *const xyz_data = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * length_[0] * length_[1], 0/*auto-alignment*/));
   LIBXSMM_VLA_DECL(3, T, C, Cdata, co.size(1), length_[1]);
@@ -39,16 +39,17 @@ template<typename T> void collocate_core(const int length_[3],
 #else
   mdarray<T, 3, CblasRowMajor> C(co.size(0), co.size(1), length_[1]);
   mdarray<T, 3, CblasRowMajor> xyz_alpha_beta(co.size(0), length_[0], length_[1]);
-  // C.zero();
-  // xyz_alpha_beta.zero();
 #endif
+  const T *LIBXSMM_RESTRICT abr0 = p_alpha_beta_reduced_.template at<CPU>(0, 0, 0);
+  const T *LIBXSMM_RESTRICT abr1 = p_alpha_beta_reduced_.template at<CPU>(1, 0, 0);
+  const T *LIBXSMM_RESTRICT abr2 = p_alpha_beta_reduced_.template at<CPU>(2, 0, 0);
 #if defined(XSMM)
   const libxsmm_mmfunction<T> xmm1(LIBXSMM_GEMM_FLAG_NONE, length_[1], co.size(2), co.size(2),
     p_alpha_beta_reduced_.ld(), co.ld(), /*C.ld()*/length_[1],
-    1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+    1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
   const libxsmm_mmfunction<T> xmm2(LIBXSMM_GEMM_FLAG_TRANS_B, length_[1], length_[0], co.size(2),
     /*C.ld()*/length_[1], p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.ld()*/length_[1],
-    1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+    1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
   const libxsmm_mmfunction<T> xmm3(LIBXSMM_GEMM_FLAG_TRANS_B, length_[2], length_[0] * length_[1], co.size(2),
     p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.size(1)*/length_[0] * /*xyz_alpha_beta.ld()*/length_[1], Vtmp.ld(),
     1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
@@ -57,79 +58,113 @@ template<typename T> void collocate_core(const int length_[3],
 
   if (co.size(0) > 1) {
     timer.start("gemm");
-    for (int a1 = 0; a1 < static_cast<int>(co.size(0)); a1++) {
+    const T* bj = co.template at<CPU>(0, 0, 0);
+#if defined(SCRATCH)
+    T* cj = &LIBXSMM_VLA_ACCESS(3, C, 0, 0, 0, co.size(1), length_[1]);
+#else
+    T* cj = C.template at<CPU>(0, 0, 0);
+#endif
+    // run loop excluding the last element
+    for (int a1 = 0; a1 < static_cast<int>(co.size(0) - 1); a1++) {
+      const T *const bi = bj; bj = co.template at<CPU>(a1 + 1, 0, 0);
+#if defined(SCRATCH)
+      T *const ci = cj; cj = &LIBXSMM_VLA_ACCESS(3, C, a1 + 1, 0, 0, co.size(1), length_[1]);
+#else
+      T *const ci = cj; cj = C.template at<CPU>(a1 + 1, 0, 0);
+#endif
 #if defined(XSMM)
-# if defined(SCRATCH)
-      xmm1(
-        p_alpha_beta_reduced_.template at<CPU>(1, 0, 0),
-        co.template at<CPU>(a1, 0, 0),
-        &LIBXSMM_VLA_ACCESS(3, C, a1, 0, 0, co.size(1), length_[1]));
-# else
-      xmm1(
-        p_alpha_beta_reduced_.template at<CPU>(1, 0, 0),
-        co.template at<CPU>(a1, 0, 0),
-        C.template at<CPU>(a1, 0, 0));
-# endif
+      xmm1(abr1, bi, ci, abr1, bj, cj);
 #else
       cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
         co.size(2), length_[1], co.size(2),
         1.0,
-        co.template at<CPU>(a1, 0, 0), // Coef_{alpha,gamma,beta}
+        bi, // Coef_{alpha,gamma,beta}
         co.ld(),
-        p_alpha_beta_reduced_.template at<CPU>(1, 0, 0), // Y_{beta,j}
+        abr1, // Y_{beta,j}
         p_alpha_beta_reduced_.ld(),
         0.0,
-        C.template at<CPU>(a1, 0, 0), // tmp_{alpha, gamma, j}
-        C.ld());
+        ci, // tmp_{alpha, gamma, j}
+        /*C.ld()*/length_[1]);
 #endif
     }
-
-    for (int a1 = 0; a1 < static_cast<int>(co.size(0)); a1++) {
+    // execute remainder with pseudo-prefetch
 #if defined(XSMM)
-# if defined(SCRATCH)
-      xmm2(
-        &LIBXSMM_VLA_ACCESS(3, C, a1, 0, 0, co.size(1), length_[1]),
-        p_alpha_beta_reduced_.template at<CPU>(0, 0, 0),
-        &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, a1, 0, 0, length_[0], length_[1]));
-# else
-      xmm2(
-        C.template at<CPU>(a1, 0, 0),
-        p_alpha_beta_reduced_.template at<CPU>(0, 0, 0),
-        xyz_alpha_beta.template at<CPU>(a1, 0, 0));
-# endif
+    xmm1(abr1, bj, cj, abr1, bj, cj);
+#else
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+      co.size(2), length_[1], co.size(2),
+      1.0,
+      bj, // Coef_{alpha,gamma,beta}
+      co.ld(),
+      abr1, // Y_{beta,j}
+      p_alpha_beta_reduced_.ld(),
+      0.0,
+      cj, // tmp_{alpha, gamma, j}
+      /*C.ld()*/length_[1]);
+#endif
+
+    // run loop excluding the last element
+#if defined(SCRATCH)
+    T* aj = &LIBXSMM_VLA_ACCESS(3, C, 0, 0, 0, co.size(1), length_[1]);
+    cj = &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, 0, length_[0], length_[1]);
+#else
+    T* aj = C.template at<CPU>(0, 0, 0);
+    cj = xyz_alpha_beta.template at<CPU>(0, 0, 0);
+#endif
+    for (int a1 = 0; a1 < static_cast<int>(co.size(0) - 1); a1++) {
+      T *const ai = aj, *const ci = cj;
+#if defined(SCRATCH)
+      aj = &LIBXSMM_VLA_ACCESS(3, C, a1 + 1, 0, 0, co.size(1), length_[1]);
+      cj = &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, a1 + 1, 0, 0, length_[0], length_[1]);
+#else
+      aj = C.template at<CPU>(a1 + 1, 0, 0);
+      cj = xyz_alpha_beta.template at<CPU>(a1 + 1, 0, 0);
+#endif
+#if defined(XSMM)
+      xmm2(ai, abr0, ci, aj, abr0, cj);
 #else
       cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
         length_[0], length_[1], co.size(2),
         1.0,
-        p_alpha_beta_reduced_.template at<CPU>(0, 0, 0), // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
+        abr0, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
         p_alpha_beta_reduced_.ld(),
-        C.template at<CPU>(a1, 0, 0), // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
-        C.ld(),
+        ai, // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
+        /*C.ld()*/length_[1],
         0.0,
-        xyz_alpha_beta.template at<CPU>(a1, 0, 0), // contains xyz_{alpha, kj} the order kj is important
-        xyz_alpha_beta.ld());
+        ci, // contains xyz_{alpha, kj} the order kj is important
+        /*xyz_alpha_beta.ld()*/length_[1]);
 #endif
     }
-
+    // execute remainder with pseudo-prefetch
 #if defined(XSMM)
-# if defined(SCRATCH)
-    xmm3(
-      p_alpha_beta_reduced_.template at<CPU>(2, 0, 0),
-      &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, 0, length_[0], length_[1]),
-      Vtmp.template at<CPU>(0, 0, 0));
-# else
-    xmm3(
-      p_alpha_beta_reduced_.template at<CPU>(2, 0, 0),
-      xyz_alpha_beta.template at<CPU>(0, 0, 0),
-      Vtmp.template at<CPU>(0, 0, 0));
-# endif
+    xmm2(aj, abr0, cj, aj, abr0, cj);
+#else
+    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+      length_[0], length_[1], co.size(2),
+      1.0,
+      abr0, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
+      p_alpha_beta_reduced_.ld(),
+      aj, // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
+      /*C.ld()*/length_[1],
+      0.0,
+      cj, // contains xyz_{alpha, kj} the order kj is important
+      /*xyz_alpha_beta.ld()*/length_[1]);
+#endif
+
+#if defined(SCRATCH)
+    cj = &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, 0, length_[0], length_[1]);
+#else
+    cj = xyz_alpha_beta.template at<CPU>(0, 0, 0);
+#endif
+#if defined(XSMM)
+    xmm3(abr2, cj, Vtmp.template at<CPU>(0, 0, 0));
 #else
     cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
       length_[0] * length_[1], length_[2], co.size(2),
       1.0,
-      xyz_alpha_beta.template at<CPU>(0, 0, 0),
-      xyz_alpha_beta.size(1) * xyz_alpha_beta.ld(),
-      p_alpha_beta_reduced_.template at<CPU>(2, 0, 0),
+      cj,
+      /*xyz_alpha_beta.size(1)*/length_[0] * /*xyz_alpha_beta.ld()*/length_[1],
+      abr2,
       p_alpha_beta_reduced_.ld(),
       0.0,
       Vtmp.template at<CPU>(0, 0, 0),
@@ -147,8 +182,8 @@ template<typename T> void collocate_core(const int length_[3],
       const T tz = co(0, 0, 0) * p_alpha_beta_reduced_(0, 0, z1);
       for (int y1 = 0; y1 < length_[1]; y1++) {
         const T tmp = tz * p_alpha_beta_reduced_(1, 0, y1);
-        const T *__restrict src = p_alpha_beta_reduced_.template at<CPU>(2, 0, 0);
-        T *__restrict dst = Vtmp.template at<CPU>(z1, y1, 0);
+        const T *LIBXSMM_RESTRICT src = abr2;
+        T *LIBXSMM_RESTRICT dst = Vtmp.template at<CPU>(z1, y1, 0);
         for (int x1 = 0; x1 < length_[2]; x1++) {
           dst[x1] = tmp * src[x1];
         }
@@ -278,7 +313,7 @@ template <typename T> bool test_collocate_core(const int i, const int j, const i
 //        for (int z = 0; z < length_[0]; z++) {
 //          for (int y = 0; y < length_[1]; y++) {
 //            const T c1 = pol_(0, gamma, z) * pol_(1, beta, y);
-//            const T*__restrict vtmp = Vtmp.template at<CPU>(z, y, 0);
+//            const T*LIBXSMM_RESTRICT vtmp = Vtmp.template at<CPU>(z, y, 0);
 //            for (int x = 0; x < length_[2]; x++) {
 //              res += c1 * pol_(2, alpha, x) * vtmp[x];
 //            }
