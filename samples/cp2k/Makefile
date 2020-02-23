@@ -42,11 +42,16 @@ F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
 F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
 endif
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
-OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
+OBJECTS := $(CPPOBJS) $(CXXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)-dbcsr $(OUTDIR)/$(OUTNAME)-collocate
+XFILES += $(OUTDIR)/$(OUTNAME)-dbcsr
+
+ifneq (,$(findstring std=c++,$(CXXFLAGS)))
+XFILES += $(OUTDIR)/$(OUTNAME)-collocate
+OBJECTS += $(CCXOBJS)
+endif
 
 .PHONY: all
 all: $(XFILES)
