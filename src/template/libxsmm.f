@@ -1082,7 +1082,7 @@
           ELSE
             ! CALL C_F_PROCPOINTER(kernel%handle, xmm3)
             ! CALL xmm3(
-            CALL libxsmm_xmmcall_abc(kernel%handle, ...)                &
+            CALL libxsmm_xmmcall_abc(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
         END SUBROUTINE
