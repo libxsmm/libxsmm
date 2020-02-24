@@ -856,8 +856,12 @@ ifneq (0,$(DYNAMIC))
 ifneq (,$(call ctest,$(LD),-dynamic))
   EXCLUDE_VALUE += -dynamic
   XLD := $(XLD) -dynamic
-  FLD := $(FLD) -dynamic
   LD := $(LD) -dynamic
+  ifeq (0,$(INTEL))
+    FLD := $(FLD) -dynamic
+  else ifneq (,$(strip $(GFC)))
+    FLD := $(FLD) -dynamic
+  endif
 endif
 endif
 
