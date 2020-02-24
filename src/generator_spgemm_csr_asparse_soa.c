@@ -19,7 +19,8 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
-                                               const void*                     i_values ) {
+                                               const void*                     i_values,
+                                               const unsigned int              i_packed_width ) {
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "knm") == 0 ||
        strcmp(i_arch, "skx") == 0 ||
@@ -49,7 +50,8 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
                                                      i_xgemm_desc,
                                                      i_row_idx,
                                                      i_column_idx,
-                                                     i_values );
+                                                     i_values,
+                                                     i_packed_width );
   } else {
     fprintf( stderr, "CSR + SOA is only available for AVX/AVX2/AVX512 at this point\n" );
     exit(-1);
@@ -61,7 +63,8 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
                                                       const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                       const unsigned int*             i_row_idx,
                                                       const unsigned int*             i_column_idx,
-                                                      const void*                     i_values ) {
+                                                      const void*                     i_values,
+                                                      const unsigned int              i_packed_width ) {
   unsigned int l_soa_width = 0;
   unsigned int l_gen_m_trips = 0;
   unsigned int l_a_is_dense = 0;
@@ -129,9 +132,6 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
     l_micro_kernel_config.a_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
   }
 
-  /* open asm */
-  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
-
   /* test if we should generate a dense version */
   if ( i_row_idx[i_xgemm_desc->m] == (unsigned int)(i_xgemm_desc->m*i_xgemm_desc->k) ) {
     l_gen_m_trips = 1;
@@ -147,6 +147,9 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   l_n_remain = ( ((i_xgemm_desc->n % l_n_chunksize) == 0) || ((unsigned int)i_xgemm_desc->n <= l_n_max_block) ) ? 0 : 1;
   l_n_loop = ( l_n_remain == 0 ) ? (l_n_chunks * l_n_chunksize) : ((l_n_chunks-1) * l_n_chunksize);
 
+  /* open asm */
+  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+
   /* loop over blocks of n */
   libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_chunksize );
@@ -154,7 +157,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   /* do matix multiplicatoin for a block of N columns */
   libxsmm_generator_spgemm_csr_asparse_soa_m_loop( io_generated_code, i_xgemm_desc, &l_loop_label_tracker, &l_micro_kernel_config, &l_gp_reg_mapping,
                                                      i_row_idx, i_column_idx, i_values,
-                                                     l_soa_width, l_gen_m_trips, l_a_is_dense, l_n_chunksize );
+                                                     l_soa_width, l_gen_m_trips, l_a_is_dense, l_n_chunksize, i_packed_width );
 
   /* adjust B pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_b,
@@ -179,7 +182,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   if ( l_n_remain != 0 ) {
     libxsmm_generator_spgemm_csr_asparse_soa_m_loop( io_generated_code, i_xgemm_desc, &l_loop_label_tracker, &l_micro_kernel_config, &l_gp_reg_mapping,
                                                        i_row_idx, i_column_idx, i_values,
-                                                       l_soa_width, l_gen_m_trips, l_a_is_dense, i_xgemm_desc->n - (l_n_chunksize * (l_n_chunks - 1)) );
+                                                       l_soa_width, l_gen_m_trips, l_a_is_dense, i_xgemm_desc->n - (l_n_chunksize * (l_n_chunks - 1)), i_packed_width );
   }
 
   /* close asm */
@@ -198,7 +201,8 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
                                                       const unsigned int                 i_soa_width,
                                                       const unsigned int                 i_gen_m_trips,
                                                       const unsigned int                 i_a_is_dense,
-                                                      const unsigned int                 i_num_c_cols ) {
+                                                      const unsigned int                 i_num_c_cols,
+                                                      const unsigned int                 i_packed_width ) {
   unsigned int l_m;
   unsigned int l_n;
   unsigned int l_z;
@@ -207,6 +211,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
   unsigned int l_b_total_offset;
 
   LIBXSMM_UNUSED(i_values);
+  LIBXSMM_UNUSED(i_packed_width);
 
   /* do sparse times dense soa multiplication */
   for ( l_m = 0; l_m < i_gen_m_trips; l_m++ ) {
