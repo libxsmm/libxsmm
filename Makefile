@@ -1635,12 +1635,12 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 endif
 
 ifeq (Windows_NT,$(UNAME))
-  ALIAS_PRIVLIBS = -ldbghelp
+  ALIAS_PRIVLIBS = $(call ldlib,$(LD),$(SLDFLAGS),dbghelp)
 else ifneq (Darwin,$(UNAME))
   ifneq (FreeBSD,$(UNAME))
-    ALIAS_PRIVLIBS = -lpthread -lrt -ldl -lm -lc
+    ALIAS_PRIVLIBS = $(LIBPTHREAD) $(LIBRT) $(LIBDL) $(LIBM) $(LIBC)
   else
-    ALIAS_PRIVLIBS = -ldl -lm -lc
+    ALIAS_PRIVLIBS = $(LIBDL) $(LIBM) $(LIBC)
   endif
 endif
 ifneq (Darwin,$(UNAME))

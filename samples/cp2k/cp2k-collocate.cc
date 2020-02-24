@@ -172,10 +172,10 @@ template<typename T> void collocate_core(const int length_[3],
 #endif
     timer.stop("gemm");
 #if defined(SCRATCH)
-    timer.start("init");
+    timer.start("deinit");
     libxsmm_free(Cdata);
     libxsmm_free(xyz_data);
-    timer.stop("init");
+    timer.stop("deinit");
 #endif
   } else {
     for (int z1 = 0; z1 < length_[0]; z1++) {
@@ -247,6 +247,7 @@ template <typename T> void collocate_core_naive2(const int *length_,
 #endif
 
 
+// The three first numbers are the grid size, the last one can be anything
 template <typename T> bool test_collocate_core(const int i, const int j, const int k, const int lmax)
 {
   mdarray<T, 3, CblasRowMajor> pol = mdarray<T, 3, CblasRowMajor>(3, lmax, std::max(std::max(i, j), k));
@@ -367,30 +368,30 @@ template <typename T> bool test_collocate_core(const int i, const int j, const i
 
 int main(int argc, char* argv[])
 {
-  const int n1in = (1 < argc ? atoi(argv[1]) : 32), n1 = std::max(n1in, 1);
-  const int n2in = (2 < argc ? atoi(argv[2]) : n1), n2 = (0 < n2in ? n2in : n1);
-  const int n3in = (3 < argc ? atoi(argv[3]) : n1), n3 = (0 < n3in ? n3in : n1);
-  const int lmin = (4 < argc ? atoi(argv[4]) : 6), lmax = (0 < lmin ? lmin : 6);
+  const int nrepin = (1 < argc ? atoi(argv[1]) : 100), nrep = std::max(nrepin, 1);
+  const int n1in = (2 < argc ? atoi(argv[2]) : 32), n1 = std::max(n1in, 1);
+  const int n2in = (3 < argc ? atoi(argv[3]) : n1), n2 = (0 < n2in ? n2in : n1);
+  const int n3in = (4 < argc ? atoi(argv[4]) : n1), n3 = (0 < n3in ? n3in : n1);
+  const int lmin = (5 < argc ? atoi(argv[5]) : 6), lmax = (0 < lmin ? lmin : 6);
 #if (defined(HAVE_MKL) || defined(__MKL)) && 0
   mkl_set_threading_layer(MKL_THREADING_SEQUENTIAL);
 #endif
   timer.start("test_collocate_core");
-
-  // The three first numbers are the grid size
-  // the last one can be anything
-  if (0 == n1in) {
-    test_collocate_core<double>(27, 31, 23, 3);
-    test_collocate_core<double>(13, 35, 13, 7);
-    test_collocate_core<double>(15, 11, 23, 9);
-    test_collocate_core<double>(13, 19, 17, 5);
-    test_collocate_core<double>(9, 11, 19, 3);
-    test_collocate_core<double>(19, 17, 25, 5);
-    test_collocate_core<double>(23, 19, 27, 1);
-    test_collocate_core<double>(25, 23, 31, 11);
-    test_collocate_core<double>(27, 31, 23, 13);
-  }
-  else {
-    test_collocate_core<double>(n1, n2, n3, lmax);
+  for (int i = 0; i < nrep; ++i) {
+    if (0 == n1in) {
+      test_collocate_core<double>(27, 31, 23, 3);
+      test_collocate_core<double>(13, 35, 13, 7);
+      test_collocate_core<double>(15, 11, 23, 9);
+      test_collocate_core<double>(13, 19, 17, 5);
+      test_collocate_core<double>(9, 11, 19, 3);
+      test_collocate_core<double>(19, 17, 25, 5);
+      test_collocate_core<double>(23, 19, 27, 1);
+      test_collocate_core<double>(25, 23, 31, 11);
+      test_collocate_core<double>(27, 31, 23, 13);
+    }
+    else {
+      test_collocate_core<double>(n1, n2, n3, lmax);
+    }
   }
   timer.stop("test_collocate_core");
 

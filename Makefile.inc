@@ -856,8 +856,12 @@ ifneq (0,$(DYNAMIC))
 ifneq (,$(call ctest,$(LD),-dynamic))
   EXCLUDE_VALUE += -dynamic
   XLD := $(XLD) -dynamic
-  FLD := $(FLD) -dynamic
   LD := $(LD) -dynamic
+  ifeq (0,$(INTEL))
+    FLD := $(FLD) -dynamic
+  else ifneq (,$(strip $(GFC)))
+    FLD := $(FLD) -dynamic
+  endif
 endif
 endif
 
@@ -1021,17 +1025,15 @@ endif
 endif
 endif
 
-LIBGFORTRAN = $(call libpath,$(FLD),$(SLDFLAGS),gfortran)
-ifneq (,$(strip $(LIBGFORTRAN)))
-ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
-  FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
-endif
-endif
-
+LIBGFORTRAN = $(call qapath,$(call libpath,$(FLD),$(SLDFLAGS),gfortran))
+LIBPTHREAD = $(call ldlib,$(LD),$(SLDFLAGS),pthread)
 LIBCPP = $(call ldlib,$(LD),$(SLDFLAGS),stdc++)
 LIBRT = $(call ldlib,$(LD),$(SLDFLAGS),rt)
 LIBDL = $(call ldlib,$(LD),$(SLDFLAGS),dl)
-LIBM = $(call ldlib,$(LD),$(SLDFLAGS),m)
+ifneq (0,$(INTEL))
+  LIBM = $(call ldlib,$(LD),$(SLDFLAGS),imf)
+endif
+LIBM ?= $(call ldlib,$(LD),$(SLDFLAGS),m)
 
 # (default) runtime library dependencies
 ifneq (0,$(FORCE_CXX)) # incl. undefined
@@ -1825,7 +1827,7 @@ ifneq (0,$(THREADS))
     ifneq (Windows_NT,$(UNAME))
       ifneq (0,$(INTEL))
         ifeq (0,$(OFFLOAD))
-          CLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),pthread) $(XLIB_END)
+          CLDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
         else
           CLDFLAGS += -pthread
         endif
@@ -1996,7 +1998,7 @@ else ifneq (0,$(MKL)) # multi-threaded
     BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),gomp)
   endif
   ifneq (0,$(THREADS))
-    BLAS_LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),pthread) $(XLIB_END)
+    BLAS_LDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
   endif
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
@@ -2110,7 +2112,7 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (0,$(BLASREF)) # BLAS (reference)
       ifneq (0,$(DEPSTATIC))
         ifneq (,$(LIBGFORTRAN))
-          BLASTEST += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(LIBM) $(XLIB_END)
+          BLASTEST += $(XLIB_BEGIN) $(LIBGFORTRAN) $(LIBM) $(XLIB_END)
         else ifeq (3,$(GCC))
           BLASTEST += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
         endif
@@ -2161,6 +2163,7 @@ cleanld = $(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | 
   -e "s/\/\//\//g"))
 
 # common runtime libraries
+LDFLAGS := $(call uniqmov,LDFLAGS,LIBPTHREAD,$(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END))
 LDFLAGS := $(call uniqmov,LDFLAGS,LIBCPP,$(XLIB_BEGIN) $(LIBCPP) $(XLIB_END))
 ifeq (0,$(INTEL))
   LDFLAGS := $(call uniqadd,LDFLAGS,LIBM,$(XLIB_BEGIN) $(LIBM) $(XLIB_END))
@@ -2213,7 +2216,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% PYMOD \
     GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW \
     NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN FMAIN \
-    CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST \
+    LIBPTHREAD CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST \
     uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
     ctest applyif extname objname unquote quote qapath qndir qdir qsuffix qbname qname abslib \
     BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
