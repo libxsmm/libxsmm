@@ -251,6 +251,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
   const void* values;
+  unsigned int packed_width;
 } libxsmm_csr_soa_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csc_soa_descriptor {
@@ -551,10 +552,12 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   int bk;
   int bc;
   size_t scratch_size;
+  size_t doutput_scratch_mark;
   void* scratch;
 
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
-  libxsmm_code_pointer gemm_fwd2;     /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd2;    /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd3;    /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_bwd;     /* ability to hoist backward GEMMs */
   libxsmm_code_pointer gemm_bwd2;    /* ability to hoist backward GEMMs */
   libxsmm_code_pointer gemm_upd;     /* ability to hoist update GEMMs */

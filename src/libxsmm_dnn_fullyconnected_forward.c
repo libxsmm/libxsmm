@@ -11,9 +11,6 @@
 #include "libxsmm_dnn_fullyconnected_forward.h"
 #include "libxsmm_main.h"
 
-#define STRIDE_BRGEMM
-
-
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom_f32_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom_bf16_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_f32_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
@@ -88,15 +85,8 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_f32_f32(libxsmm_dn
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-#ifdef ADDRESS_BRGEMM
-  libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.smra;
-#endif
-#ifdef OFFSET_BRGEMM
-  libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.smro;
-#endif
-#ifdef STRIDE_BRGEMM
-  libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.smrs;
-#endif
+  libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_beta     = handle->gemm_fwd.xgemm.smrs;
+  libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_zerobeta = handle->gemm_fwd2.xgemm.smrs;
 
 #define LIBXSMM_DNN_FC_FWD_USE_AVX512
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
@@ -146,10 +136,38 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_emu(libx
   typedef libxsmm_bfloat16 element_input_type;
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
+  libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.bsmrs;
+  libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_zerobeta = handle->gemm_fwd2.xgemm.bmrs;
+  libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_beta = handle->gemm_fwd3.xgemm.bmrs;
+
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-    libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.bsmrs;
-    libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_zerobeta = handle->gemm_fwd2.xgemm.bmrs;
+#define LIBXSMM_DNN_FC_FWD_FUSE_NONE
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_NONE
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_RELU ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_RELU
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_SIGMOID ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_RELU ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+#define LIBXSMM_DNN_FC_FWD_FUSE_RELU
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+#undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+#define LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+#undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
   } else {
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
@@ -169,15 +187,43 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16(libxsmm_
   typedef libxsmm_bfloat16 element_input_type;
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
-  if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-    libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.bsmrs;
-    libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_zerobeta = handle->gemm_fwd2.xgemm.bmrs;
+  libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.bsmrs;
+  libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_zerobeta = handle->gemm_fwd2.xgemm.bmrs;
+  libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_beta = handle->gemm_fwd3.xgemm.bmrs;
+
 #define LIBXSMM_DNN_FC_FWD_AVX512_CPX
+  if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_NONE
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
-#undef LIBXSMM_DNN_FC_FWD_AVX512_CPX
+#undef LIBXSMM_DNN_FC_FWD_FUSE_NONE
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_RELU ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_RELU
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_SIGMOID ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_RELU ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+#define LIBXSMM_DNN_FC_FWD_FUSE_RELU
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+#undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+  } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID ) {
+#define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+#define LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+#undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
   } else {
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
+#undef LIBXSMM_DNN_FC_FWD_AVX512_CPX
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -295,15 +341,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-#ifdef ADDRESS_BRGEMM
-      libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.smra;
-#endif
-#ifdef OFFSET_BRGEMM
-      libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.smro;
-#endif
-#ifdef STRIDE_BRGEMM
-      libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.smrs;
-#endif
+      libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_beta     = handle->gemm_fwd.xgemm.smrs;
+      libxsmm_smmfunction_reducebatch_strd batchreduce_kernel_zerobeta = handle->gemm_fwd2.xgemm.smrs;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #define LIBXSMM_DNN_FC_FWD_FUSE_NONE

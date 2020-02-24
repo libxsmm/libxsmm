@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.slurm *.txt *.md Makefile*"
+PATTERNS="*.c *.cc *.cpp *.cxx *.h *.hpp *.hxx *.f *.F90 *.fh *.sh *.py *.yml *.slurm *.txt *.md Makefile*"
 HERE=$(cd "$(dirname "$0")"; pwd -P)
 
 CODEFILE=${HERE}/../.codefile

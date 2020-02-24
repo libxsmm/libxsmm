@@ -27,30 +27,30 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cp2k.cpp" />
+    <ClCompile Include="cp2k-collocate.cc" />
+    <ClCompile Include="rt_graph.cc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="cp2k-perf-jit.sh" />
-    <None Include="cp2k-perf.plt" />
-    <None Include="cp2k-plot.sh" />
-    <None Include="cp2k.sh" />
     <None Include="Makefile" />
-    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="mdarray.hpp" />
+    <ClInclude Include="rt_graph.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>cp2k</ProjectName>
-    <ProjectGuid>{99A237B2-5EA1-4988-9D09-B4FD97C42AF1}</ProjectGuid>
+    <ProjectName>cp2k-collocate</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectGuid>{EDB39F12-1195-41FA-AE27-F227CDE067B2}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
-    <UseIntelMKL>Sequential</UseIntelMKL>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
     <InstrumentIntelTBB>true</InstrumentIntelTBB>
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -58,28 +58,28 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
-    <UseIntelMKL>Sequential</UseIntelMKL>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <InterproceduralOptimization>true</InterproceduralOptimization>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
-    <UseIntelMKL>Sequential</UseIntelMKL>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
     <InstrumentIntelTBB>true</InstrumentIntelTBB>
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
-    <UseIntelMKL>Sequential</UseIntelMKL>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
     <InstrumentIntelTBB>true</InstrumentIntelTBB>
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -87,9 +87,9 @@
     <InterproceduralOptimization>true</InterproceduralOptimization>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
-    <UseIntelMKL>Sequential</UseIntelMKL>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -97,9 +97,9 @@
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <InstrumentIntelTBB>true</InstrumentIntelTBB>
-    <UseIntelMKL>Sequential</UseIntelMKL>
     <PlatformToolset>v142</PlatformToolset>
     <VCToolsVersion />
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -162,7 +162,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;HAVE_MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -175,9 +175,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
-      <Cpp0xSupport>true</Cpp0xSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
-      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -205,7 +203,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;HAVE_MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -218,10 +216,8 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
-      <Cpp0xSupport>true</Cpp0xSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -253,7 +249,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;HAVE_MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -265,9 +261,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
-      <Cpp0xSupport>true</Cpp0xSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
-      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -297,7 +291,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;HAVE_MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -309,10 +303,8 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
-      <Cpp0xSupport>true</Cpp0xSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -340,15 +332,13 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;HAVE_MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
-      <Cpp0xSupport>true</Cpp0xSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
-      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -380,15 +370,13 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;HAVE_MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
-      <Cpp0xSupport>true</Cpp0xSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
-      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>

@@ -1,7 +1,10 @@
 *.c
+*.cc
 *.cpp
+*.cxx
 *.h
 *.hpp
+*.hxx
 *.f
 *.F90
 *.fh

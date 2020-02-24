@@ -14,7 +14,7 @@
      &    C_DOUBLE, C_FLOAT, C_DOUBLE_COMPLEX, C_FLOAT_COMPLEX,         &
      &    C_LONG_LONG, C_INT, C_SHORT, C_CHAR, C_INT8_T,                &
      &    C_F_POINTER, C_ASSOCIATED, C_LOC, C_PTR, C_NULL_PTR,          &
-     &    C_F_PROCPOINTER, C_FUNPTR, C_NULL_FUNPTR
+     &    C_FUNPTR, C_NULL_FUNPTR
         IMPLICIT NONE
 
         !> Name of the version (stringized set of version numbers).
@@ -1070,11 +1070,18 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pa(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pb(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pc(*)
-          IF (PRESENT(pa).AND.PRESENT(pb).AND.PRESENT(pc)) THEN
+          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm6
+          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm3
+          ! use .OR. instead of .AND. to avoid full check
+          IF (PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc)) THEN
+            ! CALL C_F_PROCPOINTER(kernel%handle, xmm6)
+            ! CALL xmm6(
             CALL libxsmm_xmmcall_prf(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
      &        C_LOC(pa), C_LOC(pb), C_LOC(pc))
           ELSE
+            ! CALL C_F_PROCPOINTER(kernel%handle, xmm3)
+            ! CALL xmm3(
             CALL libxsmm_xmmcall_abc(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
@@ -1088,11 +1095,18 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pa(*)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pb(*)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pc(*)
-          IF (PRESENT(pa).AND.PRESENT(pb).AND.PRESENT(pc)) THEN
+          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm6
+          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm3
+          ! use .OR. instead of .AND. to avoid full check
+          IF (PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc)) THEN
+            ! CALL C_F_PROCPOINTER(kernel%handle, xmm6)
+            ! CALL xmm6(
             CALL libxsmm_xmmcall_prf(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
      &        C_LOC(pa), C_LOC(pb), C_LOC(pc))
           ELSE
+            ! CALL C_F_PROCPOINTER(kernel%handle, xmm3)
+            ! CALL xmm3(
             CALL libxsmm_xmmcall_abc(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
@@ -1106,11 +1120,18 @@
           INTEGER(C_SHORT), INTENT(IN), OPTIONAL, TARGET :: pa(*)
           INTEGER(C_SHORT), INTENT(IN), OPTIONAL, TARGET :: pb(*)
           INTEGER(C_INT),   INTENT(IN), OPTIONAL, TARGET :: pc(*)
-          IF (PRESENT(pa).AND.PRESENT(pb).AND.PRESENT(pc)) THEN
+          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm6
+          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm3
+          ! use .OR. instead of .AND. to avoid full check
+          IF (PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc)) THEN
+            ! CALL C_F_PROCPOINTER(kernel%handle, xmm6)
+            ! CALL xmm6(
             CALL libxsmm_xmmcall_prf(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
      &        C_LOC(pa), C_LOC(pb), C_LOC(pc))
           ELSE
+            ! CALL C_F_PROCPOINTER(kernel%handle, xmm3)
+            ! CALL xmm3(
             CALL libxsmm_xmmcall_abc(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
@@ -1120,6 +1141,9 @@
         SUBROUTINE libxsmm_dmmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c
+          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(a, b, c)
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
@@ -1127,6 +1151,9 @@
         SUBROUTINE libxsmm_smmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c
+          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(a, b, c)
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
@@ -1134,6 +1161,9 @@
         SUBROUTINE libxsmm_wimmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c
+          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(a, b, c)
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
@@ -1141,6 +1171,9 @@
         SUBROUTINE libxsmm_dmmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
+          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(a, b, c, pa, pb, pc)
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
@@ -1148,6 +1181,9 @@
         SUBROUTINE libxsmm_smmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
+          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(a, b, c, pa, pb, pc)
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
@@ -1155,6 +1191,9 @@
         SUBROUTINE libxsmm_wimmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
+          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(a, b, c, pa, pb, pc)
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 

@@ -1057,7 +1057,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k-dbcsr.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
@@ -1635,12 +1635,12 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 endif
 
 ifeq (Windows_NT,$(UNAME))
-  ALIAS_PRIVLIBS = -ldbghelp
+  ALIAS_PRIVLIBS = $(call ldlib,$(LD),$(SLDFLAGS),dbghelp)
 else ifneq (Darwin,$(UNAME))
   ifneq (FreeBSD,$(UNAME))
-    ALIAS_PRIVLIBS = -lpthread -lrt -ldl -lm -lc
+    ALIAS_PRIVLIBS = $(LIBPTHREAD) $(LIBRT) $(LIBDL) $(LIBM) $(LIBC)
   else
-    ALIAS_PRIVLIBS = -ldl -lm -lc
+    ALIAS_PRIVLIBS = $(LIBDL) $(LIBM) $(LIBC)
   endif
 endif
 ifneq (Darwin,$(UNAME))

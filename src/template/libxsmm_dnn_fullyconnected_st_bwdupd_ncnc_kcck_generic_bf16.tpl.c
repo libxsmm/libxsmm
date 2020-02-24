@@ -9,6 +9,13 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
+#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+#if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
+#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),(__m256i)_mm512_cvtneps_pbh((B)))
+#else
+#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((B)),16)))
+#endif
+
 #if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
 #define LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(in, out, length) do { \
   unsigned int full_chunks = length / 32; \
@@ -47,22 +54,201 @@
 } while(0)
 #endif
 
-if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
-  /* size variables, all const */
-  /* here we assume that input and output blocking is similar */
-  const int bn = handle->bn;
-  const int bk = handle->bk;
-  const int bc = handle->bc;
-  const int lpb = 2;
-  const int bc_lp = bc/lpb;
-  const int bk_lp = bk/lpb;
-  const int nBlocksIFm = handle->desc.C / handle->bc;
-  const int nBlocksOFm = handle->desc.K / handle->bk;
-  const int nBlocksMB  = handle->desc.N / handle->bn;
+/* size variables, all const */
+/* here we assume that input and output blocking is similar */
+const int bn = handle->bn;
+const int bk = handle->bk;
+const int bc = handle->bc;
+int lpb = 2;
+const int bc_lp = bc/lpb;
+const int bk_lp = bk/lpb;
+const int bn_lp = bn/lpb;
+const int nBlocksIFm = handle->desc.C / handle->bc;
+const int nBlocksOFm = handle->desc.K / handle->bk;
+const int nBlocksMB  = handle->desc.N / handle->bn;
+int mb1ofm1 = 0, mb1 = 0, ofm1 = 0, mb2 = 0, ofm2 = 0;
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID) || defined(LIBXSMM_DNN_FC_BWD_FUSE_BIAS)
+int iteri = 0, iterj = 0;
+#endif
+int performed_doutput_transpose = 0;
+
+/* computing first logical thread */
+const int ltid = tid - start_thread;
+
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
+/* number of tasks for transpose that could be run in parallel */
+const int eltwise_work = nBlocksOFm * nBlocksMB;
+/* compute chunk size */
+const int eltwise_chunksize = (eltwise_work % handle->desc.threads == 0) ? (eltwise_work / handle->desc.threads) : ((eltwise_work / handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const int eltwise_thr_begin = (ltid * eltwise_chunksize < eltwise_work) ? (ltid * eltwise_chunksize) : eltwise_work;
+const int eltwise_thr_end = ((ltid + 1) * eltwise_chunksize < eltwise_work) ? ((ltid + 1) * eltwise_chunksize) : eltwise_work;
+#endif
+
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_BIAS
+/* number of tasks for transpose that could be run in parallel */
+const int dbias_work = nBlocksOFm;
+/* compute chunk size */
+const int dbias_chunksize = (dbias_work % handle->desc.threads == 0) ? (dbias_work / handle->desc.threads) : ((dbias_work / handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const int dbias_thr_begin = (ltid * dbias_chunksize < dbias_work) ? (ltid * dbias_chunksize) : dbias_work;
+const int dbias_thr_end = ((ltid + 1) * dbias_chunksize < dbias_work) ? ((ltid + 1) * dbias_chunksize) : dbias_work;
+#endif
+
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_BIAS
+LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dbias, (libxsmm_bfloat16*) handle->grad_bias->data, handle->bk);
+#endif
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
+LIBXSMM_VLA_DECL(4, unsigned char,    relumask, (unsigned char*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk);
+LIBXSMM_VLA_DECL(4,     __mmask32, relubitmask,     (__mmask32*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/8);
+#endif
+
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
+element_output_type *grad_output_ptr = (element_output_type*)((char*)handle->scratch + handle->doutput_scratch_mark);
+element_output_type *tr_doutput_ptr = (element_output_type*)grad_output_ptr + handle->desc.N * handle->desc.K;
+LIBXSMM_VLA_DECL(4, const element_output_type,   doutput_orig, (element_output_type*)handle->grad_output->data, nBlocksOFm, bn, bk);
+#else
+element_output_type *grad_output_ptr = (element_output_type*)handle->grad_output->data;
+element_output_type *tr_doutput_ptr = (element_output_type*)handle->scratch;
+#endif
+LIBXSMM_VLA_DECL(4, element_output_type,   doutput, grad_output_ptr, nBlocksOFm, bn, bk);
+LIBXSMM_VLA_DECL(5, element_output_type, doutput_tr, tr_doutput_ptr, nBlocksMB, bn_lp, bk, lpb);
+
+/* lazy barrier init */
+libxsmm_barrier_init(handle->barrier, ltid);
+
+/* Apply to doutput potential fusions */
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
+if (bk % 32 == 0) {
+  for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
+    mb1  = mb1ofm1%nBlocksMB;
+    ofm1 = mb1ofm1/nBlocksMB;
+
+    for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+      for ( iterj = 0; iterj < handle->bk; iterj += 32 ) {
+        __m512i cur_out_reg = _mm512_load_si512(&LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
+        __m512 cur_out_reg_0, cur_out_reg_1;
+        const  __m512 ones = _mm512_set1_ps(1.0f);
+#endif
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
+        __m512i zero_reg = _mm512_setzero_si512();
+        __mmask32 relumask = LIBXSMM_INTRINSICS_MM512_LOAD_MASK32 (&LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, iteri, iterj/8, nBlocksOFm, handle->bn, handle->bk/8));
+        cur_out_reg = _mm512_mask_blend_epi16 (relumask, zero_reg, cur_out_reg);
+#endif
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
+        cur_out_reg_0 = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm512_extracti64x4_epi64(cur_out_reg, 0)),16));
+        cur_out_reg_1 = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm512_extracti64x4_epi64(cur_out_reg, 1)),16));
+        cur_out_reg_0 =  _mm512_mul_ps(cur_out_reg_0, _mm512_sub_ps(ones, cur_out_reg_0));
+        cur_out_reg_1 =  _mm512_mul_ps(cur_out_reg_1, _mm512_sub_ps(ones, cur_out_reg_1));
+        cur_out_reg = LIBXSMM_INTRINSICS_MM512_CVT2_FP32_BF16(cur_out_reg_1, cur_out_reg_0);
+#endif
+        _mm512_store_si512(&LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk), cur_out_reg);
+      }
+    }
+
+    /* If in UPD pass, also perform transpose of doutput  */
+    if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
+      bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), bk, bn, bk, bn);
+    }
+  }
+} else {
+  for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
+    mb1  = mb1ofm1%nBlocksMB;
+    ofm1 = mb1ofm1/nBlocksMB;
+
+    for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+      for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+        element_output_type l_cur_out = LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
+        float l_cur_out_f32 = 0;
+        libxsmm_bfloat16_hp tmp;
+#endif
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
+        l_cur_out = (element_output_type)((LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0);
+#endif
+#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
+        tmp.i[0] = 0;
+        tmp.i[1] = l_cur_out;
+        l_cur_out_f32 = tmp.f;
+        l_cur_out_f32 = l_cur_out_f32*(1.0f - l_cur_out_f32);
+        libxsmm_rne_convert_fp32_bf16(&l_cur_out_f32, &l_cur_out, 1);
+#endif
+        LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+      }
+    }
+
+    /* If in UPD pass, also perform transpose of doutput  */
+    if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
+      for (mb2 = 0; mb2 < bn; mb2++) {
+        for (ofm2 = 0; ofm2 < bk; ofm2++) {
+          LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/lpb, ofm2, mb2%lpb, nBlocksMB, bn_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
+        }
+      }
+    }
+  }
+}
+if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
+  performed_doutput_transpose = 1;
+}
+libxsmm_barrier_wait(handle->barrier, ltid);
+#endif
+
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_BIAS)
+/* Accumulation of bias happens in f32 */
+{
+  float *scratch_dbias = (float*) ((element_output_type*)handle->scratch + handle->desc.N * (handle->desc.K + handle->desc.C) + ltid * bk * 2);
+  if (handle->bk % 16 == 0) {
+    __m512 zero_reg = _mm512_setzero_ps();
+    __m512 doutput_reg = _mm512_setzero_ps();
+    __m512 dbias_reg = _mm512_setzero_ps();
+    for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
+      for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
+        _mm512_store_ps(scratch_dbias+iterj, zero_reg);
+      }
+      for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
+        for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+          for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
+            doutput_reg = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
+            dbias_reg = _mm512_load_ps(scratch_dbias+iterj);
+            dbias_reg = _mm512_add_ps(dbias_reg, doutput_reg);
+            _mm512_store_ps(scratch_dbias+iterj, dbias_reg);
+          }
+        }
+      }
+      for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), _mm512_load_ps(scratch_dbias+iterj));
+      }
+    }
+  } else {
+    for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
+      for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+        scratch_dbias[iterj] = 0.0;
+      }
+      for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
+        for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+          for ( iterj = 0; iterj < handle->bk; ++iterj ) {
+            float doutput_f32 = 0;
+            libxsmm_bfloat16_hp tmp;
+            tmp.i[0] = 0;
+            tmp.i[1] = LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
+            doutput_f32 = tmp.f;
+            scratch_dbias[iterj] += doutput_f32;
+          }
+        }
+      }
+      libxsmm_rne_convert_fp32_bf16(scratch_dbias, &LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, 0, handle->bk ), handle->bk);
+    }
+  }
+}
+
+/* wait for eltwise to finish */
+libxsmm_barrier_wait(handle->barrier, ltid);
+#endif
+
+if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ){
   int use_2d_blocking = handle->bwd_2d_blocking;
 
-  /* computing first logical thread */
-  const int ltid = tid - start_thread;
   /* number of tasks that could be run in parallel */
   const int work = nBlocksIFm * nBlocksMB;
   /* compute chunk size */
@@ -80,10 +266,9 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
   /* loop variables */
-  int ofm1 = 0, ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0, mb1 = 0, ofm2 = 0;
+  int ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0;
   int im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
 
-  LIBXSMM_VLA_DECL(4, const element_output_type,   doutput, (element_output_type*)handle->grad_output->data, nBlocksOFm, bn, bk);
   LIBXSMM_VLA_DECL(5, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, bc_lp, bk, lpb);
   LIBXSMM_VLA_DECL(4,        element_input_type,    dinput, (element_input_type* )handle->grad_input->data, nBlocksIFm, bn, bc);
   LIBXSMM_VLA_DECL(5,       element_filter_type, filter_tr, (element_filter_type*)handle->scratch, nBlocksOFm, bk_lp, bc, lpb);
@@ -108,9 +293,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
     my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksIFm);
     my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksIFm);
   }
-
-  /* lazy barrier init */
-  libxsmm_barrier_init(handle->barrier, ltid);
 
   if (handle->desc.K > 1) {
     /* transpose weight */
@@ -203,7 +385,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
     const int copy_thr_end = ((ltid + 1) * copy_chunksize < copy_work_output) ? ((ltid + 1) * copy_chunksize) : copy_work_output;
     LIBXSMM_VLA_DECL(5,       element_filter_type, filter_tr_padded, (element_filter_type*)handle->scratch, nBlocksOFm, 1, bc, lpb);
     LIBXSMM_VLA_DECL(4,       element_output_type,   doutput_padded, (element_output_type*)handle->scratch + handle->desc.C * 2, nBlocksOFm, bn, lpb);
-    int mb1ofm1 = 0, mb2 = 0;
 
     /* Copy in weights and doutput in a padded buffer */
     for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
@@ -234,7 +415,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
       batchreduce_kernel_bwd_zerobeta( &LIBXSMM_VLA_ACCESS(5, filter_tr_padded, ifm1, 0, 0, 0, 0, nBlocksOFm, 1, bc, lpb),
           &LIBXSMM_VLA_ACCESS(4, doutput_padded,   mb1,  0, 0, 0, nBlocksOFm, bn, 2),
           &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
-     }
+    }
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
@@ -282,23 +463,11 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
 #endif
 
 if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
-  /* size variables, all const */
-  const int bn = handle->bn;
-  const int bk = handle->bk;
-  const int bc = handle->bc;
-  const int lpb = 2;
-  const int bn_lp = bn/lpb;
-  const int bc_lp = bc/lpb;
-  const int nBlocksIFm = handle->desc.C / bc;
-  const int nBlocksOFm = handle->desc.K / bk;
-  const int nBlocksMB  = handle->desc.N / bn;
-  /* computing first logical thread */
-  const int ltid = tid - start_thread;
   /* number of tasks that could be run in parallel */
-  const int ofm_subtasks = handle->ofm_subtasks;
-  const int ifm_subtasks = handle->ifm_subtasks;
-  const int bbk = bk/ofm_subtasks;
-  const int bbc = bc/ifm_subtasks;
+  const int ofm_subtasks = (handle->upd_2d_blocking == 1) ? 1 : handle->ofm_subtasks;
+  const int ifm_subtasks = (handle->upd_2d_blocking == 1) ? 1 : handle->ifm_subtasks;
+  const int bbk = (handle->upd_2d_blocking == 1) ? bk : bk/ofm_subtasks;
+  const int bbc = (handle->upd_2d_blocking == 1) ? bc : bc/ifm_subtasks;
   const int work = nBlocksIFm * ifm_subtasks * nBlocksOFm * ofm_subtasks;
   const int Cck_work = nBlocksIFm * ifm_subtasks * ofm_subtasks;
   const int Cc_work = nBlocksIFm * ifm_subtasks;
@@ -315,23 +484,20 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   int BF = handle->upd_bf;
 
   /* loop variables */
-  int mb1 = 0, ifm1ofm1 = 0, ofm1 = 0, ifm1 = 0, ofm2 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ofm1 = 0, mb1ifm1 = 0, mb2 = 0, jc = 0, jk = 0;
+  int ifm1ofm1 = 0, ifm1 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ifm1 = 0, jc = 0, jk = 0;
 
   /* Batch reduce related variables */
   unsigned long long  blocks = nBlocksMB/BF;
 
   LIBXSMM_VLA_DECL(4, const element_input_type,  input,    (element_input_type* )handle->reg_input->data, nBlocksIFm, bn, bc);
-  LIBXSMM_VLA_DECL(4, const element_output_type, doutput,  (element_output_type*)handle->grad_output->data, nBlocksOFm, bn, bk);
   LIBXSMM_VLA_DECL(5,       element_filter_type, dfilter,  (element_filter_type*)handle->grad_filter->data, nBlocksIFm, bc_lp, bk, lpb);
 
   /* Set up tensors for transposing/scratch before vnni reformatting dfilter */
-  element_output_type *tr_out_ptr = (element_output_type*)handle->scratch;
-  element_input_type  *tr_inp_ptr = (element_input_type*) ((element_output_type*)tr_out_ptr + handle->desc.N * handle->desc.K);
+  element_input_type  *tr_inp_ptr = (element_input_type*) ((element_output_type*)handle->scratch + handle->desc.N * handle->desc.K);
   float               *dfilter_f32_ptr = (float*) ((element_input_type*)tr_inp_ptr + handle->desc.N * handle->desc.C);
   element_filter_type *dfilter_scratch = (element_filter_type*) ((float*)dfilter_f32_ptr + handle->desc.C * handle->desc.K) + ltid * bc * bk;
 
   LIBXSMM_VLA_DECL(4, element_input_type,  input_tr,    (element_input_type*)tr_inp_ptr, nBlocksMB, bc, bn);
-  LIBXSMM_VLA_DECL(5, element_output_type, doutput_tr,  (element_output_type*)tr_out_ptr, nBlocksMB, bn_lp, bk, lpb);
   LIBXSMM_VLA_DECL(4,       float, dfilter_f32,  (float*)dfilter_f32_ptr, nBlocksIFm, bc, bk);
   LIBXSMM_VLA_DECL(2, element_filter_type, dfilter_block,  (element_filter_type*)dfilter_scratch, bk);
 
@@ -364,9 +530,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
     my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
   }
 
-  /* lazy barrier init */
-  libxsmm_barrier_init(handle->barrier, ltid);
-
   /* Required upfront tranposes */
   if (bc % 32 == 0) {
     for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
@@ -386,19 +549,21 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
     }
   }
 
-  if (bk % 32 == 0) {
-    for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
-      mb1 = mb1ofm1%nBlocksMB;
-      ofm1 = mb1ofm1/nBlocksMB;
-      bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), bk, bn, bk, bn);
-    }
-  } else {
-    for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
-      mb1 = mb1ofm1%nBlocksMB;
-      ofm1 = mb1ofm1/nBlocksMB;
-      for (mb2 = 0; mb2 < bn; mb2++) {
-        for (ofm2 = 0; ofm2 < bk; ofm2++) {
-          LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/lpb, ofm2, mb2%lpb, nBlocksMB, bn_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
+  if (performed_doutput_transpose == 0) {
+    if (bk % 32 == 0) {
+      for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
+        mb1 = mb1ofm1%nBlocksMB;
+        ofm1 = mb1ofm1/nBlocksMB;
+        bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), bk, bn, bk, bn);
+      }
+    } else {
+      for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
+        mb1 = mb1ofm1%nBlocksMB;
+        ofm1 = mb1ofm1/nBlocksMB;
+        for (mb2 = 0; mb2 < bn; mb2++) {
+          for (ofm2 = 0; ofm2 < bk; ofm2++) {
+            LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, mb2/lpb, ofm2, mb2%lpb, nBlocksMB, bn_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, mb2, ofm2, nBlocksOFm, bn, bk);
+          }
         }
       }
     }
@@ -407,28 +572,26 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   if (use_2d_blocking == 1) {
-    ifm2 = 0;
-    ofm2 = 0;
     if (BF == 1) {
       for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
         for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
-          batchreduce_kernel_upd_zerobeta(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc, ofm2*bbk, bk), &blocks);
+          batchreduce_kernel_upd_zerobeta(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, 0, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(2, dfilter_block, 0, 0, bk), &blocks);
           /* TODO: Make this vnni reformating in the kernel...  */
           /* Copy result back to vnni format */
-          if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
-            for (jc = 0; jc < bbc; jc+=2) {
-              for (jk = 0; jk < bbk; jk+=16) {
-                c1 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc+1, ofm2*bbk+jk, bk));
-                c0 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
+          if ((bc % 2 == 0) && (bk % 16 == 0)) {
+            for (jc = 0; jc < bc; jc+=2) {
+              for (jk = 0; jk < bk; jk+=16) {
+                c1 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, jc+1,jk, bk));
+                c0 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, jc, jk, bk));
                 c01 = _mm512_inserti64x4(c01, c0, 0);
                 c01 = _mm512_inserti64x4(c01, c1, 1);
-                _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+                _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, jc/lpb, jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
               }
             }
           } else {
-            for (ii = 0; ii < bbc; ii++) {
-              for (jj = 0; jj < bbk; jj++) {
-                LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/lpb, ofm2*bbk+jj, (ifm2*bbc+ii)%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
+            for (ii = 0; ii < bc; ii++) {
+              for (jj = 0; jj < bk; jj++) {
+                LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, ii/lpb, jj, ii%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ii, jj, bk);
               }
             }
           }
@@ -440,31 +603,31 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
           for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
             /* initialize current work task to zero */
             if (bfn == 0) {
-              for (ii = 0; ii<bbc; ii++) {
-                for (jj = 0; jj<bbk; jj++) {
-                  LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+ii, ofm2*bbk+jj, nBlocksIFm, bc, bk) = 0;
+              for (ii = 0; ii<bc; ii++) {
+                for (jj = 0; jj<bk; jj++) {
+                  LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ii, jj, nBlocksIFm, bc, bk) = 0;
                 }
               }
             }
-            batchreduce_kernel_upd(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+            batchreduce_kernel_upd(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, 0, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &blocks);
             /* Downconvert result to BF16 and vnni format */
             if (bfn == BF-1) {
-              if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
-                for (jc = 0; jc < bbc; jc+=2) {
-                  for (jk = 0; jk < bbk; jk+=16) {
-                    a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc+1, ofm2*bbk+jk, nBlocksIFm, bc, bk));
-                    b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk+jk, nBlocksIFm, bc, bk));
+              if ((bc % 2 == 0) && (bk % 16 == 0)) {
+                for (jc = 0; jc < bc; jc+=2) {
+                  for (jk = 0; jk < bk; jk+=16) {
+                    a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, jc+1, jk, nBlocksIFm, bc, bk));
+                    b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, jc, jk, nBlocksIFm, bc, bk));
                     c01 = _mm512_cvt2_fp32_bf16(a01, b01);
-                    _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+                    _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, jc/lpb, jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
                   }
                 }
               } else {
-                for (jc = 0; jc < bbc; jc++) {
-                  LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk, nBlocksIFm, bc, bk), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk, bk), bbk);
+                for (jc = 0; jc < bc; jc++) {
+                  LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, jc, 0, nBlocksIFm, bc, bk), &LIBXSMM_VLA_ACCESS(2, dfilter_block, jc, 0, bk), bk);
                 }
-                for (ii = 0; ii < bbc; ii++) {
-                  for (jj = 0; jj < bbk; jj++) {
-                    LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/lpb, ofm2*bbk+jj, (ifm2*bbc+ii)%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
+                for (ii = 0; ii < bc; ii++) {
+                  for (jj = 0; jj < bk; jj++) {
+                    LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, ii/lpb, jj, ii%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ii, jj, bk);
                   }
                 }
               }
@@ -546,6 +709,8 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
+#undef _mm512_loadcvt_bf16_fp32
+#undef _mm512_storecvt_fp32_bf16
 #undef _mm512_cvt2_fp32_bf16
 #undef LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16
 

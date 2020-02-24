@@ -147,9 +147,9 @@ int main(int argc, char* argv[]) {
 
   /* sparse routine */
 #if defined(__EDGE_EXECUTE_F32__)
-  mykernel = libxsmm_create_xcsr_soa( l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp ).smm;
+  mykernel = libxsmm_create_xcsr_soa( l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp, N_CRUNS ).smm;
 #else
-  mykernel = libxsmm_create_xcsr_soa( l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp ).dmm;
+  mykernel = libxsmm_create_xcsr_soa( l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp, N_CRUNS ).dmm;
 #endif
 
   l_start = libxsmm_timer_tick();

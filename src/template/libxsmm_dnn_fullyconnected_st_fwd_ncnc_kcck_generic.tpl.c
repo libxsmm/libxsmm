@@ -13,6 +13,7 @@
 const int nBlocksIFm = handle->desc.C / handle->bc;
 const int nBlocksOFm = handle->desc.K / handle->bk;
 const int nBlocksMB  = handle->desc.N / handle->bn;
+int use_2d_blocking = handle->fwd_2d_blocking;
 
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -24,225 +25,211 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
+/* loop variables */
+int mb1ofm1 = 0, mb1 = 0, ofm1 = 0, ifm1 = 0;
+int im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
+int mb2 = 0, ofm2 = 0;
+
 LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
-LIBXSMM_VLA_DECL(2, const float,               bias,   (float*)              handle->reg_bias->data,                           handle->bk);
+LIBXSMM_VLA_DECL(2, const element_output_type, bias,   (element_output_type*)handle->reg_bias->data,                           handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
 LIBXSMM_VLA_DECL(4, unsigned char,           relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
 #endif
 #endif
-unsigned long long blocks = nBlocksIFm;
-int iteri = 0, iterj = 0, ifm1 = 0, ifm2 = 0, BF = 1;
-int CB_BLOCKS = nBlocksIFm, perform_2d_decomp = 0;
 
-/* The snippet below does a 2D domain decomposition of output IF the number of threads and the number of work items are compatible */
-/* TODO: For now 2D decomposition targets single socket SKX */
-int row_teams = 7;
-int column_teams = 4;
-libxsmm_blasint my_col_id = ltid % column_teams;
-libxsmm_blasint my_row_id = ltid / column_teams;
-int in_tasks = (int)(handle->desc.N/handle->bn);
-int ik_tasks = (int)(handle->desc.K/handle->bk);
-int in_tasks_per_thread = (in_tasks + row_teams-1)/row_teams;
-int ik_tasks_per_thread = (ik_tasks + column_teams-1)/column_teams;
-libxsmm_blasint my_in_start = LIBXSMM_MIN( my_row_id * in_tasks_per_thread, in_tasks);
-libxsmm_blasint my_in_end = LIBXSMM_MIN( (my_row_id+1) * in_tasks_per_thread, in_tasks);
-libxsmm_blasint my_ik_start = LIBXSMM_MIN( my_col_id * ik_tasks_per_thread, ik_tasks);
-libxsmm_blasint my_ik_end = LIBXSMM_MIN( (my_col_id+1) * ik_tasks_per_thread, ik_tasks);
-#ifdef STRIDE_BRGEMM
-LIBXSMM_UNUSED( ifm2 );
-#endif
+unsigned long long  blocks = nBlocksIFm;
+int CB_BLOCKS = nBlocksIFm, BF = 1;
 
-/* Blocking reduction domain if it is too large */
-if ((handle->desc.C > 1024 && handle->desc.C <= 2048) || (handle->desc.K > 1024 && handle->desc.K <= 2048)) {
-  BF = 8;
-  while ( (nBlocksIFm % BF != 0) || (nBlocksOFm % BF != 0) ) {
-    BF--;
-  }
-}
-if (handle->desc.C > 2048 || handle->desc.K > 2048) {
-  BF = 16;
-  while ( (nBlocksIFm % BF != 0) || (nBlocksOFm % BF != 0) ) {
-    BF--;
-  }
-}
-if (handle->desc.C == 2048 && handle->desc.K == 1024) {
-  BF = 2;
-}
+BF = handle->fwd_bf;
 CB_BLOCKS = nBlocksIFm/BF;
+blocks = CB_BLOCKS;
 
-perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads &&
-  ik_tasks_per_thread*in_tasks_per_thread*CB_BLOCKS <= 4096) ? 1 : 0;
+if (use_2d_blocking == 1) {
+  row_teams = handle->fwd_row_teams;
+  column_teams = handle->fwd_column_teams;
+  my_col_id = ltid % column_teams;
+  my_row_id = ltid / column_teams;
+  im_tasks_per_thread = (nBlocksMB + row_teams-1)/row_teams;
+  in_tasks_per_thread = (nBlocksOFm + column_teams-1)/column_teams;
+  my_im_start = LIBXSMM_MIN( my_row_id * im_tasks_per_thread, nBlocksMB);
+  my_im_end = LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, nBlocksMB);
+  my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksOFm);
+  my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
+}
 
-if (perform_2d_decomp) {
-  /* Auxiliary arrays for batch-reduce gemms and potential prefetch */
-#ifdef ADDRESS_BRGEMM
-  const element_filter_type *A_array[4096];
-  const element_input_type  *B_array[4096];
+/* lazy barrier init */
+libxsmm_barrier_init(handle->barrier, ltid);
+
+if (use_2d_blocking == 1) {
+  if (BF > 1) {
+    for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
+      for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+        for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+          /* Initialize intermediate f32 tensor */
+          if ( ifm1 == 0 ) {
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+            for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+              for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+                LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = LIBXSMM_VLA_ACCESS(2, bias, ofm1, ofm2, handle->bk);
+              }
+            }
+#else
+            for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+              for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+                LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (element_output_type)0;
+              }
+            }
 #endif
-#ifdef OFFSET_BRGEMM
-  unsigned long long  A_offsets[4096];
-  unsigned long long  B_offsets[4096];
+          }
+          batchreduce_kernel_beta( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bc, handle->bk),
+              &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc),
+              &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+          /* downconvert intermediate f32 tensor to bf 16 and store to final C */
+#ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
+          if ( ifm1 == BF-1  ) {
+            for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+              for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+                float l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+                LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (unsigned char)(( l_cur_out > (element_output_type)0 ) ? 1 : 0);
+                l_cur_out = (l_cur_out > (element_output_type)0) ? l_cur_out : (element_output_type)0;
 #endif
-#if defined(ADDRESS_BRGEMM) || defined(OFFSET_BRGEMM)
-  int index;
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+                /* we ar using Pade 7/8 approximation */
+                l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
 #endif
-  int ik, in;
-
-  /* lazy barrier init */
-  libxsmm_barrier_init(handle->barrier, (int)ltid);
-
-  /* All data is in column-major format */
-  for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
-    /* Prepare arrays for the batch-reduce calls */
-    for ( ik = my_ik_start; ik < my_ik_end; ++ik ) {
-      for ( in = my_in_start; in < my_in_end; ++in ) {
-        if ( 0 == ifm1 ) {
-          for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-            for ( iterj = 0; iterj < handle->bk; ++iterj ) {
-              LIBXSMM_VLA_ACCESS(4, output, in, ik, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = 0;
+                LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+              }
             }
           }
-        }
-        /* prepare arguments for batch-reduce call */
-        for ( ifm2 = 0; ifm2 < CB_BLOCKS; ++ifm2 ) {
-#if defined(ADDRESS_BRGEMM) || defined(OFFSET_BRGEMM)
-          index = (ik-my_ik_start)*(my_in_end-my_in_start)*CB_BLOCKS + (in-my_in_start)*CB_BLOCKS + ifm2;
-#endif
-#ifdef ADDRESS_BRGEMM
-          A_array[index] = &LIBXSMM_VLA_ACCESS(4, filter, ik, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bc, handle->bk);
-          B_array[index] = &LIBXSMM_VLA_ACCESS(4, input,  in, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc);
-#endif
-#ifdef OFFSET_BRGEMM
-          A_offsets[index] = (ifm2 + ifm1*CB_BLOCKS) * handle->bc * handle->bk * sizeof(element_filter_type);
-          B_offsets[index] = (ifm2 + ifm1*CB_BLOCKS) * handle->bn * handle->bk * sizeof(element_input_type);
 #endif
         }
       }
     }
-    /* let's run the cell in blocks for good locality */
-    for ( ik = my_ik_start; ik < my_ik_end; ++ik ) {
-      for ( in = my_in_start; in < my_in_end; ++in ) {
-        blocks = CB_BLOCKS;
-#ifdef ADDRESS_BRGEMM
-        index = (ik-my_ik_start)*(my_in_end-my_in_start)*CB_BLOCKS + (in-my_in_start)*CB_BLOCKS;
-        batchreduce_kernel(&A_array[index], &B_array[index], &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
-#endif
-#ifdef OFFSET_BRGEMM
-        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ik, ifm1*CB_BLOCKS,  0, 0, nBlocksIFm, handle->bc, handle->bk),
-                            &LIBXSMM_VLA_ACCESS(4, input,  in, ifm1*CB_BLOCKS,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-                            &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks, A_offsets, B_offsets);
-#endif
-#ifdef STRIDE_BRGEMM
-        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ik, ifm1*CB_BLOCKS,  0, 0, nBlocksIFm, handle->bc, handle->bk),
-                            &LIBXSMM_VLA_ACCESS(4, input,  in, ifm1*CB_BLOCKS,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-                            &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
+  } else {
+    for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+      for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+        for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+          for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+            LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = LIBXSMM_VLA_ACCESS(2, bias, ofm1, ofm2, handle->bk);
+          }
+        }
+        batchreduce_kernel_beta( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, handle->bc, handle->bk),
+            &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0, 0, 0, nBlocksIFm, handle->bn, handle->bc),
+            &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+#else
+        batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, handle->bc, handle->bk),
+            &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+            &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 #endif
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
-        if ( ifm1 == (BF-1) ) {
-          for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-            for ( iterj = 0; iterj < handle->bk; ++iterj ) {
-              float l_cur_out = LIBXSMM_VLA_ACCESS(4, output, in, ik, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
-#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
-              l_cur_out += LIBXSMM_VLA_ACCESS( 2, bias, ik, iterj, handle->bk );
-#endif
+        for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+          for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+            element_output_type l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
-              LIBXSMM_VLA_ACCESS(4, relumask, in, ik, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = ( l_cur_out > 0.0 ) ? 1 : 0;
+            LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (unsigned char)(( l_cur_out > (element_output_type)0 ) ? 1 : 0);
+            l_cur_out = ( l_cur_out > (element_output_type)0 ) ? l_cur_out : (element_output_type)0;
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
+            /* we ar using Pade 7/8 approximation */
+            l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
+#endif
+            LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+          }
+        }
+#endif
+      }
+    }
+  }
+} else {
+  if (BF > 1) {
+    for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
+      for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
+        mb1  = mb1ofm1%nBlocksMB;
+        ofm1 = mb1ofm1/nBlocksMB;
+        /* Initialize intermediate f32 tensor */
+        if ( ifm1 == 0 ) {
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+          for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+            for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+              LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = LIBXSMM_VLA_ACCESS(2, bias, ofm1, ofm2, handle->bk);
+            }
+          }
+#else
+          for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+            for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+              LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (element_output_type)0;
+            }
+          }
+#endif
+        }
+        batchreduce_kernel_beta( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bc, handle->bk),
+            &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc),
+            &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+        /* downconvert intermediate f32 tensor to bf 16 and store to final C */
+#ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
+        if ( ifm1 == BF-1  ) {
+          for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+            for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+              float l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+              LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (unsigned char)(( l_cur_out > (element_output_type)0 ) ? 1 : 0);
               l_cur_out = (l_cur_out > (element_output_type)0) ? l_cur_out : (element_output_type)0;
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
               /* we ar using Pade 7/8 approximation */
               l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
 #endif
-              LIBXSMM_VLA_ACCESS(4, output, in, ik, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
+              LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
             }
           }
         }
 #endif
       }
     }
-  }
-  libxsmm_barrier_wait(handle->barrier, (int)ltid);
-} else {
-#ifdef ADDRESS_BRGEMM
-  const element_filter_type *A_array[1024];
-  const element_input_type  *B_array[1024];
-#endif
-#ifdef OFFSET_BRGEMM
-unsigned long long  A_offsets[1024];
-unsigned long long  B_offsets[1024];
-#endif
-  int mb1ofm1;
-  /* lazy barrier init */
-  libxsmm_barrier_init(handle->barrier, ltid);
-
-  for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
-#ifdef OFFSET_BRGEMM
-    /* Hoist here the offset preparation */
-    for ( ifm2 = 0; ifm2 < CB_BLOCKS; ++ifm2 ) {
-      A_offsets[ifm2] = (ifm2 + ifm1*CB_BLOCKS) * handle->bc * handle->bk * sizeof(element_filter_type);
-      B_offsets[ifm2] = (ifm2 + ifm1*CB_BLOCKS) * handle->bn * handle->bk * sizeof(element_input_type);
-    }
-#endif
+  } else {
     for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
-      int mb1  = mb1ofm1%nBlocksMB;
-      int ofm1 = mb1ofm1/nBlocksMB;
-
-      if ( 0 == ifm1 ) {
-        for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-          for ( iterj = 0; iterj < handle->bk; ++iterj ) {
-            LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = 0;
-          }
+      mb1  = mb1ofm1%nBlocksMB;
+      ofm1 = mb1ofm1/nBlocksMB;
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+      for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+        for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+          LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = LIBXSMM_VLA_ACCESS(2, bias, ofm1, ofm2, handle->bk);
         }
       }
-
-      blocks = CB_BLOCKS;
-#ifdef ADDRESS_BRGEMM
-      /* prepare arguments for batch-reduce call */
-      for ( ifm2 = 0; ifm2 < CB_BLOCKS; ++ifm2 ) {
-        A_array[ifm2] = &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bc, handle->bk);
-        B_array[ifm2] = &LIBXSMM_VLA_ACCESS(4, input,  mb1,  ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc);
-      }
-      batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
-#endif
-#ifdef OFFSET_BRGEMM
-      batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bc, handle->bk),
-                          &LIBXSMM_VLA_ACCESS(4, input,  mb1,  ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bn, handle->bc),
-                          &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks, A_offsets, B_offsets);
-#endif
-#ifdef STRIDE_BRGEMM
-      batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bc, handle->bk),
-                          &LIBXSMM_VLA_ACCESS(4, input,  mb1,  ifm1*CB_BLOCKS,    0, 0, nBlocksIFm, handle->bn, handle->bc),
-                          &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
+      batchreduce_kernel_beta( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, handle->bc, handle->bk),
+          &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+          &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+#else
+      batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, handle->bc, handle->bk),
+          &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+          &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 #endif
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
-      if ( ifm1 == (BF-1) ) {
-        for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-          for ( iterj = 0; iterj < handle->bk; ++iterj ) {
-            float l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
-#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
-            l_cur_out += LIBXSMM_VLA_ACCESS( 2, bias, ofm1, iterj, handle->bk );
-#endif
+      for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
+        for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
+          element_output_type l_cur_out = LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk);
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
-            LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = ( l_cur_out > (element_output_type)0 ) ? 1 : 0;
-            l_cur_out = (l_cur_out > (element_output_type)0) ? l_cur_out : (element_output_type)0;
+          LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (unsigned char)(( l_cur_out > (element_output_type)0 ) ? 1 : 0);
+          l_cur_out = ( l_cur_out > (element_output_type)0 ) ? l_cur_out : (element_output_type)0;
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
-            /* we ar using Pade 7/8 approximation */
-            l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
+          /* we ar using Pade 7/8 approximation */
+          l_cur_out = (libxsmm_stanh_pade78( l_cur_out / 2.0f ) + 1.0f) / 2.0f;
 #endif
-            LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
-          }
+          LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
         }
       }
 #endif
     }
   }
-
-  libxsmm_barrier_wait(handle->barrier, ltid);
 }
+
+libxsmm_barrier_wait(handle->barrier, ltid);
 
