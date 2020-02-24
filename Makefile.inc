@@ -1025,13 +1025,7 @@ endif
 endif
 endif
 
-LIBGFORTRAN = $(call libpath,$(FLD),$(SLDFLAGS),gfortran)
-ifneq (,$(strip $(LIBGFORTRAN)))
-ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
-  FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
-endif
-endif
-
+LIBGFORTRAN = $(call qapath,$(call libpath,$(FLD),$(SLDFLAGS),gfortran))
 LIBPTHREAD = $(call ldlib,$(LD),$(SLDFLAGS),pthread)
 LIBCPP = $(call ldlib,$(LD),$(SLDFLAGS),stdc++)
 LIBRT = $(call ldlib,$(LD),$(SLDFLAGS),rt)
@@ -2118,7 +2112,7 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (0,$(BLASREF)) # BLAS (reference)
       ifneq (0,$(DEPSTATIC))
         ifneq (,$(LIBGFORTRAN))
-          BLASTEST += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(LIBM) $(XLIB_END)
+          BLASTEST += $(XLIB_BEGIN) $(LIBGFORTRAN) $(LIBM) $(XLIB_END)
         else ifeq (3,$(GCC))
           BLASTEST += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
         endif
