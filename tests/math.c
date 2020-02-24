@@ -71,13 +71,13 @@ int main(/*int argc, char* argv[]*/)
 
   for (i = 0; i < 256; ++i) {
     const float a = libxsmm_sexp2_u8((unsigned char)i);
-    const float b = LIBXSMM_EXP2F(i);
+    const float b = LIBXSMM_EXP2F((float)i);
     if (LIBXSMM_NEQ(a, b)) exit(EXIT_FAILURE);
   }
 
   for (i = -128; i < 127; ++i) {
     const float a = libxsmm_sexp2_i8((signed char)i);
-    const float b = LIBXSMM_EXP2F(i);
+    const float b = LIBXSMM_EXP2F((float)i);
     if (LIBXSMM_NEQ(a, b)) exit(EXIT_FAILURE);
   }
 
@@ -91,18 +91,14 @@ int main(/*int argc, char* argv[]*/)
 
     if (LIBXSMM_NEQ(LIBXSMM_ROUND((double)r1), LIBXSMM_ROUNDX(double, (double)r1))) exit(EXIT_FAILURE);
     if (LIBXSMM_NEQ(LIBXSMM_ROUND((double)r2), LIBXSMM_ROUNDX(double, (double)r2))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUND(r1), LIBXSMM_ROUNDX(double, r1))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUND(r2), LIBXSMM_ROUNDX(double, r2))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUND(rd), LIBXSMM_ROUNDX(double, rd))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUND((double)rd), LIBXSMM_ROUNDX(double, (double)rd))) exit(EXIT_FAILURE);
 
     if (LIBXSMM_NEQ(LIBXSMM_ROUNDF((float)r1), LIBXSMM_ROUNDX(float, (float)r1))) exit(EXIT_FAILURE);
     if (LIBXSMM_NEQ(LIBXSMM_ROUNDF((float)r2), LIBXSMM_ROUNDX(float, (float)r2))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(r1), LIBXSMM_ROUNDX(float, r1))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(r2), LIBXSMM_ROUNDX(float, r2))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(rd), LIBXSMM_ROUNDX(float, rd))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF((float)rd), LIBXSMM_ROUNDX(float, (float)rd))) exit(EXIT_FAILURE);
 
     d1 = libxsmm_sexp2((float)rd);
-    d2 = LIBXSMM_EXP2F(rd);
+    d2 = LIBXSMM_EXP2F((float)rd);
     e1 = fabs(d1 - d2); e2 = fabs(d2);
     e3 = 0 < e2 ? (e1 / e2) : 0.0;
     if (1E-4 < LIBXSMM_MIN(e1, e3)) exit(EXIT_FAILURE);
@@ -115,7 +111,7 @@ int main(/*int argc, char* argv[]*/)
     if (a != b) exit(EXIT_FAILURE);
     d1 = libxsmm_ssqrt((float)fabs(rd));
     e1 = fabs(d1 * d1 - fabs(rd));
-    d2 = LIBXSMM_SQRTF(fabs(rd));
+    d2 = LIBXSMM_SQRTF((float)fabs(rd));
     e2 = fabs(d2 * d2 - fabs(rd));
     if (e2 < e1) {
       e3 = 0 < e2 ? (e1 / e2) : 0.f;

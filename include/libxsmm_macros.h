@@ -460,10 +460,9 @@
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
 
 /** Makes some functions available independent of C99 support. */
-#if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/ && \
-  (!defined(LIBXSMM_INTEL_COMPILER) || (1900 <= LIBXSMM_INTEL_COMPILER))
+#if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 # if defined(__PGI)
-#   define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
+#   define LIBXSMM_POWF(A, B) ((float)pow((float)(A), (float)(B)))
 # else
 #   define LIBXSMM_POWF(A, B) powf(A, B)
 # endif
@@ -479,18 +478,18 @@
 # define LIBXSMM_EXPF(A) expf(A)
 # define LIBXSMM_LOGF(A) logf(A)
 #else
-# define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
-# define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
+# define LIBXSMM_POWF(A, B) ((float)pow((float)(A), (float)(B)))
+# define LIBXSMM_FREXPF(A, B) ((float)frexp((float)(A), B))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
-# define LIBXSMM_TANHF(A) ((float)tanh((double)(A)))
-# define LIBXSMM_SQRTF(A) ((float)sqrt((double)(A)))
+# define LIBXSMM_TANHF(A) ((float)tanh((float)(A)))
+# define LIBXSMM_SQRTF(A) ((float)sqrt((float)(A)))
 # define LIBXSMM_EXP2F(A) LIBXSMM_POWF(2, A)
-# define LIBXSMM_LOG2F(A) ((float)LIBXSMM_LOG2((double)(A)))
-# define LIBXSMM_EXP2(A) pow(2.0, (double)(A))
+# define LIBXSMM_LOG2F(A) ((float)LIBXSMM_LOG2((float)(A)))
+# define LIBXSMM_EXP2(A) pow(2.0, A)
 # define LIBXSMM_LOG2(A) (log(A) * (1.0 / (M_LN2)))
-# define LIBXSMM_EXPF(A) ((float)exp((double)(A)))
-# define LIBXSMM_LOGF(A) ((float)log((double)(A)))
+# define LIBXSMM_EXPF(A) ((float)exp((float)(A)))
+# define LIBXSMM_LOGF(A) ((float)log((float)(A)))
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
@@ -844,20 +843,16 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   if !defined(__PURE_INTEL_C99_HEADERS__)
 #     define __PURE_INTEL_C99_HEADERS__
 #   endif
-#   if !defined(__USE_ISOC99)
-#     define __USE_ISOC99
-#   endif
 # endif
 #endif
 #if !defined(LIBXSMM_NO_LIBM) && (!defined(__STDC_VERSION__) || (199901L > __STDC_VERSION__) || defined(__cplusplus))
 # if defined(LIBXSMM_INTEL_COMPILER)
 #   include <mathimf.h>
-# else
-#   include <math.h>
 # endif
-# if !defined(M_LN2)
-#   define M_LN2 0.69314718055994530942
-# endif
+# include <math.h>
+#endif
+#if !defined(M_LN2)
+# define M_LN2 0.69314718055994530942
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
