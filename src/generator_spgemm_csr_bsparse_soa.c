@@ -84,8 +84,6 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
-  LIBXSMM_UNUSED(i_values);
-
   /* select simd packing width and accumulator blocking */
   if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
@@ -282,7 +280,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512_kloop( libxsmm_generate
   unsigned int l_row_elements = 0;
 
   LIBXSMM_UNUSED(i_values);
-  LIBXSMM_UNUSED(i_packed_remainder);
+  LIBXSMM_ASSERT( i_packed_blocking > 0 );
 
   /* packed loop */
   if ( i_packed_range/i_packed_blocking > 1 ) {

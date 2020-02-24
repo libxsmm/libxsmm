@@ -278,7 +278,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512_kloop( libxsmm_generate
   unsigned int l_avx_mask_instr = 0;
 
   LIBXSMM_UNUSED(i_values);
-  LIBXSMM_UNUSED(i_packed_remainder);
+  LIBXSMM_ASSERT( i_packed_blocking > 0 );
 
   /* packed loop */
   if ( i_packed_range/i_packed_blocking > 1 ) {
