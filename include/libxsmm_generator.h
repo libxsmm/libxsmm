@@ -190,7 +190,8 @@ void libxsmm_generator_spgemm_csr_soa_kernel(libxsmm_generated_code*        io_g
                                              const char*                    i_arch,
                                              const unsigned int*            i_row_idx,
                                              const unsigned int*            i_column_idx,
-                                             const void*                    i_values);
+                                             const void*                    i_values,
+                                             const unsigned int             i_packed_width );
 
 /* @TODO change int based architecture value */
 LIBXSMM_API

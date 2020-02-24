@@ -251,6 +251,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
   const void* values;
+  unsigned int packed_width;
 } libxsmm_csr_soa_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csc_soa_descriptor {

@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
       for ( l_k = 0; l_k < nb; l_k++ ) {
         LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb) = 0.f;
         LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csc,  l_i, l_j, l_k, K, nb) = 0.f;
-/*        LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csr,  l_i, l_j, l_k, K, nb) = 0.f;*/
+        LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csr,  l_i, l_j, l_k, K, nb) = 0.f;
       }
     }
   }
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
 
   /* sparse routine */
   mykernel_csc = libxsmm_create_xcsc_soa(l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp_csc, nb).smm;
-/*  mykernel_csr = libxsmm_create_xcsr_soa(l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp_csr).smm;*/
+  mykernel_csr = libxsmm_create_xcsr_soa(l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp_csr, nb).smm;
 
   l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
@@ -170,7 +170,6 @@ int main(int argc, char* argv[]) {
   printf("%fs for sparse (asm, csc)\n", l_total);
   printf("%f GFLOPS for sparse (asm, csc)\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
-#if 0
   l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
     mykernel_csr( l_a, l_b_sp_csr, l_c_asm_csr );
@@ -179,7 +178,6 @@ int main(int argc, char* argv[]) {
   l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for sparse (asm, csr)\n", l_total);
   printf("%f GFLOPS for sparse (asm, csr)\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
-#endif
 
   /* check for errors */
   l_max_error = 0.f;
@@ -195,7 +193,6 @@ int main(int argc, char* argv[]) {
     }
   }
   printf("max error (csc): %f\n", l_max_error);
-#if 0
   l_max_error = 0.f;
   for ( l_i = 0; l_i < NB; l_i++) {
     for ( l_j = 0; l_j < K; l_j++) {
@@ -209,7 +206,6 @@ int main(int argc, char* argv[]) {
     }
   }
   printf("max error (csr): %f\n", l_max_error);
-#endif
 
   /* free */
   libxsmm_free( l_b_de );
