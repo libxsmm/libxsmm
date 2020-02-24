@@ -1019,8 +1019,8 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fullyconnected_create_ten
               layout->num_dims = 2;
               layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
               layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-              layout->dim_size[0] = handle->ofmblock;
-              layout->dim_size[1] = handle->blocksofm;
+              layout->dim_size[0] = (unsigned int)handle->bk;
+              layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk);
             } else {
               free(layout->dim_type);
               free(layout->dim_size);
