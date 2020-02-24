@@ -34,8 +34,9 @@ then
     if [ "$@" ]; then
       EXCLUDE="-e /\($(echo "$@" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")\)/d"
     fi
+    # BSD's diff does not support --unchanged-line-format=""
     STATE_DIFF=$(printf "%s\n" "${STATE}" \
-               | ${DIFF} --unchanged-line-format="" "${STATEFILE}" - 2>/dev/null \
+               | ${DIFF} "${STATEFILE}" - 2>/dev/null | ${SED} -n 's/[<>] \(..*\)/\1/p' \
                | ${SED} -e 's/=..*$//' -e 's/\"//g' -e '/^$/d' ${EXCLUDE} | ${UNIQ})
     if [ "0" != "$?" ] || [ "" != "${STATE_DIFF}" ]; then
       if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
