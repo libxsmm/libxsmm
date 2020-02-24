@@ -478,13 +478,6 @@
 # define LIBXSMM_EXPF(A) expf(A)
 # define LIBXSMM_LOGF(A) logf(A)
 #else
-# if !defined(__cplusplus)
-LIBXSMM_EXTERN double pow(double, double);
-LIBXSMM_EXTERN double frexp(double, int*);
-LIBXSMM_EXTERN double sqrt(double);
-LIBXSMM_EXTERN double tanh(double);
-LIBXSMM_EXTERN double exp(double);
-# endif
 # define LIBXSMM_POWF(A, B) ((float)pow((float)(A), (float)(B)))
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((float)(A), B))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
@@ -860,6 +853,14 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 #if !defined(M_LN2)
 # define M_LN2 0.69314718055994530942
+# if !defined(__cplusplus)
+LIBXSMM_EXTERN double pow(double, double);
+LIBXSMM_EXTERN double frexp(double, int*);
+LIBXSMM_EXTERN double sqrt(double);
+LIBXSMM_EXTERN double tanh(double);
+LIBXSMM_EXTERN double exp(double);
+# endif
+
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
