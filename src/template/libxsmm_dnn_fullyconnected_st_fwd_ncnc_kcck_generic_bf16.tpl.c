@@ -109,7 +109,7 @@ LIBXSMM_VLA_DECL(2, const element_input_type,               bias,   (element_inp
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
 LIBXSMM_VLA_DECL(4, unsigned char, relumask, (unsigned char*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk);
-LIBXSMM_VLA_DECL(4, __mmask16,  relubitmask,     (__mmask16*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/8);
+LIBXSMM_VLA_DECL(4, __mmask16,  relubitmask,     (__mmask16*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/16);
 #endif
 #endif
 unsigned long long  blocks = nBlocksIFm;
@@ -176,8 +176,8 @@ if (use_2d_blocking == 1) {
                   relumask1 = _mm512_cmp_ps_mask( cur_out_1, _mm512_setzero_ps(), _CMP_GT_OQ );
                   cur_out_0 = _mm512_mask_blend_ps( relumask0, _mm512_setzero_ps(), cur_out_0 );
                   cur_out_1 = _mm512_mask_blend_ps( relumask1, _mm512_setzero_ps(), cur_out_1 );
-                  LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8, nBlocksOFm, handle->bn, handle->bk/8), relumask0 );
-                  LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8+2, nBlocksOFm, handle->bn, handle->bk/8), relumask1 );
+                  LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/16, nBlocksOFm, handle->bn, handle->bk/16), relumask0 );
+                  LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/16+1, nBlocksOFm, handle->bn, handle->bk/16), relumask1 );
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
                   /* we ar using Pade 7/8 approximation */
@@ -248,8 +248,8 @@ if (use_2d_blocking == 1) {
               relumask1 = _mm512_cmp_ps_mask( cur_out_1, _mm512_setzero_ps(), _CMP_GT_OQ );
               cur_out_0 = _mm512_mask_blend_ps( relumask0, _mm512_setzero_ps(), cur_out_0 );
               cur_out_1 = _mm512_mask_blend_ps( relumask1, _mm512_setzero_ps(), cur_out_1 );
-              LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8, nBlocksOFm, handle->bn, handle->bk/8), relumask0 );
-              LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8+2, nBlocksOFm, handle->bn, handle->bk/8), relumask1 );
+              LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/16, nBlocksOFm, handle->bn, handle->bk/16), relumask0 );
+              LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/16+1, nBlocksOFm, handle->bn, handle->bk/16), relumask1 );
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
               /* we ar using Pade 7/8 approximation */
@@ -328,8 +328,8 @@ if (use_2d_blocking == 1) {
                 relumask1 = _mm512_cmp_ps_mask( cur_out_1, _mm512_setzero_ps(), _CMP_GT_OQ );
                 cur_out_0 = _mm512_mask_blend_ps( relumask0, _mm512_setzero_ps(), cur_out_0 );
                 cur_out_1 = _mm512_mask_blend_ps( relumask1, _mm512_setzero_ps(), cur_out_1 );
-                LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8, nBlocksOFm, handle->bn, handle->bk/8), relumask0 );
-                LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8+2, nBlocksOFm, handle->bn, handle->bk/8), relumask1 );
+                LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/16, nBlocksOFm, handle->bn, handle->bk/16), relumask0 );
+                LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/16+1, nBlocksOFm, handle->bn, handle->bk/16), relumask1 );
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
                 /* we ar using Pade 7/8 approximation */
@@ -400,8 +400,8 @@ if (use_2d_blocking == 1) {
             relumask1 = _mm512_cmp_ps_mask( cur_out_1, _mm512_setzero_ps(), _CMP_GT_OQ );
             cur_out_0 = _mm512_mask_blend_ps( relumask0, _mm512_setzero_ps(), cur_out_0 );
             cur_out_1 = _mm512_mask_blend_ps( relumask1, _mm512_setzero_ps(), cur_out_1 );
-            LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8, nBlocksOFm, handle->bn, handle->bk/8), relumask0 );
-            LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/8+2, nBlocksOFm, handle->bn, handle->bk/8), relumask1 );
+            LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/16, nBlocksOFm, handle->bn, handle->bk/16), relumask0 );
+            LIBXSMM_INTRINSICS_MM512_STORE_MASK16( &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, mb2, ofm2/16+1, nBlocksOFm, handle->bn, handle->bk/16), relumask1 );
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
             /* we ar using Pade 7/8 approximation */
