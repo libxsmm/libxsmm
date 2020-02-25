@@ -1127,23 +1127,24 @@ ifneq (0,$(INTEL))
       FCFLAGS += $(FFORM_FLAG)
     endif
   endif
+  ifeq (0,$(OFFLOAD))
+  ifeq (0,$(ICX))
+    ifneq (0,$(shell echo "$$((150000<=$(CC_VERSION_NUM)))"))
+      NO_OFFLOAD_FLAG = -qno-offload
+    else
+      NO_OFFLOAD_FLAG = -no-offload
+    endif
+  endif
+  endif
+  CXXFLAGS += $(OPTFLAG) $(NO_OFFLOAD_FLAG)
+  CFLAGS += $(OPTFLAG) $(NO_OFFLOAD_FLAG)
   ifeq (,$(strip $(GFC)))
+    FCFLAGS += $(OPTFLAG) $(NO_OFFLOAD_FLAG)
     # flag specifying output directory must be last
     FMFLAGS += -module
   else
+    FCFLAGS += $(OPTFLAG)
     FMFLAGS += -J
-  endif
-  CXXFLAGS += $(OPTFLAG)
-  CFLAGS += $(OPTFLAG)
-  FCFLAGS += $(OPTFLAG)
-  ifeq (0,$(OFFLOAD))
-  ifeq (0,$(ICX))
-    ifeq (,$(strip $(GFC)))
-      FCFLAGS += -qno-offload
-    endif
-    CXXFLAGS += -qno-offload
-    CFLAGS += -qno-offload
-  endif
   endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
@@ -2216,7 +2217,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% PYMOD \
     GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW \
     NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN FMAIN \
-    LIBPTHREAD CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST \
+    LIBPTHREAD CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG \
     uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
     ctest applyif extname objname unquote quote qapath qndir qdir qsuffix qbname qname abslib \
     BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
