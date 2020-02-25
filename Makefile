@@ -1486,7 +1486,9 @@ distclean: realclean-all
 # - DESTDIR rules if PREFIX is also specified
 # - ensures deterministic behavior
 ifneq (,$(strip $(DESTDIR)))
+ifneq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
   override PREFIX = $(DESTDIR)
+endif
 endif
 
 # STAGEDIR is used as prefix of PREFIX
@@ -1496,12 +1498,10 @@ ifneq (,$(strip $(STAGEDIR)))
   ifeq (,$(filter /%,$(PREFIX)))
     override PREFIX := $(call qapath,$(STAGEDIR)/$(PREFIX))
   endif
-  ifeq (FreeBSD,$(UNAME))
-    PPKGDIR = libdata/pkgconfig
-  endif
 else ifeq (,$(strip $(PREFIX)))
   ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
     override PREFIX = /usr/local
+    PPKGDIR = libdata/pkgconfig
   else
     override PREFIX = $(call qapath,.)
   endif
