@@ -30,33 +30,33 @@ template<typename T> void collocate_core(const int length_[3],
                      const mdarray<T, 3, CblasRowMajor> &p_alpha_beta_reduced_,
                      mdarray<T, 3, CblasRowMajor> &Vtmp)
 {
-  timer.start("init");
-#if defined(SCRATCH)
-  T *const Cdata = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * co.size(1) * length_[1], 0/*auto-alignment*/));
-  T *const xyz_data = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * length_[0] * length_[1], 0/*auto-alignment*/));
-  LIBXSMM_VLA_DECL(3, T, C, Cdata, co.size(1), length_[1]);
-  LIBXSMM_VLA_DECL(3, T, xyz_alpha_beta, xyz_data, length_[0], length_[1]);
-#else
-  mdarray<T, 3, CblasRowMajor> C(co.size(0), co.size(1), length_[1]);
-  mdarray<T, 3, CblasRowMajor> xyz_alpha_beta(co.size(0), length_[0], length_[1]);
-#endif
   const T *LIBXSMM_RESTRICT abr0 = p_alpha_beta_reduced_.template at<CPU>(0, 0, 0);
   const T *LIBXSMM_RESTRICT abr1 = p_alpha_beta_reduced_.template at<CPU>(1, 0, 0);
   const T *LIBXSMM_RESTRICT abr2 = p_alpha_beta_reduced_.template at<CPU>(2, 0, 0);
-#if defined(XSMM)
-  const libxsmm_mmfunction<T> xmm1(LIBXSMM_GEMM_FLAG_NONE, length_[1], co.size(2), co.size(2),
-    p_alpha_beta_reduced_.ld(), co.ld(), /*C.ld()*/length_[1],
-    1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
-  const libxsmm_mmfunction<T> xmm2(LIBXSMM_GEMM_FLAG_TRANS_B, length_[1], length_[0], co.size(2),
-    /*C.ld()*/length_[1], p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.ld()*/length_[1],
-    1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
-  const libxsmm_mmfunction<T> xmm3(LIBXSMM_GEMM_FLAG_TRANS_B, length_[2], length_[0] * length_[1], co.size(2),
-    p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.size(1)*/length_[0] * /*xyz_alpha_beta.ld()*/length_[1], Vtmp.ld(),
-    1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
-#endif
-  timer.stop("init");
 
   if (co.size(0) > 1) {
+    timer.start("init");
+#if defined(SCRATCH)
+    T *const Cdata = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * co.size(1) * length_[1], 0/*auto-alignment*/));
+    T *const xyz_data = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * length_[0] * length_[1], 0/*auto-alignment*/));
+    LIBXSMM_VLA_DECL(3, T, C, Cdata, co.size(1), length_[1]);
+    LIBXSMM_VLA_DECL(3, T, xyz_alpha_beta, xyz_data, length_[0], length_[1]);
+#else
+    mdarray<T, 3, CblasRowMajor> C(co.size(0), co.size(1), length_[1]);
+    mdarray<T, 3, CblasRowMajor> xyz_alpha_beta(co.size(0), length_[0], length_[1]);
+#endif
+#if defined(XSMM)
+    const libxsmm_mmfunction<T> xmm1(LIBXSMM_GEMM_FLAG_NONE, length_[1], co.size(2), co.size(2),
+      p_alpha_beta_reduced_.ld(), co.ld(), /*C.ld()*/length_[1],
+      1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
+    const libxsmm_mmfunction<T> xmm2(LIBXSMM_GEMM_FLAG_TRANS_B, length_[1], length_[0], co.size(2),
+      /*C.ld()*/length_[1], p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.ld()*/length_[1],
+      1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
+    const libxsmm_mmfunction<T> xmm3(LIBXSMM_GEMM_FLAG_TRANS_B, length_[2], length_[0] * length_[1], co.size(2),
+      p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.size(1)*/length_[0] * /*xyz_alpha_beta.ld()*/length_[1], Vtmp.ld(),
+      1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+#endif
+    timer.stop("init");
     timer.start("gemm");
     const T* bj = co.template at<CPU>(0, 0, 0);
 #if defined(SCRATCH)
@@ -178,6 +178,7 @@ template<typename T> void collocate_core(const int length_[3],
     timer.stop("deinit");
 #endif
   } else {
+    timer.start("remainder");
     for (int z1 = 0; z1 < length_[0]; z1++) {
       const T tz = co(0, 0, 0) * p_alpha_beta_reduced_(0, 0, z1);
       for (int y1 = 0; y1 < length_[1]; y1++) {
@@ -189,6 +190,7 @@ template<typename T> void collocate_core(const int length_[3],
         }
       }
     }
+    timer.stop("remainder");
   }
 }
 
@@ -248,7 +250,7 @@ template <typename T> void collocate_core_naive2(const int *length_,
 
 
 // The three first numbers are the grid size, the last one can be anything
-template <typename T> bool test_collocate_core(const int i, const int j, const int k, const int lmax)
+template <typename T> T test_collocate_core(const int i, const int j, const int k, const int lmax)
 {
   mdarray<T, 3, CblasRowMajor> pol = mdarray<T, 3, CblasRowMajor>(3, lmax, std::max(std::max(i, j), k));
   mdarray<T, 3, CblasRowMajor> co = mdarray<T, 3, CblasRowMajor>(lmax, lmax, lmax);
@@ -289,16 +291,11 @@ template <typename T> bool test_collocate_core(const int i, const int j, const i
       for (int n = 0; n < static_cast<int>(Vgemm.size(2)); n++)
         maxi = std::max(std::abs(Vref(l, m, n) - Vgemm(l, m, n)), maxi);
 
-  if (maxi > 1e-14) {
-    printf("Wrong result : maximum error %.15lf\n", maxi);
-    return false;
-  }
-
   pol.clear();
   co.clear();
   Vgemm.clear();
   Vref.clear();
-  return true;
+  return maxi;
 }
 
 
@@ -368,29 +365,31 @@ template <typename T> bool test_collocate_core(const int i, const int j, const i
 
 int main(int argc, char* argv[])
 {
+  typedef double elem_type;
   const int nrepin = (1 < argc ? atoi(argv[1]) : 100), nrep = std::max(nrepin, 1);
-  const int n1in = (2 < argc ? atoi(argv[2]) : 32), n1 = std::max(n1in, 1);
+  const int n1in = (2 < argc ? atoi(argv[2]) : 0), n1 = std::max(n1in, 1);
   const int n2in = (3 < argc ? atoi(argv[3]) : n1), n2 = (0 < n2in ? n2in : n1);
   const int n3in = (4 < argc ? atoi(argv[4]) : n1), n3 = (0 < n3in ? n3in : n1);
   const int lmin = (5 < argc ? atoi(argv[5]) : 6), lmax = (0 < lmin ? lmin : 6);
+  elem_type diff = 0;
 #if (defined(HAVE_MKL) || defined(__MKL)) && 0
   mkl_set_threading_layer(MKL_THREADING_SEQUENTIAL);
 #endif
   timer.start("test_collocate_core");
   for (int i = 0; i < nrep; ++i) {
     if (0 == n1in) {
-      test_collocate_core<double>(27, 31, 23, 3);
-      test_collocate_core<double>(13, 35, 13, 7);
-      test_collocate_core<double>(15, 11, 23, 9);
-      test_collocate_core<double>(13, 19, 17, 5);
-      test_collocate_core<double>(9, 11, 19, 3);
-      test_collocate_core<double>(19, 17, 25, 5);
-      test_collocate_core<double>(23, 19, 27, 1);
-      test_collocate_core<double>(25, 23, 31, 11);
-      test_collocate_core<double>(27, 31, 23, 13);
+      diff = std::max(diff, test_collocate_core<elem_type>(27, 31, 23, 3));
+      diff = std::max(diff, test_collocate_core<elem_type>(13, 35, 13, 7));
+      diff = std::max(diff, test_collocate_core<elem_type>(15, 11, 23, 9));
+      diff = std::max(diff, test_collocate_core<elem_type>(13, 19, 17, 5));
+      diff = std::max(diff, test_collocate_core<elem_type>(9, 11, 19, 3));
+      diff = std::max(diff, test_collocate_core<elem_type>(19, 17, 25, 5));
+      diff = std::max(diff, test_collocate_core<elem_type>(23, 19, 27, 1));
+      diff = std::max(diff, test_collocate_core<elem_type>(25, 23, 31, 11));
+      diff = std::max(diff, test_collocate_core<elem_type>(27, 31, 23, 13));
     }
     else {
-      test_collocate_core<double>(n1, n2, n3, lmax);
+      diff = std::max(diff, test_collocate_core<elem_type>(n1, n2, n3, lmax));
     }
   }
   timer.stop("test_collocate_core");
@@ -402,6 +401,10 @@ int main(int argc, char* argv[])
   std::cout << "Default statistic:" << std::endl;
   std::cout << result.print();
 
+  if (diff > 1e-14) {
+    printf("Wrong result : maximum error %.15lf\n", diff);
+    return 1;
+  }
   return 0;
 }
 
