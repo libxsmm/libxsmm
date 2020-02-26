@@ -582,7 +582,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(DIRSTATE)/.state $(ROOTDIR)/$(SRCD
 	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
 		$(ROOTDIR)/.github/install.sh; \
 	fi
-	@$(CP) $(filter $(ROOTDIR)/include/%.h,$(HEADERS)) $(INCDIR) 2>/dev/null || true
+	@$(CP) $(filter $(ROOTDIR)/include/%.h,$(HEADERS)) $(INCDIR)
 ifneq (,$(filter-out 0 1 2 STATIC,$(words $(PRESTATE)) $(word 2,$(PRESTATE))))
 ifneq (0,$(STATIC)) # static
 	@rm -f $(OUTDIR)/libxsmm*.$(DLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT).*
@@ -1504,7 +1504,7 @@ endif
 ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
   ALIAS_PREFIX = $(LOCALBASE)
   ALIAS_PREFIX ?= /usr/local
-  override PREFIX := $(PREFIX)/$(ALIAS_PREFIX)
+  override PREFIX := $(call qapath,$(PREFIX)/$(ALIAS_PREFIX))
   PPKGDIR = libdata/pkgconfig
   PMODDIR = share/modules
 endif
@@ -1569,7 +1569,6 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@ls -1 $(INCDIR)/libxsmm*.h | grep -v libxsmm_source.h | xargs -I {} $(CP) -v {} $(PREFIX)/$(PINCDIR)
 	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR)
@@ -1577,7 +1576,7 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo "LIBXSMM installing header-only..."
 	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(patsubst $(PINCDIR)/%,%,$(PSRCDIR)) \
 		> $(PREFIX)/$(PINCDIR)/libxsmm_source.h
-	@-$(CP) -vr $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR)
+	@$(CP) -vr $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR) >/dev/null
 endif
 
 .PHONY: install
