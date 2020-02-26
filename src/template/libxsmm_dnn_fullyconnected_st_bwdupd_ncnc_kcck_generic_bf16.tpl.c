@@ -41,13 +41,13 @@
   int __i = 0; \
   if (remainder == 0) { \
     for ( __i = 0; __i < length; __i+= 16) { \
-      _mm256_storeu_si256((__m256i*)((float*)out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
+      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
     } \
   } else { \
     unsigned int chunk; \
     for ( chunk = 0; chunk < full_chunks; chunk++) { \
       __i = chunk * 16; \
-      _mm256_storeu_si256((__m256i*)((float*)out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
+      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
     } \
     libxsmm_rne_convert_fp32_bf16((const float*)in+16*full_chunks, (element_output_type*)out+16*full_chunks, remainder); \
   } \
@@ -449,13 +449,13 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   int __i = 0; \
   if (remainder == 0) { \
     for ( __i = 0; __i < length; __i+= 16) { \
-      _mm256_storeu_si256((__m256i*)((float*)out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
+      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
     } \
   } else { \
     unsigned int chunk; \
     for ( chunk = 0; chunk < full_chunks; chunk++) { \
       __i = chunk * 16; \
-      _mm256_storeu_si256((__m256i*)((float*)out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
+      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
     } \
     libxsmm_rne_convert_fp32_bf16((const float*)in+16*full_chunks, (element_output_type*)out+16*full_chunks, remainder); \
   } \
