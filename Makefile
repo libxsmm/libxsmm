@@ -1486,9 +1486,7 @@ distclean: realclean-all
 # - DESTDIR rules if PREFIX is also specified
 # - ensures deterministic behavior
 ifneq (,$(strip $(DESTDIR)))
-ifneq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
   override PREFIX = $(DESTDIR)
-endif
 endif
 
 # STAGEDIR is used as prefix of PREFIX
@@ -1499,16 +1497,16 @@ ifneq (,$(strip $(STAGEDIR)))
     override PREFIX := $(call qapath,$(STAGEDIR)/$(PREFIX))
   endif
 else ifeq (,$(strip $(PREFIX)))
-  ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
-    override PREFIX = /usr/local
-    PPKGDIR = libdata/pkgconfig
-  else
-    override PREFIX = $(call qapath,.)
-  endif
+  PREFIX = $(call qapath,.)
 endif
 
 # ALIAS_* variables for PKG_CONFIG and MODULES
-ALIAS_PREFIX = $(PREFIX)
+ifneq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
+  ALIAS_PREFIX = $(PREFIX)
+else
+  ALIAS_PREFIX = /usr/local
+  PPKGDIR = libdata/pkgconfig
+endif
 
 .PHONY: install-minimal
 install-minimal: libxsmm
