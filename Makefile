@@ -1503,8 +1503,8 @@ endif
 # ALIAS_* variables for PKG_CONFIG and MODULES
 ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
   ALIAS_PREFIX = $(LOCALBASE)
-  #ALIAS_PREFIX ?= /usr/local
-  PREFIX := $(PREFIX)/$(ALIAS_PREFIX)
+  ALIAS_PREFIX ?= /usr/local
+  override PREFIX := $(PREFIX)/$(ALIAS_PREFIX)
   PPKGDIR = libdata/pkgconfig
   PMODDIR = share/modules
 endif
@@ -1577,7 +1577,7 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo "LIBXSMM installing header-only..."
 	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(patsubst $(PINCDIR)/%,%,$(PSRCDIR)) \
 		> $(PREFIX)/$(PINCDIR)/libxsmm_source.h
-	@$(CP) -vr $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR)
+	@-$(CP) -vr $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR)
 endif
 
 .PHONY: install
