@@ -595,10 +595,13 @@ LIBXSMM_API_INTERN void internal_scratch_free(const void* /*memory*/, internal_m
 LIBXSMM_API_INTERN void internal_scratch_free(const void* memory, internal_malloc_pool_type* pool)
 {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-  char *const pool_buffer = pool->instance.buffer, *const buffer = (char*)memory; /* non-const */
   const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
-  LIBXSMM_ASSERT(pool_buffer <= pool->instance.head);
+  char* const pool_buffer = pool->instance.buffer;
+# if !defined(NDEBUG) || defined(LIBXSMM_MALLOC_SCRATCH_TRIM_HEAD)
+  char *const buffer = (char*)memory; /* non-const */
   LIBXSMM_ASSERT(pool_buffer <= buffer && buffer < pool_buffer + pool->instance.minsize);
+# endif
+  LIBXSMM_ASSERT(pool_buffer <= pool->instance.head);
   if (0 == counter) { /* reuse or reallocate scratch domain */
     internal_malloc_info_type *const info = internal_malloc_info(pool_buffer, 0/*no check*/);
     const size_t scale_size = (size_t)(1 != libxsmm_scratch_scale ? (libxsmm_scratch_scale * info->size) : info->size); /* hysteresis */
