@@ -1503,11 +1503,12 @@ endif
 # ALIAS_* variables for PKG_CONFIG and MODULES
 ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
   ALIAS_PREFIX = $(LOCALBASE)
-  ALIAS_PREFIX ?= /usr/local
+  #ALIAS_PREFIX ?= /usr/local
+  PREFIX := $(PREFIX)/$(ALIAS_PREFIX)
   PPKGDIR = libdata/pkgconfig
-else
-  ALIAS_PREFIX = $(PREFIX)
+  PMODDIR = share/modules
 endif
+ALIAS_PREFIX ?= $(PREFIX)
 
 .PHONY: install-minimal
 install-minimal: libxsmm
@@ -1560,12 +1561,9 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo
 	@echo "LIBXSMM installing pkg-config and module files..."
 	@mkdir -p $(PREFIX)/$(PPKGDIR)
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(ALIAS_PREFIX))/" $(OUTDIR)/libxsmmnoblas.pc > $(PREFIX)/$(PPKGDIR)/libxsmmnoblas.pc 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(ALIAS_PREFIX))/" $(OUTDIR)/libxsmmext.pc > $(PREFIX)/$(PPKGDIR)/libxsmmext.pc 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(ALIAS_PREFIX))/" $(OUTDIR)/libxsmmf.pc > $(PREFIX)/$(PPKGDIR)/libxsmmf.pc 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(ALIAS_PREFIX))/" $(OUTDIR)/libxsmm.pc > $(PREFIX)/$(PPKGDIR)/libxsmm.pc 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
 	@mkdir -p $(PREFIX)/$(PMODDIR)
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(ALIAS_PREFIX))/" $(OUTDIR)/module > $(PREFIX)/$(PMODDIR)/module 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
