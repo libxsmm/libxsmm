@@ -1501,11 +1501,11 @@ else ifeq (,$(strip $(PREFIX)))
 endif
 
 # ALIAS_* variables for PKG_CONFIG and MODULES
-ifneq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
-  ALIAS_PREFIX = $(PREFIX)
-else
+ifeq (FreeBSD,$(UNAME))
   ALIAS_PREFIX = /usr/local
   PPKGDIR = libdata/pkgconfig
+else
+  ALIAS_PREFIX = $(PREFIX)
 endif
 
 .PHONY: install-minimal
