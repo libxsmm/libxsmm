@@ -611,10 +611,7 @@ ldlib = $(call ctest,$1 $2,-l$3)
 
 ifneq (,$(FORCE_CXX))
 ifneq (0,$(FORCE_CXX))
-  override CC = $(CXX)
-  ifneq (,$(call ctest,$(CC),-xc++))
-    override CC += -xc++
-  endif
+  override CC = $(CXX) $(call ctest,$(CC),-xc++)
 endif
 endif
 
@@ -803,13 +800,9 @@ endif
 # COMMON ?= 1
 ifneq (,$(COMMON))
 ifneq (0,$(COMMON))
-  ifneq (,$(call ctest,$(LD),-fcommon))
-    CFLAGS += -fcommon
-  endif
+  CFLAGS += $(call ctest,$(CC),-fcommon)
 else
-  ifneq (,$(call ctest,$(LD),-fno-common))
-    CFLAGS += -fno-common
-  endif
+  CFLAGS += $(call ctest,$(CC),-fno-common)
 endif
 endif
 
@@ -1628,18 +1621,6 @@ else # take user's TARGET into account
   CTARGET := $(TARGET)
 endif
 
-ifneq (0,$(INTRINSICS))
-  ifeq (1,$(INTRINSICS))
-    ifeq (0,$(INTEL))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    else ifneq (,$(CTARGET))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    endif
-  endif
-else # disabled
-  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
-endif
-
 ifneq (,$(call ctest,$(CC),$(CTARGET)))
   # check target flags by feeding an ad-hoc C program into the compiler
   ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
@@ -1667,6 +1648,22 @@ endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
   TARGET ?= $(CTARGET)
+endif
+
+ifneq (0,$(INTRINSICS))
+  ifeq (1,$(INTRINSICS))
+    ifeq (0,$(INTEL))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    else ifneq (,$(CTARGET))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    endif
+  endif
+else # disabled
+  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
+endif
+
+ifeq (0,$(SYM))
+  LDFLAGS += $(call ctest,$(LD),-s)
 endif
 
 ifeq (0,$(COMPATIBLE))
