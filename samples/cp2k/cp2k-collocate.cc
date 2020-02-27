@@ -17,6 +17,11 @@
 #if !defined(SCRATCH) && 1
 # define SCRATCH
 #endif
+#if !defined(SCRATCH_LOCAL) && 1
+# if !defined(SCRATCH)
+#   define SCRATCH_LOCAL
+# endif
+#endif
 #if !defined(NAIVE2) && 0
 # define NAIVE2
 #endif
@@ -25,7 +30,7 @@
 rt_graph::Timer timer;
 
 
-template<typename T> void collocate_core(const int length_[3],
+template<typename T> void collocate_core(void* scratch, const int length_[3],
                      const mdarray<T, 3, CblasRowMajor> &co,
                      const mdarray<T, 3, CblasRowMajor> &p_alpha_beta_reduced_,
                      mdarray<T, 3, CblasRowMajor> &Vtmp)
@@ -38,9 +43,14 @@ template<typename T> void collocate_core(const int length_[3],
 
   if (co.size(0) > 1) {
     timer.start("init");
-#if defined(SCRATCH)
+#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
+# if defined(SCRATCH)
+    T *const Cdata = LIBXSMM_ALIGN(static_cast<T*>(scratch), LIBXSMM_ALIGNMENT);
+    T *const xyz_data = LIBXSMM_ALIGN(Cdata + co.size(0) * co.size(1) * length_[1], LIBXSMM_ALIGNMENT);
+# else
     T *const Cdata = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * co.size(1) * length_[1], 0/*auto-alignment*/));
     T *const xyz_data = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * length_[0] * length_[1], 0/*auto-alignment*/));
+# endif
     LIBXSMM_VLA_DECL(3, T, C, Cdata, co.size(1), length_[1]);
     LIBXSMM_VLA_DECL(3, T, xyz_alpha_beta, xyz_data, length_[0], length_[1]);
 #else
@@ -61,7 +71,7 @@ template<typename T> void collocate_core(const int length_[3],
     timer.stop("init");
     timer.start("gemm");
     const T* bj = co.template at<CPU>(0, 0, 0);
-#if defined(SCRATCH)
+#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
     T* cj = &LIBXSMM_VLA_ACCESS(3, C, 0, 0, 0, co.size(1), length_[1]);
 #else
     T* cj = C.template at<CPU>(0, 0, 0);
@@ -69,7 +79,7 @@ template<typename T> void collocate_core(const int length_[3],
     // run loop excluding the last element
     for (int a1 = 0; a1 < static_cast<int>(co.size(0) - 1); a1++) {
       const T *const bi = bj; bj = co.template at<CPU>(a1 + 1, 0, 0);
-#if defined(SCRATCH)
+#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
       T *const ci = cj; cj = &LIBXSMM_VLA_ACCESS(3, C, a1 + 1, 0, 0, co.size(1), length_[1]);
 #else
       T *const ci = cj; cj = C.template at<CPU>(a1 + 1, 0, 0);
@@ -106,7 +116,7 @@ template<typename T> void collocate_core(const int length_[3],
 #endif
 
     // run loop excluding the last element
-#if defined(SCRATCH)
+#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
     T* aj = &LIBXSMM_VLA_ACCESS(3, C, 0, 0, 0, co.size(1), length_[1]);
     cj = &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, 0, length_[0], length_[1]);
 #else
@@ -115,7 +125,7 @@ template<typename T> void collocate_core(const int length_[3],
 #endif
     for (int a1 = 0; a1 < static_cast<int>(co.size(0) - 1); a1++) {
       T *const ai = aj, *const ci = cj;
-#if defined(SCRATCH)
+#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
       aj = &LIBXSMM_VLA_ACCESS(3, C, a1 + 1, 0, 0, co.size(1), length_[1]);
       cj = &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, a1 + 1, 0, 0, length_[0], length_[1]);
 #else
@@ -153,7 +163,7 @@ template<typename T> void collocate_core(const int length_[3],
       /*xyz_alpha_beta.ld()*/length_[1]);
 #endif
 
-#if defined(SCRATCH)
+#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
     cj = &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, 0, length_[0], length_[1]);
 #else
     cj = xyz_alpha_beta.template at<CPU>(0, 0, 0);
@@ -173,7 +183,7 @@ template<typename T> void collocate_core(const int length_[3],
       ld);
 #endif
     timer.stop("gemm");
-#if defined(SCRATCH)
+#if defined(SCRATCH_LOCAL)
     timer.start("deinit");
     libxsmm_free(Cdata);
     libxsmm_free(xyz_data);
@@ -255,6 +265,11 @@ template <typename T> void collocate_core_naive2(const int *length_,
 // The three first numbers are the grid size, the last one can be anything
 template <typename T> T test_collocate_core(const int i, const int j, const int k, const int lmax)
 {
+#if defined(SCRATCH)
+  void* const scratch = malloc(sizeof(T) * (static_cast<size_t>(lmax) * lmax * j + static_cast<size_t>(lmax) * i * j) + 2 * LIBXSMM_ALIGNMENT);
+#else
+  void* const scratch = NULL;
+#endif
   mdarray<T, 3, CblasRowMajor> pol = mdarray<T, 3, CblasRowMajor>(3, lmax, std::max(std::max(i, j), k));
   mdarray<T, 3, CblasRowMajor> co = mdarray<T, 3, CblasRowMajor>(lmax, lmax, lmax);
   mdarray<T, 3, CblasRowMajor> Vgemm(i, j, k);
@@ -271,7 +286,7 @@ template <typename T> T test_collocate_core(const int i, const int j, const int 
   Vgemm.zero();
 
   timer.start("collocate_gemm");
-  collocate_core(length, co, pol, Vgemm);
+  collocate_core(scratch, length, co, pol, Vgemm);
   timer.stop("collocate_gemm");
 
   timer.start("collocate_brute_force");
@@ -298,6 +313,9 @@ template <typename T> T test_collocate_core(const int i, const int j, const int 
   co.clear();
   Vgemm.clear();
   Vref.clear();
+#if defined(SCRATCH)
+  free(scratch);
+#endif
   return maxi;
 }
 
