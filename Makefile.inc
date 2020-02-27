@@ -611,7 +611,7 @@ ldlib = $(call ctest,$1 $2,-l$3)
 
 ifneq (,$(FORCE_CXX))
 ifneq (0,$(FORCE_CXX))
-  override CC = $(CXX) $(call ctest,$(CC),-xc++)
+  override CC := $(CXX) $(call ctest,$(CC),-xc++)
 endif
 endif
 
