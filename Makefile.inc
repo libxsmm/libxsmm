@@ -605,7 +605,7 @@ uniqadd = $(filter-out $($2),$($1)) $(if $3,$3,$($2))
 uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
 ctest = $(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   echo "int main(void) { return 0; }" > $${INFILE} && \
-  $1 $2 $${INFILE} -o /dev/null 2>/dev/null >/dev/null && echo "OK"; \
+  $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
   rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null),$2)
 ldlib = $(call ctest,$1 $2,-l$3)
 
@@ -1460,7 +1460,7 @@ else # GCC assumed
   ifeq (,$(OMPLIBFILE))
   ifneq (,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
       printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" > $${INFILE} && \
-      $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) $${INFILE} -o /dev/null 2>/dev/null >/dev/null && echo "OK"; \
+      $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
       rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
     LDFLAGS += $(addprefix -L,$(LIBFIND))
     OMPLIBFILE = -l$(OMPRT)
