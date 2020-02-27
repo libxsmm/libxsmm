@@ -30,9 +30,11 @@ template<typename T> void collocate_core(const int length_[3],
                      const mdarray<T, 3, CblasRowMajor> &p_alpha_beta_reduced_,
                      mdarray<T, 3, CblasRowMajor> &Vtmp)
 {
-  const T *LIBXSMM_RESTRICT abr0 = p_alpha_beta_reduced_.template at<CPU>(0, 0, 0);
-  const T *LIBXSMM_RESTRICT abr1 = p_alpha_beta_reduced_.template at<CPU>(1, 0, 0);
-  const T *LIBXSMM_RESTRICT abr2 = p_alpha_beta_reduced_.template at<CPU>(2, 0, 0);
+  const T *LIBXSMM_RESTRICT src_x = p_alpha_beta_reduced_.template at<CPU>(2, 0, 0);
+  const T *LIBXSMM_RESTRICT src_y = p_alpha_beta_reduced_.template at<CPU>(1, 0, 0);
+  const T *LIBXSMM_RESTRICT src_z = p_alpha_beta_reduced_.template at<CPU>(0, 0, 0);
+  T *LIBXSMM_RESTRICT dst = Vtmp.template at<CPU>(0, 0, 0);
+  const int ld = Vtmp.ld();
 
   if (co.size(0) > 1) {
     timer.start("init");
@@ -53,7 +55,7 @@ template<typename T> void collocate_core(const int length_[3],
       /*C.ld()*/length_[1], p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.ld()*/length_[1],
       1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
     const libxsmm_mmfunction<T> xmm3(LIBXSMM_GEMM_FLAG_TRANS_B, length_[2], length_[0] * length_[1], co.size(2),
-      p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.size(1)*/length_[0] * /*xyz_alpha_beta.ld()*/length_[1], Vtmp.ld(),
+      p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.size(1)*/length_[0] * /*xyz_alpha_beta.ld()*/length_[1], ld,
       1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
 #endif
     timer.stop("init");
@@ -73,14 +75,14 @@ template<typename T> void collocate_core(const int length_[3],
       T *const ci = cj; cj = C.template at<CPU>(a1 + 1, 0, 0);
 #endif
 #if defined(XSMM)
-      xmm1(abr1, bi, ci, abr1, bj, cj);
+      xmm1(src_y, bi, ci, src_y, bj, cj);
 #else
       cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
         co.size(2), length_[1], co.size(2),
         1.0,
         bi, // Coef_{alpha,gamma,beta}
         co.ld(),
-        abr1, // Y_{beta,j}
+        src_y, // Y_{beta,j}
         p_alpha_beta_reduced_.ld(),
         0.0,
         ci, // tmp_{alpha, gamma, j}
@@ -89,14 +91,14 @@ template<typename T> void collocate_core(const int length_[3],
     }
     // execute remainder with pseudo-prefetch
 #if defined(XSMM)
-    xmm1(abr1, bj, cj, abr1, bj, cj);
+    xmm1(src_y, bj, cj, src_y, bj, cj);
 #else
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
       co.size(2), length_[1], co.size(2),
       1.0,
       bj, // Coef_{alpha,gamma,beta}
       co.ld(),
-      abr1, // Y_{beta,j}
+      src_y, // Y_{beta,j}
       p_alpha_beta_reduced_.ld(),
       0.0,
       cj, // tmp_{alpha, gamma, j}
@@ -121,12 +123,12 @@ template<typename T> void collocate_core(const int length_[3],
       cj = xyz_alpha_beta.template at<CPU>(a1 + 1, 0, 0);
 #endif
 #if defined(XSMM)
-      xmm2(ai, abr0, ci, aj, abr0, cj);
+      xmm2(ai, src_z, ci, aj, src_z, cj);
 #else
       cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
         length_[0], length_[1], co.size(2),
         1.0,
-        abr0, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
+        src_z, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
         p_alpha_beta_reduced_.ld(),
         ai, // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
         /*C.ld()*/length_[1],
@@ -137,12 +139,12 @@ template<typename T> void collocate_core(const int length_[3],
     }
     // execute remainder with pseudo-prefetch
 #if defined(XSMM)
-    xmm2(aj, abr0, cj, aj, abr0, cj);
+    xmm2(aj, src_z, cj, aj, src_z, cj);
 #else
     cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
       length_[0], length_[1], co.size(2),
       1.0,
-      abr0, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
+      src_z, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
       p_alpha_beta_reduced_.ld(),
       aj, // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
       /*C.ld()*/length_[1],
@@ -157,18 +159,18 @@ template<typename T> void collocate_core(const int length_[3],
     cj = xyz_alpha_beta.template at<CPU>(0, 0, 0);
 #endif
 #if defined(XSMM)
-    xmm3(abr2, cj, Vtmp.template at<CPU>(0, 0, 0));
+    xmm3(src_x, cj, dst);
 #else
     cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
       length_[0] * length_[1], length_[2], co.size(2),
       1.0,
       cj,
       /*xyz_alpha_beta.size(1)*/length_[0] * /*xyz_alpha_beta.ld()*/length_[1],
-      abr2,
+      src_x,
       p_alpha_beta_reduced_.ld(),
       0.0,
-      Vtmp.template at<CPU>(0, 0, 0),
-      Vtmp.ld());
+      dst,
+      ld);
 #endif
     timer.stop("gemm");
 #if defined(SCRATCH)
@@ -180,14 +182,15 @@ template<typename T> void collocate_core(const int length_[3],
   } else {
     timer.start("remainder");
     for (int z1 = 0; z1 < length_[0]; z1++) {
-      const T tz = co(0, 0, 0) * p_alpha_beta_reduced_(0, 0, z1);
+      const T tz = co(0, 0, 0) * src_z[z1];
+      LIBXSMM_PRAGMA_UNROLL_N(4)
       for (int y1 = 0; y1 < length_[1]; y1++) {
-        const T tmp = tz * p_alpha_beta_reduced_(1, 0, y1);
-        const T *LIBXSMM_RESTRICT src = abr2;
-        T *LIBXSMM_RESTRICT dst = Vtmp.template at<CPU>(z1, y1, 0);
+        const T tmp = tz * src_y[y1];
+        LIBXSMM_PRAGMA_SIMD
         for (int x1 = 0; x1 < length_[2]; x1++) {
-          dst[x1] = tmp * src[x1];
+          dst[x1] = tmp * src_x[x1];
         }
+        dst += ld;
       }
     }
     timer.stop("remainder");
