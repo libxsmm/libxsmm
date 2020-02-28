@@ -2355,7 +2355,7 @@ LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, void* value,
     libxsmm_descriptor wrap;
     void* dst;
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*key));
+    LIBXSMM_MEMSET127(&wrap, 0, key_size);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
     wrap.kind = LIBXSMM_KERNEL_KIND_USER;
@@ -2395,7 +2395,7 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
   {
     libxsmm_descriptor wrap;
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*key));
+    LIBXSMM_MEMSET127(&wrap, 0, key_size);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
     wrap.kind = LIBXSMM_KERNEL_KIND_USER;
