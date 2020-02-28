@@ -13,14 +13,13 @@
 
 #if !defined(XSMM) && 1
 # define XSMM
+#elif !defined(TRIANGULAR) && 0
+# define TRIANGULAR
 #endif
 #if !defined(SCRATCH) && 1
 # define SCRATCH
-#endif
-#if !defined(SCRATCH_LOCAL) && 1
-# if !defined(SCRATCH)
-#   define SCRATCH_LOCAL
-# endif
+#elif !defined(SCRATCH_LOCAL) && 1
+# define SCRATCH_LOCAL
 #endif
 #if !defined(NAIVE2) && 0
 # define NAIVE2
@@ -51,131 +50,155 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
     T *const Cdata = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * co.size(1) * length_[1], 0/*auto-alignment*/));
     T *const xyz_data = static_cast<T*>(libxsmm_aligned_scratch(sizeof(T) * co.size(0) * length_[0] * length_[1], 0/*auto-alignment*/));
 # endif
-    LIBXSMM_VLA_DECL(3, T, C, Cdata, co.size(1), length_[1]);
-    LIBXSMM_VLA_DECL(3, T, xyz_alpha_beta, xyz_data, length_[0], length_[1]);
+# if defined(TRIANGULAR)
+    mdarray<T, 2, CblasRowMajor> C(Cdata, co.size(1), length_[1]);
+# else
+    mdarray<T, 3, CblasRowMajor> C(Cdata, co.size(0), co.size(1), length_[1]);
+# endif
+    mdarray<T, 3, CblasRowMajor> xyz_alpha_beta(xyz_data, co.size(0), length_[0], length_[1]);
 #else
+# if defined(TRIANGULAR)
+    mdarray<T, 2, CblasRowMajor> C(co.size(1), length_[1]);
+# else
     mdarray<T, 3, CblasRowMajor> C(co.size(0), co.size(1), length_[1]);
+# endif
     mdarray<T, 3, CblasRowMajor> xyz_alpha_beta(co.size(0), length_[0], length_[1]);
 #endif
 #if defined(XSMM)
     const libxsmm_mmfunction<T> xmm1(LIBXSMM_GEMM_FLAG_NONE, length_[1], co.size(2), co.size(2),
-      p_alpha_beta_reduced_.ld(), co.ld(), /*C.ld()*/length_[1],
+      p_alpha_beta_reduced_.ld(), co.ld(), C.ld(),
       1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
     const libxsmm_mmfunction<T> xmm2(LIBXSMM_GEMM_FLAG_TRANS_B, length_[1], length_[0], co.size(2),
-      /*C.ld()*/length_[1], p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.ld()*/length_[1],
+      C.ld(), p_alpha_beta_reduced_.ld(), xyz_alpha_beta.ld(),
       1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
     const libxsmm_mmfunction<T> xmm3(LIBXSMM_GEMM_FLAG_TRANS_B, length_[2], length_[0] * length_[1], co.size(2),
-      p_alpha_beta_reduced_.ld(), /*xyz_alpha_beta.size(1)*/length_[0] * /*xyz_alpha_beta.ld()*/length_[1], ld,
+      p_alpha_beta_reduced_.ld(), xyz_alpha_beta.size(1) * xyz_alpha_beta.ld(), ld,
       1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
 #endif
     timer.stop("init");
     timer.start("gemm");
-    const T* bj = co.template at<CPU>(0, 0, 0);
-#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
-    T* cj = &LIBXSMM_VLA_ACCESS(3, C, 0, 0, 0, co.size(1), length_[1]);
+    const T* aj = co.template at<CPU>(0, 0, 0);
+#if defined(TRIANGULAR)
+    T* cj = xyz_alpha_beta.template at<CPU>(0, 0, 0);
 #else
     T* cj = C.template at<CPU>(0, 0, 0);
 #endif
     // run loop excluding the last element
     for (int a1 = 0; a1 < static_cast<int>(co.size(0) - 1); a1++) {
-      const T *const bi = bj; bj = co.template at<CPU>(a1 + 1, 0, 0);
-#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
-      T *const ci = cj; cj = &LIBXSMM_VLA_ACCESS(3, C, a1 + 1, 0, 0, co.size(1), length_[1]);
+      const T *const ai = aj; aj = co.template at<CPU>(a1 + 1, 0, 0);
+#if defined(TRIANGULAR)
+      T *const ci = cj; cj = xyz_alpha_beta.template at<CPU>(a1 + 1, 0, 0);
 #else
       T *const ci = cj; cj = C.template at<CPU>(a1 + 1, 0, 0);
 #endif
 #if defined(XSMM)
-      xmm1(src_y, bi, ci, src_y, bj, cj);
+      xmm1(src_y, ai, ci, src_y, aj, cj);
+#elif defined(TRIANGULAR)
+      cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+        co.size(1) - a1, length_[1], co.size(2) - a1,
+        1.0,
+        ai, // Coef_{alpha,gamma,beta}
+        co.ld(),
+        src_y, // Y_{beta,j}
+        p_alpha_beta_reduced_.ld(),
+        0.0,
+        C.template at<CPU>(0, 0), // tmp_{alpha, gamma, j}
+        C.ld());
+      cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+        length_[0], length_[1], co.size(2) - a1,
+        1.0,
+        src_z, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
+        p_alpha_beta_reduced_.ld(),
+        C.template at<CPU>(0, 0), // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
+        C.ld(),
+        0.0,
+        ci, // contains xyz_{alpha, kj} the order kj is important
+        xyz_alpha_beta.ld());
 #else
       cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
         co.size(2), length_[1], co.size(2),
         1.0,
-        bi, // Coef_{alpha,gamma,beta}
+        ai, // Coef_{alpha,gamma,beta}
         co.ld(),
         src_y, // Y_{beta,j}
         p_alpha_beta_reduced_.ld(),
         0.0,
         ci, // tmp_{alpha, gamma, j}
-        /*C.ld()*/length_[1]);
+        C.ld());
 #endif
     }
-    // execute remainder with pseudo-prefetch
-#if defined(XSMM)
-    xmm1(src_y, bj, cj, src_y, bj, cj);
-#else
+    // execute remainder
+#if !defined(TRIANGULAR)
+# if defined(XSMM)
+    xmm1(src_y, aj, cj, src_y, aj, cj); // with pseudo-prefetch
+# else
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
       co.size(2), length_[1], co.size(2),
       1.0,
-      bj, // Coef_{alpha,gamma,beta}
+      aj, // Coef_{alpha,gamma,beta}
       co.ld(),
       src_y, // Y_{beta,j}
       p_alpha_beta_reduced_.ld(),
       0.0,
       cj, // tmp_{alpha, gamma, j}
-      /*C.ld()*/length_[1]);
-#endif
-
+      C.ld());
+# endif
     // run loop excluding the last element
-#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
-    T* aj = &LIBXSMM_VLA_ACCESS(3, C, 0, 0, 0, co.size(1), length_[1]);
-    cj = &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, 0, length_[0], length_[1]);
-#else
-    T* aj = C.template at<CPU>(0, 0, 0);
+    T* bj = C.template at<CPU>(0, 0, 0);
     cj = xyz_alpha_beta.template at<CPU>(0, 0, 0);
-#endif
     for (int a1 = 0; a1 < static_cast<int>(co.size(0) - 1); a1++) {
-      T *const ai = aj, *const ci = cj;
-#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
-      aj = &LIBXSMM_VLA_ACCESS(3, C, a1 + 1, 0, 0, co.size(1), length_[1]);
-      cj = &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, a1 + 1, 0, 0, length_[0], length_[1]);
-#else
-      aj = C.template at<CPU>(a1 + 1, 0, 0);
+      T *const bi = bj, *const ci = cj;
+      bj = C.template at<CPU>(a1 + 1, 0, 0);
       cj = xyz_alpha_beta.template at<CPU>(a1 + 1, 0, 0);
-#endif
-#if defined(XSMM)
-      xmm2(ai, src_z, ci, aj, src_z, cj);
-#else
+# if defined(XSMM)
+      xmm2(bi, src_z, ci, bj, src_z, cj);
+# else
       cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
         length_[0], length_[1], co.size(2),
         1.0,
         src_z, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
         p_alpha_beta_reduced_.ld(),
-        ai, // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
-        /*C.ld()*/length_[1],
+        bi, // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
+        C.ld(),
         0.0,
         ci, // contains xyz_{alpha, kj} the order kj is important
-        /*xyz_alpha_beta.ld()*/length_[1]);
-#endif
+        xyz_alpha_beta.ld());
+# endif
     }
-    // execute remainder with pseudo-prefetch
-#if defined(XSMM)
-    xmm2(aj, src_z, cj, aj, src_z, cj);
-#else
+    // execute remainder
+# if defined(XSMM)
+    xmm2(bj, src_z, cj, bj, src_z, cj); // with pseudo-prefetch
+# else
     cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
       length_[0], length_[1], co.size(2),
       1.0,
       src_z, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
       p_alpha_beta_reduced_.ld(),
-      aj, // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
-      /*C.ld()*/length_[1],
+      bj, // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
+      C.ld(),
       0.0,
       cj, // contains xyz_{alpha, kj} the order kj is important
-      /*xyz_alpha_beta.ld()*/length_[1]);
-#endif
-
-#if (defined(SCRATCH) || defined(SCRATCH_LOCAL))
-    cj = &LIBXSMM_VLA_ACCESS(3, xyz_alpha_beta, 0, 0, 0, length_[0], length_[1]);
+      xyz_alpha_beta.ld());
+# endif
 #else
-    cj = xyz_alpha_beta.template at<CPU>(0, 0, 0);
+    cblas_dger(CblasRowMajor,
+      length_[0], length_[1],
+      co(co.size(0) - 1, 0, 0),
+      p_alpha_beta_reduced_.template at<CPU>(0, 0, 0),
+      1,
+      p_alpha_beta_reduced_.template at<CPU>(1, 0, 0),
+      1,
+      xyz_alpha_beta.template at<CPU>(co.size(0) - 1, 0, 0),
+      xyz_alpha_beta.ld());
 #endif
 #if defined(XSMM)
-    xmm3(src_x, cj, dst);
+    xmm3(src_x, xyz_alpha_beta.template at<CPU>(0, 0, 0), dst);
 #else
     cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
       length_[0] * length_[1], length_[2], co.size(2),
       1.0,
-      cj,
-      /*xyz_alpha_beta.size(1)*/length_[0] * /*xyz_alpha_beta.ld()*/length_[1],
+      xyz_alpha_beta.template at<CPU>(0, 0, 0),
+      xyz_alpha_beta.size(1) * xyz_alpha_beta.ld(),
       src_x,
       p_alpha_beta_reduced_.ld(),
       0.0,
