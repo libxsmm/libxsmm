@@ -108,6 +108,11 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
+/** Register user-defined value with the given key. The value can be queried with libxsmm_xdispatch. */
+LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, void* value, size_t value_size);
+/** Query an user-defined value from LIBXSMM's code registry. */
+LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
+
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 

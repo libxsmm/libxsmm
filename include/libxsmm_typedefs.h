@@ -517,8 +517,10 @@ typedef enum libxsmm_kernel_kind {
   LIBXSMM_KERNEL_KIND_TRMM    = 5,
   /** TRSM kernel kind */
   LIBXSMM_KERNEL_KIND_TRSM    = 6,
+  /** User-defined kernels */
+  LIBXSMM_KERNEL_KIND_USER    = 7,
   /** Not a JIT kernel */
-  LIBXSMM_KERNEL_UNREGISTERED = 7
+  LIBXSMM_KERNEL_UNREGISTERED = 8
 } libxsmm_kernel_kind;
 
 /** Specialized function for matrix-copy (weak-typed). */
