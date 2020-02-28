@@ -197,9 +197,9 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_C_UNSIGNED = 16384,
   /* in case of integer GEMM, if A and B are unsigned */
   LIBXSMM_GEMM_FLAG_AB_UNSIGNED = LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_B_UNSIGNED,
-  /* for low preicsion we also require up-front packed formats "VNNI" for best performance, this flag indicates A */
+  /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates A */
   LIBXSMM_GEMM_FLAG_VNNI_A = 32768,
-  /* for low preicsion we also require up-front packed formats "VNNI" for best performance, this flag indicates B */
+  /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates B */
   LIBXSMM_GEMM_FLAG_VNNI_B = 65536,
   /* combined types */
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0                      = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
@@ -373,7 +373,7 @@ typedef enum libxsmm_dnn_fusedbatchnorm_fuse_op {
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm_desc {
   int partN;                                 /* number of images in mini-batch, used for all elementwise computations */
-  int fullN;                                 /* number of images in mini-batch, used for statistics compuataions */
+  int fullN;                                 /* number of images in mini-batch, used for statistics computations */
   int C;                                     /* number of input feature maps */
   int H;                                     /* height of input image */
   int W;                                     /* width of input image */
