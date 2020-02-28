@@ -49,11 +49,12 @@ int main(/*int argc, char* argv[]*/)
       NULL, 1) /* invalid combination */
       ? EXIT_SUCCESS : EXIT_FAILURE);
   }
-#if 0 /* TODO: register with duplicate key, etc. */
+#if (0 != LIBXSMM_JIT) /* registry service only with JIT */
+# if 0 /* TODO: register with duplicate key, etc. */
   if (EXIT_SUCCESS == result) { /* test for some expected failure */
     result = libxsmm_xregister(key, key_size, NULL, 0);
   }
-#endif
+# endif
   for (i = 0; i < n && EXIT_SUCCESS == result; ++i) {
     result = libxsmm_xregister(key + i, key_size, value[i], strlen(value[i]) + 1);
   }
@@ -68,7 +69,7 @@ int main(/*int argc, char* argv[]*/)
       result = strcmp(v, value[i]);
     }
   }
-
+#endif
   return result;
 }
 

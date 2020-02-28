@@ -1993,12 +1993,12 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
             request.kind = (libxsmm_build_kind)desc->kind;
             request.descriptor.ptr = &desc->gemm.desc;
             request.value_size = desc_size;
-#if defined(NDEBUG)
+# if defined(NDEBUG)
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && NULL != flux_entry.ptr_const)
-#else
+# else
             build = libxsmm_build(&request, i, &flux_entry);
             if (EXIT_SUCCESS == build && NULL != flux_entry.ptr_const)
-#endif
+# endif
             {
               LIBXSMM_ASSIGN127(internal_registry_keys + i, desc);
 # if (1 < INTERNAL_REGLOCK_MAXN)
