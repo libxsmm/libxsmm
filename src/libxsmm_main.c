@@ -1835,7 +1835,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
   if (LIBXSMM_X86_SSE3 <= libxsmm_target_archid) result = EXIT_FAILURE;
 #endif
-  LIBXSMM_ASSERT(EXIT_FAILURE != result);
   return result;
 }
 
@@ -1975,7 +1974,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
       }
       else { /* enter code generation (there is no code version yet) */
         LIBXSMM_ASSERT(0 == mode || 1 < mode);
-#if (0 != LIBXSMM_JIT)
+#if (0 == LIBXSMM_JIT)
+        LIBXSMM_UNUSED(user_size);
+#else
         if (LIBXSMM_X86_AVX <= libxsmm_target_archid || /* check if JIT is supported (CPUID) */
            (LIBXSMM_X86_SSE3 <= libxsmm_target_archid && LIBXSMM_KERNEL_KIND_MATMUL == desc->kind) ||
            (LIBXSMM_KERNEL_KIND_USER == desc->kind))
