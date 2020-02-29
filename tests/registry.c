@@ -50,11 +50,19 @@ int main(/*int argc, char* argv[]*/)
       ? EXIT_SUCCESS : EXIT_FAILURE);
   }
 #if (0 != LIBXSMM_JIT) /* registry service only with JIT */
-# if 0 /* TODO: register with duplicate key, etc. */
-  if (EXIT_SUCCESS == result) { /* test for some expected failure */
+  if (EXIT_SUCCESS == result) {
     result = libxsmm_xregister(key, key_size, NULL, 0);
   }
-# endif
+  if (EXIT_SUCCESS == result) { /* same key but actual payload (instead of NULL) */
+    result = libxsmm_xregister(key, key_size, value[0], strlen(value[0]) + 1);
+  }
+  if (EXIT_SUCCESS == result) { /* re-register same key with larger payload */
+    result = (EXIT_SUCCESS != libxsmm_xregister(key, key_size,
+      value[0], strlen(value[3]) + 1) ? EXIT_SUCCESS : EXIT_FAILURE);
+  }
+  if (EXIT_SUCCESS == result) { /* release registered value */
+    libxsmm_xrelease(key, key_size);
+  }
   for (i = 0; i < n && EXIT_SUCCESS == result; ++i) {
     result = libxsmm_xregister(key + i, key_size, value[i], strlen(value[i]) + 1);
   }
@@ -68,6 +76,7 @@ int main(/*int argc, char* argv[]*/)
     if (EXIT_SUCCESS == result) {
       result = strcmp(v, value[i]);
     }
+    libxsmm_release_kernel(v);
   }
 #endif
   return result;

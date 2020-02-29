@@ -518,4 +518,5 @@ libxsmm_xmmdispatch
 libxsmm_xmmdispatch2_
 libxsmm_xmmdispatch_
 libxsmm_xregister
+libxsmm_xrelease
 libxsmmf_get_target_arch

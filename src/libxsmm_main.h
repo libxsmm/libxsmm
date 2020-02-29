@@ -724,7 +724,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
   } descriptor;
   libxsmm_build_kind kind;
   /* used by user-kind */
-  size_t value_size;
+  size_t user_size;
 } libxsmm_build_request;
 
 typedef enum libxsmm_malloc_flags {
