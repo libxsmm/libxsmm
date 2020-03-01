@@ -33,33 +33,33 @@ int main(/*int argc, char* argv[]*/)
   };
 
   if (EXIT_SUCCESS == result) { /* test for some expected failure */
-    result = (EXIT_SUCCESS != libxsmm_xregister(key, /*too large*/LIBXSMM_DESCRIPTOR_MAXSIZE + 1,
+    result = (NULL == libxsmm_xregister(key, /*too large*/LIBXSMM_DESCRIPTOR_MAXSIZE + 1,
       value[0], strlen(value[0]) + 1) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   if (EXIT_SUCCESS == result) { /* test for some expected failure */
-    result = (EXIT_SUCCESS != libxsmm_xregister(NULL, 16, /* invalid combination */
+    result = (NULL == libxsmm_xregister(NULL, 16, /* invalid combination */
       value[0], strlen(value[0]) + 1) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   if (EXIT_SUCCESS == result) { /* test for some expected failure */
-    result = (EXIT_SUCCESS != libxsmm_xregister(NULL, 0, /* invalid combination */
+    result = (NULL == libxsmm_xregister(NULL, 0, /* invalid combination */
       value[0], strlen(value[0]) + 1) ? EXIT_SUCCESS : EXIT_FAILURE);
+  }
+  if (EXIT_SUCCESS == result) { /* test for some expected failure */
+    result = (NULL == libxsmm_xregister(key, key_size, NULL, 0) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
 #if (0 != LIBXSMM_JIT) /* registry service only with JIT */
-  if (EXIT_SUCCESS == result) {
-    result = libxsmm_xregister(key, key_size, NULL, 0);
-  }
   if (EXIT_SUCCESS == result) { /* same key but some payload (value=NULL: initialized later) */
-    result = libxsmm_xregister(key, key_size, NULL, strlen(value[0]) + 1);
+    result = (NULL != libxsmm_xregister(key, key_size, NULL, strlen(value[0]) + 1) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   if (EXIT_SUCCESS == result) { /* re-register same key with larger payload */
-    result = (EXIT_SUCCESS != libxsmm_xregister(key, key_size,
+    result = (NULL == libxsmm_xregister(key, key_size,
       value[0], strlen(value[3]) + 1) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   if (EXIT_SUCCESS == result) { /* release registered value */
     libxsmm_xrelease(key, key_size);
   }
   for (i = 0; i < n && EXIT_SUCCESS == result; ++i) {
-    result = libxsmm_xregister(key + i, key_size, value[i], strlen(value[i]) + 1);
+    result = (NULL != libxsmm_xregister(key + i, key_size, value[i], strlen(value[i]) + 1) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   for (i = 0; i < n && EXIT_SUCCESS == result; ++i) {
     const char *const v = (char*)libxsmm_xdispatch(key + i, key_size);

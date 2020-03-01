@@ -2340,10 +2340,10 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
 }
 
 
-LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* value, size_t value_size)
+LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, const void* value, size_t value_size)
 {
   static int error_once = 0;
-  int result;
+  void* result;
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size) {
     libxsmm_descriptor wrap;
     void* dst;
@@ -2360,7 +2360,7 @@ LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* 
         && value_size <= size)
       {
         if (NULL != value) memcpy(dst, value, value_size);
-        result = EXIT_SUCCESS;
+        result = dst;
       }
       else {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -2368,11 +2368,10 @@ LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* 
         {
           fprintf(stderr, "LIBXSMM ERROR: value too large for previously registered key!\n");
         }
-        result = EXIT_FAILURE;
+        result = NULL;
       }
     }
-    else if (0 == value_size) result = EXIT_SUCCESS;
-    else result = EXIT_FAILURE;
+    else result = NULL;
   }
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -2386,7 +2385,7 @@ LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* 
           LIBXSMM_DESCRIPTOR_MAXSIZE);
       }
     }
-    result = EXIT_FAILURE;
+    result = NULL;
   }
   return result;
 }

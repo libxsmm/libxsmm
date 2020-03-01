@@ -118,7 +118,7 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
  * per libxsmm_xdispatch. Registry data is automatically at program termination however
  * entries can be also released if needed (libxsmm_xrelease).
  */
-LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* value, size_t value_size);
+LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, const void* value, size_t value_size);
 /**
  * Query user-defined value from LIBXSMM's code registry. The value's buffer is owned and
  * managed by LIBXSMM (can be libxsmm_xrelease'd, .e.g., if larger value for the same key
