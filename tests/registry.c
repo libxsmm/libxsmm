@@ -44,17 +44,12 @@ int main(/*int argc, char* argv[]*/)
     result = (EXIT_SUCCESS != libxsmm_xregister(NULL, 0, /* invalid combination */
       value[0], strlen(value[0]) + 1) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
-  if (EXIT_SUCCESS == result) { /* test for some expected failure */
-    result = (EXIT_SUCCESS != libxsmm_xregister(key, key_size,
-      NULL, 1) /* invalid combination */
-      ? EXIT_SUCCESS : EXIT_FAILURE);
-  }
 #if (0 != LIBXSMM_JIT) /* registry service only with JIT */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_xregister(key, key_size, NULL, 0);
   }
-  if (EXIT_SUCCESS == result) { /* same key but actual payload (instead of NULL) */
-    result = libxsmm_xregister(key, key_size, value[0], strlen(value[0]) + 1);
+  if (EXIT_SUCCESS == result) { /* same key but some payload (value=NULL: initialized later) */
+    result = libxsmm_xregister(key, key_size, NULL, strlen(value[0]) + 1);
   }
   if (EXIT_SUCCESS == result) { /* re-register same key with larger payload */
     result = (EXIT_SUCCESS != libxsmm_xregister(key, key_size,

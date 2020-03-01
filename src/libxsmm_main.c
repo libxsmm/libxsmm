@@ -2344,7 +2344,7 @@ LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* 
 {
   static int error_once = 0;
   int result;
-  if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size && (NULL != value || 0 == value_size)) {
+  if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size) {
     libxsmm_descriptor wrap;
     void* dst;
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
@@ -2359,7 +2359,7 @@ LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* 
       if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(dst, &size, NULL/*flags*/, NULL/*extra*/)
         && value_size <= size)
       {
-        memcpy(dst, value, value_size);
+        if (NULL != value) memcpy(dst, value, value_size);
         result = EXIT_SUCCESS;
       }
       else {
@@ -2405,7 +2405,7 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
     wrap.kind = LIBXSMM_KERNEL_KIND_USER;
-    /* LIBXSMM_INIT is not necessary here */
+    LIBXSMM_INIT
     result = internal_find_code(&wrap, key_size, 0/*user_size*/).ptr;
   }
 #if !defined(NDEBUG)
