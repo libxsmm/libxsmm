@@ -2340,7 +2340,7 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
 }
 
 
-LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, const void* value, size_t value_size)
+LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init)
 {
   static int error_once = 0;
   void* result;
@@ -2359,7 +2359,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, const void
       if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(dst, &size, NULL/*flags*/, NULL/*extra*/)
         && value_size <= size)
       {
-        if (NULL != value) memcpy(dst, value, value_size);
+        if (NULL != value_init) memcpy(dst, value_init, value_size);
         result = dst;
       }
       else {

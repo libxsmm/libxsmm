@@ -111,21 +111,21 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 /**
  * Register user-defined key-value pair; the value can be then queried per libxsmm_xdispatch.
  * Since the key-type is unknown to LIBXSMM, the key must be binary reproducible. Structured
- * data may be padded in a compiler/platform-specific fashion, and hence key-structs shall
- * be initialized like: memset(&mykey, 0, sizeof(mykey)) followed by element-initialization
- * (some compilers leave padded data uninitialized which breaks binary reproducible keys).
- * The given value-data is copied by LIBXSMM and may be initialized before or when received
- * per libxsmm_xdispatch. Registry data is automatically at program termination however
- * entries can be also released if needed (libxsmm_xrelease).
+ * data may be padded (compiler/platform-specific), and key-structure initialization shall be:
+ * memset(&mykey, 0, sizeof(mykey)) followed by an element-wise initialization (some compilers
+ * leave padded data uninitialized which breaks binary reproducible keys). The size of the key
+ * is limited to LIBXSMM_DESCRIPTOR_MAXSIZE. The given value is copied by LIBXSMM and may be
+ * initialized at registration-time or when received per libxsmm_xdispatch. Registered data
+ * is released at program termination but can be also released if needed (libxsmm_xrelease).
  */
-LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, const void* value, size_t value_size);
+LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init);
 /**
  * Query user-defined value from LIBXSMM's code registry. The value's buffer is owned and
  * managed by LIBXSMM (can be libxsmm_xrelease'd, .e.g., if larger value for the same key
  * must be stored).
  */
 LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
-/** Remove key-value from code registry and release memory. */
+/** Remove key-value pair from code registry and release memory. */
 LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size);
 
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (descriptor form). */
