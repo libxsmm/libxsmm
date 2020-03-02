@@ -71,9 +71,9 @@ int main(int argc, char* argv[])
     LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
     throw std::runtime_error("Eigen or Eigen/unsupported not found!");
 #else
-    LIBXSMM_GEMM_CONST libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 512);
-    LIBXSMM_GEMM_CONST libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
-    LIBXSMM_GEMM_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
+    LIBXSMM_BLAS_CONST libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 512);
+    LIBXSMM_BLAS_CONST libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
+    LIBXSMM_BLAS_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
     const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 13 / LIBXSMM_MAX(1, libxsmm_icbrt_u64(1ULL * m * n * k) >> 10), 3);
 # if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
     const double env_check = (0 == getenv("CHECK") ? 1.0 : atof(getenv("CHECK")));
@@ -90,8 +90,8 @@ int main(int argc, char* argv[])
       Eigen::ThreadPool threadpool(nthreads);
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
       Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n);
-      LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
-      LIBXSMM_GEMM_CONST ITYPE alpha(1), beta(0);
+      LIBXSMM_BLAS_CONST char transa = 'N', transb = 'N';
+      LIBXSMM_BLAS_CONST ITYPE alpha(1), beta(0);
       unsigned long long start;
       double d1;
       {

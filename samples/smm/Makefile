@@ -7,7 +7,7 @@ OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = -DLIBXSMM_GEMM_CONST
+DFLAGS = -DLIBXSMM_BLAS_CONST
 
 # Fortran code here does not allow for PEDANTIC=2
 override PEDANTIC = 1
