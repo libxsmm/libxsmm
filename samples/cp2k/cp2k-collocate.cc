@@ -13,7 +13,7 @@
 
 #if !defined(XSMM) && 1
 # define XSMM
-#elif !defined(TRIANGULAR) && 0
+#elif !defined(TRIANGULAR) && 1
 # define TRIANGULAR
 #endif
 #if !defined(SCRATCH) && 1
@@ -181,6 +181,8 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
       xyz_alpha_beta.ld());
 # endif
 #else
+    memset(xyz_alpha_beta.template at<CPU>(co.size(0) - 1, 0, 0), 0,
+      sizeof(T) * length_[0] * xyz_alpha_beta.ld());
     cblas_dger(CblasRowMajor,
       length_[0], length_[1],
       co(co.size(0) - 1, 0, 0),
@@ -302,10 +304,23 @@ template <typename T> T test_collocate_core(const int i, const int j, const int 
   int length[3] = {i, j, k};
   for (int s = 0; s < static_cast<int>(pol.size()); s++)
     pol[s] = distribution(generator);
-
+#if !defined(TRIANGULAR)
   for (int s = 0; s < static_cast<int>(co.size()); s++)
     co[s] = distribution(generator);
-
+#else
+  co.zero();
+  for (int a1 = 0; a1 < co.size(0); a1++) {
+    // for fixed a1, the matrix should be triangular of this form
+    // b1 b2 b3
+    // b4 b5
+    // b6
+    for (int b1 = 0; b1 < (co.size(1) - a1); b1++) {
+      for (int g1 = 0; g1 < (co.size(1) - a1 - b1); g1++) {
+        co(a1, b1, g1) = distribution(generator);
+      }
+    }
+  }
+#endif
   Vgemm.zero();
 
   timer.start("collocate_gemm");

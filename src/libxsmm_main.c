@@ -1820,7 +1820,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     if (0 != request->user_size) {
       void* user_data = &code->ptr;
       result = libxsmm_xmalloc((void**)user_data, request->user_size, 0/*auto*/,
-        LIBXSMM_MALLOC_FLAG_DEFAULT, &extra, sizeof(extra));
+        LIBXSMM_MALLOC_FLAG_PRIVATE, &extra, sizeof(extra));
     }
     else {
       result = EXIT_SUCCESS;
@@ -2340,10 +2340,11 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
 }
 
 
-LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* value, size_t value_size)
+LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, const void* value, size_t value_size)
 {
-  int result;
-  if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size && (NULL != value || 0 == value_size)) {
+  static int error_once = 0;
+  void* result;
+  if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size) {
     libxsmm_descriptor wrap;
     void* dst;
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
@@ -2358,16 +2359,21 @@ LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* 
       if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(dst, &size, NULL/*flags*/, NULL/*extra*/)
         && value_size <= size)
       {
-        memcpy(dst, value, value_size);
-        result = EXIT_SUCCESS;
+        if (NULL != value) memcpy(dst, value, value_size);
+        result = dst;
       }
-      else result = EXIT_FAILURE;
+      else {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM ERROR: value too large for previously registered key!\n");
+        }
+        result = NULL;
+      }
     }
-    else if (0 == value_size) result = EXIT_SUCCESS;
-    else result = EXIT_FAILURE;
+    else result = NULL;
   }
   else {
-    static int error_once = 0;
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
@@ -2379,7 +2385,7 @@ LIBXSMM_API int libxsmm_xregister(const void* key, size_t key_size, const void* 
           LIBXSMM_DESCRIPTOR_MAXSIZE);
       }
     }
-    result = EXIT_FAILURE;
+    result = NULL;
   }
   return result;
 }
@@ -2398,7 +2404,7 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
     wrap.kind = LIBXSMM_KERNEL_KIND_USER;
-    /* LIBXSMM_INIT is not necessary here */
+    LIBXSMM_INIT
     result = internal_find_code(&wrap, key_size, 0/*user_size*/).ptr;
   }
 #if !defined(NDEBUG)
