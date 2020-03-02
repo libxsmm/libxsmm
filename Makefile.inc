@@ -766,6 +766,9 @@ PGI ?= 0
 LD = $(CC)
 XLD = $(CXX)
 
+# prepend compiler-local library directory
+LIBFIND := $(call qapath,$(call qdir,$(call which,$(LD)))/../lib) $(LIBFIND)
+
 ifneq (Windows_NT,$(UNAME))
 ifneq (,$(strip $(PIC)))
   ifneq (,$(call ctest,$(CC),-f$(PIC)))
@@ -2057,7 +2060,7 @@ else ifneq (0,$(BLAS)) # generic
       BLASTEST = $(SLDFLAGS) $(patsubst %,-L%,$(BLASDIR))
     endif
     BLASLIBFILE = $(call libpath,$(LD),$(BLASTEST),openblas$(BLAS_THREADS)$(BLAS_BITS))
-    ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
+    ifeq (,$(BLASLIBFILE)) # newer distributions symlink non-decorated library to threaded OpenBLAS
       BLASLIBFILE = $(call libpath,$(LD),$(BLASTEST),openblas$(BLAS_BITS))
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
@@ -2108,14 +2111,14 @@ else ifneq (0,$(BLAS)) # generic
     endif
     BLASREF ?= 0
     ifneq (0,$(BLASREF)) # BLAS (reference)
-      ifneq (0,$(DEPSTATIC))
-        ifneq (,$(LIBGFORTRAN))
-          BLASTEST += $(XLIB_BEGIN) $(LIBGFORTRAN) $(LIBM) $(XLIB_END)
-        else ifeq (3,$(GCC))
-          BLASTEST += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
-        endif
-      endif
       ifeq (0,$(PGI))
+        ifneq (0,$(DEPSTATIC))
+          ifneq (,$(LIBGFORTRAN))
+            BLASTEST += $(XLIB_BEGIN) $(LIBGFORTRAN) $(LIBM) $(XLIB_END)
+          else ifeq (3,$(GCC))
+            BLASTEST += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
+          endif
+        endif
         QUADMATH = $(call ldlib,$(LD),$(SLDFLAGS),quadmath)
         ifneq (,$(QUADMATH))
           BLASTEST += $(XLIB_BEGIN) $(QUADMATH) $(call ldlib,$(LD),$(SLDFLAGS),m) $(XLIB_END)
@@ -2125,6 +2128,8 @@ else ifneq (0,$(BLAS)) # generic
         else
           BLAS_CLDFLAGS += $(BLASTEST)
         endif
+      else # PGI
+        BLAS_FLAGS += -D__CBLAS
       endif
     endif
     ifneq (,$(filter-out 0,$(OPENBLAS) $(BLASREF))) # OpenBLAS or RefBLAS
