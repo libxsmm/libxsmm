@@ -2322,7 +2322,7 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
       LIBXSMM_MEMZERO127(info); /* info->nstatic = 0; info->size = 0; */
       info->nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(libxsmm_descriptor));
       info->capacity = LIBXSMM_CAPACITY_REGISTRY;
-#if defined(LIBXSMM_CACHE_MAXSIZE)
+#if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       info->ncache = internal_cache_size;
 #else
       info->ncache = 0;
