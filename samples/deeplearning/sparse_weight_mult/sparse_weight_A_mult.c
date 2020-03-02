@@ -17,8 +17,9 @@ int main(int argc, char* argv[]) {
   unsigned int N =     ( argc > 1 ) ? atoi(argv[1]) : 64;
   unsigned int C =     ( argc > 2 ) ? atoi(argv[2]) : 512;
   unsigned int K =     ( argc > 3 ) ? atoi(argv[3]) : 32;
-  double sparse_frac = ( argc > 4 ) ? atof(argv[4]) : 0.90;
-  unsigned int REPS  = ( argc > 5 ) ? atoi(argv[5]) : 1;
+  unsigned int nb =    ( argc > 4 ) ? atoi(argv[4]) : 16;
+  double sparse_frac = ( argc > 5 ) ? atof(argv[5]) : 0.90;
+  unsigned int REPS  = ( argc > 6 ) ? atoi(argv[6]) : 1;
 
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -34,11 +35,12 @@ int main(int argc, char* argv[]) {
   float l_max_error = 0.0;
   unsigned int l_k, l_n;
   unsigned int l_i, l_j, l_jj;
+  unsigned int NB = N / nb;
 
-  LIBXSMM_VLA_DECL(2, float, l_p_a_de, l_a_de, K);
-  LIBXSMM_VLA_DECL(3, float, l_p_b, l_b, N/16, 16);
-  LIBXSMM_VLA_DECL(3, float, l_p_c_asm_csr, l_c_asm_csr, N/16, 16);
-  LIBXSMM_VLA_DECL(3, float, l_p_c_gold, l_c_gold, N/16, 16);
+  LIBXSMM_VLA_DECL(2, float, l_p_a_de, l_a_de, C);
+  LIBXSMM_VLA_DECL(3, float, l_p_b, l_b, NB, nb);
+  LIBXSMM_VLA_DECL(3, float, l_p_c_asm_csr, l_c_asm_csr, NB, nb);
+  LIBXSMM_VLA_DECL(3, float, l_p_c_gold, l_c_gold, NB, nb);
 
   libxsmm_descriptor_blob l_xgemm_blob;
   const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
@@ -46,21 +48,17 @@ int main(int argc, char* argv[]) {
 
   unsigned long long l_start, l_end;
   double l_total;
-  unsigned int NB, nb;
   unsigned int nnz = 0;
 
-  if (argc != 6 && argc != 1) {
+  if (argc != 7 && argc != 1) {
     fprintf( stderr, "arguments failure\n" );
     return -1;
   }
 
-  if ( N % 16 != 0 ) {
-    fprintf( stderr, "N needs to be disable by 16\n" );
+  if ( N % nb != 0 ) {
+    fprintf( stderr, "N needs to be disable by nb\n" );
     return -1;
   }
-
-  NB = N / 16;
-  nb = 16;
 
   /* touch B */
   for ( l_i = 0; l_i < C; l_i++) {
