@@ -13,7 +13,8 @@
 
 #if !defined(XSMM) && 1
 # define XSMM
-#elif !defined(TRIANGULAR) && 1
+#endif
+#if !defined(TRIANGULAR) && 1
 # define TRIANGULAR
 #endif
 #if !defined(SCRATCH) && 1
@@ -65,21 +66,39 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
     mdarray<T, 3, CblasRowMajor> xyz_alpha_beta(co.size(0), length_[0], length_[1]);
 #endif
 #if defined(XSMM)
-    const libxsmm_mmfunction<T> xmm1(LIBXSMM_GEMM_FLAG_NONE, length_[1], co.size(2), co.size(2),
-      p_alpha_beta_reduced_.ld(), co.ld(), C.ld(),
-      1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
-    const libxsmm_mmfunction<T> xmm2(LIBXSMM_GEMM_FLAG_TRANS_B, length_[1], length_[0], co.size(2),
-      C.ld(), p_alpha_beta_reduced_.ld(), xyz_alpha_beta.ld(),
-      1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
-    const libxsmm_mmfunction<T> xmm3(LIBXSMM_GEMM_FLAG_TRANS_B, length_[2], length_[0] * length_[1], co.size(2),
-      p_alpha_beta_reduced_.ld(), xyz_alpha_beta.size(1) * xyz_alpha_beta.ld(), ld,
-      1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+    struct collocate {
+      int i, j, k, lmax;
+    } key = { static_cast<int>(Vtmp.size(0)), static_cast<int>(Vtmp.size(1)), static_cast<int>(Vtmp.size(2)), static_cast<int>(co.size(0)) };
+    libxsmm_mmfunction<T>* kernelset = static_cast<libxsmm_mmfunction<T>*>(libxsmm_xdispatch(&key, sizeof(key)));
+    if (NULL == kernelset) {
+# if defined(TRIANGULAR)
+      kernelset = static_cast<libxsmm_mmfunction<T>*>(libxsmm_xregister(&key, sizeof(key),
+        sizeof(libxsmm_mmfunction<T>) * (static_cast<size_t>(2) * key.lmax - 1), NULL));
+      for (int a1 = 0; a1 < (key.lmax - 1); a1++) {
+        kernelset[2*a1+0] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_NONE, length_[1], co.size(1) - a1, co.size(2) - a1,
+          p_alpha_beta_reduced_.ld(), co.ld(), C.ld(), 1/*alpha*/, 0/*beta*/, LIBXSMM_GEMM_PREFETCH_AL2/*_AHEAD*/);
+        kernelset[2*a1+1] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_TRANS_B, length_[1], length_[0], co.size(2) - a1,
+          C.ld(), p_alpha_beta_reduced_.ld(), xyz_alpha_beta.ld(), 1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+      }
+      kernelset[2*(key.lmax-1)] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_TRANS_B, length_[2], length_[0] * length_[1], co.size(2),
+        p_alpha_beta_reduced_.ld(), xyz_alpha_beta.size(1) * xyz_alpha_beta.ld(), ld, 1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+# else
+      kernelset = static_cast<libxsmm_mmfunction<T>*>(libxsmm_xregister(&key, sizeof(key), 3 * sizeof(libxsmm_mmfunction<T>), NULL));
+      kernelset[0] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_NONE, length_[1], co.size(2), co.size(2),
+        p_alpha_beta_reduced_.ld(), co.ld(), C.ld(), 1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
+      kernelset[1] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_TRANS_B, length_[1], length_[0], co.size(2),
+        C.ld(), p_alpha_beta_reduced_.ld(), xyz_alpha_beta.ld(), 1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_AUTO);
+      kernelset[2] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_TRANS_B, length_[2], length_[0] * length_[1], co.size(2),
+        p_alpha_beta_reduced_.ld(), xyz_alpha_beta.size(1) * xyz_alpha_beta.ld(), ld, 1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
+# endif
+    }
 #endif
     timer.stop("init");
     timer.start("gemm");
     const T* aj = co.template at<CPU>(0, 0, 0);
 #if defined(TRIANGULAR)
     T* cj = xyz_alpha_beta.template at<CPU>(0, 0, 0);
+    T *const bi = C.template at<CPU>(0, 0);
 #else
     T* cj = C.template at<CPU>(0, 0, 0);
 #endif
@@ -91,9 +110,11 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
 #else
       T *const ci = cj; cj = C.template at<CPU>(a1 + 1, 0, 0);
 #endif
-#if defined(XSMM)
-      xmm1(src_y, ai, ci, src_y, aj, cj);
-#elif defined(TRIANGULAR)
+#if defined(TRIANGULAR)
+# if defined(XSMM)
+      kernelset[2*a1+0](src_y, ai, bi, src_y, aj, bi);
+      kernelset[2*a1+1](bi, src_z, ci/*, bi, src_z, cj*/);
+# else
       cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
         co.size(1) - a1, length_[1], co.size(2) - a1,
         1.0,
@@ -102,18 +123,21 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
         src_y, // Y_{beta,j}
         p_alpha_beta_reduced_.ld(),
         0.0,
-        C.template at<CPU>(0, 0), // tmp_{alpha, gamma, j}
+        bi, // tmp_{alpha, gamma, j}
         C.ld());
       cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
         length_[0], length_[1], co.size(2) - a1,
         1.0,
         src_z, // Z_{gamma,k} -> I need to transpose it I want Z_{k,gamma}
         p_alpha_beta_reduced_.ld(),
-        C.template at<CPU>(0, 0), // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
+        bi, // C_{gamma, j} = Coef_{alpha,gamma,beta} Y_{beta,j} (fixed alpha)
         C.ld(),
         0.0,
         ci, // contains xyz_{alpha, kj} the order kj is important
         xyz_alpha_beta.ld());
+# endif
+#elif defined(XSMM)
+      kernelset[0](src_y, ai, ci, src_y, aj, cj);
 #else
       cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
         co.size(2), length_[1], co.size(2),
@@ -130,7 +154,7 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
     // execute remainder
 #if !defined(TRIANGULAR)
 # if defined(XSMM)
-    xmm1(src_y, aj, cj, src_y, aj, cj); // with pseudo-prefetch
+    kernelset[0](src_y, aj, cj, src_y, aj, cj); // with pseudo-prefetch
 # else
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
       co.size(2), length_[1], co.size(2),
@@ -144,14 +168,14 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
       C.ld());
 # endif
     // run loop excluding the last element
-    T* bj = C.template at<CPU>(0, 0, 0);
+    const T* bj = C.template at<CPU>(0, 0, 0);
     cj = xyz_alpha_beta.template at<CPU>(0, 0, 0);
     for (int a1 = 0; a1 < static_cast<int>(co.size(0) - 1); a1++) {
       T *const bi = bj, *const ci = cj;
       bj = C.template at<CPU>(a1 + 1, 0, 0);
       cj = xyz_alpha_beta.template at<CPU>(a1 + 1, 0, 0);
 # if defined(XSMM)
-      xmm2(bi, src_z, ci, bj, src_z, cj);
+      kernelset[1](bi, src_z, ci, bj, src_z, cj);
 # else
       cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
         length_[0], length_[1], co.size(2),
@@ -167,7 +191,7 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
     }
     // execute remainder
 # if defined(XSMM)
-    xmm2(bj, src_z, cj, bj, src_z, cj); // with pseudo-prefetch
+    kernelset[1](bj, src_z, cj, bj, src_z, cj); // with pseudo-prefetch
 # else
     cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
       length_[0], length_[1], co.size(2),
@@ -186,15 +210,16 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
     cblas_dger(CblasRowMajor,
       length_[0], length_[1],
       co(co.size(0) - 1, 0, 0),
-      p_alpha_beta_reduced_.template at<CPU>(0, 0, 0),
-      1,
-      p_alpha_beta_reduced_.template at<CPU>(1, 0, 0),
-      1,
+      src_z, 1, src_y, 1,
       xyz_alpha_beta.template at<CPU>(co.size(0) - 1, 0, 0),
       xyz_alpha_beta.ld());
 #endif
 #if defined(XSMM)
-    xmm3(src_x, xyz_alpha_beta.template at<CPU>(0, 0, 0), dst);
+# if defined(TRIANGULAR)
+    kernelset[2*(key.lmax-1)](src_x, xyz_alpha_beta.template at<CPU>(0, 0, 0), dst);
+# else
+    kernelset[2](src_x, xyz_alpha_beta.template at<CPU>(0, 0, 0), dst);
+# endif
 #else
     cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
       length_[0] * length_[1], length_[2], co.size(2),
