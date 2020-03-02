@@ -14,7 +14,8 @@
 #if !defined(XSMM) && 1
 # define XSMM
 #endif
-#if !defined(TRIANGULAR) && 1
+#if (defined(HAVE_MKL) || defined(__MKL) || defined(OPENBLAS) || defined(__OPENBLAS) || defined(__CBLAS)) && \
+  !defined(TRIANGULAR) && 1
 # define TRIANGULAR
 #endif
 #if !defined(SCRATCH) && 1
