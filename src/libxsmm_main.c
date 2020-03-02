@@ -227,6 +227,7 @@ LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_mcopy);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_tcopy);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_trsm);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_trmm);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_user);
 LIBXSMM_APIVAR_DEFINE(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR_DEFINE(const char* internal_build_state);
 /** Time stamp (startup time of library). */
@@ -492,6 +493,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         if (0 != ngemms || 0 != internal_statistic_num_gemv
           || 0 != internal_statistic_num_mcopy || 0 != internal_statistic_num_tcopy
           || 0 != libxsmm_statistic_num_spmdm
+          || 0 != internal_statistic_num_user
           || 0 != internal_registry_nleaks)
         {
           const char sep[] = " ", *s = "";
@@ -501,6 +503,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
           if (0 != internal_statistic_num_mcopy) { fprintf(stderr, "%smcopy=%u", s, internal_statistic_num_mcopy); s = sep; }
           if (0 != internal_statistic_num_tcopy) { fprintf(stderr, "%stcopy=%u", s, internal_statistic_num_tcopy); s = sep; }
           if (0 != libxsmm_statistic_num_spmdm) { fprintf(stderr, "%sspmdm=%u", s, libxsmm_statistic_num_spmdm); s = sep; }
+          if (0 != internal_statistic_num_user) { fprintf(stderr, "%suser=%u", s, internal_statistic_num_user); s = sep; }
           if (0 != internal_registry_nleaks) { fprintf(stderr, "%snleaks=%u", s, internal_registry_nleaks); s = sep; }
           fprintf(stderr, ")");
         }
@@ -1097,6 +1100,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             case LIBXSMM_KERNEL_KIND_TRMM: {
               ++internal_statistic_num_trmm;
             } break;
+            case LIBXSMM_KERNEL_KIND_USER: {
+              ++internal_statistic_num_user;
+            } break;
             default: if (LIBXSMM_KERNEL_UNREGISTERED <= registry_keys[i].kind) {
               ++errors;
             }
@@ -1110,7 +1116,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             }
             if (LIBXSMM_CAPACITY_REGISTRY == (rest + errors + internal_statistic_num_gemv +
               internal_statistic_num_mcopy + internal_statistic_num_tcopy +
-              internal_statistic_num_trsm + internal_statistic_num_trmm))
+              internal_statistic_num_trsm + internal_statistic_num_trmm +
+              internal_statistic_num_user))
             {
               fprintf(stderr, "LIBXSMM WARNING: code registry was exhausted!\n");
             }
