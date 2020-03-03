@@ -33,6 +33,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_SYNC_GENERIC_PID) && 1
+# define LIBXSMM_SYNC_GENERIC_PID
+#endif
+
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
   uint8_t id;
@@ -631,26 +635,43 @@ LIBXSMM_API unsigned int libxsmm_get_pid(void)
 }
 
 
+LIBXSMM_API_INTERN unsigned int internal_get_tid(void);
+LIBXSMM_API_INTERN unsigned int internal_get_tid(void)
+{
+  const unsigned int nthreads = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED);
+#if defined(LIBXSMM_NTHREADS_USE)
+  static int error_once = 0;
+  if (LIBXSMM_NTHREADS_MAX < nthreads
+    && 0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: maximum number of threads is exhausted!\n");
+  }
+  return (nthreads - 1) % LIBXSMM_NTHREADS_MAX;
+#else
+  return (nthreads - 1);
+#endif
+}
+
+
 LIBXSMM_API unsigned int libxsmm_get_tid(void)
 {
 #if (0 != LIBXSMM_SYNC)
+# if defined(LIBXSMM_SYNC_GENERIC_PID)
   static LIBXSMM_TLS unsigned int tid = 0xFFFFFFFF;
-  if (0xFFFFFFFF == tid) {
-    const unsigned int nthreads = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED);
-# if defined(LIBXSMM_NTHREADS_USE)
-    static int error_once = 0;
-    if (LIBXSMM_NTHREADS_MAX < nthreads
-      && 0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: maximum number of threads is exhausted!\n");
-    }
-    tid = (nthreads - 1) % LIBXSMM_NTHREADS_MAX;
-# else
-    tid = (nthreads - 1);
-# endif
-  }
+  if (0xFFFFFFFF == tid) tid = internal_get_tid();
   return tid;
+# else
+  void* tls = LIBXSMM_TLS_GETVALUE(libxsmm_tlskey);
+  if (NULL == tls) {
+    static unsigned int tid[LIBXSMM_NTHREADS_MAX];
+    const int i = internal_get_tid();
+    tid[i] = i; tls = tid + i;
+    /* coverity[check_return] */
+    LIBXSMM_TLS_SETVALUE(libxsmm_tlskey, tls);
+  }
+  return *(unsigned int*)tls;
+# endif
 #else
   return 0;
 #endif

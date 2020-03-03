@@ -858,5 +858,9 @@ LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
 /** Security-enhanced environment. */
 LIBXSMM_APIVAR_PRIVATE(int libxsmm_se);
 
+#if (0 != LIBXSMM_SYNC)
+LIBXSMM_APIVAR_PRIVATE(LIBXSMM_TLS_TYPE libxsmm_tlskey);
+#endif
+
 #endif /*LIBXSMM_MAIN_H*/
 

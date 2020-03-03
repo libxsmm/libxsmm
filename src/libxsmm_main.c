@@ -260,6 +260,10 @@ LIBXSMM_APIVAR_PRIVATE_DEF(int libxsmm_se);
 LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_nosync);
 
+#if (0 != LIBXSMM_SYNC)
+LIBXSMM_APIVAR_PRIVATE_DEF(LIBXSMM_TLS_TYPE libxsmm_tlskey);
+#endif
+
 
 LIBXSMM_API_INLINE void internal_update_mmstatistic(const libxsmm_gemm_descriptor* desc,
   unsigned int ntry, unsigned int ncol, unsigned int njit, unsigned int nsta)
@@ -880,22 +884,21 @@ LIBXSMM_API_INTERN void internal_init(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
-    static unsigned int ninit = 0;
-#if (0 != LIBXSMM_SYNC)
-    static unsigned int gid = 0;
-    const unsigned int tid = 1 + libxsmm_get_tid();
+    static unsigned int ninit = 0, gid = 0;
+    const unsigned int tid = LIBXSMM_ATOMIC_ADD_FETCH(&ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     LIBXSMM_ASSERT(0 < tid);
-#endif
     /* libxsmm_ninit (1: initialization started, 2: library initialized, higher: to invalidate code-TLS) */
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+    if (1 == tid) {
       libxsmm_timer_tickint s0 = libxsmm_timer_tick_rtc(); /* warm-up */
       libxsmm_timer_tickint t0 = libxsmm_timer_tick_tsc(); /* warm-up */
       s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick_tsc(); /* start timing */
       assert(0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST)); /* !LIBXSMM_ASSERT */
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
-#if (0 != LIBXSMM_SYNC)
       gid = tid; /* protect initialization */
+#if (0 != LIBXSMM_SYNC)
+      /* coverity[check_return] */
+      LIBXSMM_TLS_CREATE(&libxsmm_tlskey);
       { /* construct and initialize locks */
 # if defined(LIBXSMM_REGLOCK_TRY)
         const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
@@ -1014,7 +1017,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
-#if (0 != LIBXSMM_SYNC)
     else if (gid != tid) { /* avoid recursion */
       while (2 > LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) {
 # if 1
@@ -1025,7 +1027,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       }
     }
     if (2 <= LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED))
-#endif /*0 != LIBXSMM_SYNC*/
     internal_init();
   }
 }
@@ -1167,6 +1168,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr);
 # endif
     LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global);
+    /* coverity[check_return] */
+    LIBXSMM_TLS_DESTROY(libxsmm_tlskey);
 #endif
   }
 }
