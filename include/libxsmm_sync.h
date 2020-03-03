@@ -329,7 +329,7 @@ typedef enum libxsmm_atomic_kind {
         } \
         else { \
           libxsmm_sync_cycle_npause_ = (NPAUSE); \
-          LIBXSMM_SYNC_YIELD(); \
+          LIBXSMM_SYNC_YIELD; \
           ELSE \
         } \
       } while(((EXP_STATE) & 1) != (*(DST_PTR) & 1)); \
@@ -450,7 +450,7 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 #     define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 #   endif
-#   define LIBXSMM_SYNC_YIELD YieldProcessor
+#   define LIBXSMM_SYNC_YIELD YieldProcessor()
 # else
 #   define LIBXSMM_TLS_TYPE pthread_key_t
 #   define LIBXSMM_TLS_CREATE(KEYPTR) pthread_key_create(KEYPTR, NULL)
@@ -458,14 +458,14 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_TLS_SETVALUE(KEY, PTR) pthread_setspecific(KEY, PTR)
 #   define LIBXSMM_TLS_GETVALUE(KEY) pthread_getspecific(KEY)
 #   if defined(__APPLE__) && defined(__MACH__)
-#     define LIBXSMM_SYNC_YIELD pthread_yield_np
+#     define LIBXSMM_SYNC_YIELD pthread_yield_np()
 #   else
 #     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
       LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_THROW;
 #     else
       LIBXSMM_EXTERN void pthread_yield(void);
 #     endif
-#     define LIBXSMM_SYNC_YIELD pthread_yield
+#     define LIBXSMM_SYNC_YIELD pthread_yield()
 #   endif
 #   if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && defined(__APPLE__) && defined(__MACH__)
 #     define LIBXSMM_LOCK_SPINLOCK mutex
@@ -715,6 +715,7 @@ typedef enum libxsmm_atomic_kind {
 #   endif
 # endif
 #else /* no synchronization */
+# define LIBXSMM_SYNC_YIELD LIBXSMM_SYNC_PAUSE
 # define LIBXSMM_LOCK_SPINLOCK spinlock_dummy
 # define LIBXSMM_LOCK_MUTEX mutex_dummy
 # define LIBXSMM_LOCK_RWLOCK rwlock_dummy
