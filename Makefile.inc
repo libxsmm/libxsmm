@@ -1820,27 +1820,27 @@ ifeq (Darwin,$(UNAME))
   FCFLAGS += -Wa,-q
 endif
 
-ifneq (0,$(THREADS))
-  ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
+ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
+  ifneq (,$(filter-out 0,$(THREADS) $(BLAS)))
     CFLAGS += -pthread
     CXXFLAGS += -pthread
-    FLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
-    ifneq (Windows_NT,$(UNAME))
-      ifneq (0,$(INTEL))
-        ifeq (0,$(OFFLOAD))
-          CLDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
-        else
-          CLDFLAGS += -pthread
-        endif
-      else ifneq (Darwin,$(UNAME))
-        CLDFLAGS += -pthread
-      else ifeq (0,$(CLANG))
+  endif
+  FLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
+  ifneq (Windows_NT,$(UNAME))
+    ifneq (0,$(INTEL))
+      ifeq (0,$(OFFLOAD))
+        CLDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
+      else
         CLDFLAGS += -pthread
       endif
+    else ifneq (Darwin,$(UNAME))
+      CLDFLAGS += -pthread
+    else ifeq (0,$(CLANG))
+      CLDFLAGS += -pthread
     endif
-  else ifneq (0,$(PGI))
-    LIBATOMIC ?= 1
   endif
+else ifneq (0,$(PGI))
+  LIBATOMIC ?= 1
 endif
 
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
