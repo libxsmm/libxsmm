@@ -116,7 +116,7 @@ $(OUTDIR)/$(OUTNAME)_xsmm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(LIBDE
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(call cleanld,$(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/$(OUTNAME)_batch: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_batch-c.o $(LIBDEP) $(EXTDEP) $(NOBLASDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_batch-c.o $(call cleanld,$(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_batch-c.o $(call cleanld,$(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/$(OUTNAME)_blas: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blas-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blas-c.o $(call cleanld,$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
