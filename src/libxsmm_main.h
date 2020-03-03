@@ -849,10 +849,12 @@ LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_scratch_allocator_context);
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_scratch_pools);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR_PRIVATE(double libxsmm_scratch_scale);
+/** Number of seconds per RDTSC-cycle (zero or negative if RDTSC invalid). */
+LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 /** Counts the number of attempts to create an SPMDM-handle. */
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
-/** Number of seconds per RDTSC-cycle (zero or negative if RDTSC is not constant/available). */
-LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
+/** Counts the maximum number of thread that have been active. */
+LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
 /** Security-enhanced environment. */
 LIBXSMM_APIVAR_PRIVATE(int libxsmm_se);
 

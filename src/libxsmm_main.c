@@ -252,8 +252,9 @@ LIBXSMM_APIVAR_PRIVATE_DEF(const void* libxsmm_default_allocator_context);
 LIBXSMM_APIVAR_PRIVATE_DEF(const void* libxsmm_scratch_allocator_context);
 LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_scratch_pools);
 LIBXSMM_APIVAR_PRIVATE_DEF(double libxsmm_scratch_scale);
-LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_statistic_num_spmdm);
 LIBXSMM_APIVAR_PRIVATE_DEF(double libxsmm_timer_scale);
+LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_statistic_num_spmdm);
+LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_thread_count);
 LIBXSMM_APIVAR_PRIVATE_DEF(int libxsmm_se);
 /* definition of corresponding variables */
 LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
