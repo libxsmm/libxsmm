@@ -525,7 +525,11 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         }
       }
       if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-        fprintf(stderr, "Uptime: %f s\n", libxsmm_timer_duration(internal_timer_start, libxsmm_timer_tick()));
+        fprintf(stderr, "Uptime: %f s", libxsmm_timer_duration(internal_timer_start, libxsmm_timer_tick()));
+        if (1 < libxsmm_thread_count && INT_MAX == libxsmm_verbosity) {
+          fprintf(stderr, " (nthreads=%u)", libxsmm_thread_count);
+        }
+        fprintf(stderr, "\n");
       }
     }
     else {
