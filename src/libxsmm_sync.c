@@ -639,7 +639,7 @@ LIBXSMM_API_INTERN unsigned int internal_get_tid(void);
 LIBXSMM_API_INTERN unsigned int internal_get_tid(void)
 {
   const unsigned int nthreads = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED);
-#if defined(LIBXSMM_NTHREADS_USE)
+#if !defined(NDEBUG)
   static int error_once = 0;
   if (LIBXSMM_NTHREADS_MAX < nthreads
     && 0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -647,10 +647,9 @@ LIBXSMM_API_INTERN unsigned int internal_get_tid(void)
   {
     fprintf(stderr, "LIBXSMM ERROR: maximum number of threads is exhausted!\n");
   }
-  return (nthreads - 1) % LIBXSMM_NTHREADS_MAX;
-#else
-  return (nthreads - 1);
 #endif
+  LIBXSMM_ASSERT(LIBXSMM_NTHREADS_MAX == LIBXSMM_UP2POT(LIBXSMM_NTHREADS_MAX));
+  return LIBXSMM_MOD2(nthreads - 1, LIBXSMM_NTHREADS_MAX);
 }
 
 
