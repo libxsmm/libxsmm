@@ -800,7 +800,6 @@ else # fallback
 endif
 endif
 
-# COMMON ?= 1
 ifneq (,$(COMMON))
 ifneq (0,$(COMMON))
   CFLAGS += $(call ctest,$(CC),-fcommon)
@@ -1115,9 +1114,11 @@ ifneq (0,$(INTEL))
     endif
   else
     ifneq (,$(filter 0 1,$(ICX)))
-    ifeq (,$(filter-out 0,$(FORCE_CXX)))
-      CSTD = -std=c89
-    endif
+      ifeq (,$(filter-out 0,$(FORCE_CXX)))
+        CSTD = -std=c89
+      endif
+      CXXFLAGS += -Wno-pass-failed
+      CFLAGS += -Wno-pass-failed
     endif
     ifeq (,$(strip $(GFC)))
       FCFLAGS += $(FFORM_FLAG)

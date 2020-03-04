@@ -2398,7 +2398,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t val
         fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xregister specified!\n");
       }
       else {
-        fprintf(stderr, "LIBXSMM ERROR: libxsmm_xregister has maximum key-size of %u Byte!\n",
+        fprintf(stderr, "LIBXSMM ERROR: libxsmm_xregister has maximum key-size of %i Byte!\n",
           LIBXSMM_DESCRIPTOR_MAXSIZE);
       }
     }
