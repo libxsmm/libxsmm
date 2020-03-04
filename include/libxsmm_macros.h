@@ -154,7 +154,7 @@
 
 /* LIBXSMM_ATTRIBUTE_USED: mark library functions as used to avoid warning */
 #if defined(__GNUC__) || defined(__clang__) || (defined(__INTEL_COMPILER) && !defined(_WIN32))
-# if !defined(__cplusplus)
+# if !defined(__cplusplus) || !defined(__clang__)
 #   define LIBXSMM_ATTRIBUTE_COMMON LIBXSMM_ATTRIBUTE(common)
 # else
 #   define LIBXSMM_ATTRIBUTE_COMMON
