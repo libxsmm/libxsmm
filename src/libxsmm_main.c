@@ -1023,6 +1023,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       internal_init();
     }
   }
+  LIBXSMM_ASSERT(1 < libxsmm_ninit);
 }
 
 

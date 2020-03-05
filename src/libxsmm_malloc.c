@@ -2620,7 +2620,7 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 
 LIBXSMM_API void libxsmm_set_scratch_limit(size_t nbytes)
 {
-  LIBXSMM_INIT
+  /* !LIBXSMM_INIT */
   internal_malloc_scratch_limit = nbytes;
 }
 
@@ -2628,7 +2628,7 @@ LIBXSMM_API void libxsmm_set_scratch_limit(size_t nbytes)
 LIBXSMM_API size_t libxsmm_get_scratch_limit(void)
 {
   size_t result;
-  LIBXSMM_INIT
+  /* !LIBXSMM_INIT */
   if (LIBXSMM_SCRATCH_DEFAULT != internal_malloc_scratch_limit) {
     result = internal_malloc_scratch_limit;
   }
@@ -2644,7 +2644,7 @@ LIBXSMM_API size_t libxsmm_get_scratch_limit(void)
 
 LIBXSMM_API void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t* hi)
 {
-  LIBXSMM_INIT
+  /* !LIBXSMM_INIT */
 #if !(defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) || defined(LIBXSMM_INTERCEPT_DYNAMIC))
   LIBXSMM_UNUSED(enabled);
   internal_malloc_kind = 0;
