@@ -237,6 +237,14 @@
   } \
 }
 
+#if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
+# undef LIBXSMM_INIT
+# define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(1 < libxsmm_ninit, "LIBXSMM is not initialized");
+# define LIBXSMM_INIT_COMPLETED
+#else
+# define LIBXSMM_INIT if (2 > libxsmm_ninit) libxsmm_init();
+#endif
+
 /** Map to appropriate BLAS function (or fall-back). The mapping is used e.g., inside of LIBXSMM_BLAS_XGEMM. */
 #define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
 #if (0 != LIBXSMM_BLAS) /* Helper macro to eventually (if defined) call libxsmm_init */
@@ -247,11 +255,7 @@
 #   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm_function
 #   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv_function
 #   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv_function
-#   undef LIBXSMM_INIT
-#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized");
-#   define LIBXSMM_INIT_COMPLETED
 # else
-#   define LIBXSMM_INIT if (0 == libxsmm_ninit) libxsmm_init();
 #   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch()
 #   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch()
 #   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm()
@@ -260,13 +264,6 @@
 #   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv()
 # endif
 #else /* no BLAS */
-# if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
-#   undef LIBXSMM_INIT
-#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized");
-#   define LIBXSMM_INIT_COMPLETED
-# else
-#   define LIBXSMM_INIT if (0 == libxsmm_ninit) libxsmm_init();
-# endif
 # define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_blas_error("dgemm_batch")
 # define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_blas_error("sgemm_batch")
 # define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_blas_error("dgemm")

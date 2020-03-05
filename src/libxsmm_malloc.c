@@ -385,7 +385,7 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
         || pointer == convert.ptr || pointer == result->context
         || pointer >= buffer || NULL == pointer
         || maxsize < result->size || 0 == result->size
-        || 1 >= libxsmm_ninit /* before checksum calculation */
+        || 2 > libxsmm_ninit /* before checksum calculation */
 #if !defined(LIBXSMM_MALLOC_CRC_OFF) /* last check: checksum over info */
 # if defined(LIBXSMM_MALLOC_CRC_LIGHT)
         || result->hash != LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &result)

@@ -314,7 +314,7 @@
 # define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE)
 #else
 # define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 0 != libxsmm_ninit ? libxsmm_verbosity : 1)
+    GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
 # define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
     GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1)
 #endif
