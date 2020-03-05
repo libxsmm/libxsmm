@@ -18,10 +18,11 @@
 #else
 # define LIBXSMM_MEMSET127(PTRDST, VALUE, SIZE) { \
   char *const libxsmm_memset127_dst_ = (char*)(PTRDST); \
-  union { size_t size; signed char value; } libxsmm_memset127_size_ = { (SIZE) }; \
+  union { size_t size; signed char size1; } libxsmm_memset127_; \
   signed char libxsmm_memset127_i_; LIBXSMM_ASSERT((SIZE) <= 127); \
+  libxsmm_memset127_.size = (SIZE); \
   LIBXSMM_PRAGMA_UNROLL \
-  for (libxsmm_memset127_i_ = 0; libxsmm_memset127_i_ < libxsmm_memset127_size_.value; ++libxsmm_memset127_i_) { \
+  for (libxsmm_memset127_i_ = 0; libxsmm_memset127_i_ < libxsmm_memset127_.size1; ++libxsmm_memset127_i_) { \
     libxsmm_memset127_dst_[libxsmm_memset127_i_] = (char)(VALUE); \
   } \
 }
