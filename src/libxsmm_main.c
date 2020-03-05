@@ -160,7 +160,7 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 # if defined(LIBXSMM_REGLOCK_TRY)
 #   define INTERNAL_REGLOCK_TRY(DIFF, CODE) \
     if (1 != internal_reglock_count) { /* (re-)try and get (meanwhile) generated code */ \
-      LIBXSMM_ASSERT(0 != internal_registry); /* engine is not shut down */ \
+      LIBXSMM_ASSERT(NULL != internal_registry); /* engine is not shut down */ \
       continue; \
     } \
     else { /* exit dispatch and let client fall back */ \
@@ -168,7 +168,7 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
     }
 # else
 #   define INTERNAL_REGLOCK_TRY(DIFF, CODE) \
-      LIBXSMM_ASSERT(0 != internal_registry); /* engine is not shut down */ \
+      LIBXSMM_ASSERT(NULL != internal_registry); /* engine is not shut down */ \
       continue
 # endif
 # if (1 < INTERNAL_REGLOCK_MAXN)
@@ -319,7 +319,7 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
   const internal_statistic_type statistic_big = internal_statistic[precision][2/*BIG*/];
   const internal_statistic_type statistic_xxx = internal_statistic[precision][3/*XXX*/];
   int printed = 0;
-  LIBXSMM_ASSERT(0 != ostream && (0 <= precision && precision < 2));
+  LIBXSMM_ASSERT(NULL != ostream && (0 <= precision && precision < 2));
 
   if (/* omit to print anything if it is superfluous */
     0 != statistic_sml.ntry || 0 != statistic_sml.njit || 0 != statistic_sml.nsta || 0 != statistic_sml.ncol ||
@@ -1017,7 +1017,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
-    else if (gid != tid) { /* avoid recursion */
+    else /*if (gid != tid)*/ { /* avoid recursion */
+      LIBXSMM_ASSERT(gid != tid);
       while (2 > LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) LIBXSMM_SYNC_YIELD;
       internal_init();
     }
