@@ -153,7 +153,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -180,6 +180,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -192,7 +194,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -221,6 +223,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -236,7 +240,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -261,6 +265,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -276,7 +282,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -303,6 +309,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -315,7 +323,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
@@ -336,6 +344,8 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -351,7 +361,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
@@ -371,6 +381,8 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />
