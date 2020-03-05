@@ -460,14 +460,12 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
   }
   LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
   /* determine BLAS function-pointers */
-#if defined(LIBXSMM_INIT_COMPLETED) /* perform only if not lazy */
   libxsmm_original_dgemm_batch();
   libxsmm_original_sgemm_batch();
   libxsmm_original_dgemm();
   libxsmm_original_sgemm();
   libxsmm_original_dgemv();
   libxsmm_original_sgemv();
-#endif
 }
 
 
