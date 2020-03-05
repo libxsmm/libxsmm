@@ -708,11 +708,11 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
 SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
-    AVX ?= 3
     ifeq (2,$(words $(filter avx512pf avx512er,$(CPUFLAGS)))) # KNL
+      AVX ?= 3
       MIC ?= 1
-    else # SKX
-      MIC ?= 0
+    else
+      AVX ?= 2
     endif
   else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
     ifeq (1,$(words $(filter fma,$(CPUFLAGS))))
@@ -733,6 +733,7 @@ else ifneq (0,$(KNC))
   MPSS = 1
 endif
 AVX ?= 0
+MIC ?= 0
 
 ifneq (0,$(INTEL))
   SUITE = Intel Compiler
