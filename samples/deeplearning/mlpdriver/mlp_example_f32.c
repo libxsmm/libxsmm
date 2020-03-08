@@ -25,6 +25,25 @@
   fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
 }
 
+void sgd_fp32( float* fil, float* delfil, unsigned int weightsize, float lr, unsigned int start_thread, unsigned int tid, unsigned int threads ) {
+  /* computing first logical thread */
+  const int ltid = tid - start_thread;
+  /* number of tasks that could be run in parallel */
+  const int work = weightsize;
+  /* compute chunk size */
+  const int chunksize = (work % threads == 0) ? (work / threads) : ((work / threads) + 1);
+  /* compute thr_begin and thr_end */
+  const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+  const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+  int i = 0;
+
+  for ( i = thr_begin; i < thr_end; ++i ) {
+    fil[i] = fil[i] - lr*delfil[i];
+  }
+
+  #pragma omp barrier
+}
+
 int main(int argc, char* argv[])
 {
   float **act_libxsmm, **fil_libxsmm, **delact_libxsmm, **delfil_libxsmm;
@@ -342,8 +361,10 @@ int main(int argc, char* argv[])
       for (j = 0; j < iters; ++j) {
         for ( i = num_layers-1; i > 0; --i) {
           libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[i], LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
+          sgd_fp32( fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
         }
         libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[0], LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
+        sgd_fp32( fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -384,8 +405,10 @@ int main(int argc, char* argv[])
         }
         for ( i = (num_layers-1); i > 0; --i) {
           libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[i], LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
+          sgd_fp32( fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
         }
         libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[0], LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
+        sgd_fp32( fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
       }
     }
     l_end = libxsmm_timer_tick();
