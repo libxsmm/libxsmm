@@ -364,7 +364,7 @@ int main(int argc, char* argv[])
           sgd_fp32( fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
         }
         libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[0], LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
-        sgd_fp32( fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
+        sgd_fp32( fil_libxsmm[0], delfil_libxsmm[0], C[1]*C[0], 0.1f, 0, tid, nThreads );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -408,7 +408,7 @@ int main(int argc, char* argv[])
           sgd_fp32( fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
         }
         libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[0], LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
-        sgd_fp32( fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
+        sgd_fp32( fil_libxsmm[0], delfil_libxsmm[0], C[1]*C[0], 0.1f, 0, tid, nThreads );
       }
     }
     l_end = libxsmm_timer_tick();
