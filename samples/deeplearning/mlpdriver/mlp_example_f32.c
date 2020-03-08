@@ -77,6 +77,8 @@ int main(int argc, char* argv[])
   double l_total = 0.0;
   double gflop = 0.0;
   int i, j;
+  double fil_size = 0.0;
+  double act_size = 0.0;
 
   libxsmm_dnn_fullyconnected_desc fullyconnected_desc;
   libxsmm_dnn_fullyconnected**    libxsmm_handle;
@@ -141,11 +143,19 @@ int main(int argc, char* argv[])
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
   for (i = 0; i < num_layers; ++i ) {
     if (i == 0) {
+      act_size += (double)(MB*C[i]*sizeof(float))/(1024.0*1024.0);
       printf("SIZE Activations  %i (%dx%d): %10.2f MiB\n", i, MB, C[i], (double)(MB*C[i]*sizeof(float))/(1024.0*1024.0) );
     }
+    act_size += (double)(MB*C[i+1]*sizeof(float))/(1024.0*1024.0);
+    fil_size += (double)(C[i]*C[i+1]*sizeof(float))/(1024.0*1024.0);
     printf("SIZE Filter       %i (%dx%d): %10.2f MiB\n", i, C[i], C[i+1], (double)(C[i]*C[i+1]*sizeof(float))/(1024.0*1024.0) );
     printf("SIZE Activations  %i (%dx%d): %10.2f MiB\n", i+1, MB, C[i+1], (double)(MB*C[i+1]*sizeof(float))/(1024.0*1024.0) );
   }
+  printf("\nTOTAL SIZE Activations:    %10.2f MiB\n", act_size );
+  printf("TOTAL SIZE Filter:         %10.2f MiB\n", fil_size );
+  printf("TOTAL SIZE delActivations: %10.2f MiB\n", act_size );
+  printf("TOTAL SIZE delFilter:      %10.2f MiB\n", fil_size );
+  printf("TOTAL SIZE MLP:            %10.2f MiB\n", (2.0*fil_size) + (2.0*act_size) );
 
   /* allocate data */
   act_libxsmm    = (float**)malloc( (num_layers+1)*sizeof(float*) );

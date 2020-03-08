@@ -282,6 +282,20 @@ LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
   }
 }
 
+LIBXSMM_INLINE void init_buf_bf16(libxsmm_bfloat16* buf, size_t size, int initPos, int initOne)
+{
+  int i;
+  zero_buf_bf16(buf, size);
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < (int)size; ++i) {
+    libxsmm_bfloat16_hp tmp;
+    tmp.f = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rng_f64() : (0.05 - libxsmm_rng_f64()/10.0)));
+    buf[i] = tmp.i[1];
+  }
+}
+
 LIBXSMM_API void libxsmm_dnn_dequantize_int8( char* in_buffer, float* out_buffer, int length, unsigned char scf ) {
   const float val_exp = libxsmm_sexp2_i8i(-scf);
   int i = 0;
