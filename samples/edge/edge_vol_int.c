@@ -9,6 +9,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "edge_proxy_common.h"
+#include <libxsmm_intrinsics_x86.h>
 #include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>

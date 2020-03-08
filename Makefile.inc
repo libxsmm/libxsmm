@@ -340,7 +340,9 @@ ifeq (0,$(GNU))
       CC = icx
     endif
   endif
-  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" | $(CC) $(ECFLAGS) $(EFLAGS) -E -P - 2>/dev/null))
+  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" \
+                         | $(CC) $(ECFLAGS) $(EFLAGS) -E -P - 2>/dev/null \
+                         | sed "/^[[:space:]]*$$/d" 2>/dev/null))
     ICX = 1
   else ifneq (,$(filter icx icx2,$(call qndir,$(call which,icx))$(INTEL)))
     ICX = 2
@@ -1118,6 +1120,7 @@ ifneq (0,$(INTEL))
       ifeq (,$(filter-out 0,$(FORCE_CXX)))
         CSTD = -std=c89
       endif
+    else ifneq (0,$(ICX))
       CXXFLAGS += -Wno-pass-failed
       CFLAGS += -Wno-pass-failed
     endif
