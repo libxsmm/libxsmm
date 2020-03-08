@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
   float **act_libxsmm, **fil_libxsmm, **delact_libxsmm, **delfil_libxsmm;
   float **bias_libxsmm, **delbias_libxsmm;
   unsigned char **relumask_libxsmm;
-  void* scratch;
+  void* scratch = NULL;
   size_t scratch_size = 0;
 
   /* some parameters we can overwrite via cli,
@@ -60,15 +60,15 @@ int main(int argc, char* argv[])
   int i, j;
 
   libxsmm_dnn_fullyconnected_desc fullyconnected_desc;
-  libxsmm_dnn_fullyconnected** libxsmm_handle;
-  libxsmm_dnn_tensor**  libxsmm_act;
-  libxsmm_dnn_tensor**  libxsmm_delact;
-  libxsmm_dnn_tensor**  libxsmm_fil;
-  libxsmm_dnn_tensor**  libxsmm_delfil;
-  libxsmm_dnn_tensor**  libxsmm_bias;
-  libxsmm_dnn_tensor**  libxsmm_delbias;
-  libxsmm_dnn_tensor**  libxsmm_relumask;
-  libxsmm_dnn_tensor_datalayout* libxsmm_layout;
+  libxsmm_dnn_fullyconnected**    libxsmm_handle;
+  libxsmm_dnn_tensor**            libxsmm_act;
+  libxsmm_dnn_tensor**            libxsmm_delact;
+  libxsmm_dnn_tensor**            libxsmm_fil;
+  libxsmm_dnn_tensor**            libxsmm_delfil;
+  libxsmm_dnn_tensor**            libxsmm_bias;
+  libxsmm_dnn_tensor**            libxsmm_delbias;
+  libxsmm_dnn_tensor**            libxsmm_relumask;
+  libxsmm_dnn_tensor_datalayout*  libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 
   /* reading new values from cli */
   i = 1;
-  num_layers = argc - 8;
+  num_layers = argc - 9;
   if (argc > i) iters      = atoi(argv[i++]);
   if (argc > i) MB         = atoi(argv[i++]);
   if (argc > i) fuse_type  = atoi(argv[i++]);
@@ -89,11 +89,11 @@ int main(int argc, char* argv[])
   if (argc > i) bk         = atoi(argv[i++]);
   if (argc > i) bc         = atoi(argv[i++]);
   /* allocate the number of channles buffer */
-  if ( num_layers < 2 ) {
+  if ( num_layers < 1 ) {
     printf("Usage: %s iters MB fuse_type type bn bk bc C1 C2 ... CN\n", argv[0]);
     return 0;
   }
-  C = (int*)malloc(num_layers*sizeof(int));
+  C = (int*)malloc((num_layers+1)*sizeof(int));
   for (j = 0 ; i < argc; ++i, ++j ) {
     C[j] = atoi(argv[i]);
   }
@@ -120,58 +120,58 @@ int main(int argc, char* argv[])
   printf("PARAMS: N:%d\n", MB);
   printf("PARAMS: Layers: %d\n", num_layers);
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
-  for (i = 0; i < num_layers-1; ++i ) {
+  for (i = 0; i < num_layers; ++i ) {
     if (i == 0) {
-      printf("SIZE Activations  %i: %10.2f MiB\n", i, (double)(MB*C[i]*sizeof(float))/(1024.0*1024.0) );
+      printf("SIZE Activations  %i (%dx%d): %10.2f MiB\n", i, MB, C[i], (double)(MB*C[i]*sizeof(float))/(1024.0*1024.0) );
     }
-    printf("SIZE Filter       %i: %10.2f MiB\n", i, (double)(C[i]*C[i+1]*sizeof(float))/(1024.0*1024.0) );
-    printf("SIZE Activations  %i: %10.2f MiB\n", i+1, (double)(MB*C[i+1]*sizeof(float))/(1024.0*1024.0) );
+    printf("SIZE Filter       %i (%dx%d): %10.2f MiB\n", i, C[i], C[i+1], (double)(C[i]*C[i+1]*sizeof(float))/(1024.0*1024.0) );
+    printf("SIZE Activations  %i (%dx%d): %10.2f MiB\n", i+1, MB, C[i+1], (double)(MB*C[i+1]*sizeof(float))/(1024.0*1024.0) );
   }
 
   /* allocate data */
-  act_libxsmm    = (float**)malloc( num_layers*sizeof(float*) );
-  delact_libxsmm = (float**)malloc( num_layers*sizeof(float*) );
-  for ( i = 0 ; i < num_layers; ++i ) {
+  act_libxsmm    = (float**)malloc( (num_layers+1)*sizeof(float*) );
+  delact_libxsmm = (float**)malloc( (num_layers+1)*sizeof(float*) );
+  for ( i = 0 ; i < num_layers+1; ++i ) {
     act_libxsmm[i]                = (float*)libxsmm_aligned_malloc( MB*C[i]*sizeof(float), 2097152);
     delact_libxsmm[i]             = (float*)libxsmm_aligned_malloc( MB*C[i]*sizeof(float), 2097152);
   }
-  fil_libxsmm    = (float**)malloc( (num_layers-1)*sizeof(float*) );
-  delfil_libxsmm = (float**)malloc( (num_layers-1)*sizeof(float*) );
-  for ( i = 0 ; i < num_layers-1; ++i ) {
+  fil_libxsmm    = (float**)malloc( num_layers*sizeof(float*) );
+  delfil_libxsmm = (float**)malloc( num_layers*sizeof(float*) );
+  for ( i = 0 ; i < num_layers; ++i ) {
     fil_libxsmm[i]                = (float*)libxsmm_aligned_malloc( C[i]*C[i+1]*sizeof(float), 2097152);
     delfil_libxsmm[i]             = (float*)libxsmm_aligned_malloc( C[i]*C[i+1]*sizeof(float), 2097152);
   }
-  bias_libxsmm    = (float**)malloc( (num_layers-1)*sizeof(float*) );
-  delbias_libxsmm = (float**)malloc( (num_layers-1)*sizeof(float*) );
-  for ( i = 0 ; i < num_layers-1; ++i ) {
-    bias_libxsmm[i]                = (float*)libxsmm_aligned_malloc( C[i+1]*sizeof(float), 2097152);
-    delbias_libxsmm[i]             = (float*)libxsmm_aligned_malloc( C[i+1]*sizeof(float), 2097152);
+  bias_libxsmm    = (float**)malloc( num_layers*sizeof(float*) );
+  delbias_libxsmm = (float**)malloc( num_layers*sizeof(float*) );
+  for ( i = 0 ; i < num_layers; ++i ) {
+    bias_libxsmm[i]               = (float*)libxsmm_aligned_malloc( C[i+1]*sizeof(float), 2097152);
+    delbias_libxsmm[i]            = (float*)libxsmm_aligned_malloc( C[i+1]*sizeof(float), 2097152);
   }
-  relumask_libxsmm = (unsigned char**)malloc( (num_layers-1)*sizeof(unsigned char*) );
-  for ( i = 0 ; i < num_layers-1; ++i ) {
-    relumask_libxsmm[i]                = (unsigned char*)libxsmm_aligned_malloc( MB*C[i+1]*sizeof(unsigned char), 2097152);
+  relumask_libxsmm = (unsigned char**)malloc( num_layers*sizeof(unsigned char*) );
+  for ( i = 0 ; i < num_layers; ++i ) {
+    relumask_libxsmm[i]           = (unsigned char*)libxsmm_aligned_malloc( MB*C[i+1]*sizeof(unsigned char), 2097152);
   }
 
   /* init data */
-  for ( i = 0 ; i < num_layers; ++i ) {
+  for ( i = 0 ; i < num_layers+1; ++i ) {
     init_buf( act_libxsmm[i], MB*C[i], 0, 0 );
   }
-  for ( i = 0 ; i < num_layers; ++i ) {
+  for ( i = 0 ; i < num_layers+1; ++i ) {
     init_buf( delact_libxsmm[i], MB*C[i], 0, 0 );
   }
-  for ( i = 0 ; i < num_layers-1; ++i ) {
+  for ( i = 0 ; i < num_layers; ++i ) {
     init_buf( fil_libxsmm[i], C[i]*C[i+1], 0, 0 );
   }
-  for ( i = 0 ; i < num_layers-1; ++i ) {
+  for ( i = 0 ; i < num_layers; ++i ) {
     init_buf( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 );
   }
-  for ( i = 0 ; i < num_layers-1; ++i ) {
+  for ( i = 0 ; i < num_layers; ++i ) {
     init_buf( bias_libxsmm[i], C[i+1], 0, 0 );
   }
-  for ( i = 0 ; i < num_layers-1; ++i ) {
+  for ( i = 0 ; i < num_layers; ++i ) {
     init_buf( delbias_libxsmm[i], C[i+1], 0, 0 );
   }
-  for ( i = 0 ; i < num_layers-1; ++i ) {
+  for ( i = 0 ; i < num_layers; ++i ) {
     zero_buf_uint8( relumask_libxsmm[i], MB*C[i+1] );
   }
 
@@ -180,17 +180,16 @@ int main(int argc, char* argv[])
   printf("#      Setting Up  (custom-Storage)      #\n");
   printf("##########################################\n");
 
-  /* setup LIBXSMM handles */
-  libxsmm_handle   = (libxsmm_dnn_fullyconnected**) malloc( (num_layers-1)*sizeof(libxsmm_dnn_fullyconnected*) );
-  libxsmm_act      = (libxsmm_dnn_tensor**) malloc( (num_layers)*sizeof(libxsmm_dnn_tensor*) );
-  libxsmm_delact   = (libxsmm_dnn_tensor**) malloc( (num_layers)*sizeof(libxsmm_dnn_tensor*) );
-  libxsmm_fil      = (libxsmm_dnn_tensor**) malloc( (num_layers-1)*sizeof(libxsmm_dnn_tensor*) );
-  libxsmm_delfil   = (libxsmm_dnn_tensor**) malloc( (num_layers-1)*sizeof(libxsmm_dnn_tensor*) );
-  libxsmm_bias     = (libxsmm_dnn_tensor**) malloc( (num_layers-1)*sizeof(libxsmm_dnn_tensor*) );
-  libxsmm_delbias  = (libxsmm_dnn_tensor**) malloc( (num_layers-1)*sizeof(libxsmm_dnn_tensor*) );
-  libxsmm_relumask = (libxsmm_dnn_tensor**) malloc( (num_layers-1)*sizeof(libxsmm_dnn_tensor*) );
+  libxsmm_handle   = (libxsmm_dnn_fullyconnected**) malloc( num_layers*sizeof(libxsmm_dnn_fullyconnected*) );
+  libxsmm_act      = (libxsmm_dnn_tensor**) malloc( (num_layers+1)*sizeof(libxsmm_dnn_tensor*) );
+  libxsmm_delact   = (libxsmm_dnn_tensor**) malloc( (num_layers+1)*sizeof(libxsmm_dnn_tensor*) );
+  libxsmm_fil      = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
+  libxsmm_delfil   = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
+  libxsmm_bias     = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
+  libxsmm_delbias  = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
+  libxsmm_relumask = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
 
-  for ( i = 0; i < num_layers-1; ++i ) {
+  for ( i = 0; i < num_layers; ++i ) {
     fullyconnected_desc.N = MB;
     fullyconnected_desc.C = C[i];
     fullyconnected_desc.K = C[i+1];
@@ -225,11 +224,11 @@ int main(int argc, char* argv[])
     /* setup LIBXSMM buffers */
     if ( i == 0 ) {
       libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_act[0]  = libxsmm_dnn_link_tensor( libxsmm_layout, act_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_act[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, act_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
       libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_GRADIENT_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_delact[0]  = libxsmm_dnn_link_tensor( libxsmm_layout, delact_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_delact[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, delact_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     }
 
@@ -285,7 +284,7 @@ int main(int argc, char* argv[])
   }
 
   /* bind scratch to all layers */
-  for ( i = 0; i < num_layers-1; ++i ) {
+  for ( i = 0; i < num_layers; ++i ) {
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle[i], scratch ) );
   }
 
@@ -304,7 +303,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (j = 0; j < iters; ++j) {
-        for ( i = 0; i < num_layers-1; ++i) {
+        for ( i = 0; i < num_layers; ++i) {
           libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
         }
       }
@@ -313,7 +312,7 @@ int main(int argc, char* argv[])
     l_total = libxsmm_timer_duration(l_start, l_end);
 
     gflop = 0.0;
-    for ( i = 0; i < num_layers-1; ++i) {
+    for ( i = 0; i < num_layers; ++i) {
       gflop += (2.0*(double)MB*(double)C[i]*(double)C[i+1]*(double)iters) / (1000.0*1000.0*1000.0);
     }
     printf("GFLOP  = %.5g\n", gflop/(double)iters);
@@ -341,7 +340,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (j = 0; j < iters; ++j) {
-        for ( i = (num_layers-1); i > 0; --i) {
+        for ( i = num_layers-1; i > 0; --i) {
           libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[i], LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
         }
         libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[0], LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
@@ -380,7 +379,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (j = 0; j < iters; ++j) {
-        for ( i = 0; i < num_layers-1; ++i) {
+        for ( i = 0; i < num_layers; ++i) {
           libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
         }
         for ( i = (num_layers-1); i > 0; --i) {
@@ -407,7 +406,7 @@ int main(int argc, char* argv[])
     printf("%f,%f\n", ((double)(l_total/iters)), gflop/l_total);
   }
 
-  for ( i = 0; i < num_layers-1; ++i ) {
+  for ( i = 0; i < num_layers; ++i ) {
     /* clean-up */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_scratch( libxsmm_handle[i] ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_INPUT ) );
@@ -422,7 +421,7 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_fullyconnected( libxsmm_handle[i] ) );
   }
 
-  for ( i = 0; i < num_layers-1; ++i ) {
+  for ( i = 0; i < num_layers; ++i ) {
     if ( i == 0 ) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_act[i] ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_delact[i] ) );
@@ -438,7 +437,7 @@ int main(int argc, char* argv[])
 
   /* deallocate data */
   libxsmm_free(scratch);
-  for ( i = 0; i < num_layers-1; ++i ) {
+  for ( i = 0; i < num_layers; ++i ) {
     if ( i == 0 ) {
       libxsmm_free(act_libxsmm[i]);
       libxsmm_free(delact_libxsmm[i]);
