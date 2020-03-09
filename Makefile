@@ -1555,9 +1555,9 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
-	@ls -1 $(INCDIR)/libxsmm*.h | grep -v libxsmm_source.h | xargs -I {} $(CP) -v {} $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing header-only..."
 	@$(CP) -r $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR) >/dev/null 2>/dev/null || true
