@@ -1479,31 +1479,33 @@ realclean-all: realclean
 distclean: realclean-all
 	@rm -rf libxsmm*
 
-# PREFIX and DESTDIR are equivalent
-# - DESTDIR rules if PREFIX is also specified
-# - ensures deterministic behavior
-ifneq (,$(strip $(DESTDIR)))
-  override PREFIX = $(DESTDIR)
-endif
-
-# STAGEDIR is used as prefix of PREFIX
+# DESTDIR or STAGEDIR are used as prefix of PREFIX
 # - if PREFIX is not specified, or
 # - if PREFIX is a relative path
-ifneq (,$(strip $(STAGEDIR)))
-  ifeq (,$(filter /%,$(PREFIX)))
+ifeq (,$(filter /%,$(PREFIX)))
+  ifneq (,$(strip $(DESTDIR)))
+    override PREFIX := $(call qapath,$(DESTDIR)/$(PREFIX))
+  else ifneq (,$(strip $(STAGEDIR)))
     override PREFIX := $(call qapath,$(STAGEDIR)/$(PREFIX))
   endif
-else ifeq (,$(strip $(PREFIX)))
-  PREFIX = $(call qapath,.)
-endif
-
-# ALIAS_* variables for PKG_CONFIG and MODULES
-ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
-  ALIAS_PREFIX = $(LOCALBASE)
-  ALIAS_PREFIX ?= /usr/local
-  override PREFIX := $(call qapath,$(PREFIX)/$(ALIAS_PREFIX))
-  PPKGDIR = libdata/pkgconfig
-  PMODDIR = share/modules
+  ifeq (,$(strip $(PREFIX)))
+    # determine maintainer-layout
+    ALIAS_CONFIG = $(if $(filter $(CHAR_HASH)/home/% $(CHAR_HASH)$(call qapath,$(HOME)),$(CHAR_HASH)$(call qapath,.)),0,1)
+    #ifeq (0,$(ALIAS_CONFIG))
+    #ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
+    #  ALIAS_CONFIG = 1
+    #endif
+    #endif
+    ifneq (0,$(ALIAS_CONFIG))
+      ALIAS_PREFIX = $(LOCALBASE)
+      ALIAS_PREFIX ?= /usr/local
+      PPKGDIR = libdata/pkgconfig
+      PMODDIR = share/modules
+      PREFIX = $(ALIAS_PREFIX)
+    else # fall-back
+      PREFIX = $(call qapath,.)
+    endif
+  endif
 endif
 ALIAS_PREFIX ?= $(PREFIX)
 
