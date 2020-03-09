@@ -1498,7 +1498,7 @@ endif
 
 .PHONY: install-minimal
 install-minimal: libxsmm
-ifneq ($(PREFIX),$(HEREDIR))
+ifneq ($(PREFIX),$(ROOTDIR))
 	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR) $(PREFIX)/$(PSRCDIR)
 	@echo
 	@echo "LIBXSMM installing libraries..."
@@ -1556,18 +1556,16 @@ ifneq ($(PREFIX),$(HEREDIR))
 	@echo
 	@echo "LIBXSMM installing interface..."
 	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
-	@ls -1 $(INCDIR)/libxsmm*.h | grep -v libxsmm_source.h | xargs -I {} $(CP) -v {} $(PREFIX)/$(PINCDIR)
-	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR)
+	@ls -1 $(INCDIR)/libxsmm*.h | grep -v libxsmm_source.h | xargs -I {} $(CP) -v {} $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing header-only..."
-	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(patsubst $(PINCDIR)/%,%,$(PSRCDIR)) \
-		> $(PREFIX)/$(PINCDIR)/libxsmm_source.h
 	@$(CP) -r $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR) >/dev/null 2>/dev/null || true
 endif
 
 .PHONY: install
 install: install-minimal
-ifneq ($(PREFIX),$(HEREDIR))
+ifneq ($(PREFIX),$(ROOTDIR))
 	@echo
 	@echo "LIBXSMM installing documentation..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)
@@ -1584,7 +1582,7 @@ endif
 
 .PHONY: install-all
 install-all: install samples
-ifneq ($(PREFIX),$(HEREDIR))
+ifneq ($(PREFIX),$(ROOTDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
@@ -1600,7 +1598,7 @@ endif
 
 .PHONY: install-dev
 install-dev: install-all build-tests
-ifneq ($(PREFIX),$(HEREDIR))
+ifneq ($(PREFIX),$(ROOTDIR))
 	@echo
 	@echo "LIBXSMM installing tests..."
 	@mkdir -p $(PREFIX)/$(PTSTDIR)
@@ -1609,7 +1607,7 @@ endif
 
 .PHONY: install-artifacts
 install-artifacts: install-dev
-ifneq ($(PREFIX),$(HEREDIR))
+ifneq ($(PREFIX),$(ROOTDIR))
 	@echo
 	@echo "LIBXSMM installing artifacts..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)/artifacts
