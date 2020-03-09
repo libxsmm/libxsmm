@@ -1419,7 +1419,7 @@ mkdocs: $(ROOTDIR)/documentation/index.md $(ROOTDIR)/documentation/libxsmm_sampl
 .PHONY: clean
 clean:
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
-ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
+ifneq ($(call qapath,$(BLDDIR)),$(HEREDIR))
 	@rm -rf $(BLDDIR)
 endif
 endif
@@ -1434,7 +1434,7 @@ endif
 .PHONY: realclean
 realclean: clean
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
-ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
+ifneq ($(call qapath,$(OUTDIR)),$(HEREDIR))
 	@rm -rf $(OUTDIR)
 endif
 endif
@@ -1447,7 +1447,7 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@rm -f $(OUTDIR)/libxsmm*.pc
 endif
 ifneq ($(call qapath,$(BINDIR)),$(ROOTDIR))
-ifneq ($(call qapath,$(BINDIR)),$(call qapath,.))
+ifneq ($(call qapath,$(BINDIR)),$(HEREDIR))
 	@rm -rf $(BINDIR)
 endif
 endif
@@ -1483,35 +1483,31 @@ distclean: realclean-all
 # - if PREFIX is not specified, or
 # - if PREFIX is a relative path
 ifeq (,$(filter /%,$(PREFIX)))
+  # determine maintainer-layout
+  ALIAS_CONFIG := $(if $(filter /home/%,$(HEREDIR)) $(findstring $(CHAR_HASH)$(HOMEDIR),$(CHAR_HASH)$(HEREDIR)),0,1)
+  #ifeq (0,$(ALIAS_CONFIG))
+  #ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
+  #  ALIAS_CONFIG = 1
+  #endif
+  #endif
+  ifneq (0,$(ALIAS_CONFIG))
+    ALIAS_PREFIX = $(LOCALBASE)
+    ALIAS_PREFIX ?= /usr/local
+    PPKGDIR = libdata/pkgconfig
+    PMODDIR = share/modules
+    override PREFIX := $(ALIAS_PREFIX)/$(PREFIX)
+  endif
   ifneq (,$(strip $(DESTDIR)))
     override PREFIX := $(call qapath,$(DESTDIR)/$(PREFIX))
   else ifneq (,$(strip $(STAGEDIR)))
     override PREFIX := $(call qapath,$(STAGEDIR)/$(PREFIX))
-  endif
-  ifeq (,$(strip $(PREFIX)))
-    # determine maintainer-layout
-    ALIAS_CONFIG = $(if $(filter $(CHAR_HASH)/home/% $(CHAR_HASH)$(call qapath,$(HOME)),$(CHAR_HASH)$(call qapath,.)),0,1)
-    #ifeq (0,$(ALIAS_CONFIG))
-    #ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
-    #  ALIAS_CONFIG = 1
-    #endif
-    #endif
-    ifneq (0,$(ALIAS_CONFIG))
-      ALIAS_PREFIX = $(LOCALBASE)
-      ALIAS_PREFIX ?= /usr/local
-      PPKGDIR = libdata/pkgconfig
-      PMODDIR = share/modules
-      PREFIX = $(ALIAS_PREFIX)
-    else # fall-back
-      PREFIX = $(call qapath,.)
-    endif
   endif
 endif
 ALIAS_PREFIX ?= $(PREFIX)
 
 .PHONY: install-minimal
 install-minimal: libxsmm
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(call qapath,$(PREFIX)),$(HEREDIR))
 	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR) $(PREFIX)/$(PSRCDIR)
 	@echo
 	@echo "LIBXSMM installing libraries..."
@@ -1580,7 +1576,7 @@ endif
 
 .PHONY: install
 install: install-minimal
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(call qapath,$(PREFIX)),$(HEREDIR))
 	@echo
 	@echo "LIBXSMM installing documentation..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)
@@ -1597,7 +1593,7 @@ endif
 
 .PHONY: install-all
 install-all: install samples
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(call qapath,$(PREFIX)),$(HEREDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
@@ -1613,7 +1609,7 @@ endif
 
 .PHONY: install-dev
 install-dev: install-all build-tests
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(call qapath,$(PREFIX)),$(HEREDIR))
 	@echo
 	@echo "LIBXSMM installing tests..."
 	@mkdir -p $(PREFIX)/$(PTSTDIR)
@@ -1622,7 +1618,7 @@ endif
 
 .PHONY: install-artifacts
 install-artifacts: install-dev
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(call qapath,$(PREFIX)),$(HEREDIR))
 	@echo
 	@echo "LIBXSMM installing artifacts..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)/artifacts

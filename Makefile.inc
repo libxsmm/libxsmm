@@ -254,6 +254,10 @@ qsuffix = $(suffix   $(strip      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qbname =  $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qname =   $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
 
+# current working directory (PWD)
+HEREDIR := $(call qapath,.)
+HOMEDIR := $(call qapath,$(HOME))
+
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
   OMPRT = $(patsubst lib%,%,$(OMP))
@@ -2229,7 +2233,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ctest applyif extname objname unquote quote qapath qndir qdir qsuffix qbname qname abslib \
     BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
-    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(subst $(call qapath,$(HOME)),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V)))))?))))
+    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(subst $(HOMEDIR),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V)))))?))))
 
 DIRSTATE ?= .
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
