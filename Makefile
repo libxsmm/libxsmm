@@ -1479,24 +1479,18 @@ realclean-all: realclean
 distclean: realclean-all
 	@rm -rf libxsmm*
 
-# keep original prefix
-ALIAS_PREFIX = $(PREFIX)
+# keep original prefix (:)
+ALIAS_PREFIX := $(PREFIX)
 
-# DESTDIR or STAGEDIR are used as prefix of PREFIX
-# - if PREFIX is not specified, or
-# - if PREFIX is a relative path
-ifeq (,$(filter /%,$(PREFIX)))
-  ifneq (,$(strip $(DESTDIR)))
-    override PREFIX := $(call qapath,$(DESTDIR)/$(PREFIX))
-  else ifneq (,$(strip $(STAGEDIR)))
-    override PREFIX := $(call qapath,$(STAGEDIR)/$(PREFIX))
-  endif
+# DESTDIR is used as prefix of PREFIX
+ifneq (,$(strip $(DESTDIR)))
+  override PREFIX := $(call qapath,$(DESTDIR)/$(PREFIX))
+else # fall-back
+  PREFIX ?= $(HEREDIR)
 endif
-PREFIX ?= $(HEREDIR)
-
-ALIAS_PREFIX ?= $(PREFIX)
 
 # setup maintainer-layout
+ALIAS_PREFIX ?= $(PREFIX)
 ifneq ($(ALIAS_PREFIX),$(PREFIX))
   PPKGDIR = libdata/pkgconfig
   PMODDIR = share/modules
