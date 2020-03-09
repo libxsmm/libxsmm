@@ -11,6 +11,12 @@ fullyconnecteddriver/layer_example_bf16_f32
 fullyconnecteddriver/layer_example_f32
 fusedbndriver/layer_example_bf16
 fusedbndriver/layer_example_f32
+fusedgndriver/layer_example_f32
+sparse_weight_mult/parallel_sparse_weight_B_mult
+sparse_weight_mult/simple
+sparse_weight_mult/sparse_weight_A_mult
+sparse_weight_mult/sparse_weight_B_mult
+sparse_weight_mult/sparse_weight_C_redmult
 grudriver/grudriver_nc_ck
 grudriver/grudriver_nc_kcck
 lstmdriver/lstmdriver_nc_ck

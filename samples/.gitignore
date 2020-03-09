@@ -1,11 +1,8 @@
 blocked_gemm/blocked_gemm
 deeplearning/cnnlayer/layer_example_*
 deeplearning/lstmdriver/lstmdriver_*
-edge/dense_rmacsoa_*
-edge/dense_rmbcsoa_*
-edge/asparse_srsoa_*
-edge/bsparse_srsoa_*
-edge/bsparse_scsoa_*
+edge/samples/edge/dense_packedacrm_*
+edge/samples/edge/dense_packedbcrm_*
 edge/edge_vol_int
 eigen/eigen_smm
 eigen/eigen_tensor
