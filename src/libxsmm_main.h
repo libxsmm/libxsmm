@@ -744,8 +744,8 @@ typedef enum libxsmm_malloc_flags {
       LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
-/** Format for instance an amount of Bytes like libxsmm_format_size(result, nbytes, "KMGT", "B", 10). */
-LIBXSMM_API_INTERN void libxsmm_format_size(char buffer[32], size_t nbytes, const char scale[], const char* unit, int base);
+/** Format for instance an amount of Bytes like libxsmm_format_size(result, sizeof(result), nbytes, "KMGT", "B", 10). */
+LIBXSMM_API_INTERN void libxsmm_format_size(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
 
 /** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
