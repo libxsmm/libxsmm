@@ -348,9 +348,7 @@ ifeq (0,$(GNU))
   ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" \
                          | $(CC) $(ECFLAGS) $(EFLAGS) -E -P - 2>/dev/null \
                          | sed "/^[[:space:]]*$$/d" 2>/dev/null))
-    ICX = 1
-  else ifneq (,$(filter icx icx2,$(call qndir,$(call which,icx))$(INTEL)))
-    ICX = 2
+    ICX = $(INTEL)
   endif
 endif
 ICX ?= 0
