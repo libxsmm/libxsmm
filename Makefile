@@ -309,6 +309,7 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_dnn_pooling.h \
           $(ROOTDIR)/include/libxsmm_dnn_fullyconnected.h \
           $(ROOTDIR)/include/libxsmm_dnn_rnncell.h \
+          $(ROOTDIR)/include/libxsmm_dnn_softmaxloss.h \
           $(ROOTDIR)/include/libxsmm_rng.h \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_fsspmdm.h \
@@ -333,7 +334,8 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_dnn_fusedgroupnorm.c libxsmm_dnn_fusedgroupnorm_forward.c libxsmm_dnn_fusedgroupnorm_backward.c \
           libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c libxsmm_dnn_pooling_backward.c libxsmm_dnn_convolution_forward.c \
           libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c libxsmm_dnn_fullyconnected_backward_weight_update.c \
-          libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c)
+          libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c libxsmm_dnn_softmaxloss.c \
+          libxsmm_dnn_softmaxloss_forward.c libxsmm_dnn_softmaxloss_backward.c )
 SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
           libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c)
 

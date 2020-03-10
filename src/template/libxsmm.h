@@ -47,6 +47,7 @@
 #include "libxsmm_dnn_fusedgroupnorm.h"
 #include "libxsmm_dnn_pooling.h"
 #include "libxsmm_dnn_rnncell.h"
+#include "libxsmm_dnn_softmaxloss.h"
 #include "libxsmm_blocked_gemm.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
