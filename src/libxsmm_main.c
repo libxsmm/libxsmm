@@ -451,7 +451,7 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 
 
 /* Caution: cannot be used multiple time in a single expression! */
-LIBXSMM_API_INTERN void libxsmm_format_size(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
+LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
 {
   const int len = (NULL != scale ? ((int)strlen(scale)) : 0);
   const int m = LIBXSMM_INTRINSICS_BITSCANBWD64(nbytes) / base, n = LIBXSMM_MIN(m, len);
@@ -461,6 +461,7 @@ LIBXSMM_API_INTERN void libxsmm_format_size(char buffer[32], int buffer_size, si
   for (i = 0; i < n; ++i) nbytes >>= base;
   LIBXSMM_SNPRINTF(buffer, buffer_size, "%i %c%s",
     (int)nbytes, 0 < n ? scale[n-1] : *unit, 0 < n ? unit : "");
+  return nbytes;
 }
 
 
@@ -481,7 +482,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
       libxsmm_scratch_info scratch_info; size_t size_scratch = 0, size_private = 0;
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
-      char size_private_buffer[32], size_code_buffer[32];
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
       }
@@ -489,9 +489,15 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         size_private = scratch_info.internal;
         size_scratch = scratch_info.size;
       }
-      libxsmm_format_size(size_private_buffer, sizeof(size_private_buffer), size_private, "KM", "B", 10);
-      libxsmm_format_size(size_code_buffer, sizeof(size_code_buffer), internal_registry_nbytes, "KM", "B", 10);
-      fprintf(stderr, "Registry and code: %s + %s", size_private_buffer, size_code_buffer);
+      if (0 != size_private) { /* should be always true */
+        char size_private_buffer[32], size_code_buffer[32];
+        /* coverity[check_return] */
+        libxsmm_format_size(size_private_buffer, sizeof(size_private_buffer), size_private, "KM", "B", 10);
+        fprintf(stderr, "Registry and code: %s", size_private_buffer);
+        if (0 != libxsmm_format_size(size_code_buffer, sizeof(size_code_buffer), internal_registry_nbytes, "KM", "B", 10)) {
+          fprintf(stderr, " + %s", size_code_buffer);
+        }
+      }
       if (0 != high_verbosity) {
         unsigned int ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
@@ -519,6 +525,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       fprintf(stderr, "\n");
       if (0 != size_scratch) {
         char size_scratch_buffer[32];
+        /* coverity[check_return] */
         libxsmm_format_size(size_scratch_buffer, sizeof(size_scratch_buffer), size_scratch, "KM", "B", 10);
         fprintf(stderr, "Scratch: %s", size_scratch_buffer);
         if (0 != high_verbosity) {
