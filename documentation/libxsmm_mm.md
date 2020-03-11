@@ -188,7 +188,7 @@ void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, con
 void* libxsmm_xdispatch(const void* key, size_t key_size);
 ```
 
-This functionality can be also used to dispatch multiple kernels in one step, e.g., if a single task relies on multiple kernels. This has way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels.
+This functionality can be also used to dispatch multiple kernels in one step, e.g., if a single task relies on multiple kernels. This way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels used by this task.
 
 ### Call Wrapper
 
