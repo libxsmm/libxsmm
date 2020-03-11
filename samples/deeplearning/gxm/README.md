@@ -19,7 +19,7 @@ compressed LMDB data.
 
 The hyperparameter definitions for each topology are also in the corresponding directory under "model_zoo" in
 a .prototxt file with the suffix "solver". For a single-node, this file is called solver.prototxt. For multi-node
-the filename also contains the global minibatch size (=single node minibatch size x number of nodes); e.g., solver_896.prototxt contains hyperparameters for MB=56 per node and 16 nodes. The "solver*" file also contains a
+the filename also contains the global minibatch size (=single node minibatch size x number of nodes);, e.g., solver_896.prototxt contains hyperparameters for MB=56 per node and 16 nodes. The "solver*" file also contains a
 flag that specifies whether to start execution from a checkpoint (and thus read load weights from the "./weights"
 directory) or from scratch; by default execution starts from scratch.
 

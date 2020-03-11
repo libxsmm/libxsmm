@@ -8,7 +8,7 @@ Previously, this document covered building TensorFlow with LIBXSMM's API for Dee
 git clone https://github.com/tensorflow/tensorflow.git
 ```
 
-<a name="non-default-compiler"></a>MKL, MKL-DNN, and LIBXSMM do not impose to build for a specific code path or target flags and attempt to exploit the most recent instruction set extensions. For most other code it is recommended to use a recent GNU Compiler Collection to build TensorFlow. If the static code path does not match the highest possible CPU target (march=native), TensorFlow emits a warning at runtime which is reasonable given that libraries such as Eigen may contribute performance critical code paths. With any [recent Bazel version](https://github.com/bazelbuild/bazel/releases), a non-default GNU Compiler Collection can be source'd i.e., it can be added to the environment just normally as shown below (the second block of exports may be safely omitted).
+<a name="non-default-compiler"></a>MKL, MKL-DNN, and LIBXSMM do not impose to build for a specific code path or target flags and attempt to exploit the most recent instruction set extensions. For most other code it is recommended to use a recent GNU Compiler Collection to build TensorFlow. If the static code path does not match the highest possible CPU target (march=native), TensorFlow emits a warning at runtime which is reasonable given that libraries such as Eigen may contribute performance critical code paths. With any [recent Bazel version](https://github.com/bazelbuild/bazel/releases), a non-default GNU Compiler Collection can be source'd, i.e., it can be added to the environment just normally as shown below (the second block of exports may be safely omitted).
 
 ```bash
 export PATH=/path/to/gcc/bin:${PATH}
@@ -31,7 +31,7 @@ TF_NEED_GCP=0 TF_NEED_HDFS=0 TF_NEED_S3=0 TF_NEED_KAFKA=0 \
 ./configure
 ```
 
-Bazel is downloading dependencies by default during the initial build stage and hence Internet access on the build system is highly desirable. When behind an HTTP-proxy, the environment variables `https_proxy` and `http_proxy` are considered by the Python package installer (pip) but they should carry `https://` and `http://` respectively (in the past `pip --proxy` was necessary despite of the environment variables being present e.g., `pip --proxy proxy.domain.com:912`).
+Bazel is downloading dependencies by default during the initial build stage and hence Internet access on the build system is highly desirable. When behind an HTTP-proxy, the environment variables `https_proxy` and `http_proxy` are considered by the Python package installer (pip) but they should carry `https://` and `http://` respectively (in the past `pip --proxy` was necessary despite of the environment variables being present, e.g., `pip --proxy proxy.domain.com:912`).
 
 ```bash
 export https_proxy=https://proxy.domain.com:912

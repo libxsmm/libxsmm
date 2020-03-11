@@ -37,7 +37,7 @@ Please note that if multiple threads are enabled and used, an appropriate pin-st
 ./benchmark-plot.sh xsmm
 ```
 
-The plot script relies at least on Gnuplot. ImageMagick (mogrify) can be also useful if PNGs are created e.g., `./benchmark-plot.sh xsmm png 0` (the last argument disables single-file charts in contrast to multi-page PDFs created by default, the option also disables chart titles).
+The plot script relies at least on Gnuplot. ImageMagick (mogrify) can be also useful if PNGs are created, e.g., `./benchmark-plot.sh xsmm png 0` (the last argument disables single-file charts in contrast to multi-page PDFs created by default, the option also disables chart titles).
 
 The set of kernels executed during the benchmark can be larger than the kernels presented by the plots: [benchmark.set](https://github.com/hfp/libxsmm/blob/master/samples/magazine/benchmark.set) selects the kernels independent of the kernels executed (union).
 
@@ -484,7 +484,7 @@ compressed LMDB data.
 
 The hyperparameter definitions for each topology are also in the corresponding directory under "model_zoo" in
 a .prototxt file with the suffix "solver". For a single-node, this file is called solver.prototxt. For multi-node
-the filename also contains the global minibatch size (=single node minibatch size x number of nodes); e.g., solver_896.prototxt contains hyperparameters for MB=56 per node and 16 nodes. The "solver*" file also contains a
+the filename also contains the global minibatch size (=single node minibatch size x number of nodes);, e.g., solver_896.prototxt contains hyperparameters for MB=56 per node and 16 nodes. The "solver*" file also contains a
 flag that specifies whether to start execution from a checkpoint (and thus read load weights from the "./weights"
 directory) or from scratch; by default execution starts from scratch.
 
