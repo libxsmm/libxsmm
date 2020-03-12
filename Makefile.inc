@@ -1344,7 +1344,7 @@ else # GCC assumed
       CXXFLAGS += -fno-asynchronous-unwind-tables
       FCFLAGS += -fno-asynchronous-unwind-tables
       CFLAGS += -fno-asynchronous-unwind-tables
-      ifneq (0,$(PEDANTIC))
+      ifeq (0,$(PEDANTIC))
         CFLAGS += -Wno-format
       endif
     endif
