@@ -4218,9 +4218,9 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%" SCNuPTR ", %%%%%s\\n\\t\"\n", l_instr_name, i_immediate, l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%" SCNiPTR ", %%%%%s\\n\\t\"\n", l_instr_name, i_immediate, l_gp_reg_name );
     } else {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%" SCNuPTR ", %%%s\n", l_instr_name, i_immediate, l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%" SCNiPTR ", %%%s\n", l_instr_name, i_immediate, l_gp_reg_name );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
