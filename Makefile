@@ -1486,8 +1486,10 @@ ALIAS_PREFIX := $(PREFIX)
 # DESTDIR is used as prefix of PREFIX
 ifneq (,$(strip $(DESTDIR)))
   override PREFIX := $(call qapath,$(DESTDIR)/$(PREFIX))
-else # fall-back
-  PREFIX ?= $(HEREDIR)
+endif
+# fall-back
+ifeq (,$(strip $(PREFIX)))
+  override PREFIX := $(HEREDIR)
 endif
 
 # setup maintainer-layout
