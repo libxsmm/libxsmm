@@ -923,8 +923,8 @@ abslibpath ?= $(call absliblpath,$1)
 
 libpath = $(strip $(if $1, \
   $(if $(call ldlib,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
-    | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(CHAR_CLOSE)]\).*/:\1/" \
-    | rev | sed "s/\(..*\) :..*$$/\1/" | rev \
+    | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(CHAR_CLOSE)]\).*/$(CHAR_HASH)\1/" \
+    | rev | cut -d$(CHAR_HASH) -f1 | rev \
     | sed -n "s/[[:space:]]*\(\.*\/..*\)\([[:space:]]..*\)*/\1/p" \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
 
