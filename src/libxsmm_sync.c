@@ -22,6 +22,7 @@
 #include <stdint.h>
 #if defined(_WIN32)
 # include <process.h>
+LIBXSMM_EXTERN short _InterlockedExchangeAdd16(volatile short* add, short val); /* potentially missing prototype */
 #else
 # if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__) && defined(__USE_GNU)
 #   include <linux/futex.h>
