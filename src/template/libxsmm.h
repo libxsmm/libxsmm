@@ -108,6 +108,26 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
+/**
+ * Register user-defined key-value pair; the value can be then queried per libxsmm_xdispatch.
+ * Since the key-type is unknown to LIBXSMM, the key must be binary reproducible. Structured
+ * data may be padded (compiler/platform-specific), and key-structure initialization shall be:
+ * memset(&mykey, 0, sizeof(mykey)) followed by an element-wise initialization (some compilers
+ * leave padded data uninitialized which breaks binary reproducible keys). The size of the key
+ * is limited to LIBXSMM_DESCRIPTOR_MAXSIZE. The given value is copied by LIBXSMM and may be
+ * initialized at registration-time or when received per libxsmm_xdispatch. Registered data
+ * is released at program termination but can be also released if needed (libxsmm_xrelease).
+ */
+LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init);
+/**
+ * Query user-defined value from LIBXSMM's code registry. The value's buffer is owned and
+ * managed by LIBXSMM (can be libxsmm_xrelease'd, .e.g., if larger value for the same key
+ * must be stored).
+ */
+LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
+/** Remove key-value pair from code registry and release memory. */
+LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size);
+
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 
@@ -504,7 +524,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
  * Deallocates the JIT'ted code as returned by libxsmm_create_* functions,
  * unregisters and releases code from the code registry.
  */
-LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel);
+LIBXSMM_API void libxsmm_release_kernel(const void* kernel);
 
 /** Matrix copy function ("in" can be NULL to zero the destination). */
 LIBXSMM_API void libxsmm_matcopy(void* out, const void* in, unsigned int typesize,

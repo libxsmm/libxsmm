@@ -61,9 +61,15 @@ int main(int argc, char* argv[])
   /* allocate A, B, and C matrix buffers */
   void *const va = malloc(sa), *const vb = malloc(sb), *const vc = malloc(sc), *wa = va, *wb = vb, *wc = vc;
   /* align memory according to PAD */
+#if defined(PAD) && (1 < (PAD))
   T *const pa = static_cast<T*>(std::align(PAD, sa - PAD + 1, wa, sa));
   T *const pb = static_cast<T*>(std::align(PAD, sb - PAD + 1, wb, sb));
   T *const pc = static_cast<T*>(std::align(PAD, sc - PAD + 1, wc, sc));
+#else
+  T *const pa = static_cast<T*>(wa);
+  T *const pb = static_cast<T*>(wb);
+  T *const pc = static_cast<T*>(wc);
+#endif
   const double scale = 1.0 / size;
   blaze::timing::WcTimer timer;
 

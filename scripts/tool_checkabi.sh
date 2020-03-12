@@ -93,12 +93,17 @@ then
     ${SORT} -u ${ABINEW} > ${ABITMP}
     ${MV} ${ABITMP} ${ABINEW}
     REMOVED=$(${DIFF} --new-line-format="" --unchanged-line-format="" <(${SORT} ${ABICUR}) ${ABINEW})
+    NOTE="Note: LIBXSMM must be built with \"make STATIC=0 SYM|DBG=1\"!"
     if [ "" = "${REMOVED}" ]; then
       ${CP} ${ABINEW} ${ABICUR}
+      if [ "so" != "${LIBTYPE}" ]; then
+        echo "${NOTE}"
+      fi
       echo "Successfully completed."
     else
       echo "Error: removed or renamed function(s)"
       echo "${REMOVED}"
+      echo "${NOTE}"
     fi
   elif [ -e "${LIBS}"/${INCLUDE}.${LIBTYPE} ]; then
     echo "Error: ABI checker requires shared libraries (${LIBTYPE})."

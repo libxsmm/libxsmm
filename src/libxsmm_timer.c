@@ -117,7 +117,7 @@ LIBXSMM_API int libxsmm_get_timer_info(libxsmm_timer_info* info)
       info->tsc = 1;
     }
 # if !defined(LIBXSMM_INIT_COMPLETED)
-    else if (0 == libxsmm_ninit) {
+    else if (2 > libxsmm_ninit) {
       libxsmm_init();
       if (0 < libxsmm_timer_scale) {
         info->tsc = 1;
@@ -156,7 +156,7 @@ LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick(void)
     LIBXSMM_TIMER_RDTSC(result);
   }
 # if !defined(LIBXSMM_INIT_COMPLETED)
-  else if (0 == libxsmm_ninit) {
+  else if (2 > libxsmm_ninit) {
     libxsmm_init();
     if (0 < libxsmm_timer_scale) {
       LIBXSMM_TIMER_RDTSC(result);

@@ -207,9 +207,6 @@ endif
 # avoid to link with C++ standard library
 FORCE_CXX = 0
 
-# GCC-10 style linkage (error for duplicate symbols)
-COMMON = 0
-
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
@@ -570,26 +567,27 @@ ifneq (nopf,$(PREFETCH_SCHEME))
   SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch); LIBXSMM_UNUSED(C_prefetch);~
 endif
 
+# auto-clean the co-build
+$(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py \
+    $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(wildcard $(ROOTDIR)/.github/*) $(ROOTDIR)/version.txt
+#ifneq (,$(filter-out 0 1 2 STATIC,$(words $(PRESTATE)) $(word 2,$(PRESTATE))))
+ifneq (0,$(STATIC)) # static
+	@rm -f $(OUTDIR)/libxsmm*.$(DLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT).*
+else # shared/dynamic
+	@rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(SLIBEXT).*
+endif
+	@touch $@
+#endif
+
 .PHONY: config
 config: $(INCDIR)/libxsmm_config.h
-$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(DIRSTATE)/.state $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
-                            $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py \
-                            $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                            $(wildcard $(ROOTDIR)/.github/*) \
-                            $(ROOTDIR)/version.txt
+$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(DIRSTATE)/.state $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h
 	$(information)
 	$(info --- LIBXSMM build log)
 	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
 		$(ROOTDIR)/.github/install.sh; \
 	fi
 	@$(CP) $(filter $(ROOTDIR)/include/%.h,$(HEADERS)) $(INCDIR) 2>/dev/null || true
-ifneq (,$(filter-out 0 1 2 STATIC,$(words $(PRESTATE)) $(word 2,$(PRESTATE))))
-ifneq (0,$(STATIC)) # static
-	@rm -f $(OUTDIR)/libxsmm*.$(DLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT).*
-else # shared/dynamic
-	@rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(SLIBEXT).*
-endif
-endif
 ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
@@ -1422,7 +1420,7 @@ mkdocs: $(ROOTDIR)/documentation/index.md $(ROOTDIR)/documentation/libxsmm_sampl
 .PHONY: clean
 clean:
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
-ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
+ifneq ($(call qapath,$(BLDDIR)),$(HEREDIR))
 	@rm -rf $(BLDDIR)
 endif
 endif
@@ -1437,7 +1435,7 @@ endif
 .PHONY: realclean
 realclean: clean
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
-ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
+ifneq ($(call qapath,$(OUTDIR)),$(HEREDIR))
 	@rm -rf $(OUTDIR)
 endif
 endif
@@ -1450,7 +1448,7 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@rm -f $(OUTDIR)/libxsmm*.pc
 endif
 ifneq ($(call qapath,$(BINDIR)),$(ROOTDIR))
-ifneq ($(call qapath,$(BINDIR)),$(call qapath,.))
+ifneq ($(call qapath,$(BINDIR)),$(HEREDIR))
 	@rm -rf $(BINDIR)
 endif
 endif
@@ -1482,37 +1480,28 @@ realclean-all: realclean
 distclean: realclean-all
 	@rm -rf libxsmm*
 
-# PREFIX and DESTDIR are equivalent
-# - DESTDIR rules if PREFIX is also specified
-# - ensures deterministic behavior
+# keep original prefix (:)
+ALIAS_PREFIX := $(PREFIX)
+
+# DESTDIR is used as prefix of PREFIX
 ifneq (,$(strip $(DESTDIR)))
-  override PREFIX = $(DESTDIR)
+  override PREFIX := $(call qapath,$(DESTDIR)/$(PREFIX))
+endif
+# fall-back
+ifeq (,$(strip $(PREFIX)))
+  override PREFIX := $(HEREDIR)
 endif
 
-# STAGEDIR is used as prefix of PREFIX
-# - if PREFIX is not specified, or
-# - if PREFIX is a relative path
-ifneq (,$(strip $(STAGEDIR)))
-  ifeq (,$(filter /%,$(PREFIX)))
-    override PREFIX := $(call qapath,$(STAGEDIR)/$(PREFIX))
-  endif
-  ifeq (FreeBSD,$(UNAME))
-    PPKGDIR = libdata/pkgconfig
-  endif
-else ifeq (,$(strip $(PREFIX)))
-  ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
-    override PREFIX = /usr/local
-  else
-    override PREFIX = $(call qapath,.)
-  endif
+# setup maintainer-layout
+ALIAS_PREFIX ?= $(PREFIX)
+ifneq ($(ALIAS_PREFIX),$(PREFIX))
+  PPKGDIR = libdata/pkgconfig
+  PMODDIR = share/modules
 endif
-
-# ALIAS_* variables for PKG_CONFIG and MODULES
-ALIAS_PREFIX = $(PREFIX)
 
 .PHONY: install-minimal
 install-minimal: libxsmm
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(PREFIX),$(ABSDIR))
 	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR) $(PREFIX)/$(PSRCDIR)
 	@echo
 	@echo "LIBXSMM installing libraries..."
@@ -1561,31 +1550,25 @@ ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
 	@echo
 	@echo "LIBXSMM installing pkg-config and module files..."
 	@mkdir -p $(PREFIX)/$(PPKGDIR)
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/libxsmmnoblas.pc > $(PREFIX)/$(PPKGDIR)/libxsmmnoblas.pc 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/libxsmmext.pc > $(PREFIX)/$(PPKGDIR)/libxsmmext.pc 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/libxsmmf.pc > $(PREFIX)/$(PPKGDIR)/libxsmmf.pc 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/libxsmm.pc > $(PREFIX)/$(PPKGDIR)/libxsmm.pc 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
 	@mkdir -p $(PREFIX)/$(PMODDIR)
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(PREFIX))/" $(OUTDIR)/module > $(PREFIX)/$(PMODDIR)/module 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
-	@ls -1 $(INCDIR)/libxsmm*.h | grep -v libxsmm_source.h | xargs -I {} $(CP) -v {} $(PREFIX)/$(PINCDIR)
-	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR)
 	@echo
 	@echo "LIBXSMM installing header-only..."
-	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(patsubst $(PINCDIR)/%,%,$(PSRCDIR)) \
-		> $(PREFIX)/$(PINCDIR)/libxsmm_source.h
-	@$(CP) -vr $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR)
+	@$(CP) -r $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR) >/dev/null 2>/dev/null || true
 endif
 
 .PHONY: install
 install: install-minimal
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing documentation..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)
@@ -1602,7 +1585,7 @@ endif
 
 .PHONY: install-all
 install-all: install samples
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
@@ -1618,7 +1601,7 @@ endif
 
 .PHONY: install-dev
 install-dev: install-all build-tests
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing tests..."
 	@mkdir -p $(PREFIX)/$(PTSTDIR)
@@ -1627,7 +1610,7 @@ endif
 
 .PHONY: install-artifacts
 install-artifacts: install-dev
-ifneq ($(call qapath,$(PREFIX)),$(call qapath,.))
+ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing artifacts..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)/artifacts

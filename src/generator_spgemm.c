@@ -165,7 +165,7 @@ void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
-    libxsmm_generator_spgemm_csr_asparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
+    libxsmm_generator_spgemm_csr_asparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values, i_packed_width );
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */

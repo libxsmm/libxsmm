@@ -689,6 +689,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_GETRF      = LIBXSMM_KERNEL_KIND_GETRF,
   LIBXSMM_BUILD_KIND_TRMM       = LIBXSMM_KERNEL_KIND_TRMM,
   LIBXSMM_BUILD_KIND_TRSM       = LIBXSMM_KERNEL_KIND_TRSM,
+  LIBXSMM_BUILD_KIND_USER       = LIBXSMM_KERNEL_KIND_USER,
   LIBXSMM_BUILD_KIND_PGEMMRMAC  = LIBXSMM_KERNEL_UNREGISTERED,
   LIBXSMM_BUILD_KIND_PGEMMRMBC,
   LIBXSMM_BUILD_KIND_SRSOA,
@@ -708,6 +709,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
   char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
   libxsmm_descriptor_kind kind; /* kind: must be the first member */
   LIBXSMM_REGDESC(LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; , desc; });
+  LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; char desc[1]; } user;
 } libxsmm_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
@@ -721,6 +723,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
     const libxsmm_csr_reg_descriptor* sreg;
   } descriptor;
   libxsmm_build_kind kind;
+  /* used by user-kind */
+  size_t user_size;
 } libxsmm_build_request;
 
 typedef enum libxsmm_malloc_flags {
@@ -740,8 +744,11 @@ typedef enum libxsmm_malloc_flags {
       LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
-/** Format for instance an amount of Bytes like libxsmm_format_size(nbytes, "KMGT", "B", 10). */
-LIBXSMM_API_INTERN const char* libxsmm_format_size(size_t nbytes, const char scale[], const char* unit, int base);
+/**
+ * Format for instance an amount of Bytes like libxsmm_format_size(result, sizeof(result), nbytes, "KMGT", "B", 10).
+ * The value returned is in requested/determined unit so that the user can decide about printing the buffer.
+ */
+LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
 
 /** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
@@ -845,12 +852,18 @@ LIBXSMM_APIVAR_PRIVATE(const void* libxsmm_scratch_allocator_context);
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_scratch_pools);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR_PRIVATE(double libxsmm_scratch_scale);
+/** Number of seconds per RDTSC-cycle (zero or negative if RDTSC invalid). */
+LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 /** Counts the number of attempts to create an SPMDM-handle. */
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
-/** Number of seconds per RDTSC-cycle (zero or negative if RDTSC is not constant/available). */
-LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
+/** Counts the maximum number of thread that have been active. */
+LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
 /** Security-enhanced environment. */
 LIBXSMM_APIVAR_PRIVATE(int libxsmm_se);
+
+#if (0 != LIBXSMM_SYNC)
+LIBXSMM_APIVAR_PRIVATE(LIBXSMM_TLS_TYPE libxsmm_tlskey);
+#endif
 
 #endif /*LIBXSMM_MAIN_H*/
 

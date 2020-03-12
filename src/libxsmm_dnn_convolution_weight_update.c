@@ -20,7 +20,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom_f32
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
-void transpose_32x16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int ld_in, int ld_out)
+void transpose_32x16(const libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int ld_in, int ld_out)
 {
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
   __m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;
@@ -169,7 +169,7 @@ void transpose_32x16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int ld_in, int
 }
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
-void transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col, int ld_in, int ld_out)
+void transpose_32xcols(const libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col, int ld_in, int ld_out)
 {
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
   __m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;
@@ -561,7 +561,7 @@ void transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col, int
 }
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
-void transpose_input_pixels_bf16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int M, int N, int ld_in, int ld_out){
+void transpose_input_pixels_bf16(const libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int M, int N, int ld_in, int ld_out){
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
   int i, j;
   int full16_chunks = N/16;
@@ -571,14 +571,14 @@ void transpose_input_pixels_bf16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, in
   if (full16_chunks) {
     for (i=0; i<M; i+=32) {
       for (j=0; j<_N; j+=16) {
-        transpose_32x16((libxsmm_bfloat16*)in + i + ld_in*j, (libxsmm_bfloat16*)out + j + i*ld_out, ld_in, ld_out);
+        transpose_32x16((const libxsmm_bfloat16*)in + i + ld_in*j, (libxsmm_bfloat16*)out + j + i*ld_out, ld_in, ld_out);
       }
     }
   }
 
   if (remainder_cols) {
     for (i=0; i<M; i+=32) {
-      transpose_32xcols((libxsmm_bfloat16*)in + i + ld_in*full16_chunks*16, (libxsmm_bfloat16*)out + full16_chunks*16 + i*ld_out, remainder_cols, ld_in, ld_out);
+      transpose_32xcols((const libxsmm_bfloat16*)in + i + ld_in*full16_chunks*16, (libxsmm_bfloat16*)out + full16_chunks*16 + i*ld_out, remainder_cols, ld_in, ld_out);
     }
   }
 #else

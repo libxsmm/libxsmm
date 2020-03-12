@@ -7,7 +7,7 @@ OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = -DLIBXSMM_GEMM_CONST
+DFLAGS = -DLIBXSMM_BLAS_CONST
 
 # PEDANTIC=2: OpenBLAS headers can cause warnings
 override PEDANTIC = 1

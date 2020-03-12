@@ -16,6 +16,7 @@ BASENAME=$(command -v basename)
 MKDIR=$(command -v mkdir)
 CHMOD=$(command -v chmod)
 UNAME=$(command -v uname)
+DIFF=$(command -v diff)
 SYNC=$(command -v sync)
 GREP=$(command -v grep)
 WGET=$(command -v wget)
@@ -44,8 +45,9 @@ if [ "" = "${REVSTART}" ]; then
 fi
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
-   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${LS}" ] && \
-   [ "" != "${TR}" ] && [ "" != "${RM}" ] && [ "" != "${CP}" ];
+   [ "" != "${DIFF}" ] && [ "" != "${GREP}" ] && [ "" != "${SED}" ] && \
+   [ "" != "${LS}" ] && [ "" != "${TR}" ] && \
+   [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
   # check if full/unlimited tests are triggered
   if [ "" != "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
@@ -165,7 +167,7 @@ then
     fi
     umask 007
     # eventually cleanup run-script of terminated/previous sessions
-    ${RM} -f ${HERE}/../.tool_??????.sh
+    ${RM} -f "${HERE}/../.tool_??????.sh"
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
@@ -187,6 +189,11 @@ then
   if [ "" != "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
     LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
   fi
+
+  # backup current environment (snapshot)
+  ${RM} -f "${HERE}/../.env_??????"
+  ENVFILE=$(${MKTEMP} ${HERE}/../.env_XXXXXX)
+  declare -px > ${ENVFILE}
 
   RESULT=0
   # control log
@@ -260,6 +267,17 @@ then
       fi
       CONFIGCOUNT=${#CONFIGFILES[@]}
       if [ "0" != "${CONFIGCOUNT}" ]; then
+        # no need to have unique values in ENVDIFF aka "sort -u"
+        ENVDIFF=$(declare -px | ${DIFF} ${ENVFILE} - | ${SED} -n 's/[<>] \(..*\)/\1/p' | ${SED} -n 's/declare -x \(..*\)=..*/\1/p')
+        # restore environment
+        for ENV in ${ENVDIFF}; do
+          ENVVAR=$(${GREP} "declare \-x ${ENV}=" ${ENVFILE})
+          if [ "" != "${ENVVAR}" ]; then
+            eval ${ENVVAR}
+          else
+            unset ${ENV}
+          fi
+        done
         CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
         CONFIG=$(${BASENAME} ${CONFIGFILE} .env)
         source "${CONFIGFILE}" ""
@@ -390,9 +408,12 @@ then
     TEST=""
   done # TEST
 
-  # remove temporary script (if it exists)
+  # remove temporary files
   if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
     ${RM} ${TESTSCRIPT}
+  fi
+  if [ "" != "${ENVFILE}" ] && [ -e ${ENVFILE} ]; then
+    ${RM} ${ENVFILE}
   fi
 
   # control log

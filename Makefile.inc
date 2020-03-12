@@ -254,6 +254,11 @@ qsuffix = $(suffix   $(strip      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qbname =  $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qname =   $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
 
+# absolute directory paths
+ABSDIR := $(call qapath,$(ROOTDIR))
+HOMEDIR := $(call qapath,$(HOME))
+HEREDIR := $(call qapath,.)
+
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
   OMPRT = $(patsubst lib%,%,$(OMP))
@@ -340,10 +345,10 @@ ifeq (0,$(GNU))
       CC = icx
     endif
   endif
-  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" | $(CC) $(ECFLAGS) $(EFLAGS) -E -P - 2>/dev/null))
-    ICX = 1
-  else ifneq (,$(filter icx icx2,$(call qndir,$(call which,icx))$(INTEL)))
-    ICX = 2
+  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" \
+                         | $(CC) $(ECFLAGS) $(EFLAGS) -E -P - 2>/dev/null \
+                         | sed "/^[[:space:]]*$$/d" 2>/dev/null))
+    ICX = $(INTEL)
   endif
 endif
 ICX ?= 0
@@ -605,16 +610,13 @@ uniqadd = $(filter-out $($2),$($1)) $(if $3,$3,$($2))
 uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
 ctest = $(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   echo "int main(void) { return 0; }" > $${INFILE} && \
-  $1 $2 $${INFILE} -o /dev/null 2>/dev/null >/dev/null && echo "OK"; \
+  $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
   rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null),$2)
 ldlib = $(call ctest,$1 $2,-l$3)
 
 ifneq (,$(FORCE_CXX))
 ifneq (0,$(FORCE_CXX))
-  override CC = $(CXX)
-  ifneq (,$(call ctest,$(CC),-xc++))
-    override CC += -xc++
-  endif
+  override CC := $(CXX) $(call ctest,$(CC),-xc++)
 endif
 endif
 
@@ -711,11 +713,11 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
 SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
-    AVX ?= 3
     ifeq (2,$(words $(filter avx512pf avx512er,$(CPUFLAGS)))) # KNL
+      AVX ?= 3
       MIC ?= 1
-    else # SKX
-      MIC ?= 0
+    else
+      AVX ?= 2
     endif
   else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
     ifeq (1,$(words $(filter fma,$(CPUFLAGS))))
@@ -736,6 +738,7 @@ else ifneq (0,$(KNC))
   MPSS = 1
 endif
 AVX ?= 0
+MIC ?= 0
 
 ifneq (0,$(INTEL))
   SUITE = Intel Compiler
@@ -769,6 +772,9 @@ PGI ?= 0
 LD = $(CC)
 XLD = $(CXX)
 
+# prepend compiler-local library directory
+LIBFIND := $(call qapath,$(call qdir,$(call which,$(LD)))/../lib) $(LIBFIND)
+
 ifneq (Windows_NT,$(UNAME))
 ifneq (,$(strip $(PIC)))
   ifneq (,$(call ctest,$(CC),-f$(PIC)))
@@ -800,16 +806,11 @@ else # fallback
 endif
 endif
 
-# COMMON ?= 1
 ifneq (,$(COMMON))
 ifneq (0,$(COMMON))
-  ifneq (,$(call ctest,$(LD),-fcommon))
-    CFLAGS += -fcommon
-  endif
+  CFLAGS += $(call ctest,$(CC),-fcommon)
 else
-  ifneq (,$(call ctest,$(LD),-fno-common))
-    CFLAGS += -fno-common
-  endif
+  CFLAGS += $(call ctest,$(CC),-fno-common)
 endif
 endif
 
@@ -923,7 +924,8 @@ abslibpath ?= $(call absliblpath,$1)
 libpath = $(strip $(if $1, \
   $(if $(call ldlib,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(CHAR_CLOSE)]\).*/:\1/" \
-    | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)\([[:space:]]..*\)*/\1/p" \
+    | rev | sed "s/\(..*\) :..*$$/\1/" | rev \
+    | sed -n "s/[[:space:]]*\(\.*\/..*\)\([[:space:]]..*\)*/\1/p" \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
@@ -1119,31 +1121,35 @@ ifneq (0,$(INTEL))
     endif
   else
     ifneq (,$(filter 0 1,$(ICX)))
-    ifeq (,$(filter-out 0,$(FORCE_CXX)))
-      CSTD = -std=c89
-    endif
+      ifeq (,$(filter-out 0,$(FORCE_CXX)))
+        CSTD = -std=c89
+      endif
+    else ifneq (0,$(ICX))
+      CXXFLAGS += -Wno-pass-failed
+      CFLAGS += -Wno-pass-failed
     endif
     ifeq (,$(strip $(GFC)))
       FCFLAGS += $(FFORM_FLAG)
     endif
   endif
+  ifeq (0,$(OFFLOAD))
+  ifeq (0,$(ICX))
+    ifneq (0,$(shell echo "$$((150000<=$(CC_VERSION_NUM)))"))
+      NO_OFFLOAD_FLAG = -qno-offload
+    else
+      NO_OFFLOAD_FLAG = -no-offload
+    endif
+  endif
+  endif
+  CXXFLAGS += $(OPTFLAG) $(NO_OFFLOAD_FLAG)
+  CFLAGS += $(OPTFLAG) $(NO_OFFLOAD_FLAG)
   ifeq (,$(strip $(GFC)))
+    FCFLAGS += $(OPTFLAG) $(NO_OFFLOAD_FLAG)
     # flag specifying output directory must be last
     FMFLAGS += -module
   else
+    FCFLAGS += $(OPTFLAG)
     FMFLAGS += -J
-  endif
-  CXXFLAGS += $(OPTFLAG)
-  CFLAGS += $(OPTFLAG)
-  FCFLAGS += $(OPTFLAG)
-  ifeq (0,$(OFFLOAD))
-  ifeq (0,$(ICX))
-    ifeq (,$(strip $(GFC)))
-      FCFLAGS += -qno-offload
-    endif
-    CXXFLAGS += -qno-offload
-    CFLAGS += -qno-offload
-  endif
   endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
@@ -1339,9 +1345,7 @@ else # GCC assumed
       FCFLAGS += -fno-asynchronous-unwind-tables
       CFLAGS += -fno-asynchronous-unwind-tables
       ifneq (0,$(PEDANTIC))
-      ifneq (1,$(PEDANTIC))
         CFLAGS += -Wno-format
-      endif
       endif
     endif
     FPEDANTIC += $(FWARNEXTRA)
@@ -1466,7 +1470,7 @@ else # GCC assumed
   ifeq (,$(OMPLIBFILE))
   ifneq (,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
       printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" > $${INFILE} && \
-      $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) $${INFILE} -o /dev/null 2>/dev/null >/dev/null && echo "OK"; \
+      $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
       rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
     LDFLAGS += $(addprefix -L,$(LIBFIND))
     OMPLIBFILE = -l$(OMPRT)
@@ -1627,18 +1631,6 @@ else # take user's TARGET into account
   CTARGET := $(TARGET)
 endif
 
-ifneq (0,$(INTRINSICS))
-  ifeq (1,$(INTRINSICS))
-    ifeq (0,$(INTEL))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    else ifneq (,$(CTARGET))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    endif
-  endif
-else # disabled
-  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
-endif
-
 ifneq (,$(call ctest,$(CC),$(CTARGET)))
   # check target flags by feeding an ad-hoc C program into the compiler
   ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
@@ -1666,6 +1658,22 @@ endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
   TARGET ?= $(CTARGET)
+endif
+
+ifneq (0,$(INTRINSICS))
+  ifeq (1,$(INTRINSICS))
+    ifeq (0,$(INTEL))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    else ifneq (,$(CTARGET))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    endif
+  endif
+else # disabled
+  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
+endif
+
+ifeq (0,$(SYM))
+  LDFLAGS += $(call ctest,$(LD),-s)
 endif
 
 ifeq (0,$(COMPATIBLE))
@@ -1819,27 +1827,27 @@ ifeq (Darwin,$(UNAME))
   FCFLAGS += -Wa,-q
 endif
 
-ifneq (0,$(THREADS))
-  ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
+ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
+  ifneq (,$(filter-out 0,$(THREADS) $(BLAS)))
     CFLAGS += -pthread
     CXXFLAGS += -pthread
-    FLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
-    ifneq (Windows_NT,$(UNAME))
-      ifneq (0,$(INTEL))
-        ifeq (0,$(OFFLOAD))
-          CLDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
-        else
-          CLDFLAGS += -pthread
-        endif
-      else ifneq (Darwin,$(UNAME))
-        CLDFLAGS += -pthread
-      else ifeq (0,$(CLANG))
+  endif
+  FLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
+  ifneq (Windows_NT,$(UNAME))
+    ifneq (0,$(INTEL))
+      ifeq (0,$(OFFLOAD))
+        CLDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
+      else
         CLDFLAGS += -pthread
       endif
+    else ifneq (Darwin,$(UNAME))
+      CLDFLAGS += -pthread
+    else ifeq (0,$(CLANG))
+      CLDFLAGS += -pthread
     endif
-  else ifneq (0,$(PGI))
-    LIBATOMIC ?= 1
   endif
+else ifneq (0,$(PGI))
+  LIBATOMIC ?= 1
 endif
 
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
@@ -2059,7 +2067,7 @@ else ifneq (0,$(BLAS)) # generic
       BLASTEST = $(SLDFLAGS) $(patsubst %,-L%,$(BLASDIR))
     endif
     BLASLIBFILE = $(call libpath,$(LD),$(BLASTEST),openblas$(BLAS_THREADS)$(BLAS_BITS))
-    ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
+    ifeq (,$(BLASLIBFILE)) # newer distributions symlink non-decorated library to threaded OpenBLAS
       BLASLIBFILE = $(call libpath,$(LD),$(BLASTEST),openblas$(BLAS_BITS))
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
@@ -2110,14 +2118,14 @@ else ifneq (0,$(BLAS)) # generic
     endif
     BLASREF ?= 0
     ifneq (0,$(BLASREF)) # BLAS (reference)
-      ifneq (0,$(DEPSTATIC))
-        ifneq (,$(LIBGFORTRAN))
-          BLASTEST += $(XLIB_BEGIN) $(LIBGFORTRAN) $(LIBM) $(XLIB_END)
-        else ifeq (3,$(GCC))
-          BLASTEST += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
-        endif
-      endif
       ifeq (0,$(PGI))
+        ifneq (0,$(DEPSTATIC))
+          ifneq (,$(LIBGFORTRAN))
+            BLASTEST += $(XLIB_BEGIN) $(LIBGFORTRAN) $(LIBM) $(XLIB_END)
+          else ifeq (3,$(GCC))
+            BLASTEST += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
+          endif
+        endif
         QUADMATH = $(call ldlib,$(LD),$(SLDFLAGS),quadmath)
         ifneq (,$(QUADMATH))
           BLASTEST += $(XLIB_BEGIN) $(QUADMATH) $(call ldlib,$(LD),$(SLDFLAGS),m) $(XLIB_END)
@@ -2127,6 +2135,8 @@ else ifneq (0,$(BLAS)) # generic
         else
           BLAS_CLDFLAGS += $(BLASTEST)
         endif
+      else # PGI
+        BLAS_FLAGS += -D__CBLAS
       endif
     endif
     ifneq (,$(filter-out 0,$(OPENBLAS) $(BLASREF))) # OpenBLAS or RefBLAS
@@ -2210,18 +2220,19 @@ objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% %STATE MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% UNUSED AVX \
-    COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO SSE ENV EXTDEP FORTDEP FSTD GINFO TESTSIZE \
-    DLIBEXT DYNAMIC FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE SHARED \
-    CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% PYMOD \
-    GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX MINGW \
-    NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN FMAIN \
-    LIBPTHREAD CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST \
-    uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
-    ctest applyif extname objname unquote quote qapath qndir qdir qsuffix qbname qname abslib \
+  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% %STATE MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX \
+    COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO SSE ENV EXTDEP FORTDEP FSTD GINFO \
+    DLIBEXT DYNAMIC FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE \
+    CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% \
+    GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX \
+    NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
+    LIBPTHREAD CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION \
+    HEREDIR HOMEDIR UNUSED TESTSIZE SHARED PYMOD MINGW FMAIN VERSION \
+    abslib applyif uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
+    ctest extname objname unquote quote qapath qndir qdir qsuffix qbname qname \
     BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
-    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V))))?))))
+    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(subst $(HOMEDIR),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V)))))?))))
 
 DIRSTATE ?= .
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))

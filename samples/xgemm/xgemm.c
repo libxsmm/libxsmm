@@ -56,20 +56,20 @@ LIBXSMM_BLAS_SYMBOL_DECL(ITYPE, gemm)
 
 int main(int argc, char* argv[])
 {
-  LIBXSMM_GEMM_CONST libxsmm_blasint m = (1 < argc ? atoi(argv[1]) : 512);
-  LIBXSMM_GEMM_CONST libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
-  LIBXSMM_GEMM_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k), nn = n;
-  LIBXSMM_GEMM_CONST OTYPE alpha = (OTYPE)(7 < argc ? atof(argv[7]) : 1.0);
-  LIBXSMM_GEMM_CONST OTYPE beta  = (OTYPE)(8 < argc ? atof(argv[8]) : 1.0);
-  LIBXSMM_GEMM_CONST char transa = (/*LIBXSMM_GEMM_CONST*/ char)( 9 < argc ? *argv[9]  : 'N');
-  LIBXSMM_GEMM_CONST char transb = (/*LIBXSMM_GEMM_CONST*/ char)(10 < argc ? *argv[10] : 'N');
-  LIBXSMM_GEMM_CONST libxsmm_blasint mm = (('N' == transa || 'n' == transa) ? m : k);
-  LIBXSMM_GEMM_CONST libxsmm_blasint kk = (('N' == transb || 'n' == transb) ? k : n);
-  LIBXSMM_GEMM_CONST libxsmm_blasint ka = (('N' == transa || 'n' == transa) ? k : m);
-  LIBXSMM_GEMM_CONST libxsmm_blasint kb = (('N' == transb || 'n' == transb) ? n : k);
-  LIBXSMM_GEMM_CONST libxsmm_blasint lda = ((4 < argc && mm < atoi(argv[4])) ? atoi(argv[4]) : mm);
-  LIBXSMM_GEMM_CONST libxsmm_blasint ldb = ((5 < argc && kk < atoi(argv[5])) ? atoi(argv[5]) : kk);
-  LIBXSMM_GEMM_CONST libxsmm_blasint ldc = ((6 < argc && m < atoi(argv[6])) ? atoi(argv[6]) : m);
+  LIBXSMM_BLAS_CONST libxsmm_blasint m = (1 < argc ? atoi(argv[1]) : 512);
+  LIBXSMM_BLAS_CONST libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
+  LIBXSMM_BLAS_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k), nn = n;
+  LIBXSMM_BLAS_CONST OTYPE alpha = (OTYPE)(7 < argc ? atof(argv[7]) : 1.0);
+  LIBXSMM_BLAS_CONST OTYPE beta  = (OTYPE)(8 < argc ? atof(argv[8]) : 1.0);
+  LIBXSMM_BLAS_CONST char transa = (/*LIBXSMM_BLAS_CONST*/ char)( 9 < argc ? *argv[9]  : 'N');
+  LIBXSMM_BLAS_CONST char transb = (/*LIBXSMM_BLAS_CONST*/ char)(10 < argc ? *argv[10] : 'N');
+  LIBXSMM_BLAS_CONST libxsmm_blasint mm = (('N' == transa || 'n' == transa) ? m : k);
+  LIBXSMM_BLAS_CONST libxsmm_blasint kk = (('N' == transb || 'n' == transb) ? k : n);
+  LIBXSMM_BLAS_CONST libxsmm_blasint ka = (('N' == transa || 'n' == transa) ? k : m);
+  LIBXSMM_BLAS_CONST libxsmm_blasint kb = (('N' == transb || 'n' == transb) ? n : k);
+  LIBXSMM_BLAS_CONST libxsmm_blasint lda = ((4 < argc && mm < atoi(argv[4])) ? atoi(argv[4]) : mm);
+  LIBXSMM_BLAS_CONST libxsmm_blasint ldb = ((5 < argc && kk < atoi(argv[5])) ? atoi(argv[5]) : kk);
+  LIBXSMM_BLAS_CONST libxsmm_blasint ldc = ((6 < argc && m < atoi(argv[6])) ? atoi(argv[6]) : m);
   const int nrepeat = ((11 < argc && 0 < atoi(argv[11])) ? atoi(argv[11])
     : LIBXSMM_MAX(13 / LIBXSMM_MAX(1, (int)(libxsmm_icbrt_u64(1ULL * m * n * k) >> 10)), 3));
   const double gflops = 2.0 * m * n * k * 1E-9;

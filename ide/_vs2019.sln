@@ -50,11 +50,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "transpose", "..\samples\tra
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "headeronly", "..\tests\headeronly.vcxproj", "{88C3F7F5-A3AA-4974-B928-5EE69BC17C31}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vla", "..\tests\vla.vcxproj", "{326EBB80-794E-4E06-BA06-85CFE26F7C3C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmmext", "libxsmmext.vcxproj", "{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -68,6 +68,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "malloc", "..\tests\malloc.v
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hash", "..\tests\hash.vcxproj", "{4B3F30DD-1A04-4FA6-B5A4-7B1F86990A9A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "matcopy", "..\tests\matcopy.vcxproj", "{A674A92E-D92F-4AA0-9264-F719D39407B8}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -81,8 +84,14 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "eigen", "eigen", "{F41F38BC-64ED-478C-AF08-51D0BAEC263E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gemmflags", "..\tests\gemmflags.vcxproj", "{D54866A7-43B1-40AF-AE02-C96BD5B03B81}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "matdiff", "..\tests\matdiff.vcxproj", "{978B5AF3-4A2E-4DC9-BF7C-374403865240}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "eigen_tensor", "..\samples\eigen\eigen_tensor.vcxproj", "{315C606A-433F-43DB-8A26-A44AB66C99B1}"
 EndProject
@@ -119,6 +128,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bsparse_srsoa", "..\samples
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "atomics", "..\tests\atomics.vcxproj", "{E29F73D9-3474-4C67-800A-075D5EC7C2AB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "xgemm", "xgemm", "{927066C2-55DE-4180-8620-40C62B8000DE}"
 EndProject
@@ -457,6 +469,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cp2k-collocate", "..\sample
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "registry", "..\tests\registry.vcxproj", "{988F6B05-1746-43E6-8FEA-B7DB609EE668}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
 Global
@@ -1405,6 +1423,18 @@ Global
 		{EDB39F12-1195-41FA-AE27-F227CDE067B2}.symbols|Win32.Build.0 = symbols|Win32
 		{EDB39F12-1195-41FA-AE27-F227CDE067B2}.symbols|x64.ActiveCfg = symbols|x64
 		{EDB39F12-1195-41FA-AE27-F227CDE067B2}.symbols|x64.Build.0 = symbols|x64
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.debug|Win32.ActiveCfg = debug|Win32
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.debug|Win32.Build.0 = debug|Win32
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.debug|x64.ActiveCfg = debug|x64
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.debug|x64.Build.0 = debug|x64
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.release|Win32.ActiveCfg = release|Win32
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.release|Win32.Build.0 = release|Win32
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.release|x64.ActiveCfg = release|x64
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.release|x64.Build.0 = release|x64
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.symbols|Win32.ActiveCfg = symbols|Win32
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.symbols|Win32.Build.0 = symbols|Win32
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.symbols|x64.ActiveCfg = symbols|x64
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1501,6 +1531,7 @@ Global
 		{D1E1982A-58C8-4B08-9F05-7697FACD0BF5} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
 		{99A237B2-5EA1-4988-9D09-B4FD97C42AF1} = {D1E1982A-58C8-4B08-9F05-7697FACD0BF5}
 		{EDB39F12-1195-41FA-AE27-F227CDE067B2} = {D1E1982A-58C8-4B08-9F05-7697FACD0BF5}
+		{988F6B05-1746-43E6-8FEA-B7DB609EE668} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD13D8C2-5B0F-431B-897A-AA0FE5BDFCB2}

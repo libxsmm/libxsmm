@@ -59,8 +59,7 @@
 /* permit thread-unsafe */
 #if !defined(LIBXSMM_SYNC_NONE) && ( \
   (defined(__PGI) && (!defined(LIBXSMM_LIBATOMIC) || !defined(__STATIC))) || \
-  (defined(_CRAYC) && !defined(__GNUC__)) || \
-  (defined(__MINGW32__)))
+  (defined(_CRAYC) && !defined(__GNUC__)))
 # define LIBXSMM_SYNC_NONE
 #endif
 
@@ -290,12 +289,16 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) InterlockedOr((volatile LONG*)(DST_PTR), VALUE)
 # define LIBXSMM_ATOMIC_FETCH_OR8(DST_PTR, VALUE, KIND) _InterlockedOr8((volatile char*)(DST_PTR), VALUE)
 # define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) + (VALUE))
+# define LIBXSMM_ATOMIC_ADD_FETCH16(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, VALUE, KIND) + (VALUE))
 # define LIBXSMM_ATOMIC_ADD_FETCH64(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) + (VALUE))
 # define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) ((size_t)LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) - ((size_t)VALUE))
+# define LIBXSMM_ATOMIC_SUB_FETCH16(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_SUB16(DST_PTR, VALUE, KIND) - (VALUE))
 # define LIBXSMM_ATOMIC_SUB_FETCH64(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) - (VALUE))
 # define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) InterlockedExchangeAdd((volatile LONG*)(DST_PTR), VALUE)
+# define LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, VALUE, KIND) _InterlockedExchangeAdd16((volatile SHORT*)(DST_PTR), VALUE)
 # define LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) InterlockedExchangeAdd64((volatile LONGLONG*)(DST_PTR), VALUE)
 # define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, -1 * (VALUE), KIND)
+# define LIBXSMM_ATOMIC_FETCH_SUB16(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, -1 * (VALUE), KIND)
 # define LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, -1 * (VALUE), KIND)
 # define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) (((LONG)(OLDVAL)) == InterlockedCompareExchange((volatile LONG*)(DST_PTR), NEWVAL, OLDVAL))
 # define LIBXSMM_ATOMIC_CMPSWP8(DST_PTR, OLDVAL, NEWVAL, KIND) ((OLDVAL) == _InterlockedCompareExchange8((volatile char*)(DST_PTR), NEWVAL, OLDVAL))
@@ -329,7 +332,7 @@ typedef enum libxsmm_atomic_kind {
         } \
         else { \
           libxsmm_sync_cycle_npause_ = (NPAUSE); \
-          LIBXSMM_SYNC_YIELD(); \
+          LIBXSMM_SYNC_YIELD; \
           ELSE \
         } \
       } while(((EXP_STATE) & 1) != (*(DST_PTR) & 1)); \
@@ -387,6 +390,11 @@ typedef enum libxsmm_atomic_kind {
 #   endif
 # endif
 # if defined(LIBXSMM_WIN32_THREADS)
+#   define LIBXSMM_TLS_TYPE DWORD
+#   define LIBXSMM_TLS_CREATE(KEYPTR) *(KEYPTR) = TlsAlloc()
+#   define LIBXSMM_TLS_DESTROY(KEY) TlsFree(KEY)
+#   define LIBXSMM_TLS_SETVALUE(KEY, PTR) TlsSetValue(KEY, PTR)
+#   define LIBXSMM_TLS_GETVALUE(KEY) TlsGetValue(KEY)
 #   define LIBXSMM_LOCK_SPINLOCK spin
 #   if ((LIBXSMM_WIN32_THREADS) & 0x0600)
 #     define LIBXSMM_LOCK_MUTEX rwlock
@@ -445,17 +453,22 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 #     define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 #   endif
-#   define LIBXSMM_SYNC_YIELD YieldProcessor
+#   define LIBXSMM_SYNC_YIELD YieldProcessor()
 # else
+#   define LIBXSMM_TLS_TYPE pthread_key_t
+#   define LIBXSMM_TLS_CREATE(KEYPTR) pthread_key_create(KEYPTR, NULL)
+#   define LIBXSMM_TLS_DESTROY(KEY) pthread_key_delete(KEY)
+#   define LIBXSMM_TLS_SETVALUE(KEY, PTR) pthread_setspecific(KEY, PTR)
+#   define LIBXSMM_TLS_GETVALUE(KEY) pthread_getspecific(KEY)
 #   if defined(__APPLE__) && defined(__MACH__)
-#     define LIBXSMM_SYNC_YIELD pthread_yield_np
+#     define LIBXSMM_SYNC_YIELD pthread_yield_np()
 #   else
 #     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
       LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_THROW;
 #     else
       LIBXSMM_EXTERN void pthread_yield(void);
 #     endif
-#     define LIBXSMM_SYNC_YIELD pthread_yield
+#     define LIBXSMM_SYNC_YIELD pthread_yield()
 #   endif
 #   if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && defined(__APPLE__) && defined(__MACH__)
 #     define LIBXSMM_LOCK_SPINLOCK mutex
@@ -705,6 +718,7 @@ typedef enum libxsmm_atomic_kind {
 #   endif
 # endif
 #else /* no synchronization */
+# define LIBXSMM_SYNC_YIELD LIBXSMM_SYNC_PAUSE
 # define LIBXSMM_LOCK_SPINLOCK spinlock_dummy
 # define LIBXSMM_LOCK_MUTEX mutex_dummy
 # define LIBXSMM_LOCK_RWLOCK rwlock_dummy

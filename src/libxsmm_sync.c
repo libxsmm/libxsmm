@@ -33,6 +33,18 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_SYNC_RWLOCK_BITS)
+# if defined(__MINGW32__)
+#   define LIBXSMM_SYNC_RWLOCK_BITS 32
+# else
+#   define LIBXSMM_SYNC_RWLOCK_BITS 16
+# endif
+#endif
+
+#if !defined(LIBXSMM_SYNC_GENERIC_PID) && 1
+# define LIBXSMM_SYNC_GENERIC_PID
+#endif
+
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
   uint8_t id;
@@ -459,11 +471,10 @@ LIBXSMM_API void libxsmm_mutex_release(libxsmm_mutex* mutex)
 
 
 #if (0 != LIBXSMM_SYNC)
+typedef LIBXSMM_CONCATENATE3(uint,LIBXSMM_SYNC_RWLOCK_BITS,_t) internal_sync_uint_t;
+typedef LIBXSMM_CONCATENATE3(int,LIBXSMM_SYNC_RWLOCK_BITS,_t) internal_sync_int_t;
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
-  struct {
-    uint16_t writer;
-    uint16_t reader;
-  } kind;
+  struct { internal_sync_uint_t writer, reader; } kind;
   uint32_t bits;
 } internal_sync_counter;
 #endif
@@ -547,11 +558,7 @@ LIBXSMM_API void libxsmm_rwlock_release(libxsmm_rwlock* rwlock)
 {
 #if (0 != LIBXSMM_SYNC)
   assert(0 != rwlock);
-# if defined(_WIN32)
-  _InterlockedExchangeAdd16((volatile short*)&rwlock->completions.kind.writer, 1);
-# else
-  LIBXSMM_ATOMIC_ADD_FETCH(&rwlock->completions.kind.writer, 1, LIBXSMM_ATOMIC_SEQ_CST);
-# endif
+  LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_ADD, LIBXSMM_SYNC_RWLOCK_BITS)(&rwlock->completions.kind.writer, 1, LIBXSMM_ATOMIC_SEQ_CST);
 #else
   LIBXSMM_UNUSED(rwlock);
 #endif
@@ -563,11 +570,7 @@ LIBXSMM_API_INLINE int internal_rwlock_tryread(libxsmm_rwlock* rwlock, internal_
 {
 #if (0 != LIBXSMM_SYNC)
   assert(0 != rwlock && 0 != prev);
-# if defined(_WIN32)
-  prev->bits = InterlockedExchangeAdd((volatile LONG*)&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC);
-# else
   prev->bits = LIBXSMM_ATOMIC_FETCH_ADD(&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC, LIBXSMM_ATOMIC_SEQ_CST);
-# endif
   return rwlock->completions.kind.writer != prev->kind.writer
     ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1) /* not acquired */
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK));
@@ -610,11 +613,7 @@ LIBXSMM_API void libxsmm_rwlock_relread(libxsmm_rwlock* rwlock)
 {
 #if (0 != LIBXSMM_SYNC)
   assert(0 != rwlock);
-# if defined(_WIN32)
-  _InterlockedExchangeAdd16((volatile short*)&rwlock->completions.kind.reader, 1);
-# else
-  LIBXSMM_ATOMIC_ADD_FETCH(&rwlock->completions.kind.reader, 1, LIBXSMM_ATOMIC_SEQ_CST);
-# endif
+  LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_ADD, LIBXSMM_SYNC_RWLOCK_BITS)(&rwlock->completions.kind.reader, 1, LIBXSMM_ATOMIC_SEQ_CST);
 #else
   LIBXSMM_UNUSED(rwlock);
 #endif
@@ -631,27 +630,42 @@ LIBXSMM_API unsigned int libxsmm_get_pid(void)
 }
 
 
+LIBXSMM_API_INTERN unsigned int internal_get_tid(void);
+LIBXSMM_API_INTERN unsigned int internal_get_tid(void)
+{
+  const unsigned int nthreads = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED);
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (LIBXSMM_NTHREADS_MAX < nthreads
+    && 0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: maximum number of threads is exhausted!\n");
+  }
+#endif
+  LIBXSMM_ASSERT(LIBXSMM_NTHREADS_MAX == LIBXSMM_UP2POT(LIBXSMM_NTHREADS_MAX));
+  return LIBXSMM_MOD2(nthreads - 1, LIBXSMM_NTHREADS_MAX);
+}
+
+
 LIBXSMM_API unsigned int libxsmm_get_tid(void)
 {
 #if (0 != LIBXSMM_SYNC)
+# if defined(LIBXSMM_SYNC_GENERIC_PID)
   static LIBXSMM_TLS unsigned int tid = 0xFFFFFFFF;
-  if (0xFFFFFFFF == tid) {
-    static unsigned int libxsmm_thread_count = 0;
-    const unsigned int nthreads = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED);
-# if defined(LIBXSMM_NTHREADS_USE)
-    static int error_once = 0;
-    if (LIBXSMM_NTHREADS_MAX < nthreads
-      && 0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: maximum number of threads is exhausted!\n");
-    }
-    tid = (nthreads - 1) % LIBXSMM_NTHREADS_MAX;
-# else
-    tid = (nthreads - 1);
-# endif
-  }
+  if (0xFFFFFFFF == tid) tid = internal_get_tid();
   return tid;
+# else
+  void* tls = LIBXSMM_TLS_GETVALUE(libxsmm_tlskey);
+  if (NULL == tls) {
+    static unsigned int tid[LIBXSMM_NTHREADS_MAX];
+    const int i = internal_get_tid();
+    tid[i] = i; tls = tid + i;
+    /* coverity[check_return] */
+    LIBXSMM_TLS_SETVALUE(libxsmm_tlskey, tls);
+  }
+  return *(unsigned int*)tls;
+# endif
 #else
   return 0;
 #endif

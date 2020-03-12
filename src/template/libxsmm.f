@@ -156,7 +156,7 @@
           TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
-        !> Generic function type (single-precision).
+        !> Generic function type (low-precision)
         TYPE :: LIBXSMM_WIMMFUNCTION
           TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
@@ -523,7 +523,7 @@
             INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
-          !> General dense matrix multiplication; MT via libxsmmext (double-precision).
+          !> General dense MM; MT via libxsmmext (double-precision).
           !> Implicit FORTRAN 77 interface: similar to DGEMM.
           PURE SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,    &
      &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
@@ -537,7 +537,7 @@
             REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
           END SUBROUTINE
 
-          !> General dense matrix multiplication; MT via libxsmmext (single-precision).
+          !> General dense MM; MT via libxsmmext (single-precision).
           !> Implicit FORTRAN 77 interface: similar to SGEMM.
           PURE SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,    &
      &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
@@ -551,7 +551,7 @@
             REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
           END SUBROUTINE
 
-          !> Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch_omp.
+          !> Process a series of MMs (batch). See also libxsmm_gemm_batch_omp.
           !> The kind of matrix operands (a, b, c) depend on index_stride:
           !> index_stride==0: pointers to pointers of elements e.g., double** for the C matrices.
           !> index_stride!=0: pointer to elements e.g., const double* for the A and B matrices.
@@ -572,7 +572,7 @@
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             !> Stride (measured in Bytes) used to walk stride_*. In Fortran: index_stride!=0.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
-            !> Number of matrix multiplications. If the size is given as a negative value,
+            !> Number of SMMs. If the size is given as a negative value,
             !> then internal synchronization is omitted.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -589,7 +589,7 @@
             INTEGER(C_INT), INTENT(IN) :: tid, nthreads
           END SUBROUTINE
 
-          !> Process a series of matrix multiplications (batch). See also libxsmm_mmbatch.
+          !> Process a series of SMMs (batch). See also libxsmm_mmbatch.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: iprec, oprec
           !> REAL(4|8)    :: alpha, beta
@@ -616,7 +616,7 @@
             INTEGER(C_INT), INTENT(IN) :: iprec, oprec
           END SUBROUTINE
 
-          !> Process a series of matrix multiplications (batch) with OpenMP (libxsmmext).
+          !> Process a series of SMMs (batch) with OpenMP (libxsmmext).
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: iprec, oprec
           !> REAL(4|8)    :: alpha, beta
@@ -661,7 +661,7 @@
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
           END SUBROUTINE
 
-          !> Processes the batch of previously recorded matrix multiplications
+          !> Processes the batch of previously recorded SMMs
           !> (libxsmm_mmbatch_begin); libxsmmext required.
           !> Implicit FORTRAN 77 interface: available.
           SUBROUTINE libxsmm_mmbatch_end() BIND(C)
@@ -708,6 +708,8 @@
           CALL C_F_POINTER(arch, libxsmm_get_target_arch, length)
         END FUNCTION
 
+        !> Determines the C-address of the given scalar.
+        !> This overload belongs to libxsmm_ptr0.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z0
         FUNCTION libxsmm_ptr_z0(a)
           COMPLEX(C_DOUBLE_COMPLEX), INTENT(IN), TARGET :: a
@@ -716,6 +718,8 @@
           fptr => a; libxsmm_ptr_z0 = C_LOC(fptr)
         END FUNCTION
 
+        !> Determines the C-address of the given array.
+        !> This overload belongs to libxsmm_ptr1.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z1
         FUNCTION libxsmm_ptr_z1(a)
           COMPLEX(C_DOUBLE_COMPLEX), INTENT(IN) :: a(:)
@@ -727,6 +731,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given 2d-array.
+        !> This overload belongs to libxsmm_ptr2.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z2
         FUNCTION libxsmm_ptr_z2(a)
           COMPLEX(C_DOUBLE_COMPLEX), INTENT(IN) :: a(:,:)
@@ -738,6 +744,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given scalar.
+        !> This overload belongs to libxsmm_ptr0.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c0
         FUNCTION libxsmm_ptr_c0(a)
           COMPLEX(C_FLOAT_COMPLEX), INTENT(IN), TARGET :: a
@@ -746,6 +754,8 @@
           fptr => a; libxsmm_ptr_c0 = C_LOC(fptr)
         END FUNCTION
 
+        !> Determines the C-address of the given array.
+        !> This overload belongs to libxsmm_ptr1.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c1
         FUNCTION libxsmm_ptr_c1(a)
           COMPLEX(C_FLOAT_COMPLEX), INTENT(IN) :: a(:)
@@ -757,6 +767,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given 2d-array.
+        !> This overload belongs to libxsmm_ptr2.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c2
         FUNCTION libxsmm_ptr_c2(a)
           COMPLEX(C_FLOAT_COMPLEX), INTENT(IN) :: a(:,:)
@@ -768,6 +780,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given scalar.
+        !> This overload belongs to libxsmm_ptr0.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d0
         FUNCTION libxsmm_ptr_d0(a)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a
@@ -776,6 +790,8 @@
           fptr => a; libxsmm_ptr_d0 = C_LOC(fptr)
         END FUNCTION
 
+        !> Determines the C-address of the given array.
+        !> This overload belongs to libxsmm_ptr1.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d1
         FUNCTION libxsmm_ptr_d1(a)
           REAL(C_DOUBLE), INTENT(IN) :: a(:)
@@ -787,6 +803,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given 2d-array.
+        !> This overload belongs to libxsmm_ptr2.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d2
         FUNCTION libxsmm_ptr_d2(a)
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:)
@@ -798,6 +816,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given scalar.
+        !> This overload belongs to libxsmm_ptr0.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s0
         FUNCTION libxsmm_ptr_s0(a)
           REAL(C_FLOAT), INTENT(IN), TARGET :: a
@@ -806,6 +826,8 @@
           fptr => a; libxsmm_ptr_s0 = C_LOC(fptr)
         END FUNCTION
 
+        !> Determines the C-address of the given array.
+        !> This overload belongs to libxsmm_ptr1.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s1
         FUNCTION libxsmm_ptr_s1(a)
           REAL(C_FLOAT), INTENT(IN) :: a(:)
@@ -817,6 +839,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given 2d-array.
+        !> This overload belongs to libxsmm_ptr2.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s2
         FUNCTION libxsmm_ptr_s2(a)
           REAL(C_FLOAT), INTENT(IN) :: a(:,:)
@@ -828,6 +852,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given scalar.
+        !> This overload belongs to libxsmm_ptr0.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i0
         FUNCTION libxsmm_ptr_i0(a)
           INTEGER(C_INT), INTENT(IN), TARGET :: a
@@ -836,6 +862,8 @@
           fptr => a; libxsmm_ptr_i0 = C_LOC(fptr)
         END FUNCTION
 
+        !> Determines the C-address of the given array.
+        !> This overload belongs to libxsmm_ptr1.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i1
         FUNCTION libxsmm_ptr_i1(a)
           INTEGER(C_INT), INTENT(IN) :: a(:)
@@ -847,6 +875,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given 2d-array.
+        !> This overload belongs to libxsmm_ptr2.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i2
         FUNCTION libxsmm_ptr_i2(a)
           INTEGER(C_INT), INTENT(IN) :: a(:,:)
@@ -858,6 +888,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given scalar.
+        !> This overload belongs to libxsmm_ptr0.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w0
         FUNCTION libxsmm_ptr_w0(a)
           INTEGER(C_SHORT), INTENT(IN), TARGET :: a
@@ -866,6 +898,8 @@
           fptr => a; libxsmm_ptr_w0 = C_LOC(fptr)
         END FUNCTION
 
+        !> Determines the C-address of the given array.
+        !> This overload belongs to libxsmm_ptr1.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w1
         FUNCTION libxsmm_ptr_w1(a)
           INTEGER(C_SHORT), INTENT(IN) :: a(:)
@@ -877,6 +911,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given 2d-array.
+        !> This overload belongs to libxsmm_ptr2.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w2
         FUNCTION libxsmm_ptr_w2(a)
           INTEGER(C_SHORT), INTENT(IN) :: a(:,:)
@@ -888,6 +924,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given scalar.
+        !> This overload belongs to libxsmm_ptr0.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j0
         FUNCTION libxsmm_ptr_j0(a)
           INTEGER(C_INT8_T), INTENT(IN), TARGET :: a
@@ -896,6 +934,8 @@
           fptr => a; libxsmm_ptr_j0 = C_LOC(fptr)
         END FUNCTION
 
+        !> Determines the C-address of the given array.
+        !> This overload belongs to libxsmm_ptr1.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j1
         FUNCTION libxsmm_ptr_j1(a)
           INTEGER(C_INT8_T), INTENT(IN) :: a(:)
@@ -907,6 +947,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given 2d-array.
+        !> This overload belongs to libxsmm_ptr2.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j2
         FUNCTION libxsmm_ptr_j2(a)
           INTEGER(C_INT8_T), INTENT(IN) :: a(:,:)
@@ -918,6 +960,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given scalar.
+        !> This overload belongs to libxsmm_ptr0.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b0
         FUNCTION libxsmm_ptr_b0(a)
           CHARACTER(C_CHAR), INTENT(IN), TARGET :: a
@@ -926,6 +970,8 @@
           fptr => a; libxsmm_ptr_b0 = C_LOC(fptr)
         END FUNCTION
 
+        !> Determines the C-address of the given array.
+        !> This overload belongs to libxsmm_ptr1.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b1
         FUNCTION libxsmm_ptr_b1(a)
           CHARACTER(C_CHAR), INTENT(IN) :: a(:)
@@ -937,6 +983,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given 2d-array.
+        !> This overload belongs to libxsmm_ptr2.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b2
         FUNCTION libxsmm_ptr_b2(a)
           CHARACTER(C_CHAR), INTENT(IN) :: a(:,:)
@@ -948,6 +996,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given scalar.
+        !> This overload belongs to libxsmm_ptr0.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l0
         FUNCTION libxsmm_ptr_l0(a)
           INTEGER(C_LONG_LONG), INTENT(IN), TARGET :: a
@@ -956,6 +1006,8 @@
           fptr => a; libxsmm_ptr_l0 = C_LOC(fptr)
         END FUNCTION
 
+        !> Determines the C-address of the given array.
+        !> This overload belongs to libxsmm_ptr1.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l1
         FUNCTION libxsmm_ptr_l1(a)
           INTEGER(C_LONG_LONG), INTENT(IN) :: a(:)
@@ -967,6 +1019,8 @@
           END IF
         END FUNCTION
 
+        !> Determines the C-address of the given 2d-array.
+        !> This overload belongs to libxsmm_ptr2.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l2
         FUNCTION libxsmm_ptr_l2(a)
           INTEGER(C_LONG_LONG), INTENT(IN) :: a(:,:)
@@ -978,24 +1032,31 @@
           END IF
         END FUNCTION
 
+        !> Deallocate JIT'ted code created by libxsmm_create routines. To
+        !> unregister code generated with libxsmm_dispatch is unnecessary.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_dmmkernel
         SUBROUTINE libxsmm_release_dmmkernel(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           CALL libxsmm_release_kernel(kernel%handle)
         END SUBROUTINE
 
+        !> Deallocate JIT'ted code created by libxsmm_create routines. To
+        !> unregister code generated with libxsmm_dispatch is unnecessary.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_smmkernel
         SUBROUTINE libxsmm_release_smmkernel(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           CALL libxsmm_release_kernel(kernel%handle)
         END SUBROUTINE
 
+        !> Deallocate JIT'ted code created by libxsmm_create routines. To
+        !> unregister code generated with libxsmm_dispatch is unnecessary.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_wimmkernel
         SUBROUTINE libxsmm_release_wimmkernel(kernel)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
           CALL libxsmm_release_kernel(kernel%handle)
         END SUBROUTINE
 
+        !> Query or JIT-generate an SMM-kernel (double-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmdispatch
         SUBROUTINE libxsmm_dmmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
@@ -1012,6 +1073,7 @@
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
 
+        !> Query or JIT-generate an SMM-kernel (single-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmdispatch
         SUBROUTINE libxsmm_smmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
@@ -1028,6 +1090,7 @@
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
 
+        !> Query or JIT-generate an SMM-kernel (low-precision, int-accumulate).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmdispatch
         SUBROUTINE libxsmm_wimmdispatch(kernel,                         &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
@@ -1044,24 +1107,37 @@
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
 
+        !> Checks if the given kernel was generated. JIT code is guaranteed
+        !> to be generated if JIT support was enabled at build-time of the
+        !> library (default). This overload belongs to libxsmm_(mm)available.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
         LOGICAL FUNCTION libxsmm_dmmavailable(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_dmmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
+        !> Checks if the given kernel was generated. JIT code is guaranteed
+        !> to be generated if JIT support was enabled at build-time of the
+        !> library (default). This overload belongs to libxsmm_(mm)available.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
         LOGICAL FUNCTION libxsmm_smmavailable(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_smmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
+        !> Checks if the given kernel was generated. JIT code is guaranteed
+        !> to be generated if JIT support was enabled at build-time of the
+        !> library (default). This overload belongs to libxsmm_(mm)available.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmavailable
         LOGICAL FUNCTION libxsmm_wimmavailable(kernel)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_wimmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall
         SUBROUTINE libxsmm_dmmcall(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
@@ -1087,6 +1163,10 @@
           END IF
         END SUBROUTINE
 
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall
         SUBROUTINE libxsmm_smmcall(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
@@ -1112,6 +1192,10 @@
           END IF
         END SUBROUTINE
 
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall
         SUBROUTINE libxsmm_wimmcall(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
@@ -1137,6 +1221,10 @@
           END IF
         END SUBROUTINE
 
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
         SUBROUTINE libxsmm_dmmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
@@ -1147,6 +1235,10 @@
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
         SUBROUTINE libxsmm_smmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
@@ -1157,6 +1249,10 @@
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall_abc
         SUBROUTINE libxsmm_wimmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
@@ -1167,6 +1263,10 @@
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prf
         SUBROUTINE libxsmm_dmmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
@@ -1177,6 +1277,10 @@
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prf
         SUBROUTINE libxsmm_smmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
@@ -1187,6 +1291,10 @@
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall_prf
         SUBROUTINE libxsmm_wimmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
@@ -1197,6 +1305,8 @@
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (double-precision).
+        !> This overload belongs to libxsmm_(d)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm0
         PURE SUBROUTINE libxsmm_dgemm0(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1228,6 +1338,8 @@
      &      alpha, a, lda, b, ldb, beta, c, ldc)
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (double-precision).
+        !> This overload belongs to libxsmm_(d)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm1
         PURE SUBROUTINE libxsmm_dgemm1(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1247,6 +1359,8 @@
           END IF
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (double-precision).
+        !> This overload belongs to libxsmm_(d)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm2
         PURE SUBROUTINE libxsmm_dgemm2(transa, transb, m, n, k,         &
      &  a, b, c, alpha, beta)
@@ -1263,6 +1377,8 @@
           END IF
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (double-precision).
+        !> This overload belongs to libxsmm_(d)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm3
         PURE SUBROUTINE libxsmm_dgemm3(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1280,6 +1396,8 @@
           END IF
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (single-precision).
+        !> This overload belongs to libxsmm_(s)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm0
         PURE SUBROUTINE libxsmm_sgemm0(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1311,6 +1429,8 @@
      &      alpha, a, lda, b, ldb, beta, c, ldc)
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (single-precision).
+        !> This overload belongs to libxsmm_(s)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm1
         PURE SUBROUTINE libxsmm_sgemm1(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1330,6 +1450,8 @@
           END IF
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (single-precision).
+        !> This overload belongs to libxsmm_(s)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm2
         PURE SUBROUTINE libxsmm_sgemm2(transa, transb, m, n, k,         &
      &  a, b, c, alpha, beta)
@@ -1346,6 +1468,8 @@
           END IF
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (single-precision).
+        !> This overload belongs to libxsmm_(s)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm3
         PURE SUBROUTINE libxsmm_sgemm3(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1363,6 +1487,8 @@
           END IF
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (low-precision, int-accumulate).
+        !> This overload belongs to libxsmm_(wi)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm0
         PURE SUBROUTINE libxsmm_wigemm0(transa, transb, m, n, k,        &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1394,6 +1520,8 @@
      &      alpha, a, lda, b, ldb, beta, c, ldc)
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (low-precision, int-accumulate).
+        !> This overload belongs to libxsmm_(wi)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm1
         PURE SUBROUTINE libxsmm_wigemm1(transa, transb, m, n, k,        &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1413,6 +1541,8 @@
           END IF
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (low-precision, int-accumulate).
+        !> This overload belongs to libxsmm_(wi)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm2
         PURE SUBROUTINE libxsmm_wigemm2(transa, transb, m, n, k,        &
      &  a, b, c, alpha, beta)
@@ -1429,6 +1559,8 @@
           END IF
         END SUBROUTINE
 
+        !> Auto-dispatched general dense MM (low-precision, int-accumulate).
+        !> This overload belongs to libxsmm_(wi)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm3
         PURE SUBROUTINE libxsmm_wigemm3(transa, transb, m, n, k,        &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1446,6 +1578,8 @@
           END IF
         END SUBROUTINE
 
+        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
+        !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm0
         PURE SUBROUTINE libxsmm_blas_dgemm0(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1477,6 +1611,8 @@
      &      alpha, a, lda, b, ldb, beta, c, ldc)
         END SUBROUTINE
 
+        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
+        !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm1
         PURE SUBROUTINE libxsmm_blas_dgemm1(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1496,6 +1632,8 @@
           END IF
         END SUBROUTINE
 
+        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
+        !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm2
         PURE SUBROUTINE libxsmm_blas_dgemm2(transa, transb, m, n, k,    &
      &  a, b, c, alpha, beta)
@@ -1512,6 +1650,8 @@
           END IF
         END SUBROUTINE
 
+        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
+        !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm3
         PURE SUBROUTINE libxsmm_blas_dgemm3(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1529,6 +1669,8 @@
           END IF
         END SUBROUTINE
 
+        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
+        !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm0
         PURE SUBROUTINE libxsmm_blas_sgemm0(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1560,6 +1702,8 @@
      &      alpha, a, lda, b, ldb, beta, c, ldc)
         END SUBROUTINE
 
+        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
+        !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm1
         PURE SUBROUTINE libxsmm_blas_sgemm1(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
@@ -1579,6 +1723,8 @@
           END IF
         END SUBROUTINE
 
+        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
+        !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm2
         PURE SUBROUTINE libxsmm_blas_sgemm2(transa, transb, m, n, k,    &
      &  a, b, c, alpha, beta)
@@ -1595,6 +1741,8 @@
           END IF
         END SUBROUTINE
 
+        !> Re-exposes BLAS based GEMM routine with an interfaces similar to
+        !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm3
         PURE SUBROUTINE libxsmm_blas_sgemm3(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)

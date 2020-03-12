@@ -27,17 +27,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="transpose.c" />
+    <ClCompile Include="registry.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
     <None Include="README.md" />
-    <None Include="transpose.sh" />
+    <None Include="test.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>transpose</ProjectName>
-    <ProjectGuid>{B65838AD-C64D-4F47-BBCD-A011223B9585}</ProjectGuid>
+    <ProjectName>registry</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectGuid>{988F6B05-1746-43E6-8FEA-B7DB609EE668}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
@@ -153,7 +153,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -166,10 +166,10 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
-      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -180,8 +180,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libxsmm.lib;libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -194,7 +194,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -207,11 +207,11 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
-      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -222,9 +222,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -240,7 +240,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -252,10 +252,10 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
-      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -265,8 +265,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libxsmm.lib;libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -282,7 +282,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -294,11 +294,11 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
-      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -308,9 +308,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -323,16 +323,16 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
-      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -343,9 +343,9 @@
       <LargeAddressAware>true</LargeAddressAware>
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -361,16 +361,16 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__BLAS=0;__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <OpenMPSupport>true</OpenMPSupport>
+      <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
-      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -380,9 +380,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ProjectReference />

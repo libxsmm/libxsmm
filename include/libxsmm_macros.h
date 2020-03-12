@@ -154,7 +154,7 @@
 
 /* LIBXSMM_ATTRIBUTE_USED: mark library functions as used to avoid warning */
 #if defined(__GNUC__) || defined(__clang__) || (defined(__INTEL_COMPILER) && !defined(_WIN32))
-# if !defined(__cplusplus)
+# if !defined(__cplusplus) || !defined(__clang__)
 #   define LIBXSMM_ATTRIBUTE_COMMON LIBXSMM_ATTRIBUTE(common)
 # else
 #   define LIBXSMM_ATTRIBUTE_COMMON
@@ -458,6 +458,7 @@
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
+#define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
 
 /** Makes some functions available independent of C99 support. */
 #if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
@@ -729,7 +730,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 
 #if (0 != LIBXSMM_SYNC)
-# if defined(_WIN32)
+# if defined(_WIN32) || defined(__CYGWIN__)
 #   include <windows.h>
 # else
 #   include <pthread.h>

@@ -58,24 +58,13 @@ Successively calling a kernel (i.e., multiple times) allows for amortizing the c
 
 ```C
 /** Call dispatched (*function_ptr)(a, b, c [, pa, pb, pc]). */
-libxsmm_[s|d]mmfunction libxsmm_[s|d]mmdispatch(
+libxsmm_[s|d]mmfunction libxsmm_[type-prefix]mmdispatch(
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   /** NULL: tight fit (m) */ const libxsmm_blasint* lda,
   /** NULL: tight fit (k) */ const libxsmm_blasint* ldb,
   /** NULL: tight fit (m) */ const libxsmm_blasint* ldc,
-  /** NULL: LIBXSMM_ALPHA */ const real* alpha,
-  /** NULL: LIBXSMM_BETA  */ const real* beta,
-  /** NULL: LIBXSMM_FLAGS */ const int* flags,
-  /** NULL: LIBXSMM_PREFETCH_NONE (not LIBXSMM_PREFETCH!) */
-  const int* prefetch);
-
-libxsmm_w[i|s]mmfunction libxsmm_w[i|s]mmdispatch(
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  /** NULL: tight fit (m) */ const libxsmm_blasint* lda,
-  /** NULL: tight fit (k) */ const libxsmm_blasint* ldb,
-  /** NULL: tight fit (m) */ const libxsmm_blasint* ldc,
-  /** NULL: LIBXSMM_ALPHA */ const int* alpha,
-  /** NULL: LIBXSMM_BETA  */ const int* beta,
+  /** NULL: LIBXSMM_ALPHA */ const type* alpha,
+  /** NULL: LIBXSMM_BETA  */ const type* beta,
   /** NULL: LIBXSMM_FLAGS */ const int* flags,
   /** NULL: LIBXSMM_PREFETCH_NONE (not LIBXSMM_PREFETCH!) */
   const int* prefetch);
@@ -87,7 +76,7 @@ Overloaded function signatures are provided and allow to omit arguments (C++ and
 /* generates or dispatches the code specialization */
 libxsmm_mmfunction<T> xmm(m, n, k);
 if (xmm) { /* JIT'ted code */
-  /* can be parallelized per e.g., OpenMP */
+  /* can be parallelized per, e.g., OpenMP */
   for (int i = 0; i < n; ++i) {
     xmm(a+i*asize, b+i*bsize, c+i*csize);
   }
@@ -189,6 +178,17 @@ void libxsmm_dgemm_batch(const char transa_array[], const char transb_array[],
 ```
 
 <a name="batch-sync"></a>**NOTE**: the multi-threaded implementation (`ntasks > 1` or "omp" form of the functions) avoids data races if indexes or pointers for the destination (C-)matrix are duplicated. This synchronization occurs automatically (`beta != 0`), but can be avoided by passing a negative `batchsize`, `group_size` and/or a negative `group_count`.
+
+### User-Data Dispatch
+
+It can be desired to dispatch user-defined data, i.e., to query a value based on a key. To register a user-defined key-value pair with LIBXSMM's fast key-value store, the key must be binary reproducible. Structured key-data (`struct` or `class` type) that is potentially padded in a compiler/platform-specific fashion must be fully initialized before registration and dispatch/query, i.e., all gaps may be zeroed before initializing data members (`memset(&mykey, 0, sizeof(mykey))`). This is because some compilers leave padded data uninitialized, which breaks binary reproducible keys. The size of the key is limited to LIBXSMM_DESCRIPTOR_MAXSIZE, but the size of the value is arbitrary. The given value is copied by LIBXSMM and may be initialized at registration-time or when dispatched. Registered data is released at program termination but can be also unregistered and released if needed (`libxsmm_xrelease`).
+
+```C
+void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init);
+void* libxsmm_xdispatch(const void* key, size_t key_size);
+```
+
+This functionality can be also used to dispatch multiple kernels in one step, e.g., if a single task relies on multiple kernels. This way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels used by this task.
 
 ### Call Wrapper
 
