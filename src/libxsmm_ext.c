@@ -131,6 +131,13 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void sgemm_batch(
 
 #elif (0 != LIBXSMM_NO_BLAS) /* no-BLAS library */
 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state0[16]);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state1[16]);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
+LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
+#endif
+
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE void internal_noblas_sink(LIBXSMM_VARIADIC);
 LIBXSMM_API_INTERN void internal_noblas_sink(LIBXSMM_VARIADIC)
 {
