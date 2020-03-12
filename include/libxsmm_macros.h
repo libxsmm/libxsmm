@@ -730,7 +730,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 
 #if (0 != LIBXSMM_SYNC)
-# if defined(_WIN32)
+# if defined(_WIN32) || defined(__CYGWIN__)
 #   include <windows.h>
 # else
 #   include <pthread.h>

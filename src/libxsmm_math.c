@@ -109,14 +109,14 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
               type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
               NULL/*extension*/, 0/*extension_size*/);
             if ('-' == *env && '1' < env[1]) {
-              printf("LIBXSMM MATDIFF (%s): m=%" PRIi64 " n=%" PRIi64 " ldi=%" PRIi64 " ldo=%" PRIi64 " failed.\n",
-                libxsmm_typename(datatype), (long long)m, (long long)n, (long long)ldr, (long long)ldt);
+              printf("LIBXSMM MATDIFF (%s): m=%" PRIuPTR " n=%" PRIuPTR " ldi=%" PRIuPTR " ldo=%" PRIuPTR " failed.\n",
+                libxsmm_typename(datatype), (uintptr_t)m, (uintptr_t)n, (uintptr_t)ldr, (uintptr_t)ldt);
             }
           }
         }
         else if ('-' == *env && '1' < env[1] && NULL != tst) {
-          printf("LIBXSMM MATDIFF (%s): m=%" PRIi64 " n=%" PRIi64 " ldi=%" PRIi64 " ldo=%" PRIi64 " passed.\n",
-            libxsmm_typename(datatype), (long long)m, (long long)n, (long long)ldr, (long long)ldt);
+          printf("LIBXSMM MATDIFF (%s): m=%" PRIuPTR " n=%" PRIuPTR " ldi=%" PRIuPTR " ldo=%" PRIuPTR " passed.\n",
+            libxsmm_typename(datatype), (uintptr_t)m, (uintptr_t)n, (uintptr_t)ldr, (uintptr_t)ldt);
         }
       }
       if (0 == result_nan) {
