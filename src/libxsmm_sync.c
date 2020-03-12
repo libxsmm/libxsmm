@@ -22,7 +22,6 @@
 #include <stdint.h>
 #if defined(_WIN32)
 # include <process.h>
-LIBXSMM_EXTERN short _InterlockedExchangeAdd16(volatile short* add, short val); /* potentially missing prototype */
 #else
 # if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__) && defined(__USE_GNU)
 #   include <linux/futex.h>
@@ -32,6 +31,14 @@ LIBXSMM_EXTERN short _InterlockedExchangeAdd16(volatile short* add, short val); 
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
+#endif
+
+#if !defined(LIBXSMM_SYNC_RWLOCK_BITS)
+# if defined(__MINGW32__)
+#   define LIBXSMM_SYNC_RWLOCK_BITS 32
+# else
+#   define LIBXSMM_SYNC_RWLOCK_BITS 16
+# endif
 #endif
 
 #if !defined(LIBXSMM_SYNC_GENERIC_PID) && 1
@@ -464,11 +471,10 @@ LIBXSMM_API void libxsmm_mutex_release(libxsmm_mutex* mutex)
 
 
 #if (0 != LIBXSMM_SYNC)
+typedef LIBXSMM_CONCATENATE3(uint,LIBXSMM_SYNC_RWLOCK_BITS,_t) internal_sync_uint_t;
+typedef LIBXSMM_CONCATENATE3(int,LIBXSMM_SYNC_RWLOCK_BITS,_t) internal_sync_int_t;
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
-  struct {
-    uint16_t writer;
-    uint16_t reader;
-  } kind;
+  struct { internal_sync_uint_t writer, reader; } kind;
   uint32_t bits;
 } internal_sync_counter;
 #endif
@@ -552,11 +558,7 @@ LIBXSMM_API void libxsmm_rwlock_release(libxsmm_rwlock* rwlock)
 {
 #if (0 != LIBXSMM_SYNC)
   assert(0 != rwlock);
-# if defined(_WIN32)
-  _InterlockedExchangeAdd16((volatile short*)&rwlock->completions.kind.writer, 1);
-# else
-  LIBXSMM_ATOMIC_ADD_FETCH(&rwlock->completions.kind.writer, 1, LIBXSMM_ATOMIC_SEQ_CST);
-# endif
+  LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_ADD, LIBXSMM_SYNC_RWLOCK_BITS)(&rwlock->completions.kind.writer, 1, LIBXSMM_ATOMIC_SEQ_CST);
 #else
   LIBXSMM_UNUSED(rwlock);
 #endif
@@ -568,11 +570,7 @@ LIBXSMM_API_INLINE int internal_rwlock_tryread(libxsmm_rwlock* rwlock, internal_
 {
 #if (0 != LIBXSMM_SYNC)
   assert(0 != rwlock && 0 != prev);
-# if defined(_WIN32)
-  prev->bits = InterlockedExchangeAdd((volatile LONG*)&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC);
-# else
   prev->bits = LIBXSMM_ATOMIC_FETCH_ADD(&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC, LIBXSMM_ATOMIC_SEQ_CST);
-# endif
   return rwlock->completions.kind.writer != prev->kind.writer
     ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1) /* not acquired */
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK));
@@ -615,11 +613,7 @@ LIBXSMM_API void libxsmm_rwlock_relread(libxsmm_rwlock* rwlock)
 {
 #if (0 != LIBXSMM_SYNC)
   assert(0 != rwlock);
-# if defined(_WIN32)
-  _InterlockedExchangeAdd16((volatile short*)&rwlock->completions.kind.reader, 1);
-# else
-  LIBXSMM_ATOMIC_ADD_FETCH(&rwlock->completions.kind.reader, 1, LIBXSMM_ATOMIC_SEQ_CST);
-# endif
+  LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_ADD, LIBXSMM_SYNC_RWLOCK_BITS)(&rwlock->completions.kind.reader, 1, LIBXSMM_ATOMIC_SEQ_CST);
 #else
   LIBXSMM_UNUSED(rwlock);
 #endif
