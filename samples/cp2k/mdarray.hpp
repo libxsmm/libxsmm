@@ -768,6 +768,8 @@ class mdarray_base
                              stream_id__);
             }
         }
+#else
+        (void)idx0__; (void)n__; (void)stream_id__; /* unused */
 #endif
     }
 
@@ -889,9 +891,9 @@ class mdarray : public mdarray_base<T, N, format>
         this->label_  = label__;
         this->layout_ = format;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1});
+            this->init_dimensions({{d0, d1}});
         else
-            this->init_dimensions({d1, d0});
+            this->init_dimensions({{d1, d0}});
         this->allocate(memory__);
     }
 
@@ -922,9 +924,9 @@ class mdarray : public mdarray_base<T, N, format>
         this->label_  = label__;
         this->layout_ = format;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1, d2, d3});
+            this->init_dimensions({{d0, d1, d2, d3}});
         else
-            this->init_dimensions({d3, d2, d1, d0});
+            this->init_dimensions({{d3, d2, d1, d0}});
         this->allocate(memory__);
     }
 
@@ -940,9 +942,9 @@ class mdarray : public mdarray_base<T, N, format>
         this->label_  = label__;
         this->layout_ = format;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1, d2, d3, d4});
+            this->init_dimensions({{d0, d1, d2, d3, d4}});
         else
-            this->init_dimensions({d4, d3, d2, d1, d0});
+            this->init_dimensions({{d4, d3, d2, d1, d0}});
         this->allocate(memory__);
     }
 
@@ -975,6 +977,8 @@ class mdarray : public mdarray_base<T, N, format>
         this->raw_ptr_ = ptr__;
 #ifdef HAVE_CUDA
         this->raw_ptr_device_ = ptr_device__;
+#else
+        (void)ptr_device__; /* unused */
 #endif
     }
 
@@ -985,9 +989,9 @@ class mdarray : public mdarray_base<T, N, format>
         this->layout_ = format;
         this->label_  = label__;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1});
+            this->init_dimensions({{d0, d1}});
         else
-            this->init_dimensions({d1, d0});
+            this->init_dimensions({{d1, d0}});
         this->raw_ptr_ = ptr__;
     }
 
@@ -998,12 +1002,14 @@ class mdarray : public mdarray_base<T, N, format>
         this->layout_ = format;
         this->label_  = label__;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1});
+            this->init_dimensions({{d0, d1}});
         else
-            this->init_dimensions({d1, d0});
+            this->init_dimensions({{d1, d0}});
         this->raw_ptr_ = ptr__;
 #ifdef HAVE_CUDA
         this->raw_ptr_device_ = ptr_device__;
+#else
+        (void)ptr_device__; /* unused */
 #endif
     }
 
@@ -1015,9 +1021,9 @@ class mdarray : public mdarray_base<T, N, format>
         this->layout_ = format;
         this->label_  = label__;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1, d2});
+            this->init_dimensions({{d0, d1, d2}});
         else
-            this->init_dimensions({d2, d1, d0});
+            this->init_dimensions({{d2, d1, d0}});
 
         this->raw_ptr_ = ptr__;
     }
@@ -1030,12 +1036,14 @@ class mdarray : public mdarray_base<T, N, format>
         this->layout_ = format;
         this->label_  = label__;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1, d2});
+            this->init_dimensions({{d0, d1, d2}});
         else
-            this->init_dimensions({d2, d1, d0});
+            this->init_dimensions({{d2, d1, d0}});
         this->raw_ptr_ = ptr__;
 #ifdef HAVE_CUDA
         this->raw_ptr_device_ = ptr_device__;
+#else
+        (void)ptr_device__; /* unused */
 #endif
     }
 
@@ -1048,9 +1056,9 @@ class mdarray : public mdarray_base<T, N, format>
         this->layout_ = format;
         this->label_  = label__;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1, d2, d3});
+            this->init_dimensions({{d0, d1, d2, d3}});
         else
-            this->init_dimensions({d3, d2, d1, d0});
+            this->init_dimensions({{d3, d2, d1, d0}});
 
         this->raw_ptr_ = ptr__;
     }
@@ -1065,9 +1073,9 @@ class mdarray : public mdarray_base<T, N, format>
         this->layout_ = format;
         this->label_  = label__;
         if (this->layout_ == CblasColMajor)
-            this->init_dimensions({d0, d1, d2, d3, d4});
+            this->init_dimensions({{d0, d1, d2, d3, d4}});
         else
-            this->init_dimensions({d4, d3, d2, d1, d0});
+            this->init_dimensions({{d4, d3, d2, d1, d0}});
         this->raw_ptr_ = ptr__;
     }
 
