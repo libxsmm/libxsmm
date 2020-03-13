@@ -922,7 +922,7 @@ abslibpath ?= $(call absliblpath,$1)
 libpath = $(strip $(if $1, \
   $(if $(call ldlib,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
     | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
-    | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
+    | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; else ls -1 {}.* 2>/dev/null; fi" | tail -n1))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
@@ -1340,7 +1340,7 @@ else # GCC assumed
       CXXFLAGS += -fno-asynchronous-unwind-tables
       FCFLAGS += -fno-asynchronous-unwind-tables
       CFLAGS += -fno-asynchronous-unwind-tables
-      ifeq (0,$(PEDANTIC))
+      ifneq (,$(filter 0 1,$(PEDANTIC)))
         CFLAGS += -Wno-format
       endif
     endif
