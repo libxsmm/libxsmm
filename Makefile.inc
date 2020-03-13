@@ -264,6 +264,14 @@ ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
   OMPRT = $(patsubst lib%,%,$(OMP))
 endif
 
+uniqadd = $(filter-out $($2),$($1)) $(if $3,$3,$($2))
+uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
+ctest = $(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
+  echo "int main(void) { return 0; }" > $${INFILE} && \
+  $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null),$2)
+ldlib = $(if $1,$(call ctest,$1 $2,-l$3))
+
 ifneq (0,$(PYMOD))
   ifneq (,$(PYTHON))
     PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n "$(REVERSION1)p")
@@ -606,14 +614,6 @@ ifneq (,$(CCAR))
   endif
 endif
 
-uniqadd = $(filter-out $($2),$($1)) $(if $3,$3,$($2))
-uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
-ctest = $(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
-  echo "int main(void) { return 0; }" > $${INFILE} && \
-  $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
-  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null),$2)
-ldlib = $(call ctest,$1 $2,-l$3)
-
 ifneq (,$(FORCE_CXX))
 ifneq (0,$(FORCE_CXX))
   override CC := $(CXX) $(call ctest,$(CC),-xc++)
@@ -919,10 +919,9 @@ ifneq (0,$(ABSLIBS))
 endif
 abslibpath ?= $(call absliblpath,$1)
 
-libpath = $(strip $(if $1, \
-  $(if $(call ldlib,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
+libpath = $(strip $(if $1,$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
     | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
-    | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; else ls -1 {}.* 2>/dev/null; fi" | tail -n1))))
+    | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; else ls -1 {}.* 2>/dev/null; fi" | tail -n1)))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
