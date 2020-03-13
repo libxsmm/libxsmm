@@ -915,17 +915,13 @@ absliblpath = $(strip $(if $1, \
   $(if $(findstring .$(ILIBEXT),$1),-L$(call qdir,$(call qapath,$1)))))
 
 ifneq (0,$(ABSLIBS))
-#ifeq (0,$(DEPSTATIC))
   abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
-#endif
 endif
 abslibpath ?= $(call absliblpath,$1)
 
 libpath = $(strip $(if $1, \
   $(if $(call ldlib,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
-    | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(CHAR_CLOSE)]\).*/$(CHAR_HASH)\1/" \
-    | rev | cut -d$(CHAR_HASH) -f1 | rev \
-    | sed -n "s/[[:space:]]*\(\.*\/..*\)\([[:space:]]..*\)*/\1/p" \
+    | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
