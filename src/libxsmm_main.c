@@ -743,22 +743,10 @@ LIBXSMM_API_INTERN void internal_init(void)
         }
       }
     }
-# if defined(LIBXSMM_INTERCEPT_DYNAMIC)
-    else {
-      if (NULL == getenv("I_MPI_PIN_DOMAIN")) {
-        static char pindomain[] = "I_MPI_PIN_DOMAIN=auto";
-        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(pindomain));
-      }
-      if (NULL == getenv("I_MPI_PIN_ORDER")) {
-        static char pinorder[] = "I_MPI_PIN_ORDER=bunch";
-        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(pinorder));
-      }
-#   if defined(LIBXSMM_MALLOC)
-      if (NULL == getenv("I_MPI_SHM_HEAP")) {
-        static char shmheap[] = "I_MPI_SHM_HEAP=1";
-        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(shmheap));
-      }
-#   endif
+# if defined(LIBXSMM_INTERCEPT_DYNAMIC) && defined(LIBXSMM_MALLOC)
+    else if (NULL == getenv("I_MPI_SHM_HEAP")) {
+      static char shmheap[] = "I_MPI_SHM_HEAP=1";
+      LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(shmheap));
     }
 # endif
 #endif
