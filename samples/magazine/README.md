@@ -31,7 +31,7 @@ Please note that if multiple threads are enabled and used, an appropriate pin-st
 ./benchmark-plot.sh xsmm
 ```
 
-The plot script relies at least on Gnuplot. ImageMagick (mogrify) can be also useful if PNGs are created e.g., `./benchmark-plot.sh xsmm png 0` (the last argument disables single-file charts in contrast to multi-page PDFs created by default, the option also disables chart titles).
+The plot script relies at least on Gnuplot. ImageMagick (mogrify) can be also useful if PNGs are created, e.g., `./benchmark-plot.sh xsmm png 0` (the last argument disables single-file charts in contrast to multi-page PDFs created by default, the option also disables chart titles).
 
 The set of kernels executed during the benchmark can be larger than the kernels presented by the plots: [benchmark.set](https://github.com/hfp/libxsmm/blob/master/samples/magazine/benchmark.set) selects the kernels independent of the kernels executed (union).
 

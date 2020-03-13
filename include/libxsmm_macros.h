@@ -730,7 +730,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 
 #if (0 != LIBXSMM_SYNC)
-# if defined(_WIN32)
+# if defined(_WIN32) || defined(__CYGWIN__)
 #   include <windows.h>
 # else
 #   include <pthread.h>
@@ -797,6 +797,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_NOTHROW LIBXSMM_THROW
 #else
 # define LIBXSMM_NOTHROW
+#endif
+#if defined(_WIN32)
+# define LIBXSMM_PUTENV(A) _putenv(A)
+#else
+# define LIBXSMM_PUTENV(A) putenv(A)
 #endif
 
 /* block must be after including above header files */

@@ -923,8 +923,9 @@ abslibpath ?= $(call absliblpath,$1)
 
 libpath = $(strip $(if $1, \
   $(if $(call ldlib,$1,$2,$3),$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
-    | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(CHAR_CLOSE)]\).*/:\1/" \
-    | rev | cut -d: -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)\([[:space:]]..*\)*/\1/p" \
+    | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(CHAR_CLOSE)]\).*/$(CHAR_HASH)\1/" \
+    | rev | cut -d$(CHAR_HASH) -f1 | rev \
+    | sed -n "s/[[:space:]]*\(\.*\/..*\)\([[:space:]]..*\)*/\1/p" \
     | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; fi" | tail -n1))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
@@ -1343,10 +1344,8 @@ else # GCC assumed
       CXXFLAGS += -fno-asynchronous-unwind-tables
       FCFLAGS += -fno-asynchronous-unwind-tables
       CFLAGS += -fno-asynchronous-unwind-tables
-      ifneq (0,$(PEDANTIC))
-      ifneq (1,$(PEDANTIC))
+      ifeq (0,$(PEDANTIC))
         CFLAGS += -Wno-format
-      endif
       endif
     endif
     FPEDANTIC += $(FWARNEXTRA)
