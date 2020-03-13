@@ -798,6 +798,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_NOTHROW
 #endif
+#if defined(_WIN32)
+# define LIBXSMM_PUTENV(A) _putenv(A)
+#else
+# define LIBXSMM_PUTENV(A) putenv(A)
+#endif
 
 /* block must be after including above header files */
 #if (defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__) < LIBXSMM_VERSION2(2, 26)) \

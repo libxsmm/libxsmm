@@ -697,6 +697,7 @@ LIBXSMM_API_INTERN void internal_init(void)
     /* clear error status (dummy condition: it does not matter if MPI_Init or MPI_Abort) */
     const char *const dlsymname = (NULL == dlerror() ? "MPI_Init" : "MPI_Abort");
     const void *const dlsymbol = dlsym(LIBXSMM_RTLD_NEXT, dlsymname);
+    const void *const dlmpi = (NULL == dlerror() ? dlsymbol : NULL);
 #endif
     const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
     void *new_registry = NULL, *new_keys = NULL;
@@ -725,7 +726,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #if defined(LIBXSMM_AUTOPIN)
 # if defined(LIBXSMM_INTERCEPT_DYNAMIC)
     /* MPI: non-user affinity can slow-down unrelated jobs, e.g., CP2K regtests */
-    if (NULL == dlerror() && NULL == dlsymbol)
+    if (NULL == dlmpi)
 # endif
     { /* setup some viable affinity if nothing else is present */
       const char *const gomp_cpu_affinity = getenv("GOMP_CPU_AFFINITY");
@@ -736,16 +737,30 @@ LIBXSMM_API_INTERN void internal_init(void)
         && (NULL == omp_proc_bind || 0 == *omp_proc_bind))
       {
         static char affinity[] = "OMP_PROC_BIND=TRUE";
-#if defined(_WIN32)
-        LIBXSMM_EXPECT(EXIT_SUCCESS, _putenv(affinity));
-#else
-        LIBXSMM_EXPECT(EXIT_SUCCESS, putenv(affinity));
-#endif
+        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(affinity));
         if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
           fprintf(stderr, "LIBXSMM: prepared to pin threads.\n");
         }
       }
     }
+# if defined(LIBXSMM_INTERCEPT_DYNAMIC)
+    else {
+      if (NULL == getenv("I_MPI_PIN_DOMAIN")) {
+        static char pindomain[] = "I_MPI_PIN_DOMAIN=auto";
+        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(pindomain));
+      }
+      if (NULL == getenv("I_MPI_PIN_ORDER")) {
+        static char pinorder[] = "I_MPI_PIN_ORDER=bunch";
+        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(pinorder));
+      }
+#   if defined(LIBXSMM_MALLOC)
+      if (NULL == getenv("I_MPI_SHM_HEAP")) {
+        static char shmheap[] = "I_MPI_SHM_HEAP=1";
+        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(shmheap));
+      }
+#   endif
+    }
+# endif
 #endif
 #if !defined(_WIN32) && 0
     umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
