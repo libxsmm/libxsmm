@@ -501,7 +501,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_softmaxloss {
   int Bc;
   int bn;
   int Bn;
+  float loss;
   size_t scratch_size;
+  void* scratch;
 };
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedgroupnorm {

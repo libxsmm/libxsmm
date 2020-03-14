@@ -168,6 +168,73 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_softmaxloss_create_tensor
 }
 
 
+LIBXSMM_API size_t libxsmm_dnn_softmaxloss_get_scratch_size(const libxsmm_dnn_softmaxloss* handle, libxsmm_dnn_err_t* status) {
+  size_t l_scratch_size = 0;
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    l_scratch_size = handle->scratch_size + 64; /* 64 byte extra in case the user code does not care about alignment */
+  } else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return l_scratch_size;
+}
+
+
+LIBXSMM_API void* libxsmm_dnn_softmaxloss_get_scratch_ptr(const libxsmm_dnn_softmaxloss* handle, libxsmm_dnn_err_t* status)
+{
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    return handle->scratch;
+  } else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return 0;
+}
+
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_softmaxloss_bind_scratch(libxsmm_dnn_softmaxloss* handle, const void* scratch) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  uintptr_t address = (uintptr_t)scratch;
+  size_t offset = 0;
+
+  if (scratch == 0) {
+    status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+    return status;
+  }
+
+  if (0 != handle) {
+    /* align the internal scratch buffer if needed */
+    if (address % 64 == 0) {
+      handle->scratch = (void*)address;
+    } else {
+      offset = (64 - address % 64);
+      handle->scratch = (void*)(address+offset);
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return status;
+}
+
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_softmaxloss_release_scratch(libxsmm_dnn_softmaxloss* handle) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    handle->scratch = 0;
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return status;
+}
+
+
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_softmaxloss_bind_tensor(libxsmm_dnn_softmaxloss* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 

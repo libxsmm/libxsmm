@@ -31,8 +31,13 @@ libxsmm_dnn_err_t libxsmm_dnn_softmaxloss_st_bwd_ncnc_f32_f32(libxsmm_dnn_softma
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef float element_input_type;
   typedef float element_output_type;
+  typedef float element_label_type;
 
+#if 0
 # include "template/libxsmm_dnn_softmaxloss_st_bwd_ncnc_avx512.tpl.c"
+#else
+# include "template/libxsmm_dnn_softmaxloss_st_bwd_ncnc_generic.tpl.c"
+#endif
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -48,9 +53,16 @@ libxsmm_dnn_err_t libxsmm_dnn_softmaxloss_st_bwd_ncnc_bf16_bf16(libxsmm_dnn_soft
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef libxsmm_bfloat16 element_input_type;
   typedef libxsmm_bfloat16 element_output_type;
+  typedef libxsmm_bfloat16 element_label_type;
 
 # define LIBXSMM_DNN_SOFTMAXLOSS_BWD_BF16
+#if 0
 # include "template/libxsmm_dnn_softmaxloss_st_bwd_ncnc_avx512.tpl.c"
+#else
+#if 0
+# include "template/libxsmm_dnn_softmaxloss_st_bwd_ncnc_generic.tpl.c"
+#endif
+#endif
 # undef LIBXSMM_DNN_SOFTMAXLOSS_BWD_BF16
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -87,14 +99,18 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_softmaxloss_st_bwd_ncnc(libxsmm
     if ( handle->desc.datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;
+      typedef float element_label_type;
 
 # include "template/libxsmm_dnn_softmaxloss_st_bwd_ncnc_generic.tpl.c"
     } else if ( handle->desc.datatype == LIBXSMM_DNN_DATATYPE_BF16 ) {
       typedef libxsmm_bfloat16 element_input_type;
       typedef libxsmm_bfloat16 element_output_type;
+      typedef libxsmm_bfloat16 element_label_type;
 
 # define LIBXSMM_DNN_SOFTMAXLOSS_BWD_BF16
+#if 0
 # include "template/libxsmm_dnn_softmaxloss_st_bwd_ncnc_generic.tpl.c"
+#endif
 # undef LIBXSMM_DNN_SOFTMAXLOSS_BWD_BF16
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
