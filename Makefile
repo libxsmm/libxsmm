@@ -1495,7 +1495,9 @@ ifeq (,$(strip $(PREFIX)))
 endif
 
 # setup maintainer-layout
-ALIAS_PREFIX ?= $(PREFIX)
+ifeq (,$(strip $(ALIAS_PREFIX)))
+  override ALIAS_PREFIX := $(PREFIX)
+endif
 ifneq ($(ALIAS_PREFIX),$(PREFIX))
   PPKGDIR = libdata/pkgconfig
   PMODDIR = share/modules
