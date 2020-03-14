@@ -235,13 +235,14 @@ LIBXSMM_APIVAR_DEFINE(const char* internal_build_state);
 LIBXSMM_APIVAR_DEFINE(libxsmm_timer_tickint internal_timer_start);
 
 #if defined(_WIN32)
+# define INTERNAL_SINGLETON_HANDLE HANDLE
 # define INTERNAL_SINGLETON(HANDLE) (NULL != (HANDLE))
-LIBXSMM_APIVAR_DEFINE(HANDLE internal_singleton_handle);
 #else
+# define INTERNAL_SINGLETON_HANDLE int
 # define INTERNAL_SINGLETON(HANDLE) (0 <= (HANDLE) && 0 != *internal_singleton_fname)
 LIBXSMM_APIVAR_DEFINE(char internal_singleton_fname[64]);
-LIBXSMM_APIVAR_DEFINE(int internal_singleton_handle);
 #endif
+LIBXSMM_APIVAR_DEFINE(INTERNAL_SINGLETON_HANDLE internal_singleton_handle);
 
 /* definition of corresponding variables */
 LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_malloc_function libxsmm_default_malloc_fn);
@@ -465,11 +466,47 @@ LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, 
 }
 
 
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE void internal_dump(FILE* ostream, INTERNAL_SINGLETON_HANDLE handle, int urgent);
+LIBXSMM_API_INTERN void internal_dump(FILE* ostream, INTERNAL_SINGLETON_HANDLE handle, int urgent)
+{
+  char *const env_dump_build = getenv("LIBXSMM_DUMP_BUILD");
+  char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
+    ? getenv("LIBXSMM_DUMP_FILES")
+    : getenv("LIBXSMM_DUMP_FILE"));
+  LIBXSMM_ASSERT_MSG(INTERNAL_SINGLETON(handle), "Invalid handle");
+  /* determine whether this instance is unique or not */
+  if (NULL != env_dump_files && 0 != *env_dump_files && 0 == urgent) { /* dump per-node info */
+    const char* filename = strtok(env_dump_files, INTERNAL_DELIMS);
+    for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
+      FILE* const file = fopen(filename, "r");
+      if (NULL != file) {
+        int c = fgetc(file);
+        fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
+        /* coverity[tainted_data] */
+        while (EOF != c) {
+          fputc(c, stdout);
+          c = fgetc(file);
+        }
+        fputc('\n', stdout);
+        fclose(file);
+      }
+    }
+  }
+  if  (NULL != internal_build_state /* dump build state */
+    && NULL != env_dump_build && 0 != *env_dump_build)
+  {
+    const int dump_build = atoi(env_dump_build);
+    if (0 == urgent ? (0 < dump_build) : (0 > dump_build)) {
+      fprintf(ostream, "\n\nBUILD_DATE=%i\n", LIBXSMM_CONFIG_BUILD_DATE);
+      fprintf(ostream, "%s\n", internal_build_state);
+    }
+  }
+}
+
+
 LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
-  char *const env_dump_build = getenv("LIBXSMM_DUMP_BUILD");
-  char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES") ? getenv("LIBXSMM_DUMP_FILES") : getenv("LIBXSMM_DUMP_FILE"));
   libxsmm_finalize();
   LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
@@ -552,32 +589,8 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
   }
   /* determine whether this instance is unique or not */
-  if (INTERNAL_SINGLETON(internal_singleton_handle)) { /* dump per-node info */
-    if (NULL != env_dump_build || NULL != env_dump_files) {
-      if (NULL != env_dump_files && 0 != *env_dump_files) {
-        const char *filename = strtok(env_dump_files, INTERNAL_DELIMS);
-        for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
-          FILE *const file = fopen(filename, "r");
-          if (NULL != file) {
-            int c = fgetc(file);
-            fprintf(stdout, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
-            /* coverity[tainted_data] */
-            while (EOF != c) {
-              fputc(c, stdout);
-              c = fgetc(file);
-            }
-            fputc('\n', stdout);
-            fclose(file);
-          }
-        }
-      }
-      if (NULL != env_dump_build && 0 != *env_dump_build && '0' != *env_dump_build) {
-        fprintf(stdout, "\n\nBUILD_DATE=%i\n", LIBXSMM_CONFIG_BUILD_DATE);
-        if (NULL != internal_build_state) {
-          fprintf(stdout, "%s\n", internal_build_state);
-        }
-      }
-    }
+  if (INTERNAL_SINGLETON(internal_singleton_handle)) {
+    internal_dump(stdout, internal_singleton_handle, 0/*urgent*/);
     /* cleanup singleton */
 #if defined(_WIN32)
     ReleaseMutex(internal_singleton_handle);
@@ -695,17 +708,17 @@ LIBXSMM_API_INTERN void internal_init(void)
   if (NULL == internal_registry) { /* double-check after acquiring the lock(s) */
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC) && defined(LIBXSMM_AUTOPIN)
     /* clear error status (dummy condition: it does not matter if MPI_Init or MPI_Abort) */
-    const char *const dlsymname = (NULL == dlerror() ? "MPI_Init" : "MPI_Abort");
-    const void *const dlsymbol = dlsym(LIBXSMM_RTLD_NEXT, dlsymname);
-    const void *const dlmpi = (NULL == dlerror() ? dlsymbol : NULL);
+    const char* const dlsymname = (NULL == dlerror() ? "MPI_Init" : "MPI_Abort");
+    const void* const dlsymbol = dlsym(LIBXSMM_RTLD_NEXT, dlsymname);
+    const void* const dlmpi = (NULL == dlerror() ? dlsymbol : NULL);
 #endif
-    const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
-    void *new_registry = NULL, *new_keys = NULL;
+    const char* const env_verbose = getenv("LIBXSMM_VERBOSE");
+    void* new_registry = NULL, * new_keys = NULL;
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
 # if defined(LIBXSMM_NTHREADS_USE)
     void* new_cache = NULL;
 # endif
-    const char *const env_cache = getenv("LIBXSMM_CACHE");
+    const char* const env_cache = getenv("LIBXSMM_CACHE");
     if (NULL != env_cache && 0 != *env_cache) {
       const int cache_size = atoi(env_cache), cache_size2 = LIBXSMM_UP2POT(cache_size);
       internal_cache_size = LIBXSMM_MIN(cache_size2, LIBXSMM_CACHE_MAXSIZE);
@@ -723,9 +736,14 @@ LIBXSMM_API_INTERN void internal_init(void)
       libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
     }
 #endif
+#if (0 == LIBXSMM_JIT)
+    if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
+      fprintf(stderr, "LIBXSMM: JIT-code generation was disabled at compile-time.\n");
+    }
+#endif
 #if defined(LIBXSMM_AUTOPIN)
 # if defined(LIBXSMM_INTERCEPT_DYNAMIC)
-    /* MPI: non-user affinity can slow-down unrelated jobs, e.g., CP2K regtests */
+    /* MPI: unwanted affinity can slow-down unrelated jobs (over-subscription), e.g., CP2K regtests */
     if (NULL == dlmpi)
 # endif
     { /* setup some viable affinity if nothing else is present */
@@ -985,6 +1003,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         internal_singleton_handle = fcntl(singleton_handle, F_SETLK, &singleton_flock);
         if (0 > internal_singleton_handle && 0 <= singleton_handle) close(singleton_handle);
 #endif  /* coverity[leaked_handle] */
+        if (INTERNAL_SINGLETON(internal_singleton_handle)) {
+          internal_dump(stdout, internal_singleton_handle, 1/*urgent*/);
+        }
       }
       { /* calibrate timer */
         int register_termination_proc;
