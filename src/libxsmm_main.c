@@ -1003,15 +1003,15 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         internal_singleton_handle = fcntl(singleton_handle, F_SETLK, &singleton_flock);
         if (0 > internal_singleton_handle && 0 <= singleton_handle) close(singleton_handle);
 #endif  /* coverity[leaked_handle] */
-        if (INTERNAL_SINGLETON(internal_singleton_handle)) {
-          internal_dump(stdout, 1/*urgent*/);
-        }
       }
       { /* calibrate timer */
         int register_termination_proc;
         libxsmm_timer_tickint s1, t1;
         libxsmm_cpuid_x86_info info;
         internal_init(); /* must be first to initialize verbosity, etc. */
+        if (INTERNAL_SINGLETON(internal_singleton_handle)) { /* after internal_init */
+          internal_dump(stdout, 1/*urgent*/);
+        }
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* mid-timing */
         libxsmm_cpuid_x86(&info);
         if (0 != info.constant_tsc && t0 < t1) {
