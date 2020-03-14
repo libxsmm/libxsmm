@@ -300,10 +300,10 @@ int main(int argc, char* argv[])
     num_quants, num_modes, num_modes, num_modes, 0, num_modes, alpha, beta, flags, prefetch);
   l_xgemm_desc_star = libxsmm_dgemm_descriptor_init(&l_xgemm_blob_star,
     num_quants, num_modes, num_quants, 0, num_modes, num_modes, alpha, beta, flags, prefetch);
-  a_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_a_rowptr,  mat_a_colidx,  (const void*)mat_a_values, num_cfr ).dmm;
-  b_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_b_rowptr,  mat_b_colidx,  (const void*)mat_b_values, num_cfr ).dmm;
-  c_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_c_rowptr,  mat_c_colidx,  (const void*)mat_c_values, num_cfr ).dmm;
-  st_kernel = libxsmm_create_xcsr_soa( l_xgemm_desc_star, mat_st_rowptr, mat_st_colidx, (const void*)mat_st_values, num_cfr ).dmm;
+  a_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_a_rowptr,  mat_a_colidx,  (const void*)mat_a_values, (unsigned int)num_cfr ).dmm;
+  b_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_b_rowptr,  mat_b_colidx,  (const void*)mat_b_values, (unsigned int)num_cfr ).dmm;
+  c_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_c_rowptr,  mat_c_colidx,  (const void*)mat_c_values, (unsigned int)num_cfr ).dmm;
+  st_kernel = libxsmm_create_xcsr_soa( l_xgemm_desc_star, mat_st_rowptr, mat_st_colidx, (const void*)mat_st_values, (unsigned int)num_cfr ).dmm;
   if ( a_kernel == 0 ) {
     printf("a kernel could not be built -> exit!");
     exit(-1);

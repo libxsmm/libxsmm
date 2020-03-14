@@ -466,14 +466,14 @@ LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, 
 }
 
 
-LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE void internal_dump(FILE* ostream, INTERNAL_SINGLETON_HANDLE handle, int urgent);
-LIBXSMM_API_INTERN void internal_dump(FILE* ostream, INTERNAL_SINGLETON_HANDLE handle, int urgent)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE void internal_dump(FILE* ostream, int urgent);
+LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
 {
   char *const env_dump_build = getenv("LIBXSMM_DUMP_BUILD");
   char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
     ? getenv("LIBXSMM_DUMP_FILES")
     : getenv("LIBXSMM_DUMP_FILE"));
-  LIBXSMM_ASSERT_MSG(INTERNAL_SINGLETON(handle), "Invalid handle");
+  LIBXSMM_ASSERT_MSG(INTERNAL_SINGLETON(internal_singleton_handle), "Invalid handle");
   /* determine whether this instance is unique or not */
   if (NULL != env_dump_files && 0 != *env_dump_files && 0 == urgent) { /* dump per-node info */
     const char* filename = strtok(env_dump_files, INTERNAL_DELIMS);
@@ -590,7 +590,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   }
   /* determine whether this instance is unique or not */
   if (INTERNAL_SINGLETON(internal_singleton_handle)) {
-    internal_dump(stdout, internal_singleton_handle, 0/*urgent*/);
+    internal_dump(stdout, 0/*urgent*/);
     /* cleanup singleton */
 #if defined(_WIN32)
     ReleaseMutex(internal_singleton_handle);
@@ -1004,7 +1004,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         if (0 > internal_singleton_handle && 0 <= singleton_handle) close(singleton_handle);
 #endif  /* coverity[leaked_handle] */
         if (INTERNAL_SINGLETON(internal_singleton_handle)) {
-          internal_dump(stdout, internal_singleton_handle, 1/*urgent*/);
+          internal_dump(stdout, 1/*urgent*/);
         }
       }
       { /* calibrate timer */
