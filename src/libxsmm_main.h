@@ -506,6 +506,21 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_softmaxloss {
   void* scratch;
 };
 
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_optimizer {
+  libxsmm_dnn_optimizer_desc desc;
+  libxsmm_dnn_tensor* reg_filter;      /* filter tensor */
+  libxsmm_dnn_tensor* grad_filter;     /* grad filter tensor */
+  libxsmm_dnn_tensor* master_filter;   /* master filter tensor */
+  libxsmm_barrier* barrier;            /* barrier */
+  int bc;
+  int Bc;
+  int bk;
+  int Bk;
+  int fm_lp_block;
+  size_t scratch_size;
+  void* scratch;
+};
+
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedgroupnorm {
   libxsmm_dnn_fusedgroupnorm_desc desc;
   libxsmm_dnn_tensor* reg_input;      /* input tensor */

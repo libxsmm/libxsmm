@@ -68,6 +68,8 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_REGULAR_FILTER_TRANS,
   /* gradient filter */
   LIBXSMM_DNN_GRADIENT_FILTER,
+  /* master filter */
+  LIBXSMM_DNN_MASTER_FILTER,
   /** general filter type */
   LIBXSMM_DNN_FILTER,
   /* regular bias */
