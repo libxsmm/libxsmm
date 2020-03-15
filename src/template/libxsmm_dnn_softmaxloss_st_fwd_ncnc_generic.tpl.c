@@ -127,7 +127,7 @@ for ( i = n_thr_begin; i < n_thr_end; ++i ) {
   /* sum exp over outputs */
   for ( ifm1 = 0; ifm1 < Bc; ++ifm1 ) {
     for ( ifm2 = 0; ifm2 < bc; ++ifm2 ) {
-      LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) = exp( LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) - max );
+      LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) = (float)exp( (double)(LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) - max) );
       sum_of_exp += LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc );
     }
   }
@@ -152,7 +152,7 @@ if ( ltid == 0 ) {
       libxsmm_blasint ifm1b = ifm/bc;
       libxsmm_blasint ifm2b = ifm%bc;
       float val = ( LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) > FLT_MIN ) ? LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) : FLT_MIN;
-      handle->loss = log( val );
+      handle->loss = (float)log( (double)val );
     }
   }
   handle->loss = ((-1.0f)*handle->loss)/handle->desc.N;
