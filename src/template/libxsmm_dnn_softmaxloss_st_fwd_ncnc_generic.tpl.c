@@ -87,7 +87,7 @@ LIBXSMM_VLA_DECL(4, const float,  input, pinput_fp32,  Bc, bn, bc);
 LIBXSMM_VLA_DECL(4,       element_output_type, output, (element_output_type*)handle->reg_output->data, Bc, bn, bc);
 LIBXSMM_VLA_DECL(4, const element_input_type,   input,  (element_input_type*)handle->reg_input->data,  Bc, bn, bc);
 #endif
-LIBXSMM_VLA_DECL(2, const element_label_type,   label,  (element_label_type*)handle->label->data,              bc);
+LIBXSMM_VLA_DECL(2, const element_label_type,   label,  (element_label_type*)handle->label->data,              bn);
 
 /* lazy barrier init */
 libxsmm_barrier_init( handle->barrier, ltid );
@@ -149,7 +149,7 @@ if ( ltid == 0 ) {
   handle->loss = 0.0f;
   for ( img1 = 0; img1 < Bn; ++img1 ) {
     for ( img2 = 0; img2 <bn; ++img2 ) {
-      libxsmm_blasint ifm = (libxsmm_blasint)LIBXSMM_VLA_ACCESS( 2, label, ifm1, ifm2, bc );
+      libxsmm_blasint ifm = (libxsmm_blasint)LIBXSMM_VLA_ACCESS( 2, label, img1, img2, bn );
       libxsmm_blasint ifm1b = ifm/bc;
       libxsmm_blasint ifm2b = ifm%bc;
       element_output_type val = ( LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) > FLT_MIN ) ? LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) : FLT_MIN;
