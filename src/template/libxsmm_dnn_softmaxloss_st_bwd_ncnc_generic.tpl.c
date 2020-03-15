@@ -54,7 +54,6 @@ libxsmm_blasint Bc = handle->Bc;
 
 /* loop counters */
 int i = 0;
-int j = 0;
 libxsmm_blasint img1, img2, ifm1, ifm2;
 
 float rcp_N = 1.0f/handle->desc.N;
@@ -70,6 +69,7 @@ const int n_chunksize = (n_work % handle->desc.threads == 0) ? (n_work / handle-
 const int n_thr_begin = (ltid * n_chunksize < n_work) ? (ltid * n_chunksize) : n_work;
 const int n_thr_end = ((ltid + 1) * n_chunksize < n_work) ? ((ltid + 1) * n_chunksize) : n_work;
 
+#if defined(LIBXSMM_DNN_SOFTMAXLOSS_BWD_BF16) || defined(LIBXSMM_DNN_SOFTMAXLOSS_BWD_BF16_AVX512)
 /* number of tasks that could run in parallel for the batch */
 const int nc_work = Bn * bn;
 /* compute chunk size */
@@ -78,7 +78,6 @@ const int nc_chunksize = (nc_work % handle->desc.threads == 0) ? (nc_work / hand
 const int nc_thr_begin = (ltid * nc_chunksize < nc_work) ? (ltid * nc_chunksize) : nc_work;
 const int nc_thr_end = ((ltid + 1) * nc_chunksize < nc_work) ? ((ltid + 1) * nc_chunksize) : nc_work;
 
-#if defined(LIBXSMM_DNN_SOFTMAXLOSS_BWD_BF16) || defined(LIBXSMM_DNN_SOFTMAXLOSS_BWD_BF16_AVX512)
 libxsmm_bfloat16* poutput_bf16 = (element_output_type*)handle->reg_output->data;
 libxsmm_bfloat16* pdinput_bf16 = (element_input_type*)handle->grad_input->data;
 float*            poutput_fp32 = (float*)handle->scratch;
