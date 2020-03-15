@@ -77,7 +77,7 @@ if ( ltid == 0 ) {
   handle->loss = 0.0f;
   for ( img1 = 0; img1 < Bn; ++img1 ) {
     for ( img2 = 0; img2 <bn; ++img2 ) {
-      libxsmm_blasint ifm = LIBXSMM_VLA_ACCESS( 2, label, ifm1, ifm2, bc );
+      libxsmm_blasint ifm = (libxsmm_blasint)LIBXSMM_VLA_ACCESS( 2, label, ifm1, ifm2, bc );
       libxsmm_blasint ifm1b = ifm/bc;
       libxsmm_blasint ifm2b = ifm%bc;
       element_output_type val = ( LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) > FLT_MIN ) ? LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) : FLT_MIN;

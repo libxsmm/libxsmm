@@ -45,7 +45,7 @@ for ( i = n_thr_begin; i < n_thr_end; ++i ) {
   /* set output to input and set compute max per image */
   for ( ifm1 = 0; ifm1 < Bc; ++ifm1 ) {
     for ( ifm2 = 0; ifm2 < bc; ++ifm2 ) {
-      if ( (ifm1*Bc)+ifm2 == LIBXSMM_VLA_ACCESS( 2, label, ifm1, ifm2, bc ) ) {
+      if ( (ifm1*Bc)+ifm2 == (libxsmm_blasint)LIBXSMM_VLA_ACCESS( 2, label, ifm1, ifm2, bc ) ) {
         LIBXSMM_VLA_ACCESS( 4, dinput, img1, ifm1, img2, ifm2, Bc, bn, bc ) =
           ( LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) - 1.0f ) * rcp_N * handle->desc.loss_weight;
       } else {
