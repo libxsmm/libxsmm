@@ -13,7 +13,6 @@
 
 LIBXSMM_API libxsmm_dnn_optimizer* libxsmm_dnn_create_optimizer(libxsmm_dnn_optimizer_desc optimizer_desc, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_optimizer* handle = 0;
-  int lpb;
 
   if ( (optimizer_desc.datatype == LIBXSMM_DNN_DATATYPE_F32) && (optimizer_desc.datatype == LIBXSMM_DNN_DATATYPE_BF16) ) {
     handle = (libxsmm_dnn_optimizer*)malloc(sizeof(libxsmm_dnn_optimizer));
@@ -327,6 +326,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_optimizer_execute_st(libxsmm_dnn_optim
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
+    LIBXSMM_UNUSED(start_thread);
+    LIBXSMM_UNUSED(tid);
   }
   else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
