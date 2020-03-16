@@ -15,7 +15,6 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <float.h>
-#include <math.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -34,7 +33,7 @@ libxsmm_dnn_err_t libxsmm_dnn_optimizer_sgd_st_f32_f32(libxsmm_dnn_optimizer* ha
 
 # define LIBXSMM_DNN_OPTIMIZER_SGD_F32_AVX512
 # include "template/libxsmm_dnn_optimizer_sgd_st_generic.tpl.c"
-# undef LIBXSMM_DNN_OPTIMIZRT_SGD_F32_AVX512
+# undef LIBXSMM_DNN_OPTIMIZER_SGD_F32_AVX512
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
