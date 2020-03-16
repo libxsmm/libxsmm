@@ -95,10 +95,13 @@
     <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_fusedgroupnorm_backward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_fusedgroupnorm_forward.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_optimizer_sgd.h" />
     <ClInclude Include="..\src\libxsmm_dnn_pooling_backward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_pooling_forward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_rnncell_backward_weight_update.h" />
     <ClInclude Include="..\src\libxsmm_dnn_rnncell_forward.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_softmaxloss_backward.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_softmaxloss_forward.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_main.h" />
@@ -163,12 +166,17 @@
     <ClCompile Include="..\src\libxsmm_dnn_fusedgroupnorm.c" />
     <ClCompile Include="..\src\libxsmm_dnn_fusedgroupnorm_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_fusedgroupnorm_forward.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_optimizer.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_optimizer_sgd.c" />
     <ClCompile Include="..\src\libxsmm_dnn_pooling.c" />
     <ClCompile Include="..\src\libxsmm_dnn_pooling_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_pooling_forward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_rnncell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_rnncell_backward_weight_update.c" />
     <ClCompile Include="..\src\libxsmm_dnn_rnncell_forward.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_softmaxloss.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_softmaxloss_backward.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_softmaxloss_forward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_tensor.c" />
     <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
     <ClCompile Include="..\src\libxsmm_generator.c" />
@@ -523,6 +531,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_optimizer_sgd_st_generic.tpl.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_pooling_st_bwd_custom_f32_bf16_c16_avx512.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
@@ -764,6 +780,22 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_rnn_fwd_nc_kcck.tpl.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_softmaxloss_st_bwd_ncnc_generic.tpl.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_softmaxloss_st_fwd_ncnc_generic.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>

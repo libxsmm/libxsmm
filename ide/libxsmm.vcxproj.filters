@@ -273,6 +273,15 @@
     <ClInclude Include="..\src\libxsmm_dnn_fullyconnected_backward_weight_update.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_optimizer_sgd.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_softmaxloss_backward.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_softmaxloss_forward.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -774,6 +783,30 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom_generic_i8i32.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_optimizer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_optimizer_sgd.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_softmaxloss.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_softmaxloss_backward.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_softmaxloss_forward.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_optimizer_sgd_st_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_softmaxloss_st_bwd_ncnc_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_softmaxloss_st_fwd_ncnc_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
   </ItemGroup>
