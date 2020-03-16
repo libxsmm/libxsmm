@@ -153,7 +153,7 @@ STATIC ?= 0
 PIC ?= pic
 
 PLATFORM ?= 0
-ifneq (0,$(PLATFORM))
+ifneq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" || echo "0")) # NaN
   DFLAGS += -DLIBXSMM_PLATFORM_FORCE
 endif
 
@@ -260,7 +260,7 @@ HOMEDIR := $(call qapath,$(HOME))
 HEREDIR := $(call qapath,.)
 
 # Pickup OpenMP library name if passed as OMP=libname|name
-ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
+ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9][0-9]*$$"; echo "$$?")) # NaN
   OMPRT = $(patsubst lib%,%,$(OMP))
 endif
 
@@ -1475,7 +1475,7 @@ else # GCC assumed
   ifneq (,$(OMPFLAG_FORCE))
     ifneq (,$(OMPLIBFILE))
       # clang: OMP=libomp
-      ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
+      ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9][0-9]*$$"; echo "$$?")) # NaN
         ifneq (0,$(CLANG))
           CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
           CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
