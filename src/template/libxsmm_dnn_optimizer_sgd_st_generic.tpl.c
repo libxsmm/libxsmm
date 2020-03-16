@@ -26,10 +26,10 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-element_filter_type*  filter = handle->reg_filter->data;
-element_filter_type* dfilter = handle->grad_filter->data;
+element_filter_type*  filter = (element_filter_type*)handle->reg_filter->data;
+element_filter_type* dfilter = (element_filter_type*)handle->grad_filter->data;
 #if defined(LIBXSMM_DNN_OPTIMIZER_SGD_BF16) || defined(LIBXSMM_DNN_OPTIMIZER_SGD_BF16_AVX512)
-element_master_type*  master = handle->master_filter->data;
+element_master_type*  master = (element_master_type*)handle->master_filter->data;
 #endif
 
 /* lazy barrier init */
