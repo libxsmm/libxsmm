@@ -79,6 +79,7 @@
 #include "../src/libxsmm_dnn_fusedgroupnorm_backward.c"
 #include "../src/libxsmm_dnn_fusedgroupnorm_forward.c"
 #include "../src/libxsmm_dnn_optimizer.c"
+#include "../src/libxsmm_dnn_optimizer_sgd.c"
 #include "../src/libxsmm_dnn_pooling.c"
 #include "../src/libxsmm_dnn_pooling_backward.c"
 #include "../src/libxsmm_dnn_pooling_forward.c"

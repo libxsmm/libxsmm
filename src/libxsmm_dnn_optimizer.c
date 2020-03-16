@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Sasikanth Avancha (Intel Corp.)
 ******************************************************************************/
+#include "libxsmm_dnn_optimizer_sgd.h"
 #include "libxsmm_main.h"
 
 
