@@ -2353,41 +2353,36 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
 {
   int result = EXIT_SUCCESS;
-  if (0 != info) {
-    LIBXSMM_INIT
-    if (0 != internal_registry) {
-      size_t i;
-      LIBXSMM_MEMZERO127(info); /* info->nstatic = 0; info->size = 0; */
-      info->nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(libxsmm_descriptor));
-      info->capacity = LIBXSMM_CAPACITY_REGISTRY;
+  LIBXSMM_INIT /* verbosity */
+  if (0 != info && 0 != internal_registry) {
+    size_t i;
+    LIBXSMM_MEMZERO127(info); /* info->nstatic = 0; info->size = 0; */
+    info->nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(libxsmm_descriptor));
+    info->capacity = LIBXSMM_CAPACITY_REGISTRY;
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-      info->ncache = internal_cache_size;
+    info->ncache = internal_cache_size;
 #else
-      info->ncache = 0;
+    info->ncache = 0;
 #endif
-      for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
-        libxsmm_code_pointer code = internal_registry[i];
-        if (0 != code.ptr_const && EXIT_SUCCESS == result) {
-          if (0 == (LIBXSMM_CODE_STATIC & code.uval)) { /* check for allocated/generated JIT-code */
-            size_t buffer_size = 0;
-            void* buffer = 0;
+    for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
+      libxsmm_code_pointer code = internal_registry[i];
+      if (0 != code.ptr_const && EXIT_SUCCESS == result) {
+        if (0 == (LIBXSMM_CODE_STATIC & code.uval)) { /* check for allocated/generated JIT-code */
+          size_t buffer_size = 0;
+          void* buffer = 0;
 #if defined(LIBXSMM_HASH_COLLISION)
-            code.uval &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
+          code.uval &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
-            result = libxsmm_get_malloc_xinfo(code.ptr_const, &buffer_size, NULL/*flags*/, &buffer);
-            if (EXIT_SUCCESS == result) {
-              info->nbytes += LIBXSMM_UP2(buffer_size + (((char*)code.ptr_const) - (char*)buffer), LIBXSMM_PAGE_MINSIZE);
-            }
+          result = libxsmm_get_malloc_xinfo(code.ptr_const, &buffer_size, NULL/*flags*/, &buffer);
+          if (EXIT_SUCCESS == result) {
+            info->nbytes += LIBXSMM_UP2(buffer_size + (((char*)code.ptr_const) - (char*)buffer), LIBXSMM_PAGE_MINSIZE);
           }
-          else {
-            ++info->nstatic;
-          }
-          ++info->size;
         }
+        else {
+          ++info->nstatic;
+        }
+        ++info->size;
       }
-    }
-    else {
-      result = EXIT_FAILURE;
     }
   }
   else {
@@ -2401,6 +2396,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t val
 {
   static int error_once = 0;
   void* result;
+  LIBXSMM_INIT /* verbosity */
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size) {
     libxsmm_descriptor wrap;
     void* dst;
@@ -2409,7 +2405,6 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t val
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
     wrap.kind = LIBXSMM_KERNEL_KIND_USER;
-    LIBXSMM_INIT
     dst = internal_find_code(&wrap, key_size, value_size).ptr;
     if (NULL != dst) {
       size_t size;
@@ -2451,6 +2446,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t val
 LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
 {
   void* result;
+  LIBXSMM_INIT /* verbosity */
 #if !defined(NDEBUG)
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size)
 #endif
@@ -2461,7 +2457,6 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
     wrap.kind = LIBXSMM_KERNEL_KIND_USER;
-    LIBXSMM_INIT
     result = internal_find_code(&wrap, key_size, 0/*user_size*/).ptr;
   }
 #if !defined(NDEBUG)
@@ -2488,6 +2483,7 @@ LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size)
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_xmmfunction result;
+  LIBXSMM_INIT /* verbosity */
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
@@ -2498,7 +2494,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
       wrap.gemm.desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     }
-    LIBXSMM_INIT
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xgemm;
 #if defined(_DEBUG)
     if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity && NULL != result.xmm) {
@@ -3809,9 +3804,9 @@ LIBXSMM_API libxsmm_sububmmfunction_reducebatch_strd libxsmm_sububmmdispatch_red
 LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_descriptor* descriptor)
 {
   libxsmm_xmcopyfunction result;
+  LIBXSMM_INIT /* verbosity */
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-    LIBXSMM_INIT
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
@@ -3832,9 +3827,9 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
 LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor)
 {
   libxsmm_xtransfunction result;
+  LIBXSMM_INIT /* verbosity */
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-    LIBXSMM_INIT
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
@@ -3852,9 +3847,9 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
 LIBXSMM_API libxsmm_pgemm_xfunction libxsmm_dispatch_pgemm(const libxsmm_pgemm_descriptor* descriptor)
 {
   libxsmm_trmm_xfunction result;
+  LIBXSMM_INIT /* verbosity */
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-    LIBXSMM_INIT
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
@@ -3872,9 +3867,9 @@ LIBXSMM_API libxsmm_pgemm_xfunction libxsmm_dispatch_pgemm(const libxsmm_pgemm_d
 LIBXSMM_API libxsmm_getrf_xfunction libxsmm_dispatch_getrf(const libxsmm_getrf_descriptor* descriptor)
 {
   libxsmm_trmm_xfunction result;
+  LIBXSMM_INIT /* verbosity */
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-    LIBXSMM_INIT
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
@@ -3892,9 +3887,9 @@ LIBXSMM_API libxsmm_getrf_xfunction libxsmm_dispatch_getrf(const libxsmm_getrf_d
 LIBXSMM_API libxsmm_trmm_xfunction libxsmm_dispatch_trmm(const libxsmm_trmm_descriptor* descriptor)
 {
   libxsmm_trmm_xfunction result;
+  LIBXSMM_INIT /* verbosity */
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-    LIBXSMM_INIT
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
@@ -3912,9 +3907,9 @@ LIBXSMM_API libxsmm_trmm_xfunction libxsmm_dispatch_trmm(const libxsmm_trmm_desc
 LIBXSMM_API libxsmm_trsm_xfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descriptor* descriptor)
 {
   libxsmm_trsm_xfunction result;
+  LIBXSMM_INIT /* verbosity */
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-    LIBXSMM_INIT
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
