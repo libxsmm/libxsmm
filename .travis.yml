@@ -1,4 +1,5 @@
 os: linux # default
+dist: xenial # default
 language: cpp
 
 branches:
@@ -108,7 +109,8 @@ script:
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} TRACE=1 STATIC=0 BLAS=1 ABSLIBS=1 MIX=0
                        EFLAGS="-DITYPE=double -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests &&
-      ${ENVBIN} LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt
+      ${ENVBIN} LIBXSMM_TRACE=$(if [ "g++" != "${CXX}" ] && [ "osx" != "${TRAVIS_OS_NAME}" ]; then echo "1"; else echo "0"; fi)
+                ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} &&
     if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "$((1<UPLOAD_ENABLED))" ]; then eval ${UPLOAD}; fi
 
