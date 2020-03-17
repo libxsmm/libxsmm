@@ -21,7 +21,8 @@ SYNC=$(command -v sync)
 GREP=$(command -v grep)
 WGET=$(command -v wget)
 GIT=$(command -v git)
-SED=$(command -v sed)
+# GNU sed is a prerequisite (macOS)
+SED=$(command -v gsed)
 CUT=$(command -v cut)
 LS=$(command -v ls)
 TR=$(command -v tr)
@@ -32,7 +33,11 @@ MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
 
-if [ "" != "${WGET}" ] && [ "" != "${PIPELINE}" ] && \
+if [ "" = "${SED}" ]; then
+  SED=$(command -v sed)
+fi
+
+if [ "" != "${WGET}" ] && [ "" != "${SED}" ] && [ "" != "${PIPELINE}" ] && \
    [ "" != "${BUILDKITE_ORGANIZATION_SLUG}" ] && \
    [ "" != "${BUILDKITE_AGENT_ACCESS_TOKEN}" ];
 then
