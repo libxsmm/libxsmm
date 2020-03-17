@@ -47,6 +47,7 @@ LIBXSMM_API libxsmm_dnn_softmaxloss* libxsmm_dnn_create_softmaxloss(libxsmm_dnn_
         *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
         free( handle );
         handle = 0;
+        return handle;
       }
       /* create barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);

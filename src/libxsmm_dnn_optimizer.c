@@ -48,6 +48,7 @@ LIBXSMM_API libxsmm_dnn_optimizer* libxsmm_dnn_create_optimizer(libxsmm_dnn_opti
         *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
         free( handle );
         handle = 0;
+        return handle;
       }
       /* create barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
