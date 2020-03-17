@@ -47,23 +47,20 @@ ifeq (d,$(filter d,$(MAKEFLAGS)))
   SHELL += -xv
 endif
 
+which = $(shell which $1 2>/dev/null)
+which ?= $(shell command -v $1)
+
 ifeq (Windows_NT,$(OS))
   UNAME ?= Windows_NT
-  ENVBIN ?= $(NULL)
   # Cygwin/MinGW based
   DLIBEXT ?= dll
   SLIBEXT ?= lib
 else
   UNAME ?= $(shell uname)
   ifneq (Darwin,$(UNAME))
-    ENVBIN ?= env
-  else
-    ENVBIN ?= $(NULL)
+    ENV ?= $(call which,env)
   endif
 endif
-
-which = $(shell which $1 2>/dev/null)
-which ?= $(shell command -v $1)
 
 # Command line utilities
 #PKGCFG ?= $(call which,pkg-config)
@@ -77,7 +74,7 @@ PYTHON ?= $(call which,python)
 
 ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
-  SHELL := $(ENVBIN) PATH=$(MAKEINC):$(PATH) $(SHELL)
+  SHELL := $(ENV) PATH=$(MAKEINC):$(PATH) $(SHELL)
   PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null; command -v python)
 endif
 endif
@@ -2225,7 +2222,7 @@ objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% %STATE MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX \
-    COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO SSE ENVBIN EXTDEP FORTDEP FSTD GINFO \
+    COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO SSE ENV EXTDEP FORTDEP FSTD GINFO \
     DLIBEXT DYNAMIC FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE \
     CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% \
     GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX \

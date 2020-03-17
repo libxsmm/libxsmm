@@ -1,6 +1,6 @@
 os: linux # default
-dist: xenial # default
 language: cpp
+#dist: xenial
 
 branches:
   except:
@@ -64,8 +64,8 @@ before_install:
     fi
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] && [ -e /etc/ssl/certs/ca-certificates.crt ]; then
       echo -n | openssl s_client -connect scan.coverity.com:443 2>/dev/null
-      | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
-      | sudo tee -a /etc/ssl/certs/ca-certificates.crt;
+      | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' 2>/dev/null
+      | sudo tee -a /etc/ssl/certs/ca-certificates.crt 2>/dev/null;
     fi
   - if [ "" = "${CODECOV_ENABLED}" ] || [ "0" != "${CODECOV_ENABLED}" ]; then
       if [ "osx" = "${TRAVIS_OS_NAME}" ] && [ "clang" != "${CC}" ]; then sudo easy_install pip; fi;
@@ -109,7 +109,7 @@ script:
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
       make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} TRACE=1 STATIC=0 BLAS=1 ABSLIBS=1 MIX=0
                        EFLAGS="-DITYPE=double -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests &&
-      ${ENVBIN} LIBXSMM_TRACE=$(if [ "g++" != "${CXX}" ]; then echo "1"; else echo "0"; fi)
+      ${ENV} LIBXSMM_TRACE=$(if [ "g++" != "${CXX}" ]; then echo "1"; else echo "0"; fi)
                 ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} &&
     if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "$((1<UPLOAD_ENABLED))" ]; then eval ${UPLOAD}; fi
