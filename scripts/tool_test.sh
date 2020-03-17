@@ -92,7 +92,9 @@ then
   if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "${UNAME}" ]; then
     export TRAVIS_OS_NAME=$(${UNAME})
   fi
-  HOST=$(hostname -s 2>/dev/null)
+  if [ "" = "${HOSTNAME}" ]; then
+    HOSTNAME=$(hostname -s 2>/dev/null)
+  fi
 
   # setup PARTITIONS for multi-tests
   if [ "" = "${PARTITIONS}" ]; then
@@ -263,12 +265,12 @@ then
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     CONFIGFILE=""
-    if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ]; then
+    if [ "" != "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ]; then
       CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
       if [ "" != "${CONFIGPAT}" ]; then
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOST}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
+        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
       else
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOST}/${CONFIG}.env 2>/dev/null"))
+        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
       fi
       CONFIGCOUNT=${#CONFIGFILES[@]}
       if [ "0" != "${CONFIGCOUNT}" ]; then
