@@ -21,7 +21,6 @@ SYNC=$(command -v sync)
 GREP=$(command -v grep)
 WGET=$(command -v wget)
 GIT=$(command -v git)
-# GNU sed is a prerequisite (macOS)
 SED=$(command -v gsed)
 CUT=$(command -v cut)
 LS=$(command -v ls)
@@ -33,6 +32,7 @@ MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
 
+# GNU sed is desired (macOS)
 if [ "" = "${SED}" ]; then
   SED=$(command -v sed)
 fi
@@ -73,8 +73,8 @@ then
       export TESTID=${TESTSETFILE}
     fi
     export TESTSET=${TESTID}
-  else
-    if [ "" != "$1" ]; then
+  else # case number given
+    if [ "" != "$1" ] && [ "0" != "$1" ]; then
       export TESTID=$1
     else
       export TESTID=1
@@ -172,13 +172,14 @@ then
       # convert: seconds -> minutes
       SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMITRUN/60))"
     fi
+    #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
     umask 007
     # eventually cleanup run-script of terminated/previous sessions
     ${RM} -f "${HERE}/../.tool_??????.sh"
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
-                    --preserve-env --unbuffered ${TESTSCRIPT}"
+                    --unbuffered ${TESTSCRIPT}"
   elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ]; then
     umask 007
     # eventually cleanup run-script of terminated/previous sessions
@@ -311,6 +312,13 @@ then
         ${CP} -u /opt/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
         ${CP} -u ${LICSDIR}/licenses/* ${REPOROOT}/licenses 2>/dev/null
         echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
+        # setup environment on a per-test basis
+        echo "if [ \"\" != \"${CONFIGFILE}\" ]; then" >> ${TESTSCRIPT}
+        echo "  if [ -e \"${ENVFILE}\" ]; then" >> ${TESTSCRIPT}
+        echo "    eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\"" >> ${TESTSCRIPT}
+        echo "  fi" >> ${TESTSCRIPT}
+        echo "  source \"${CONFIGFILE}\" \"\"" >> ${TESTSCRIPT}
+        echo "fi" >> ${TESTSCRIPT}
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e "${SLURMFILE}" ]; then
           DIR=$(cd $(dirname ${SLURMFILE}); pwd -P)
@@ -358,24 +366,14 @@ then
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
         fi
-      fi
-
-      # setup environment on a per-test basis
-      if [ "" != "${CONFIGFILE}" ]; then
-        if [ -e "${ENVFILE}" ]; then
-          # no need to have unique values in ENVDIFF aka "sort -u"
-          ENVDIFF=$(declare -px | ${DIFF} ${ENVFILE} - | ${SED} -n 's/[<>] \(..*\)/\1/p' | ${SED} -n 's/declare -x \(..*\)=..*/\1/p')
-          # restore environment
-          for ENV in ${ENVDIFF}; do
-            ENVVAR=$(${GREP} "declare \-x ${ENV}=" ${ENVFILE})
-            if [ "" != "${ENVVAR}" ]; then
-              eval ${ENVVAR}
-            else
-              unset ${ENV}
-            fi
-          done
+      else
+        # setup environment on a per-test basis
+        if [ "" != "${CONFIGFILE}" ]; then
+          if [ -e "${ENVFILE}" ]; then
+            eval ${HERE}/tool_envrestore.sh "${ENVFILE}"
+          fi
+          source "${CONFIGFILE}" ""
         fi
-        source "${CONFIGFILE}" ""
       fi
 
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
@@ -410,7 +408,7 @@ then
     done # SLURMFILE
 
     # increment the case number, or exit the script
-    if [ "" = "$1" ] && [ "0" = "${RESULT}" ]; then
+    if [ "0" = "$1" ] && [ "0" = "${RESULT}" ]; then
       TESTID=$((TESTID+1))
     else # finish
       break
