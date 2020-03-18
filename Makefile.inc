@@ -109,10 +109,9 @@ TRACE ?= 0
 ifeq (0,$(DBG))
   ifneq (0,$(INSTRUMENT))
     SYM = $(INSTRUMENT)
-  else ifeq (0,$(shell echo "$$((0>$(SYM)))"))
+  endif
+  ifeq (0,$(shell echo "$$((1<$(SYM) || 0>$(SYM)))"))
     DFLAGS += -DNDEBUG
-  else
-    DFLAGS += -D_DEBUG
   endif
 else # debugging enabled
   ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
