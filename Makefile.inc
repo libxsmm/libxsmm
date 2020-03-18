@@ -1177,14 +1177,6 @@ ifneq (0,$(INTEL))
       FCFLAGS += -check
     endif
   endif
-  ifneq (0,$(INSTRUMENT))
-  ifneq (Darwin1,$(UNAME)$(INSTRUMENT))
-    CXXFLAGS += -finstrument-functions
-    CFLAGS += -finstrument-functions
-    FCFLAGS += -finstrument-functions
-    DFLAGS += -D__TRACE=$(INSTRUMENT)
-  endif
-  endif
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifeq (0,$(COMPATIBLE))
     ifneq (,$(filter environment% override command%,$(origin COMPATIBLE)))
@@ -1408,26 +1400,6 @@ else # GCC assumed
         FCFLAGS += -ffat-lto-objects
       endif
     endif
-  endif
-  ifneq (0,$(INSTRUMENT))
-  ifneq (Darwin1,$(UNAME)$(INSTRUMENT))
-    DFLAGS += -D__TRACE=$(INSTRUMENT)
-    ifeq (0,$(PGI))
-      CXXFLAGS += -finstrument-functions
-      CFLAGS += -finstrument-functions
-      FCFLAGS += -finstrument-functions
-      # e.g. clang does not need/understand below flag
-      ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION_NUM)))"))
-        CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-        ifneq (,$(filter 2 3,$(GCC)))
-          CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-          ifeq (3,$(GCC))
-            FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-          endif
-        endif
-      endif
-    endif
-  endif
   endif
   ifeq (Windows_NT,$(UNAME))
     LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),dbghelp) $(XLIB_END)
@@ -1674,6 +1646,28 @@ endif
 
 ifeq (0,$(SYM))
   LDFLAGS += $(call ctest,$(LD),-s)
+endif
+
+ifneq (0,$(INSTRUMENT))
+ifneq (Darwin1,$(UNAME)$(INSTRUMENT))
+  DFLAGS += -D__TRACE=$(INSTRUMENT)
+  ifeq (0,$(PGI))
+    CXXFLAGS += -finstrument-functions $(call ctest,$(CXX),-fno-partial-inlining) $(call ctest,$(CXX),-fno-optimize-sibling-calls)
+    CFLAGS += -finstrument-functions $(call ctest,$(CC),-fno-partial-inlining) $(call ctest,$(CC),-fno-optimize-sibling-calls)
+    FCFLAGS += -finstrument-functions $(call ctest,$(FC),-fno-partial-inlining) $(call ctest,$(FC),-fno-optimize-sibling-calls)
+    ifeq (0,$(INTEL)) # e.g. Intel, Clang, and others do not need/understand below flag
+    ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION_NUM)))"))
+      CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+      ifneq (,$(filter 2 3,$(GCC)))
+        CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+        ifeq (3,$(GCC))
+          FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+        endif
+      endif
+    endif
+    endif
+  endif
+endif
 endif
 
 ifeq (0,$(COMPATIBLE))
