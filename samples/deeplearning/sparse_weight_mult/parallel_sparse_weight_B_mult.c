@@ -1,11 +1,11 @@
 /******************************************************************************
- * Copyright (c) Intel Corporation - All rights reserved.                      *
- * This file is part of the LIBXSMM library.                                   *
- *                                                                             *
- * For information on the license, see the LICENSE file.                       *
- * Further information: https://github.com/hfp/libxsmm/                        *
- * SPDX-License-Identifier: BSD-3-Clause                                       *
- ******************************************************************************/
+* Copyright (c) Intel Corporation - All rights reserved.                      *
+* This file is part of the LIBXSMM library.                                   *
+*                                                                             *
+* For information on the license, see the LICENSE file.                       *
+* Further information: https://github.com/hfp/libxsmm/                        *
+* SPDX-License-Identifier: BSD-3-Clause                                       *
+******************************************************************************/
 /* Xing Liu (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
@@ -30,10 +30,10 @@ void BlockSpMatStep1(int K, int C, int KB, int CB, unsigned int *colptr,
         int k_blk_offset = k % KB;
         unsigned colstart = colptr[k];
         unsigned colend = colptr[k + 1];
-        for (i = colstart; i < colend; ++i) {
+        for (i = colstart; i < (int)colend; ++i) {
             int c = rowidx[i];
             int c_blk_idx = c / CB;
-            int blk_idx = k_blk_idx * C / CB + c_blk_idx;
+            blk_idx = k_blk_idx * C / CB + c_blk_idx;
             nnzb[blk_idx]++;
             b_colptr[blk_idx][k_blk_offset + 1]++;
         }
@@ -56,11 +56,11 @@ void BlockSpMatStep2(int K, int C, int KB, int CB, unsigned int *colptr,
         int k_blk_offset = k % KB;
         unsigned colstart = colptr[k];
         unsigned colend = colptr[k + 1];
-        for (i = colstart; i < colend; ++i) {
+        for (i = colstart; i < (int)colend; ++i) {
             int c = rowidx[i];
             int c_blk_idx = c / CB;
             int c_blk_offset = c % CB;
-            int blk_idx = k_blk_idx * C / CB + c_blk_idx;
+            blk_idx = k_blk_idx * C / CB + c_blk_idx;
             b_rowidx[blk_idx][b_colptr[blk_idx][k_blk_offset]] = c_blk_offset;
             b_values[blk_idx][b_colptr[blk_idx][k_blk_offset]] = values[i];
             b_colptr[blk_idx][k_blk_offset]++;
@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
                 nnz++;
                 colptr[l_k + 1]++;
             }
-            l_B[l_k * C + l_c] = tmp;
+            l_B[l_k * C + l_c] = (float)tmp;
         }
     }
     for (l_k = 0; l_k < K; l_k++) {
@@ -205,9 +205,9 @@ int main(int argc, char **argv) {
             for (l_c = 0; l_c < C / CB; ++l_c) {
                 for (l_nn = 0; l_nn < NB / nb; ++l_nn) {
                     for (l_kk = 0; l_kk < KB; ++l_kk) {
-                        int k = l_k * KB + l_kk;
+                        k = l_k * KB + l_kk;
                         for (l_cc = 0; l_cc < CB; ++l_cc) {
-                            int c = l_c * CB + l_cc;
+                            c = l_c * CB + l_cc;
                             for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
                                 LIBXSMM_VLA_ACCESS(5, l_p_C_gold, l_n, l_k,
                                                    l_nn, l_kk, l_nnn, K / KB,
@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
     printf("max error = %f\n", l_max_error);
     /* check performace */
     unsigned long long l_start = libxsmm_timer_tick();
-    for (i = 0; i < REPS; ++i) {
+    for (i = 0; i < (int)REPS; ++i) {
 #ifdef _OPENMP
 #       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c)
 #endif
