@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 #endif
 
   /* initialize data according to touch-first policy */
-#if defined(_OPENMP) && !defined(SYNC)
+#if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
@@ -105,13 +105,15 @@ int main(int argc, char* argv[])
 
 #if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   if (NULL != jitter) {
-# if !defined(_OPENMP) || defined(SYNC)
-    duration = seconds();
-# else
+# if defined(_OPENMP)
 #   pragma omp parallel
+# endif
     { /* OpenMP thread pool is already populated (parallel region) */
+# if defined(_OPENMP)
 #     pragma omp single
+# endif
       duration = seconds();
+# if defined(_OPENMP)
 #     pragma omp for private(i)
 # endif
       for (i = 0; i < size; ++i) {
@@ -122,9 +124,7 @@ int main(int argc, char* argv[])
 #endif
         kernel(jitter, a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
       }
-# if defined(_OPENMP) && !defined(SYNC)
     }
-# endif
     duration = seconds() - duration;
   }
   else
@@ -133,13 +133,15 @@ int main(int argc, char* argv[])
 # endif
 #endif
   {
-#if !defined(_OPENMP) || defined(SYNC)
-    duration = seconds();
-#else
+#if defined(_OPENMP)
 #   pragma omp parallel
+#endif
     { /* OpenMP thread pool is already populated (parallel region) */
+#if defined(_OPENMP)
 #     pragma omp single
+#endif
       duration = seconds();
+#if defined(_OPENMP)
 #     pragma omp for private(i)
 #endif
       for (i = 0; i < size; ++i) {
@@ -152,9 +154,7 @@ int main(int argc, char* argv[])
           &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
            &beta, c + STREAM_C(j * nc), &ldc);
       }
-#if defined(_OPENMP) && !defined(SYNC)
     }
-#endif
     duration = seconds() - duration;
   }
 

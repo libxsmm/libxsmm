@@ -37,10 +37,14 @@
 #endif
 #if 0
 # define STREAM_C(EXPR) (EXPR)
+# define SYNC(IDX, INC, END) ((IDX) * (INC))
+#elif defined(_OPENMP)
+# define STREAM_C(EXPR) (EXPR)
+# define SYNC(IDX, INC, END) (((1048573 * omp_get_thread_num()) % (END)) * (INC))
 #else
 # define STREAM_C(EXPR) 0
 /* synchronization among C matrices */
-# define SYNC
+# define SYNC(IDX, INC, END) 0
 #endif
 
 /**

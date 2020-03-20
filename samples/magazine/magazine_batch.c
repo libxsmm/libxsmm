@@ -54,15 +54,15 @@ int main(int argc, char* argv[])
   const double scale = 1.0 / size;
   libxsmm_timer_tickint start;
   double duration;
-#if defined(SYNC)
+#if 1 /* synchronize among C-locations */
   const libxsmm_blasint xsize = size;
-#else
+#else /* assume no data race (C-index) */
   const libxsmm_blasint xsize = -size;
 #endif
   int i;
 
   /* initialize data according to touch-first policy */
-#if defined(_OPENMP) && !defined(SYNC)
+#if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
     }
     ia[i] = (int)STREAM_A(j * na);
     ib[i] = (int)STREAM_B(j * nb);
-    ic[i] = (int)STREAM_C(j * nc);
+    ic[i] = (int)STREAM_C(SYNC(j, nc, size));
   }
 
   start = libxsmm_timer_tick();
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
   { /* calculate checksum */
     double check = 0;
     for (i = 0; i < size; ++i) {
-      const double cn = norm(c + STREAM_C(i * nc), (int)m, (int)n, (int)ldc);
+      const double cn = norm(c + STREAM_C(SYNC(i, nc, size)), (int)m, (int)n, (int)ldc);
       if (check < cn) check = cn;
     }
     printf("\n%f (check)\n", check);

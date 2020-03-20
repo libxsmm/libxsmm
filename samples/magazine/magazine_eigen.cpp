@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
 #endif
 
   /* initialize data according to touch-first policy */
-#if defined(_OPENMP) && !defined(SYNC)
+#if defined(_OPENMP)
 # pragma omp parallel for
 #endif
   for (int i = 0; i < size; ++i) {
@@ -111,11 +111,11 @@ int main(int argc, char* argv[])
     }
   }
 
-#if defined(_OPENMP) && !defined(SYNC)
+#if defined(_OPENMP)
 # pragma omp parallel
 #endif
   {
-#if defined(_OPENMP) && !defined(SYNC)
+#if defined(_OPENMP)
 #   pragma omp single
 #endif
 #if defined(__EIGEN_TIMER)
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 #else
     duration = seconds();
 #endif
-#if defined(_OPENMP) && !defined(SYNC)
+#if defined(_OPENMP)
 #   pragma omp for
 #endif
     for (int i = 0; i < size; ++i) {
