@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
     LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
     throw "LAPACK/BLAS library must be available for this sample code!";
 #else /* BLAS available */
-    const libxsmm_blasint benchmark = 1 < argc ? std::atoi(argv[1]) : 0;
+    const libxsmm_blasint benchmark = (1 < argc ? std::atoi(argv[1]) : 0);
     LIBXSMM_BLAS_CONST libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
     LIBXSMM_BLAS_CONST libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
     LIBXSMM_BLAS_CONST libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
