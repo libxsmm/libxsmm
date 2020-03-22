@@ -25,31 +25,6 @@
   fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
 }
 
-void sgd_bf16( float* filmaster, libxsmm_bfloat16* fil, libxsmm_bfloat16* delfil, unsigned int weightsize, float lr, unsigned int start_thread, unsigned int tid, unsigned int threads ) {
-  libxsmm_bfloat16_hp t1, t2;
-  /* computing first logical thread */
-  const int ltid = tid - start_thread;
-  /* number of tasks that could be run in parallel */
-  const int work = weightsize;
-  /* compute chunk size */
-  const int chunksize = (work % threads == 0) ? (work / threads) : ((work / threads) + 1);
-  /* compute thr_begin and thr_end */
-  const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
-  const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-  int i = 0;
-
-  t1.i[0] = 0;
-
-  for ( i = thr_begin; i < thr_end; ++i ) {
-    t1.i[1] = delfil[i];
-    filmaster[i] = filmaster[i] - lr*t1.f;
-    t2.f = filmaster[i];
-    fil[i] = t2.i[1];
-  }
-
-  #pragma omp barrier
-}
-
 int main(int argc, char* argv[])
 {
   libxsmm_bfloat16 **act_libxsmm, **fil_libxsmm, **delact_libxsmm, **delfil_libxsmm;
@@ -88,7 +63,11 @@ int main(int argc, char* argv[])
   double fil_size = 0.0;
 
   libxsmm_dnn_fullyconnected_desc fullyconnected_desc;
-  libxsmm_dnn_fullyconnected**    libxsmm_handle;
+  libxsmm_dnn_fullyconnected**    libxsmm_fc_layer;
+  libxsmm_dnn_optimizer_desc      optimizer_desc;
+  libxsmm_dnn_optimizer**         libxsmm_opt;
+  libxsmm_dnn_softmaxloss_desc    softmaxloss_desc;
+  libxsmm_dnn_softmaxloss*        libxsmm_softmax;
   libxsmm_dnn_tensor**            libxsmm_act;
   libxsmm_dnn_tensor**            libxsmm_delact;
   libxsmm_dnn_tensor**            libxsmm_fil;
@@ -96,6 +75,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor**            libxsmm_bias;
   libxsmm_dnn_tensor**            libxsmm_delbias;
   libxsmm_dnn_tensor**            libxsmm_relumask;
+  libxsmm_dnn_tensor**            libxsmm_mafil;
   libxsmm_dnn_tensor_datalayout*  libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
@@ -121,10 +101,12 @@ int main(int argc, char* argv[])
     printf("Usage: %s iters MB fuse_type type bn bk bc C1 C2 ... CN\n", argv[0]);
     return 0;
   }
-  C = (int*)malloc((num_layers+1)*sizeof(int));
+  C = (int*)malloc((num_layers+2)*sizeof(int));
   for (j = 0 ; i < argc; ++i, ++j ) {
     C[j] = atoi(argv[i]);
   }
+  /* handle softmax config */
+  C[num_layers+1] = C[num_layers];
 
   if (type != 'A' && type != 'F' && type != 'B') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only)\n");
@@ -158,6 +140,8 @@ int main(int argc, char* argv[])
     printf("SIZE Filter       %i (%dx%d): %10.2f MiB\n", i, C[i], C[i+1], (double)(C[i]*C[i+1]*sizeof(libxsmm_bfloat16))/(1024.0*1024.0) );
     printf("SIZE Activations  %i (%dx%d): %10.2f MiB\n", i+1, MB, C[i+1], (double)(MB*C[i+1]*sizeof(libxsmm_bfloat16))/(1024.0*1024.0) );
   }
+  act_size += (double)(MB*C[num_layers+1]*sizeof(float))/(1024.0*1024.0);
+  printf("SIZE Activations softmax (%dx%d): %10.2f MiB\n", MB, C[num_layers+1], (double)(MB*C[num_layers+1]*sizeof(libxsmm_bfloat16))/(1024.0*1024.0) );
   printf("\nTOTAL SIZE Activations:            %10.2f MiB\n", act_size );
   printf("TOTAL SIZE Filter (incl. master):  %10.2f MiB\n", 3.0*fil_size );
   printf("TOTAL SIZE delActivations:         %10.2f MiB\n", act_size );
@@ -167,9 +151,12 @@ int main(int argc, char* argv[])
   /* allocate data */
   act_libxsmm    = (libxsmm_bfloat16**)malloc( (num_layers+1)*sizeof(libxsmm_bfloat16*) );
   delact_libxsmm = (libxsmm_bfloat16**)malloc( (num_layers+1)*sizeof(libxsmm_bfloat16*) );
-  for ( i = 0 ; i < num_layers+1; ++i ) {
+  for ( i = 0 ; i < num_layers+2; ++i ) {
     act_libxsmm[i]                = (libxsmm_bfloat16*)libxsmm_aligned_malloc( MB*C[i]*sizeof(libxsmm_bfloat16), 2097152);
-    delact_libxsmm[i]             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( MB*C[i]*sizeof(libxsmm_bfloat16), 2097152);
+    /* softmax has no incoming gradients */
+    if ( i < num_layers+1 ) {
+      delact_libxsmm[i]             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( MB*C[i]*sizeof(libxsmm_bfloat16), 2097152);
+    }
   }
   fil_master     = (float**)           malloc( num_layers*sizeof(float*) );
   fil_libxsmm    = (libxsmm_bfloat16**)malloc( num_layers*sizeof(libxsmm_bfloat16*) );
@@ -191,7 +178,7 @@ int main(int argc, char* argv[])
   }
 
   /* init data */
-  for ( i = 0 ; i < num_layers+1; ++i ) {
+  for ( i = 0 ; i < num_layers+2; ++i ) {
     init_buf_bf16( act_libxsmm[i], MB*C[i], 0, 0 );
   }
   for ( i = 0 ; i < num_layers+1; ++i ) {
@@ -219,14 +206,16 @@ int main(int argc, char* argv[])
   printf("#      Setting Up  (custom-Storage)      #\n");
   printf("##########################################\n");
 
-  libxsmm_handle   = (libxsmm_dnn_fullyconnected**) malloc( num_layers*sizeof(libxsmm_dnn_fullyconnected*) );
-  libxsmm_act      = (libxsmm_dnn_tensor**) malloc( (num_layers+1)*sizeof(libxsmm_dnn_tensor*) );
+  libxsmm_fc_layer   = (libxsmm_dnn_fullyconnected**) malloc( num_layers*sizeof(libxsmm_dnn_fullyconnected*) );
+  libxsmm_opt      = (libxsmm_dnn_optimizer**) malloc( num_layers*sizeof(libxsmm_dnn_optimizer*) );
+  libxsmm_act      = (libxsmm_dnn_tensor**) malloc( (num_layers+2)*sizeof(libxsmm_dnn_tensor*) );
   libxsmm_delact   = (libxsmm_dnn_tensor**) malloc( (num_layers+1)*sizeof(libxsmm_dnn_tensor*) );
   libxsmm_fil      = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
   libxsmm_delfil   = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
   libxsmm_bias     = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
   libxsmm_delbias  = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
   libxsmm_relumask = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
+  libxsmm_mafil    = (libxsmm_dnn_tensor**) malloc( num_layers*sizeof(libxsmm_dnn_tensor*) );
 
   for ( i = 0; i < num_layers; ++i ) {
     fullyconnected_desc.N = MB;
@@ -257,62 +246,93 @@ int main(int argc, char* argv[])
       /* cannot happen */
     }
 
-    libxsmm_handle[i] = libxsmm_dnn_create_fullyconnected( fullyconnected_desc, &status );
+    libxsmm_fc_layer[i] = libxsmm_dnn_create_fullyconnected( fullyconnected_desc, &status );
+    CHKERR_LIBXSMM_DNN( status );
+
+    optimizer_desc.C = C[i];
+    optimizer_desc.K = C[i+1];
+    optimizer_desc.bc = (C[i  ] % bc == 0) ? bc : C[i  ];
+    optimizer_desc.bk = (C[i+1] % bk == 0) ? bk : C[i+1];
+    optimizer_desc.learning_rate = 0.1f;
+    optimizer_desc.threads = nThreads;
+    optimizer_desc.opt_type = LIBXSMM_DNN_OPTIMIZER_SGD;
+    optimizer_desc.datatype = LIBXSMM_DNN_DATATYPE_BF16;
+    optimizer_desc.datatype_master = LIBXSMM_DNN_DATATYPE_F32;
+    optimizer_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED;
+    libxsmm_opt[i] = libxsmm_dnn_create_optimizer( optimizer_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
 
     /* setup LIBXSMM buffers */
     if ( i == 0 ) {
-      libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_fc_layer[i], LIBXSMM_DNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_act[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, act_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-      libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_GRADIENT_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_fc_layer[i], LIBXSMM_DNN_GRADIENT_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_delact[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, delact_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     }
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_OUTPUT, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_fc_layer[i], LIBXSMM_DNN_REGULAR_OUTPUT, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_act[i+1]  = libxsmm_dnn_link_tensor( libxsmm_layout, act_libxsmm[i+1], &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_GRADIENT_OUTPUT, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_fc_layer[i], LIBXSMM_DNN_GRADIENT_OUTPUT, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_delact[i+1]  = libxsmm_dnn_link_tensor( libxsmm_layout, delact_libxsmm[i+1], &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_FILTER, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_fc_layer[i], LIBXSMM_DNN_REGULAR_FILTER, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_fil[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, fil_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_GRADIENT_FILTER, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_fc_layer[i], LIBXSMM_DNN_GRADIENT_FILTER, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_delfil[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, delfil_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_CHANNEL_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_fc_layer[i], LIBXSMM_DNN_REGULAR_CHANNEL_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_bias[i] = libxsmm_dnn_link_tensor( libxsmm_layout, bias_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_fc_layer[i], LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_delbias[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, delbias_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_RELU_MASK, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_fc_layer[i], LIBXSMM_DNN_RELU_MASK, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_relumask[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, relumask_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
     /* bind buffers and filter to handle */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[i], libxsmm_act[  i],      LIBXSMM_DNN_REGULAR_INPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[i], libxsmm_delact[i  ],   LIBXSMM_DNN_GRADIENT_INPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[i], libxsmm_act[i+1],      LIBXSMM_DNN_REGULAR_OUTPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[i], libxsmm_delact[i+1],   LIBXSMM_DNN_GRADIENT_OUTPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[i], libxsmm_fil[i],        LIBXSMM_DNN_REGULAR_FILTER ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[i], libxsmm_delfil[i],     LIBXSMM_DNN_GRADIENT_FILTER ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[i], libxsmm_bias[i],       LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[i], libxsmm_delbias[i],    LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[i], libxsmm_relumask[i],   LIBXSMM_DNN_RELU_MASK ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_fc_layer[i], libxsmm_act[  i],      LIBXSMM_DNN_REGULAR_INPUT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_fc_layer[i], libxsmm_delact[i  ],   LIBXSMM_DNN_GRADIENT_INPUT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_fc_layer[i], libxsmm_act[i+1],      LIBXSMM_DNN_REGULAR_OUTPUT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_fc_layer[i], libxsmm_delact[i+1],   LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_fc_layer[i], libxsmm_fil[i],        LIBXSMM_DNN_REGULAR_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_fc_layer[i], libxsmm_delfil[i],     LIBXSMM_DNN_GRADIENT_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_fc_layer[i], libxsmm_bias[i],       LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_fc_layer[i], libxsmm_delbias[i],    LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_fc_layer[i], libxsmm_relumask[i],   LIBXSMM_DNN_RELU_MASK ) );
+
+    libxsmm_layout = libxsmm_dnn_optimizer_create_tensor_datalayout( libxsmm_opt[i], LIBXSMM_DNN_MASTER_FILTER, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_mafil[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, fil_master[i], &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+    /* bind filters to optimizer */
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_optimizer_bind_tensor( libxsmm_opt[i], libxsmm_fil[i],        LIBXSMM_DNN_REGULAR_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_optimizer_bind_tensor( libxsmm_opt[i], libxsmm_mafil[i],      LIBXSMM_DNN_MASTER_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_optimizer_bind_tensor( libxsmm_opt[i], libxsmm_delfil[i],     LIBXSMM_DNN_GRADIENT_FILTER ) );
 
     /* let's allocate and bind scratch */
-    if ( libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_handle[i], &status ) > scratch_size ) {
-      scratch_size = libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_handle[i], &status );
+    if ( libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_fc_layer[i], &status ) > scratch_size ) {
+      scratch_size = libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_fc_layer[i], &status );
+      CHKERR_LIBXSMM_DNN( status );
+      if ( scratch != NULL ) {
+        libxsmm_free( scratch );
+      }
+      scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+      init_buf( (float*)scratch, scratch_size/4, 0, 0 );
+    }
+    if ( libxsmm_dnn_optimizer_get_scratch_size( libxsmm_opt[i], &status ) > scratch_size ) {
+      scratch_size = libxsmm_dnn_optimizer_get_scratch_size( libxsmm_opt[i], &status );
       CHKERR_LIBXSMM_DNN( status );
       if ( scratch != NULL ) {
         libxsmm_free( scratch );
@@ -322,10 +342,42 @@ int main(int argc, char* argv[])
     }
   }
 
+  /* create softmax layer */
+  softmaxloss_desc.N = MB;
+  softmaxloss_desc.C = C[num_layers];
+  softmaxloss_desc.bn = (MB % bn == 0) ? bn : MB;
+  softmaxloss_desc.bc = (C[num_layers] % bc == 0) ? bc : C[num_layers];
+  softmaxloss_desc.loss_weight = 1.0;
+  softmaxloss_desc.threads = nThreads;
+  softmaxloss_desc.datatype = LIBXSMM_DNN_DATATYPE_BF16;
+  softmaxloss_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED;
+  libxsmm_softmax = libxsmm_dnn_create_softmaxloss( softmaxloss_desc, &status );
+  CHKERR_LIBXSMM_DNN( status );
+
+  libxsmm_layout = libxsmm_dnn_softmaxloss_create_tensor_datalayout( libxsmm_softmax, LIBXSMM_DNN_REGULAR_OUTPUT, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_act[num_layers+1]  = libxsmm_dnn_link_tensor( libxsmm_layout, act_libxsmm[num_layers+1], &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_tensor( libxsmm_softmax, libxsmm_act[num_layers],      LIBXSMM_DNN_REGULAR_INPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_tensor( libxsmm_softmax, libxsmm_delact[num_layers],   LIBXSMM_DNN_GRADIENT_INPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_tensor( libxsmm_softmax, libxsmm_act[num_layers+1],      LIBXSMM_DNN_REGULAR_OUTPUT ) );
+
+  if ( libxsmm_dnn_softmaxloss_get_scratch_size( libxsmm_softmax, &status ) > scratch_size ) {
+    scratch_size = libxsmm_dnn_softmaxloss_get_scratch_size( libxsmm_softmax, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    if ( scratch != NULL ) {
+      libxsmm_free( scratch );
+    }
+    scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+    init_buf( (float*)scratch, scratch_size/4, 0, 0 );
+  }
+
   /* bind scratch to all layers */
   for ( i = 0; i < num_layers; ++i ) {
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle[i], scratch ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_fc_layer[i], scratch ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_optimizer_bind_scratch(      libxsmm_opt[i],      scratch ) );
   }
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_scratch(    libxsmm_softmax,     scratch ) );
 
   if (type == 'A' || type == 'F') {
     printf("##########################################\n");
@@ -343,8 +395,9 @@ int main(int argc, char* argv[])
 #endif
       for (j = 0; j < iters; ++j) {
         for ( i = 0; i < num_layers; ++i) {
-          libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
+          libxsmm_dnn_fullyconnected_execute_st( libxsmm_fc_layer[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
         }
+        libxsmm_dnn_softmaxloss_execute_st( libxsmm_softmax, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -379,12 +432,13 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (j = 0; j < iters; ++j) {
+        libxsmm_dnn_softmaxloss_execute_st( libxsmm_softmax, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid );
         for ( i = num_layers-1; i > 0; --i) {
-          libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[i], LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
-          sgd_bf16( fil_master[i], fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
+          libxsmm_dnn_fullyconnected_execute_st( libxsmm_fc_layer[i], LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
+          libxsmm_dnn_optimizer_execute_st( libxsmm_opt[i], 0, tid );
         }
-        libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[0], LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
-        sgd_bf16( fil_master[0], fil_libxsmm[0], delfil_libxsmm[0], C[1]*C[0], 0.1f, 0, tid, nThreads );
+        libxsmm_dnn_fullyconnected_execute_st( libxsmm_fc_layer[0], LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
+        libxsmm_dnn_optimizer_execute_st( libxsmm_opt[i], 0, tid );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -421,14 +475,16 @@ int main(int argc, char* argv[])
 #endif
       for (j = 0; j < iters; ++j) {
         for ( i = 0; i < num_layers; ++i) {
-          libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
+          libxsmm_dnn_fullyconnected_execute_st( libxsmm_fc_layer[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
         }
+        libxsmm_dnn_softmaxloss_execute_st( libxsmm_softmax, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
+        libxsmm_dnn_softmaxloss_execute_st( libxsmm_softmax, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid );
         for ( i = (num_layers-1); i > 0; --i) {
-          libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[i], LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
-          sgd_bf16( fil_master[i], fil_libxsmm[i], delfil_libxsmm[i], C[i+1]*C[i], 0.1f, 0, tid, nThreads );
+          libxsmm_dnn_fullyconnected_execute_st( libxsmm_fc_layer[i], LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
+          libxsmm_dnn_optimizer_execute_st( libxsmm_opt[i], 0, tid );
         }
-        libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[0], LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
-        sgd_bf16( fil_master[0], fil_libxsmm[0], delfil_libxsmm[0], C[1]*C[0], 0.1f, 0, tid, nThreads );
+        libxsmm_dnn_fullyconnected_execute_st( libxsmm_fc_layer[0], LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
+        libxsmm_dnn_optimizer_execute_st( libxsmm_opt[i], 0, tid );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -451,18 +507,28 @@ int main(int argc, char* argv[])
 
   for ( i = 0; i < num_layers; ++i ) {
     /* clean-up */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_scratch( libxsmm_handle[i] ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_INPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_GRADIENT_INPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_OUTPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_GRADIENT_OUTPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_FILTER ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_GRADIENT_FILTER ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_RELU_MASK ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_fullyconnected( libxsmm_handle[i] ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_scratch( libxsmm_fc_layer[i] ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_fc_layer[i], LIBXSMM_DNN_REGULAR_INPUT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_fc_layer[i], LIBXSMM_DNN_GRADIENT_INPUT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_fc_layer[i], LIBXSMM_DNN_REGULAR_OUTPUT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_fc_layer[i], LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_fc_layer[i], LIBXSMM_DNN_REGULAR_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_fc_layer[i], LIBXSMM_DNN_GRADIENT_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_fc_layer[i], LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_fc_layer[i], LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_fc_layer[i], LIBXSMM_DNN_RELU_MASK ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_fullyconnected( libxsmm_fc_layer[i] ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_optimizer_release_scratch( libxsmm_opt[i] ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_optimizer_release_tensor( libxsmm_opt[i], LIBXSMM_DNN_REGULAR_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_optimizer_release_tensor( libxsmm_opt[i], LIBXSMM_DNN_MASTER_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_optimizer_release_tensor( libxsmm_opt[i], LIBXSMM_DNN_GRADIENT_FILTER ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_optimizer( libxsmm_opt[i] ) );
   }
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_release_scratch( libxsmm_softmax ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_release_tensor( libxsmm_softmax, LIBXSMM_DNN_REGULAR_INPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_release_tensor( libxsmm_softmax, LIBXSMM_DNN_GRADIENT_INPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_release_tensor( libxsmm_softmax, LIBXSMM_DNN_REGULAR_OUTPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_softmaxloss( libxsmm_softmax ) );
 
   for ( i = 0; i < num_layers; ++i ) {
     if ( i == 0 ) {
@@ -476,7 +542,9 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias[i] ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_delbias[i] ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_relumask[i] ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_mafil[i] ) );
   }
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_act[num_layers+1] ) );
 
   /* deallocate data */
   libxsmm_free(scratch);
@@ -493,7 +561,9 @@ int main(int argc, char* argv[])
     libxsmm_free(bias_libxsmm[i]);
     libxsmm_free(delbias_libxsmm[i]);
     libxsmm_free(relumask_libxsmm[i]);
+    libxsmm_free(fil_master[i]);
   }
+  libxsmm_free(act_libxsmm[num_layers+1]);
 
   free( libxsmm_act );
   free( libxsmm_delact );
@@ -502,6 +572,7 @@ int main(int argc, char* argv[])
   free( libxsmm_bias );
   free( libxsmm_delbias );
   free( libxsmm_relumask );
+  free( libxsmm_mafil );
 
   free( act_libxsmm );
   free( delact_libxsmm );
