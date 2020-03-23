@@ -1964,6 +1964,43 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
           l_2or3grp2 = 0;
           l_vecval2 = i_mask_reg_number;
           break;
+       case LIBXSMM_X86_INSTR_VPCMPUD:
+          l_second = 0x2;
+          l_fifth = -0x47;
+          l_oddgrp2 = 0;
+          l_2or3grp2 = 0;
+          l_vecval2 = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPW:
+          l_second = 0x2;
+          l_fifth = -0x26;
+          l_third = 0x80;
+          l_oddgrp2 = 0;
+          l_2or3grp2 = 0;
+          l_vecval2 = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPB:
+          l_second = 0x2;
+          l_fifth = -0x26;
+          l_oddgrp2 = 0;
+          l_2or3grp2 = 0;
+          l_vecval2 = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPUW:
+          l_second = 0x2;
+          l_fifth = -0x27;
+          l_third = 0x80;
+          l_oddgrp2 = 0;
+          l_2or3grp2 = 0;
+          l_vecval2 = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPUB:
+          l_second = 0x2;
+          l_fifth = -0x27;
+          l_oddgrp2 = 0;
+          l_2or3grp2 = 0;
+          l_vecval2 = i_mask_reg_number;
+          break;
        case LIBXSMM_X86_INSTR_VCMPPS:
           l_third = -1;
           l_fifth = 0x5d;
