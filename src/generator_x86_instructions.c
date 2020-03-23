@@ -3129,11 +3129,71 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
           l_oddgrp1 = 0;
           l_2or3grp1 = 0;
           break;
+       case LIBXSMM_X86_INSTR_VPCMPB:
+          l_place = i + 5;
+          l_sizereg = 64;
+          l_second = 2;
+          l_third = 1;
+          l_fifth = 0x20;
+          l_sixth = i_mask_reg_number*8;
+          l_vecval1 = 0;
+          l_vecgrp1 = 0;
+          l_oddgrp1 = 0;
+          l_2or3grp1 = 0;
+          break;
        case LIBXSMM_X86_INSTR_VPCMPD:
           l_place = i + 5;
           l_sizereg = 64;
           l_second = 2;
           l_third = 1;
+          l_sixth = i_mask_reg_number*8;
+          l_vecval1 = 0;
+          l_vecgrp1 = 0;
+          l_oddgrp1 = 0;
+          l_2or3grp1 = 0;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPW:
+          l_place = i + 5;
+          l_sizereg = 64;
+          l_second = 2;
+          l_third = 0x81;
+          l_fifth = 0x20;
+          l_sixth = i_mask_reg_number*8;
+          l_vecval1 = 0;
+          l_vecgrp1 = 0;
+          l_oddgrp1 = 0;
+          l_2or3grp1 = 0;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPUB:
+          l_place = i + 5;
+          l_sizereg = 64;
+          l_second = 2;
+          l_third = 1;
+          l_fifth = 0x1F;
+          l_sixth = i_mask_reg_number*8;
+          l_vecval1 = 0;
+          l_vecgrp1 = 0;
+          l_oddgrp1 = 0;
+          l_2or3grp1 = 0;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPUD:
+          l_place = i + 5;
+          l_sizereg = 64;
+          l_second = 2;
+          l_third = 1;
+          l_fifth = -1;
+          l_sixth = i_mask_reg_number*8;
+          l_vecval1 = 0;
+          l_vecgrp1 = 0;
+          l_oddgrp1 = 0;
+          l_2or3grp1 = 0;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPUW:
+          l_place = i + 5;
+          l_sizereg = 64;
+          l_second = 2;
+          l_third = 0x81;
+          l_fifth = 0x1F;
           l_sixth = i_mask_reg_number*8;
           l_vecval1 = 0;
           l_vecgrp1 = 0;
