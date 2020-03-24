@@ -1951,11 +1951,32 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
        case LIBXSMM_X86_INSTR_VBLENDMPS:
           if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
           {
-              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%u != %i\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask for VBLENDMPS immediate=%u != %i\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
               exit(-1);
           }
           l_second = 0x1;
           l_fourth = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VPBLENDMB:
+          if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
+          {
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask for VPBLENDMB immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              exit(-1);
+          }
+          l_second = 0x1;
+          l_fourth = i_mask_reg_number;
+          l_fifth = 0x1;
+          break;
+       case LIBXSMM_X86_INSTR_VPBLENDMW:
+          if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
+          {
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask for VPBLENDMW immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              exit(-1);
+          }
+          l_second = 0x1;
+          l_third = 0x80;
+          l_fourth = i_mask_reg_number;
+          l_fifth = 0x1;
           break;
        case LIBXSMM_X86_INSTR_VPCMPD:
           l_second = 0x2;
