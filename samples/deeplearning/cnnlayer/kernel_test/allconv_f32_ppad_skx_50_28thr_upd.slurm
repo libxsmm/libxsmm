@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#SBATCH -J allconv_f32_ppad_skx_50_28thr
+#SBATCH -J allconv_f32_ppad_skx_50_28thr_upd
 #SBATCH --get-user-env
 #SBATCH --partition=skx
 #SBATCH --ntasks=1
