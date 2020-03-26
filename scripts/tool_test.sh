@@ -201,6 +201,7 @@ then
   # backup current environment (snapshot)
   ${RM} -f "${HERE}/../.env_??????"
   ENVFILE=$(${MKTEMP} ${HERE}/../.env_XXXXXX)
+  ${CHMOD} +r ${ENVFILE}
   declare -px > ${ENVFILE}
 
   RESULT=0
