@@ -4618,7 +4618,8 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_code,
                                         const unsigned int      i_mask_instr,
                                         const unsigned int      i_gp_reg_number,
-                                        const unsigned int      i_mask_reg_number ) {
+                                        const unsigned int      i_mask_reg_number,
+                                        const unsigned int      i_is_store ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -4661,12 +4662,20 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
        buf[i++] = 0xc4;
        buf[i++] = (unsigned char)(0xe1 - l_nx8*0x20);
        buf[i++] = (unsigned char)(0x78 + l_case);
-       buf[i++] = 0x92;
+       if ( i_is_store != 0 ) {
+         buf[i++] = 0x93;
+       } else {
+         buf[i++] = 0x92;
+       }
        buf[i++] = (unsigned char)(0xc0 + l_regnum0 + 8*i_mask_reg_number);
     } else {
        buf[i++] = 0xc5;
        buf[i++] = (unsigned char)(0xf8 + l_case);
-       buf[i++] = 0x92;
+       if ( i_is_store != 0 ) {
+         buf[i++] = 0x93;
+       } else {
+         buf[i++] = 0x92;
+       }
        buf[i++] = (unsigned char)(0xc0 + l_regnum0 + 8*i_mask_reg_number);
     }
 
@@ -4695,10 +4704,18 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
       l_prefix = 'd';
     }
 
-    if ( io_generated_code->code_type == 0 ) {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%s%c, %%%%k%u\\n\\t\"\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
+    if ( i_is_store != 0 ) {
+      if ( io_generated_code->code_type == 0 ) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%k%u, %%%%%s%c\\n\\t\"\n", l_instr_name, i_mask_reg_number, l_gp_reg_name, l_prefix );
+      } else {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%k%u, %%%s%c\n", l_instr_name, i_mask_reg_number, l_gp_reg_name, l_prefix );
+      }
     } else {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%s%c, %%k%u\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
+      if ( io_generated_code->code_type == 0 ) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%s%c, %%%%k%u\\n\\t\"\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
+      } else {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%s%c, %%k%u\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
+      }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }

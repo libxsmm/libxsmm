@@ -84,12 +84,12 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
     libxsmm_x86_instruction_mask_move( io_generated_code,
                                       LIBXSMM_X86_INSTR_KMOVQ,
                                       i_gp_reg_mapping->gp_reg_help_0,
-                                      1 );
+                                      1, 0 );
   } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC || i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
                                       LIBXSMM_X86_INSTR_KMOVW,
                                       i_gp_reg_mapping->gp_reg_help_0,
-                                      1 );
+                                      1, 0 );
   } else {
     /* Should not happen! */
   }

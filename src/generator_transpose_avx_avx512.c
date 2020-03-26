@@ -713,7 +713,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            io_generated_code->code_size = i;
            libxsmm_x86_instruction_alu_imm ( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, 8, imask );
            /* kmovw %r8d, %k1: */
-           libxsmm_x86_instruction_mask_move ( io_generated_code, LIBXSMM_X86_INSTR_KMOVW, 8, 1 );
+           libxsmm_x86_instruction_mask_move ( io_generated_code, LIBXSMM_X86_INSTR_KMOVW, 8, 1, 0 );
            i = io_generated_code->code_size;
         }
         if ( n0 > 0 )
@@ -730,7 +730,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            io_generated_code->code_size = i;
            libxsmm_x86_instruction_alu_imm ( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, 8, imask );
            /* kmovw %r8d, %k2: */
-           libxsmm_x86_instruction_mask_move ( io_generated_code, LIBXSMM_X86_INSTR_KMOVW, 8, 2 );
+           libxsmm_x86_instruction_mask_move ( io_generated_code, LIBXSMM_X86_INSTR_KMOVW, 8, 2, 0 );
            i = io_generated_code->code_size;
         }
      }

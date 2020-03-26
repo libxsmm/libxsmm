@@ -385,12 +385,14 @@ void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
  * @param i_mask_instr actual mask move instruction
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_mask_reg_number the register number (k1=1...k7=7)
+ * @param i_is_store indicates if we wnat to move the mask to gpr
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_code,
                                         const unsigned int      i_mask_instr,
                                         const unsigned int      i_gp_reg_number,
-                                        const unsigned int      i_mask_reg_number );
+                                        const unsigned int      i_mask_reg_number,
+                                        const unsigned int      i_is_store );
 
 /**
  * Allows for mask move instructions in AVX512

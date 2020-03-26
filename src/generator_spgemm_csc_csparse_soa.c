@@ -252,7 +252,7 @@ void libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
   /* load maske register */
   l_mask_val = 0xffff >> (16-i_m_blocking);
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_0, l_mask_val );
-  libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVW, i_gp_reg_mapping->gp_reg_help_0, l_mask_reg );
+  libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVW, i_gp_reg_mapping->gp_reg_help_0, l_mask_reg, 0 );
 
   /* set c accumulator to 0 */
   for ( l_i = 0; l_i < l_max_m; ++l_i ) {
