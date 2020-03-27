@@ -43,7 +43,8 @@ void sgemm_trup( const char*  transa,
   int Bn = (*n)/bn;
   int Bk = (*k)/bk;
   unsigned long long Bkbr = (unsigned long long)Bk;
-
+  int BnB = 8;
+  int BmB = Bm;
   /* mult-dim array definitons for readable code */
   LIBXSMM_VLA_DECL( 2, const float, origa,    a,         (*lda) );
   LIBXSMM_VLA_DECL( 2, const float, origb,    b,         (*ldb) );
@@ -55,7 +56,7 @@ void sgemm_trup( const char*  transa,
   libxsmm_smmfunction_reducebatch_strd fluxcapacitor = libxsmm_smmdispatch_reducebatch_strd( bm, bn, bk, bk*bm*sizeof(float), bk*bn*sizeof(float), &bm, &bk, ldc, NULL, NULL, NULL, NULL);
 
   /* tmp counters */
-  int lm1, ln1, lk1, lm2, ln2, lk2;
+  int lm1, ln1, lk1, lm2, ln2, lk2, lno, Bne, lmo, Bme;
 
   /* some checks */
   assert( ((*m)   % 64) == 0 );
@@ -69,61 +70,66 @@ void sgemm_trup( const char*  transa,
   assert( *transa == 'N' );
   assert( *transb == 'N' );
 
-  #pragma omp parallel private(lm1, lm2, ln1, ln2, lk1, lk2)
+  #pragma omp parallel private(lm1, lm2, ln1, ln2, lk1, lk2, lno, Bne, lmo, Bme)
   {
-    /* copy A into blocked format */
-    #pragma omp for private(lm1, lm2, lk1, lk2) collapse(2) nowait
-    for ( lm1 = 0; lm1 < Bm; ++lm1 ) {
-      for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
-        __m512 vmone = _mm512_set1_ps( -1.0f );
-        for ( lk2 = 0; lk2 < bk; ++lk2 ) {
-          float* tmpaddr1 = &LIBXSMM_VLA_ACCESS( 4, blka, lm1, lk1, lk2, 0, Bk, bk, bm );
-          const float* tmpaddr2 = &LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2, (lm1*bm), (*lda) );
-          _mm512_storeu_ps( tmpaddr1,    _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2 ) ) );
-          _mm512_storeu_ps( tmpaddr1+16, _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2+16 ) ) );
-          _mm512_storeu_ps( tmpaddr1+32, _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2+32 ) ) );
-          _mm512_storeu_ps( tmpaddr1+48, _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2+48 ) ) );
-#if 0
-          for ( lm2 = 0; lm2 < bm;  ) {
-            LIBXSMM_VLA_ACCESS( 4, blka, lm1, lk1, lk2, lm2, Bk, bk, bm ) =
-              (*alpha)*LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2, (lm1*bm)+lm2, (*lda) );
-          }
+    for ( lmo = 0; lmo < Bm; lmo += BmB ) {
+      Bme = (lmo+BmB > Bm) ? Bm : lmo+BmB;
+      for ( lno = 0; lno < Bn; lno += BnB ) {
+        Bne = (lno+BnB > Bn) ? Bn : lno+BnB;
+
+        #pragma omp for private(ln1, ln2, lk1, lk2) collapse(2)
+        for ( ln1 = lno; ln1 < Bne; ++ln1 ) {
+          for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
+            for ( ln2 = 0; ln2 < bn; ++ln2 ) {
+#if 1
+              float* tmpaddr1 = &LIBXSMM_VLA_ACCESS( 4, blkb, ln1, lk1, ln2, 0, Bk, bn, bk );
+              const float* tmpaddr2 = &LIBXSMM_VLA_ACCESS( 2, origb, (ln1*bn)+ln2, (lk1*bk), (*ldb) );
+              _mm512_storeu_ps( tmpaddr1,    _mm512_loadu_ps( tmpaddr2 ) );
+              _mm512_storeu_ps( tmpaddr1+16, _mm512_loadu_ps( tmpaddr2+16 ) );
+              _mm512_storeu_ps( tmpaddr1+32, _mm512_loadu_ps( tmpaddr2+32 ) );
+              _mm512_storeu_ps( tmpaddr1+48, _mm512_loadu_ps( tmpaddr2+48 ) );
+#else
+              for ( lk2 = 0; lk2 < bk; ++lk2 ) {
+                LIBXSMM_VLA_ACCESS( 4, blkb, ln1, lk1, ln2, lk2, Bk, bn, bk ) =
+                  LIBXSMM_VLA_ACCESS( 2, origb, (ln1*bn)+ln2, (lk1*bk)+lk2, (*ldb) );
+              }
 #endif
-        }
-      }
-    }
-
-    /* copy B into blocked format */
-    #pragma omp for private(ln1, ln2, lk1, lk2) collapse(2) nowait
-    for ( ln1 = 0; ln1 < Bn; ++ln1 ) {
-      for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
-        for ( ln2 = 0; ln2 < bn; ++ln2 ) {
-          float* tmpaddr1 = &LIBXSMM_VLA_ACCESS( 4, blkb, ln1, lk1, ln2, 0, Bk, bn, bk );
-          const float* tmpaddr2 = &LIBXSMM_VLA_ACCESS( 2, origb, (ln1*bn)+ln2, (lk1*bk), (*ldb) );
-          _mm512_storeu_ps( tmpaddr1,    _mm512_loadu_ps( tmpaddr2 ) );
-          _mm512_storeu_ps( tmpaddr1+16, _mm512_loadu_ps( tmpaddr2+16 ) );
-          _mm512_storeu_ps( tmpaddr1+32, _mm512_loadu_ps( tmpaddr2+32 ) );
-          _mm512_storeu_ps( tmpaddr1+48, _mm512_loadu_ps( tmpaddr2+48 ) );
-#if 0
-          for ( lk2 = 0; lk2 < bk; ++lk2 ) {
-            LIBXSMM_VLA_ACCESS( 4, blkb, ln1, lk1, ln2, lk2, Bk, bn, bk ) =
-              LIBXSMM_VLA_ACCESS( 2, origb, (ln1*bn)+ln2, (lk1*bk)+lk2, (*ldb) );
+            }
           }
-#endif
         }
-      }
-    }
 
-    #pragma omp barrier
+        #pragma omp for private(lm1, ln1, lk1, lk2) collapse(2)
+        for ( lm1 = lmo; lm1 < Bme; ++lm1 ) {
+          /* we prepare a bm*K tile of A in L1/L2 cache */
+          for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
+            __m512 vmone = _mm512_set1_ps( -1.0f );
+            for ( lk2 = 0; lk2 < bk; ++lk2 ) {
+#if 1
+              float* tmpaddr1 = &LIBXSMM_VLA_ACCESS( 4, blka, lm1, lk1, lk2, 0, Bk, bk, bm );
+              const float* tmpaddr2 = &LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2, (lm1*bm), (*lda) );
+              _mm512_storeu_ps( tmpaddr1,    _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2 ) ) );
+              _mm512_storeu_ps( tmpaddr1+16, _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2+16 ) ) );
+              _mm512_storeu_ps( tmpaddr1+32, _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2+32 ) ) );
+              _mm512_storeu_ps( tmpaddr1+48, _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2+48 ) ) );
+#else
+              for ( lm2 = 0; lm2 < bm;  ) {
+                LIBXSMM_VLA_ACCESS( 4, blka, lm1, lk1, lk2, lm2, Bk, bk, bm ) =
+                  (*alpha)*LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2, (lm1*bm)+lm2, (*lda) );
+              }
+#endif
+            }
+          }
+        }
 
-    /* do the GEMM */
-    #pragma omp for private(lm1, ln1) collapse(2) nowait
-    for ( lm1 = 0; lm1 < Bm; ++lm1 ) {
-      for ( ln1 = 0; ln1 < Bn; ++ln1 ) {
-        fluxcapacitor( &LIBXSMM_VLA_ACCESS( 4,  blka, lm1, 0, 0, 0, Bk, bk, bm ),
-                       &LIBXSMM_VLA_ACCESS( 4,  blkb, ln1, 0, 0, 0, Bk, bn, bk ),
-                       &LIBXSMM_VLA_ACCESS( 2, origc, (ln1*bn), (lm1*bm), (*ldc) ),
-                       &Bkbr );
+        #pragma omp for private(lm1, ln1) collapse(2)
+        for ( lm1 = lmo; lm1 < Bme; ++lm1 ) {
+           for ( ln1 = lno; ln1 < Bne; ++ln1 ) {
+            fluxcapacitor( &LIBXSMM_VLA_ACCESS( 4,  blka, lm1, 0, 0, 0, Bk, bk, bm ),
+                           &LIBXSMM_VLA_ACCESS( 4,  blkb, ln1, 0, 0, 0, Bk, bn, bk ),
+                           &LIBXSMM_VLA_ACCESS( 2, origc, (ln1*bn), (lm1*bm), (*ldc) ),
+                           &Bkbr );
+          }
+        }
       }
     }
   }
