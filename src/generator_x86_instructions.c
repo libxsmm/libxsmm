@@ -4652,31 +4652,31 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
           fprintf(stderr, "libxsmm_instruction_mask_move: Strange kmov instruction\n");
           exit(-1);
     }
+
+    if ( (i_is_store == 1) && (i_mask_instr != LIBXSMM_X86_INSTR_KMOVQ) && (l_nx8 > 0) ) l_case -= 0x80;
+    if ( i_is_store != 0 ) l_nx8 *= 4;
+
     if ( i_mask_reg_number > 7 )
     {
        fprintf(stderr, "libxsmm_instruction_mask_move: Strange mask number=%u\n",i_mask_reg_number);
        exit(-1);
     }
-    if ( l_nx8 || i_mask_instr==LIBXSMM_X86_INSTR_KMOVQ )
+
+    if ( (l_nx8&&i_is_store==0) || i_mask_instr==LIBXSMM_X86_INSTR_KMOVQ )
     {
-       buf[i++] = 0xc4;
+       buf[i++] = (unsigned char)(0xc4);
        buf[i++] = (unsigned char)(0xe1 - l_nx8*0x20);
        buf[i++] = (unsigned char)(0x78 + l_case);
-       if ( i_is_store != 0 ) {
-         buf[i++] = 0x93;
-       } else {
-         buf[i++] = 0x92;
-       }
+    } else {
+       buf[i++] = (unsigned char)(0xc5);
+       buf[i++] = (unsigned char)(0xf8 + l_case);
+    }
+    if ( i_is_store == 0 ) {
+       buf[i++] = (unsigned char)(0x92);
        buf[i++] = (unsigned char)(0xc0 + l_regnum0 + 8*i_mask_reg_number);
     } else {
-       buf[i++] = 0xc5;
-       buf[i++] = (unsigned char)(0xf8 + l_case);
-       if ( i_is_store != 0 ) {
-         buf[i++] = 0x93;
-       } else {
-         buf[i++] = 0x92;
-       }
-       buf[i++] = (unsigned char)(0xc0 + l_regnum0 + 8*i_mask_reg_number);
+       buf[i++] = (unsigned char)(0x93);
+       buf[i++] = (unsigned char)(0xc0 + 8*l_regnum0 + i_mask_reg_number);
     }
 
     io_generated_code->code_size = i;
