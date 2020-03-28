@@ -17,50 +17,77 @@
 #include <omp.h>
 #include <mkl.h>
 
-void sgemm_trup( const char*  transa,
-                     const char*  transb,
-                     const int*   m,
-                     const int*   n,
-                     const int*   k,
-                     const float* alpha,
-                     const float* a,
-                     const int*   lda,
-                     const float* b,
-                     const int*   ldb,
-                     const float* beta,
-                     float* c,
-                     const int*   ldc,
-                     float*       scratch ) {
-  /* tmpa and tmpb pointers for block storage */
-  float* tmpa = scratch;
-  float* tmpb = scratch+((*k)*(*lda));
+size_t sgemm_trup_get_scratch( const int*   m,
+                               const int*   n,
+                               const int*   k ) {
+  size_t memam = 0;
 
+  assert( ((*m)   % 64) == 0 );
+  assert( (((*n)-1) % 64) == 0 );
+  assert( ((*k)   % 64) == 0 );
+
+  memam += (*m)*(*k)*sizeof(float);
+  memam += (*n)*(*k)*sizeof(float);
+  memam += ((*m)*(*k)*sizeof(size_t))/(64*64);
+  memam += ((*n-1)*(*k)*sizeof(size_t))/(64*64);
+  memam += ((*n-1)*(*m)*sizeof(size_t))/(64*64);
+
+  return memam;
+}
+
+void sgemm_trup( const char*  transa,
+                 const char*  transb,
+                 const int*   m,
+                 const int*   n,
+                 const int*   k,
+                 const float* alpha,
+                 const float* a,
+                 const int*   lda,
+                 const float* b,
+                 const int*   ldb,
+                 const float* beta,
+                       float* c,
+                 const int*   ldc,
+                       void*  scratch ) {
+  /* tmpa and tmpb pointers for block storage */
+  float* tmpa = (float*)scratch;
+  float* tmpb = tmpa+((*k)*(*lda));
   /* (fixed) blocking factors */
   int bm = 64;
   int bn = 64;
   int bk = 64;
+  int bn2 = 65;
   int Bm = (*m)/bm;
-  int Bn = (*n)/bn;
+  int Bn = ((*n)-1)/bn;
   int Bk = (*k)/bk;
   unsigned long long Bkbr = (unsigned long long)Bk;
   int BnB = 8;
   int BmB = Bm;
+
+  /* helper arrays for mixed shaped tile tensors */
+  size_t* poa = (size_t*)(tmpb + (*n)*(*ldb));
+  size_t* pob = poa + (Bm*Bk);
+  size_t* poc = pob + (Bn*Bk);
+
   /* mult-dim array definitons for readable code */
   LIBXSMM_VLA_DECL( 2, const float, origa,    a,         (*lda) );
   LIBXSMM_VLA_DECL( 2, const float, origb,    b,         (*ldb) );
-  LIBXSMM_VLA_DECL( 2,       float, origc,    c,         (*ldc) );
-  LIBXSMM_VLA_DECL( 4,       float,  blka, tmpa, Bk, bk,    bm );
-  LIBXSMM_VLA_DECL( 4,       float,  blkb, tmpb, Bk, bn,    bk );
+
+  /* organization of tile offsets */
+  LIBXSMM_VLA_DECL( 2,       size_t, offa, poa, Bk);
+  LIBXSMM_VLA_DECL( 2,       size_t, offb, pob, Bk);
+  LIBXSMM_VLA_DECL( 2,       size_t, offc, poc, Bm);
 
   /* jitted libxsmm batch reduce kernel for compute */
-  libxsmm_smmfunction_reducebatch_strd fluxcapacitor = libxsmm_smmdispatch_reducebatch_strd( bm, bn, bk, bk*bm*sizeof(float), bk*bn*sizeof(float), &bm, &bk, ldc, NULL, NULL, NULL, NULL);
+  libxsmm_smmfunction_reducebatch_strd fluxcapacitor =  libxsmm_smmdispatch_reducebatch_strd( bm, bn,  bk, bk*bm*sizeof(float), bk*bn*sizeof(float),  &bm, &bk, ldc, NULL, NULL, NULL, NULL);
+  libxsmm_smmfunction_reducebatch_strd fluxcapacitor2 = libxsmm_smmdispatch_reducebatch_strd( bm, bn2, bk, bk*bm*sizeof(float), bk*bn2*sizeof(float), &bm, &bk, ldc, NULL, NULL, NULL, NULL);
 
   /* tmp counters */
   int lm1, ln1, lk1, lm2, ln2, lk2, lno, Bne, lmo, Bme;
 
   /* some checks */
   assert( ((*m)   % 64) == 0 );
-  assert( ((*n)   % 64) == 0 );
+  assert( (((*n)-1) % 64) == 0 );
   assert( ((*k)   % 64) == 0 );
   assert( ((*lda) % 64) == 0 );
   assert( ((*ldb) % 64) == 0 );
@@ -69,6 +96,28 @@ void sgemm_trup( const char*  transa,
   assert( *beta  ==  1.0f );
   assert( *transa == 'N' );
   assert( *transb == 'N' );
+
+  for ( lm1 = 0; lm1 < Bm; ++lm1 ) {
+    for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
+      LIBXSMM_VLA_ACCESS( 2, offa, lm1, lk1, Bk ) = ((size_t)bm*bk*lk1) + ((size_t)lm1*bm*(*k));
+    }
+  }
+
+  for ( ln1 = 0; ln1 < Bn; ++ln1 ) {
+    for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
+      if ( ln1 == Bn-1 ) {
+        LIBXSMM_VLA_ACCESS( 2, offb, ln1, lk1, Bk ) = ((size_t)bn2*bk*lk1) + ((size_t)ln1*bn*(*k));
+      } else {
+        LIBXSMM_VLA_ACCESS( 2, offb, ln1, lk1, Bk ) = ((size_t)bn*bk*lk1) + ((size_t)ln1*bn*(*k));
+      }
+    }
+  }
+
+  for ( ln1 = 0; ln1 < Bn; ++ln1 ) {
+    for ( lm1 = 0; lm1 < Bm; ++lm1 ) {
+      LIBXSMM_VLA_ACCESS( 2, offc, ln1, lm1, Bm ) = ((size_t)bm*lm1) + ((size_t)ln1*bn*(*m));
+    }
+  }
 
   #pragma omp parallel private(lm1, lm2, ln1, ln2, lk1, lk2, lno, Bne, lmo, Bme)
   {
@@ -80,20 +129,14 @@ void sgemm_trup( const char*  transa,
         #pragma omp for private(ln1, ln2, lk1, lk2) collapse(2)
         for ( ln1 = lno; ln1 < Bne; ++ln1 ) {
           for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
-            for ( ln2 = 0; ln2 < bn; ++ln2 ) {
-#if 1
-              float* tmpaddr1 = &LIBXSMM_VLA_ACCESS( 4, blkb, ln1, lk1, ln2, 0, Bk, bn, bk );
+            int mybn = ( ln1 == Bn-1 ) ? bn2 : bn;
+            for ( ln2 = 0; ln2 < mybn; ++ln2 ) {
+              float* tmpaddr1 = tmpb + LIBXSMM_VLA_ACCESS( 2, offb, ln1, lk1, Bk ) + ln2*bk;
               const float* tmpaddr2 = &LIBXSMM_VLA_ACCESS( 2, origb, (ln1*bn)+ln2, (lk1*bk), (*ldb) );
               _mm512_storeu_ps( tmpaddr1,    _mm512_loadu_ps( tmpaddr2 ) );
               _mm512_storeu_ps( tmpaddr1+16, _mm512_loadu_ps( tmpaddr2+16 ) );
               _mm512_storeu_ps( tmpaddr1+32, _mm512_loadu_ps( tmpaddr2+32 ) );
               _mm512_storeu_ps( tmpaddr1+48, _mm512_loadu_ps( tmpaddr2+48 ) );
-#else
-              for ( lk2 = 0; lk2 < bk; ++lk2 ) {
-                LIBXSMM_VLA_ACCESS( 4, blkb, ln1, lk1, ln2, lk2, Bk, bn, bk ) =
-                  LIBXSMM_VLA_ACCESS( 2, origb, (ln1*bn)+ln2, (lk1*bk)+lk2, (*ldb) );
-              }
-#endif
             }
           }
         }
@@ -104,19 +147,12 @@ void sgemm_trup( const char*  transa,
           for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
             __m512 vmone = _mm512_set1_ps( -1.0f );
             for ( lk2 = 0; lk2 < bk; ++lk2 ) {
-#if 1
-              float* tmpaddr1 = &LIBXSMM_VLA_ACCESS( 4, blka, lm1, lk1, lk2, 0, Bk, bk, bm );
+              float* tmpaddr1 = tmpa + LIBXSMM_VLA_ACCESS( 2, offa, lm1, lk1, Bk ) + lk2*bm;
               const float* tmpaddr2 = &LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2, (lm1*bm), (*lda) );
               _mm512_storeu_ps( tmpaddr1,    _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2 ) ) );
               _mm512_storeu_ps( tmpaddr1+16, _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2+16 ) ) );
               _mm512_storeu_ps( tmpaddr1+32, _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2+32 ) ) );
               _mm512_storeu_ps( tmpaddr1+48, _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2+48 ) ) );
-#else
-              for ( lm2 = 0; lm2 < bm;  ) {
-                LIBXSMM_VLA_ACCESS( 4, blka, lm1, lk1, lk2, lm2, Bk, bk, bm ) =
-                  (*alpha)*LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2, (lm1*bm)+lm2, (*lda) );
-              }
-#endif
             }
           }
         }
@@ -124,10 +160,18 @@ void sgemm_trup( const char*  transa,
         #pragma omp for private(lm1, ln1) collapse(2)
         for ( lm1 = lmo; lm1 < Bme; ++lm1 ) {
            for ( ln1 = lno; ln1 < Bne; ++ln1 ) {
-            fluxcapacitor( &LIBXSMM_VLA_ACCESS( 4,  blka, lm1, 0, 0, 0, Bk, bk, bm ),
-                           &LIBXSMM_VLA_ACCESS( 4,  blkb, ln1, 0, 0, 0, Bk, bn, bk ),
-                           &LIBXSMM_VLA_ACCESS( 2, origc, (ln1*bn), (lm1*bm), (*ldc) ),
-                           &Bkbr );
+             if ( ln1 == (Bn - 1) ) {
+               fluxcapacitor2( tmpa + LIBXSMM_VLA_ACCESS( 2, offa, lm1,   0,     Bk ),
+                               tmpb + LIBXSMM_VLA_ACCESS( 2, offb, ln1,   0,     Bk ),
+                               c    + LIBXSMM_VLA_ACCESS( 2, offc, ln1, lm1, (*ldc) ),
+                               &Bkbr );
+
+             } else {
+               fluxcapacitor( tmpa + LIBXSMM_VLA_ACCESS( 2, offa, lm1,   0,     Bk ),
+                              tmpb + LIBXSMM_VLA_ACCESS( 2, offb, ln1,   0,     Bk ),
+                              c    + LIBXSMM_VLA_ACCESS( 2, offc, ln1, lm1, (*ldc) ),
+                              &Bkbr );
+            }
           }
         }
       }
@@ -146,15 +190,15 @@ int main(int argc, char* argv []) {
   double l_runtime;
   double l_gflops;
 
-  if ( argc != 5 ) {
-    printf("wrong arguments, required: ./%s sM N K iters\n", argv[0]);
+  if ( argc != 4 ) {
+    printf("wrong arguments, required: ./%s N K iters\n", argv[0]);
     return EXIT_FAILURE;
   }
 
   M = atoi(argv[1]);
-  N = atoi(argv[2]);
-  K = atoi(argv[3]);
-  iters = atoi(argv[4]);
+  N = M+1;
+  K = atoi(argv[2]);
+  iters = atoi(argv[3]);
   LDA = M;
   LDB = K;
   LDC = M;
@@ -163,7 +207,7 @@ int main(int argc, char* argv []) {
   B        = (float*)libxsmm_aligned_malloc( (size_t)N * (size_t)K * sizeof(float),             2097152 );
   C        = (float*)libxsmm_aligned_malloc( (size_t)M * (size_t)N * sizeof(float),             2097152 );
   Cgold    = (float*)libxsmm_aligned_malloc( (size_t)M * (size_t)N * sizeof(float),             2097152 );
-  scratch  = (float*)libxsmm_aligned_malloc( (size_t)K * ((size_t)M+(size_t)N) * sizeof(float), 2097152 );
+  scratch  = (void*)libxsmm_aligned_malloc( sgemm_trup_get_scratch( &M, &N, &K ) * sizeof(char), 2097152 );
   l_gflops = ((double)M*(double)N*(double)K*2.0)/(double)1e9;
 
   /* init data */
