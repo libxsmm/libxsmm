@@ -17,11 +17,16 @@
 #include <omp.h>
 #include <mkl.h>
 
-
-#define  _mm512_bf16cvt(A) _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((A)),16))
-#define  _mm512_bf16store(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((B)),16)))
+#if 0
+#define __USE_NATIVE_CPX__
+#endif
 
 #ifdef __AVX512BW__
+#ifndef __USE_NATIVE_CPX__
+#define  _mm512_bf16cvt(A) _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((A)),16))
+#define  _mm512_bf16store(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((B)),16)))
+#endif
+
 size_t sgemm_trup_get_scratch( const int*   m,
                                const int*   n,
                                const int*   k ) {
@@ -301,10 +306,10 @@ void bf16sgemm_trup( const char*  transa,
               libxsmm_bfloat16* tmpaddr1 = tmpb + LIBXSMM_VLA_ACCESS( 2, offb, ln1, lk1, Bk ) + ln2*bk;
               const float* tmpaddr2 = &LIBXSMM_VLA_ACCESS( 2, origb, (ln1*bn)+ln2, (lk1*bk), (*ldb) );
 #ifdef __USE_NATIVE_CPX__
-              __512bh v0 = _mm512_cvtne2ps_pbh( _mm512_loadu_ps( tmpaddr2+16 ), _mm512_loadu_ps( tmpaddr2    ) );
-              __512bh v1 = _mm512_cvtne2ps_pbh( _mm512_loadu_ps( tmpaddr2+48 ), _mm512_loadu_ps( tmpaddr2+32 ) );
-              __m512_storeu_si512( tmpaddr1,    v0 );
-              __m512_storeu_si512( tmpaddr1+32, v0 );
+              __m512i v0 = _mm512_cvtne2ps_pbh( _mm512_loadu_ps( tmpaddr2+16 ), _mm512_loadu_ps( tmpaddr2    ) );
+              __m512i v1 = _mm512_cvtne2ps_pbh( _mm512_loadu_ps( tmpaddr2+48 ), _mm512_loadu_ps( tmpaddr2+32 ) );
+              _mm512_storeu_si512( tmpaddr1,    v0 );
+              _mm512_storeu_si512( tmpaddr1+32, v1 );
 #else
               _mm512_bf16store( tmpaddr1,    _mm512_loadu_ps( tmpaddr2 ) );
               _mm512_bf16store( tmpaddr1+16, _mm512_loadu_ps( tmpaddr2+16 ) );
@@ -326,10 +331,10 @@ void bf16sgemm_trup( const char*  transa,
               const float* tmpaddr2a = &LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2, (lm1*bm), (*lda) );
               const float* tmpaddr2b = &LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2+1, (lm1*bm), (*lda) );
 #ifdef __USE_NATIVE_CPX__
-              __512bh vba0 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b    ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a    ) ) );
-              __512bh vba1 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b+16 ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+16 ) ) );
-              __512bh vba2 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b+32 ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+32 ) ) );
-              __512bh vba3 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b+48 ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+48 ) ) );
+              __m512i vba_0 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b    ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a    ) ) );
+              __m512i vba_1 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b+16 ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+16 ) ) );
+              __m512i vba_2 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b+32 ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+32 ) ) );
+              __m512i vba_3 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b+48 ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+48 ) ) );
 #else
               __m256i a_0 = _mm512_bf16cvt( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a ) ) );
               __m256i a_1 = _mm512_bf16cvt( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+16 ) ) );
