@@ -21,6 +21,7 @@
 #define  _mm512_bf16cvt(A) _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((A)),16))
 #define  _mm512_bf16store(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((B)),16)))
 
+#ifdef __AVX512BW__
 size_t sgemm_trup_get_scratch( const int*   m,
                                const int*   n,
                                const int*   k ) {
@@ -299,10 +300,17 @@ void bf16sgemm_trup( const char*  transa,
             for ( ln2 = 0; ln2 < mybn; ++ln2 ) {
               libxsmm_bfloat16* tmpaddr1 = tmpb + LIBXSMM_VLA_ACCESS( 2, offb, ln1, lk1, Bk ) + ln2*bk;
               const float* tmpaddr2 = &LIBXSMM_VLA_ACCESS( 2, origb, (ln1*bn)+ln2, (lk1*bk), (*ldb) );
+#ifdef __USE_NATIVE_CPX__
+              __512bh v0 = _mm512_cvtne2ps_pbh( _mm512_loadu_ps( tmpaddr2+16 ), _mm512_loadu_ps( tmpaddr2    ) );
+              __512bh v1 = _mm512_cvtne2ps_pbh( _mm512_loadu_ps( tmpaddr2+48 ), _mm512_loadu_ps( tmpaddr2+32 ) );
+              __m512_storeu_si512( tmpaddr1,    v0 );
+              __m512_storeu_si512( tmpaddr1+32, v0 );
+#else
               _mm512_bf16store( tmpaddr1,    _mm512_loadu_ps( tmpaddr2 ) );
               _mm512_bf16store( tmpaddr1+16, _mm512_loadu_ps( tmpaddr2+16 ) );
               _mm512_bf16store( tmpaddr1+32, _mm512_loadu_ps( tmpaddr2+32 ) );
               _mm512_bf16store( tmpaddr1+48, _mm512_loadu_ps( tmpaddr2+48 ) );
+#endif
             }
           }
         }
@@ -317,6 +325,12 @@ void bf16sgemm_trup( const char*  transa,
               libxsmm_bfloat16* tmpaddr1 = tmpa + LIBXSMM_VLA_ACCESS( 2, offa, lm1, lk1, Bk ) + lk2*bm;
               const float* tmpaddr2a = &LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2, (lm1*bm), (*lda) );
               const float* tmpaddr2b = &LIBXSMM_VLA_ACCESS( 2, origa, (lk1*bk)+lk2+1, (lm1*bm), (*lda) );
+#ifdef __USE_NATIVE_CPX__
+              __512bh vba0 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b    ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a    ) ) );
+              __512bh vba1 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b+16 ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+16 ) ) );
+              __512bh vba2 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b+32 ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+32 ) ) );
+              __512bh vba3 = _mm512_cvtne2ps_pbh( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2b+48 ) ), _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+48 ) ) );
+#else
               __m256i a_0 = _mm512_bf16cvt( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a ) ) );
               __m256i a_1 = _mm512_bf16cvt( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+16 ) ) );
               __m256i a_2 = _mm512_bf16cvt( _mm512_mul_ps( vmone, _mm512_loadu_ps( tmpaddr2a+32 ) ) );
@@ -329,6 +343,7 @@ void bf16sgemm_trup( const char*  transa,
               __m512i vba_1 = _mm512_inserti64x4( _mm512_castsi256_si512(a_1), b_1, 1);
               __m512i vba_2 = _mm512_inserti64x4( _mm512_castsi256_si512(a_2), b_2, 1);
               __m512i vba_3 = _mm512_inserti64x4( _mm512_castsi256_si512(a_3), b_3, 1);
+#endif
               _mm512_storeu_si512( tmpaddr1,    _mm512_permutexvar_epi16(perm_index, vba_0 ) );
               _mm512_storeu_si512( tmpaddr1+32, _mm512_permutexvar_epi16(perm_index, vba_1 ) );
               _mm512_storeu_si512( tmpaddr1+64, _mm512_permutexvar_epi16(perm_index, vba_2 ) );
@@ -358,6 +373,55 @@ void bf16sgemm_trup( const char*  transa,
     }
   }
 }
+#else
+size_t sgemm_trup_get_scratch( const int*   m,
+                               const int*   n,
+                               const int*   k ) {
+  size_t memam = 1;
+  return memam;
+}
+
+void sgemm_trup( const char*  transa,
+                 const char*  transb,
+                 const int*   m,
+                 const int*   n,
+                 const int*   k,
+                 const float* alpha,
+                 const float* a,
+                 const int*   lda,
+                 const float* b,
+                 const int*   ldb,
+                 const float* beta,
+                       float* c,
+                 const int*   ldc,
+                       void*  scratch ) {
+  return;
+}
+
+size_t bf16sgemm_trup_get_scratch( const int*   m,
+                               const int*   n,
+                               const int*   k ) {
+  size_t memam = 1;
+  return memam;
+}
+
+void bf16sgemm_trup( const char*  transa,
+                 const char*  transb,
+                 const int*   m,
+                 const int*   n,
+                 const int*   k,
+                 const float* alpha,
+                 const float* a,
+                 const int*   lda,
+                 const float* b,
+                 const int*   ldb,
+                 const float* beta,
+                       float* c,
+                 const int*   ldc,
+                       void*  scratch ) {
+  return;
+}
+#endif
 
 int main(int argc, char* argv []) {
   int M, N, K, LDA, LDB, LDC, iters;
