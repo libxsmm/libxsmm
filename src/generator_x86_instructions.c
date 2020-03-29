@@ -4723,6 +4723,65 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
 
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated_code,
+                                            const unsigned int      i_mask_instr,
+                                            const unsigned int      i_gp_reg_base,
+                                            const unsigned int      i_gp_reg_idx,
+                                            const unsigned int      i_scale,
+                                            const int               i_displacement,
+                                            const unsigned int      i_mask_reg_number,
+                                            const unsigned int      i_is_store ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @TODO needs to be implmented */
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_gp_reg_base[4];
+    char l_gp_reg_idx[4];
+    char l_instr_name[16];
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base, 3 );
+    libxsmm_get_x86_instr_name( i_mask_instr, l_instr_name, 15 );
+
+    if ( i_is_store != 0 ) {
+      if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
+        if ( io_generated_code->code_type == 0 ) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%k%u, %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_mask_reg_number, i_displacement, l_gp_reg_base );
+        } else {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%k%u, %i(%%%s)\n", l_instr_name, i_mask_reg_number, i_displacement, l_gp_reg_base );
+        }
+      } else {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx, 3 );
+        if ( io_generated_code->code_type == 0 ) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%k%u, %i(%%%%%s,%%%%%s,%u)\\n\\t\"\n", l_instr_name, i_mask_reg_number, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale );
+        } else {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%k%u, %i(%%%s,%%%s,%u)\n", l_instr_name, i_mask_reg_number, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale );
+        }
+      }
+    } else {
+      if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
+        if ( io_generated_code->code_type == 0 ) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%k%u\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, i_mask_reg_number );
+        } else {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%k%u\n", l_instr_name, i_displacement, l_gp_reg_base, i_mask_reg_number );
+        }
+      } else {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx, 3 );
+        if ( io_generated_code->code_type == 0 ) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%u), %%%%k%u\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_mask_reg_number );
+        } else {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%u), %%k%u\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_mask_reg_number );
+        }
+      }
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_mask_instr,
                                                const unsigned int      i_mask_reg_number_src_0,

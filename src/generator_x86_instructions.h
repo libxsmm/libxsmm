@@ -398,6 +398,28 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
  * Allows for mask move instructions in AVX512
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_mask_instr actual mask move instruction
+ * @param i_gp_reg_base base address register for memory broadcast
+ * @param i_gp_reg_idx index register for memory broadcast, can be LIBXSMM_X86_GP_REG_UNDEF -> then regular displacement version is generated
+ * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF
+ * @param i_displacement displacement to SIB address
+ * @param i_mask_reg_number the register number (k1=1...k7=7)
+ * @param i_is_store indicates if we wnat to move the mask to gpr
+ */
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated_code,
+                                            const unsigned int      i_mask_instr,
+                                            const unsigned int      i_gp_reg_base,
+                                            const unsigned int      i_gp_reg_idx,
+                                            const unsigned int      i_scale,
+                                            const int               i_displacement,
+                                            const unsigned int      i_mask_reg_number,
+                                            const unsigned int      i_is_store );
+
+/**
+ * Allows for mask move instructions in AVX512
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_mask_instr actual mask compute instruction
  * @param i_mask_reg_number_src_0 the first operand register number (att syntax) (k1=1...k7=7)
  * @param i_mask_reg_number_src_1 the second operand register number (att syntax) (k1=1...k7=7)
