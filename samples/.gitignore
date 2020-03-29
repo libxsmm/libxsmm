@@ -31,6 +31,4 @@ pyfr/pyfr_gemm_cm
 pyfr/pyfr_gemm_rm
 specfem/specfem
 spmdm/spmdm
-xgemm/xgemm
-xgemm/kernel
 *.txt

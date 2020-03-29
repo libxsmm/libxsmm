@@ -10,12 +10,16 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
-#include <string.h>
-#include <omp.h>
-#include <mkl.h>
+
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
+#if defined(__MKL)
+# include <mkl.h>
+#else
+LIBXSMM_BLAS_SYMBOL_DECL(float, gemm)
+#endif
 
 #if 0
 #define __USE_NATIVE_CPX__
@@ -79,7 +83,7 @@ void sgemm_trup( const char*  transa,
   size_t* pob = poa + (Bm*Bk);
   size_t* poc = pob + (Bn*Bk);
 
-  /* mult-dim array definitons for readable code */
+  /* mult-dim array definitions for readable code */
   LIBXSMM_VLA_DECL( 2, const float, origa,    a,         (*lda) );
   LIBXSMM_VLA_DECL( 2, const float, origb,    b,         (*ldb) );
 
@@ -129,14 +133,18 @@ void sgemm_trup( const char*  transa,
     }
   }
 
-  #pragma omp parallel private(lm1, lm2, ln1, ln2, lk1, lk2, lno, Bne, lmo, Bme)
+#if defined(_OPENMP)
+# pragma omp parallel private(lm1, lm2, ln1, ln2, lk1, lk2, lno, Bne, lmo, Bme)
+#endif
   {
     for ( lmo = 0; lmo < Bm; lmo += BmB ) {
       Bme = (lmo+BmB > Bm) ? Bm : lmo+BmB;
       for ( lno = 0; lno < Bn; lno += BnB ) {
         Bne = (lno+BnB > Bn) ? Bn : lno+BnB;
 
-        #pragma omp for private(ln1, ln2, lk1, lk2) collapse(2)
+#if defined(_OPENMP)
+#       pragma omp for private(ln1, ln2, lk1, lk2) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
         for ( ln1 = lno; ln1 < Bne; ++ln1 ) {
           for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
             int mybn = ( ln1 == Bn-1 ) ? bn2 : bn;
@@ -151,7 +159,9 @@ void sgemm_trup( const char*  transa,
           }
         }
 
-        #pragma omp for private(lm1, ln1, lk1, lk2) collapse(2)
+#if defined(_OPENMP)
+#       pragma omp for private(lm1, ln1, lk1, lk2) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
         for ( lm1 = lmo; lm1 < Bme; ++lm1 ) {
           /* we prepare a bm*K tile of A in L1/L2 cache */
           for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
@@ -167,7 +177,9 @@ void sgemm_trup( const char*  transa,
           }
         }
 
-        #pragma omp for private(lm1, ln1) collapse(2)
+#if defined(_OPENMP)
+#       pragma omp for private(lm1, ln1) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
         for ( lm1 = lmo; lm1 < Bme; ++lm1 ) {
            for ( ln1 = lno; ln1 < Bne; ++ln1 ) {
              if ( ln1 == (Bn - 1) ) {
@@ -241,7 +253,7 @@ void bf16sgemm_trup( const char*  transa,
   size_t* pob = poa + (Bm*Bk);
   size_t* poc = pob + (Bn*Bk);
 
-  /* mult-dim array definitons for readable code */
+  /* mult-dim array definitions for readable code */
   LIBXSMM_VLA_DECL( 2, const float, origa,    a,         (*lda) );
   LIBXSMM_VLA_DECL( 2, const float, origb,    b,         (*ldb) );
 
@@ -291,14 +303,18 @@ void bf16sgemm_trup( const char*  transa,
     }
   }
 
-  #pragma omp parallel private(lm1, lm2, ln1, ln2, lk1, lk2, lno, Bne, lmo, Bme)
+#if defined(_OPENMP)
+# pragma omp parallel private(lm1, lm2, ln1, ln2, lk1, lk2, lno, Bne, lmo, Bme)
+#endif
   {
     for ( lmo = 0; lmo < Bm; lmo += BmB ) {
       Bme = (lmo+BmB > Bm) ? Bm : lmo+BmB;
       for ( lno = 0; lno < Bn; lno += BnB ) {
         Bne = (lno+BnB > Bn) ? Bn : lno+BnB;
 
-        #pragma omp for private(ln1, ln2, lk1, lk2) collapse(2)
+#if defined(_OPENMP)
+#       pragma omp for private(ln1, ln2, lk1, lk2) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
         for ( ln1 = lno; ln1 < Bne; ++ln1 ) {
           for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
             int mybn = ( ln1 == Bn-1 ) ? bn2 : bn;
@@ -320,7 +336,9 @@ void bf16sgemm_trup( const char*  transa,
           }
         }
 
-        #pragma omp for private(lm1, ln1, lk1, lk2) collapse(2)
+#if defined(_OPENMP)
+#       pragma omp for private(lm1, ln1, lk1, lk2) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
         for ( lm1 = lmo; lm1 < Bme; ++lm1 ) {
           /* we prepare a bm*K tile of A in L1/L2 cache */
           for ( lk1 = 0; lk1 < Bk; ++lk1 ) {
@@ -357,7 +375,9 @@ void bf16sgemm_trup( const char*  transa,
           }
         }
 
-        #pragma omp for private(lm1, ln1) collapse(2)
+#if defined(_OPENMP)
+#       pragma omp for private(lm1, ln1) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
         for ( lm1 = lmo; lm1 < Bme; ++lm1 ) {
            for ( ln1 = lno; ln1 < Bne; ++ln1 ) {
              if ( ln1 == (Bn - 1) ) {
@@ -479,7 +499,7 @@ int main(int argc, char* argv []) {
   }
 
   /* call MKL and custom trup for correctness */
-  sgemm( &transa, &transb, &M, &N, &K, &alpha, A, &LDA, B, &LDB, &beta, Cgold, &LDC );
+  LIBXSMM_GEMM_SYMBOL(float)( &transa, &transb, &M, &N, &K, &alpha, A, &LDA, B, &LDB, &beta, Cgold, &LDC );
   sgemm_trup( &transa, &transb, &M, &N, &K, &alpha, A, &LDA, B, &LDB, &beta, C, &LDC, scratch );
   bf16sgemm_trup( &transa, &transb, &M, &N, &K, &alpha, A, &LDA, B, &LDB, &beta, Cbf16, &LDC, scratch2 );
 
@@ -507,15 +527,15 @@ int main(int argc, char* argv []) {
 
   /* benchmark */
   l_start = libxsmm_timer_tick();
-  for( i = 0; i < iters; ++i ) {
-    sgemm( &transa, &transb, &M, &N, &K, &alpha, A, &LDA, B, &LDB, &beta, Cgold, &LDC );
+  for( i = 0; i < (size_t)iters; ++i ) {
+    LIBXSMM_GEMM_SYMBOL(float)( &transa, &transb, &M, &N, &K, &alpha, A, &LDA, B, &LDB, &beta, Cgold, &LDC );
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   l_runtime = l_runtime / (double)iters;
   printf(" Performance SGEMM:       %f GFLOPS  %f s \n", l_gflops/l_runtime, l_runtime );
 
   l_start = libxsmm_timer_tick();
-  for( i = 0; i < iters; ++i ) {
+  for( i = 0; i < (size_t)iters; ++i ) {
     sgemm_trup( &transa, &transb, &M, &N, &K, &alpha, A, &LDA, B, &LDB, &beta, Cgold, &LDC, scratch );
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -523,7 +543,7 @@ int main(int argc, char* argv []) {
   printf(" Performance fp32-custom: %f GFLOPS  %f s \n", l_gflops/l_runtime, l_runtime );
 
   l_start = libxsmm_timer_tick();
-  for( i = 0; i < iters; ++i ) {
+  for( i = 0; i < (size_t)iters; ++i ) {
     bf16sgemm_trup( &transa, &transb, &M, &N, &K, &alpha, A, &LDA, B, &LDB, &beta, Cgold, &LDC, scratch2 );
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
