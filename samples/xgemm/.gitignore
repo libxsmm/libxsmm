@@ -1,1 +1,4 @@
 .kernel_test_??????.slurm
+bf16sgemm
+kernel
+xgemm
