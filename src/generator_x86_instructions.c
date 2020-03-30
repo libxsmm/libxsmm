@@ -4734,6 +4734,139 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO needs to be implmented */
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+
+    int l_regbas0 = i_gp_reg_base % 8;
+    int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
+    int l_regidx  = i_gp_reg_idx  % 8;
+    int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
+    int l_sca=0;
+
+    int l_place = i+4;
+    int l_sizereg = 1;
+    int l_forced_offset = 0;
+    int l_second = 0;
+    int l_third = 0;
+    int l_fourth = 0;
+    int l_fifth = 0;
+    int l_sixth = 0;
+    int l_bytes = 5;
+    int l_tmp = 0;
+
+
+    if ( l_maxsize - i < 20 )
+    {
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+       //fprintf(stderr,"libxsmm_instruction_mask_move_mem Most instructions need at most 20 bytes\n");
+       return;
+    }
+    if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) ||
+         (((int)i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_base > LIBXSMM_X86_GP_REG_R15)) )
+    {
+       fprintf(stderr,"libxsmm_instruction_mask_move_mem has invalid i_gp_reg_base input\n");
+       exit(-1);
+    }
+    if ( (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) &&
+         (((int)i_gp_reg_idx < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15)) )
+    {
+       fprintf(stderr,"libxsmm_instruction_mask_move_mem has invalid i_gp_reg_idx input\n");
+       exit(-1);
+    }
+
+    switch ( i_mask_instr ) {
+       case LIBXSMM_X86_INSTR_KMOVQ:
+          break;
+       case LIBXSMM_X86_INSTR_KMOVD:
+          l_third += 1;
+          break;
+       case LIBXSMM_X86_INSTR_KMOVB:
+          l_place = i + 3;
+          l_bytes = 4;
+          l_third += 1;
+          if ( l_gp8 || l_ix8 ) { l_bytes = 5; l_third -= 0x80; l_place=i+4; }
+          break;
+       case LIBXSMM_X86_INSTR_KMOVW:
+          l_place = i + 3;
+          l_bytes = 4;
+          if ( l_gp8 || l_ix8 ) { l_bytes = 5; l_third -= 0x80; l_place=i+4; }
+          break;
+       default:
+          fprintf(stderr, "libxsmm_instruction_mask_move_mem: Unknown instruction type: %u\n", i_mask_instr);
+          exit(-1);
+    }
+ 
+    if ( i_is_store == 1 ) {
+       if ( l_bytes == 5 ) l_fourth = 1;
+       if ( i_mask_instr==LIBXSMM_X86_INSTR_KMOVW || i_mask_instr==LIBXSMM_X86_INSTR_KMOVB ) l_tmp = 1;
+    }
+
+    if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) &&
+    ((int)i_gp_reg_idx >= LIBXSMM_X86_GP_REG_RAX) &&
+         (i_gp_reg_idx <= LIBXSMM_X86_GP_REG_R15) )
+    {
+       switch ( i_scale ) {
+          case 1:
+             l_sca=0;
+             break;
+          case 2:
+             l_sca=0x40;
+             break;
+          case 4:
+             l_sca=0x80;
+             break;
+          case 8:
+             l_sca=0xc0;
+             break;
+          default:
+             fprintf(stderr, "libxsmm_instruction_mask_move_mem: cannot handle i_scale=%u parameter\n", i_scale);
+             exit(-1);
+       }
+    }
+
+    if ( l_bytes == 4 ) {
+        buf[i++] = (unsigned char)(0xc5);
+        if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
+        {
+            buf[i++] = (unsigned char)(0xf8 + l_third);
+            buf[i++] = (unsigned char)(0x90 + l_tmp);
+            buf[i++] = (unsigned char)(0x00 + l_fourth + l_regbas0 + i_mask_reg_number*8);
+            if ( l_regbas0 == 4 ) buf[i++]=(unsigned char)(0x24);
+        } else {
+            buf[i++] = (unsigned char)(0xf8 + l_third);
+            buf[i++] = (unsigned char)(0x90 + l_tmp);
+            buf[i++] = (unsigned char)(0x04 + l_fourth + i_mask_reg_number*8);
+            buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+        }
+    } else {
+        buf[i++] = (unsigned char)(0xc4);
+        buf[i++] = (unsigned char)(0xe1 - l_gp8 * 0x20 - l_ix8 * 0x40);
+        if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
+        {
+            buf[i++] = (unsigned char)(0xf8 + l_third);
+            buf[i++] = (unsigned char)(0x90 + l_fourth);
+            buf[i++] = (unsigned char)(0x00 + l_regbas0 + i_mask_reg_number*8);
+            if ( l_regbas0 == 4 ) buf[i++]=(unsigned char)(0x24);
+        } else {
+            buf[i++] = (unsigned char)(0xf8 + l_third);
+            buf[i++] = (unsigned char)(0x90 + l_fourth);
+            buf[i++] = (unsigned char)(0x04 + i_mask_reg_number*8);
+            buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+        }
+    }
+ 
+    if ( (l_regbas0 == 5) && (i_displacement==0) )
+    {
+       /* Registers like rbp/r13 when you have a displacement of 0, we need
+ *           force the single byte of zero to appear. */
+        l_forced_offset = 1;
+    }
+
+    i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
+
+    io_generated_code->code_size = i;
+
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
