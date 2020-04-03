@@ -459,6 +459,11 @@ int main(int argc, char* argv []) {
   double l_runtime;
   double l_gflops;
 
+#ifndef __AVX512F__
+  printf("\nthe binary was built without AVX512 support, tests will fail and not run!!\n\n");
+  return EXIT_SUCCESS;
+#endif
+
   if ( argc != 4 ) {
     printf("wrong arguments, required: ./%s N K iters\n", argv[0]);
     return EXIT_FAILURE;
