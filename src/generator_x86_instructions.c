@@ -1142,7 +1142,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
     }
 
     io_generated_code->code_size = i;
-    /* *loc = i;  */
+    /* *loc = i; */
 
   } else {
   }
@@ -1299,9 +1299,9 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( l_vreg2 != LIBXSMM_X86_VEC_REG_UNDEF )
           {
              LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
-/*
+#if 0
              fprintf(stderr,"Please call VCVTPS2PD with regs 0 and 1. Use UNDEF with reg 2\n");
-*/
+#endif
              exit(-1);
           }
           l_vreg2 = l_vreg1;
@@ -4104,7 +4104,8 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     if ( ( l_regbas0 == 5) && (i_displacement==0) )
     {
        /* Registers like rbp/r13 when you have a displacement of 0, we need
- *           force the single byte of zero to appear. */
+        * force the single byte of zero to appear.
+        */
        l_forced_offset = 1;
     }
 
@@ -4733,7 +4734,7 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
                                             const unsigned int      i_is_store ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO needs to be implmented */
+    /* @TODO needs to be implemented */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
     unsigned int l_maxsize = io_generated_code->buffer_size;
@@ -4747,19 +4748,20 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
     int l_place = i+4;
     int l_sizereg = 1;
     int l_forced_offset = 0;
-    int l_second = 0;
+    /*int l_second = 0;*/
     int l_third = 0;
     int l_fourth = 0;
-    int l_fifth = 0;
-    int l_sixth = 0;
+    /*int l_fifth = 0;*/
+    /*int l_sixth = 0;*/
     int l_bytes = 5;
     int l_tmp = 0;
-
 
     if ( l_maxsize - i < 20 )
     {
        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       //fprintf(stderr,"libxsmm_instruction_mask_move_mem Most instructions need at most 20 bytes\n");
+#if 0
+       fprintf(stderr,"libxsmm_instruction_mask_move_mem Most instructions need at most 20 bytes\n");
+#endif
        return;
     }
     if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) ||
@@ -4796,7 +4798,7 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
           fprintf(stderr, "libxsmm_instruction_mask_move_mem: Unknown instruction type: %u\n", i_mask_instr);
           exit(-1);
     }
- 
+
     if ( i_is_store == 1 ) {
        if ( l_bytes == 5 ) l_fourth = 1;
        if ( i_mask_instr==LIBXSMM_X86_INSTR_KMOVW || i_mask_instr==LIBXSMM_X86_INSTR_KMOVB ) l_tmp = 1;
@@ -4855,11 +4857,12 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
             buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
         }
     }
- 
+
     if ( (l_regbas0 == 5) && (i_displacement==0) )
     {
        /* Registers like rbp/r13 when you have a displacement of 0, we need
- *           force the single byte of zero to appear. */
+        * force the single byte of zero to appear.
+        */
         l_forced_offset = 1;
     }
 
