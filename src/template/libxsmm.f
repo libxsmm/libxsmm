@@ -1210,7 +1210,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall0_abc
         SUBROUTINE libxsmm_dmmcall0_abc(kernel, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
-          REAL(C_DOUBLE), INTENT(IN), TARGET :: a, b, c
+          REAL(C_DOUBLE), INTENT(IN), POINTER :: a, b, c
           ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
           ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
           ! CALL xmm(...)
@@ -1271,7 +1271,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall0_prf
         SUBROUTINE libxsmm_dmmcall0_prf(kernel, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
-          REAL(C_DOUBLE), INTENT(IN), TARGET :: a, b, c, pa, pb, pc
+          REAL(C_DOUBLE), INTENT(IN), POINTER :: a, b, c, pa, pb, pc
           ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
           ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
           ! CALL xmm(...)
@@ -1339,7 +1339,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall0_abc
         SUBROUTINE libxsmm_smmcall0_abc(kernel, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
-          REAL(C_FLOAT), INTENT(IN), TARGET :: a, b, c
+          REAL(C_FLOAT), INTENT(IN), POINTER :: a, b, c
           ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
           ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
           ! CALL xmm(...)
@@ -1400,7 +1400,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall0_prf
         SUBROUTINE libxsmm_smmcall0_prf(kernel, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
-          REAL(C_FLOAT), INTENT(IN), TARGET :: a, b, c, pa, pb, pc
+          REAL(C_FLOAT), INTENT(IN), POINTER :: a, b, c, pa, pb, pc
           ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
           ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
           ! CALL xmm(...)
@@ -1466,7 +1466,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall0_abc
         SUBROUTINE libxsmm_wimmcall0_abc(kernel, a, b, c)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
-          INTEGER(C_SHORT), INTENT(IN), TARGET :: a, b, c
+          INTEGER(C_SHORT), INTENT(IN), POINTER :: a, b, c
           ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
           ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
           ! CALL xmm(...)
@@ -1527,7 +1527,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall0_prf
         SUBROUTINE libxsmm_wimmcall0_prf(kernel, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
-          INTEGER(C_SHORT), INTENT(IN), TARGET :: a, b, c, pa, pb, pc
+          INTEGER(C_SHORT), INTENT(IN), POINTER :: a, b, c, pa, pb, pc
           ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
           ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
           ! CALL xmm(...)
