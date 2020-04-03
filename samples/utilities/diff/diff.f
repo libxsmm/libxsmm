@@ -21,7 +21,7 @@
         INTEGER, PARAMETER :: T = 4
 
         INTEGER(T), ALLOCATABLE, TARGET :: a(:), b(:)
-        !DIR$ ATTRIBUTES ALIGN:64 :: a1, b1
+        !DIR$ ATTRIBUTES ALIGN:64 :: a, b
         INTEGER(LIBXSMM_TICKINT_KIND) :: start
         DOUBLE PRECISION :: duration(3), d
         INTEGER :: i, n, nrepeat
@@ -44,7 +44,7 @@
           nrepeat = 5
         END IF
 
-        duration = 0
+        duration = 0D0
         n = MERGE(n, ISHFT(ISHFT(2, 20) / T, 10), 0 < n) ! 2 GB by default
         nbytes = INT(n, 8) * T
         WRITE(*, "(A,I0,A,I0,A,A,I0,A)")                                &
@@ -95,13 +95,13 @@
           WRITE(*, "(A)") REPEAT("-", W)
           WRITE(*, "(A,F10.1,A)") "DIFF (LIBXSMM):",                    &
      &      REAL(nbytes, 8) * REAL(nrepeat, 8) /                        &
-     &      (duration(1) * ISHFT(1, 20)), " MB/s"
+     &      (duration(1) * REAL(ISHFT(1, 20), 8)), " MB/s"
           WRITE(*, "(A,F10.1,A)") "ALL  (Fortran):",                    &
      &      REAL(nbytes, 8) * REAL(nrepeat, 8) /                        &
-     &      (duration(2) * ISHFT(1, 20)), " MB/s"
+     &      (duration(2) * REAL(ISHFT(1, 20), 8)), " MB/s"
           WRITE(*, "(A,F10.1,A)") "ANY  (Fortran):",                    &
      &      REAL(nbytes, 8) * REAL(nrepeat, 8) /                        &
-     &      (duration(3) * ISHFT(1, 20)), " MB/s"
+     &      (duration(3) * REAL(ISHFT(1, 20), 8)), " MB/s"
           WRITE(*, "(A)") REPEAT("-", W)
         END IF
 
