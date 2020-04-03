@@ -192,203 +192,6 @@
           INTEGER(LIBXSMM_BLASINT_KIND) n
         END TYPE
 
-        INTERFACE libxsmm_ptr0
-          MODULE PROCEDURE libxsmm_ptr_z0, libxsmm_ptr_c0
-          MODULE PROCEDURE libxsmm_ptr_d0, libxsmm_ptr_s0
-          MODULE PROCEDURE libxsmm_ptr_i0, libxsmm_ptr_w0
-          MODULE PROCEDURE libxsmm_ptr_j0 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_b0 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_l0 !! long long
-        END INTERFACE
-
-        INTERFACE libxsmm_ptr1
-          MODULE PROCEDURE libxsmm_ptr_z1, libxsmm_ptr_c1
-          MODULE PROCEDURE libxsmm_ptr_d1, libxsmm_ptr_s1
-          MODULE PROCEDURE libxsmm_ptr_i1, libxsmm_ptr_w1
-          MODULE PROCEDURE libxsmm_ptr_j1 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_b1 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_l1 !! long long
-        END INTERFACE
-
-        INTERFACE libxsmm_ptr2
-          MODULE PROCEDURE libxsmm_ptr_z2, libxsmm_ptr_c2
-          MODULE PROCEDURE libxsmm_ptr_d2, libxsmm_ptr_s2
-          MODULE PROCEDURE libxsmm_ptr_i2, libxsmm_ptr_w2
-          MODULE PROCEDURE libxsmm_ptr_j2 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_b2 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_l2 !! long long
-        END INTERFACE
-
-        INTERFACE libxsmm_ptr
-          MODULE PROCEDURE libxsmm_ptr_z0, libxsmm_ptr_c0
-          MODULE PROCEDURE libxsmm_ptr_d0, libxsmm_ptr_s0
-          MODULE PROCEDURE libxsmm_ptr_i0, libxsmm_ptr_w0
-          MODULE PROCEDURE libxsmm_ptr_j0 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_b0 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_l0 !! long long
-          MODULE PROCEDURE libxsmm_ptr_z1, libxsmm_ptr_c1
-          MODULE PROCEDURE libxsmm_ptr_d1, libxsmm_ptr_s1
-          MODULE PROCEDURE libxsmm_ptr_i1, libxsmm_ptr_w1
-          MODULE PROCEDURE libxsmm_ptr_j1 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_b1 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_l1 !! long long
-          MODULE PROCEDURE libxsmm_ptr_z2, libxsmm_ptr_c2
-          MODULE PROCEDURE libxsmm_ptr_d2, libxsmm_ptr_s2
-          MODULE PROCEDURE libxsmm_ptr_i2, libxsmm_ptr_w2
-          MODULE PROCEDURE libxsmm_ptr_j2 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_b2 !! Byte/char
-          MODULE PROCEDURE libxsmm_ptr_l2 !! long long
-        END INTERFACE
-
-        !> Deallocates JIT'ted code, or unregisters/releases code from registry.
-        INTERFACE libxsmm_release_mmkernel
-          MODULE PROCEDURE libxsmm_release_dmmkernel
-          MODULE PROCEDURE libxsmm_release_smmkernel
-          MODULE PROCEDURE libxsmm_release_wimmkernel
-        END INTERFACE
-
-        !> Construct JIT-code depending on given argument set.
-        INTERFACE libxsmm_mmdispatch
-          MODULE PROCEDURE libxsmm_dmmdispatch, libxsmm_smmdispatch
-          MODULE PROCEDURE libxsmm_wimmdispatch
-        END INTERFACE
-
-        !> Construct JIT-code depending on given argument set.
-        INTERFACE libxsmm_dispatch
-          MODULE PROCEDURE libxsmm_dmmdispatch, libxsmm_smmdispatch
-          MODULE PROCEDURE libxsmm_wimmdispatch
-        END INTERFACE
-
-        !> Check if a function is available (LIBXSMM_?MMFUNCTION).
-        INTERFACE libxsmm_mmavailable
-          MODULE PROCEDURE libxsmm_dmmavailable, libxsmm_smmavailable
-          MODULE PROCEDURE libxsmm_wimmavailable
-        END INTERFACE
-
-        !> Check if a function is available (LIBXSMM_?MMFUNCTION).
-        INTERFACE libxsmm_available
-          MODULE PROCEDURE libxsmm_smmavailable, libxsmm_dmmavailable
-          MODULE PROCEDURE libxsmm_wimmavailable
-        END INTERFACE
-
-        !> Call a specialized function (double-precision).
-        INTERFACE libxsmm_dmmcall
-          MODULE PROCEDURE libxsmm_dmmcall0_abc, libxsmm_dmmcall0_prf
-          MODULE PROCEDURE libxsmm_dmmcall1_abc, libxsmm_dmmcall1_prf
-          MODULE PROCEDURE libxsmm_dmmcall2_abc, libxsmm_dmmcall2_prf
-        END INTERFACE
-
-        !> Call a specialized function (single-precision).
-        INTERFACE libxsmm_smmcall
-          MODULE PROCEDURE libxsmm_smmcall0_abc, libxsmm_smmcall0_prf
-          MODULE PROCEDURE libxsmm_smmcall1_abc, libxsmm_smmcall1_prf
-          MODULE PROCEDURE libxsmm_smmcall2_abc, libxsmm_smmcall2_prf
-        END INTERFACE
-
-        !> Call a specialized function (mixed-precision, integer).
-        INTERFACE libxsmm_wimmcall
-          MODULE PROCEDURE libxsmm_wimmcall0_abc, libxsmm_wimmcall0_prf
-          MODULE PROCEDURE libxsmm_wimmcall1_abc, libxsmm_wimmcall1_prf
-          MODULE PROCEDURE libxsmm_wimmcall2_abc, libxsmm_wimmcall2_prf
-        END INTERFACE
-
-        !> Call a specialized function (multi-precision).
-        INTERFACE libxsmm_mmcall
-          MODULE PROCEDURE libxsmm_dmmcall0_abc, libxsmm_dmmcall0_prf
-          MODULE PROCEDURE libxsmm_dmmcall1_abc, libxsmm_dmmcall1_prf
-          MODULE PROCEDURE libxsmm_dmmcall2_abc, libxsmm_dmmcall2_prf
-          MODULE PROCEDURE libxsmm_smmcall0_abc, libxsmm_smmcall0_prf
-          MODULE PROCEDURE libxsmm_smmcall1_abc, libxsmm_smmcall1_prf
-          MODULE PROCEDURE libxsmm_smmcall2_abc, libxsmm_smmcall2_prf
-          MODULE PROCEDURE libxsmm_wimmcall0_abc, libxsmm_wimmcall0_prf
-          MODULE PROCEDURE libxsmm_wimmcall1_abc, libxsmm_wimmcall1_prf
-          MODULE PROCEDURE libxsmm_wimmcall2_abc, libxsmm_wimmcall2_prf
-        END INTERFACE
-
-        !> Overloaded GEMM routines (double-precision).
-        INTERFACE libxsmm_dgemm
-          MODULE PROCEDURE libxsmm_dgemm0
-          MODULE PROCEDURE libxsmm_dgemm1
-          MODULE PROCEDURE libxsmm_dgemm2
-          MODULE PROCEDURE libxsmm_dgemm3
-        END INTERFACE
-
-        !> Overloaded GEMM routines (single-precision).
-        INTERFACE libxsmm_sgemm
-          MODULE PROCEDURE libxsmm_sgemm0
-          MODULE PROCEDURE libxsmm_sgemm1
-          MODULE PROCEDURE libxsmm_sgemm2
-        END INTERFACE
-
-        !> Overloaded GEMM routines (low-precision).
-        INTERFACE libxsmm_wigemm
-          MODULE PROCEDURE libxsmm_wigemm0
-          MODULE PROCEDURE libxsmm_wigemm1
-          MODULE PROCEDURE libxsmm_wigemm2
-        END INTERFACE
-
-        !> Overloaded GEMM routines.
-        INTERFACE libxsmm_gemm
-          MODULE PROCEDURE libxsmm_dgemm0
-          MODULE PROCEDURE libxsmm_dgemm1
-          MODULE PROCEDURE libxsmm_dgemm2
-          MODULE PROCEDURE libxsmm_dgemm3
-          MODULE PROCEDURE libxsmm_sgemm0
-          MODULE PROCEDURE libxsmm_sgemm1
-          MODULE PROCEDURE libxsmm_sgemm2
-          MODULE PROCEDURE libxsmm_sgemm3
-          MODULE PROCEDURE libxsmm_wigemm0
-          MODULE PROCEDURE libxsmm_wigemm1
-          MODULE PROCEDURE libxsmm_wigemm2
-          MODULE PROCEDURE libxsmm_wigemm3
-        END INTERFACE
-
-        !> Overloaded BLAS GEMM routines (double-precision).
-        INTERFACE libxsmm_blas_dgemm
-          MODULE PROCEDURE libxsmm_blas_dgemm0
-          MODULE PROCEDURE libxsmm_blas_dgemm1
-          MODULE PROCEDURE libxsmm_blas_dgemm2
-          MODULE PROCEDURE libxsmm_blas_dgemm3
-        END INTERFACE
-
-        !> Overloaded BLAS GEMM routines (single-precision).
-        INTERFACE libxsmm_blas_sgemm
-          MODULE PROCEDURE libxsmm_blas_sgemm0
-          MODULE PROCEDURE libxsmm_blas_sgemm1
-          MODULE PROCEDURE libxsmm_blas_sgemm2
-          MODULE PROCEDURE libxsmm_blas_sgemm3
-        END INTERFACE
-
-        !> Overloaded BLAS GEMM routines (single/double-precision).
-        INTERFACE libxsmm_blas_gemm
-          MODULE PROCEDURE libxsmm_blas_dgemm0
-          MODULE PROCEDURE libxsmm_blas_dgemm1
-          MODULE PROCEDURE libxsmm_blas_dgemm2
-          MODULE PROCEDURE libxsmm_blas_dgemm3
-          MODULE PROCEDURE libxsmm_blas_sgemm0
-          MODULE PROCEDURE libxsmm_blas_sgemm1
-          MODULE PROCEDURE libxsmm_blas_sgemm2
-          MODULE PROCEDURE libxsmm_blas_sgemm3
-        END INTERFACE
-
-        !> Calculate a hash value for a given key value (binary blob).
-        !> Conceptually pure, but C_LOC may be (incorrectly) impure.
-        INTERFACE libxsmm_hash
-          MODULE PROCEDURE libxsmm_hash_char
-          MODULE PROCEDURE libxsmm_hash_i8
-          MODULE PROCEDURE libxsmm_hash_i32
-          MODULE PROCEDURE libxsmm_hash_i64
-        END INTERFACE
-
-        !> Calculate whether there is a difference between two series of items.
-        !> Conceptually pure, but C_LOC may be (incorrectly) impure.
-        INTERFACE libxsmm_diff
-          MODULE PROCEDURE libxsmm_diff_char
-          MODULE PROCEDURE libxsmm_diff_i8
-          MODULE PROCEDURE libxsmm_diff_i32
-          MODULE PROCEDURE libxsmm_diff_i64
-        END INTERFACE
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_gemm_auto_prefetch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_gemm_auto_prefetch
@@ -734,6 +537,209 @@
             TYPE(LIBXSMM_MATDIFF_INFO), INTENT(OUT) :: info
           END SUBROUTINE
         END INTERFACE$MNK_INTERFACE_LIST
+
+        INTERFACE libxsmm_ptr0
+          MODULE PROCEDURE libxsmm_ptr_z0, libxsmm_ptr_c0
+          MODULE PROCEDURE libxsmm_ptr_d0, libxsmm_ptr_s0
+          MODULE PROCEDURE libxsmm_ptr_i0, libxsmm_ptr_w0
+          MODULE PROCEDURE libxsmm_ptr_j0 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_b0 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_l0 !! long long
+        END INTERFACE
+
+        INTERFACE libxsmm_ptr1
+          MODULE PROCEDURE libxsmm_ptr_z1, libxsmm_ptr_c1
+          MODULE PROCEDURE libxsmm_ptr_d1, libxsmm_ptr_s1
+          MODULE PROCEDURE libxsmm_ptr_i1, libxsmm_ptr_w1
+          MODULE PROCEDURE libxsmm_ptr_j1 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_b1 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_l1 !! long long
+        END INTERFACE
+
+        INTERFACE libxsmm_ptr2
+          MODULE PROCEDURE libxsmm_ptr_z2, libxsmm_ptr_c2
+          MODULE PROCEDURE libxsmm_ptr_d2, libxsmm_ptr_s2
+          MODULE PROCEDURE libxsmm_ptr_i2, libxsmm_ptr_w2
+          MODULE PROCEDURE libxsmm_ptr_j2 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_b2 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_l2 !! long long
+        END INTERFACE
+
+        INTERFACE libxsmm_ptr
+          MODULE PROCEDURE libxsmm_ptr_z0, libxsmm_ptr_c0
+          MODULE PROCEDURE libxsmm_ptr_d0, libxsmm_ptr_s0
+          MODULE PROCEDURE libxsmm_ptr_i0, libxsmm_ptr_w0
+          MODULE PROCEDURE libxsmm_ptr_j0 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_b0 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_l0 !! long long
+          MODULE PROCEDURE libxsmm_ptr_z1, libxsmm_ptr_c1
+          MODULE PROCEDURE libxsmm_ptr_d1, libxsmm_ptr_s1
+          MODULE PROCEDURE libxsmm_ptr_i1, libxsmm_ptr_w1
+          MODULE PROCEDURE libxsmm_ptr_j1 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_b1 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_l1 !! long long
+          MODULE PROCEDURE libxsmm_ptr_z2, libxsmm_ptr_c2
+          MODULE PROCEDURE libxsmm_ptr_d2, libxsmm_ptr_s2
+          MODULE PROCEDURE libxsmm_ptr_i2, libxsmm_ptr_w2
+          MODULE PROCEDURE libxsmm_ptr_j2 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_b2 !! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_l2 !! long long
+        END INTERFACE
+
+        !> Deallocates JIT'ted code, or unregisters/releases code from registry.
+        INTERFACE libxsmm_release_mmkernel
+          MODULE PROCEDURE libxsmm_release_dmmkernel
+          MODULE PROCEDURE libxsmm_release_smmkernel
+          MODULE PROCEDURE libxsmm_release_wimmkernel
+        END INTERFACE
+
+        !> Construct JIT-code depending on given argument set.
+        INTERFACE libxsmm_mmdispatch
+          MODULE PROCEDURE libxsmm_dmmdispatch, libxsmm_smmdispatch
+          MODULE PROCEDURE libxsmm_wimmdispatch
+        END INTERFACE
+
+        !> Construct JIT-code depending on given argument set.
+        INTERFACE libxsmm_dispatch
+          MODULE PROCEDURE libxsmm_dmmdispatch, libxsmm_smmdispatch
+          MODULE PROCEDURE libxsmm_wimmdispatch
+        END INTERFACE
+
+        !> Check if a function is available (LIBXSMM_?MMFUNCTION).
+        INTERFACE libxsmm_mmavailable
+          MODULE PROCEDURE libxsmm_dmmavailable, libxsmm_smmavailable
+          MODULE PROCEDURE libxsmm_wimmavailable
+        END INTERFACE
+
+        !> Check if a function is available (LIBXSMM_?MMFUNCTION).
+        INTERFACE libxsmm_available
+          MODULE PROCEDURE libxsmm_smmavailable, libxsmm_dmmavailable
+          MODULE PROCEDURE libxsmm_wimmavailable
+        END INTERFACE
+
+        !> Call a specialized function (double-precision).
+        INTERFACE libxsmm_dmmcall
+          MODULE PROCEDURE libxsmm_dmmcallx_abc, libxsmm_dmmcallx_prf
+          MODULE PROCEDURE libxsmm_dmmcall0_abc, libxsmm_dmmcall0_prf
+          MODULE PROCEDURE libxsmm_dmmcall1_abc, libxsmm_dmmcall1_prf
+          MODULE PROCEDURE libxsmm_dmmcall2_abc, libxsmm_dmmcall2_prf
+        END INTERFACE
+
+        !> Call a specialized function (single-precision).
+        INTERFACE libxsmm_smmcall
+          MODULE PROCEDURE libxsmm_smmcallx_abc, libxsmm_smmcallx_prf
+          MODULE PROCEDURE libxsmm_smmcall0_abc, libxsmm_smmcall0_prf
+          MODULE PROCEDURE libxsmm_smmcall1_abc, libxsmm_smmcall1_prf
+          MODULE PROCEDURE libxsmm_smmcall2_abc, libxsmm_smmcall2_prf
+        END INTERFACE
+
+        !> Call a specialized function (mixed-precision, integer).
+        INTERFACE libxsmm_wimmcall
+          MODULE PROCEDURE libxsmm_wimmcallx_abc, libxsmm_wimmcallx_prf
+          MODULE PROCEDURE libxsmm_wimmcall0_abc, libxsmm_wimmcall0_prf
+          MODULE PROCEDURE libxsmm_wimmcall1_abc, libxsmm_wimmcall1_prf
+          MODULE PROCEDURE libxsmm_wimmcall2_abc, libxsmm_wimmcall2_prf
+        END INTERFACE
+
+        !> Call a specialized function (multi-precision).
+        INTERFACE libxsmm_mmcall
+          MODULE PROCEDURE libxsmm_dmmcallx_abc, libxsmm_dmmcallx_prf
+          MODULE PROCEDURE libxsmm_dmmcall0_abc, libxsmm_dmmcall0_prf
+          MODULE PROCEDURE libxsmm_dmmcall1_abc, libxsmm_dmmcall1_prf
+          MODULE PROCEDURE libxsmm_dmmcall2_abc, libxsmm_dmmcall2_prf
+          MODULE PROCEDURE libxsmm_smmcallx_abc, libxsmm_smmcallx_prf
+          MODULE PROCEDURE libxsmm_smmcall0_abc, libxsmm_smmcall0_prf
+          MODULE PROCEDURE libxsmm_smmcall1_abc, libxsmm_smmcall1_prf
+          MODULE PROCEDURE libxsmm_smmcall2_abc, libxsmm_smmcall2_prf
+          MODULE PROCEDURE libxsmm_wimmcallx_abc, libxsmm_wimmcallx_prf
+          MODULE PROCEDURE libxsmm_wimmcall0_abc, libxsmm_wimmcall0_prf
+          MODULE PROCEDURE libxsmm_wimmcall1_abc, libxsmm_wimmcall1_prf
+          MODULE PROCEDURE libxsmm_wimmcall2_abc, libxsmm_wimmcall2_prf
+        END INTERFACE
+
+        !> Overloaded GEMM routines (double-precision).
+        INTERFACE libxsmm_dgemm
+          MODULE PROCEDURE libxsmm_dgemm0
+          MODULE PROCEDURE libxsmm_dgemm1
+          MODULE PROCEDURE libxsmm_dgemm2
+          MODULE PROCEDURE libxsmm_dgemm3
+        END INTERFACE
+
+        !> Overloaded GEMM routines (single-precision).
+        INTERFACE libxsmm_sgemm
+          MODULE PROCEDURE libxsmm_sgemm0
+          MODULE PROCEDURE libxsmm_sgemm1
+          MODULE PROCEDURE libxsmm_sgemm2
+        END INTERFACE
+
+        !> Overloaded GEMM routines (low-precision).
+        INTERFACE libxsmm_wigemm
+          MODULE PROCEDURE libxsmm_wigemm0
+          MODULE PROCEDURE libxsmm_wigemm1
+          MODULE PROCEDURE libxsmm_wigemm2
+        END INTERFACE
+
+        !> Overloaded GEMM routines.
+        INTERFACE libxsmm_gemm
+          MODULE PROCEDURE libxsmm_dgemm0
+          MODULE PROCEDURE libxsmm_dgemm1
+          MODULE PROCEDURE libxsmm_dgemm2
+          MODULE PROCEDURE libxsmm_dgemm3
+          MODULE PROCEDURE libxsmm_sgemm0
+          MODULE PROCEDURE libxsmm_sgemm1
+          MODULE PROCEDURE libxsmm_sgemm2
+          MODULE PROCEDURE libxsmm_sgemm3
+          MODULE PROCEDURE libxsmm_wigemm0
+          MODULE PROCEDURE libxsmm_wigemm1
+          MODULE PROCEDURE libxsmm_wigemm2
+          MODULE PROCEDURE libxsmm_wigemm3
+        END INTERFACE
+
+        !> Overloaded BLAS GEMM routines (double-precision).
+        INTERFACE libxsmm_blas_dgemm
+          MODULE PROCEDURE libxsmm_blas_dgemm0
+          MODULE PROCEDURE libxsmm_blas_dgemm1
+          MODULE PROCEDURE libxsmm_blas_dgemm2
+          MODULE PROCEDURE libxsmm_blas_dgemm3
+        END INTERFACE
+
+        !> Overloaded BLAS GEMM routines (single-precision).
+        INTERFACE libxsmm_blas_sgemm
+          MODULE PROCEDURE libxsmm_blas_sgemm0
+          MODULE PROCEDURE libxsmm_blas_sgemm1
+          MODULE PROCEDURE libxsmm_blas_sgemm2
+          MODULE PROCEDURE libxsmm_blas_sgemm3
+        END INTERFACE
+
+        !> Overloaded BLAS GEMM routines (single/double-precision).
+        INTERFACE libxsmm_blas_gemm
+          MODULE PROCEDURE libxsmm_blas_dgemm0
+          MODULE PROCEDURE libxsmm_blas_dgemm1
+          MODULE PROCEDURE libxsmm_blas_dgemm2
+          MODULE PROCEDURE libxsmm_blas_dgemm3
+          MODULE PROCEDURE libxsmm_blas_sgemm0
+          MODULE PROCEDURE libxsmm_blas_sgemm1
+          MODULE PROCEDURE libxsmm_blas_sgemm2
+          MODULE PROCEDURE libxsmm_blas_sgemm3
+        END INTERFACE
+
+        !> Calculate a hash value for a given key value (binary blob).
+        !> Conceptually pure, but C_LOC may be (incorrectly) impure.
+        INTERFACE libxsmm_hash
+          MODULE PROCEDURE libxsmm_hash_char
+          MODULE PROCEDURE libxsmm_hash_i8
+          MODULE PROCEDURE libxsmm_hash_i32
+          MODULE PROCEDURE libxsmm_hash_i64
+        END INTERFACE
+
+        !> Calculate whether there is a difference between two series of items.
+        !> Conceptually pure, but C_LOC may be (incorrectly) impure.
+        INTERFACE libxsmm_diff
+          MODULE PROCEDURE libxsmm_diff_char
+          MODULE PROCEDURE libxsmm_diff_i8
+          MODULE PROCEDURE libxsmm_diff_i32
+          MODULE PROCEDURE libxsmm_diff_i64
+        END INTERFACE
 
       CONTAINS
         !> Returns the name of the target architecture as determined by
@@ -1187,6 +1193,20 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
         !> libxsmm_xmmcall routines can be used in FORTRAN77.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcallx_abc
+        SUBROUTINE libxsmm_dmmcallx_abc(kernel, a, b, c)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(...)
+          CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
+        END SUBROUTINE
+
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall0_abc
         SUBROUTINE libxsmm_dmmcall0_abc(kernel, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
@@ -1202,7 +1222,7 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
         !> libxsmm_xmmcall routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall1
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall1_abc
         SUBROUTINE libxsmm_dmmcall1_abc(kernel, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           REAL(C_DOUBLE), INTENT(IN),    TARGET :: a(*), b(*)
@@ -1218,7 +1238,7 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
         !> libxsmm_xmmcall routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall2
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall2_abc
         SUBROUTINE libxsmm_dmmcall2_abc(kernel, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           REAL(C_DOUBLE), INTENT(IN),    TARGET :: a(:,:), b(:,:)
@@ -1228,6 +1248,20 @@
           ! CALL xmm(...)
           CALL libxsmm_xmmcall_abc(kernel%handle,                       &
      &      libxsmm_ptr(a), libxsmm_ptr(b), libxsmm_ptr(c))
+        END SUBROUTINE
+
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcallx_prf
+        SUBROUTINE libxsmm_dmmcallx_prf(kernel, a, b, c, pa, pb, pc)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(...)
+          CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !> Calls the kernel for the given arguments. Alternatively,
@@ -1288,6 +1322,20 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
         !> libxsmm_xmmcall routines can be used in FORTRAN77.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcallx_abc
+        SUBROUTINE libxsmm_smmcallx_abc(kernel, a, b, c)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(...)
+          CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
+        END SUBROUTINE
+
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall0_abc
         SUBROUTINE libxsmm_smmcall0_abc(kernel, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
@@ -1329,6 +1377,20 @@
           ! CALL xmm(...)
           CALL libxsmm_xmmcall_abc(kernel%handle,                       &
      &      libxsmm_ptr(a), libxsmm_ptr(b), libxsmm_ptr(c))
+        END SUBROUTINE
+
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcallx_prf
+        SUBROUTINE libxsmm_smmcallx_prf(kernel, a, b, c, pa, pb, pc)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(...)
+          CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !> Calls the kernel for the given arguments. Alternatively,
@@ -1387,6 +1449,20 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
         !> libxsmm_xmmcall routines can be used in FORTRAN77.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcallx_abc
+        SUBROUTINE libxsmm_wimmcallx_abc(kernel, a, b, c)
+          TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(...)
+          CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
+        END SUBROUTINE
+
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall0_abc
         SUBROUTINE libxsmm_wimmcall0_abc(kernel, a, b, c)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
@@ -1428,6 +1504,20 @@
           ! CALL xmm(...)
           CALL libxsmm_xmmcall_abc(kernel%handle,                       &
      &      libxsmm_ptr(a), libxsmm_ptr(b), libxsmm_ptr(c))
+        END SUBROUTINE
+
+        !> Calls the kernel for the given arguments. Alternatively,
+        !> PROCPOINTER can be used as shown by the inner comments
+        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
+        !> libxsmm_xmmcall routines can be used in FORTRAN77.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcallx_prf
+        SUBROUTINE libxsmm_wimmcallx_prf(kernel, a, b, c, pa, pb, pc)
+          TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
+          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
+          ! CALL xmm(...)
+          CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !> Calls the kernel for the given arguments. Alternatively,
