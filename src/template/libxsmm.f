@@ -622,7 +622,6 @@
           MODULE PROCEDURE libxsmm_dmmcallx_abc, libxsmm_dmmcallx_prf
           MODULE PROCEDURE libxsmm_dmmcall0_abc, libxsmm_dmmcall0_prf
           MODULE PROCEDURE libxsmm_dmmcall1_abc, libxsmm_dmmcall1_prf
-          MODULE PROCEDURE libxsmm_dmmcall2_abc, libxsmm_dmmcall2_prf
         END INTERFACE
 
         !> Call a specialized function (single-precision).
@@ -630,7 +629,6 @@
           MODULE PROCEDURE libxsmm_smmcallx_abc, libxsmm_smmcallx_prf
           MODULE PROCEDURE libxsmm_smmcall0_abc, libxsmm_smmcall0_prf
           MODULE PROCEDURE libxsmm_smmcall1_abc, libxsmm_smmcall1_prf
-          MODULE PROCEDURE libxsmm_smmcall2_abc, libxsmm_smmcall2_prf
         END INTERFACE
 
         !> Call a specialized function (mixed-precision, integer).
@@ -638,7 +636,6 @@
           MODULE PROCEDURE libxsmm_wimmcallx_abc, libxsmm_wimmcallx_prf
           MODULE PROCEDURE libxsmm_wimmcall0_abc, libxsmm_wimmcall0_prf
           MODULE PROCEDURE libxsmm_wimmcall1_abc, libxsmm_wimmcall1_prf
-          MODULE PROCEDURE libxsmm_wimmcall2_abc, libxsmm_wimmcall2_prf
         END INTERFACE
 
         !> Call a specialized function (multi-precision).
@@ -646,15 +643,12 @@
           MODULE PROCEDURE libxsmm_dmmcallx_abc, libxsmm_dmmcallx_prf
           MODULE PROCEDURE libxsmm_dmmcall0_abc, libxsmm_dmmcall0_prf
           MODULE PROCEDURE libxsmm_dmmcall1_abc, libxsmm_dmmcall1_prf
-          MODULE PROCEDURE libxsmm_dmmcall2_abc, libxsmm_dmmcall2_prf
           MODULE PROCEDURE libxsmm_smmcallx_abc, libxsmm_smmcallx_prf
           MODULE PROCEDURE libxsmm_smmcall0_abc, libxsmm_smmcall0_prf
           MODULE PROCEDURE libxsmm_smmcall1_abc, libxsmm_smmcall1_prf
-          MODULE PROCEDURE libxsmm_smmcall2_abc, libxsmm_smmcall2_prf
           MODULE PROCEDURE libxsmm_wimmcallx_abc, libxsmm_wimmcallx_prf
           MODULE PROCEDURE libxsmm_wimmcall0_abc, libxsmm_wimmcall0_prf
           MODULE PROCEDURE libxsmm_wimmcall1_abc, libxsmm_wimmcall1_prf
-          MODULE PROCEDURE libxsmm_wimmcall2_abc, libxsmm_wimmcall2_prf
         END INTERFACE
 
         !> Overloaded GEMM routines (double-precision).
@@ -1157,22 +1151,6 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
         !> libxsmm_xmmcall routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall2_abc
-        SUBROUTINE libxsmm_dmmcall2_abc(kernel, a, b, c)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
-          REAL(C_DOUBLE), INTENT(IN),    TARGET :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
-          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
-          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
-          ! CALL xmm(...)
-          CALL libxsmm_xmmcall_abc(kernel%handle,                       &
-     &      libxsmm_ptr(a), libxsmm_ptr(b), libxsmm_ptr(c))
-        END SUBROUTINE
-
-        !> Calls the kernel for the given arguments. Alternatively,
-        !> PROCPOINTER can be used as shown by the inner comments
-        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
-        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcallx_prf
         SUBROUTINE libxsmm_dmmcallx_prf(kernel, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
@@ -1221,26 +1199,6 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
         !> libxsmm_xmmcall routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall2_prf
-        SUBROUTINE libxsmm_dmmcall2_prf(kernel, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
-          REAL(C_DOUBLE), INTENT(IN),    TARGET ::  a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT), TARGET ::  c(:,:)
-          REAL(C_DOUBLE), INTENT(IN),    TARGET :: pa(:,:)
-          REAL(C_DOUBLE), INTENT(IN),    TARGET :: pb(:,:)
-          REAL(C_DOUBLE), INTENT(IN),    TARGET :: pc(:,:)
-          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
-          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
-          ! CALL xmm(...)
-          CALL libxsmm_xmmcall_prf(kernel%handle,                       &
-     &      libxsmm_ptr(a),  libxsmm_ptr(b),  libxsmm_ptr(c),           &
-     &      libxsmm_ptr(pa), libxsmm_ptr(pb), libxsmm_ptr(pc))
-        END SUBROUTINE
-
-        !> Calls the kernel for the given arguments. Alternatively,
-        !> PROCPOINTER can be used as shown by the inner comments
-        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
-        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcallx_abc
         SUBROUTINE libxsmm_smmcallx_abc(kernel, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
@@ -1280,22 +1238,6 @@
           ! CALL xmm(...)
           CALL libxsmm_xmmcall_abc(kernel%handle,                       &
      &      C_LOC(a), C_LOC(b), C_LOC(c))
-        END SUBROUTINE
-
-        !> Calls the kernel for the given arguments. Alternatively,
-        !> PROCPOINTER can be used as shown by the inner comments
-        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
-        !> libxsmm_xmmcall routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall2_abc
-        SUBROUTINE libxsmm_smmcall2_abc(kernel, a, b, c)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
-          REAL(C_FLOAT), INTENT(IN),    TARGET :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
-          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
-          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
-          ! CALL xmm(...)
-          CALL libxsmm_xmmcall_abc(kernel%handle,                       &
-     &      libxsmm_ptr(a), libxsmm_ptr(b), libxsmm_ptr(c))
         END SUBROUTINE
 
         !> Calls the kernel for the given arguments. Alternatively,
@@ -1350,24 +1292,6 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
         !> libxsmm_xmmcall routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall2_prf
-        SUBROUTINE libxsmm_smmcall2_prf(kernel, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
-          REAL(C_FLOAT), INTENT(IN),    TARGET :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
-          REAL(C_FLOAT), INTENT(IN), TARGET :: pa(:,:), pb(:,:), pc(:,:)
-          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
-          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
-          ! CALL xmm(...)
-          CALL libxsmm_xmmcall_prf(kernel%handle,                       &
-     &      libxsmm_ptr(a),  libxsmm_ptr(b),  libxsmm_ptr(c),           &
-     &      libxsmm_ptr(pa), libxsmm_ptr(pb), libxsmm_ptr(pc))
-        END SUBROUTINE
-
-        !> Calls the kernel for the given arguments. Alternatively,
-        !> PROCPOINTER can be used as shown by the inner comments
-        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
-        !> libxsmm_xmmcall routines can be used in FORTRAN77.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcallx_abc
         SUBROUTINE libxsmm_wimmcallx_abc(kernel, a, b, c)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
@@ -1407,22 +1331,6 @@
           ! CALL xmm(...)
           CALL libxsmm_xmmcall_abc(kernel%handle,                       &
      &      C_LOC(a), C_LOC(b), C_LOC(c))
-        END SUBROUTINE
-
-        !> Calls the kernel for the given arguments. Alternatively,
-        !> PROCPOINTER can be used as shown by the inner comments
-        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
-        !> libxsmm_xmmcall routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall2_abc
-        SUBROUTINE libxsmm_wimmcall2_abc(kernel, a, b, c)
-          TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
-          INTEGER(C_SHORT), INTENT(IN),  TARGET :: a(:,:), b(:,:)
-          INTEGER(C_INT), INTENT(INOUT), TARGET :: c(:,:)
-          ! PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
-          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
-          ! CALL xmm(...)
-          CALL libxsmm_xmmcall_abc(kernel%handle,                       &
-     &      libxsmm_ptr(a), libxsmm_ptr(b), libxsmm_ptr(c))
         END SUBROUTINE
 
         !> Calls the kernel for the given arguments. Alternatively,
@@ -1471,26 +1379,6 @@
           CALL libxsmm_xmmcall_prf(kernel%handle,                       &
      &      C_LOC(a),  C_LOC(b),  C_LOC(c),                             &
      &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
-        END SUBROUTINE
-
-        !> Calls the kernel for the given arguments. Alternatively,
-        !> PROCPOINTER can be used as shown by the inner comments
-        !> of this routine (LIBXSMM_FUNCTION3/6, etc.). The
-        !> libxsmm_xmmcall routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall2_prf
-        SUBROUTINE libxsmm_wimmcall2_prf(kernel, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
-          INTEGER(C_SHORT), INTENT(IN),  TARGET ::  a(:,:), b(:,:)
-          INTEGER(C_INT), INTENT(INOUT), TARGET ::  c(:,:)
-          INTEGER(C_SHORT), INTENT(IN),  TARGET :: pa(:,:)
-          INTEGER(C_SHORT), INTENT(IN),  TARGET :: pb(:,:)
-          INTEGER(C_INT),   INTENT(IN),  TARGET :: pc(:,:)
-          ! PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
-          ! CALL C_F_PROCPOINTER(kernel%handle, xmm)
-          ! CALL xmm(...)
-          CALL libxsmm_xmmcall_prf(kernel%handle,                       &
-     &      libxsmm_ptr(a),  libxsmm_ptr(b),  libxsmm_ptr(c),           &
-     &      libxsmm_ptr(pa), libxsmm_ptr(pb), libxsmm_ptr(pc))
         END SUBROUTINE
 
         !> Auto-dispatched general dense MM (double-precision).
