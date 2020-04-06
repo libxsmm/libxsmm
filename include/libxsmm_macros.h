@@ -779,6 +779,9 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(_Bool)
+# define _Bool int
+#endif
 #if defined(_WIN32) && 0
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
 #elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
