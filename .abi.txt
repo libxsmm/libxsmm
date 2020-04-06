@@ -520,8 +520,10 @@ libxsmm_wimmdispatch_reducebatch_offs
 libxsmm_wimmdispatch_reducebatch_offs_unroll
 libxsmm_wimmdispatch_reducebatch_strd
 libxsmm_wimmdispatch_reducebatch_strd_unroll
+libxsmm_xclear_
 libxsmm_xdiff_
 libxsmm_xdispatch
+libxsmm_xdispatch_
 libxsmm_xgemm
 libxsmm_xgemm_omp
 libxsmm_xgemm_omp_
@@ -533,5 +535,7 @@ libxsmm_xmmdispatch
 libxsmm_xmmdispatch2_
 libxsmm_xmmdispatch_
 libxsmm_xregister
+libxsmm_xregister_
 libxsmm_xrelease
+libxsmm_xrelease_
 libxsmmf_get_target_arch

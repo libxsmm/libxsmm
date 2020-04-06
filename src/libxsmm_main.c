@@ -4338,5 +4338,70 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
   LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(fn, a, b, c, pa, pb, pc);
 }
 
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xregister)(void** /*regval*/,
+  const void* /*key*/, const int* /*keysize*/, const int* /*valsize*/, const void* /*valinit*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xregister)(void** regval,
+  const void* key, const int* keysize, const int* valsize, const void* valinit)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != regval && NULL != key && NULL != keysize && NULL != valsize)
+#endif
+  {
+    *regval = libxsmm_xregister(key, *keysize, *valsize, valinit);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xregister specified!\n");
+  }
+#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdispatch)(void** /*regval*/, const void* /*key*/, const int* /*keysize*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdispatch)(void** regval, const void* key, const int* keysize)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != regval && NULL != key && NULL != keysize)
+#endif
+  {
+    *regval = libxsmm_xdispatch(key, *keysize);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xdispatch specified!\n");
+  }
+#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xrelease)(const void* /*key*/, const int* /*keysize*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xrelease)(const void* key, const int* keysize)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != key && NULL != keysize)
+#endif
+  {
+    libxsmm_xrelease(key, *keysize);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xrelease specified!\n");
+  }
+#endif
+}
+
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
 

@@ -208,9 +208,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_prf
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xclear
-        !!DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
-        !!DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xdispatch
-        !!DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xrelease
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xrelease
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
@@ -377,11 +375,13 @@
             INTEGER(C_INT), INTENT(IN) :: nbytes
           END SUBROUTINE
 
-          ! void* libxsmm_xregister(const void* key, size_t key_size,
-          !                size_t value_size, const void* value_init);
-          ! void* libxsmm_xdispatch(const void* key, size_t key_size);
-          ! void libxsmm_xrelease(const void* key, size_t key_size);
-          ! TODO
+          !> Remove key-value pair from code registry and release memory.
+          SUBROUTINE libxsmm_xrelease(key, keysize)                     &
+     &    BIND(C, NAME="libxsmm_xrelease_")
+            IMPORT C_PTR, C_INT
+            TYPE(C_PTR), INTENT(IN), VALUE :: key
+            INTEGER(C_INT), INTENT(IN) :: keysize
+          END SUBROUTINE
 
           !> Matrix transposition; MT via libxsmmext (out-of-place form).
           !> Implicit FORTRAN 77 interface:
@@ -1215,6 +1215,57 @@
      &        C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
         END SUBROUTINE
+
+        !> Register user-defined key-value; value can be queried (libxsmm_xdispatch).
+        !> Since the key-type is unknown to LIBXSMM, the key must be binary reproducible,
+        !> i.e., the key must be initially zero-filled (libxsmm_xclear) followed by an
+        !> element-wise initialization (some compilers leave padded data uninitialized).
+        !> The size of the key is limited (see documentation). The given value is copied
+        !> by LIBXSMM and may be initialized at registration-time or when received per
+        !> libxsmm_xdispatch. Registered data is released at program termination but can
+        !> be also released if needed (libxsmm_xrelease).
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
+        FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
+          TYPE(C_PTR), INTENT(IN), VALUE :: key
+          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: valinit
+          INTEGER(C_INT), INTENT(IN) :: keysize, valsize
+          TYPE(C_PTR) :: libxsmm_xregister
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xregister
+          INTERFACE
+            SUBROUTINE internal_xregister(regval,                       &
+     &      key, keysize, valsize, valinit)                             &
+     &      BIND(C, NAME="libxsmm_xregister_")
+              IMPORT C_PTR, C_INT
+              TYPE(C_PTR), INTENT(OUT) :: regval
+              TYPE(C_PTR), INTENT(IN), VALUE :: key, valinit
+              INTEGER(C_INT), INTENT(IN) :: keysize, valsize
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_xregister(libxsmm_xregister,                    &
+     &      key, keysize, valsize, valinit)
+        END FUNCTION
+
+        !> Query user-defined value from LIBXSMM's code registry.
+        !> The value's buffer is owned and managed by LIBXSMM
+        !> (can be libxsmm_xrelease'd, .e.g., if larger value
+        !> for the same key must be stored).
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xdispatch
+        FUNCTION libxsmm_xdispatch(key, keysize)
+          TYPE(C_PTR), INTENT(IN), VALUE :: key
+          INTEGER(C_INT), INTENT(IN) :: keysize
+          TYPE(C_PTR) :: libxsmm_xdispatch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xdispatch
+          INTERFACE
+            SUBROUTINE internal_xdispatch(regval, key, keysize)         &
+     &      BIND(C, NAME="libxsmm_xdispatch_")
+              IMPORT C_PTR, C_INT
+              TYPE(C_PTR), INTENT(OUT) :: regval
+              TYPE(C_PTR), INTENT(IN), VALUE :: key
+              INTEGER(C_INT), INTENT(IN) :: keysize
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_xdispatch(libxsmm_xdispatch, key, keysize)
+        END FUNCTION
 
         !> Auto-dispatched general dense MM (double-precision).
         !> This overload belongs to libxsmm_(d)gemm.
