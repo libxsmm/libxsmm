@@ -16,7 +16,7 @@
      &                        libxsmm_otrans_omp,                       &
      &                        libxsmm_otrans,                           &
      &                        libxsmm_itrans,                           &
-     &                        libxsmm_ptr1
+     &                        libxsmm_ptr
         IMPLICIT NONE
 
         INTEGER, PARAMETER :: T = KIND(0D0)
@@ -93,7 +93,7 @@
           !$OMP END PARALLEL DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            CALL libxsmm_otrans_omp(libxsmm_ptr1(b1), libxsmm_ptr1(a1), &
+            CALL libxsmm_otrans_omp(libxsmm_ptr(b1), libxsmm_ptr(a1),   &
      &              S, m, n, lda, ldb)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -108,7 +108,7 @@
           !$OMP END PARALLEL DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            CALL libxsmm_itrans(libxsmm_ptr1(b1), S, m, n, ldb)
+            CALL libxsmm_itrans(libxsmm_ptr(b1), S, m, n, ldb)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         END IF

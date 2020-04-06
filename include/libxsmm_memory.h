@@ -43,13 +43,13 @@
 
 
 /**
- * Calculate if there is a difference between two (short) buffers.
+ * Calculates if there is a difference between two (short) buffers.
  * Returns zero if there is no difference; otherwise non-zero.
  */
 LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned char size);
 
 /**
- * Calculate if there is a difference between "a" and "n x b".
+ * Calculates if there is a difference between "a" and "n x b".
  * Returns the index of the first match (or "n" in case of no match).
  */
 LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char size,

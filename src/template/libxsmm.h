@@ -111,7 +111,7 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
 /**
- * Register user-defined key-value pair; the value can be then queried per libxsmm_xdispatch.
+ * Register user-defined key-value pair; the value can then be queried per libxsmm_xdispatch.
  * Since the key-type is unknown to LIBXSMM, the key must be binary reproducible. Structured
  * data may be padded (compiler/platform-specific), and key-structure initialization shall be:
  * memset(&mykey, 0, sizeof(mykey)) followed by an element-wise initialization (some compilers

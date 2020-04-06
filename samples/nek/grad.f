@@ -11,7 +11,7 @@
 !=======================================================================!
 
       PROGRAM grad
-        USE :: LIBXSMM
+        USE :: LIBXSMM, libxsmm_mmcall => libxsmm_dmmcall_abc
         USE :: STREAM_UPDATE_KERNELS
 
         !$ USE omp_lib
@@ -166,19 +166,19 @@
             CALL libxsmm_blas_dgemm(m=m, n=n*k, k=m,                    &
      &              a=dx, b=a(:,:,1,i), c=tm1(:,:,1),                   &
      &              alpha=alpha, beta=beta)
-            CALL stream_vector_copy( tm1(1,1,1), cx(1,1,1,i), m*n*k )
+            CALL stream_vector_copy(tm1(1,1,1), cx(1,1,1,i), m*n*k)
             DO j = 1, k
               ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
               CALL libxsmm_blas_dgemm(m=m, n=n, k=n,                    &
      &              a=a(:,:,j,i), b=dy, c=tm2(:,:,j),                   &
      &              alpha=alpha, beta=beta)
             END DO
-            CALL stream_vector_copy( tm2(1,1,1), cy(1,1,1,i), m*n*k )
+            CALL stream_vector_copy(tm2(1,1,1), cy(1,1,1,i), m*n*k)
             ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
             CALL libxsmm_blas_dgemm(m=m*n, n=k, k=k,                    &
      &              a=a(:,:,1,i), b=dz, c=tm3(:,:,1),                   &
      &              alpha=alpha, beta=beta)
-            CALL stream_vector_copy( tm3(1,1,1), cz(1,1,1,i), m*n*k )
+            CALL stream_vector_copy(tm3(1,1,1), cz(1,1,1,i), m*n*k)
           END DO
         END DO
         !$OMP BARRIER
@@ -208,13 +208,13 @@
           !$OMP DO
           DO i = LBOUND(a, 4), UBOUND(a, 4)
             CALL mxmf2(dx, m, a(:,:,:,i), m, tm1(:,:,:), n*k)
-            CALL stream_vector_copy( tm1(1,1,1), cx(1,1,1,i), m*n*k )
+            CALL stream_vector_copy(tm1(1,1,1), cx(1,1,1,i), m*n*k)
             DO j = 1, k
               CALL mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
             END DO
-            CALL stream_vector_copy( tm2(1,1,1), cy(1,1,1,i), m*n*k )
+            CALL stream_vector_copy(tm2(1,1,1), cy(1,1,1,i), m*n*k)
             CALL mxmf2(a(:,:,:,i), m*n, dz, k, tm3(:,:,:), k)
-            CALL stream_vector_copy( tm3(1,1,1), cz(1,1,1,i), m*n*k )
+            CALL stream_vector_copy(tm3(1,1,1), cz(1,1,1,i), m*n*k)
           END DO
         END DO
         !$OMP BARRIER
@@ -247,19 +247,19 @@
             CALL libxsmm_dgemm(m=m, n=n*k, k=m,                         &
      &              a=dx, b=a(:,:,1,i), c=tm1(:,:,1),                   &
      &              alpha=alpha, beta=beta)
-            CALL stream_vector_copy( tm1(1,1,1), cx(1,1,1,i), m*n*k )
+            CALL stream_vector_copy(tm1(1,1,1), cx(1,1,1,i), m*n*k)
             DO j = 1, k
               ! PGI: cannot deduce generic procedure (libxsmm_gemm)
               CALL libxsmm_dgemm(m=m, n=n, k=n,                         &
      &              a=a(:,:,j,i), b=dy, c=tm2(:,:,j),                   &
      &              alpha=alpha, beta=beta)
             END DO
-            CALL stream_vector_copy( tm2(1,1,1), cy(1,1,1,i), m*n*k )
+            CALL stream_vector_copy(tm2(1,1,1), cy(1,1,1,i), m*n*k)
             ! PGI: cannot deduce generic procedure (libxsmm_gemm)
             CALL libxsmm_dgemm(m=m*n, n=k, k=k,                         &
      &              a=a(:,:,1,i), b=dz, c=tm3(:,:,1),                   &
      &              alpha=alpha, beta=beta)
-            CALL stream_vector_copy( tm3(1,1,1), cz(1,1,1,i), m*n*k )
+            CALL stream_vector_copy(tm3(1,1,1), cz(1,1,1,i), m*n*k)
           END DO
         END DO
         !$OMP BARRIER
@@ -295,17 +295,14 @@
           DO r = 1, repetitions
             !$OMP DO
             DO i = LBOUND(a, 4), UBOUND(a, 4)
-              CALL libxsmm_mmcall(xmm1,                                 &
-     &                C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(tm1(1,1,1)))
-              CALL stream_vector_copy( tm1(1,1,1), cx(1,1,1,i), m*n*k )
+              CALL libxsmm_mmcall(xmm1, dx, a(1,1,1,i), tm1(1,1,1))
+              CALL stream_vector_copy(tm1(1,1,1), cx(1,1,1,i), m*n*k)
               DO j = 1, k
-                CALL libxsmm_mmcall(xmm2,                               &
-     &                C_LOC(a(1,1,j,i)), C_LOC(dy), C_LOC(tm2(1,1,j)))
+                CALL libxsmm_mmcall(xmm2, a(1,1,j,i), dy, tm2(1,1,j))
               END DO
-              CALL stream_vector_copy( tm2(1,1,1), cy(1,1,1,i), m*n*k )
-              CALL libxsmm_mmcall(xmm3,                                 &
-     &                C_LOC(a(1,1,1,i)), C_LOC(dz), C_LOC(tm3(1,1,1)))
-              CALL stream_vector_copy( tm3(1,1,1), cz(1,1,1,i), m*n*k )
+              CALL stream_vector_copy(tm2(1,1,1), cy(1,1,1,i), m*n*k)
+              CALL libxsmm_mmcall(xmm3, a(1,1,1,i), dz, tm3(1,1,1))
+              CALL stream_vector_copy(tm3(1,1,1), cz(1,1,1,i), m*n*k)
             END DO
            END DO
           !$OMP BARRIER

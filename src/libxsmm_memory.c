@@ -415,16 +415,15 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string)
 #if defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* hash_seed, const void* data, const int* size)
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xhash)(int* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xhash)(int* hash_seed, const void* data, const int* size)
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
   if (NULL != hash_seed && NULL != data && NULL != size && 0 <= *size)
 #endif
   {
-    unsigned int *const hash_seed_ui32 = (unsigned int*)hash_seed;
-    *hash_seed_ui32 = (libxsmm_hash(data, (unsigned int)*size, *hash_seed_ui32) & 0x7FFFFFFF/*sign-bit*/);
+    *hash_seed = (int)(libxsmm_hash(data, (unsigned int)*size, (unsigned int)*hash_seed) & 0x7FFFFFFF/*sign-bit*/);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -437,47 +436,15 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* hash_seed, const void* data
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_char)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_char)(void* hash_seed, const void* data, const int* size)
-{
-  LIBXSMM_FSYMBOL(libxsmm_hash)(hash_seed, data, size);
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i8)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i8)(void* hash_seed, const void* data, const int* size)
-{
-  LIBXSMM_FSYMBOL(libxsmm_hash)(hash_seed, data, size);
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i32)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i32)(void* hash_seed, const void* data, const int* size)
-{
-  LIBXSMM_FSYMBOL(libxsmm_hash)(hash_seed, data, size);
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i64)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash_i64)(void* hash_seed, const void* data, const int* size)
-{
-  LIBXSMM_FSYMBOL(libxsmm_hash)(hash_seed, data, size);
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* result, const void* a, const void* b, const long long* size)
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdiff)(_Bool* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdiff)(_Bool* result, const void* a, const void* b, const long long* size)
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
   if (NULL != result && NULL != a && NULL != b && NULL != size && 0 <= *size)
 #endif
   {
-    *result = libxsmm_memcmp(a, b, (size_t)*size);
+    *result = (_Bool)libxsmm_memcmp(a, b, (size_t)*size);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -486,38 +453,6 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* result, const void* a, const
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_memcmp specified!\n");
   }
 #endif
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_char)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_char)(int* result, const void* a, const void* b, const long long* size)
-{
-  LIBXSMM_FSYMBOL(libxsmm_diff)(result, a, b, size);
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i8)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i8)(int* result, const void* a, const void* b, const long long* size)
-{
-  LIBXSMM_FSYMBOL(libxsmm_diff)(result, a, b, size);
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i32)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i32)(int* result, const void* a, const void* b, const long long* size)
-{
-  LIBXSMM_FSYMBOL(libxsmm_diff)(result, a, b, size);
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i64)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff_i64)(int* result, const void* a, const void* b, const long long* size)
-{
-  LIBXSMM_FSYMBOL(libxsmm_diff)(result, a, b, size);
 }
 
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/

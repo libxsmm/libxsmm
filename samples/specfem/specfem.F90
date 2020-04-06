@@ -16,7 +16,7 @@
 
 module my_libxsmm
 
-  use libxsmm !,only: LIBXSMM_SMMFUNCTION,libxsmm_dispatch,libxsmm_mmcall,libxsmm_init,libxsmm_finalize,libxsmm_ptr2,libxsmm_ptr0
+  use libxsmm !,only: LIBXSMM_SMMFUNCTION,libxsmm_dispatch,libxsmm_mmcall,libxsmm_init,libxsmm_finalize
 
   implicit none
 

@@ -10,7 +10,7 @@
 !=======================================================================!
 
       PROGRAM smm
-        USE :: LIBXSMM
+        USE :: LIBXSMM, libxsmm_mmcall => libxsmm_dmmcall_abc
         !$ USE omp_lib
         IMPLICIT NONE
 
@@ -173,7 +173,7 @@
         !$OMP END PARALLEL
         CALL performance(duration, m, n, k, size2)
         CALL libxsmm_matdiff(diff, LIBXSMM_DATATYPE_F64, m, n,          &
-     &    libxsmm_ptr2(d), libxsmm_ptr2(c))
+     &    libxsmm_ptr(d), libxsmm_ptr(c))
         WRITE(*, "(1A,A,F10.1)") CHAR(9), "diff:      ", diff%l2_abs
         CALL libxsmm_matdiff_reduce(max_diff, diff)
 
@@ -191,7 +191,7 @@
           DO r = 1, repetitions
             !$OMP DO
             DO i = LBOUND(a, 3), UBOUND(a, 3)
-              CALL libxsmm_dmmcall(xmm, a(:,:,i), b(:,:,i), tmp)
+              CALL libxsmm_mmcall(xmm, a(:,:,i), b(:,:,i), tmp)
             END DO
           END DO
           !$OMP BARRIER
@@ -204,7 +204,7 @@
           !$OMP END PARALLEL
           CALL performance(duration, m, n, k, size2)
           CALL libxsmm_matdiff(diff, LIBXSMM_DATATYPE_F64, m, n,        &
-     &      libxsmm_ptr2(d), libxsmm_ptr2(c))
+     &      libxsmm_ptr(d), libxsmm_ptr(c))
           WRITE(*, "(1A,A,F10.1)") CHAR(9), "diff:      ", diff%l2_abs
           CALL libxsmm_matdiff_reduce(max_diff, diff)
         END IF

@@ -11,7 +11,7 @@
 !=======================================================================!
 
       PROGRAM stpm
-        USE :: LIBXSMM
+        USE :: LIBXSMM, libxsmm_mmcall => libxsmm_dmmcall_abc
         USE :: STREAM_UPDATE_KERNELS
 
         !$ USE omp_lib
@@ -316,15 +316,12 @@
             !$OMP DO
             DO i = LBOUND(a, 4), UBOUND(a, 4)
               ! [mm,m]x[m,n*k]->[mm,n*k]
-              CALL libxsmm_mmcall(xmm1,                                 &
-     &                C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(tm1))
+              CALL libxsmm_mmcall(xmm1, dx, a(1,1,1,i), tm1)
               DO j = 1, k ! [mm,n]x[n,nn]->[mm,nn]
-                CALL libxsmm_mmcall(xmm2,                               &
-     &                C_LOC(tm1(1,1,j)), C_LOC(dy), C_LOC(tm2(1,1,j)))
+                CALL libxsmm_mmcall(xmm2, tm1(1,1,j), dy, tm2(1,1,j))
               END DO
               ! [mm*nn,k]x[k,kk]->[mm*nn,kk]
-              CALL libxsmm_mmcall(xmm3,                                 &
-     &                C_LOC(tm2), C_LOC(dz), C_LOC(tm3(1,1,1)))
+              CALL libxsmm_mmcall(xmm3, tm2, dz, tm3(1,1,1))
               CALL stream_vector_copy(                                  &
      &                tm3(1,1,1), c(1,1,1,i), mm*nn*kk)
             END DO
