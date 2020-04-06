@@ -372,7 +372,7 @@
           !> Fill destination with zeros; treats dst in raw/binary fashion.
           SUBROUTINE libxsmm_xclear(dst, nbytes)                        &
      &    BIND(C, NAME="libxsmm_xclear_")
-            IMPORT C_PTR
+            IMPORT C_PTR, C_INT
             TYPE(C_PTR), INTENT(IN), VALUE :: dst
             INTEGER(C_INT), INTENT(IN) :: nbytes
           END SUBROUTINE
