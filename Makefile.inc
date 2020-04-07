@@ -925,7 +925,7 @@ abslibpath ?= $(call absliblpath,$1)
 
 libpath = $(strip $(if $1,$(shell $(FLUSH) $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
   | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
-  | xargs -I {} sh -c "ls -1 {} 2>/dev/null || ls -1 {}.* 2>/dev/null" | tail -n1)))
+  | xargs -I {} sh -c "ls -pd {} 2>/dev/null || ls -pd {}.* 2>/dev/null" | grep -v /$$ | tail -n1)))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
@@ -1026,7 +1026,7 @@ endif
 endif
 endif
 
-LIBGFORTRAN = $(call qapath,$(call libpath,$(FLD),$(SLDFLAGS),gfortran))
+LIBGFORTRAN = $(call libpath,$(FLD),$(SLDFLAGS),gfortran)
 LIBPTHREAD = $(call ldlib,$(LD),$(SLDFLAGS),pthread)
 LIBCPP = $(call ldlib,$(LD),$(SLDFLAGS),stdc++)
 LIBRT = $(call ldlib,$(LD),$(SLDFLAGS),rt)
