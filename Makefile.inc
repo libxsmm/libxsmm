@@ -64,6 +64,9 @@ endif
 
 # Command line utilities
 #PKGCFG ?= $(call which,pkg-config)
+ifneq (,$(call which,stdbuf))
+  FLUSH ?= stdbuf -o0 -e0
+endif
 CP ?= $(call which,cp)
 MV ?= $(call which,mv)
 MAKE ?= make
@@ -905,7 +908,7 @@ else # OSX
   ifneq (ld,$(call qndir,$(LD)))
     XLNKOPT = -Xlinker
   endif
-  #XLNKVERBOSE = -t
+  XLNKVERBOSE = -t
   linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) $(call quote,$2),$1))
   abslibrpath = $(strip $(if \
     $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$(NULL),$1), \
@@ -920,9 +923,9 @@ ifneq (0,$(ABSLIBS))
 endif
 abslibpath ?= $(call absliblpath,$1)
 
-libpath = $(strip $(if $1,$(shell $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
-    | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
-    | xargs -I {} sh -c "if [ -f '{}' ]; then echo '{}'; else ls -1 {}.* 2>/dev/null; fi" | tail -n1)))
+libpath = $(strip $(if $1,$(shell $(FLUSH) $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
+  | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
+  | xargs -I {} sh -c "ls -1 {} 2>/dev/null || ls -1 {}.* 2>/dev/null" | tail -n1)))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
@@ -1412,14 +1415,16 @@ else # GCC assumed
       OMPRT = omp
     else ifneq (0,$(GCC))
       OMPFLAG_FORCE = -fopenmp
-    else ifneq (Darwin,$(UNAME))
-      ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION_NUM)))"))
-        OMPFLAG_FORCE = -fopenmp
+    else ifeq (0,$(INTEL))
+      ifneq (Darwin,$(UNAME))
+        ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION_NUM)))"))
+          OMPFLAG_FORCE = -fopenmp
+          OMPRT = omp
+        endif
+      else # Darwin
+        OMPFLAG_FORCE = -Xpreprocessor -fopenmp
         OMPRT = omp
       endif
-    else # Darwin
-      OMPFLAG_FORCE = -Xpreprocessor -fopenmp
-      OMPRT = omp
     endif
   endif
   ifeq (,$(OMPFLAG_FORCE))
@@ -1856,7 +1861,9 @@ GLIBC ?= 0
 
 OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
 ifneq (,$(strip $(OMPLIBFILE)))
-  OMPLIB = $(call abslib,$(OMPLIBFILE))
+  OMPLIB ?= $(call abslib,$(OMPLIBFILE))
+else ifneq (0,$(INTEL))
+  OMPLIB ?= $(call ldlib,$(LD),$(SLDFLAGS),$(OMPRT))
 endif
 
 ifneq (,$(OMPFLAG_FORCE))
