@@ -4003,12 +4003,6 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_gp_reg_idx,
                                        const unsigned int      i_scale,
                                        const int               i_displacement ) {
-#if !defined(NDEBUG)
-  if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
-    return;
-  }
-#endif
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -4066,27 +4060,18 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     if ( l_gp8 || l_ix8 )
     {
         if (l_gp8) l_sse_preamble += 1;
-#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
-        LIBXSMM_ASSERT(0 == l_ix8);
-        /* coverity[dead_error_line] */
         if (l_ix8) l_sse_preamble += 2;
-#endif
         buf[i++] = (unsigned char)l_sse_preamble;
         ++l_place1;
     }
 
-#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
-    if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
-#endif
-    {
+    if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ){
         LIBXSMM_ASSERT(i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF);
         buf[i++] = 0x0f;
         buf[i++] = 0x18;
         buf[i++] = (unsigned char)(0x10 + l_instype + l_regbas0);
         if ( l_regbas0 == 4 ) buf[i++]=0x24;
-    }
-#if !defined(NDEBUG)
-    else { /* coverity[dead_error_begin] */
+    } else {
         const int l_regidx = i_gp_reg_idx % 8;
         int l_sca = 0;
         if (i_scale == 2) l_sca = 0x40;
@@ -4097,9 +4082,6 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         buf[i++] = (unsigned char)(0x14 + l_instype);
         buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
     }
-#else
-    LIBXSMM_UNUSED(i_scale);
-#endif
 
     if ( ( l_regbas0 == 5) && (i_displacement==0) )
     {
@@ -4118,15 +4100,26 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_base_name[4];
+    char l_gp_reg_idx_name[4];
     char l_instr_name[16];
 
     libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     libxsmm_get_x86_instr_name( i_prefetch_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name );
+      if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name );
+      } else {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx_name, 3 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%u)\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, l_gp_reg_idx_name, i_scale );
+      }
     } else {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s)\n", l_instr_name, i_displacement, l_gp_reg_base_name );
+      if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s)\n", l_instr_name, i_displacement, l_gp_reg_base_name );
+      } else {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx_name, 3 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%u)\n", l_instr_name, i_displacement, l_gp_reg_base_name, l_gp_reg_idx_name, i_scale );
+      }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
