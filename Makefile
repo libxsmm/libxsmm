@@ -345,12 +345,10 @@ OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB)))) $(BLDDIR)/mic/generator_common.o
-EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
-               $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
+EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
                $(BLDDIR)/intel64/libxsmm_ext_blocked_gemm.o \
                $(BLDDIR)/intel64/libxsmm_ext_gemm.o
-EXTOBJS_MIC  = $(BLDDIR)/mic/libxsmm_ext.o \
-               $(BLDDIR)/mic/libxsmm_ext_xcopy.o \
+EXTOBJS_MIC  = $(BLDDIR)/mic/libxsmm_ext_xcopy.o \
                $(BLDDIR)/mic/libxsmm_ext_blocked_gemm.o \
                $(BLDDIR)/mic/libxsmm_ext_gemm.o
 NOBLAS_HST   = $(BLDDIR)/intel64/libxsmm_noblas.o
@@ -749,14 +747,10 @@ $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, -mmic \
   $(DFLAGS) $(IFLAGS) $(EXTCFLAGS) $(CFLAGS))))
-$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, -mmic \
-  $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 endif
 endif
 
 # build rules that include target flags
-$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
-  $(CTARGET) $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
