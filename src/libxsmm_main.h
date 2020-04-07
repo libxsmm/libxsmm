@@ -341,7 +341,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int upd_ofw_rb;
   int upd_ofh_rb;
   int fm_lp_block; /* additional blocking for low precision datatypes of feature maps */
-  int upd_use_thread_fil;
   int upd_use_external_reduce;
   int filter_transposed;
   int nBImg;
@@ -415,14 +414,14 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_barrier* barrier;
 
   /* scratch */
+  void* scratch;
+  size_t scratch_size;
   void* scratch1;
   size_t scratch1_size;
   void* scratch2;
   size_t scratch2_size;
   void* scratch3;
   size_t scratch3_size;
-  void* scratch4;             /* TLS: used to reduce weights */
-  size_t scratch4_size;
   void* scratch5;             /* TLS: copy-buffer (if padding is needed), or [H][W][c-block]-tensor (generic FWD/BWD) */
   size_t max_scratch5_size;
   void* scratch6;             /* TLS: output_scratch (generic WU), or float-accumulation buffer */
@@ -432,12 +431,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t minibatch_scratch_size;
   size_t fwdbwd_scratch_size;
   int padding_flag;           /* Flag that dictates if we should apply padding in the input */
-  void* scratchIw;            /* Winograd input buffer */
-  size_t scratchIw_size;
-  void* scratchOw;            /* Winograd output buffer */
-  size_t scratchOw_size;
-  void* scratchVk;            /* Winograd weight buffer */
-  size_t scratchVk_size;
 
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd2;     /* ability to hoist forward GEMMs */
