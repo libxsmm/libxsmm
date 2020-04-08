@@ -446,9 +446,8 @@ ifeq (0,$(FORTRAN))
 endif
 
 # fixup FC-default given by MAKE
+FIXFC ?= 0
 ifneq (,$(strip $(FC)))
-ifeq (0,$(INTEL))
-  FIXFC ?= 0
   ifeq (,$(call which,$(FC)))
     FIXFC = 1
   else ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
@@ -458,16 +457,15 @@ ifeq (0,$(INTEL))
       FIXFC = 1
     endif
   endif
-  ifneq (0,$(FIXFC))
-    ifneq (,$(call qndir,$(call which,gfortran)))
-      MKL_FCRTL = gf
-      GFC = gfortran
-      FC = $(GFC)
-    else
-      FC = $(NULL)
-    endif
-  endif
 endif
+ifneq (0,$(FIXFC))
+  ifneq (,$(call qndir,$(call which,gfortran)))
+    MKL_FCRTL = gf
+    GFC = gfortran
+    FC = $(GFC)
+  else
+    FC = $(NULL)
+  endif
 endif
 
 ifneq (,$(strip $(FC)))
