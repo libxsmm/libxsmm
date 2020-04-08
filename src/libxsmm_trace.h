@@ -49,6 +49,7 @@ LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int si
 #   pragma GCC diagnostic push
 # endif
 # if defined(__clang__)
+#   pragma clang diagnostic ignored "-Wunknown-warning-option"
 #   pragma clang diagnostic ignored "-Wframe-address"
 # elif defined(__GNUC__) /* no version-check */
 #   pragma GCC diagnostic ignored "-Wpragmas"
