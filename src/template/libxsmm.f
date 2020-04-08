@@ -96,38 +96,26 @@
         !> Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
           ! Automatically select strategy (frontend).
-     &    LIBXSMM_PREFETCH_AUTO       = -1,                             &
+     &    LIBXSMM_PREFETCH_AUTO                     = -1,               &
           ! No prefetching and no prefetch function signature.
-     &    LIBXSMM_PREFETCH_NONE       = 0,                              &
+     &    LIBXSMM_PREFETCH_NONE                     = 0,                &
           ! Only function prefetch signature.
-     &    LIBXSMM_PREFETCH_SIGONLY    = 1,                              &
+     &    LIBXSMM_PREFETCH_SIGONLY                  = 1,                &
           ! Prefetch PA using accesses to A.
-     &    LIBXSMM_PREFETCH_AL2        = 2,                              &
-          ! Prefetch PA (aggressive).
-     &    LIBXSMM_PREFETCH_AL2_JPST   = 4,                              &
+     &    LIBXSMM_GEMM_PREFETCH_AL2                 = 2,                &
           ! Prefetch PB using accesses to C.
-     &    LIBXSMM_PREFETCH_BL2_VIA_C  = 8,                              &
+     &    LIBXSMM_GEMM_PREFETCH_BL2_VIA_C           = 4,                &
           ! Prefetch A ahead.
-     &    LIBXSMM_PREFETCH_AL2_AHEAD  = 16,                             &
+     &    LIBXSMM_GEMM_PREFETCH_AL2_AHEAD           = 8,                &
           ! Composed prefetch strategies.
-     &    LIBXSMM_PREFETCH_AL2BL2_VIA_C = IOR(                          &
-     &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2),        &
-     &    LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST = IOR(                     &
-     &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2_JPST),   &
-     &    LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = IOR(                    &
-     &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2_AHEAD),  &
-          ! Prefetch PA/PB/PC in L1 (using accesses to A, B, C)
-     &    LIBXSMM_PREFETCH_AL1        = 32,                             &
-     &    LIBXSMM_PREFETCH_BL1        = 64,                             &
-     &    LIBXSMM_PREFETCH_CL1        = 128,                            &
-     &    LIBXSMM_PREFETCH_AL1_BL1 = IOR(                               &
-     &        LIBXSMM_PREFETCH_AL1, LIBXSMM_PREFETCH_BL1),              &
-     &    LIBXSMM_PREFETCH_BL1_CL1 = IOR(                               &
-     &        LIBXSMM_PREFETCH_BL1, LIBXSMM_PREFETCH_CL1),              &
-     &    LIBXSMM_PREFETCH_AL1_CL1 = IOR(                               &
-     &        LIBXSMM_PREFETCH_AL1, LIBXSMM_PREFETCH_CL1),              &
-     &    LIBXSMM_PREFETCH_AL1_BL1_CL1 = IOR(                           &
-     &        LIBXSMM_PREFETCH_AL1_BL1, LIBXSMM_PREFETCH_CL1)
+     &    LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C        = IOR(              &
+     &        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C,                          &
+     &        LIBXSMM_GEMM_PREFETCH_AL2),                               &
+     &    LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD  = IOR(              &
+     &        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C,                          &
+     &        LIBXSMM_GEMM_PREFETCH_AL2_AHEAD),                         &
+          ! Current B into L1.
+     &    LIBXSMM_GEMM_PREFETCH_BL1                 = 16
 
         !> Enumerates the available target architectures and instruction
         !> set extensions as returned by libxsmm_get_target_archid().
