@@ -270,7 +270,7 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2_AHEAD,
   /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C (Eigen library). */
   LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C         = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C,
-  /* current B into L1 */
+  /** Current B into L1. */
   LIBXSMM_GEMM_PREFETCH_BL1                = 16
 } libxsmm_gemm_prefetch_type;
 
