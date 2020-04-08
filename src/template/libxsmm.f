@@ -1218,12 +1218,12 @@
 
         !> Register user-defined key-value; value can be queried (libxsmm_xdispatch).
         !> Since the key-type is unknown to LIBXSMM, the key must be binary reproducible,
-        !> i.e., the key must be initially zero-filled (libxsmm_xclear) followed by an
-        !> element-wise initialization (some compilers leave padded data uninitialized).
+        !> i.e., if it is a structured type (padded data may be uninitialized), it must
+        !> be initially zero-filled (libxsmm_xclear) followed by an element-wise setup.
         !> The size of the key is limited (see documentation). The given value is copied
-        !> by LIBXSMM and may be initialized at registration-time or when received per
-        !> libxsmm_xdispatch. Registered data is released at program termination but can
-        !> be also released if needed (libxsmm_xrelease).
+        !> by LIBXSMM and may be initialized at registration-time or whenever queried.
+        !> Registered data is released at program termination but can be also released
+        !> if needed (libxsmm_xrelease), .e.g., for larger value for the same key.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
         FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
           TYPE(C_PTR), INTENT(IN), VALUE :: key
@@ -1246,9 +1246,6 @@
         END FUNCTION
 
         !> Query user-defined value from LIBXSMM's code registry.
-        !> The value's buffer is owned and managed by LIBXSMM
-        !> (can be libxsmm_xrelease'd, .e.g., if larger value
-        !> for the same key must be stored).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xdispatch
         FUNCTION libxsmm_xdispatch(key, keysize)
           TYPE(C_PTR), INTENT(IN), VALUE :: key

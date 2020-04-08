@@ -111,21 +111,17 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
 /**
- * Register user-defined key-value pair; the value can then be queried per libxsmm_xdispatch.
- * Since the key-type is unknown to LIBXSMM, the key must be binary reproducible. Structured
- * data may be padded (compiler/platform-specific), and key-structure initialization shall be:
- * memset(&mykey, 0, sizeof(mykey)) followed by an element-wise initialization (some compilers
- * leave padded data uninitialized which breaks binary reproducible keys). The size of the key
- * is limited to LIBXSMM_DESCRIPTOR_MAXSIZE. The given value is copied by LIBXSMM and may be
- * initialized at registration-time or when received per libxsmm_xdispatch. Registered data
- * is released at program termination but can be also released if needed (libxsmm_xrelease).
+ * Register user-defined key-value.
+ * Since the key-type is unknown to LIBXSMM, the key must be binary reproducible,
+ * i.e., if it is a structured type (padded data may be uninitialized), it must
+ * be initially zero-filled (memset) followed by an element-wise initialization.
+ * The size of the key is limited (see documentation). The given value is copied
+ * by LIBXSMM and may be initialized at registration-time or whenever queried.
+ * Registered data is released at program termination but can be also released
+ * if needed (libxsmm_xrelease), .e.g., for larger value for the same key.
  */
 LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init);
-/**
- * Query user-defined value from LIBXSMM's code registry. The value's buffer is owned and
- * managed by LIBXSMM (can be libxsmm_xrelease'd, .e.g., if larger value for the same key
- * must be stored).
- */
+/** Query user-defined value from LIBXSMM's code registry. */
 LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
 /** Remove key-value pair from code registry and release memory. */
 LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size);
