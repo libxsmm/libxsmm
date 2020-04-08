@@ -91,6 +91,7 @@
 #define LIBXSMM_EXPAND(...) __VA_ARGS__
 #define LIBXSMM_ELIDE(...)
 
+/** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
 #define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
 #define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
 #define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) (int) \
@@ -341,7 +342,7 @@
 #     define LIBXSMM_OPENMP_SIMD
 #   endif
 # elif defined(__GNUC__)
-#   if LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+#   if LIBXSMM_VERSION2(4, 9) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
 #     define LIBXSMM_OPENMP_SIMD
 #   endif
 # else
@@ -404,7 +405,7 @@
 # define LIBXSMM_PRAGMA_UNROLL
 #endif
 #if !defined(LIBXSMM_PRAGMA_UNROLL_N)
-# if defined(__GNUC__) && (LIBXSMM_VERSION3(8, 3, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+# if defined(__GNUC__) && (LIBXSMM_VERSION2(8, 3) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__))
 #   define LIBXSMM_PRAGMA_UNROLL_N(N) LIBXSMM_PRAGMA(GCC unroll N)
 # else
 #   define LIBXSMM_PRAGMA_UNROLL_N(N)
@@ -501,7 +502,7 @@
 # endif
 #elif defined(_MSC_VER)
 # define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
-#elif defined(__GNUC__) && !defined(_CRAYC) && (LIBXSMM_VERSION3(4, 5, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+#elif defined(__GNUC__) && !defined(_CRAYC) && (LIBXSMM_VERSION2(4, 5) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__))
 # define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0)
 #else
 # define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
@@ -815,7 +816,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   define _Float128 __float128
 # endif
 # if !defined(LIBXSMM_GLIBC_FPTYPES) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
-  && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) || \
+  && (LIBXSMM_VERSION2(7, 0) > LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) || \
      (defined(LIBXSMM_INTEL_COMPILER) && (1802 >= LIBXSMM_INTEL_COMPILER)))
 #   define LIBXSMM_GLIBC_FPTYPES
 # endif
