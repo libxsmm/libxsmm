@@ -13,6 +13,12 @@
 
 #include "libxsmm_memory.h"
 
+/* include tensorflow/core/public/version.h prior to LIBXSMM otherwise the current TensorFlow API is assumed */
+#if !defined(LIBXSMM_TF12) && (!defined(TF_VERSION_STRING) || \
+  LIBXSMM_VERSION2(1, 12) <= LIBXSMM_VERSION2(TF_MAJOR_VERSION, TF_MINOR_VERSION))
+# define LIBXSMM_TF12 /* TF_PATCH_VERSION does not matter */
+#endif
+
 /** Can be used with libxsmm_[get|set]_scratch_limit. */
 #define LIBXSMM_SCRATCH_UNLIMITED ((size_t)LIBXSMM_UNLIMITED)
 #define LIBXSMM_SCRATCH_DEFAULT 0
@@ -253,11 +259,11 @@ struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
 /** Forward-declared types/functions used to implement libxsmm_tf_allocator. */
 namespace tensorflow {
   class Allocator;
-#if defined(TF_VERSION_STRING) && LIBXSMM_VERSION3(1, 12, 0) > LIBXSMM_VERSION3(TF_MAJOR_VERSION, TF_MINOR_VERSION, TF_PATCH_VERSION)
-  Allocator* cpu_allocator();
-#else /* include tensorflow/core/public/version.h prior to LIBXSMM otherwise the current TensorFlow API is assumed */
+#if defined(LIBXSMM_TF12)
   class DeviceBase; int DeviceNumaNode(const DeviceBase* /*device*/);
   Allocator* cpu_allocator(int /*numa_node*/);
+#else
+  Allocator* cpu_allocator();
 #endif
 }
 
@@ -293,19 +299,19 @@ public:
 
   /** Global form of allocating memory (malloc signature). */
   static void* malloc(size_t size) {
-#if defined(TF_VERSION_STRING) && LIBXSMM_VERSION3(1, 12, 0) > LIBXSMM_VERSION3(TF_MAJOR_VERSION, TF_MINOR_VERSION, TF_PATCH_VERSION)
-    return libxsmm_tf_allocator::allocate(tensorflow::cpu_allocator(), size);
-#else /* include tensorflow/core/public/version.h prior to LIBXSMM otherwise the current TensorFlow API is assumed */
+#if defined(LIBXSMM_TF12)
     return libxsmm_tf_allocator::allocate(tensorflow::cpu_allocator(-1/*kNUMANoAffinity*/), size);
+#else
+    return libxsmm_tf_allocator::allocate(tensorflow::cpu_allocator(), size);
 #endif
   }
 
   /** Global form of deallocating memory (free signature). */
   static void free(void* buffer) {
-#if defined(TF_VERSION_STRING) && LIBXSMM_VERSION3(1, 12, 0) > LIBXSMM_VERSION3(TF_MAJOR_VERSION, TF_MINOR_VERSION, TF_PATCH_VERSION)
-    libxsmm_tf_allocator::deallocate(tensorflow::cpu_allocator(), buffer);
-#else /* include tensorflow/core/public/version.h prior to LIBXSMM otherwise the current TensorFlow API is assumed */
+#if defined(LIBXSMM_TF12)
     libxsmm_tf_allocator::deallocate(tensorflow::cpu_allocator(-1/*kNUMANoAffinity*/), buffer);
+#else
+    libxsmm_tf_allocator::deallocate(tensorflow::cpu_allocator(), buffer);
 #endif
   }
 
@@ -315,7 +321,7 @@ public:
     context_type *const tf_context = static_cast<context_type*>(context);
     allocator_ptr allocator = NULL;
     if (NULL != tf_context) {
-#if defined(TF_VERSION_STRING) && LIBXSMM_VERSION3(1, 12, 0) > LIBXSMM_VERSION3(TF_MAJOR_VERSION, TF_MINOR_VERSION, TF_PATCH_VERSION)
+#if !defined(LIBXSMM_TF12)
       if (NULL != tf_context->device()) {
         if (0 < tf_context->num_outputs()) {
           allocator = tf_context->device()->GetStepAllocator(
@@ -342,7 +348,10 @@ public:
     context_type *const tf_context = static_cast<context_type*>(context);
     allocator_ptr allocator = NULL;
     if (NULL != tf_context) {
-#if defined(TF_VERSION_STRING) && LIBXSMM_VERSION3(1, 12, 0) > LIBXSMM_VERSION3(TF_MAJOR_VERSION, TF_MINOR_VERSION, TF_PATCH_VERSION)
+#if defined(LIBXSMM_TF12)
+      const int numa_node = DeviceNumaNode(tf_context->device());
+      allocator = tensorflow::cpu_allocator(numa_node);
+#else
       if (NULL != tf_context->device()) {
         if (0 < tf_context->num_outputs()) {
           allocator = tf_context->device()->GetStepAllocator(
@@ -355,9 +364,6 @@ public:
             tf_context->resource_manager());
         }
       }
-#else /* include tensorflow/core/public/version.h prior to LIBXSMM otherwise the current TensorFlow API is assumed */
-      const int numa_node = DeviceNumaNode(tf_context->device());
-      allocator = tensorflow::cpu_allocator(numa_node);
 #endif
     }
     libxsmm_tf_allocator::deallocate(allocator, buffer);
