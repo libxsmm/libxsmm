@@ -1307,9 +1307,9 @@ else # GCC assumed
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
-                 -Wcharacter-truncation -Wline-truncation \
+                 -Wimplicit-interface -Wimplicit-procedure \
                  -Wconversion -Wintrinsics-std \
-                 -Wimplicit-interface -Wimplicit-procedure
+                 -Wcharacter-truncation
     ifneq (0,$(shell echo "$$((40200<=$(CC_VERSION_NUM)))"))
       CPEDANTIC += -Wno-overlength-strings
     else ifneq (0,$(CLANG))
@@ -1322,7 +1322,8 @@ else # GCC assumed
     ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION_NUM)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
                    -Wrealloc-lhs -Wrealloc-lhs-all \
-                   -Wreal-q-constant -Wconversion-extra
+                   -Wreal-q-constant -Wconversion-extra \
+                   -Wline-truncation
     endif
     endif
     ifneq (0,$(UNUSED))

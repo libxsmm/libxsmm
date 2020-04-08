@@ -1887,7 +1887,7 @@
               INTEGER(C_INT), INTENT(IN) :: n
             END SUBROUTINE
           END INTERFACE
-          libxsmm_shuffle = 0 ! avoids warning (older CRAY FTN)
+          libxsmm_shuffle = INT(0, KIND=C_LONG_LONG) ! avoid warning (older CRAY)
           CALL internal_shuffle(libxsmm_shuffle, n)
         END FUNCTION
 
@@ -1951,7 +1951,7 @@
      &        libxsmm_ptr(a), libxsmm_ptr(b),                           &
      &        SIZE(a, KIND=C_LONG_LONG))
           ELSE
-            libxsmm_diff_char = .TRUE.
+            libxsmm_diff_char = LOGICAL(.TRUE., KIND=C_BOOL)
           END IF
         END FUNCTION
 
@@ -1967,7 +1967,7 @@
      &        libxsmm_ptr(a), libxsmm_ptr(b),                           &
      &        SIZE(a, KIND=C_LONG_LONG))
           ELSE
-            libxsmm_diff_i8 = .TRUE.
+            libxsmm_diff_i8 = LOGICAL(.TRUE., KIND=C_BOOL)
           END IF
         END FUNCTION
 
@@ -1981,9 +1981,9 @@
      &    THEN
             CALL libxsmm_xdiff(libxsmm_diff_i32,                        &
      &        libxsmm_ptr(a), libxsmm_ptr(b),                           &
-     &        SIZE(a, KIND=C_LONG_LONG) * 4)
+     &        SIZE(a, KIND=C_LONG_LONG) * INT(4, KIND=C_LONG_LONG))
           ELSE
-            libxsmm_diff_i32 = .TRUE.
+            libxsmm_diff_i32 = LOGICAL(.TRUE., KIND=C_BOOL)
           END IF
         END FUNCTION
 
@@ -1997,9 +1997,9 @@
      &    THEN
             CALL libxsmm_xdiff(libxsmm_diff_i64,                        &
      &        libxsmm_ptr(a), libxsmm_ptr(b),                           &
-     &        SIZE(a, KIND=C_LONG_LONG) * 8)
+     &        SIZE(a, KIND=C_LONG_LONG) * INT(8, KIND=C_LONG_LONG))
           ELSE
-            libxsmm_diff_i64 = .TRUE.
+            libxsmm_diff_i64 = LOGICAL(.TRUE., KIND=C_BOOL)
           END IF
         END FUNCTION
       END MODULE
