@@ -944,21 +944,21 @@
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_dmm
         FUNCTION libxsmm_ptr_dmm(a)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN), TARGET :: a(*)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN), TARGET :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_dmm
-          libxsmm_ptr_dmm = C_LOC(a)
+          libxsmm_ptr_dmm = C_LOC(a(LBOUND(a,1))%handle)
         END FUNCTION
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_smm
         FUNCTION libxsmm_ptr_smm(a)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN), TARGET :: a(*)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN), TARGET :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_smm
-          libxsmm_ptr_smm = C_LOC(a)
+          libxsmm_ptr_smm = C_LOC(a(LBOUND(a,1))%handle)
         END FUNCTION
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_wimm
         FUNCTION libxsmm_ptr_wimm(a)
-          TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN), TARGET :: a(*)
+          TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN), TARGET :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_wimm
-          libxsmm_ptr_wimm = C_LOC(a)
+          libxsmm_ptr_wimm = C_LOC(a(LBOUND(a,1))%handle)
         END FUNCTION
 
         !> Deallocate JIT'ted code created by libxsmm_create routines. To
