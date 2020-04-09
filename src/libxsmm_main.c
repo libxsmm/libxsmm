@@ -400,7 +400,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(
   const libxsmm_blasint lda = m, ldb = k, ldc = m;
   /*const*/ int precondition = LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k) && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc);
   if (precondition) {
-    const size_t size = (LIBXSMM_HASH_SIZE)-sizeof(libxsmm_descriptor_kind);
+    const size_t size = (LIBXSMM_HASH_SIZE) - sizeof(libxsmm_descriptor_kind);
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_dinit(&blob, precision,
       m, n, k, lda, ldb, ldc, LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_FLAGS, INTERNAL_PREFETCH);
