@@ -72,13 +72,13 @@ else
 .PHONY: $(OUTDIR)/$(OUTNAME)
 endif
 
-$(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
+$(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make $(DEPDIR)/include/libxsmm_source.h
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/dispatched: $(BLDDIR)/dispatched-cpp.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/inlined: $(BLDDIR)/inlined-cpp.o $(OUTDIR)/.make $(LIBDEP)
+$(OUTDIR)/inlined: $(BLDDIR)/inlined-cpp.o $(OUTDIR)/.make $(DEPDIR)/include/libxsmm_source.h
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)

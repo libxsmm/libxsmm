@@ -68,7 +68,7 @@ else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
 endif
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(LIBDEP) $(EXTDEP)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(DEPDIR)/include/libxsmm_source.h
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/kernel: $(OUTDIR)/.make $(BLDDIR)/kernel-c.o $(LIBDEP)

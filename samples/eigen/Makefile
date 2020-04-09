@@ -91,11 +91,11 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 # no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
-$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_smm-cpp.o #$(LIBDEP) $(EXTDEP)
+$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_smm-cpp.o $(DEPDIR)/include/libxsmm_source.h
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_smm-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 # no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
-$(OUTDIR)/$(OUTNAME)_tensor: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_tensor-cpp.o #$(LIBDEP) $(EXTDEP)
+$(OUTDIR)/$(OUTNAME)_tensor: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_tensor-cpp.o $(DEPDIR)/include/libxsmm_source.h
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_tensor-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc

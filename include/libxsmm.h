@@ -609,9 +609,6 @@ LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
 
 #if !defined(LIBXSMM_DEFAULT_CONFIG) && !defined(LIBXSMM_SOURCE_H)
 
-LIBXSMM_API void libxsmm_smm_23_23_23(const float* a, const float* b, float* c, ...);
-LIBXSMM_API void libxsmm_dmm_23_23_23(const double* a, const double* b, double* c, ...);
-
 #endif /*!defined(LIBXSMM_DEFAULT_CONFIG)*/
 
 #if defined(__cplusplus)
