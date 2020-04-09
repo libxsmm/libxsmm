@@ -115,6 +115,7 @@
     <ClInclude Include="..\src\perf_jitdump.h" />
     <ClInclude Include="..\src\template\libxsmm.h" />
     <ClInclude Include="..\src\template\libxsmm_config.h" />
+    <ClInclude Include="..\src\template\libxsmm_version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
@@ -1107,24 +1108,30 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">
     <TargetName>$(ProjectName)-$(Configuration)</TargetName>
     <ProfileDirectory>build\$(Platform)-$(Configuration)\$(ProjectName)\</ProfileDirectory>
-    <CustomBuildBeforeTargets>BuildGenerateSources</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">
     <TargetName>$(ProjectName)-$(Configuration)</TargetName>
     <ProfileDirectory>build\$(Platform)-$(Configuration)\$(ProjectName)\</ProfileDirectory>
-    <CustomBuildBeforeTargets>BuildGenerateSources</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
-    <CustomBuildBeforeTargets>BuildGenerateSources</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
-    <CustomBuildBeforeTargets>BuildGenerateSources</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">
-    <CustomBuildBeforeTargets>BuildGenerateSources</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
-    <CustomBuildBeforeTargets>BuildGenerateSources</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
     <ClCompile>
@@ -1166,13 +1173,8 @@
       <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
-    <CustomBuildStep>
-      <Command>xcopy /D /Y ..\src\template\libxsmm*.h ..\include</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>..\include\libxsmm.h;..\include\libxsmm_config.h</Outputs>
-      <Message>Configuring LIBXSMM...</Message>
-    </CustomBuildStep>
+    <CustomBuildStep />
+    <CustomBuildStep />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">
     <ClCompile>
@@ -1216,13 +1218,8 @@
       <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
-    <CustomBuildStep>
-      <Command>xcopy /D /Y ..\src\template\libxsmm*.h ..\include</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>..\include\libxsmm.h;..\include\libxsmm_config.h</Outputs>
-      <Message>Configuring LIBXSMM...</Message>
-    </CustomBuildStep>
+    <CustomBuildStep />
+    <CustomBuildStep />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
     <Midl>
@@ -1266,13 +1263,8 @@
       <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
-    <CustomBuildStep>
-      <Command>xcopy /D /Y ..\src\template\libxsmm*.h ..\include</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>..\include\libxsmm.h;..\include\libxsmm_config.h</Outputs>
-      <Message>Configuring LIBXSMM...</Message>
-    </CustomBuildStep>
+    <CustomBuildStep />
+    <CustomBuildStep />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">
     <Midl>
@@ -1318,13 +1310,8 @@
       <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
-    <CustomBuildStep>
-      <Command>xcopy /D /Y ..\src\template\libxsmm*.h ..\include</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>..\include\libxsmm.h;..\include\libxsmm_config.h</Outputs>
-      <Message>Configuring LIBXSMM...</Message>
-    </CustomBuildStep>
+    <CustomBuildStep />
+    <CustomBuildStep />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">
     <ClCompile>
@@ -1361,13 +1348,8 @@
       <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
-    <CustomBuildStep>
-      <Command>xcopy /D /Y ..\src\template\libxsmm*.h ..\include</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>..\include\libxsmm.h;..\include\libxsmm_config.h</Outputs>
-      <Message>Configuring LIBXSMM...</Message>
-    </CustomBuildStep>
+    <CustomBuildStep />
+    <CustomBuildStep />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
     <Midl>
@@ -1406,13 +1388,8 @@
       <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
-    <CustomBuildStep>
-      <Command>xcopy /D /Y ..\src\template\libxsmm*.h ..\include</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>..\include\libxsmm.h;..\include\libxsmm_config.h</Outputs>
-      <Message>Configuring LIBXSMM...</Message>
-    </CustomBuildStep>
+    <CustomBuildStep />
+    <CustomBuildStep />
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

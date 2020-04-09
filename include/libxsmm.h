@@ -608,7 +608,10 @@ LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
 #if !defined(LIBXSMM_DEFAULT_CONFIG) && !defined(LIBXSMM_SOURCE_H)
-$MNK_INTERFACE_LIST
+
+LIBXSMM_API void libxsmm_smm_23_23_23(const float* a, const float* b, float* c, ...);
+LIBXSMM_API void libxsmm_dmm_23_23_23(const double* a, const double* b, double* c, ...);
+
 #endif /*!defined(LIBXSMM_DEFAULT_CONFIG)*/
 
 #if defined(__cplusplus)
@@ -923,4 +926,5 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
 
 #endif /*__cplusplus*/
 #endif /*LIBXSMM_H*/
+
 

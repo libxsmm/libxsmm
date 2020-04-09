@@ -583,7 +583,7 @@ endif
 #endif
 
 .PHONY: config
-config: $(INCDIR)/libxsmm_config.h
+config: $(INCDIR)/libxsmm_config.h $(INCDIR)/libxsmm_version.h
 $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(DIRSTATE)/.state $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h
 	$(information)
 	$(info --- LIBXSMM build log)
@@ -598,13 +598,22 @@ ifneq (,$(PYTHON))
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) > $@
 endif
+$(INCDIR)/libxsmm_version.h: $(INCDIR)/.make $(DIRSTATE)/.state $(ROOTDIR)/$(SRCDIR)/template/libxsmm_version.h
+ifneq (,$(PYTHON))
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_version.h > $@
+else
+.PHONY: $(INCDIR)/libxsmm_version.h
+endif
+
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
 ifneq (,$(PYTHON))
 $(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
-                     $(INCDIR)/libxsmm_config.h $(HEADERS)
+                     $(INCDIR)/libxsmm_version.h \
+                     $(INCDIR)/libxsmm_config.h \
+                     $(HEADERS)
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
 else
@@ -621,6 +630,7 @@ fheader: $(INCDIR)/libxsmm.f
 ifneq (,$(PYTHON))
 $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
+                     $(INCDIR)/libxsmm_version.h \
                      $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
@@ -1463,6 +1473,7 @@ endif
 	@rm -f $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh
 	@rm -f $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh
 	@rm -f $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh
+	@rm -f $(INCDIR)/libxsmm_version.h
 	@rm -f $(INCDIR)/libxsmm_config.h
 	@rm -f $(INCDIR)/libxsmm.modmic
 	@rm -f $(INCDIR)/libxsmm.mod

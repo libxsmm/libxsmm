@@ -4,10 +4,8 @@ libxsmm*-*
 libxsmm*_*
 opentuner.db
 bin/libxsmm_generator
-include/libxsmm_config.h
-include/libxsmm_source.h
+include/libxsmm_version.h
 include/libxsmm.f
-include/libxsmm.h
 build
 lib/libxsmm*
 lib/module
