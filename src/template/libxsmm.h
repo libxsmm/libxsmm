@@ -356,8 +356,8 @@ LIBXSMM_API libxsmm_sububmmfunction_reducebatch_strd libxsmm_sububmmdispatch_red
 /**
  * Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch/omp.
  * The kind of matrix operands (a, b, c) depend on index_stride:
- * index_stride==0: pointers to pointers of elements e.g., double** for the C matrices.
- * index_stride!=0: pointer to elements e.g., const double* for the A and B matrices.
+ * index_stride==0: pointers to pointers of elements, e.g., double** for the C matrices.
+ * index_stride!=0: pointer to elements, e.g., const double* for the A and B matrices.
  */
 LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
@@ -440,7 +440,7 @@ LIBXSMM_APIEXT void libxsmm_sgemm_batch_omp(const char transa_array[], const cha
  * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
  * Pointer arguments are used to filter intercepted GEMM calls such that
  * non-NULL values match. Otherwise (NULL) the respective argument is
- * considered a "free value" i.e., every value can match; libxsmmext required.
+ * considered a "free value", i.e., every value can match; libxsmmext required.
  */
 LIBXSMM_APIEXT void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const int* flags,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,

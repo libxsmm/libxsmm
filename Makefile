@@ -32,10 +32,10 @@ DFLAGS = -DLIBXSMM_BUILD
 # A value of zero (0) populates a default threshold
 THRESHOLD ?= 0
 
-# Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" generates (1,1,1), (2,2,2),
-# and (3,3,3). This way a heterogeneous set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2),
+# Generates M,N,K-combinations for each comma separated group, e.g., "1, 2, 3" generates (1,1,1), (2,2,2),
+# and (3,3,3). This way a heterogeneous set can be generated, e.g., "1 2, 3" generates (1,1,1), (1,1,2),
 # (1,2,1), (1,2,2), (2,1,1), (2,1,2) (2,2,1) out of the first group, and a (3,3,3) for the second group
-# To generate a series of square matrices one can specify e.g., make MNK=$(echo $(seq -s, 1 5))
+# To generate a series of square matrices one can specify, e.g., make MNK=$(echo $(seq -s, 1 5))
 # Alternative to MNK, index sets can be specified separately according to a loop nest relationship
 # (M(N(K))) using M, N, and K separately. Please consult the documentation for further details.
 MNK ?= 0

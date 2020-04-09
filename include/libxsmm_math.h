@@ -46,7 +46,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
  * The very first (initial) output should be zeroed (libxsmm_matdiff_clear).
  */
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input);
-/** Clears the given info-structure e.g., for the initial reduction-value (libxsmm_matdiff_reduce). */
+/** Clears the given info-structure, e.g., for the initial reduction-value (libxsmm_matdiff_reduce). */
 LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info);
 
 /** Greatest common divisor (corner case: the GCD of 0 and 0 is 1). */
@@ -65,7 +65,7 @@ LIBXSMM_API size_t libxsmm_shuffle(unsigned int n);
 
 /**
  * Divides the product into prime factors and selects factors such that the new product is within
- * the given limit (0/1-Knapsack problem) e.g., product=12=2*2*3 and limit=6 then result=2*3=6.
+ * the given limit (0/1-Knapsack problem), e.g., product=12=2*2*3 and limit=6 then result=2*3=6.
  * The limit is at least reached or exceeded with the minimal possible product (is_lower=true).
  */
 LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned int limit, int is_lower);

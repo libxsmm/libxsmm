@@ -114,11 +114,11 @@ int main(int argc, char* argv[])
        * Expression templates attempt to delay evaluation until the sequence point
        * is reached, or an "expression object" goes out of scope and hence must
        * materialize the effect. Ideally, a complex expression is mapped to the
-       * best possible implementation e.g., c = alpha * a * b + beta * c may be
+       * best possible implementation, e.g., c = alpha * a * b + beta * c may be
        * mapped to GEMM or definitely omits alpha*a in case of alpha=1, or similar
        * for special cases for beta=0 and beta=1.
        * However, to not rely on an ideal transformation a *manually specialized*
-       * expression is written for e.g., alpha=1 and beta=1 (c += a * b).
+       * expression is written for, e.g., alpha=1 and beta=1 (c += a * b).
        * NOTE: changing alpha or beta from above may not have an effect
        *       depending on what is selected below (expression).
        */

@@ -415,8 +415,10 @@
 
           !> Process a series of MMs (batch). See also libxsmm_gemm_batch_omp.
           !> The kind of matrix operands (a, b, c) depend on index_stride:
-          !> index_stride==0: pointers to pointers of elements e.g., double** for the C matrices.
-          !> index_stride!=0: pointer to elements e.g., const double* for the A and B matrices.
+          !> index_stride==0: pointers to pointers of elements, e.g.,
+          !> double** for the C matrices.
+          !> index_stride!=0: pointer to elements, e.g.,
+          !> const double* for the A and B matrices.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: iprec, oprec
           !> REAL(4|8)    :: alpha, beta
@@ -433,7 +435,8 @@
             IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             !> Determines index-base (usually 0, 1 for one-based indexes).
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
-            !> Stride (measured in Bytes) used to walk stride_*. In Fortran: index_stride!=0.
+            !> Stride (measured in Bytes) used to walk stride_*.
+            !> In Fortran: index_stride!=0.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
             !> Number of SMMs. If the size is given as a negative value,
             !> then internal synchronization is omitted.
@@ -443,7 +446,8 @@
             CHARACTER(C_CHAR),  INTENT(IN) :: transa, transb
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-            !> Arrays of indexes determining the position of a, b, and c operands.
+            !> Arrays of indexes determining the position of
+            !> a, b, and c operands.
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
@@ -508,10 +512,11 @@
             INTEGER(C_INT), INTENT(IN) :: iprec, oprec
           END SUBROUTINE
 
-          !> This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
+          !> This function is a no-op unless LIBXSMM is built to intercept GEMM.
           !> Pointer arguments are used to filter intercepted GEMM calls such that
           !> non-NULL values match. Otherwise (NULL) the respective argument is
-          !> considered a "free value" i.e., every value can match; libxsmmext required.
+          !> considered a "free value", i.e., every value can match;
+          !> libxsmmext required.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: gemm_precision, flags
           !> INTEGER(4|8) :: m, n, k, lda, ldb, ldc
@@ -542,7 +547,7 @@
             TYPE(LIBXSMM_MATDIFF_INFO), INTENT(IN)    :: input
           END SUBROUTINE
 
-          !> Clears the given info-structure e.g., for the initial
+          !> Clears the given info-structure, e.g., for the initial
           !> reduction-value (libxsmm_matdiff_reduce).
           !> Implicit FORTRAN 77 interface: available.
           PURE SUBROUTINE libxsmm_matdiff_clear(info) BIND(C)

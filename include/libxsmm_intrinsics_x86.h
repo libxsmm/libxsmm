@@ -222,7 +222,7 @@
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #   elif defined(_CRAYC) && defined(__GNUC__)
-      /* TODO: version check e.g., LIBXSMM_VERSION2(11, 5) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR) */
+      /* TODO: version check, e.g., LIBXSMM_VERSION2(11, 5) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR) */
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
