@@ -199,7 +199,7 @@ EXCLUDE_STATE = \
 DIRSTATE = $(OUTDIR)/..
 
 ifeq (,$(M)$(N)$(K))
-ifneq (,$(filter 0,$(MNK) 0))
+ifeq (,$(filter-out 0,$(MNK)))
   EXCLUDE_STATE += PRECISION MNK M N K
 endif
 endif
