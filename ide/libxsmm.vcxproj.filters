@@ -282,6 +282,9 @@
     <ClInclude Include="..\src\libxsmm_dnn_softmaxloss_forward.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\template\libxsmm_version.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
