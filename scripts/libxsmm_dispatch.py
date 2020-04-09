@@ -44,19 +44,15 @@ if __name__ == "__main__":
             print(" */")
             print("#if (0 != LIBXSMM_JIT) && !defined(__MIC__)")
             print(
-                "/* check if target arch. permits execution"
-                " (arch. may be overridden) */"
-            )
-            print(
-                "if (LIBXSMM_STATIC_TARGET_ARCH" " <= libxsmm_target_archid &&"
-            )
-            print(
-                "   (LIBXSMM_X86_SSE3 > libxsmm_target_archid "
+                "if (LIBXSMM_X86_SSE3 > libxsmm_target_archid "
                 "/* JIT code gen. is not available */"
             )
             print(
-                "   /* condition allows to avoid JIT "
+                "   /* conditions allows to avoid JIT "
                 "(if static code is good enough) */"
+            )
+            print(
+                "   || (LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid)"
             )
             print(
                 "   || (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid &&"
@@ -65,7 +61,7 @@ if __name__ == "__main__":
                 "       libxsmm_cpuid_vlen32(LIBXSMM_STATIC_TARGET_ARCH) =="
             )
             print(
-                "       libxsmm_cpuid_vlen32(libxsmm_target_archid))))"
+                "       libxsmm_cpuid_vlen32(libxsmm_target_archid)))"
             )
             print("#endif")
             print("{")
