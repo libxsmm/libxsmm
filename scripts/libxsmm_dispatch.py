@@ -55,12 +55,17 @@ if __name__ == "__main__":
                 "/* JIT code gen. is not available */"
             )
             print(
-                "    /* condition allows to avoid JIT "
+                "   /* condition allows to avoid JIT "
                 "(if static code is good enough) */"
             )
             print(
-                "    || LIBXSMM_STATIC_TARGET_ARCH"
-                " == libxsmm_target_archid))"
+                "   || (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid &&"
+            )
+            print(
+                "       libxsmm_cpuid_vlen32(LIBXSMM_STATIC_TARGET_ARCH) =="
+            )
+            print(
+                "       libxsmm_cpuid_vlen32(libxsmm_target_archid))))"
             )
             print("#endif")
             print("{")
