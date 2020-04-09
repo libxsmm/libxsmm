@@ -13,6 +13,7 @@ fusedbndriver/layer_example_bf16
 fusedbndriver/layer_example_f32
 fusedgndriver/layer_example_f32
 sparse_weight_mult/parallel_sparse_weight_B_mult
+sparse_weight_mult/parallel_sparse_weight_C_redmult
 sparse_weight_mult/simple
 sparse_weight_mult/sparse_weight_A_mult
 sparse_weight_mult/sparse_weight_B_mult
