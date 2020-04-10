@@ -2732,7 +2732,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
 #endif
 }
 
-void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
+LIBXSMM_INLINE void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
                    float *wigold, float *wcgold, float *wfgold, float *wogold,
                    float *rigold, float *rcgold, float *rfgold, float *rogold,
                    float *bigold, float *bcgold, float *bfgold, float *bogold,
@@ -2844,7 +2844,7 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
   }
 }
 
-void lstm_ref_bwd_upd( int N, int C, int K, int t,
+LIBXSMM_INLINE void lstm_ref_bwd_upd( int N, int C, int K, int t,
                        float *xgoldt, float *cspgold, float *hpgold,
                        float *csgoldt, float *cogoldt, float *hgoldt,
                        float *icfogoldt, float *wgold, float *rgold,
@@ -2969,7 +2969,7 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
   }
 }
 
-void gru_ref_fwd( int N, int C, int K, int t,
+LIBXSMM_INLINE void gru_ref_fwd( int N, int C, int K, int t,
                   float *wi, float *wc, float *wf,
                   float *ri, float *rc, float *rf,
                   float *bi, float *bc, float *bf,
@@ -3036,7 +3036,7 @@ void gru_ref_fwd( int N, int C, int K, int t,
   }
 }
 
-void gru_ref_bwd_upd( int N, int C, int K, int t,
+LIBXSMM_INLINE void gru_ref_bwd_upd( int N, int C, int K, int t,
                       float *xt,  float *hpD,  float *ht,
                       float *it,  float *ct,   float *ft, float *ot,
                       float *wi,  float *wc,   float *wf,

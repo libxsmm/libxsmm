@@ -2153,9 +2153,9 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           int mprotect_result;
 # if !defined(LIBXSMM_MALLOC_CRC_OFF) && defined(LIBXSMM_VTUNE) /* check checksum */
 #   if defined(LIBXSMM_MALLOC_CRC_LIGHT)
-          LIBXSMM_ASSERT(info->hash == LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info));
+          assert(info->hash == LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info)); /* !LIBXSMM_ASSERT */
 #   else
-          LIBXSMM_ASSERT(info->hash == libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
+          assert(info->hash == libxsmm_crc32(LIBXSMM_MALLOC_SEED, info, /* !LIBXSMM_ASSERT */
             /* info size minus actual hash value */
             (unsigned int)(((char*)&info->hash) - ((char*)info))));
 #   endif
