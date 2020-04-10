@@ -356,6 +356,7 @@ libxsmm_ptr_c2
 libxsmm_ptr_d0
 libxsmm_ptr_d1
 libxsmm_ptr_d2
+libxsmm_ptr_dmm
 libxsmm_ptr_i0
 libxsmm_ptr_i1
 libxsmm_ptr_i2
@@ -368,9 +369,11 @@ libxsmm_ptr_l2
 libxsmm_ptr_s0
 libxsmm_ptr_s1
 libxsmm_ptr_s2
+libxsmm_ptr_smm
 libxsmm_ptr_w0
 libxsmm_ptr_w1
 libxsmm_ptr_w2
+libxsmm_ptr_wimm
 libxsmm_ptr_z0
 libxsmm_ptr_z1
 libxsmm_ptr_z2
