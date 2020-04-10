@@ -756,17 +756,17 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 $(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, -mmic \
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h,-mmic \
   $(DFLAGS) $(IFLAGS) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, -mmic \
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h,-mmic \
   $(DFLAGS) $(IFLAGS) $(CFLAGS))))
 $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, -mmic \
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h,-mmic \
   $(DFLAGS) $(IFLAGS) $(EXTCFLAGS) $(CFLAGS))))
-$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, -mmic \
+$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h,-mmic \
   $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 endif
 endif
