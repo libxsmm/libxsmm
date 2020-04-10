@@ -26,7 +26,6 @@ LICFILE ?= LICENSE.md
 CFLAGS = $(RPM_OPT_FLAGS)
 CXXFLAGS = $(RPM_OPT_FLAGS)
 FCFLAGS = $(RPM_OPT_FLAGS)
-DFLAGS = -DLIBXSMM_BUILD
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS
 # A value of zero (0) populates a default threshold
@@ -737,6 +736,12 @@ $(1): $(2) $(3) $(dir $(1))/.make
 	fi
 endef
 
+ifneq (0,$(GLIBC))
+  DFLAGS += -DLIBXSMM_BUILD=2
+else
+  DFLAGS += -DLIBXSMM_BUILD=1
+endif
+
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
 ifeq (0,$(OMP))
   ifeq (,$(filter environment% override command%,$(origin OMP)))
@@ -752,7 +757,6 @@ ifneq (0,$(MPSS))
 $(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, -mmic \
-  $(call applyif,$(GLIBC),libxsmm_malloc,$(OBJ),-DLIBXSMM_GLIBC) \
   $(DFLAGS) $(IFLAGS) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
@@ -768,12 +772,12 @@ endif
 endif
 
 # build rules that include target flags
+# individual flags: $(call applyif,$(CONDITION),libxsmm_malloc,$(OBJ),-Dindividual_flag>)
 $(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
   $(CTARGET) $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
-  $(call applyif,$(GLIBC),libxsmm_malloc,$(OBJ),-DLIBXSMM_GLIBC) \
   $(DFLAGS) $(IFLAGS) $(CTARGET) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \

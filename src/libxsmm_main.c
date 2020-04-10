@@ -50,17 +50,20 @@
 #if !defined(LIBXSMM_HASH_SEED)
 # define LIBXSMM_HASH_SEED 25071975
 #endif
-#if !defined(LIBXSMM_UNIFY_LOCKS)
-# define LIBXSMM_UNIFY_LOCKS
+#if !defined(LIBXSMM_MALLOC_HOOK_ALIGN) && 1
+# define LIBXSMM_MALLOC_HOOK_ALIGN
 #endif
-#if !defined(LIBXSMM_CACHE_PAD) && 1
-# define LIBXSMM_CACHE_PAD
+#if !defined(LIBXSMM_MALLOC_HOOK_INIT) && 0
+# define LIBXSMM_MALLOC_HOOK_INIT
 #endif
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
 # define LIBXSMM_ENABLE_DEREG
 #endif
 #if !defined(LIBXSMM_REGLOCK_TRY) && 0
 # define LIBXSMM_REGLOCK_TRY
+#endif
+#if !defined(LIBXSMM_UNIFY_LOCKS) && 1
+# define LIBXSMM_UNIFY_LOCKS
 #endif
 #if !defined(LIBXSMM_DIFF_INLINE) && 1
 # define LIBXSMM_DIFF_INLINE
@@ -70,6 +73,9 @@
 #endif
 #if !defined(LIBXSMM_DESC_PAD) && 1
 # define LIBXSMM_DESC_PAD
+#endif
+#if !defined(LIBXSMM_CACHE_PAD) && 1
+# define LIBXSMM_CACHE_PAD
 #endif
 #if !defined(LIBXSMM_AUTOPIN) && 1
 # define LIBXSMM_AUTOPIN
@@ -264,6 +270,149 @@ LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_nosync);
 #if (0 != LIBXSMM_SYNC)
 LIBXSMM_APIVAR_PRIVATE_DEF(LIBXSMM_TLS_TYPE libxsmm_tlskey);
 #endif
+
+
+LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size)
+{
+  void* result;
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  result = __libc_memalign(alignment, size);
+#elif defined(_WIN32) || defined(__CYGWIN__)
+  LIBXSMM_UNUSED(alignment);
+  result = malloc(size);
+#else
+  if (0 != posix_memalign(&result, alignment, size)) result = NULL;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment, size_t size)
+{
+  void* result;
+#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+  if (
+# if defined(LIBXSMM_MALLOC_HOOK_INIT)
+    1 < libxsmm_ninit &&
+# endif
+    NULL != libxsmm_malloc_fn.memalign.ptr)
+  {
+    result = libxsmm_malloc_fn.memalign.ptr(alignment, size);
+  }
+  else
+#endif
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  result = __libc_memalign(alignment, size);
+#else
+  result = libxsmm_memalign_internal(alignment, size);
+#endif
+  return result;
+}
+
+
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
+{
+  void* result;
+#if defined(LIBXSMM_MALLOC_HOOK_ALIGN)
+  const size_t alignment = libxsmm_alignment(size, 0/*auto*/);
+  result = __real_memalign(alignment, size);
+#else
+# if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+  if (
+#   if defined(LIBXSMM_MALLOC_HOOK_INIT)
+    1 < libxsmm_ninit &&
+#   endif
+    NULL != libxsmm_malloc_fn.malloc.ptr)
+  {
+    LIBXSMM_ASSERT(malloc != libxsmm_malloc_fn.malloc.ptr);
+    result = libxsmm_malloc_fn.malloc.ptr(size);
+  }
+  else
+# endif
+# if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  result = __libc_malloc(size);
+# else
+  result = malloc(size);
+# endif
+#endif
+  return result;
+}
+
+
+#if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t size)
+{
+  void* result;
+#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+  if (
+# if defined(LIBXSMM_MALLOC_HOOK_INIT)
+    1 < libxsmm_ninit &&
+# endif
+    NULL != libxsmm_malloc_fn.calloc.ptr)
+  {
+    LIBXSMM_ASSERT(calloc != libxsmm_malloc_fn.calloc.ptr);
+    result = libxsmm_malloc_fn.calloc.ptr(num, size);
+  }
+  else
+#endif
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  result = __libc_calloc(num, size);
+#else
+  result = calloc(num, size);
+#endif
+  return result;
+}
+#endif
+
+
+#if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t size)
+{
+  void* result;
+#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+  if (
+# if defined(LIBXSMM_MALLOC_HOOK_INIT)
+    1 < libxsmm_ninit &&
+# endif
+    NULL != libxsmm_malloc_fn.realloc.ptr)
+  {
+    LIBXSMM_ASSERT(realloc != libxsmm_malloc_fn.realloc.ptr);
+    result = libxsmm_malloc_fn.realloc.ptr(ptr, size);
+  }
+  else
+#endif
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  result = __libc_realloc(ptr, size);
+#else
+  result = realloc(ptr, size);
+#endif
+  return result;
+}
+#endif
+
+
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
+{
+  if (NULL != ptr) {
+#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+    if (
+# if defined(LIBXSMM_MALLOC_HOOK_INIT)
+      1 < libxsmm_ninit &&
+# endif
+      NULL != libxsmm_malloc_fn.free.ptr)
+    {
+      LIBXSMM_ASSERT(free != libxsmm_malloc_fn.free.ptr);
+      libxsmm_malloc_fn.free.ptr(ptr);
+    }
+    else
+#endif
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+    __libc_free(ptr);
+#else
+    free(ptr);
+#endif
+  }
+}
 
 
 LIBXSMM_API_INLINE void internal_update_mmstatistic(const libxsmm_gemm_descriptor* desc,

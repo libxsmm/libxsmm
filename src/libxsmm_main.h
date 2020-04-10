@@ -51,6 +51,12 @@
 #if !defined(LIBXSMM_MALLOC_LIMIT)
 # define LIBXSMM_MALLOC_LIMIT (2U << 20) /* 2 MB */
 #endif
+#if !defined(LIBXSMM_MALLOC_HOOK_REALLOC) && 1
+# define LIBXSMM_MALLOC_HOOK_REALLOC
+#endif
+#if !defined(LIBXSMM_MALLOC_HOOK_CALLOC) && 1
+# define LIBXSMM_MALLOC_HOOK_CALLOC
+#endif
 #if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER_ID)
 # define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)LIBXSMM_UNLIMITED)
 #endif
@@ -63,6 +69,19 @@
   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION2(6, 1) >= \
     LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
 # define LIBXSMM_INTERCEPT_DYNAMIC
+#endif
+
+#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && \
+  defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC) && \
+  (!defined(_CRAYC) && !defined(__TRACE)) /* TODO */ && \
+  (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+# define LIBXSMM_MALLOC_HOOK_DYNAMIC
+#endif
+#if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && \
+  defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC) && \
+  (!defined(_WIN32)) /* TODO */ && \
+  (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+# define LIBXSMM_MALLOC_HOOK_STATIC
 #endif
 
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC)
@@ -768,17 +787,49 @@ typedef enum libxsmm_malloc_flags {
       LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
-/**
- * Format for instance an amount of Bytes like libxsmm_format_size(result, sizeof(result), nbytes, "KMGT", "B", 10).
- * The value returned is in requested/determined unit so that the user can decide about printing the buffer.
- */
-LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_realloc_fun)(void* /*ptr*/, size_t /*size*/);
 
-/** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
+#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_fntype {
+  union { const void* dlsym; void* (*ptr)(size_t, size_t);  } alignmem;
+  union { const void* dlsym; void* (*ptr)(size_t, size_t);  } memalign;
+  union { const void* dlsym; libxsmm_malloc_fun ptr;        } malloc;
+# if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
+  union { const void* dlsym; void* (*ptr)(size_t, size_t);  } calloc;
+# endif
+# if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
+  union { const void* dlsym; libxsmm_realloc_fun ptr;      } realloc;
+# endif
+  union { const void* dlsym; libxsmm_free_fun ptr;          } free;
+} libxsmm_malloc_fntype;
+LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_fntype libxsmm_malloc_fn);
+#endif
 
-/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD)))
+/* prototypes for GLIBC internal implementation */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_memalign(size_t alignment, size_t size);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_malloc(size_t size);
+#if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_calloc(size_t num, size_t size);
+#endif
+#if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_realloc(void* ptr, size_t size);
+#endif
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void  __libc_free(void* ptr);
+#endif /*(defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD)))*/
+
+LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size);
+
+/* See https://sourceware.org/binutils/docs-2.34/ld/Options.html#index-_002d_002dwrap_003dsymbol */
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment, size_t size);
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size);
+#if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t size);
+#endif
+#if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t size);
+#endif
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr);
 
 /** Retrieve internal information about a buffer (default memory domain). */
 LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);
@@ -804,9 +855,6 @@ LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
 LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
-/** intern function to calculate blockings, that's private API hence it's in this function */
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_dnn_datatype datatype_in, libxsmm_dnn_datatype datatype_out );
-
 /**
  * Attribute memory allocation and protect with only the necessary flags.
  * This procedure is expected to run only one time per buffer, and may
@@ -826,11 +874,23 @@ LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check);
 /** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);
 
+/**
+ * Format for instance an amount of Bytes like libxsmm_format_size(result, sizeof(result), nbytes, "KMGT", "B", 10).
+ * The value returned is in requested/determined unit so that the user can decide about printing the buffer.
+ */
+LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
+
+/** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
+
 /** Determines the given value in double-precision based on the given type. */
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
+
+/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_xinfo {
   /** Non-zero of kernel is registered. */
@@ -854,6 +914,11 @@ LIBXSMM_API_INTERN void libxsmm_memory_finalize(void);
 
 LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
+
+/** intern function to calculate blockings, that's private API hence it's in this function */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks(
+  int C, int K, int* C_block, int* K_block, int* fm_lp_block,
+  libxsmm_dnn_datatype datatype_in, libxsmm_dnn_datatype datatype_out);
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
