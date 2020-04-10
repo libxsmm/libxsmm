@@ -296,7 +296,7 @@ LIBXSMM_INLINE void init_buf_bf16(libxsmm_bfloat16* buf, size_t size, int initPo
   }
 }
 
-LIBXSMM_API void libxsmm_dnn_dequantize_int8( char* in_buffer, float* out_buffer, int length, unsigned char scf ) {
+LIBXSMM_INLINE void libxsmm_dnn_dequantize_int8( char* in_buffer, float* out_buffer, int length, unsigned char scf ) {
   const float val_exp = libxsmm_sexp2_i8i(-scf);
   int i = 0;
 #ifdef _OPENMP
@@ -307,7 +307,7 @@ LIBXSMM_API void libxsmm_dnn_dequantize_int8( char* in_buffer, float* out_buffer
   }
 }
 
-LIBXSMM_API_INLINE float libxsmm_internal_get_max_common( float* in_buffer, int length ) {
+LIBXSMM_INLINE float libxsmm_internal_get_max_common( float* in_buffer, int length ) {
   float absmax_value = LIBXSMM_ABS(in_buffer[0]);
   int i = 0;
   for (i = 1; i < length; ++i ) {

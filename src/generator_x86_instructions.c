@@ -99,7 +99,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
   /* The jmp instruction better be somewhere valid in the code */
   if ( i_src_location < 0 )
   {
-     fprintf(stderr,"Bogus source location for internal jumping routine: %d\n",i_src_location );
+     fprintf(stderr,"Bogus source location for internal jumping routine: %i\n", i_src_location);
      exit(-1);
   }
   /* Make sure i_src_location is no bigger than the end of the code */
@@ -135,7 +135,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
   /* Make sure we aren't trying to jump to the same location as the original jump instruction */
   if ( i_src_location==i_dest_location || (i_src_location==i_dest_location+1) )
   {
-     fprintf(stderr,"i_src_location=%d is physically too close to i_dest_location=%d\n",i_src_location,i_dest_location);
+     fprintf(stderr,"i_src_location=%i is physically too close to i_dest_location=%i\n",i_src_location,i_dest_location);
      exit(-1);
   }
 
@@ -1960,7 +1960,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
        case LIBXSMM_X86_INSTR_VPBLENDMB:
           if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
           {
-              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask for VPBLENDMB immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask for VPBLENDMB immediate=%u != %i\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
               exit(-1);
           }
           l_second = 0x1;
@@ -1970,7 +1970,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
        case LIBXSMM_X86_INSTR_VPBLENDMW:
           if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
           {
-              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask for VPBLENDMW immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask for VPBLENDMW immediate=%u != %i\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
               exit(-1);
           }
           l_second = 0x1;
