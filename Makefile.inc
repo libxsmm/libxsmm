@@ -268,13 +268,21 @@ ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9][0-9]*$$"; echo "$$?")) # NaN
   OMPRT = $(patsubst lib%,%,$(OMP))
 endif
 
-uniqadd = $(filter-out $($2),$($1)) $(if $3,$3,$($2))
+uniqadd = $(if $($2),$(filter-out $($2),$($1)) $(if $3,$3,$($2)),$(filter-out $2,$($1)) $(if $3,$3,$2))
 uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
-ctest = $(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
+
+ctest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   echo "int main(void) { return 0; }" > $${INFILE} && \
   $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
-  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null),$2)
-ldlib = $(if $1,$(call ctest,$1 $2,-l$3))
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null),$2))
+# INFILE cannot use leading dot when used with certain F-compiler
+ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
+  printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && \
+  $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
+  rm -f /tmp/$$(basename $${INFILE} .c).* _libxsmm_??????.* 2>/dev/null),$2))
+
+ldclib = $(if $1,$(call ctest,$1 $2,-l$3))
+ldflib = $(if $1,$(call ftest,$1 $2,-l$3))
 
 ifneq (0,$(PYMOD))
   ifneq (,$(PYTHON))
@@ -282,7 +290,7 @@ ifneq (0,$(PYMOD))
     PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
     PYROOT = $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
     PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
-    PYLIB = $(call ldlib,$(LD),$(SLDFLAGS),python$(PYVERSION))
+    PYLIB = $(call ldclib,$(LD),$(SLDFLAGS),python$(PYVERSION))
     ifneq (,$(PYINC))
     ifneq (,$(PYLIB))
       LDFLAGS += $(PYLIB)
@@ -774,6 +782,12 @@ PGI ?= 0
 LD = $(CC)
 XLD = $(CXX)
 
+ifneq (0,$(INTEL))
+ifeq (,$(strip $(GFC)))
+  override LD += -nofor-main
+endif
+endif
+
 # prepend compiler-local library directory
 LIBFIND := $(call qapath,$(call qdir,$(call which,$(LD)))/../lib) $(LIBFIND)
 
@@ -817,15 +831,15 @@ endif
 endif
 
 FREEFORM ?= 1
+ifneq (0,$(INTEL))
 ifeq (,$(strip $(GFC)))
-  ifneq (0,$(INTEL))
-    ifneq (,$(strip $(LIB_FLD)))
-      LIB_FLD += -nofor-main
-    endif
-    ifneq (0,$(FREEFORM))
-      FFORM_FLAG = -free
-    endif
+  ifneq (,$(strip $(LIB_FLD)))
+    LIB_FLD := $(call uniqadd,LIB_FLD,-nofor-main)
   endif
+  ifneq (0,$(FREEFORM))
+    FFORM_FLAG = -free
+  endif
+endif
 endif
 ifneq (0,$(FREEFORM))
 ifeq (0,$(PGI))
@@ -1017,30 +1031,30 @@ endif
 LIBATOMIC ?= 0
 ifneq (0,$(THREADS))
 ifneq (0,$(LIBATOMIC))
-ifneq (,$(call ldlib,$(LD),$(SLDFLAGS),atomic))
-  LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),atomic)
+ifneq (,$(call ldclib,$(LD),$(SLDFLAGS),atomic))
+  LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),atomic)
   DFLAGS += -DLIBXSMM_LIBATOMIC
 endif
 endif
 endif
 
 LIBGFORTRAN = $(call libpath,$(FLD),$(SLDFLAGS),gfortran)
-LIBPTHREAD = $(call ldlib,$(LD),$(SLDFLAGS),pthread)
-LIBCPP = $(call ldlib,$(LD),$(SLDFLAGS),stdc++)
-LIBRT = $(call ldlib,$(LD),$(SLDFLAGS),rt)
-LIBDL = $(call ldlib,$(LD),$(SLDFLAGS),dl)
+LIBPTHREAD = $(call ldclib,$(LD),$(SLDFLAGS),pthread)
+LIBCPP = $(call ldclib,$(LD),$(SLDFLAGS),stdc++)
+LIBRT = $(call ldclib,$(LD),$(SLDFLAGS),rt)
+LIBDL = $(call ldclib,$(LD),$(SLDFLAGS),dl)
 ifneq (0,$(INTEL))
-  LIBM = $(call ldlib,$(LD),$(SLDFLAGS),imf)
+  LIBM = $(call ldclib,$(LD),$(SLDFLAGS),imf)
 endif
-LIBM ?= $(call ldlib,$(LD),$(SLDFLAGS),m)
+LIBM ?= $(call ldclib,$(LD),$(SLDFLAGS),m)
 
 # (default) runtime library dependencies
 ifneq (0,$(FORCE_CXX)) # incl. undefined
-  FCLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),stdc++) $(XLIB_END)
+  FCLDFLAGS += $(XLIB_BEGIN) $(call ldflib,$(FLD),$(SLDFLAGS),stdc++) $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) $(LIBCPP) $(XLIB_END)
 endif
-FCLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),c) $(XLIB_END)
-CXXLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),c) $(XLIB_END)
+FCLDFLAGS += $(XLIB_BEGIN) $(call ldflib,$(FLD),$(SLDFLAGS),c) $(XLIB_END)
+CXXLDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),c) $(XLIB_END)
 
 ifneq (0,$(INTEL))
   AR ?= xiar
@@ -1233,7 +1247,7 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(OMPFLAG_FORCE)
     CFLAGS += $(OMPFLAG_FORCE)
     ifneq (,$(strip $(GFC)))
-      LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),$(OMPRT)) $(XLIB_END)
+      LDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),$(OMPRT)) $(XLIB_END)
     else
       LDFLAGS += $(OMPFLAG_FORCE)
     endif
@@ -1270,7 +1284,7 @@ else # GCC assumed
       CXXFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
       CFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
       FCFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
-      LDFLAGS += -g -fsanitize=thread $(call ldlib,$(LD),$(SLDFLAGS),tsan) -fno-omit-frame-pointer
+      LDFLAGS += -g -fsanitize=thread $(call ldclib,$(LD),$(SLDFLAGS),tsan) -fno-omit-frame-pointer
     else
       ifneq (,$(filter 2 3,$(GCC)))
         CXXFLAGS += -g3
@@ -1404,9 +1418,9 @@ else # GCC assumed
     endif
   endif
   ifeq (Windows_NT,$(UNAME))
-    LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),dbghelp) $(XLIB_END)
+    LDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),dbghelp) $(XLIB_END)
   else ifeq (FreeBSD,$(UNAME))
-    LDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),execinfo) $(XLIB_END)
+    LDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),execinfo) $(XLIB_END)
   endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(PGI))
@@ -1482,22 +1496,22 @@ else # GCC assumed
       FLDFLAGS += -fopenmp
       FCFLAGS += -fopenmp
     else # mixed toolchain
-      OMPTEST = $(call ldlib,$(FLD),$(SLDFLAGS),$(OMPRT))
+      OMPTEST = $(call ldflib,$(FLD),$(SLDFLAGS),$(OMPRT))
       ifneq (,$(OMPTEST))
         FLDFLAGS += $(OMPTEST)
       else
-        OMPTEST = $(call ldlib,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))
+        OMPTEST = $(call ldflib,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))
         ifneq (,$(OMPTEST))
           FLDFLAGS += $(addprefix -L,$(LIBFIND)) $(OMPTEST)
         else # last try
-          FLDFLAGS += $(call ldlib,$(FLD),$(SLDFLAGS),gomp)
+          FLDFLAGS += $(call ldflib,$(FLD),$(SLDFLAGS),gomp)
         endif
       endif
-      OMPTEST = $(call ctest,$(FC),-fopenmp)
+      OMPTEST = $(call ftest,$(FC),-fopenmp)
       ifneq (,$(OMPTEST))
         FCFLAGS += $(OMPTEST)
       else
-        FCFLAGS += $(call ctest,$(FC),$(OMPFLAG_FORCE))
+        FCFLAGS += $(call ftest,$(FC),$(OMPFLAG_FORCE))
       endif
     endif
   endif
@@ -1660,7 +1674,7 @@ ifneq (Darwin1,$(UNAME)$(INSTRUMENT))
   ifeq (0,$(PGI))
     CXXFLAGS += -finstrument-functions $(call ctest,$(CXX),-fno-partial-inlining) $(call ctest,$(CXX),-fno-optimize-sibling-calls)
     CFLAGS += -finstrument-functions $(call ctest,$(CC),-fno-partial-inlining) $(call ctest,$(CC),-fno-optimize-sibling-calls)
-    FCFLAGS += -finstrument-functions $(call ctest,$(FC),-fno-partial-inlining) $(call ctest,$(FC),-fno-optimize-sibling-calls)
+    FCFLAGS += -finstrument-functions $(call ftest,$(FC),-fno-partial-inlining) $(call ftest,$(FC),-fno-optimize-sibling-calls)
     ifeq (0,$(INTEL)) # e.g. Intel, Clang, and others do not need/understand below flag
     ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION_NUM)))"))
       CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
@@ -1832,7 +1846,7 @@ ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
     CFLAGS += -pthread
     CXXFLAGS += -pthread
   endif
-  FLDFLAGS += $(XLIB_BEGIN) $(call ldlib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
+  FLDFLAGS += $(XLIB_BEGIN) $(call ldflib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
   ifneq (Windows_NT,$(UNAME))
     ifneq (0,$(INTEL))
       ifeq (0,$(OFFLOAD))
@@ -1862,7 +1876,7 @@ OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$
 ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB ?= $(call abslib,$(OMPLIBFILE))
 else ifneq (0,$(INTEL))
-  OMPLIB ?= $(call ldlib,$(LD),$(SLDFLAGS),$(OMPRT))
+  OMPLIB ?= $(call ldclib,$(LD),$(SLDFLAGS),$(OMPRT))
 endif
 
 ifneq (,$(OMPFLAG_FORCE))
@@ -2002,10 +2016,10 @@ else ifneq (0,$(MKL)) # multi-threaded
     ifneq (gnu,$(MKL_OMPRTL))
       BLAS_LDFLAGS += $(OMPLIB)
     else
-      BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),gomp)
+      BLAS_LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),gomp)
     endif
   else ifeq (gnu,$(OMPLIB)$(MKL_OMPRTL))
-    BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),gomp)
+    BLAS_LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),gomp)
   endif
   ifneq (0,$(THREADS))
     BLAS_LDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
@@ -2115,7 +2129,7 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -framework Accelerate
       BLAS_FLAGS += -D__CBLAS
     else # fallback
-      BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),blas)
+      BLAS_LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),blas)
       BLASREF ?= 1
     endif
     BLASREF ?= 0
@@ -2125,12 +2139,12 @@ else ifneq (0,$(BLAS)) # generic
           ifneq (,$(LIBGFORTRAN))
             BLASTEST += $(XLIB_BEGIN) $(LIBGFORTRAN) $(LIBM) $(XLIB_END)
           else ifeq (3,$(GCC))
-            BLASTEST += $(XLIB_BEGIN) $(call ldlib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
+            BLASTEST += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
           endif
         endif
-        QUADMATH = $(call ldlib,$(LD),$(SLDFLAGS),quadmath)
+        QUADMATH = $(call ldclib,$(LD),$(SLDFLAGS),quadmath)
         ifneq (,$(QUADMATH))
-          BLASTEST += $(XLIB_BEGIN) $(QUADMATH) $(call ldlib,$(LD),$(SLDFLAGS),m) $(XLIB_END)
+          BLASTEST += $(XLIB_BEGIN) $(QUADMATH) $(call ldclib,$(LD),$(SLDFLAGS),m) $(XLIB_END)
         endif
         ifneq (3,$(GCC))
           BLAS_LDFLAGS += $(BLASTEST)
@@ -2162,7 +2176,7 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_LDFLAGS += $(call abslib,$(if $(call qsuffix,$(BLASLIB)),$(BLASLIB),$(BLASLIB).$(BLASLIBEXT)))
       endif
     else # fallback
-      BLAS_LDFLAGS += $(call ldlib,$(LD),$(SLDFLAGS),$(BLASLIB))
+      BLAS_LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),$(BLASLIB))
     endif
   endif
 endif
@@ -2232,8 +2246,8 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
     LIBPTHREAD CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION \
     HEREDIR HOMEDIR UNUSED TESTSIZE SHARED PYMOD MINGW FMAIN VERSION ACC% \
-    abslib applyif uniqadd uniqmov ldlib which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
-    ctest extname objname unquote quote qapath qndir qdir qsuffix qbname qname \
+    abslib applyif uniqadd uniqmov which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
+    ctest ftest ldclib ldflib extname objname unquote quote qapath qndir qdir qsuffix qbname qname \
     BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(subst $(HOMEDIR),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V)))))?))))
