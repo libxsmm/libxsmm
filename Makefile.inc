@@ -1623,29 +1623,13 @@ else # take user's TARGET into account
   CTARGET := $(TARGET)
 endif
 
-ifneq (,$(call ctest,$(CC),$(CTARGET)))
-  # check target flags by feeding an ad-hoc C program into the compiler
-  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
-      echo "int main(void) { return 0; }" > $${INFILE} && \
-      RESULT=$$($(CC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
-      if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-      rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-    CTARGET = $(NULL)
-  endif
-  ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-  # INFILE cannot start with a leading dot when used with certain compiler
-  ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
-      printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && \
-      RESULT=$$($(FC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
-      if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-      rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.* 2>/dev/null))
-    # inherit CTARGET flags
-    FTARGET = $(CTARGET)
-  endif
-  endif
-else # revoke target flags
+ifneq (,$(call ftest,$(FC),$(CTARGET)))
+  # inherit CTARGET flags
+  FTARGET = $(CTARGET)
+endif
+ifeq (,$(call ctest,$(CC),$(CTARGET)))
+  # revoke target flags
   CTARGET = $(NULL)
-  FTARGET = $(NULL)
 endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
