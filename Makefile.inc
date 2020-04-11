@@ -782,11 +782,13 @@ PGI ?= 0
 LD = $(CC)
 XLD = $(CXX)
 
-#ifneq (0,$(INTEL))
-#ifeq (,$(strip $(GFC)))
-  #override LD += -nofor-main
-#endif
-#endif
+ifneq (0,$(INTEL))
+ifeq (,$(strip $(GFC)))
+ifneq (,$(call ftest,$(LD),-nofor-main))
+  override LD := $(LD) -nofor-main
+endif
+endif
+endif
 
 # prepend compiler-local library directory
 LIBFIND := $(call qapath,$(call qdir,$(call which,$(LD)))/../lib) $(LIBFIND)
