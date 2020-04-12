@@ -372,7 +372,10 @@ ifeq (,$(filter Darwin,$(UNAME)))
       DFLAGS += -DLIBXSMM_PERF_JITDUMP
     endif
   endif
-  VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+  VTUNEROOT = $(shell env | grep VTUNE_PROFILER | grep -m1 _DIR | cut -d= -f2-)
+  ifeq (,$(VTUNEROOT))
+    VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+  endif
   ifeq (,$(VTUNEROOT))
     VTUNEROOT = $(EBROOTVTUNE)/vtune_amplifier
   endif
