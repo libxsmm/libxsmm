@@ -408,6 +408,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int compute_pixels;
   int upd_trans_w_only;
   int fwd_padding_copy;
+  int upd_padding_copy;
 
   libxsmm_xtransfunction tr_kernel;
 
@@ -440,6 +441,16 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t fwd_packing_padding_scratch_offset;
   size_t fwd_lp_output_full_scratch_offset;
   size_t fwd_lp_output_block_scratch_offset;
+
+  size_t upd_packing_padding_scratch_size;
+  size_t upd_lp_output_full_scratch_size;
+  size_t upd_lp_input_full_scratch_size;
+  size_t upd_filter_scratch_size;
+  size_t upd_packing_padding_scratch_offset;
+  size_t upd_lp_output_full_scratch_offset;
+  size_t upd_lp_input_full_scratch_offset;
+  size_t upd_filter_scratch_offset;
+
   size_t fwd_scratch_size;
   size_t bwd_filter_trans_scratch_size;
   size_t bwd_packing_padding_scratch_size;
