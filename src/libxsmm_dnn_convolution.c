@@ -321,7 +321,8 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_fwd_scratch( libxsmm_dnn_l
     handle->fwd_packing_padding_scratch_size = 0;
   }
   /* output buffer in high precision when we use BF16 */
-  if ( ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) || ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 ) ) {
+  if ( ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) ||
+       ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 )      ) {
     handle->fwd_lp_output_full_scratch_size = (size_t)handle->desc.N * handle->desc.K *
                                                 handle->ofwp * handle->ofhp *
                                                 libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32);
@@ -335,7 +336,8 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_fwd_scratch( libxsmm_dnn_l
   /* set offsets */
   handle->fwd_packing_padding_scratch_offset = 0;
   handle->fwd_lp_output_full_scratch_offset = handle->fwd_packing_padding_scratch_size;
-  handle->fwd_lp_output_block_scratch_offset = handle->fwd_lp_output_full_scratch_offset + handle->fwd_lp_output_full_scratch_size;
+  handle->fwd_lp_output_block_scratch_offset = handle->fwd_lp_output_full_scratch_offset +
+                                                 handle->fwd_lp_output_full_scratch_size;
 
   /* set overall scratch size for forward */
   handle->fwd_scratch_size = handle->fwd_packing_padding_scratch_size +
