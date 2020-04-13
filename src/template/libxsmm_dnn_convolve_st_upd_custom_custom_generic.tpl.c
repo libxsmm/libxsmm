@@ -20,8 +20,8 @@ element_output_type *const out = (element_output_type*)handle->grad_output->data
 LIBXSMM_VLA_DECL(5, const element_output_type, output, (const element_output_type*)out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 const int IFWP = (handle->upd_padding_copy == 1) ? handle->ifwp + 2*handle->desc.pad_w :  handle->ifwp;
 const int IFHP = (handle->upd_padding_copy == 1) ? handle->ifhp + 2*handle->desc.pad_h :  handle->ifhp;
-element_input_type *input_ptr_to_use = (handle->upd_padding_copy == 1) ? (element_input_type*) ((char*)handle->scratch + upd_packing_padding_scratch_offset) : (element_input_type*)handle->reg_input->data;
-LIBXSMM_VLA_DECL(5, const element_input_type, input, (const element_input_type*) input_ptr_to_use, handle->blocksifm, IFHP, IFWP, handle->ifmblock);
+element_input_type *input_ptr_to_use = (handle->upd_padding_copy == 1) ? (element_input_type*) ((char*)handle->scratch + handle->upd_packing_padding_scratch_offset) : (element_input_type*)handle->reg_input->data;
+LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) input_ptr_to_use, handle->blocksifm, IFHP, IFWP, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, element_filter_type, weight_global, (element_filter_type*)handle->grad_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 element_filter_type *weight_ptr = (handle->weight_copies == 1) ? (element_filter_type*)handle->grad_filter->data : (element_filter_type*) ((char*)handle->scratch + handle->upd_filter_scratch_offset) + ltid * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
 LIBXSMM_VLA_DECL(6, element_filter_type, weight_private, (element_filter_type*)weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
@@ -38,7 +38,7 @@ libxsmm_barrier_init(handle->barrier, ltid);
 if (handle->upd_padding_copy == 1) {
   LIBXSMM_VLA_DECL(5, element_input_type, input_src, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
   int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
-  
+
   my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
   my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
   my_ifm_start = 0;
@@ -64,7 +64,7 @@ if (handle->upd_padding_copy == 1) {
         }
       }
     }
-  }  
+  }
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 

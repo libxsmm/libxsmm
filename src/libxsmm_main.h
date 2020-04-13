@@ -444,11 +444,11 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 
   size_t upd_packing_padding_scratch_size;
   size_t upd_lp_output_full_scratch_size;
-  size_t upd_lp_input_full_scratch_size;  
-  size_t upd_filter_scratch_size;  
+  size_t upd_lp_input_full_scratch_size;
+  size_t upd_filter_scratch_size;
   size_t upd_packing_padding_scratch_offset;
   size_t upd_lp_output_full_scratch_offset;
-  size_t upd_lp_input_full_scratch_offset;  
+  size_t upd_lp_input_full_scratch_offset;
   size_t upd_filter_scratch_offset;
 
   size_t fwd_scratch_size;

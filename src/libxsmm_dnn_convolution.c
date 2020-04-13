@@ -813,7 +813,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_l
     handle->upd_lp_output_full_scratch_size = 0;
     handle->upd_lp_input_full_scratch_size = 0;
   }
-  
+
   handle->upd_lp_output_full_scratch_offset = handle->upd_packing_padding_scratch_size;
   handle->upd_lp_input_full_scratch_offset = handle->upd_lp_output_full_scratch_offset + handle->upd_lp_output_full_scratch_size;
 
