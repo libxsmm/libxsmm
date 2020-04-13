@@ -50,7 +50,10 @@ LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int si
 # endif
 # if defined(__clang__)
 #   pragma clang diagnostic ignored "-Wunknown-warning-option"
-#   pragma clang diagnostic ignored "-Wframe-address"
+#   if (LIBXSMM_VERSION2(9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)) ||
+      !(defined(__APPLE__) && defined(__MACH__))
+#     pragma clang diagnostic ignored "-Wframe-address"
+#   endif
 # elif defined(__GNUC__) /* no version-check */
 #   pragma GCC diagnostic ignored "-Wpragmas"
 #   pragma GCC diagnostic ignored "-Wframe-address"
