@@ -27,7 +27,7 @@ unsigned long long n_blocks;
 /* offset output pointer in case of physical output padding */
 element_output_type* out = (element_output_type*)handle->reg_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
-element_input_type *input_ptr = (handle->pack_input == 1) ?(element_input_type*)(handle->scratch + handle->fwd_packing_padding_scratch_offset) : (element_input_type*)handle->reg_input->data;
+element_input_type *input_ptr = (handle->pack_input == 1) ?(element_input_type*)((char*)handle->scratch + handle->fwd_packing_padding_scratch_offset) : (element_input_type*)handle->reg_input->data;
 const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
 const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
 LIBXSMM_VLA_DECL(5, element_input_type, input, input_ptr, IFH, IFW, handle->blocksifm, handle->ifmblock);
