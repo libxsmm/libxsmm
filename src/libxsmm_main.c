@@ -886,7 +886,7 @@ LIBXSMM_API_INTERN void internal_init(void)
     }
 #endif
 #if (0 == LIBXSMM_JIT)
-    if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
+    if (2 > libxsmm_ninit && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)) {
       fprintf(stderr, "LIBXSMM: JIT-code generation was disabled at compile-time.\n");
     }
 #endif

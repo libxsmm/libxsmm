@@ -13,7 +13,7 @@
 
 int main(/*int argc, char* argv[]*/)
 {
-  int result = EXIT_SUCCESS, i;
+  int result = EXIT_SUCCESS;
   struct { int x, y, z; } key[] = {
     { 0, 0, 0 },
     { 0, 0, 1 },
@@ -24,14 +24,16 @@ int main(/*int argc, char* argv[]*/)
     { 1, 1, 0 },
     { 1, 1, 1 }
   };
-  const size_t key_size = sizeof(*key);
-  const int n = (int)sizeof(key) / (int)key_size;
   /*const*/ char* value[] = {
     "hello", "world", "libxsmm",
     "hello world", "hello libxsmm",
     "value", "next", "last"
   };
-
+  const size_t key_size = sizeof(*key);
+#if (0 != LIBXSMM_JIT) /* unused variable warning */
+  const int n = (int)sizeof(key) / (int)key_size;
+  int i;
+#endif
   if (EXIT_SUCCESS == result) { /* test for some expected failure */
     result = (NULL == libxsmm_xregister(key, /*too large*/LIBXSMM_DESCRIPTOR_MAXSIZE + 1,
       strlen(value[0]) + 1, value[0]) ? EXIT_SUCCESS : EXIT_FAILURE);
