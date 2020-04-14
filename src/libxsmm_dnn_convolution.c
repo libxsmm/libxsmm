@@ -1083,15 +1083,6 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->scratch = 0;
   handle->scratch_size = LIBXSMM_MAX( handle->fwd_scratch_size, LIBXSMM_MAX( handle->bwd_scratch_size, handle->upd_scratch_size ) );
 
-  /* @TODO this is old code and it need to be refactored */
-  /* backward transpose filters, as we want to call small GEMMs we need that scratch AND also scratch to potentially pack input if requested*/
-  handle->scratch1 = 0;
-  handle->scratch1_size = (size_t)handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
-    * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_in) + (size_t)handle->desc.N * handle->ofwp * handle->ofhp * handle->desc.C;
-  if (handle->fm_lp_block > 1) {
-    /* If low precision, we need extra buffer to store intermediate weight tensor */
-    handle->scratch1_size *= 2;
-  }
   handle->scratch3 = 0;
   handle->scratch3_size = 0;
   handle->scratch6 = 0;
@@ -2100,8 +2091,6 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                            l_scratch_size += handle->scratch7_size + 64;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-                                           /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
-                                           l_scratch_size = handle->scratch1_size + 64;
                                            l_scratch_size += handle->max_scratch5_size + 64;
                                            l_scratch_size += handle->scratch7_size + 64;
                                          } break;
@@ -2109,7 +2098,6 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                            if (handle->use_lp_kernel == 1) {
                                              l_scratch_size += handle->scratch2_size + 64;
                                            }
-                                           /* we need a minibatch copy for transpose of input, scratch3 */
                                            l_scratch_size += handle->scratch3_size + 64;
                                            l_scratch_size += handle->max_scratch5_size + 64;
                                            l_scratch_size += handle->minibatch_scratch_size + 64;
@@ -2119,12 +2107,9 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                            }
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
-                                           l_scratch_size += handle->scratch1_size + 64;
                                            if (handle->use_lp_kernel == 1) {
                                              l_scratch_size += handle->scratch2_size + 64;
                                            }
-                                           /* we need a minibatch copy for transpose of input, scratch3 */
                                            l_scratch_size += handle->scratch3_size + 64;
                                            l_scratch_size += handle->max_scratch5_size + 64;
                                            if (handle->scratch6_size != 0) {
@@ -2175,13 +2160,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
                                            if (address % 64 == 0) {
-                                             handle->scratch1 = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->scratch1 = (void*)(address+offset);
-                                           }
-                                           address += handle->scratch1_size + 64;
-                                           if (address % 64 == 0) {
                                              handle->scratch5 = (void*)address;
                                            } else {
                                              offset = (64 - address % 64);
@@ -2209,13 +2187,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                            }
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-                                           /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
-                                           if (address % 64 == 0) {
-                                             handle->scratch1 = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->scratch1 = (void*)(address+offset);
-                                           }
                                            if (address % 64 == 0) {
                                              handle->scratch5 = (void*)address;
                                            }
@@ -2281,14 +2252,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                            }
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
-                                           if (address % 64 == 0) {
-                                             handle->scratch1 = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->scratch1 = (void*)(address+offset);
-                                           }
-                                           address += handle->scratch1_size + 64;
                                            if (handle->use_lp_kernel == 1) {
                                              if (address % 64 == 0) {
                                                handle->scratch2 = (void*)address;
@@ -2360,7 +2323,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
                                            handle->scratch7 = 0;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-                                           handle->scratch1 = 0;
                                            handle->scratch5 = 0;
                                            handle->scratch7 = 0;
                                          } break;
@@ -2372,7 +2334,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
                                            handle->scratch7 = 0;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           handle->scratch1 = 0;
                                            handle->scratch2 = 0;
                                            handle->scratch3 = 0;
                                            handle->scratch5 = 0;
@@ -2579,7 +2540,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_layer* ha
   }
 
   /* check if we have scratch */
-  if (handle->scratch1 == 0) {
+  if (handle->scratch == 0) {
     status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
     return status;
   }
@@ -2593,7 +2554,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_layer* ha
   /* check that we are in FP32 */
   if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
     LIBXSMM_VLA_DECL(6, float, wt, (float*)handle->reg_filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
-    LIBXSMM_VLA_DECL(6, float, tr_wt, (float*)handle->scratch1, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
+    LIBXSMM_VLA_DECL(6, float, tr_wt, (float*)((char*)handle->scratch + handle->bwd_filter_trans_scratch_offset), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
       for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {

@@ -464,8 +464,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   void* scratch;
   size_t scratch_size;
 
-  void* scratch1;
-  size_t scratch1_size;
   void* scratch2;
   size_t scratch2_size;
   void* scratch3;
