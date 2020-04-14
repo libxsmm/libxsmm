@@ -45,13 +45,13 @@ const int size_tls1 = padded_h * padded_w * handle->ifmblock;
 element_input_type *const del_input_scratch_padding = (element_input_type*)((char*)handle->scratch + handle->bwd_packing_padding_scratch_offset) + ltid * size_tls1;
 for ( ii = 0; ii < size_tls1; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
 
+/* lazy barrier init */
+libxsmm_barrier_init(handle->barrier, ltid);
+
 /* transpose filters, if requested */
 if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
   weight_base = (element_filter_type*)handle->reg_filter_tr->data;
 } else {
-  /* lazy barrier init */
-  libxsmm_barrier_init(handle->barrier, ltid);
-
   for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     ofm1 = ifm1ofm1 / handle->blocksifm;
     ifm1 = ifm1ofm1 % handle->blocksifm;
@@ -174,3 +174,4 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
 
 } /* end of new scope for additional variable declarations (C89) */
 
+libxsmm_barrier_wait(handle->barrier, ltid);
