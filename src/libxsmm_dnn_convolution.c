@@ -493,12 +493,12 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_avoid_acc_load_bwd( libxsmm
 LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bwd_scratch( libxsmm_dnn_layer* handle ) {
   /* transpose of weights */
   handle->bwd_filter_trans_scratch_size = (size_t)handle->desc.C * handle->desc.K *
-                                            handle->desc.R * handle->desc.S;
+                                            handle->desc.R * handle->desc.S *
+                                            libxsmm_dnn_typesize(handle->datatype_in);
 
   handle->bwd_packing_padding_scratch_size = 0;
   /* packing of input */
   if ( handle->pack_input_bwd != 0 ) {
-    printf("using input packing \n");
     handle->bwd_packing_padding_scratch_size = (size_t)handle->desc.N * handle->desc.C *
                                                  handle->ofhp * handle->ofwp *
                                                  libxsmm_dnn_typesize(handle->datatype_in);
