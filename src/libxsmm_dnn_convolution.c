@@ -499,38 +499,36 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bwd_scratch( libxsmm_dnn_l
   }
   /* logical padding with copying in the fly */
   if ( handle->use_fallback_bwd_loops != 0 ) {
-    handle->bwd_packing_padding_scratch_size = (size_t)handle->desc.N * handle->desc.K *
-                                                 (handle->ofh + 2*handle->desc.pad_h) *
-                                                 (handle->ofw + 2*handle->desc.pad_w) *
+    handle->bwd_packing_padding_scratch_size = (size_t)handle->desc.N * handle->desc.C *
+                                                 (handle->desc.H + 2*handle->desc.pad_h) *
+                                                 (handle->desc.W + 2*handle->desc.pad_w) *
                                                  libxsmm_dnn_typesize(handle->datatype_in);
   } else {
     handle->bwd_packing_padding_scratch_size = 0;
   }
   /* output buffer in high precision when we use BF16 */
   if ( ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) ) {
-    handle->bwd_lp_output_full_scratch_size = (size_t)handle->desc.N * handle->desc.C *
+    handle->bwd_lp_input_full_scratch_size = (size_t)handle->desc.N * handle->desc.C *
                                                 handle->ifwp * handle->ifhp *
                                                 libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32);
-    handle->bwd_lp_output_block_scratch_size = (size_t)handle->desc.threads * handle->bwd_ofw_rb *
+#if 0
+    handle->bwd_lp_input_block_scratch_size = (size_t)handle->desc.threads * handle->bwd_ofw_rb *
                                                  handle->desc.v * handle->bwd_ofh_rb * handle->ifmblock *
                                                  libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32);
+#endif
   } else {
-    handle->bwd_lp_output_full_scratch_size = 0;
-    handle->bwd_lp_output_block_scratch_size = 0;
+    handle->bwd_lp_input_full_scratch_size = 0;
   }
   /* set offsets */
   handle->bwd_filter_trans_scratch_offset = 0;
   handle->bwd_packing_padding_scratch_offset = handle->bwd_filter_trans_scratch_size;
-  handle->bwd_lp_output_full_scratch_offset = handle->bwd_packing_padding_scratch_offset +
+  handle->bwd_lp_input_full_scratch_offset = handle->bwd_packing_padding_scratch_offset +
                                                 handle->bwd_packing_padding_scratch_size;
-  handle->bwd_lp_output_block_scratch_offset = handle->bwd_lp_output_full_scratch_offset +
-                                                 handle->bwd_lp_output_full_scratch_size;
 
   /* set overall scratch size for forward */
   handle->bwd_scratch_size = handle->bwd_filter_trans_scratch_size +
                                handle->bwd_packing_padding_scratch_size +
-                               handle->bwd_lp_output_full_scratch_size +
-                               handle->bwd_lp_output_block_scratch_size;
+                               handle->bwd_lp_input_full_scratch_size;
 }
 
 /**********************************************************/

@@ -39,7 +39,7 @@ LIBXSMM_VLA_DECL(6, element_filter_type, wt, (element_filter_type*)handle->reg_f
 #if defined(LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK)
 LIBXSMM_VLA_DECL(6, element_filter_type, wt, (element_filter_type*)handle->reg_filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
 #endif
-LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->scratch1, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
+LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)((char*)handle->scratch + handle->bwd_filter_trans_scratch_offset), handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
 /* define weight pointer which has the correct format */
 element_filter_type* weight_base = 0;
 
@@ -47,9 +47,7 @@ element_filter_type* weight_base = 0;
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int size_tls1 = padded_h * padded_w * handle->ifmblock;
-element_input_type *const del_input_scratch_padding = (element_input_type*)(((char*)handle->scratch5) +
-  ltid * LIBXSMM_UP2(size_tls1 * sizeof(element_input_type), LIBXSMM_CACHELINE));
-LIBXSMM_ASSERT(size_tls1 * sizeof(element_input_type) * handle->desc.threads <= handle->max_scratch5_size);
+element_input_type *const del_input_scratch_padding = (element_input_type*)((char*)handle->scratch + handle->bwd_packing_padding_scratch_offset) + ltid * size_tls1;
 for ( ii = 0; ii < size_tls1; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
 
 /* transpose filters, if requested */
@@ -79,7 +77,7 @@ if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
       }
     }
   }
-  weight_base = (element_filter_type*)handle->scratch1;
+  weight_base = (element_filter_type*)((char*)handle->scratch + handle->bwd_filter_trans_scratch_offset);
 
   /* wait for transpose to finish */
   libxsmm_barrier_wait(handle->barrier, ltid);
