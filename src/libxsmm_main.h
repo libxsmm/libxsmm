@@ -468,10 +468,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratch2_size;
   void* scratch3;
   size_t scratch3_size;
-  void* scratch5;             /* TLS: copy-buffer (if padding is needed), or [H][W][c-block]-tensor (generic FWD/BWD) */
-  size_t max_scratch5_size;
-  void* scratch6;             /* TLS: output_scratch (generic WU), or float-accumulation buffer */
-  size_t scratch6_size;
   void* scratch7;             /* TLS: filter_scratch (generic WU) */
   size_t scratch7_size;
   size_t minibatch_scratch_size;
