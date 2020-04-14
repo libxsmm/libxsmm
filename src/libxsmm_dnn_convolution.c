@@ -507,7 +507,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bwd_scratch( libxsmm_dnn_l
     handle->bwd_packing_padding_scratch_size = 0;
   }
   /* output buffer in high precision when we use BF16 */
-  if ( ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) ) {
+  if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) {
     handle->bwd_lp_input_full_scratch_size = (size_t)handle->desc.N * handle->desc.C *
                                                 handle->ifwp * handle->ifhp *
                                                 libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32);
