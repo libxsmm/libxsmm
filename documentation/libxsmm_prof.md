@@ -5,26 +5,26 @@
 To analyze which kind of kernels have been called, and from where these kernels have been invoked (call stack), the library allows profiling its JIT code using Intel&#160;VTune&#160;Amplifier. To enable this support, VTune's root directory needs to be set at build-time of the library. Enabling symbols (SYM=1 or DBG=1) incorporates VTune's JIT Profiling API:
 
 ```bash
-source /path/to/vtune_amplifier/amplxe-vars.sh
+source /opt/intel/vtune_profiler/vtune-vars.sh
 make SYM=1
 ```
 
-Above, the root directory is automatically determined from the environment (VTUNE_AMPLIFIER_\*_DIR). This variable is present after source'ing the Intel&#160;VTune environment, but it can be manually provided as well (`make VTUNEROOT=/path/to/vtune_amplifier`). Symbols are not really required to display kernel names for the dynamically generated code, however enabling symbols makes the analysis much more useful for the rest of the (static) code, and hence it has been made a prerequisite. For example, when "call stacks" are collected it is possible to find out where the JIT code has been invoked by the application:
+Above, the root directory is automatically determined from the environment (VTUNE_PROFILER_\*_DIR or VTUNE_AMPLIFIER_\*_DIR with older versions). This variable is present after source'ing the Intel&#160;VTune environment (`source /path/to/vtune_amplifier/amplxe-vars.sh` with older version), but it can be manually provided as well (`make VTUNEROOT=/path/to/vtune_amplifier`). Symbols are not really required to display kernel names for the dynamically generated code, however enabling symbols makes the analysis much more useful for the rest of the (static) code, and hence it has been made a prerequisite. For example, when "call stacks" are collected it is possible to find out where the JIT code has been invoked by the application:
 
 ```bash
-amplxe-cl -r result-directory -data-limit 0 -collect hotspots -knob sampling-mode=hw \
-          -knob enable-stack-collection=true -- ./myapplication
+vtune -r resultdir -data-limit 0 -collect hotspots -knob sampling-mode=hw \
+      -knob enable-stack-collection=true -- ./myapplication
 ```
 
 In case of an MPI-parallelized application, it can be useful to only collect results from a "representative" rank, and to also avoid running the event collector in every rank of the application. With Intel&#160;MPI both of which can be achieved by:
 
 ```bash
-mpirun [...] -gtool 'amplxe-cl -r result-directory \
+mpirun [...] -gtool 'vtune -r resultdir \
                      -data-limit 0 -collect hotspots -knob sampling-mode=hw \
                      -knob enable-stack-collection=true:4=exclusive'
 ```
 
-The `:4=exclusive` is related to mpirun's gtool arguments and unrelated to VTune's command line syntax; such argument(s) need to appear at the end of the gtool-string. For instance, the shown command line selects the 4th rank (otherwise all ranks are sampled) along with "exclusive" usage of the performance monitoring unit (PMU) such that only one event-collector runs for all ranks.
+The `:4=exclusive` is related to Intel MPI or mpirun's gtool arguments and unrelated to VTune's command line syntax (see `vtune --help` or `amplxe-cl --help` with older versions); such argument(s) need to appear at the end of the gtool-string. For instance, the shown command line selects the 5th rank (zero-based) along with exclusive usage of the performance monitoring unit (PMU) such that only one event-collector runs for all ranks (without rank-number, all ranks are sampled).
 
 <a name="vtune-jit-api"></a>Intel&#160;VTune&#160;Amplifier presents invoked JIT code like functions, which belong to a module named "libxsmm.jit". The function name as well as the module name are supplied by LIBXSMM using VTune's JIT-Profiling API. Below, the shown "function name" (`libxsmm_knl_dnn_23x23x23_23_23_23_a1_b1_p6::mxm`) encodes an AVX-512 ("knl") double-precision kernel ("d") for small dense matrix multiplication, which performs no transposes ("nn"). The name further encodes M=N=K=LDA=LDB=LDC=23, Alpha=Beta=1.0, and a prefetch strategy ("p6").
 

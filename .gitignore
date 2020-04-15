@@ -29,6 +29,7 @@ tmp
 .vscode
 .state
 .make
+.vs
 threadsafety-*.txt
 malloc-trace-*.txt
 blas-trace-*.txt
