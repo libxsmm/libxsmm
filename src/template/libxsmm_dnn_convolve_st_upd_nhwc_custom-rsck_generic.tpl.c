@@ -17,7 +17,7 @@ libxsmm_blasint LDB = (handle->upd_pack_input == 1) ? handle->blocksifm * handle
 #if defined(LIBXSMM_DNN_TPL_UPD_DIRECT_GENERIC_NHWC_CUSTOM)
 libxsmm_blasint LDC = handle->ofmblock;
 #endif
-#if defined(LIBXSMM_DNN_TPL_UPD_DIRECT_GENERIC_IFHP, IFWPNHWC_RSCK)
+#if defined(LIBXSMM_DNN_TPL_UPD_DIRECT_GENERIC_NHWC_RSCK)
 libxsmm_blasint LDC = handle->blocksofm * handle->ofmblock;
 #endif
 int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
@@ -33,7 +33,7 @@ LIBXSMM_VLA_DECL(6, element_filter_type, weight_global, (element_filter_type*)ha
 #if defined(LIBXSMM_DNN_TPL_UPD_DIRECT_GENERIC_NHWC_RSCK)
 LIBXSMM_VLA_DECL(6, element_filter_type, weight_global, (element_filter_type*)handle->grad_filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
 #endif
-element_filter_type *weight_ptr = (element_filter_type*)((char*)handle->scratch + handle->upd_filter_scratch_offset) + ltid * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
+element_filter_type *weight_ptr = (handle->weight_copies == 1) ? (element_filter_type*)handle->grad_filter->data : (element_filter_type*) ((char*)handle->scratch + handle->upd_filter_scratch_offset) + ltid * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
 #if defined(LIBXSMM_DNN_TPL_UPD_DIRECT_GENERIC_NHWC_CUSTOM)
 LIBXSMM_VLA_DECL(6, element_filter_type, weight_private, (element_filter_type*)weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 #endif
@@ -347,8 +347,7 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
                 ind++;
               }
             }
-            n_blocks = ind;libxsmm_barrier_wait(handle->barrier, ltid);
-#
+            n_blocks = ind;
 #if defined(LIBXSMM_DNN_TPL_UPD_DIRECT_GENERIC_NHWC_CUSTOM)
             br_gemm_kernel(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(6, weight_global, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &n_blocks);
 #endif
