@@ -191,9 +191,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #endif
 
 #if defined(LIBXSMM_MALLOC_ALIGN_ALL)
-# define INTERNAL_AUTOALIGN(SIZE, ALIGNMENT) libxsmm_alignment(SIZE, ALIGNMENT)
+# define INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT) libxsmm_alignment(SIZE, ALIGNMENT)
 #else
-# define INTERNAL_AUTOALIGN(SIZE, ALIGNMENT) ALIGNMENT
+# define INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT) (ALIGNMENT)
 #endif
 
 #define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) { \
@@ -204,7 +204,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     || (internal_malloc_limit[0] > (SIZE)) \
     || (internal_malloc_limit[1] < (SIZE) && 0 != internal_malloc_limit[1])) \
   { \
-    const size_t internal_memalign_hook_alignment_ = INTERNAL_AUTOALIGN(ALIGNMENT); \
+    const size_t internal_memalign_hook_alignment_ = INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT); \
     (RESULT) = (0 != internal_memalign_hook_alignment_ \
       ? __real_memalign(internal_memalign_hook_alignment_, SIZE) \
       : __real_malloc(SIZE)); \
