@@ -101,10 +101,10 @@ ASNEEDED ?= 0
 # 1: build according to STATIC=0 and STATIC=1
 SHARED ?= 0
 
-# -1: support intercepted malloc (default: disabled at runtime)
+# -1: support intercepted malloc (disabled at runtime by default)
 #  0: disable intercepted malloc at compile-time
 # >0: enable intercepted malloc
-MALLOC ?= -1
+MALLOC ?= 0
 
 # Determines the kind of routine called for intercepted GEMMs
 # >=1 and odd : sequential and non-tiled (small problem sizes only)
