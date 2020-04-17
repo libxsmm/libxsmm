@@ -8,7 +8,7 @@ if [ "" = "${PYTHON}" ]; then
   PYTHON=$(command -v python)
 fi
 
-$(PYTHON) << END
+${PYTHON} << END
 f1 = open("${TESTFILE1}", "w+")
 f2 = open("${TESTFILE2}", "w+")
 i = 0
