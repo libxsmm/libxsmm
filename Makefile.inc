@@ -73,6 +73,8 @@ MAKE ?= make
 
 # Python interpreter per PYTHON=/path/to/python
 PYTHON3 ?= $(call which,python3)
+# Python3 by default
+PYTHON ?= $(PYTHON3)
 PYTHON ?= $(call which,python)
 
 ifeq (,$(PYTHON))
