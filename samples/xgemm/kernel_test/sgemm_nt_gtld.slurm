@@ -3,7 +3,12 @@
 TESTFILE1=$(mktemp -p .)
 TESTFILE2=$(mktemp -p .)
 
-python << END
+PYTHON=$(command -v python3)
+if [ "" = "${PYTHON}" ]; then
+  PYTHON=$(command -v python)
+fi
+
+$(PYTHON) << END
 f1 = open("${TESTFILE1}", "w+")
 f2 = open("${TESTFILE2}", "w+")
 i = 0
