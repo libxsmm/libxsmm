@@ -74,14 +74,11 @@ MAKE ?= make
 # Python interpreter per PYTHON=/path/to/python
 PYTHON3 ?= $(call which,python3)
 # Python3 by default
-PYTHON ?= $(PYTHON3)
-PYTHON ?= $(call which,python)
-
-ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
   SHELL := $(ENVBIN) PATH=$(MAKEINC):$(PATH) $(SHELL)
   PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null; command -v python)
-endif
+else
+  PYTHON ?= $(call which,python)
 endif
 
 ifneq (Darwin,$(UNAME))
