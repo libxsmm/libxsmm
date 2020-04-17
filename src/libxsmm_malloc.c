@@ -32,9 +32,8 @@
 # include <intrin.h>
 #else
 # include <sys/mman.h>
-# if defined(MAP_HUGETLB) && defined(MAP_POPULATE)
+# if defined(MAP_POPULATE)
 #   include <sys/utsname.h>
-#   include <string.h>
 # endif
 # include <sys/types.h>
 # include <unistd.h>
