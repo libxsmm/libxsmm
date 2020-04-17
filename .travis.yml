@@ -90,8 +90,13 @@ install:
     fi
   - if [ "" = "${CODECOV_ENABLED}" ] || [ "0" != "${CODECOV_ENABLED}" ]; then
       if [ "clang" != "${CC}" ]; then
-        pip install --upgrade pip;
-        pip install --user codecov;
+        if [ "" != "$(command -v pip3)" ]; then
+          pip3 install --upgrade pip;
+          pip3 install --user codecov;
+        else
+          pip install --upgrade pip;
+          pip install --user codecov;
+        fi;
       fi;
     fi
 
