@@ -301,14 +301,20 @@
 #define LIBXSMM_API_INLINE LIBXSMM_INLINE LIBXSMM_RETARGETABLE
 #define LIBXSMM_API_DEF
 
+#if (!defined(__INTEL_COMPILER) || !defined(_WIN32))
+#define LIBXSMM_APIVAR_ALIGNED(DECL, VISIBILITY) LIBXSMM_ALIGNED(LIBXSMM_APIVAR(DECL, VISIBILITY, LIBXSMM_API_DEF), LIBXSMM_CONFIG_CACHELINE)
+#else
+#define LIBXSMM_APIVAR_ALIGNED(DECL, VISIBILITY) LIBXSMM_APIVAR(DECL, VISIBILITY, LIBXSMM_API_DEF)
+#endif
+
 /** Public visible variable declaration (without definition) located in header file. */
 #define LIBXSMM_APIVAR_PUBLIC(DECL) LIBXSMM_APIVAR(DECL, EXPORT, LIBXSMM_API_EXTERN)
 /** Public visible variable definition (complements declaration) located in source file. */
-#define LIBXSMM_APIVAR_PUBLIC_DEF(DECL) LIBXSMM_ALIGNED(LIBXSMM_APIVAR(DECL, EXPORT, LIBXSMM_API_DEF), LIBXSMM_CONFIG_CACHELINE)
+#define LIBXSMM_APIVAR_PUBLIC_DEF(DECL) LIBXSMM_APIVAR_ALIGNED(DECL, EXPORT)
 /** Private variable declaration (without definition) located in header file. */
 #define LIBXSMM_APIVAR_PRIVATE(DECL) LIBXSMM_APIVAR(DECL, INTERN, LIBXSMM_API_EXTERN)
 /** Private variable definition (complements declaration) located in source file. */
-#define LIBXSMM_APIVAR_PRIVATE_DEF(DECL) LIBXSMM_ALIGNED(LIBXSMM_APIVAR(DECL, INTERN, LIBXSMM_API_DEF), LIBXSMM_CONFIG_CACHELINE)
+#define LIBXSMM_APIVAR_PRIVATE_DEF(DECL) LIBXSMM_APIVAR_ALIGNED(DECL, INTERN)
 /** Private variable (declaration and definition) located in source file. */
 #define LIBXSMM_APIVAR_DEFINE(DECL) LIBXSMM_APIVAR_PRIVATE(DECL); LIBXSMM_APIVAR_PRIVATE_DEF(DECL)
 /** Function decoration used for private functions. */
@@ -856,7 +862,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # endif
 #endif
 #if !defined(LIBXSMM_NO_LIBM) && (!defined(__STDC_VERSION__) || (199901L > __STDC_VERSION__) || defined(__cplusplus))
-# if defined(LIBXSMM_INTEL_COMPILER)
+# if defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) /* error including dfp754.h */
 #   include <mathimf.h>
 # endif
 # include <math.h>
