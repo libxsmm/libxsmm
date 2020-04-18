@@ -3,8 +3,9 @@
 TESTFILE1=$(mktemp -p .)
 TESTFILE2=$(mktemp -p .)
 
-PYTHON=$(command -v python3)
-if [ "" = "${PYTHON}" ]; then
+if [ -x "$(command -v python3)" ]; then
+  PYTHON=$(command -v python3)
+else
   PYTHON=$(command -v python)
 fi
 

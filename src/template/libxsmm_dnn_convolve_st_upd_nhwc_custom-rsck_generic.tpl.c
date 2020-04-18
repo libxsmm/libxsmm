@@ -182,7 +182,7 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     if (handle->upd_avoid_rim_fmas == 0) {
       const int IFH = (handle->upd_pack_input == 1) ? handle->ifhp/handle->desc.u : IFHP;
       const int IFW = (handle->upd_pack_input == 1) ? handle->ifwp/handle->desc.v : IFWP;
-      element_input_type *input_ptr_base = (handle->upd_pack_input == 1) ? (element_input_type*)((char*)handle->scratch + handle->upd_packing_padding_scratch_offset) : (element_input_type*)handle->reg_input->data;
+      element_input_type *input_ptr_base = (handle->upd_pack_input == 1) ? (element_input_type*)((char*)handle->scratch + handle->upd_packing_padding_scratch_offset) : (element_input_type*)input_ptr_to_use;
       LIBXSMM_VLA_DECL(5, element_input_type, input_use, (element_input_type*)input_ptr_base, IFH, IFW, handle->blocksifm, handle->ifmblock);
       const float beta = ((handle->desc.N == 1) && (handle->upd_ofh_rb == handle->ofh) && (handle->upd_ofw_rb == handle->ofw)) ? 0.f : 1.f;
       gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->upd_ofw_rb * handle->upd_ofh_rb, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
