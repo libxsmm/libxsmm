@@ -2068,12 +2068,8 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
 
   if (0 != handle) {
     switch (kind) {
-      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           l_scratch_size += handle->scratch7_size + 64;
-                                         } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-                                           l_scratch_size += handle->scratch7_size + 64;
-                                         } break;
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: break;
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: break;
       case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
                                            if (handle->use_lp_kernel == 1) {
                                              l_scratch_size += handle->scratch2_size + 64;
@@ -2129,30 +2125,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
       offset = (64 - address % 64);
       handle->scratch = (void*)(address+offset);
     }
+    address += handle->scratch_size + 64;
     /* @TODO this is old code and needs to be refactored */
     switch (kind) {
-      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           if (handle->scratch7_size != 0) {
-                                             if (address % 64 == 0) {
-                                               handle->scratch7 = (void*)address;
-                                             } else {
-                                               offset = (64 - address % 64);
-                                               handle->scratch7 = (void*)(address+offset);
-                                             }
-                                             address += handle->scratch7_size + 64;
-                                           }
-                                         } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-                                           if (handle->scratch7_size != 0) {
-                                             if (address % 64 == 0) {
-                                               handle->scratch7 = (void*)address;
-                                             } else {
-                                               offset = (64 - address % 64);
-                                               handle->scratch7 = (void*)(address+offset);
-                                             }
-                                             address += handle->scratch7_size + 64;
-                                           }
-                                         } break;
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: break;
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: break;
       case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
                                            /* we need a minibatch copy for transpose of input, scratch3 */
                                            if (handle->use_lp_kernel == 1) {
@@ -2171,6 +2148,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                              offset = (64 - address % 64);
                                              handle->scratch3 = (void*)(address+offset);
                                            }
+                                           address += handle->scratch3_size + 64;
                                            if (handle->scratch7_size != 0) {
                                              if (address % 64 == 0) {
                                                handle->scratch7 = (void*)address;
@@ -2229,12 +2207,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
   if (0 != handle) {
     handle->scratch = 0;
     switch (kind) {
-      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           handle->scratch7 = 0;
-                                         } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-                                           handle->scratch7 = 0;
-                                         } break;
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: break;
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: break;
       case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
                                            handle->scratch2 = 0;
                                            handle->scratch3 = 0;
