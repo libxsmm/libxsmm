@@ -12,16 +12,21 @@ make SYM=1
 Above, the root directory is automatically determined from the environment (VTUNE_PROFILER_\*_DIR or VTUNE_AMPLIFIER_\*_DIR with older versions). This variable is present after source'ing the Intel&#160;VTune environment (`source /path/to/vtune_amplifier/amplxe-vars.sh` with older version), but it can be manually provided as well (`make VTUNEROOT=/path/to/vtune_amplifier`). Symbols are not really required to display kernel names for the dynamically generated code, however enabling symbols makes the analysis much more useful for the rest of the (static) code, and hence it has been made a prerequisite. For example, when "call stacks" are collected it is possible to find out where the JIT code has been invoked by the application:
 
 ```bash
-vtune -r resultdir -data-limit 0 -collect hotspots -knob sampling-mode=hw \
-      -knob enable-stack-collection=true -- ./myapplication
+vtune -r resultdir -data-limit 0 -collect hotspots \
+      -knob enable-stack-collection=true \
+      -knob sampling-mode=hw \
+      -knob stack-size=0 \
+      -- ./myapplication
 ```
 
 In case of an MPI-parallelized application, it can be useful to only collect results from a "representative" rank, and to also avoid running the event collector in every rank of the application. With Intel&#160;MPI both of which can be achieved by:
 
 ```bash
-mpirun [...] -gtool 'vtune -r resultdir \
-                     -data-limit 0 -collect hotspots -knob sampling-mode=hw \
-                     -knob enable-stack-collection=true:4=exclusive'
+mpirun -gtool 'vtune -r resultdir -data-limit 0 -collect hotspots \
+                     -knob enable-stack-collection=true \
+                     -knob sampling-mode=hw \
+                     -knob stack-size=0:4=exclusive' \
+  [...] .myapplication
 ```
 
 The `:4=exclusive` is related to Intel MPI or mpirun's gtool arguments and unrelated to VTune's command line syntax (see `vtune --help` or `amplxe-cl --help` with older versions); such argument(s) need to appear at the end of the gtool-string. For instance, the shown command line selects the 5th rank (zero-based) along with exclusive usage of the performance monitoring unit (PMU) such that only one event-collector runs for all ranks (without rank-number, all ranks are sampled).
