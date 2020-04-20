@@ -41,8 +41,9 @@ then
   echo "Warning: some Python scripts do not pass flake8 check (${HERE})!"
 fi
 
-if [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ] && \
-   [ "" != "${SED}" ] && [ "" != "${CUT}" ] && [ "" != "${TR}" ];
+if [ "" != "${SED}" ] && [ "" != "${CUT}" ] && [ "" != "${TR}" ] && \
+   [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ] && \
+   [ "" != "${MKTEMP}" ];
 then
   if [ "" != "${ICONV}" ]; then
     CAT="${ICONV} -t ASCII"
