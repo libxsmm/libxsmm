@@ -14,7 +14,6 @@
      &                        libxsmm_timer_duration,                   &
      &                        libxsmm_timer_tick,                       &
      &                        libxsmm_otrans_omp,                       &
-     &                        libxsmm_otrans,                           &
      &                        libxsmm_itrans,                           &
      &                        libxsmm_ptr
         IMPLICIT NONE

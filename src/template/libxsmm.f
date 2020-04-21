@@ -199,7 +199,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xrelease
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xitrans
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xotrans
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xotrans_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch
@@ -405,7 +405,7 @@
           !> ARRAY        :: output, input
           !> INTEGER(4|8) :: m, n, ldi, ldo
           !> INTEGER(4)   :: typesize
-          PURE SUBROUTINE libxsmm_xotrans_omp(output, input,            &
+          PURE SUBROUTINE libxsmm_otrans_omp(output, input,             &
      &    typesize, m, n, ldi, ldo)                                     &
      &    BIND(C, NAME="libxsmm_otrans_omp_")
             IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
@@ -772,15 +772,6 @@
           MODULE PROCEDURE libxsmm_otrans_d2
           MODULE PROCEDURE libxsmm_otrans_s1
           MODULE PROCEDURE libxsmm_otrans_s2
-        END INTERFACE
-
-        !> Overloaded TRANSPOSE routines; MT via libxsmmext (out-of-place form).
-        INTERFACE libxsmm_otrans_omp
-          MODULE PROCEDURE libxsmm_otrans_omp_p0
-          MODULE PROCEDURE libxsmm_otrans_omp_d1
-          MODULE PROCEDURE libxsmm_otrans_omp_d2
-          MODULE PROCEDURE libxsmm_otrans_omp_s1
-          MODULE PROCEDURE libxsmm_otrans_omp_s2
         END INTERFACE
 
         !> Calculate a hash value for a given key value (binary blob).
@@ -1927,66 +1918,6 @@
           REAL(C_FLOAT), INTENT(OUT), TARGET :: output(ldo,*)
           REAL(C_FLOAT), INTENT(IN),  TARGET ::  input(ldi,*)
           CALL libxsmm_xotrans(C_LOC(output), C_LOC(input),             &
-     &      4, m, n, ldi, ldo)
-        END SUBROUTINE
-
-        !> Matrix transposition; MT via libxsmmext (out-of-place form).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp_p0
-        PURE SUBROUTINE libxsmm_otrans_omp_p0(output, input, typesize,  &
-     &  m, n, ldi, ldo)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
-          TYPE(C_PTR),    INTENT(IN) :: output, input
-          INTEGER(C_INT), INTENT(IN) :: typesize
-          CALL libxsmm_xotrans_omp(output, input,                       &
-     &      typesize, m, n, ldi, ldo)
-        END SUBROUTINE
-
-        !> Transpose a matrix (out-of-place form, DP/rank-1).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp_d1
-        SUBROUTINE libxsmm_otrans_omp_d1(output, input, m, n, ldi, ldo)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
-          REAL(C_DOUBLE), INTENT(OUT), TARGET :: output(*)
-          REAL(C_DOUBLE), INTENT(IN),  TARGET ::  input(*)
-          CALL libxsmm_xotrans_omp(C_LOC(output), C_LOC(input),         &
-     &      8, m, n, ldi, ldo)
-        END SUBROUTINE
-
-        !> Transpose a matrix (out-of-place form, DP/rank-2).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp_d2
-        SUBROUTINE libxsmm_otrans_omp_d2(output, input, m, n, ldi, ldo)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
-          REAL(C_DOUBLE), INTENT(OUT), TARGET :: output(ldo,*)
-          REAL(C_DOUBLE), INTENT(IN),  TARGET ::  input(ldi,*)
-          CALL libxsmm_xotrans_omp(C_LOC(output), C_LOC(input),         &
-     &      8, m, n, ldi, ldo)
-        END SUBROUTINE
-
-        !> Transpose a matrix (out-of-place form, SP/rank-1).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp_s1
-        SUBROUTINE libxsmm_otrans_omp_s1(output, input, m, n, ldi, ldo)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
-          REAL(C_FLOAT), INTENT(OUT), TARGET :: output(*)
-          REAL(C_FLOAT), INTENT(IN),  TARGET ::  input(*)
-          CALL libxsmm_xotrans_omp(C_LOC(output), C_LOC(input),         &
-     &      4, m, n, ldi, ldo)
-        END SUBROUTINE
-
-        !> Transpose a matrix (out-of-place form, SP/rank-2).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp_s2
-        SUBROUTINE libxsmm_otrans_omp_s2(output, input, m, n, ldi, ldo)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
-          REAL(C_FLOAT), INTENT(OUT), TARGET :: output(ldo,*)
-          REAL(C_FLOAT), INTENT(IN),  TARGET ::  input(ldi,*)
-          CALL libxsmm_xotrans_omp(C_LOC(output), C_LOC(input),         &
      &      4, m, n, ldi, ldo)
         END SUBROUTINE
 

@@ -934,10 +934,10 @@ endif
 .PHONY: flib_hst
 ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf.pc
-$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmmext.$(LIBEXT)
+$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
 ifeq (0,$(STATIC))
 	$(LIB_FLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmmext.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 else # static
 	@rm -f $@
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
@@ -1689,7 +1689,7 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "includedir=$(ALIAS_INCLUDEDIR)" >> $@
 	@echo "libdir=$(ALIAS_LIBDIR)" >> $@
 	@echo >> $@
-	@echo "Requires: libxsmmext" >> $@
+	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
 	@echo "Libs: -L\$${libdir} -lxsmmf" >> $@
 
