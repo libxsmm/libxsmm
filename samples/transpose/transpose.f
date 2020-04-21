@@ -14,8 +14,9 @@
      &                        libxsmm_timer_duration,                   &
      &                        libxsmm_timer_tick,                       &
      &                        libxsmm_otrans_omp,                       &
+     &                        libxsmm_otrans,                           &
      &                        libxsmm_itrans,                           &
-     &                        libxsmm_ptr
+     &                        ptr => libxsmm_ptr
         IMPLICIT NONE
 
         INTEGER, PARAMETER :: T = KIND(0D0)
@@ -92,8 +93,10 @@
           !$OMP END PARALLEL DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            CALL libxsmm_otrans_omp(libxsmm_ptr(b1), libxsmm_ptr(a1),   &
-     &              S, m, n, lda, ldb)
+            !CALL libxsmm_otrans_omp(ptr(b1), ptr(a1), S, m, n, lda, ldb)
+            !CALL libxsmm_otrans(ptr(b1), ptr(a1), S, m, n, lda, ldb)
+            !CALL libxsmm_otrans(bn, an, S, m, n, lda, ldb)
+            CALL libxsmm_otrans(b1, a1, m, n, lda, ldb)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
           DEALLOCATE(a1)
@@ -107,7 +110,9 @@
           !$OMP END PARALLEL DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            CALL libxsmm_itrans(libxsmm_ptr(b1), S, m, n, ldb)
+            !CALL libxsmm_itrans(ptr(b1), S, m, n, ldb)
+            CALL libxsmm_itrans(bn, m, n, ldb)
+            CALL libxsmm_itrans(b1, m, n, ldb)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         END IF
