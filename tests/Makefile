@@ -80,7 +80,7 @@ ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
 $(1): $(2) $(OBJECTX) $(dir $(1))/.make $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(LIBDEP) $(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(MAINLIB) $(EXTLIB)) \
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB) $(MAINLIB)) \
 		$(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 else
 .PHONY: $(1)

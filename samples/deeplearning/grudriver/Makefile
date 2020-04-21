@@ -55,10 +55,10 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/grudriver_nc_ck: $(OUTDIR)/.make $(BLDDIR)/grudriver_nc_ck-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/grudriver_nc_ck-c.o $(call cleanld,$(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+	$(LD) -o $@ $(BLDDIR)/grudriver_nc_ck-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/grudriver_nc_kcck: $(OUTDIR)/.make $(BLDDIR)/grudriver_nc_kcck-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/grudriver_nc_kcck-c.o $(call cleanld,$(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+	$(LD) -o $@ $(BLDDIR)/grudriver_nc_kcck-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

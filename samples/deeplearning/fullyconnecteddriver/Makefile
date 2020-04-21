@@ -55,13 +55,13 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o $(call cleanld,$(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/layer_example_bf16: $(OUTDIR)/.make $(BLDDIR)/layer_example_bf16-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example_bf16-c.o $(call cleanld,$(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+	$(LD) -o $@ $(BLDDIR)/layer_example_bf16-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/layer_example_bf16_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_bf16_f32-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example_bf16_f32-c.o $(call cleanld,$(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+	$(LD) -o $@ $(BLDDIR)/layer_example_bf16_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

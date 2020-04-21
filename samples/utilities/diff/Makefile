@@ -57,7 +57,7 @@ compile: $(OBJECTS) $(FTNOBJS)
 ifneq (,$(strip $(FC)))
 ifneq (0,$(shell echo "$$((3>$(GCC) || 40600<=$(FC_VERSION_NUM)))"))
 $(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP)
-	$(FLD) -o $@ $(FTNOBJS) $(EXTLIB) $(FORTLIB) $(MAINLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(EXTLIB) $(MAINLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
 endif
