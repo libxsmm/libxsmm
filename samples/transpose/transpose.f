@@ -95,7 +95,7 @@
           DO k = 1, nrepeat
             !CALL libxsmm_otrans_omp(ptr(b1), ptr(a1), S, m, n, lda, ldb)
             !CALL libxsmm_otrans(ptr(b1), ptr(a1), S, m, n, lda, ldb)
-            !CALL libxsmm_otrans(bn, an, S, m, n, lda, ldb)
+            !CALL libxsmm_otrans(bn, an, m, n, lda, ldb)
             CALL libxsmm_otrans(b1, a1, m, n, lda, ldb)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -111,7 +111,7 @@
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
             !CALL libxsmm_itrans(ptr(b1), S, m, n, ldb)
-            CALL libxsmm_itrans(bn, m, n, ldb)
+            !CALL libxsmm_itrans(bn, m, n, ldb)
             CALL libxsmm_itrans(b1, m, n, ldb)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
