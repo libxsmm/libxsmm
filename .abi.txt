@@ -305,7 +305,12 @@ libxsmm_lcm
 libxsmm_malloc
 libxsmm_matcopy
 libxsmm_matcopy_
+libxsmm_matcopy_d1
+libxsmm_matcopy_d2
 libxsmm_matcopy_omp
+libxsmm_matcopy_p0
+libxsmm_matcopy_s1
+libxsmm_matcopy_s2
 libxsmm_matcopy_thread
 libxsmm_matcopy_thread_internal
 libxsmm_matdiff
@@ -349,11 +354,6 @@ libxsmm_otrans_d1
 libxsmm_otrans_d2
 libxsmm_otrans_omp
 libxsmm_otrans_omp_
-libxsmm_otrans_omp_d1
-libxsmm_otrans_omp_d2
-libxsmm_otrans_omp_p0
-libxsmm_otrans_omp_s1
-libxsmm_otrans_omp_s2
 libxsmm_otrans_p0
 libxsmm_otrans_s1
 libxsmm_otrans_s2
