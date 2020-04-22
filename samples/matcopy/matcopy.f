@@ -15,21 +15,24 @@
      &                        libxsmm_timer_tick,                       &
      &                        libxsmm_matcopy_omp,                      &
      &                        libxsmm_matcopy,                          &
+     &                        libxsmm_init,                             &
      &                        ptr => libxsmm_ptr
         IMPLICIT NONE
 
         INTEGER, PARAMETER :: T = KIND(0D0)
-        INTEGER, PARAMETER :: S = 8
+        INTEGER, PARAMETER :: S = T
+        INTEGER, PARAMETER :: W = 39
         REAL(T), PARAMETER :: X = REAL(-1, T)
 
         REAL(T), ALLOCATABLE, TARGET :: a1(:), b1(:)
         !DIR$ ATTRIBUTES ALIGN:64 :: a1, b1
-        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, ldi, ldo, i, j, k
-        REAL(T), POINTER :: an(:,:), bn(:,:)
-        DOUBLE PRECISION :: duration
-        INTEGER(8) :: nbytes, start
-        INTEGER :: nrepeat
-        REAL(T) :: diff
+        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, ldi, ldo, h, i, j
+        REAL(T), POINTER :: an(:,:,:), bn(:,:,:)
+        DOUBLE PRECISION :: d, duration(2)
+        INTEGER(8) :: start
+        INTEGER :: r, nrepeat
+        INTEGER :: k, ngb
+        INTEGER :: nbytes
 
         CHARACTER(32) :: argv
         INTEGER :: argc
@@ -63,69 +66,116 @@
           CALL GET_COMMAND_ARGUMENT(5, argv)
           READ(argv, "(I32)") nrepeat
         ELSE
-          nrepeat = 3
+          nrepeat = 5
+        END IF
+        IF (6 <= argc) THEN
+          CALL GET_COMMAND_ARGUMENT(6, argv)
+          READ(argv, "(I32)") ngb
+          IF (0.GE.ngb) ngb = 2
+        ELSE ! 2 GB by default
+          ngb = 2
         END IF
 
-        nbytes = INT(m * n, 8) * T ! size in Byte
-        WRITE(*, "(2(A,I0),2(A,I0),A,I0,A)")                            &
-     &    "m=", m, " n=", n, " ldi=", ldi, " ldo=", ldo,                &
-     &    " size=", (nbytes / ISHFT(1, 20)), "MB"
+        nbytes = m * n * S ! size in Byte
+        k = INT(ISHFT(INT(ngb,8), 30) / INT(nbytes,8))
+        IF (0.GE.k) k = 1
 
-        ALLOCATE(a1(ldi*n), b1(ldo*n))
-        an(1:ldi,1:n) => a1
-        bn(1:ldo,1:n) => b1
+        WRITE(*, "(3(A,I0),2(A,I0),A,I0,A)")                            &
+     &    "m=", m, " n=", n, " k=", k, " ldi=", ldi, " ldo=", ldo,      &
+     &    " size=", INT(k,8) * INT(nbytes,8) / ISHFT(1, 20), "MB"
+        CALL libxsmm_init()
 
-        !$OMP PARALLEL DO PRIVATE(i, j) DEFAULT(NONE) SHARED(m, n, an)
-        DO j = 1, n
-          DO i = 1, ldi
-            an(i,j) = initial_value(i - 1, j - 1, ldi)
-          END DO
-          DO i = 1, ldo
-            bn(i,j) = X
+        ALLOCATE(a1(ldi*n*k), b1(ldo*n*k))
+        an(1:ldi,1:n, 1:k) => a1
+        bn(1:ldo,1:n, 1:k) => b1
+
+        !$OMP PARALLEL DO DEFAULT(NONE) PRIVATE(h, i, j) SHARED(n, k, ldi, ldo, an, bn)
+        DO h = 1, k
+          DO j = 1, n
+            DO i = 1, ldi
+              an(i,j,h) = initial_value(i-1, j-1, ldi*h)
+            END DO
+            DO i = 1, ldo
+              bn(i,j,h) = X
+            END DO
           END DO
         END DO
         !$OMP END PARALLEL DO
 
-        start = libxsmm_timer_tick()
-        DO k = 1, nrepeat
-          CALL libxsmm_matcopy_omp(ptr(b1), ptr(a1), S, m, n, ldi, ldo)
-          CALL libxsmm_matcopy(ptr(b1), ptr(a1), S, m, n, ldi, ldo)
-          CALL libxsmm_matcopy(bn, an, m, n, ldi, ldo)
-          CALL libxsmm_matcopy(b1, a1, m, n, ldi, ldo)
-        END DO
-        duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-
-        diff = REAL(0, T)
-        DO j = 1, n
-          DO i = 1, m
-            diff = MAX(diff, ABS(bn(i,j) - an(i,j)))
+        duration = 0D0
+        ! matcopy bandwidth assumes RFO
+        WRITE(*, "(A)") REPEAT("-", W)
+        DO r = 1, nrepeat
+          start = libxsmm_timer_tick()
+          DO h = 1, k
+            !CALL libxsmm_matcopy(ptr(bn(:,:,h)), ptr(an(:,:,h)), S,     &
+            CALL libxsmm_matcopy(bn(:,:,h), an(:,:,h),                  &
+     &        m, n, ldi, ldo)
           END DO
-          DO i = m+1, ldo
-            diff = MAX(diff, ABS(bn(i,j) - X))
-          END DO
-        END DO
-        DEALLOCATE(a1, b1)
-
-        IF (0.GE.diff) THEN
-          IF ((0.LT.duration).AND.(0.LT.nrepeat)) THEN
-            ! matcopy bandwidth assumes RFO
-            WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", 3D0     &
-     &        * REAL(nbytes, T)                                         &
-     &        * REAL(nrepeat, T) / (duration * REAL(ISHFT(1_8, 30), T)),&
-     &        " GB/s"
-            WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ",         &
-     &        1D3 * duration / REAL(nrepeat, T),                        &
-     &        " ms"
+          d = libxsmm_timer_duration(start, libxsmm_timer_tick())
+          IF ((0.GE.diff(an, bn, m)).AND.(0.LT.d)) THEN ! GE: avoid warning
+            duration(1) = duration(1) + d
+            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "LIBXSMM:", 1D3 * d,     &
+     &        " ms", CHAR(9), REAL(3 * k, 8) * REAL(nbytes, 8) / (      &
+     &                        REAL(ISHFT(1, 20), 8) * d),               &
+     &        " MB/s"
+          ELSE
+            WRITE(*, "(A)") "Failed!"
+            EXIT
           END IF
-        ELSE
-          WRITE(*,*) "Validation failed!"
-          STOP 1
+          start = libxsmm_timer_tick()
+          DO h = 1, k
+            bn(1:m,:,h) = an(1:m,:,h)
+          END DO
+          d = libxsmm_timer_duration(start, libxsmm_timer_tick())
+          IF ((0.GE.diff(an, bn, m)).AND.(0.LT.d)) THEN ! GE: avoid warning
+            duration(2) = duration(2) + d
+            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "FORTRAN:", 1D3 * d,     &
+     &        " ms", CHAR(9), REAL(3*k, 8) * REAL(nbytes, 8) / (        &
+     &                        REAL(ISHFT(1, 20), 8) * d),               &
+     &        " MB/s"
+          ELSE
+            WRITE(*, "(A)") "Failed!"
+            EXIT
+          END IF
+          WRITE(*, "(A)") REPEAT("-", W)
+        END DO
+
+        DEALLOCATE(a1, b1)
+        IF (ALL(0.LT.duration)) THEN
+          WRITE(*, "(A,I0,A)") "Arithmetic average of ",                &
+     &      nrepeat, " iterations"
+          WRITE(*, "(A)") REPEAT("-", W)
+          WRITE(*, "(A,F10.1,A)") "LIBXSMM:", REAL(3*k*nrepeat, 8) *    &
+     &      REAL(nbytes, 8) / (REAL(ISHFT(1, 20), 8) * duration(1)),    &
+     &      " MB/s"
+          WRITE(*, "(A,F10.1,A)") "FORTRAN:", REAL(3*k*nrepeat, 8) *    &
+     &      REAL(nbytes, 8) / (REAL(ISHFT(1, 20), 8) * duration(2)),    &
+     &      " MB/s"
+          WRITE(*, "(A)") REPEAT("-", W)
         END IF
 
       CONTAINS
         PURE REAL(T) FUNCTION initial_value(i, j, m)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: i, j, m
           initial_value = REAL(j * m + i, T)
+        END FUNCTION
+
+        PURE REAL(T) FUNCTION diff(a, b, m)
+          REAL(T), INTENT(IN) :: a(:,:,:), b(:,:,:)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND) :: h, i, j
+          diff = REAL(0,T)
+          DO h = LBOUND(a,3), UBOUND(a,3)
+            DO j = LBOUND(a,2), UBOUND(a,2)
+              DO i = LBOUND(a,1), m
+                diff = MAX(diff, ABS(b(i,j,h) - a(i,j,h)))
+              END DO
+              DO i = m+1, UBOUND(b,1)
+                diff = MAX(diff, ABS(b(i,j,h) - X))
+              END DO
+            END DO
+          END DO
         END FUNCTION
       END PROGRAM
 
