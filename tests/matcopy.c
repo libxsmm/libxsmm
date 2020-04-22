@@ -76,6 +76,20 @@ int main(void)
 
   for (fun = 0; fun < 2; ++fun) {
     for (test = start; test < ntests; ++test) {
+      matcopy[fun](b, NULL, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test], prefetch + test);
+      { /* validation */
+        unsigned int testerrors = 0;
+        libxsmm_blasint i, j;
+        for (i = 0; i < n[test]; ++i) {
+          for (j = 0; j < m[test]; ++j) {
+            const ELEM_TYPE u = 0;
+            const ELEM_TYPE v = b[i*ldo[test]+j];
+            if (LIBXSMM_NEQ(u, v)) {
+              ++testerrors;
+            }
+          }
+        }
+      }
       matcopy[fun](b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test], prefetch + test);
       { /* validation */
         unsigned int testerrors = 0;

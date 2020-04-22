@@ -100,8 +100,13 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 #else
       LIBXSMM_UNUSED(prefetch);
 #endif /*defined(_OPENMP)*/
-      { /* no MT, or small problem-size */
+      if (NULL != in) { /* no MT, or small problem-size */
         LIBXSMM_XCOPY_NONJIT(LIBXSMM_MCOPY_KERNEL,
+          typesize, out, in, ldi, ldo, 0, m, 0, n,
+          LIBXSMM_XALIGN_MCOPY);
+      }
+      else { /* no MT, or small problem-size */
+        LIBXSMM_XCOPY_NONJIT(LIBXSMM_MZERO_KERNEL,
           typesize, out, in, ldi, ldo, 0, m, 0, n,
           LIBXSMM_XALIGN_MCOPY);
       }
