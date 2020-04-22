@@ -308,6 +308,7 @@ libxsmm_matcopy_
 libxsmm_matcopy_d1
 libxsmm_matcopy_d2
 libxsmm_matcopy_omp
+libxsmm_matcopy_omp_
 libxsmm_matcopy_p0
 libxsmm_matcopy_s1
 libxsmm_matcopy_s2

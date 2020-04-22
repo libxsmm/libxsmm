@@ -200,6 +200,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmatcopy
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xitrans
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xotrans
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
@@ -408,6 +409,20 @@
           PURE SUBROUTINE libxsmm_xotrans(output, input,                &
      &    typesize, m, n, ldi, ldo)                                     &
      &    BIND(C, NAME="libxsmm_otrans_")
+            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
+            TYPE(C_PTR), INTENT(IN), VALUE :: output, input
+            INTEGER(C_INT), INTENT(IN) :: typesize
+          END SUBROUTINE
+
+          !> Matrix copy; MT via libxsmmext (out-of-place form).
+          !> Implicit FORTRAN 77 interface:
+          !> ARRAY        :: output, input
+          !> INTEGER(4|8) :: m, n, ldi, ldo
+          !> INTEGER(4)   :: typesize
+          PURE SUBROUTINE libxsmm_matcopy_omp(output, input,            &
+     &    typesize, m, n, ldi, ldo)                                     &
+     &    BIND(C, NAME="libxsmm_matcopy_omp_")
             IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input

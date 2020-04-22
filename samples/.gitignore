@@ -15,10 +15,8 @@ magazine/magazine_blas
 magazine/magazine_blaze
 magazine/magazine_eigen
 magazine/magazine_xsmm
+matcopy/matcopyf
 matcopy/matcopy
-matcopy/kernel
-transpose/transpose
-transpose/kernel
 nek/axhm
 nek/grad
 nek/rstr
