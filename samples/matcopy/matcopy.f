@@ -28,7 +28,7 @@
         !DIR$ ATTRIBUTES ALIGN:64 :: a1, b1
         INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, ldi, ldo, h, i, j
         REAL(T), POINTER :: an(:,:,:), bn(:,:,:)
-        DOUBLE PRECISION :: d, duration(2)
+        DOUBLE PRECISION :: d, duration(4)
         INTEGER(8) :: start
         INTEGER :: r, nrepeat
         INTEGER :: k, ngb
@@ -103,9 +103,24 @@
         !$OMP END PARALLEL DO
 
         duration = 0D0
-        ! matcopy bandwidth assumes RFO
+        ! matcopy bandwidth assumes RFO in case of copy
         WRITE(*, "(A)") REPEAT("-", W)
         DO r = 1, nrepeat
+          start = libxsmm_timer_tick()
+          DO h = 1, k
+            CALL libxsmm_matcopy(bn(:,:,h), m=m, n=n, ldi=ldi, ldo=ldo)
+          END DO
+          d = libxsmm_timer_duration(start, libxsmm_timer_tick())
+          IF (0.LT.d) THEN
+            duration(1) = duration(1) + d
+            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "LIBXSMM (zero):", 1D3   &
+     &          * d, " ms", CHAR(9), REAL(1 * k, 8) * REAL(nbytes, 8)   &
+     &          / (REAL(ISHFT(1, 20), 8) * d), " MB/s"
+          ELSE
+            WRITE(*, "(A)") "Failed!"
+            EXIT
+          END IF
+
           start = libxsmm_timer_tick()
           DO h = 1, k
             !CALL libxsmm_matcopy(ptr(bn(:,:,h)), ptr(an(:,:,h)), S,     &
@@ -113,31 +128,46 @@
      &        m, n, ldi, ldo)
           END DO
           d = libxsmm_timer_duration(start, libxsmm_timer_tick())
-          IF ((0.GE.diff(an, bn, m)).AND.(0.LT.d)) THEN ! GE: avoid warning
-            duration(1) = duration(1) + d
-            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "LIBXSMM:", 1D3 * d,     &
-     &        " ms", CHAR(9), REAL(3 * k, 8) * REAL(nbytes, 8) / (      &
-     &                        REAL(ISHFT(1, 20), 8) * d),               &
-     &        " MB/s"
+          IF ((0.LT.d).AND.(0.GE.diff(an, bn, m))) THEN
+            duration(2) = duration(2) + d
+            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "LIBXSMM (copy):", 1D3   &
+     &          * d, " ms", CHAR(9), REAL(3 * k, 8) * REAL(nbytes, 8)   &
+     &          / (REAL(ISHFT(1, 20), 8) * d), " MB/s"
           ELSE
             WRITE(*, "(A)") "Failed!"
             EXIT
           END IF
+
+          start = libxsmm_timer_tick()
+          DO h = 1, k
+            bn(1:m,:,h) = REAL(0,T)
+          END DO
+          d = libxsmm_timer_duration(start, libxsmm_timer_tick())
+          IF (0.LT.d) THEN
+            duration(3) = duration(3) + d
+            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "FORTRAN (zero):", 1D3   &
+     &          * d, " ms", CHAR(9), REAL(1 * k, 8) * REAL(nbytes, 8)   &
+     &          / (REAL(ISHFT(1, 20), 8) * d), " MB/s"
+          ELSE
+            WRITE(*, "(A)") "Failed!"
+            EXIT
+          END IF
+
           start = libxsmm_timer_tick()
           DO h = 1, k
             bn(1:m,:,h) = an(1:m,:,h)
           END DO
           d = libxsmm_timer_duration(start, libxsmm_timer_tick())
-          IF ((0.GE.diff(an, bn, m)).AND.(0.LT.d)) THEN ! GE: avoid warning
-            duration(2) = duration(2) + d
-            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "FORTRAN:", 1D3 * d,     &
-     &        " ms", CHAR(9), REAL(3*k, 8) * REAL(nbytes, 8) / (        &
-     &                        REAL(ISHFT(1, 20), 8) * d),               &
-     &        " MB/s"
+          IF ((0.LT.d).AND.(0.GE.diff(an, bn, m))) THEN
+            duration(4) = duration(4) + d
+            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "FORTRAN (copy):", 1D3   &
+     &          * d, " ms", CHAR(9), REAL(3 * k, 8) * REAL(nbytes, 8)   &
+     &          / (REAL(ISHFT(1, 20), 8) * d), " MB/s"
           ELSE
             WRITE(*, "(A)") "Failed!"
             EXIT
           END IF
+
           WRITE(*, "(A)") REPEAT("-", W)
         END DO
 
@@ -146,12 +176,21 @@
           WRITE(*, "(A,I0,A)") "Arithmetic average of ",                &
      &      nrepeat, " iterations"
           WRITE(*, "(A)") REPEAT("-", W)
-          WRITE(*, "(A,F10.1,A)") "LIBXSMM:", REAL(3*k*nrepeat, 8) *    &
-     &      REAL(nbytes, 8) / (REAL(ISHFT(1, 20), 8) * duration(1)),    &
-     &      " MB/s"
-          WRITE(*, "(A,F10.1,A)") "FORTRAN:", REAL(3*k*nrepeat, 8) *    &
-     &      REAL(nbytes, 8) / (REAL(ISHFT(1, 20), 8) * duration(2)),    &
-     &      " MB/s"
+
+          WRITE(*, "(A,F10.1,A)") "LIBXSMM (zero):",                    &
+     &      (REAL(1*k*nrepeat, 8) * REAL(nbytes, 8))                    &
+     &    / (REAL(ISHFT(1, 20), 8) * duration(1)), " MB/s"
+          WRITE(*, "(A,F10.1,A)") "LIBXSMM (copy):",                    &
+     &      (REAL(3*k*nrepeat, 8) * REAL(nbytes, 8))                    &
+     &    / (REAL(ISHFT(1, 20), 8) * duration(2)), " MB/s"
+
+          WRITE(*, "(A,F10.1,A)") "FORTRAN (zero):",                    &
+     &      (REAL(1*k*nrepeat, 8) * REAL(nbytes, 8))                    &
+     &    / (REAL(ISHFT(1, 20), 8) * duration(3)), " MB/s"
+          WRITE(*, "(A,F10.1,A)") "FORTRAN (copy):",                    &
+     &      (REAL(3*k*nrepeat, 8) * REAL(nbytes, 8))                    &
+     &    / (REAL(ISHFT(1, 20), 8) * duration(4)), " MB/s"
+
           WRITE(*, "(A)") REPEAT("-", W)
         END IF
 

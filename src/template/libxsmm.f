@@ -421,12 +421,12 @@
           !> INTEGER(4|8) :: m, n, ldi, ldo
           !> INTEGER(4)   :: typesize
           PURE SUBROUTINE libxsmm_matcopy_omp(output, input,            &
-     &    typesize, m, n, ldi, ldo)                                     &
+     &    typesize, m, n, ldi, ldo, prefetch)                           &
      &    BIND(C, NAME="libxsmm_matcopy_omp_")
             IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
-            INTEGER(C_INT), INTENT(IN) :: typesize
+            INTEGER(C_INT), INTENT(IN) :: typesize, prefetch
           END SUBROUTINE
 
           !> Matrix transposition; MT via libxsmmext (out-of-place form).
