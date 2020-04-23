@@ -68,13 +68,13 @@ class MatcopyTune(MeasurementInterface):
         nruns = max(self.args.nruns, 1)
         begin = max(self.args.begin, self.mintilesize)
         end = max(self.args.end, self.mintilesize)
-        m = random.randint(begin, end - 1)
-        n = random.randint(begin, end - 1)
+        m = random.randint(begin, end)
+        n = random.randint(begin, end)
         if (self.args.tight):
             ldi = ldo = m
         else:
-            ldi = max(random.randint(begin, end - 1), m)
-            ldo = max(random.randint(begin, end - 1), m)
+            ldi = max(random.randint(begin, end), m)
+            ldo = max(random.randint(begin, end), m)
         kind = ["COPY", "ZERO"][self.args.zero]
         run_cmd = (
             "CHECK=0 " +  # no checks and only LIBXSMM measurement
