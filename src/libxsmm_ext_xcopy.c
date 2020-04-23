@@ -24,14 +24,14 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
     LIBXSMM_INIT
     {
 #if defined(_OPENMP)
-      const unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
-      const unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
+      const unsigned int tm = libxsmm_mcopy_mtile[4 < typesize ? 0 : 1];
+      const unsigned int tn = (unsigned int)(libxsmm_mcopy_stretch * tm);
       if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
         const int iprefetch = (0 == prefetch ? 0 : *prefetch);
         libxsmm_xmcopyfunction kernel = NULL;
         const libxsmm_mcopy_descriptor* desc;
         libxsmm_descriptor_blob blob;
-        if (0 != (1 & libxsmm_trans_jit) /* JIT'ted matrix-copy permitted? */
+        if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted matrix-copy permitted? */
           && NULL != (desc = libxsmm_mcopy_descriptor_init(&blob, typesize,
           tm, tn, (unsigned int)ldo, (unsigned int)ldi,
             NULL != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/)))
@@ -47,7 +47,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
         { /* enable internal parallelization */
           const int nthreads = omp_get_max_threads();
 # if defined(LIBXSMM_EXT_TASKS)
-          if (0 >= libxsmm_trans_taskscale)
+          if (0 >= libxsmm_xcopy_taskscale)
 # endif
           {
 #           pragma omp parallel num_threads(nthreads)
@@ -57,7 +57,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           }
 # if defined(LIBXSMM_EXT_TASKS)
           else { /* tasks requested */
-            const int ntasks = nthreads * libxsmm_trans_taskscale;
+            const int ntasks = nthreads * libxsmm_xcopy_taskscale;
 #           pragma omp parallel num_threads(nthreads)
             { /* first thread discovering work will launch all tasks */
 #             pragma omp single nowait /* anyone is good */
@@ -76,9 +76,9 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
         else { /* assume external parallelization */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
           const int nthreads = omp_get_num_threads();
-          const int ntasks = (0 == libxsmm_trans_taskscale
+          const int ntasks = (0 == libxsmm_xcopy_taskscale
             ? (LIBXSMM_XCOPY_TASKSCALE)
-            : libxsmm_trans_taskscale) * nthreads;
+            : libxsmm_xcopy_taskscale) * nthreads;
           int tid;
           for (tid = 0; tid < ntasks; ++tid) {
 #           pragma omp task untied
@@ -147,8 +147,8 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
     LIBXSMM_INIT
     if (out != in) {
 #if defined(_OPENMP)
-      const unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
-      const unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
+      const unsigned int tm = libxsmm_tcopy_mtile[4 < typesize ? 0 : 1];
+      const unsigned int tn = (unsigned int)(libxsmm_tcopy_stretch * tm);
       if (tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
@@ -158,7 +158,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         { /* enable internal parallelization */
           const int nthreads = omp_get_max_threads();
 # if defined(LIBXSMM_EXT_TASKS)
-          if (0 >= libxsmm_trans_taskscale)
+          if (0 >= libxsmm_xcopy_taskscale)
 # endif
           {
 #           pragma omp parallel num_threads(nthreads)
@@ -170,7 +170,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
           }
 # if defined(LIBXSMM_EXT_TASKS)
           else { /* tasks requested */
-            const int ntasks = nthreads * libxsmm_trans_taskscale;
+            const int ntasks = nthreads * libxsmm_xcopy_taskscale;
 #           pragma omp parallel num_threads(nthreads)
             { /* first thread discovering work will launch all tasks */
 #             pragma omp single nowait /* anyone is good */
@@ -189,9 +189,9 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         else { /* assume external parallelization */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
           const int nthreads = omp_get_num_threads();
-          const int ntasks = (0 == libxsmm_trans_taskscale
+          const int ntasks = (0 == libxsmm_xcopy_taskscale
             ? (LIBXSMM_XCOPY_TASKSCALE)
-            : libxsmm_trans_taskscale) * nthreads;
+            : libxsmm_xcopy_taskscale) * nthreads;
           int tid;
           for (tid = 0; tid < ntasks; ++tid) {
 #           pragma omp task untied
@@ -215,7 +215,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         libxsmm_xtransfunction kernel = NULL;
         const libxsmm_trans_descriptor* desc;
         libxsmm_descriptor_blob blob;
-        if (0 != (2 & libxsmm_trans_jit) /* JIT'ted transpose permitted? */
+        if (0 != (2 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
           && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo))
           && NULL != (kernel = libxsmm_dispatch_trans(desc))) /* JIT-kernel available */
         {

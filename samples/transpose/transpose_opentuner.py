@@ -68,8 +68,8 @@ class TransposeTune(MeasurementInterface):
         end = max(self.args.end, self.mintilesize)
         run_cmd = (
             "CHECK=-1"  # repeatable runs
-            " LIBXSMM_XCOPY_M=" + str(self.granularity * cfg["M"]) +
-            " LIBXSMM_XCOPY_N=" + str(self.granularity * cfg["N"]) +
+            " LIBXSMM_TCOPY_M=" + str(self.granularity * cfg["M"]) +
+            " LIBXSMM_TCOPY_N=" + str(self.granularity * cfg["N"]) +
             " ./transpose.sh o" + " " + str(end) + " " + str(end) +
             " " + str(end) + " " + str(end) + " " + str(nruns) +
             " -" + str(begin))
