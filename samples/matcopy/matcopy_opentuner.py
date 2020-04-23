@@ -91,7 +91,9 @@ class MatcopyTune(MeasurementInterface):
             bandwidth = float(match.group(1))
             assert(0 < bandwidth)
             kernelsize = (self.granularity**2) * cfg["M"] * cfg["N"]
-            return Result(time=1/bandwidth, accuracy=bandwidth, size=kernelsize)
+            return Result(time=1/bandwidth,
+                          accuracy=bandwidth,
+                          size=kernelsize)
         else:
             sys.tracebacklimit = 0
             raise RuntimeError("Execution failed for \"" + run_cmd + "\"!")
@@ -110,7 +112,7 @@ class MatcopyTune(MeasurementInterface):
             time.strftime("-%Y%m%d-%H%M%S") + ".json")
         print("Optimal block size written to " + filename +
               ": ", configuration.data)
-        #self.manipulator().save_to_file(configuration.data, filename)
+        # self.manipulator().save_to_file(configuration.data, filename)
         with open(filename, 'w') as fd:
             json.dump(configuration.data, fd)
 
