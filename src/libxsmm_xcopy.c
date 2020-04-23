@@ -39,18 +39,18 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
   { /* mcopy: setup tile sizes according to CPUID or environment */
     if (LIBXSMM_X86_AVX512_CORE <= archid) { /* avx-512/core */
       internal_mcopy_prefetch = 0;
-      libxsmm_mcopy_mbytes = 464;
-      libxsmm_mcopy_nscale = 1.155f;
+      libxsmm_mcopy_mbytes = 1144;
+      libxsmm_mcopy_nscale = 0.224f;
     }
     else if (LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > archid) {
       internal_mcopy_prefetch = 1;
-      libxsmm_mcopy_mbytes = 464;
-      libxsmm_mcopy_nscale = 1.155f;
+      libxsmm_mcopy_mbytes = 1144;
+      libxsmm_mcopy_nscale = 0.224f;
     }
     else { /* avx2 */
       internal_mcopy_prefetch = 0;
-      libxsmm_mcopy_mbytes = 464;
-      libxsmm_mcopy_nscale = 1.155f;
+      libxsmm_mcopy_mbytes = 1144;
+      libxsmm_mcopy_nscale = 0.224f;
     }
   }
   { /* tcopy: setup tile sizes according to CPUID or environment */
