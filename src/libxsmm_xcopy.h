@@ -200,12 +200,12 @@ LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_jit);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_taskscale);
-/** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_mcopy_mtile);
-LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_tcopy_mtile);
-/** M-factor shaping the N-extent (tile shape). */
-LIBXSMM_APIVAR_PUBLIC(float libxsmm_mcopy_stretch);
-LIBXSMM_APIVAR_PUBLIC(float libxsmm_tcopy_stretch);
+/** M-extent of type-size in Byte. */
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_mcopy_mbytes);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_tcopy_mbytes);
+/** M-factor shaping the N-extent. */
+LIBXSMM_APIVAR_PUBLIC(float libxsmm_mcopy_nscale);
+LIBXSMM_APIVAR_PUBLIC(float libxsmm_tcopy_nscale);
 
 #endif /*LIBXSMM_XCOPY_H*/
 
