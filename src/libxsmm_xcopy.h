@@ -200,11 +200,15 @@ LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_jit);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_taskscale);
+/** Targeted default prefetch */
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_mcopy_prefetch);
 /** M-extent of type-size in Byte. */
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_mcopy_mbytes);
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_mzero_mbytes);
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_tcopy_mbytes);
 /** M-factor shaping the N-extent. */
 LIBXSMM_APIVAR_PUBLIC(float libxsmm_mcopy_nscale);
+LIBXSMM_APIVAR_PUBLIC(float libxsmm_mzero_nscale);
 LIBXSMM_APIVAR_PUBLIC(float libxsmm_tcopy_nscale);
 
 #endif /*LIBXSMM_XCOPY_H*/

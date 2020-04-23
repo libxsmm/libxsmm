@@ -24,10 +24,20 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
     LIBXSMM_INIT
     {
 #if defined(_OPENMP)
-      const unsigned int tm = (libxsmm_mcopy_mbytes + typesize - 1) / typesize;
-      const unsigned int tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
+      int prefetch_default;
+      unsigned int tm, tn;
+      if (NULL != in) {
+        prefetch_default = libxsmm_mcopy_prefetch;
+        tm = (libxsmm_mcopy_mbytes + typesize - 1) / typesize;
+        tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
+      }
+      else {
+        prefetch_default = 0;
+        tm = (libxsmm_mzero_mbytes + typesize - 1) / typesize;
+        tn = (unsigned int)(libxsmm_mzero_nscale * tm);
+      }
       if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
-        const int iprefetch = (0 == prefetch ? 0 : *prefetch);
+        const int iprefetch = (NULL == prefetch ? prefetch_default : *prefetch);
         libxsmm_xmcopyfunction kernel = NULL;
         const libxsmm_mcopy_descriptor* desc;
         libxsmm_descriptor_blob blob;
@@ -117,7 +127,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
     if ( 0 != libxsmm_get_verbosity() /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      if (0 == out) {
+      if (NULL == out) {
         fprintf(stderr, "LIBXSMM ERROR: the matrix-copy input and/or output is NULL!\n");
       }
       else if (out == in) {
@@ -241,7 +251,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
     if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      if (0 == out || 0 == in) {
+      if (NULL == out || NULL == in) {
         fprintf(stderr, "LIBXSMM ERROR: the transpose input and/or output is NULL!\n");
       }
       else if (out == in) {

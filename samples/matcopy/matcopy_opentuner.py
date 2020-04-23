@@ -75,17 +75,20 @@ class MatcopyTune(MeasurementInterface):
         else:
             ldi = max(random.randint(begin, end - 1), m)
             ldo = max(random.randint(begin, end - 1), m)
+        kind = ["COPY", "ZERO"][self.args.zero]
         run_cmd = (
-            "CHECK=0"  # no checks and only LIBXSMM measurement
-            " LIBXSMM_MCOPY_M=" + str(self.granularity * cfg["M"]) +
-            " LIBXSMM_MCOPY_N=" + str(self.granularity * cfg["N"]) +
+            "CHECK=0 " +  # no checks and only LIBXSMM measurement
+            ["ZERO=0", "ZERO=1"][self.args.zero] +
+            " LIBXSMM_M" + kind + "_M=" + str(self.granularity * cfg["M"]) +
+            " LIBXSMM_M" + kind + "_N=" + str(self.granularity * cfg["N"]) +
             " ./matcopyf "
             + str(m) + " " + str(n) + " " + str(ldi) + " " + str(ldo) + " "
             + str(nruns)) + " " + str(self.args.nmb)
         run_result = self.call_program(run_cmd)
         if (0 == run_result["returncode"]):
             match = re.search(
-                "LIBXSMM \\(zero\\):\\s+([0-9]+(\\.[0-9]*)*)",
+                "LIBXSMM \\(" + kind.lower() +
+                "\\):\\s+([0-9]+(\\.[0-9]*)*)",
                 str(run_result["stdout"]))
             assert(match is not None)
             bandwidth = float(match.group(1))
@@ -106,6 +109,7 @@ class MatcopyTune(MeasurementInterface):
             "matcopy-"
             + str(max(self.args.begin, 1)) + "_"
             + str(max(self.args.end,   1))
+            + ["_", "_zero_"][self.args.zero]
             + ["_", "_tight_"][self.args.tight]
             + str(max(self.args.nruns, 1)) + "_"
             + str(self.args.nmb) +
@@ -156,6 +160,10 @@ if __name__ == "__main__":
     argparser.add_argument(
         "maxn", type=int, default=160, nargs='?',
         help="Max. tile size (N)")
+    argparser.add_argument(
+        "zero", type=str2bool, nargs='?',
+        const=True, default=False,
+        help="Zeroing instead of copy")
     argparser.add_argument(
         "tight", type=str2bool, nargs='?',
         const=True, default=True,
