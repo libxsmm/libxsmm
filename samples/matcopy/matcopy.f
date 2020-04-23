@@ -68,12 +68,14 @@
         IF (3 <= argc) THEN
           CALL GET_COMMAND_ARGUMENT(3, argv)
           READ(argv, "(I32)") ldi
+          ldi = MAX(ldi, m)
         ELSE
           ldi = m
         END IF
         IF (4 <= argc) THEN
           CALL GET_COMMAND_ARGUMENT(4, argv)
           READ(argv, "(I32)") ldo
+          ldo = MAX(ldi, m)
         ELSE
           ldo = ldi
         END IF
