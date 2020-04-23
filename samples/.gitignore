@@ -10,16 +10,6 @@ edge/dense_packedbcrm_*
 edge/edge_vol_int
 eigen/eigen_smm
 eigen/eigen_tensor
-magazine/magazine_batch
-magazine/magazine_blas
-magazine/magazine_blaze
-magazine/magazine_eigen
-magazine/magazine_xsmm
-matcopy/matcopyf
-matcopy/matcopy
-nek/axhm
-nek/grad
-nek/rstr
 packed/trsm/gemm
 packed/trsm/getrf
 packed/trmm/trmm
@@ -27,6 +17,5 @@ packed/trsm/trsm
 pyfr/pyfr_driver_asp_reg
 pyfr/pyfr_gemm_cm
 pyfr/pyfr_gemm_rm
-specfem/specfem
 spmdm/spmdm
 *.txt

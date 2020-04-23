@@ -4,4 +4,7 @@ grad-perf.txt
 grad-perf.sh
 rstr-perf.txt
 rstr-perf.sh
+axhm
+grad
+rstr
 *.dot

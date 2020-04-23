@@ -19,6 +19,7 @@ from opentuner import IntegerParameter
 from opentuner import MeasurementInterface
 from opentuner import Result
 import random
+import json
 import time
 import sys
 import re
@@ -102,14 +103,16 @@ class MatcopyTune(MeasurementInterface):
         filename = (
             "matcopy-"
             + str(max(self.args.begin, 1)) + "_"
-            + str(max(self.args.end,   1)) + "_"
-            + str(self.args.tight) + "_"
+            + str(max(self.args.end,   1))
+            + ["_", "_tight_"][self.args.tight]
             + str(max(self.args.nruns, 1)) + "_"
             + str(self.args.nmb) +
             time.strftime("-%Y%m%d-%H%M%S") + ".json")
         print("Optimal block size written to " + filename +
               ": ", configuration.data)
-        self.manipulator().save_to_file(configuration.data, filename)
+        #self.manipulator().save_to_file(configuration.data, filename)
+        with open(filename, 'w') as fd:
+            json.dump(configuration.data, fd)
 
 
 # https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
