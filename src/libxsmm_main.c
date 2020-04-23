@@ -447,7 +447,7 @@ LIBXSMM_API_INLINE void internal_update_mmstatistic(const libxsmm_gemm_descripto
 LIBXSMM_API_INLINE unsigned int internal_print_number(unsigned int n, char default_unit, char* unit)
 {
   unsigned int number = n;
-  LIBXSMM_ASSERT(0 != unit);
+  LIBXSMM_ASSERT(NULL != unit);
   *unit = default_unit;
   if ((1000000) <= n) {
     number = (n + 500000) / 1000000;
