@@ -462,7 +462,8 @@ int main(int argc, char* argv []) {
 #ifndef __AVX512F__
   printf("\nthe binary was built without AVX512 support, tests will fail and not run!!\n\n");
   return EXIT_SUCCESS;
-#endif
+
+#else
 
   if ( argc != 4 ) {
     printf("wrong arguments, required: ./%s N K iters\n", argv[0]);
@@ -564,5 +565,6 @@ int main(int argc, char* argv []) {
   libxsmm_free( scratch2 );
 
   return EXIT_SUCCESS;
+#endif
 }
 
