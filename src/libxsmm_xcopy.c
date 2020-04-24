@@ -29,6 +29,135 @@ LIBXSMM_APIVAR_PUBLIC_DEF(float libxsmm_mcopy_nscale);
 LIBXSMM_APIVAR_PUBLIC_DEF(float libxsmm_mzero_nscale);
 LIBXSMM_APIVAR_PUBLIC_DEF(float libxsmm_tcopy_nscale);
 
+LIBXSMM_APIVAR_DEFINE(void (*internal_mcopy_function)(void*, const void*,
+  unsigned int, unsigned int, unsigned int,
+  unsigned int, unsigned int, unsigned int, unsigned int,
+  unsigned int, unsigned int, libxsmm_xmcopyfunction));
+LIBXSMM_APIVAR_DEFINE(void (*internal_mzero_function)(void*,
+  unsigned int, unsigned int,
+  unsigned int, unsigned int, unsigned int, unsigned int,
+  unsigned int, unsigned int, libxsmm_xmcopyfunction));
+LIBXSMM_APIVAR_DEFINE(void (*internal_tcopy_function)(void*, const void*,
+  unsigned int, unsigned int, unsigned int,
+  unsigned int, unsigned int, unsigned int, unsigned int,
+  unsigned int, unsigned int, libxsmm_xtransfunction));
+
+
+LIBXSMM_API_INLINE
+void internal_mcopy_sw(void* out, const void* in,
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
+{
+  int prefetch;
+  LIBXSMM_ASSERT(NULL != in);
+  if (NULL == kernel) {
+    prefetch = 0;
+  }
+  else {
+    const libxsmm_descriptor* desc;
+    libxsmm_code_pointer code;
+    code.xmatcopy = kernel;
+    LIBXSMM_EXPECT_NOT(NULL, libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/));
+    LIBXSMM_ASSERT(NULL != desc && LIBXSMM_KERNEL_KIND_MCOPY == desc->kind);
+    prefetch = desc->mcopy.desc.prefetch;
+  }
+  if (0 == prefetch) {
+    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, kernel,
+      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
+  }
+  else {
+    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_PF, kernel,
+      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
+  }
+}
+
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+void internal_mcopy_avx2(void* out, const void* in,
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
+{
+#if defined(LIBXSMM_INTRINSICS_AVX2)
+  int prefetch;
+  LIBXSMM_ASSERT(NULL != in);
+  if (NULL == kernel) {
+    prefetch = 0;
+  }
+  else {
+    const libxsmm_descriptor* desc;
+    libxsmm_code_pointer code;
+    code.xmatcopy = kernel;
+    LIBXSMM_EXPECT_NOT(NULL, libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/));
+    LIBXSMM_ASSERT(NULL != desc && LIBXSMM_KERNEL_KIND_MCOPY == desc->kind);
+    prefetch = desc->mcopy.desc.prefetch;
+  }
+  if (0 == prefetch) {
+    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, kernel,
+      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
+  }
+  else {
+    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_PF, kernel,
+      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
+  }
+#else
+  internal_mcopy_sw(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+#endif
+}
+
+
+LIBXSMM_API_INLINE
+void internal_mzero_sw(void* out, unsigned int typesize, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
+{
+  LIBXSMM_XCOPY(LIBXSMM_MZERO_KERNEL, LIBXSMM_MZERO_CALL, kernel,
+    out, NULL, typesize, 0, ldo, tm, tn, m0, m1, n0, n1);
+}
+
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+void internal_mzero_avx2(void* out, unsigned int typesize, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
+{
+#if defined(LIBXSMM_INTRINSICS_AVX2)
+  LIBXSMM_XCOPY(LIBXSMM_MZERO_KERNEL, LIBXSMM_MZERO_CALL, kernel,
+    out, NULL, typesize, 0, ldo, tm, tn, m0, m1, n0, n1);
+#else
+  internal_mzero_sw(out, typesize, ldo, m0, m1, n0, n1, tm, tn, kernel);
+#endif
+}
+
+
+LIBXSMM_API_INTERN
+void internal_tcopy_sw(void* out, const void* in,
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel)
+{
+  LIBXSMM_ASSERT(NULL != in);
+  LIBXSMM_XCOPY(LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, kernel,
+    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
+}
+
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+void internal_tcopy_avx2(void* out, const void* in,
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel)
+{
+#if defined(LIBXSMM_INTRINSICS_AVX2)
+  LIBXSMM_ASSERT(NULL != in);
+  LIBXSMM_XCOPY(LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, kernel,
+    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
+#else
+  internal_tcopy_sw(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+#endif
+}
+
 
 LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
 {
@@ -59,6 +188,18 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
       libxsmm_mzero_nscale = 64.f;
       libxsmm_tcopy_mbytes = 16;
       libxsmm_tcopy_nscale = 32.f;
+    }
+  }
+  { /* setup dispatch pointers */
+    if (LIBXSMM_X86_AVX2 <= archid) {
+      internal_mcopy_function = internal_mcopy_avx2;
+      internal_mzero_function = internal_mzero_avx2;
+      internal_tcopy_function = internal_tcopy_avx2;
+    }
+    else {
+      internal_mcopy_function = internal_mcopy_sw;
+      internal_mzero_function = internal_mzero_sw;
+      internal_tcopy_function = internal_tcopy_sw;
     }
   }
   { /* mcopy: load/adjust tile sizes */
@@ -113,6 +254,11 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
 
 LIBXSMM_API_INTERN void libxsmm_xcopy_finalize(void)
 {
+#if !defined(NDEBUG)
+  internal_mcopy_function = NULL;
+  internal_mzero_function = NULL;
+  internal_tcopy_function = NULL;
+#endif
 }
 
 
@@ -162,29 +308,23 @@ LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
 {
-  int prefetch;
-  LIBXSMM_ASSERT(NULL != in);
-  if (NULL == kernel) {
-    prefetch = 0;
+#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+  internal_mcopy_avx2(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) /* pointer based function call */
+# if defined(LIBXSMM_INIT_COMPLETED)
+  LIBXSMM_ASSERT(NULL != internal_mcopy_function);
+  internal_mcopy_function(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+# else
+  if (NULL != internal_mcopy_function) {
+    internal_mcopy_function(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
   }
   else {
-    const libxsmm_descriptor* desc;
-    libxsmm_code_pointer code;
-    code.xmatcopy = kernel;
-    LIBXSMM_EXPECT_NOT(NULL, libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/));
-    LIBXSMM_ASSERT(NULL != desc && LIBXSMM_KERNEL_KIND_MCOPY == desc->kind);
-    prefetch = desc->mcopy.desc.prefetch;
+    internal_mcopy_sw(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
   }
-  if (0 == prefetch) {
-    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, kernel,
-      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
-      LIBXSMM_XALIGN_MCOPY);
-  }
-  else {
-    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_PF, kernel,
-      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
-      LIBXSMM_XALIGN_MCOPY);
-  }
+# endif
+#else
+  internal_mcopy_sw(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+#endif
 }
 
 
@@ -192,9 +332,23 @@ LIBXSMM_API_INTERN void libxsmm_matzero_internal(void* out, unsigned int typesiz
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
 {
-  LIBXSMM_XCOPY(LIBXSMM_MZERO_KERNEL, LIBXSMM_MZERO_CALL, kernel,
-    out, NULL, typesize, 0, ldo, tm, tn, m0, m1, n0, n1,
-    LIBXSMM_XALIGN_MCOPY);
+#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+  internal_mzero_avx2(out, typesize, ldo, m0, m1, n0, n1, tm, tn, kernel);
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) /* pointer based function call */
+# if defined(LIBXSMM_INIT_COMPLETED)
+  LIBXSMM_ASSERT(NULL != internal_mzero_function);
+  internal_mzero_function(out, typesize, ldo, m0, m1, n0, n1, tm, tn, kernel);
+# else
+  if (NULL != internal_mzero_function) {
+    internal_mzero_function(out, typesize, ldo, m0, m1, n0, n1, tm, tn, kernel);
+  }
+  else {
+    internal_mzero_sw(out, typesize, ldo, m0, m1, n0, n1, tm, tn, kernel);
+  }
+# endif
+#else
+  internal_mzero_sw(out, typesize, ldo, m0, m1, n0, n1, tm, tn, kernel);
+#endif
 }
 
 
@@ -326,10 +480,23 @@ LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel)
 {
-  LIBXSMM_ASSERT(NULL != in);
-  LIBXSMM_XCOPY(LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, kernel,
-    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
-    LIBXSMM_XALIGN_TCOPY);
+#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+  internal_tcopy_avx2(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) /* pointer based function call */
+# if defined(LIBXSMM_INIT_COMPLETED)
+  LIBXSMM_ASSERT(NULL != internal_tcopy_function);
+  internal_tcopy_function(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+# else
+  if (NULL != internal_tcopy_function) {
+    internal_tcopy_function(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+  }
+  else {
+    internal_tcopy_sw(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+  }
+# endif
+#else
+  internal_tcopy_sw(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
+#endif
 }
 
 
