@@ -31,7 +31,8 @@
 
 /* kernel uses consecutive stores */
 #define LIBXSMM_MZERO_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
-  /*static*/ const TYPE libxsmm_mzero_kernel_src_value_ = { 0 }, *const SRC = &libxsmm_mzero_kernel_src_value_; \
+  static /*const*/ TYPE libxsmm_mzero_kernel_src_value_ /* zero */; \
+  const TYPE *const SRC = &libxsmm_mzero_kernel_src_value_; \
   TYPE *const DST = (TYPE*)(((char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDO) + (INDEX_J)))
 /* call JIT-kernel (matrix-copy with prefetch) */
 #define LIBXSMM_MZERO_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
