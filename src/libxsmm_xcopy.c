@@ -59,25 +59,13 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
     }
     else { /* avx2 */
       libxsmm_mcopy_prefetch = 0;
-      libxsmm_mcopy_mbytes = 1144;
-      libxsmm_mcopy_nscale = 0.224f;
+      libxsmm_mcopy_mbytes = 1224;
+      libxsmm_mcopy_nscale = 0.392f;
       libxsmm_mzero_mbytes = 704;
       libxsmm_mzero_nscale = 0.318f;
       libxsmm_tcopy_mbytes = 16;
       libxsmm_tcopy_nscale = 32.f;
     }
-  }
-  { /* mzero: load/adjust tile sizes */
-    const char* const env_m = getenv("LIBXSMM_MZERO_M"), * const env_n = getenv("LIBXSMM_MZERO_N");
-    const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
-    const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
-    if (0 < m) libxsmm_mzero_mbytes = LIBXSMM_MAX(m, 1);
-    if (0 < n) libxsmm_mzero_nscale = ((float)n) / libxsmm_mzero_mbytes;
-    if (1 > (libxsmm_mzero_nscale * libxsmm_mzero_mbytes)) {
-      const float stretch = 1.f / libxsmm_mzero_mbytes;
-      libxsmm_mzero_nscale = LIBXSMM_MAX(stretch, libxsmm_mzero_nscale);
-    }
-    libxsmm_mzero_mbytes *= 8; /* measured as if DP */
   }
   { /* mcopy: load/adjust tile sizes */
     const char* const env_m = getenv("LIBXSMM_MCOPY_M"), * const env_n = getenv("LIBXSMM_MCOPY_N");
@@ -90,6 +78,18 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
       libxsmm_mcopy_nscale = LIBXSMM_MAX(stretch, libxsmm_mcopy_nscale);
     }
     libxsmm_mcopy_mbytes *= 8; /* measured as if DP */
+  }
+  { /* mzero: load/adjust tile sizes */
+    const char* const env_m = getenv("LIBXSMM_MZERO_M"), * const env_n = getenv("LIBXSMM_MZERO_N");
+    const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
+    const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
+    if (0 < m) libxsmm_mzero_mbytes = LIBXSMM_MAX(m, 1);
+    if (0 < n) libxsmm_mzero_nscale = ((float)n) / libxsmm_mzero_mbytes;
+    if (1 > (libxsmm_mzero_nscale * libxsmm_mzero_mbytes)) {
+      const float stretch = 1.f / libxsmm_mzero_mbytes;
+      libxsmm_mzero_nscale = LIBXSMM_MAX(stretch, libxsmm_mzero_nscale);
+    }
+    libxsmm_mzero_mbytes *= 8; /* measured as if DP */
   }
   { /* tcopy: load/adjust tile sizes */
     const char* const env_m = getenv("LIBXSMM_TCOPY_M"), * const env_n = getenv("LIBXSMM_TCOPY_N");
@@ -122,7 +122,7 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_finalize(void)
 
 
 LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsigned int typesize,
-  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo, const int* prefetch,
+  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo,
   unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel,
   int tid, int nthreads)
 {
@@ -152,14 +152,8 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
   LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= n, "Invalid task size");
 
   if (NULL != in) { /* copy-kernel */
-    if (NULL != prefetch && 0 != *prefetch) { /* prefetch */
-      libxsmm_matcopy_internal_pf(out, in, typesize, ldi, ldo,
-        m0, m1, n0, n1, tm, tn, kernel);
-    }
-    else { /* no prefetch */
-      libxsmm_matcopy_internal(out, in, typesize, ldi, ldo,
-        m0, m1, n0, n1, tm, tn, kernel);
-    }
+    libxsmm_matcopy_internal(out, in, typesize, ldi, ldo,
+      m0, m1, n0, n1, tm, tn, kernel);
   }
   else {
     libxsmm_matzero_internal(out, typesize, ldo,
@@ -168,27 +162,34 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_matcopy_internal_pf(void* out, const void* in,
-  unsigned int typesize, unsigned int ldi, unsigned int ldo,
-  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
-  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
-{
-  LIBXSMM_ASSERT(NULL != in);
-  LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, kernel,
-    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
-    LIBXSMM_XALIGN_MCOPY);
-}
-
-
 LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
 {
+  int prefetch;
   LIBXSMM_ASSERT(NULL != in);
-  LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, kernel,
-    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
-    LIBXSMM_XALIGN_MCOPY);
+  if (NULL == kernel) {
+    prefetch = 0;
+  }
+  else {
+    const libxsmm_descriptor* desc;
+    libxsmm_code_pointer code;
+    code.xmatcopy = kernel;
+    LIBXSMM_EXPECT_NOT(NULL, libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/));
+    LIBXSMM_ASSERT(NULL != desc && LIBXSMM_KERNEL_KIND_MCOPY == desc->kind);
+    prefetch = desc->mcopy.desc.prefetch;
+  }
+  if (0 == prefetch) {
+    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, kernel,
+      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
+      LIBXSMM_XALIGN_MCOPY);
+  }
+  else {
+    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_PF, kernel,
+      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
+      LIBXSMM_XALIGN_MCOPY);
+  }
 }
 
 
@@ -204,7 +205,7 @@ LIBXSMM_API_INTERN void libxsmm_matzero_internal(void* out, unsigned int typesiz
 
 LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  const int* prefetch, int tid, int nthreads)
+  int tid, int nthreads)
 {
   LIBXSMM_INIT
   if (0 < typesize && m <= ldi && m <= ldo && out != in &&
@@ -214,15 +215,15 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
   {
     if (0 < m && 0 < n) {
       libxsmm_xmcopyfunction kernel = NULL;
-      int prefetch_default;
       unsigned int tm, tn;
+      int prefetch;
       if (NULL != in) {
-        prefetch_default = libxsmm_mcopy_prefetch;
+        prefetch = libxsmm_mcopy_prefetch;
         tm = (libxsmm_mcopy_mbytes + typesize - 1) / typesize;
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
       }
       else {
-        prefetch_default = 0;
+        prefetch = 0;
         tm = (libxsmm_mzero_mbytes + typesize - 1) / typesize;
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
       }
@@ -242,16 +243,15 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
       else
 #endif
       if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
-        const int iprefetch = (NULL == prefetch ? prefetch_default : *prefetch);
         libxsmm_descriptor_blob blob;
         kernel = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&blob,
           typesize, tm, tn, (unsigned int)ldo, (unsigned int)ldi,
           NULL != in ? LIBXSMM_MATCOPY_FLAG_DEFAULT : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
-          iprefetch, NULL/*default unroll*/));
+          prefetch, NULL/*default unroll*/));
       }
       libxsmm_matcopy_thread_internal(out, in, typesize,
         (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-        prefetch, tm, tn, kernel, tid, nthreads);
+        tm, tn, kernel, tid, nthreads);
     }
   }
   else {
@@ -283,10 +283,9 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
 
 
 LIBXSMM_API void libxsmm_matcopy(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  const int* prefetch)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
-  libxsmm_matcopy_thread(out, in, typesize, m, n, ldi, ldo, prefetch, 0/*tid*/, 1/*nthreads*/);
+  libxsmm_matcopy_thread(out, in, typesize, m, n, ldi, ldo, 0/*tid*/, 1/*nthreads*/);
 }
 
 
@@ -466,16 +465,14 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* /*out*/, const void* /*in*/, const int* /*typesize*/,
-  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/,
-  const int* /*prefetch*/);
+  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* out, const void* in, const int* typesize,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-  const int* prefetch)
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
   LIBXSMM_ASSERT(NULL != typesize && 0 < *typesize && NULL != m);
   ldx = *(NULL != ldi ? ldi : m);
-  libxsmm_matcopy(out, in, (unsigned int)*typesize, *m, *(NULL != n ? n : m), ldx, NULL != ldo ? *ldo : ldx, prefetch);
+  libxsmm_matcopy(out, in, (unsigned int)*typesize, *m, *(NULL != n ? n : m), ldx, NULL != ldo ? *ldo : ldx);
 }
 
 

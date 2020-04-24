@@ -34,13 +34,13 @@
   const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((size_t)(INDEX_J) * (LDI) + (INDEX_I))); \
         TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_J) * (LDO) + (INDEX_I)))
 /* call JIT-kernel (matrix-copy) */
-#define LIBXSMM_MCOPY_CALL_NOPF(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+#define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
   const unsigned int libxsmm_mcopy_call_nopf_uldi_ = (unsigned int)(LDI); \
   const unsigned int libxsmm_mcopy_call_nopf_uldo_ = (unsigned int)(LDO); \
   (KERNEL)(SRC, &libxsmm_mcopy_call_nopf_uldi_, DST, &libxsmm_mcopy_call_nopf_uldo_); \
 }
 /* call JIT-kernel (matrix-copy with prefetch) */
-#define LIBXSMM_MCOPY_CALL(PRFT_KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+#define LIBXSMM_MCOPY_CALL_PF(PRFT_KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
   const unsigned int libxsmm_mcopy_call_uldi_ = (unsigned int)(LDI); \
   const unsigned int libxsmm_mcopy_call_uldo_ = (unsigned int)(LDO); \
   (PRFT_KERNEL)(SRC, &libxsmm_mcopy_call_uldi_, DST, &libxsmm_mcopy_call_uldo_, \
@@ -172,13 +172,9 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid);
 LIBXSMM_API_INTERN void libxsmm_xcopy_finalize(void);
 
 LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsigned int typesize,
-  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo, const int* prefetch,
+  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo,
   unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel,
   int tid, int nthreads);
-LIBXSMM_API_INTERN void libxsmm_matcopy_internal_pf(void* out, const void* in,
-  unsigned int typesize, unsigned int ldi, unsigned int ldo,
-  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
-  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel);
 LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,

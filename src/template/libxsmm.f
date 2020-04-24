@@ -379,13 +379,13 @@
           !> Implicit FORTRAN 77 interface:
           !> ARRAY        :: input, output
           !> INTEGER(4|8) :: m, n, ldi, ldo
-          !> INTEGER(4)   :: typesize, prefetch
+          !> INTEGER(4)   :: typesize
           PURE SUBROUTINE libxsmm_xmatcopy(output, input, typesize,     &
-     &    m, n, ldi, ldo, prefetch) BIND(C, NAME="libxsmm_matcopy_")
+     &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_matcopy_")
             IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
-            INTEGER(C_INT), INTENT(IN) :: typesize, prefetch
+            INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
           !> Transpose a matrix (in-place form).
@@ -421,12 +421,12 @@
           !> INTEGER(4|8) :: m, n, ldi, ldo
           !> INTEGER(4)   :: typesize
           PURE SUBROUTINE libxsmm_matcopy_omp(output, input,            &
-     &    typesize, m, n, ldi, ldo, prefetch)                           &
+     &    typesize, m, n, ldi, ldo)                                     &
      &    BIND(C, NAME="libxsmm_matcopy_omp_")
             IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
-            INTEGER(C_INT), INTENT(IN) :: typesize, prefetch
+            INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
           !> Matrix transposition; MT via libxsmmext (out-of-place form).
@@ -1829,70 +1829,61 @@
         !> is not present, the routine is used to zero-fill the out-matrix.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_p0
         PURE SUBROUTINE libxsmm_matcopy_p0(output, input, typesize,     &
-     &  m, n, ldi, ldo, prefetch)
+     &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                                OPTIONAL :: n, ldi, ldo
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch
           INTEGER(C_INT), INTENT(IN) :: typesize
           TYPE(C_PTR), INTENT(IN), OPTIONAL :: input
           TYPE(C_PTR), INTENT(IN) :: output
           CALL libxsmm_xmatcopy(output, input, typesize,                &
-     &      m, n, ldi, ldo, prefetch)
+     &      m, n, ldi, ldo)
         END SUBROUTINE
 
         !> Matrix-copy (2-dimensional copy) routine (DP/rank-1).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_d1
-        SUBROUTINE libxsmm_matcopy_d1(output, input, m, n,              &
-     &  ldi, ldo, prefetch)
+        SUBROUTINE libxsmm_matcopy_d1(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
           REAL(C_DOUBLE), INTENT(OUT),          TARGET :: output(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET ::  input(*)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch
           CALL libxsmm_xmatcopy(C_LOC(output), C_LOC(input), 8,         &
-     &      m, n, ldi, ldo, prefetch)
+     &      m, n, ldi, ldo)
         END SUBROUTINE
 
         !> Matrix-copy (2-dimensional copy) routine (DP/rank-2).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_d2
-        SUBROUTINE libxsmm_matcopy_d2(output, input, m, n,              &
-     &  ldi, ldo, prefetch)
+        SUBROUTINE libxsmm_matcopy_d2(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND),    INTENT(IN) :: m, n, ldi, ldo
           REAL(C_DOUBLE), INTENT(OUT),          TARGET :: output(ldo,*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET ::  input(ldi,*)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch
           CALL libxsmm_xmatcopy(C_LOC(output), C_LOC(input), 8,         &
-     &      m, n, ldi, ldo, prefetch)
+     &      m, n, ldi, ldo)
         END SUBROUTINE
 
         !> Matrix-copy (2-dimensional copy) routine (SP/rank-1).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_s1
-        SUBROUTINE libxsmm_matcopy_s1(output, input, m, n,              &
-     &  ldi, ldo, prefetch)
+        SUBROUTINE libxsmm_matcopy_s1(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
           REAL(C_FLOAT),  INTENT(OUT),          TARGET :: output(*)
           REAL(C_FLOAT),  INTENT(IN), OPTIONAL, TARGET ::  input(*)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch
           CALL libxsmm_xmatcopy(C_LOC(output), C_LOC(input), 4,         &
-     &      m, n, ldi, ldo, prefetch)
+     &      m, n, ldi, ldo)
         END SUBROUTINE
 
         !> Matrix-copy (2-dimensional copy) routine (SP/rank-2).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_s2
-        SUBROUTINE libxsmm_matcopy_s2(output, input, m, n,              &
-     &  ldi, ldo, prefetch)
+        SUBROUTINE libxsmm_matcopy_s2(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND),    INTENT(IN) :: m, n, ldi, ldo
           REAL(C_FLOAT),  INTENT(OUT),          TARGET :: output(ldo,*)
           REAL(C_FLOAT),  INTENT(IN), OPTIONAL, TARGET ::  input(ldi,*)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch
           CALL libxsmm_xmatcopy(C_LOC(output), C_LOC(input), 4,         &
-     &      m, n, ldi, ldo, prefetch)
+     &      m, n, ldi, ldo)
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form).

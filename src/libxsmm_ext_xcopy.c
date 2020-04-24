@@ -15,8 +15,7 @@
 
 
 LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  const int* prefetch)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   if (0 < typesize && m <= ldi && m <= ldo && out != in &&
     ((NULL != out && 0 < m && 0 < n) || (0 == m && 0 == n)))
@@ -24,31 +23,29 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
     LIBXSMM_INIT
     {
 #if defined(_OPENMP)
-      int prefetch_default;
       unsigned int tm, tn;
+      int prefetch;
       if (NULL != in) {
-        prefetch_default = libxsmm_mcopy_prefetch;
+        prefetch = libxsmm_mcopy_prefetch;
         tm = (libxsmm_mcopy_mbytes + typesize - 1) / typesize;
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
       }
       else {
-        prefetch_default = 0;
+        prefetch = 0;
         tm = (libxsmm_mzero_mbytes + typesize - 1) / typesize;
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
       }
       if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
-        const int iprefetch = (NULL == prefetch ? prefetch_default : *prefetch);
         libxsmm_xmcopyfunction kernel = NULL;
         const libxsmm_mcopy_descriptor* desc;
         libxsmm_descriptor_blob blob;
         if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted matrix-copy permitted? */
           && NULL != (desc = libxsmm_mcopy_descriptor_init(&blob, typesize,
           tm, tn, (unsigned int)ldo, (unsigned int)ldi,
-            NULL != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/)))
+            NULL != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, prefetch, NULL/*default unroll*/)))
         {
           kernel = libxsmm_dispatch_mcopy(desc);
         }
-
 # if defined(LIBXSMM_EXT_TASKS) && 0/* implies _OPENMP */
         if (0 == omp_get_active_level())
 # else
@@ -63,7 +60,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 #           pragma omp parallel num_threads(nthreads)
             libxsmm_matcopy_thread_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-              prefetch, tm, tn, kernel, omp_get_thread_num(), nthreads);
+              tm, tn, kernel, omp_get_thread_num(), nthreads);
           }
 # if defined(LIBXSMM_EXT_TASKS)
           else { /* tasks requested */
@@ -76,7 +73,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 #                 pragma omp task untied
                   libxsmm_matcopy_thread_internal(out, in, typesize,
                     (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-                    prefetch, tm, tn, kernel, tid, ntasks);
+                    tm, tn, kernel, tid, ntasks);
                 }
               }
             }
@@ -94,7 +91,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 #           pragma omp task untied
             libxsmm_matcopy_thread_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-              prefetch, tm, tn, kernel, tid, ntasks);
+              tm, tn, kernel, tid, ntasks);
           }
           if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #           pragma omp taskwait
@@ -102,13 +99,11 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 # else
           libxsmm_matcopy_thread_internal(out, in, typesize,
             (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-            prefetch, tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
+            tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # endif
         }
       }
       else
-#else
-      LIBXSMM_UNUSED(prefetch);
 #endif /*defined(_OPENMP)*/
       if (NULL != in) { /* no MT, or small problem-size */
         LIBXSMM_XCOPY_NONJIT(LIBXSMM_MCOPY_KERNEL,
@@ -275,16 +270,14 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_matcopy_omp)(void* /*out*/, const void* /*in*/, const int* /*typesize*/,
-  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/,
-  const int* /*prefetch*/);
+  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/);
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_matcopy_omp)(void* out, const void* in, const int* typesize,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-  const int* prefetch)
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
   LIBXSMM_ASSERT(NULL != typesize && 0 < *typesize && NULL != m);
   ldx = *(NULL != ldi ? ldi : m);
-  libxsmm_matcopy_omp(out, in, (unsigned int)*typesize, *m, *(NULL != n ? n : m), ldx, NULL != ldo ? *ldo : ldx, prefetch);
+  libxsmm_matcopy_omp(out, in, (unsigned int)*typesize, *m, *(NULL != n ? n : m), ldx, NULL != ldo ? *ldo : ldx);
 }
 
 
