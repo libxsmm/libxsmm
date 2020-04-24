@@ -756,7 +756,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 #if !defined(LIBXSMM_EXPECT_ELIDE)
 # define LIBXSMM_EXPECT_ELIDE(RESULT, EXPR) do { \
-    /*const*/ int libxsmm_expect_result_ = (EXPR); \
+    /*const*/ int libxsmm_expect_result_ = ((RESULT) == (EXPR)); \
     LIBXSMM_UNUSED(libxsmm_expect_result_); \
   } while(0)
 #endif
