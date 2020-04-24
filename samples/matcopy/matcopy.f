@@ -126,7 +126,7 @@
           IF (0.NE.zero) THEN
             start = libxsmm_timer_tick()
             DO h = 1, k
-              CALL libxsmm_matcopy(bn(:,:,h), m=m, n=n, ldi=ldi, ldo=ldo)
+              CALL libxsmm_matcopy(bn(:,:,h), m=m,n=n, ldi=ldi,ldo=ldo)
             END DO
             d = libxsmm_timer_duration(start, libxsmm_timer_tick())
             IF (0.GE.d) THEN
@@ -174,8 +174,8 @@
               EXIT
             END IF
             duration(3) = duration(3) + d
-            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "FORTRAN (zero):", 1D3 &
-     &        * d, " ms", CHAR(9), REAL(1 * k, 8) * REAL(nbytes, 8)   &
+            WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "FORTRAN (zero):", 1D3   &
+     &        * d, " ms", CHAR(9), REAL(1 * k, 8) * REAL(nbytes, 8)     &
      &        / (REAL(ISHFT(1, 20), 8) * d), " MB/s"
           END IF
 
