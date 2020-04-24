@@ -35,28 +35,28 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
   { /* setup tile sizes according to CPUID or environment */
     if (LIBXSMM_X86_AVX512_CORE <= archid) { /* avx-512/core */
       libxsmm_mcopy_prefetch = 0;
-      libxsmm_mcopy_mbytes = 1144;
-      libxsmm_mcopy_nscale = 0.224f;
-      libxsmm_mzero_mbytes = 704;
-      libxsmm_mzero_nscale = 0.318f;
+      libxsmm_mcopy_mbytes = 16;
+      libxsmm_mcopy_nscale = 64.f;
+      libxsmm_mzero_mbytes = 16;
+      libxsmm_mzero_nscale = 64.f;
       libxsmm_tcopy_mbytes = 16;
       libxsmm_tcopy_nscale = 32.f;
     }
     else if (LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > archid) {
       libxsmm_mcopy_prefetch = 1;
-      libxsmm_mcopy_mbytes = 1144;
-      libxsmm_mcopy_nscale = 0.224f;
-      libxsmm_mzero_mbytes = 704;
-      libxsmm_mzero_nscale = 0.318f;
+      libxsmm_mcopy_mbytes = 16;
+      libxsmm_mcopy_nscale = 64.f;
+      libxsmm_mzero_mbytes = 16;
+      libxsmm_mzero_nscale = 64.f;
       libxsmm_tcopy_mbytes = 16;
       libxsmm_tcopy_nscale = 32.f;
     }
     else { /* avx2 */
       libxsmm_mcopy_prefetch = 0;
-      libxsmm_mcopy_mbytes = 1224;
-      libxsmm_mcopy_nscale = 0.392f;
-      libxsmm_mzero_mbytes = 704;
-      libxsmm_mzero_nscale = 0.318f;
+      libxsmm_mcopy_mbytes = 16;
+      libxsmm_mcopy_nscale = 64.f;
+      libxsmm_mzero_mbytes = 16;
+      libxsmm_mzero_nscale = 64.f;
       libxsmm_tcopy_mbytes = 16;
       libxsmm_tcopy_nscale = 32.f;
     }

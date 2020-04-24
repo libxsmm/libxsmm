@@ -31,17 +31,17 @@
 
 /* kernel uses consecutive stores */
 #define LIBXSMM_MZERO_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
-  const TYPE libxsmm_mzero_kernel_src_value_ = { 0 }, *const SRC = &libxsmm_mzero_kernel_src_value_; \
-  TYPE *const DST = (TYPE*)(((char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_J) * (LDO) + (INDEX_I)))
+  /*static*/ const TYPE libxsmm_mzero_kernel_src_value_ = { 0 }, *const SRC = &libxsmm_mzero_kernel_src_value_; \
+  TYPE *const DST = (TYPE*)(((char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDO) + (INDEX_J)))
 /* call JIT-kernel (matrix-copy with prefetch) */
 #define LIBXSMM_MZERO_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-  const unsigned int libxsmm_mzero_call_uldo_ = (unsigned int)(LDO); LIBXSMM_UNUSED(SRC); \
-  (KERNEL)(NULL, NULL, DST, &libxsmm_mzero_call_uldo_); \
+  const unsigned int libxsmm_mzero_call_uldo_ = (unsigned int)(LDO); \
+  (KERNEL)(SRC, &libxsmm_mzero_call_uldo_, DST, &libxsmm_mzero_call_uldo_); \
 }
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
-  const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((size_t)(INDEX_J) * (LDI) + (INDEX_I))); \
-        TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_J) * (LDO) + (INDEX_I)))
+  const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDI) + (INDEX_J))); \
+        TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDO) + (INDEX_J)))
 /* call JIT-kernel (matrix-copy) */
 #define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
   const unsigned int libxsmm_mcopy_call_nopf_uldi_ = (unsigned int)(LDI); \
