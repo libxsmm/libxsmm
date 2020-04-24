@@ -392,7 +392,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       const int env_bi = (NULL == env_b || 0 == *env_b) ? -1/*auto*/ : atoi(env_b);
       const unsigned int env_bu = (unsigned int)(0 >= env_bi ? (LIBXSMM_GEMM_BATCHSIZE) : env_bi);
       const unsigned int batchscale = LIBXSMM_ABS(internal_gemm_batchreduce) * 2048/*arbitrary*/ * 2/*A and B-matrices*/ * sizeof(void*);
-      const unsigned int minsize = (batchscale * env_bu + (LIBXSMM_GEMM_BATCHSCALE) - 1) / (LIBXSMM_GEMM_BATCHSCALE);
+      const unsigned int minsize = LIBXSMM_UPDIV(batchscale * env_bu, LIBXSMM_GEMM_BATCHSCALE);
       const unsigned int batchsize = LIBXSMM_MAX(env_bu, minsize);
       const void *const extra = NULL;
       LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_MMBATCH_SCALE) && NULL == libxsmm_mmbatch_array);
@@ -962,8 +962,8 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       result.ptr->km = tm; result.ptr->kn = tn;
       result.ptr->mt = mt; result.ptr->nt = nt;
       result.ptr->m = um; result.ptr->n = un;
-      result.ptr->dm = (ntm + mt - 1) / mt * tm;
-      result.ptr->dn = (ntn + nt - 1) / nt * tn;
+      result.ptr->dm = LIBXSMM_UPDIV(ntm, mt) * tm;
+      result.ptr->dn = LIBXSMM_UPDIV(ntn, nt) * tn;
       km = tm; kn = tn;
     }
     else { /* TT */
@@ -996,8 +996,8 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       result.ptr->km = tn; result.ptr->kn = tm;
       result.ptr->mt = nt; result.ptr->nt = mt;
       result.ptr->m = un; result.ptr->n = um;
-      result.ptr->dm = (ntn + nt - 1) / nt * tn;
-      result.ptr->dn = (ntm + mt - 1) / mt * tm;
+      result.ptr->dm = LIBXSMM_UPDIV(ntn, nt) * tn;
+      result.ptr->dn = LIBXSMM_UPDIV(ntm, mt) * tm;
       km = kn = tt;
     }
     result.ptr->dk = ntk / kt * tk;
@@ -1373,7 +1373,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
 {
   int result = EXIT_SUCCESS;
   const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
-  const libxsmm_blasint tasksize = (size + ntasks - 1) / ntasks;
+  const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, ntasks);
   const libxsmm_blasint begin = tid * tasksize, span = begin + tasksize;
   const libxsmm_blasint end = LIBXSMM_MIN(span, size);
 

@@ -27,12 +27,12 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
       int prefetch;
       if (NULL != in) { /* mcopy */
         prefetch = libxsmm_mcopy_prefetch;
-        tm = (libxsmm_mcopy_mbytes + typesize - 1) / typesize;
+        tm = LIBXSMM_UPDIV(libxsmm_mcopy_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
       }
       else { /* mzero */
         prefetch = 0;
-        tm = (libxsmm_mzero_mbytes + typesize - 1) / typesize;
+        tm = LIBXSMM_UPDIV(libxsmm_mzero_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
       }
       if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
@@ -154,7 +154,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
     LIBXSMM_INIT
     if (out != in) {
 #if defined(_OPENMP)
-      const unsigned int tm = (libxsmm_tcopy_mbytes + typesize - 1) / typesize;
+      const unsigned int tm = LIBXSMM_UPDIV(libxsmm_tcopy_mbytes, typesize);
       const unsigned int tn = (unsigned int)(libxsmm_tcopy_nscale * tm);
       if (tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */

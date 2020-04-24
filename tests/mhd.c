@@ -31,8 +31,8 @@ int main(int argc, char* argv[])
   /* Allocate data according to the header information. */
   if (EXIT_SUCCESS == result) {
     size_t typesize;
-    pitch[0] = (size[0] + bw - 1) / bw * bw;
-    pitch[1] = (size[1] + bh - 1) / bh * bh;
+    pitch[0] = LIBXSMM_UP(size[0], bw);
+    pitch[1] = LIBXSMM_UP(size[1], bh);
     pitch[2] = size[2];
     /* center the image inside of the (pitched) buffer */
     offset[0] = (pitch[0] - size[0]) / 2;

@@ -59,7 +59,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
         const unsigned char otypesize = libxsmm_typesize((libxsmm_datatype)LIBXSMM_GETENUM_OUT(batchdesc->datatype));
 #if defined(_OPENMP)
         if (0 == (LIBXSMM_MMBATCH_FLAG_SEQUENTIAL & batchdesc->flags)) { /* parallelized */
-          const int nchunks = (int)((batchsize + libxsmm_gemm_taskgrain - 1) / libxsmm_gemm_taskgrain);
+          const int nchunks = (int)LIBXSMM_UPDIV(batchsize, libxsmm_gemm_taskgrain);
 # if defined(LIBXSMM_EXT_TASKS)
           if (0 == omp_get_active_level()) {
             const int max_nthreads = omp_get_max_threads();
@@ -850,7 +850,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
       if (0 != suitable) { /* check if an SMM is suitable */
         const unsigned char itypesize = libxsmm_typesize((libxsmm_datatype)iprec);
 #if defined(_OPENMP)
-        const int nchunks = (int)((size + libxsmm_gemm_taskgrain - 1) / libxsmm_gemm_taskgrain);
+        const int nchunks = (int)LIBXSMM_UPDIV(size, libxsmm_gemm_taskgrain);
         const int ntasks = nchunks * npargroups, nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
         if (1 < nthreads) {
           if (0 == outerpar) { /* enable internal parallelization */

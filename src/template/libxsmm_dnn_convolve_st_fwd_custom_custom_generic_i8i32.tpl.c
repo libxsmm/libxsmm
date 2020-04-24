@@ -24,9 +24,9 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 int imgofm1ofhofw;
-int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
-int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
-int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
+int imgpt = LIBXSMM_UPDIV(handle->desc.N, handle->desc.threads);
+int my_img_start = LIBXSMM_MIN(ltid * imgpt, handle->desc.N);
+int my_img_end = LIBXSMM_MIN((ltid+1) * imgpt, handle->desc.N);
 int ifmblock_lp =  handle->ifmblock/handle->fm_lp_block;
 /* Batch reduce related variables */
 unsigned long long n_blocks;
@@ -43,10 +43,10 @@ LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)han
 libxsmm_barrier_init(handle->barrier, ltid);
 
 if (handle->pack_input == 1) {
-  int ifmpt = (handle->blocksifm+spread_out-1)/spread_out;
+  int ifmpt = LIBXSMM_UPDIV(handle->blocksifm, spread_out);
   int ifm_id = ltid % spread_out;
-  int my_ifm_start = LIBXSMM_MIN( ifm_id * ifmpt, handle->blocksifm);
-  int my_ifm_end = LIBXSMM_MIN( (ifm_id+1) * ifmpt, handle->blocksifm);
+  int my_ifm_start = LIBXSMM_MIN(ifm_id * ifmpt, handle->blocksifm);
+  int my_ifm_end = LIBXSMM_MIN((ifm_id+1) * ifmpt, handle->blocksifm);
   LIBXSMM_VLA_DECL(5, element_input_type, input_src, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
   for (img = my_img_start; img < my_img_end; img++) {
     for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {

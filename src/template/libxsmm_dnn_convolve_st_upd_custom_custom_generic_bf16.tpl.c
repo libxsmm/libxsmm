@@ -453,13 +453,13 @@ if (handle->upd_linearized_pixels == 0) {
   if (handle->use_hybrid_imgofm_parallelization == 1) {
     /* Here we are using batch-reduce kernel and hybrid minibatch/FM parallelization */
     /* FIXME: Hardcoed logic for N=27  */
-    int group_size = (handle->desc.threads == 27 && handle->desc.N == 27 && handle->ofw == 14 && handle->desc.R == 1 && handle->desc.u == 1 && ltid >= 24) ? 3 : ((handle->desc.threads+handle->weight_copies-1)/handle->weight_copies);
-    int tile_id = ltid/( (handle->desc.threads+handle->weight_copies-1)/handle->weight_copies );
+    int group_size = (handle->desc.threads == 27 && handle->desc.N == 27 && handle->ofw == 14 && handle->desc.R == 1 && handle->desc.u == 1 && ltid >= 24) ? 3 : LIBXSMM_UPDIV(handle->desc.threads, handle->weight_copies);
+    int tile_id = ltid / LIBXSMM_UPDIV(handle->desc.threads, handle->weight_copies);
     int tiles = handle->weight_copies;
-    int img_per_tile = (handle->desc.N+tiles-1)/tiles;
+    int img_per_tile = LIBXSMM_UPDIV(handle->desc.N, tiles);
     int my_in_tile_id = ltid % group_size;
-    int ifms_per_thread = (handle->blocksifm+group_size-1)/group_size;
-    int ofms_per_thread = (handle->blocksofm+group_size-1)/group_size;
+    int ifms_per_thread = LIBXSMM_UPDIV(handle->blocksifm, group_size);
+    int ofms_per_thread = LIBXSMM_UPDIV(handle->blocksofm, group_size);
     int my_R_start = 0;
     int my_R_end = handle->desc.R;
     element_filter_type *weight_ptr_group = (handle->weight_copies > 1) ? (element_filter_type*)handle->scratch7 + tile_id * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S : (element_filter_type*)handle->grad_filter->data;
@@ -468,27 +468,27 @@ if (handle->upd_linearized_pixels == 0) {
     float *weight_tile_ptr_f32 = (float*)handle->scratch2 + handle->desc.N * (handle->output_pixels/2) * handle->desc.K + tile_id * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
     LIBXSMM_VLA_DECL(6, float, weight_private_tile_f32, (float*)weight_tile_ptr_f32, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 
-    my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
-    my_img_end = LIBXSMM_MIN( (tile_id+1) * img_per_tile, handle->desc.N);
-    my_ifm_start = LIBXSMM_MIN( my_in_tile_id * ifms_per_thread, handle->blocksifm  );
-    my_ifm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ifms_per_thread, handle->blocksifm  );
+    my_img_start = LIBXSMM_MIN(tile_id * img_per_tile, handle->desc.N);
+    my_img_end = LIBXSMM_MIN((tile_id+1) * img_per_tile, handle->desc.N);
+    my_ifm_start = LIBXSMM_MIN(my_in_tile_id * ifms_per_thread, handle->blocksifm  );
+    my_ifm_end = LIBXSMM_MIN((my_in_tile_id+1) * ifms_per_thread, handle->blocksifm  );
     my_ofm_start = 0;
     my_ofm_end = handle->blocksofm;
     /* FIXME: Hardcoed logic for N=27  */
     if (handle->desc.threads == 27 && handle->desc.N == 27 && handle->desc.C == 256 && handle->desc.K == 1024 && handle->ofh == 14 && handle->desc.u == 1) {
-      my_ofm_start = LIBXSMM_MIN( my_in_tile_id * ofms_per_thread, handle->blocksofm  );
-      my_ofm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ofms_per_thread, handle->blocksofm  );
+      my_ofm_start = LIBXSMM_MIN(my_in_tile_id * ofms_per_thread, handle->blocksofm);
+      my_ofm_end = LIBXSMM_MIN((my_in_tile_id+1) * ofms_per_thread, handle->blocksofm);
       my_ifm_start = 0;
       my_ifm_end = handle->blocksifm;
     }
     if (handle->desc.threads == 27 && handle->desc.N == 27 && handle->desc.R == 3 && handle->desc.S == 3 && handle->ofh == 14) {
-      int r_per_tile = (handle->desc.R+group_size-1)/group_size;
+      int r_per_tile = LIBXSMM_UPDIV(handle->desc.R, group_size);
       my_ifm_start = 0;
       my_ifm_end = handle->blocksifm;
       my_ofm_start = 0;
       my_ofm_end = handle->blocksofm;
-      my_R_start = LIBXSMM_MIN( my_in_tile_id * r_per_tile, handle->desc.R );
-      my_R_end = LIBXSMM_MIN( (my_in_tile_id+1) * r_per_tile, handle->desc.R );
+      my_R_start = LIBXSMM_MIN(my_in_tile_id * r_per_tile, handle->desc.R);
+      my_R_end = LIBXSMM_MIN((my_in_tile_id+1) * r_per_tile, handle->desc.R);
     }
     block_ofm = my_ofm_end-my_ofm_start+1;
     block_ifm = my_ifm_end-my_ifm_start+1;

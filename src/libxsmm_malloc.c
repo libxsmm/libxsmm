@@ -532,7 +532,8 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_t
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) || (1 >= (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   LIBXSMM_UNUSED(exclude);
 #else
-  const internal_malloc_pool_type* pool = (const internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
+  const internal_malloc_pool_type* pool = (const internal_malloc_pool_type*)LIBXSMM_UP2(
+    (uintptr_t)internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
 # if (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   const internal_malloc_pool_type *const end = pool + libxsmm_scratch_pools;
   LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
@@ -561,7 +562,8 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_t
 LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const void* memory)
 {
   internal_malloc_pool_type* result = NULL;
-  internal_malloc_pool_type* pool = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
+  internal_malloc_pool_type* pool = (internal_malloc_pool_type*)LIBXSMM_UP2(
+    (uintptr_t)internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
   const char* const buffer = (const char*)memory;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   const unsigned int npools = libxsmm_scratch_pools;
@@ -659,7 +661,8 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
     size_t local_size = 0;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     if (0 < libxsmm_scratch_pools) {
-      internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
+      internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)LIBXSMM_UP2(
+        (uintptr_t)internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
       internal_malloc_pool_type *const end = pools + libxsmm_scratch_pools, *pool = pools;
       const size_t align_size = libxsmm_alignment(size, alignment), alloc_size = size + align_size - 1;
 # if (0 != LIBXSMM_SYNC)
@@ -1892,8 +1895,10 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 #endif
         /*fall-back*/NULL != buffer)
       {
-        char *const cbuffer = (char*)buffer, *const aligned = LIBXSMM_ALIGN(cbuffer + extra_size + sizeof(internal_malloc_info_type), alloc_alignment);
-        internal_malloc_info_type *const buffer_info = (internal_malloc_info_type*)(aligned - sizeof(internal_malloc_info_type));
+        char *const cbuffer = (char*)buffer, *const aligned = LIBXSMM_ALIGN(
+          cbuffer + extra_size + sizeof(internal_malloc_info_type), alloc_alignment);
+        internal_malloc_info_type *const buffer_info = (internal_malloc_info_type*)(
+          aligned - sizeof(internal_malloc_info_type));
         LIBXSMM_ASSERT((aligned + size) <= (cbuffer + alloc_size));
         LIBXSMM_ASSERT(0 < alloc_alignment);
         /* former content must be preserved prior to setup of buffer_info */
@@ -2343,7 +2348,8 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
 # endif
   {
     unsigned int i;
-    pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
+    pools = (internal_malloc_pool_type*)LIBXSMM_UP2(
+      (uintptr_t)internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
     for (i = 0; i < libxsmm_scratch_pools; ++i) {
       if (0 != pools[i].instance.minsize) {
         if (
@@ -2425,7 +2431,8 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
     info->internal = internal_malloc_private_max;
     info->local = internal_malloc_local_max;
     info->size = internal_malloc_public_max;
-    { const internal_malloc_pool_type* pool = (const internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
+    { const internal_malloc_pool_type* pool = (const internal_malloc_pool_type*)LIBXSMM_UP2(
+        (uintptr_t)internal_malloc_pool_buffer, LIBXSMM_MALLOC_SCRATCH_PADDING);
 # if (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
       const internal_malloc_pool_type *const end = pool + libxsmm_scratch_pools;
       LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);

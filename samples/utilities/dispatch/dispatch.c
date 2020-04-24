@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
   tcall = (tcall + (size_t)size_total * nrepeat - 1) / ((size_t)size_total * nrepeat);
   tdsp0 = (tdsp0 + (size_t)size_total * nrepeat - 1) / ((size_t)size_total * nrepeat);
   tdsp1 = (tdsp1 + (size_t)size_total * nrepeat - 1) / ((size_t)size_total * nrepeat);
-  tcgen = (tcgen + size_total - 1) / size_total;
+  tcgen = LIBXSMM_UPDIV(tcgen, size_total);
   if (0 < tcall && 0 < tdsp0 && 0 < tdsp1 && 0 < tcgen) {
     const double tcall_ns = 1E9 * libxsmm_timer_duration(0, tcall), tcgen_ns = 1E9 * libxsmm_timer_duration(0, tcgen);
     const double tdsp0_ns = 1E9 * libxsmm_timer_duration(0, tdsp0), tdsp1_ns = 1E9 * libxsmm_timer_duration(0, tdsp1);

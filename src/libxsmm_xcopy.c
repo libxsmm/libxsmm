@@ -121,7 +121,7 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
   unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel,
   int tid, int nthreads)
 {
-  const int mtasks = (m + tm - 1) / tm;
+  const int mtasks = LIBXSMM_UPDIV(m, tm);
   unsigned int m0, m1, n0, n1;
 
   LIBXSMM_ASSERT_MSG(tid < nthreads && 0 < nthreads, "Invalid task setup");
@@ -131,14 +131,14 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
   LIBXSMM_ASSERT(0 < mtasks);
 
   if (nthreads <= mtasks) { /* parallelized over M */
-    const unsigned int mt = (m + nthreads - 1) / nthreads;
+    const unsigned int mt = LIBXSMM_UPDIV(m, nthreads);
     m0 = LIBXSMM_MIN(tid * mt, m); m1 = LIBXSMM_MIN(m0 + mt, m);
     n0 = 0; n1 = n;
   }
   else { /* parallelized over M and N */
     const int ntasks = nthreads / mtasks;
     const int mtid = tid / ntasks, ntid = tid - mtid * ntasks;
-    const unsigned int nt = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
+    const unsigned int nt = LIBXSMM_UP(LIBXSMM_UPDIV(n, ntasks), tn) ;
     m0 = LIBXSMM_MIN(mtid * tm, m); m1 = LIBXSMM_MIN(m0 + tm, m);
     n0 = LIBXSMM_MIN(ntid * nt, n); n1 = LIBXSMM_MIN(n0 + nt, n);
   }
@@ -214,12 +214,12 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
       int prefetch;
       if (NULL != in) { /* mcopy */
         prefetch = libxsmm_mcopy_prefetch;
-        tm = (libxsmm_mcopy_mbytes + typesize - 1) / typesize;
+        tm = LIBXSMM_UPDIV(libxsmm_mcopy_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
       }
       else { /* mzero */
         prefetch = 0;
-        tm = (libxsmm_mzero_mbytes + typesize - 1) / typesize;
+        tm = LIBXSMM_UPDIV(libxsmm_mzero_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
       }
       if ((unsigned int)m < tm || (unsigned int)n < tn) {
@@ -291,7 +291,7 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
   unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel,
   int tid, int nthreads)
 {
-  const int mtasks = (m + tm - 1) / tm;
+  const int mtasks = LIBXSMM_UPDIV(m, tm);
   unsigned int m0, m1, n0, n1;
 
   LIBXSMM_ASSERT_MSG(tid < nthreads && 0 < nthreads, "Invalid task setup");
@@ -301,14 +301,15 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
   LIBXSMM_ASSERT(0 < mtasks);
 
   if (nthreads <= mtasks) { /* parallelized over M */
-    const unsigned int mt = (m + nthreads - 1) / nthreads;
-    m0 = LIBXSMM_MIN(tid * mt, m); m1 = LIBXSMM_MIN(m0 + mt, m);
+    const unsigned int mt = LIBXSMM_UPDIV(m, nthreads);
+    m0 = LIBXSMM_MIN(tid * mt, m);
+    m1 = LIBXSMM_MIN(m0 + mt, m);
     n0 = 0; n1 = n;
   }
   else { /* parallelized over M and N */
     const int ntasks = nthreads / mtasks;
     const int mtid = tid / ntasks, ntid = tid - mtid * ntasks;
-    const unsigned int nt = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
+    const unsigned int nt = LIBXSMM_UP(LIBXSMM_UPDIV(n, ntasks), tn);
     m0 = LIBXSMM_MIN(mtid * tm, m); m1 = LIBXSMM_MIN(m0 + tm, m);
     n0 = LIBXSMM_MIN(ntid * nt, n); n1 = LIBXSMM_MIN(n0 + nt, n);
   }
@@ -345,7 +346,7 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
   {
     if (0 < m && 0 < n) {
       if (out != in) {
-        unsigned int tm = (libxsmm_tcopy_mbytes + typesize - 1) / typesize;
+        unsigned int tm = LIBXSMM_UPDIV(libxsmm_tcopy_mbytes, typesize);
         unsigned int tn = (unsigned int)(libxsmm_tcopy_nscale * tm);
         libxsmm_xtransfunction kernel = NULL;
         if ((unsigned int)m < tm || (unsigned int)n < tn) {

@@ -566,23 +566,23 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
     handle->bn = 6;
   }
   handle->bk = 128;
-  handle->mb = (handle->m + handle->bm - 1) / handle->bm;
-  handle->nb = (handle->n + handle->bn - 1) / handle->bn;
-  handle->kb = (handle->k + handle->bk - 1) / handle->bk;
+  handle->mb = LIBXSMM_UPDIV(handle->m, handle->bm);
+  handle->nb = LIBXSMM_UPDIV(handle->n, handle->bn);
+  handle->kb = LIBXSMM_UPDIV(handle->k, handle->bk);
 
   max_work_per_block    = handle->bm * handle->bn;
   avg_work_per_block    = (double)((size_t)handle->m * handle->n) / ((size_t)handle->mb * handle->nb);
   load_imbalance_1      = max_work_per_block / avg_work_per_block;
-  max_blocks_per_thread = (handle->mb * handle->nb + max_threads - 1) / max_threads;
+  max_blocks_per_thread = LIBXSMM_UPDIV(handle->mb * handle->nb, max_threads);
   avg_blocks_per_thread = (double)handle->mb * handle->nb / max_threads;
   load_imbalance_2      = max_blocks_per_thread / avg_blocks_per_thread;
   load_imbalance        = load_imbalance_1 * load_imbalance_2;
 
   while (32 < handle->bm && load_imbalance > load_imbalance_tolerate) {
     handle->bm--;
-    handle->mb = (handle->m + handle->bm - 1) / handle->bm;
+    handle->mb = LIBXSMM_UPDIV(handle->m, handle->bm);
 
-    max_blocks_per_thread = (handle->mb * handle->nb + max_threads - 1) / max_threads;
+    max_blocks_per_thread = LIBXSMM_UPDIV(handle->mb * handle->nb, max_threads);
     avg_blocks_per_thread = (double)handle->mb * handle->nb / max_threads;
     load_imbalance_2      = max_blocks_per_thread / avg_blocks_per_thread;
     max_work_per_block    = handle->bm * handle->bn;

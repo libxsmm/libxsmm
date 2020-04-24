@@ -11,10 +11,10 @@
 int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myIfmId, nIfmBlocks, ind, task, ifm1ofm1;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
-int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
+int imgpt = LIBXSMM_UPDIV(handle->desc.N, handle->desc.threads);
 int threads_per_image = handle->desc.threads / handle->desc.N;
-int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
-int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
+int my_img_start = LIBXSMM_MIN(ltid * imgpt, handle->desc.N);
+int my_img_end = LIBXSMM_MIN((ltid+1) * imgpt, handle->desc.N);
 int my_ifm_start = 0;
 int my_ifm_end = handle->blocksifm;
 
@@ -97,10 +97,10 @@ if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) == 0 ) 
 }
 
 if ( imgpt <= 1 ) {
-  my_img_start = LIBXSMM_MIN( ltid / threads_per_image, handle->desc.N);
-  my_img_end = LIBXSMM_MIN( my_img_start + 1, handle->desc.N);
+  my_img_start = LIBXSMM_MIN(ltid / threads_per_image, handle->desc.N);
+  my_img_end = LIBXSMM_MIN(my_img_start + 1, handle->desc.N);
   myIfmId = ltid % threads_per_image;
-  nIfmBlocks = (handle->blocksifm + threads_per_image - 1) / threads_per_image;
+  nIfmBlocks = LIBXSMM_UPDIV(handle->blocksifm, threads_per_image);
   my_ifm_start = LIBXSMM_MIN(myIfmId * nIfmBlocks, handle->blocksifm);
   my_ifm_end = LIBXSMM_MIN((myIfmId+1) * nIfmBlocks, handle->blocksifm);
 }
@@ -120,13 +120,13 @@ if ( handle->use_ifm_parallelization == 1 ) {
   }
   if ((spread_out > 1) && (handle->desc.threads % spread_out == 0)) {
     int tile_id = ltid / spread_out;
-    int ifmpt = (handle->blocksifm+spread_out-1)/spread_out;
+    int ifmpt = LIBXSMM_UPDIV(handle->blocksifm, spread_out);
     int ifm_id = ltid % spread_out;
-    imgpt = ((handle->desc.N + handle->desc.threads - 1)/handle->desc.threads) * spread_out;
-    my_img_start = LIBXSMM_MIN( tile_id * imgpt, handle->desc.N);
-    my_img_end = LIBXSMM_MIN( (tile_id+1) * imgpt, handle->desc.N);
-    my_ifm_start = LIBXSMM_MIN( ifm_id * ifmpt, handle->blocksifm);
-    my_ifm_end = LIBXSMM_MIN( (ifm_id+1) * ifmpt, handle->blocksifm);
+    imgpt = LIBXSMM_UPDIV(handle->desc.N, handle->desc.threads) * spread_out;
+    my_img_start = LIBXSMM_MIN(tile_id * imgpt, handle->desc.N);
+    my_img_end = LIBXSMM_MIN((tile_id+1) * imgpt, handle->desc.N);
+    my_ifm_start = LIBXSMM_MIN(ifm_id * ifmpt, handle->blocksifm);
+    my_ifm_end = LIBXSMM_MIN((ifm_id+1) * ifmpt, handle->blocksifm);
   }
 }
 
