@@ -42,18 +42,16 @@ int main(void)
   const libxsmm_blasint ldi[] = { 0, 1, 1, 1, 1, 1, 2, 2, 2, 17, 3, 6, 6, 8, 6, 7, 9, 9,  9, 512, 16, 63,  16, 512, 3000 };
   const libxsmm_blasint ldo[] = { 0, 1, 1, 1, 1, 1, 1, 8, 2,  2, 3, 4, 6, 6, 8, 8, 9, 9,  9,  16, 16, 64, 512,  16, 3072 };
   const int prefetch[]        = { 0, 0, 1, 1, 1, 0, 1, 0, 1,  0, 1, 0, 1, 0, 1, 0, 0, 0,  0,   0,  1,  0,   1,   0,    1 };
-  const int start = 0, ntests = sizeof(m) / sizeof(*m);
+  const int start = 4, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0;
   unsigned int nerrors = 0;
   ELEM_TYPE *a = 0, *b = 0;
 #if defined(MATCOPY_GOLD)
   ELEM_TYPE *c = 0;
 #endif
-  void (*matcopy[])(void*, const void*, unsigned int,
-    libxsmm_blasint, libxsmm_blasint,
-    libxsmm_blasint, libxsmm_blasint, const int*) = {
+  void (*matcopy[])(void*, const void*, unsigned int, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint) = {
       libxsmm_matcopy, libxsmm_matcopy_omp
-    };
+  };
   int test, fun;
 
   for (test = start; test < ntests; ++test) {
@@ -76,7 +74,7 @@ int main(void)
 
   for (fun = 0; fun < 2; ++fun) {
     for (test = start; test < ntests; ++test) {
-      matcopy[fun](b, NULL, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test], prefetch + test);
+      matcopy[fun](b, NULL, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
       { /* validation */
         unsigned int testerrors = 0;
         libxsmm_blasint i, j;
@@ -90,7 +88,7 @@ int main(void)
           }
         }
       }
-      matcopy[fun](b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test], prefetch + test);
+      matcopy[fun](b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
       { /* validation */
         unsigned int testerrors = 0;
         libxsmm_blasint i, j;

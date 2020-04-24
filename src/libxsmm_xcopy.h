@@ -19,6 +19,15 @@
 #if !defined(LIBXSMM_XCOPY_TASKSCALE)
 # define LIBXSMM_XCOPY_TASKSCALE 2
 #endif
+/* 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy */
+#if !defined(LIBXSMM_XCOPY_JIT)
+# if (defined(_WIN32) || defined(__CYGWIN__))
+/* only enable matcopy code generation (workaround issue with taking GP registers correctly) */
+#   define LIBXSMM_XCOPY_JIT 0
+# else
+#   define LIBXSMM_XCOPY_JIT 1
+# endif
+#endif
 
 /* kernel uses consecutive stores */
 #define LIBXSMM_MZERO_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
@@ -192,8 +201,10 @@ LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel);
 
-/** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+/** Determines whether JIT-kernels are used or not; values see LIBXSMM_XCOPY_JIT. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_jit);
+#endif
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_taskscale);
 /** Targeted default prefetch */

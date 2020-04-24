@@ -25,27 +25,29 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 #if defined(_OPENMP)
       unsigned int tm, tn;
       int prefetch;
-      if (NULL != in) {
+      if (NULL != in) { /* mcopy */
         prefetch = libxsmm_mcopy_prefetch;
         tm = (libxsmm_mcopy_mbytes + typesize - 1) / typesize;
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
       }
-      else {
+      else { /* mzero */
         prefetch = 0;
         tm = (libxsmm_mzero_mbytes + typesize - 1) / typesize;
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
       }
       if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
         libxsmm_xmcopyfunction kernel = NULL;
+# if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
         const libxsmm_mcopy_descriptor* desc;
         libxsmm_descriptor_blob blob;
-        if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted matrix-copy permitted? */
+        if (0 != (2 & libxsmm_xcopy_jit) /* JIT'ted matrix-copy permitted? */
           && NULL != (desc = libxsmm_mcopy_descriptor_init(&blob, typesize,
           tm, tn, (unsigned int)ldo, (unsigned int)ldi,
             NULL != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, prefetch, NULL/*default unroll*/)))
         {
           kernel = libxsmm_dispatch_mcopy(desc);
         }
+# endif
 # if defined(LIBXSMM_EXT_TASKS) && 0/* implies _OPENMP */
         if (0 == omp_get_active_level())
 # else
@@ -217,16 +219,19 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
       else
 #endif /*defined(_OPENMP)*/
       { /* no MT, or small problem-size */
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
         libxsmm_xtransfunction kernel = NULL;
         const libxsmm_trans_descriptor* desc;
         libxsmm_descriptor_blob blob;
-        if (0 != (2 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
+        if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
           && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo))
           && NULL != (kernel = libxsmm_dispatch_trans(desc))) /* JIT-kernel available */
         {
           LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
         }
-        else {
+        else
+#endif
+        {
           LIBXSMM_XCOPY_NONJIT(LIBXSMM_TCOPY_KERNEL,
             typesize, out, in, ldi, ldo, 0, m, 0, n,
             LIBXSMM_XALIGN_TCOPY);
