@@ -210,6 +210,21 @@ int main(/*int argc, char* argv[]*/)
     }
   }
 
+  { /* check LIBXSMM_LO, LIBXSMM_UP and LIBXSMM_UP2 */
+    const int ai[] = { 0, 1, 3, 5, 127, 3000 };
+    const int ao[] = { 0, 1, 1, 1,  19,  429 };
+    const int bi[] = { 0, 1, 3, 5, 127, 3000 };
+    const int bo[] = { 0, 7, 7, 7, 133, 3003 };
+    const int ci[] = { 0, 1, 3, 5, 127, 3000 };
+    const int co[] = { 0, 8, 8, 8, 128, 3000 };
+    const int n = sizeof(ai) / sizeof(*ai);
+    for (i = 0; i < n; ++i) {
+      if (LIBXSMM_LO( ai[i], 7) != ao[i]) exit(EXIT_FAILURE);
+      if (LIBXSMM_UP( bi[i], 7) != bo[i]) exit(EXIT_FAILURE);
+      if (LIBXSMM_UP2(ci[i], 8) != co[i]) exit(EXIT_FAILURE);
+    }
+  }
+
   { /* check GCD */
     const size_t a[] = { 0, 1, 0, 100, 10 };
     const size_t b[] = { 0, 0, 1, 10, 100 };
