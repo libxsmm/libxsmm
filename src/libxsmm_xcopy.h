@@ -190,8 +190,13 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_finalize(void);
 
 LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsigned int typesize,
   unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo,
-  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel,
+  unsigned int km, unsigned int kn, libxsmm_xmcopyfunction kernel,
   int tid, int nthreads);
+LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsigned int typesize,
+  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo,
+  unsigned int km, unsigned int kn, libxsmm_xtransfunction kernel,
+  int tid, int nthreads);
+
 LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
@@ -199,11 +204,6 @@ LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
 LIBXSMM_API_INTERN void libxsmm_matzero_internal(void* out, unsigned int typesize, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel);
-
-LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsigned int typesize,
-  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo,
-  unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel,
-  int tid, int nthreads);
 LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
