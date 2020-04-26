@@ -22,7 +22,8 @@
         INTEGER, PARAMETER :: T = KIND(0D0)
         INTEGER, PARAMETER :: S = T
         INTEGER, PARAMETER :: W = 50
-        REAL(T), PARAMETER :: X = REAL(-1, T)
+        REAL(T), PARAMETER :: X = REAL(-1, T) ! pattern
+        REAL(T), PARAMETER :: Z = REAL(-1, T) ! zero
 
         REAL(T), ALLOCATABLE, TARGET :: a1(:), b1(:)
         !DIR$ ATTRIBUTES ALIGN:64 :: a1, b1
@@ -30,7 +31,7 @@
         REAL(T), POINTER :: an(:,:,:), bn(:,:,:)
         DOUBLE PRECISION :: d, duration(4)
         INTEGER(8) :: start
-        INTEGER :: r, nrepeat
+        INTEGER :: r, nrepeat, error
         INTEGER :: k, nmb
         INTEGER :: nbytes
 
@@ -106,7 +107,8 @@
         an(1:ldi,1:n, 1:k) => a1
         bn(1:ldo,1:n, 1:k) => b1
 
-        !$OMP PARALLEL DO DEFAULT(NONE) PRIVATE(h, i, j) SHARED(n, k, ldi, ldo, an, bn, check)
+        !$OMP PARALLEL DO DEFAULT(NONE) PRIVATE(h, i, j)                &
+        !$OMP             SHARED(n, k, ldi, ldo, an, bn, check)
         DO h = 1, k
           DO j = 1, n
             DO i = 1, ldi
@@ -119,8 +121,9 @@
         END DO
         !$OMP END PARALLEL DO
 
+        error = 0
         duration = 0D0
-        ! matcopy bandwidth assumes RFO in case of copy
+        ! matcopy bandwidth assumes NTS in case of copy
         WRITE(*, "(A)") REPEAT("-", W)
         DO r = 1, nrepeat
           IF (0.NE.zero) THEN
@@ -129,8 +132,8 @@
               CALL libxsmm_matcopy(bn(:,:,h), m=m,n=n, ldi=ldi,ldo=ldo)
             END DO
             d = libxsmm_timer_duration(start, libxsmm_timer_tick())
-            IF (0.GE.d) THEN
-              duration = 0D0
+            IF ((0.GE.d).OR.(0.LT.diff(check, m, bn))) THEN
+              error = 1
               EXIT
             END IF
             duration(1) = duration(1) + d
@@ -149,14 +152,14 @@
      &        m, n, ldi, ldo)
             END DO
             d = libxsmm_timer_duration(start, libxsmm_timer_tick())
-            IF ((0.GE.d).OR.(0.LT.diff(check, an, bn, m))) THEN
-              duration = 0D0
+            IF ((0.GE.d).OR.(0.LT.diff(check, m, bn, an))) THEN
+              error = 2
               EXIT
             END IF
             duration(2) = duration(2) + d
             IF (0.NE.check) THEN
               WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "LIBXSMM (copy):", 1D3 &
-     &          * d, " ms", CHAR(9), REAL(3 * k, 8) * REAL(nbytes, 8)   &
+     &          * d, " ms", CHAR(9), REAL(2 * k, 8) * REAL(nbytes, 8)   &
      &          / (REAL(ISHFT(1, 20), 8) * d), " MB/s"
             END IF
           END IF
@@ -166,11 +169,11 @@
           IF (0.NE.zero) THEN
             start = libxsmm_timer_tick()
             DO h = 1, k
-              bn(1:m,:,h) = REAL(0,T)
+              bn(1:m,:,h) = Z
             END DO
             d = libxsmm_timer_duration(start, libxsmm_timer_tick())
-            IF (0.GE.d) THEN
-              duration = 0D0
+            IF ((0.GE.d).OR.(0.LT.diff(check, m, bn))) THEN
+              error = 3
               EXIT
             END IF
             duration(3) = duration(3) + d
@@ -185,13 +188,13 @@
               bn(1:m,:,h) = an(1:m,:,h)
             END DO
             d = libxsmm_timer_duration(start, libxsmm_timer_tick())
-            IF ((0.GE.d).OR.(0.LT.diff(check, an, bn, m))) THEN
-              duration = 0D0
+            IF ((0.GE.d).OR.(0.LT.diff(check, m, bn, an))) THEN
+              error = 4
               EXIT
             END IF
             duration(4) = duration(4) + d
             WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "FORTRAN (copy):", 1D3   &
-     &        * d, " ms", CHAR(9), REAL(3 * k, 8) * REAL(nbytes, 8)     &
+     &        * d, " ms", CHAR(9), REAL(2 * k, 8) * REAL(nbytes, 8)     &
      &        / (REAL(ISHFT(1, 20), 8) * d), " MB/s"
           END IF
 
@@ -200,7 +203,7 @@
 
         DEALLOCATE(a1, b1)
 
-        IF (ANY(0.LT.duration)) THEN
+        IF (0.EQ.error) THEN
           IF ((1.LT.nrepeat).OR.(0.EQ.check)) THEN
             IF (1.LT.nrepeat) THEN
               WRITE(*, "(A,I0,A)") "Arithmetic average of ",            &
@@ -214,7 +217,7 @@
             END IF
             IF (0.LT.duration(2)) THEN
               WRITE(*, "(A,F10.1,A)") "LIBXSMM (copy):",                &
-     &          (REAL(3*k*nrepeat, 8) * REAL(nbytes, 8))                &
+     &          (REAL(2*k*nrepeat, 8) * REAL(nbytes, 8))                &
      &        / (REAL(ISHFT(1, 20), 8) * duration(2)), " MB/s"
             END IF
             IF (0.LT.duration(3)) THEN
@@ -224,13 +227,24 @@
             END IF
             IF (0.LT.duration(4)) THEN
               WRITE(*, "(A,F10.1,A)") "FORTRAN (copy):",                &
-     &          (REAL(3*k*nrepeat, 8) * REAL(nbytes, 8))                &
+     &          (REAL(2*k*nrepeat, 8) * REAL(nbytes, 8))                &
      &        / (REAL(ISHFT(1, 20), 8) * duration(4)), " MB/s"
             END IF
             WRITE(*, "(A)") REPEAT("-", W)
           END IF
         ELSE
-          WRITE(*, "(A)") "Failed!"
+          SELECT CASE (error)
+            CASE (1)
+              WRITE(*, "(A)") "Error: LIBXSMM-zero failed!"
+            CASE (2)
+              WRITE(*, "(A)") "Error: LIBXSMM-copy failed!"
+            CASE (3)
+              WRITE(*, "(A)") "Error: FORTRAN-zero failed!"
+            CASE (4)
+              WRITE(*, "(A)") "Error: FORTRAN-copy failed!"
+            CASE DEFAULT
+              WRITE(*, "(A)") "Unknown error!"
+          END SELECT
         END IF
 
       CONTAINS
@@ -239,20 +253,26 @@
           initial_value = REAL(j * m + i, T)
         END FUNCTION
 
-        PURE REAL(T) FUNCTION diff(check, a, b, m)
-          REAL(T), INTENT(IN) :: a(:,:,:), b(:,:,:)
+        PURE REAL(T) FUNCTION diff(check, m, mat, ref)
           INTEGER, INTENT(IN) :: check
+          REAL(T), INTENT(IN) :: mat(:,:,:)
+          REAL(T), INTENT(IN), OPTIONAL :: ref(:,:,:)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND) :: h, i, j
-          diff = REAL(0,T)
+          REAL(T) :: aijh
+          diff = Z
           IF (0.NE.check) THEN
-            DO h = LBOUND(a,3), UBOUND(a,3)
-              DO j = LBOUND(a,2), UBOUND(a,2)
-                DO i = LBOUND(a,1), m
-                  diff = MAX(diff, ABS(b(i,j,h) - a(i,j,h)))
+            DO h = LBOUND(mat,3), UBOUND(mat,3)
+              DO j = LBOUND(mat,2), UBOUND(mat,2)
+                DO i = LBOUND(mat,1), m
+                  IF (PRESENT(ref)) THEN ! copy
+                    diff = MAX(diff, ABS(mat(i,j,h) - ref(i,j,h)))
+                  ELSE ! zero
+                    diff = MAX(diff, ABS(mat(i,j,h) - Z))
+                  END IF
                 END DO
-                DO i = m+1, UBOUND(b,1)
-                  diff = MAX(diff, ABS(b(i,j,h) - X))
+                DO i = m+1, UBOUND(mat,1)
+                  diff = MAX(diff, ABS(mat(i,j,h) - X))
                 END DO
               END DO
             END DO
