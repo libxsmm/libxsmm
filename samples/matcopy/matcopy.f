@@ -23,7 +23,7 @@
         INTEGER, PARAMETER :: S = T
         INTEGER, PARAMETER :: W = 50
         REAL(T), PARAMETER :: X = REAL(-1, T) ! pattern
-        REAL(T), PARAMETER :: Z = REAL(-1, T) ! zero
+        REAL(T), PARAMETER :: Z = REAL( 0, T) ! zero
 
         REAL(T), ALLOCATABLE, TARGET :: a1(:), b1(:)
         !DIR$ ATTRIBUTES ALIGN:64 :: a1, b1
