@@ -37,12 +37,12 @@
       _vcs = _mm512_fmadd_ps( _vi, _vci, _vcs );
       _vco = LIBXSMM_INTRINSICS_MM512_TANH_PS( _vcs );
       _vh = _mm512_mul_ps( _vo, _vco );
-      _mm512_store_ps( &_o[(_j*K)+_k], _vo );
-      _mm512_store_ps( &_i[(_j*K)+_k], _vi );
-      _mm512_store_ps( &_ci[(_j*K)+_k], _vci );
-      _mm512_store_ps( &_f[(_j*K)+_k], _vf );
-      _mm512_store_ps( &_cs[(_j*K)+_k], _vcs );
-      _mm512_store_ps( &_co[(_j*K)+_k], _vco );
+      _mm512_storeu_ps( &_o[(_j*K)+_k], _vo );
+      _mm512_storeu_ps( &_i[(_j*K)+_k], _vi );
+      _mm512_storeu_ps( &_ci[(_j*K)+_k], _vci );
+      _mm512_storeu_ps( &_f[(_j*K)+_k], _vf );
+      _mm512_storeu_ps( &_cs[(_j*K)+_k], _vcs );
+      _mm512_storeu_ps( &_co[(_j*K)+_k], _vco );
       LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_h[(_j*K)+_k], _vh );
     }
   }

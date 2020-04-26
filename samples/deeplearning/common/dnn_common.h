@@ -2544,13 +2544,13 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
       cov = LIBXSMM_INTRINSICS_MM512_TANH_PS (csv);
       /* h = o.co */
       hv = _mm512_mul_ps (ov, cov);
-      _mm512_store_ps (&(i[j*4*K + l]), iv);
-      _mm512_store_ps (&(c[j*4*K + l]), cv);
-      _mm512_store_ps (&(f[j*4*K + l]), fv);
-      _mm512_store_ps (&(o[j*4*K + l]), ov);
-      _mm512_store_ps (&(cs[j*K + l]),  csv);
-      _mm512_store_ps (&(co[j*K + l]),  cov);
-      _mm512_store_ps (&(h[j*K + l]),   hv);
+      _mm512_storeu_ps (&(i[j*4*K + l]), iv);
+      _mm512_storeu_ps (&(c[j*4*K + l]), cv);
+      _mm512_storeu_ps (&(f[j*4*K + l]), fv);
+      _mm512_storeu_ps (&(o[j*4*K + l]), ov);
+      _mm512_storeu_ps (&(cs[j*K + l]),  csv);
+      _mm512_storeu_ps (&(co[j*K + l]),  cov);
+      _mm512_storeu_ps (&(h[j*K + l]),   hv);
     }
   }
 #if defined(_OPENMP)
@@ -2669,11 +2669,11 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
       /* update dcsp */
       /* dcsp = dcsp.f */
       dcspv = _mm512_mul_ps (dcspv, fv);
-      _mm512_store_ps (&(di[j*4*K + l]), div);
-      _mm512_store_ps (&(dc[j*4*K + l]), dcv);
-      _mm512_store_ps (&(df[j*4*K + l]), dfv);
-      _mm512_store_ps (&(dp[j*4*K + l]), dov);
-      _mm512_store_ps (&(dcsp[j*K + l]), dcspv);
+      _mm512_storeu_ps (&(di[j*4*K + l]), div);
+      _mm512_storeu_ps (&(dc[j*4*K + l]), dcv);
+      _mm512_storeu_ps (&(df[j*4*K + l]), dfv);
+      _mm512_storeu_ps (&(dp[j*4*K + l]), dov);
+      _mm512_storeu_ps (&(dcsp[j*K + l]), dcspv);
     }
   }
 #if defined(_OPENMP)

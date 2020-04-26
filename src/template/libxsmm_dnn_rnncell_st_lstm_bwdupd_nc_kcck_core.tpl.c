@@ -489,10 +489,10 @@ for (j = t-1; j >= 0; --j) {
           dbo_sum = _mm512_add_ps(dbo_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K)));
           dbc_sum = _mm512_add_ps(dbc_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K)));
         }
-        _mm512_store_ps(&dbi[ik], dbi_sum);
-        _mm512_store_ps(&dbf[ik], dbf_sum);
-        _mm512_store_ps(&dbo[ik], dbo_sum);
-        _mm512_store_ps(&dbc[ik], dbc_sum);
+        _mm512_storeu_ps(&dbi[ik], dbi_sum);
+        _mm512_storeu_ps(&dbf[ik], dbf_sum);
+        _mm512_storeu_ps(&dbo[ik], dbo_sum);
+        _mm512_storeu_ps(&dbc[ik], dbc_sum);
       }
     } else {
       for (ik = thr_begin_k; ik < thr_end_k; ik++) {

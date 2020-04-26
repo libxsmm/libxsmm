@@ -80,12 +80,12 @@ void SplitLoop::backPropagate(vector<TensorBuf *>& deloutpb, TensorBuf *delinpb,
 #pragma omp parallel for
 #endif
         for(int j=0; j<size; j+=16) {
-          __m512 vo = _mm512_load_ps( out1+j );
-          vo = _mm512_add_ps( vo, _mm512_load_ps( out2+j ) );
+          __m512 vo = _mm512_loadu_ps( out1+j );
+          vo = _mm512_add_ps( vo, _mm512_loadu_ps( out2+j ) );
 #ifdef USE_NTS_SPLIT
           _mm512_stream_ps( &(((float*)delinp)[j]), vo );
 #else
-          _mm512_store_ps( &(((float*)delinp)[j]), vo );
+          _mm512_storeu_ps( &(((float*)delinp)[j]), vo );
 #endif
         }
       } else if ( num_outp == 1 ) {
@@ -94,11 +94,11 @@ void SplitLoop::backPropagate(vector<TensorBuf *>& deloutpb, TensorBuf *delinpb,
 #pragma omp parallel for
 #endif
         for(int j=0; j<size; j+=16) {
-          __m512 vo = _mm512_load_ps( out1+j );
+          __m512 vo = _mm512_loadu_ps( out1+j );
 #ifdef USE_NTS_SPLIT
           _mm512_stream_ps( &(((float*)delinp)[j]), vo );
 #else
-          _mm512_store_ps( &(((float*)delinp)[j]), vo );
+          _mm512_storeu_ps( &(((float*)delinp)[j]), vo );
 #endif
         }
       } else {
@@ -106,14 +106,14 @@ void SplitLoop::backPropagate(vector<TensorBuf *>& deloutpb, TensorBuf *delinpb,
 #pragma omp parallel for
 #endif
         for(int j=0; j<size; j+=16) {
-          __m512 vo = _mm512_load_ps( &(((float*)deloutp[0])[j]) );
+          __m512 vo = _mm512_loadu_ps( &(((float*)deloutp[0])[j]) );
           for(int i=1; i<num_outp; i++) {
-            vo = _mm512_add_ps( vo, _mm512_load_ps( &(((float*)deloutp[i])[j]) ) );
+            vo = _mm512_add_ps( vo, _mm512_loadu_ps( &(((float*)deloutp[i])[j]) ) );
           }
 #ifdef USE_NTS_SPLIT
           _mm512_stream_ps( &(((float*)delinp)[j]), vo );
 #else
-          _mm512_store_ps( &(((float*)delinp)[j]), vo );
+          _mm512_storeu_ps( &(((float*)delinp)[j]), vo );
 #endif
         }
       }

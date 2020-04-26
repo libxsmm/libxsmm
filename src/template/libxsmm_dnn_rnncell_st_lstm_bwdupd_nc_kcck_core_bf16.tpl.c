@@ -327,10 +327,10 @@ for (j = t-1; j >= 0; --j) {
           dbo_sum = _mm512_add_ps(dbo_sum, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K)));
           dbc_sum = _mm512_add_ps(dbc_sum, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K)));
         }
-        _mm512_store_ps(&dbi[ik], dbi_sum);
-        _mm512_store_ps(&dbf[ik], dbf_sum);
-        _mm512_store_ps(&dbo[ik], dbo_sum);
-        _mm512_store_ps(&dbc[ik], dbc_sum);
+        _mm512_storeu_ps(&dbi[ik], dbi_sum);
+        _mm512_storeu_ps(&dbf[ik], dbf_sum);
+        _mm512_storeu_ps(&dbo[ik], dbo_sum);
+        _mm512_storeu_ps(&dbc[ik], dbc_sum);
         /* Downconvert delta bias to bf16 if done with all timesteps */
         if (j == 0) {
           _mm512_storecvt_fp32_bf16(&dbi_bf16[ik], dbi_sum);

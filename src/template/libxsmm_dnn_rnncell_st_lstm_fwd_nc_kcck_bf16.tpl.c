@@ -21,7 +21,7 @@ do { \
   libxsmm_blasint __i,__j; \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=16 ) { \
-      _mm512_store_ps((float*)&dst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&src[(__j*ld)+__i])); \
+      _mm512_storeu_ps((float*)&dst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&src[(__j*ld)+__i])); \
     } \
   } \
 } while (0)
@@ -33,7 +33,7 @@ do { \
   libxsmm_blasint __i,__j; \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=16 ) { \
-      _mm512_store_ps((float*)&srcdst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&colv[__i])); \
+      _mm512_storeu_ps((float*)&srcdst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&colv[__i])); \
     } \
   } \
 } while (0)
@@ -46,7 +46,7 @@ do { \
   __m512 vbias = _mm512_set1_ps(const_bias); \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=16 ) { \
-      _mm512_store_ps((float*)&srcdst[(__j*ld)+__i], _mm512_add_ps(vbias, _mm512_loadcvt_bf16_fp32(&colv[__i]))); \
+      _mm512_storeu_ps((float*)&srcdst[(__j*ld)+__i], _mm512_add_ps(vbias, _mm512_loadcvt_bf16_fp32(&colv[__i]))); \
     } \
   } \
 } while (0)

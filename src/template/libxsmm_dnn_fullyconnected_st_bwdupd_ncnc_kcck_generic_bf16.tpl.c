@@ -204,7 +204,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
     __m512 dbias_reg = _mm512_setzero_ps();
     for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
       for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-        _mm512_store_ps(scratch_dbias+iterj, zero_reg);
+        _mm512_storeu_ps(scratch_dbias+iterj, zero_reg);
       }
       for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
         for ( iteri = 0; iteri < handle->bn; ++iteri ) {
@@ -212,7 +212,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
             doutput_reg = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
             dbias_reg = LIBXSMM_INTRINSICS_MM512_LOAD_PS(scratch_dbias+iterj);
             dbias_reg = _mm512_add_ps(dbias_reg, doutput_reg);
-            _mm512_store_ps(scratch_dbias+iterj, dbias_reg);
+            _mm512_storeu_ps(scratch_dbias+iterj, dbias_reg);
           }
         }
       }

@@ -31,7 +31,7 @@
 #define _MM_GATHER_INT32(Addr, idx, scale) _mm512_i32gather_epi32((idx), (Addr), (scale))
 #define _MM_GATHER_FP32(Addr, idx, scale) _mm512_i32gather_ps((idx), (Addr), (scale))
 #define _MM_CMPNEQ_FP32(v1,v2) _mm512_cmp_ps_mask(v1,v2,12)
-#define _MM_STORE_FP32 _mm512_store_ps
+#define _MM_STORE_FP32 _mm512_storeu_ps
 #define _MM_STOREU_FP32 _mm512_storeu_ps
 #define _MM_ADD_FP32 _mm512_add_ps
 #define _MM_FMADD_FP32 _mm512_fmadd_ps
