@@ -204,7 +204,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
     __m512 dbias_reg = _mm512_setzero_ps();
     for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
       for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-        _mm512_store_ps(scratch_dbias+iterj, zero_reg);
+        _mm512_storeu_ps(scratch_dbias+iterj, zero_reg);
       }
       for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
         for ( iteri = 0; iteri < handle->bn; ++iteri ) {
@@ -212,7 +212,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
             doutput_reg = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
             dbias_reg = LIBXSMM_INTRINSICS_MM512_LOAD_PS(scratch_dbias+iterj);
             dbias_reg = _mm512_add_ps(dbias_reg, doutput_reg);
-            _mm512_store_ps(scratch_dbias+iterj, dbias_reg);
+            _mm512_storeu_ps(scratch_dbias+iterj, dbias_reg);
           }
         }
       }
@@ -581,11 +581,11 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
           if ((bc % 2 == 0) && (bk % 16 == 0)) {
             for (jc = 0; jc < bc; jc+=2) {
               for (jk = 0; jk < bk; jk+=16) {
-                c1 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, jc+1,jk, bk));
-                c0 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, jc, jk, bk));
+                c1 = _mm256_loadu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, jc+1,jk, bk));
+                c0 = _mm256_loadu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, jc, jk, bk));
                 c01 = _mm512_inserti64x4(c01, c0, 0);
                 c01 = _mm512_inserti64x4(c01, c1, 1);
-                _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, jc/lpb, jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+                _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, jc/lpb, jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
               }
             }
           } else {
@@ -618,7 +618,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
                     a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, jc+1, jk, nBlocksIFm, bc, bk));
                     b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, jc, jk, nBlocksIFm, bc, bk));
                     c01 = _mm512_cvt2_fp32_bf16(a01, b01);
-                    _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, jc/lpb, jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+                    _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, jc/lpb, jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
                   }
                 }
               } else {
@@ -649,11 +649,11 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
         if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
           for (jc = 0; jc < bbc; jc+=2) {
             for (jk = 0; jk < bbk; jk+=16) {
-              c1 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc+1, ofm2*bbk+jk, bk));
-              c0 = _mm256_load_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
+              c1 = _mm256_loadu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc+1, ofm2*bbk+jk, bk));
+              c0 = _mm256_loadu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk+jk, bk));
               c01 = _mm512_inserti64x4(c01, c0, 0);
               c01 = _mm512_inserti64x4(c01, c1, 1);
-              _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+              _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
             }
           }
         } else {
@@ -688,7 +688,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
                   a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc+1, ofm2*bbk+jk, nBlocksIFm, bc, bk));
                   b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk+jk, nBlocksIFm, bc, bk));
                   c01 = _mm512_cvt2_fp32_bf16(a01, b01);
-                  _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+                  _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
                 }
               }
             } else {

@@ -656,7 +656,7 @@ if (handle->weight_copies > 1) {
       element_filter_type *weight_ptr_src = (element_filter_type*)handle->scratch7 + ii * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S + ij * 16;
       weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(weight_ptr_src));
     }
-    _mm512_store_ps(&weight_ptr_glb[ij*16], weight_sum);
+    _mm512_storeu_ps(&weight_ptr_glb[ij*16], weight_sum);
 #endif
   }
 }

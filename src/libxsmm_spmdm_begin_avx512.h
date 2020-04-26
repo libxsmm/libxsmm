@@ -25,13 +25,13 @@
 #define _MM_SET_INT32 _mm512_set_epi32
 #define _MM_LOAD_FP32 LIBXSMM_INTRINSICS_MM512_LOAD_PS
 #define _MM_LOADU_FP32 _mm512_loadu_ps
-#define _MM_LOAD_INT32 _mm512_load_epi32
-#define _MM_STORE_INT32 _mm512_store_epi32
+#define _MM_LOAD_INT32 _mm512_loadu_si512
+#define _MM_STORE_INT32 _mm512_storeu_si512
 #define _MM_LOADU_INT32(x) _mm512_loadu_si512( (void const *)(x))
 #define _MM_GATHER_INT32(Addr, idx, scale) _mm512_i32gather_epi32((idx), (Addr), (scale))
 #define _MM_GATHER_FP32(Addr, idx, scale) _mm512_i32gather_ps((idx), (Addr), (scale))
 #define _MM_CMPNEQ_FP32(v1,v2) _mm512_cmp_ps_mask(v1,v2,12)
-#define _MM_STORE_FP32 _mm512_store_ps
+#define _MM_STORE_FP32 _mm512_storeu_ps
 #define _MM_STOREU_FP32 _mm512_storeu_ps
 #define _MM_ADD_FP32 _mm512_add_ps
 #define _MM_FMADD_FP32 _mm512_fmadd_ps
@@ -278,8 +278,8 @@
   { \
     __m256i vk1 = _mm256_set1_epi16((short)(k)); \
     __m256i vk2 = _mm256_set1_epi16((short)((k) + 8)); \
-    __m256i v_idx = _mm256_add_epi32(vk1, _mm256_load_si256(&shufmasks2[(m)&0xFF])); \
-    __m256i v_idx_2 = _mm256_add_epi32(vk2, _mm256_load_si256(&shufmasks2[((m)>>8)&0xFF])); \
+    __m256i v_idx = _mm256_add_epi32(vk1, _mm256_loadu_si256(&shufmasks2[(m)&0xFF])); \
+    __m256i v_idx_2 = _mm256_add_epi32(vk2, _mm256_loadu_si256(&shufmasks2[((m)>>8)&0xFF])); \
     _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx); \
     cnt = (unsigned short)((cnt) + _mm_popcnt_u32((m)&0xFF)); \
     _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx_2); \

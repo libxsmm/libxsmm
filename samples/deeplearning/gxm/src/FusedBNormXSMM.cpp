@@ -562,11 +562,11 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
         __m512  vnhw_ratio = _mm512_set1_ps(nhw_ratio);
 
         for (int b = 0; b < nBfm; ++b) {
-          __m512 vbm = _mm512_load_ps(&bmean[b][0]);
-          __m512 vbvar = _mm512_load_ps(&bvar[b][0]);
+          __m512 vbm = _mm512_loadu_ps(&bmean[b][0]);
+          __m512 vbvar = _mm512_loadu_ps(&bvar[b][0]);
 
-          _mm512_store_ps( &(gexp[b*VLEN]), _mm512_add_ps(_mm512_mul_ps(_mm512_load_ps( &(gexp[b*VLEN]) ), vmmf), vbm));
-          _mm512_store_ps( &(gv[b*VLEN]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(gv[b*VLEN]) ), vmmf), _mm512_mul_ps(vnhw_ratio, vbvar)));
+          _mm512_storeu_ps( &(gexp[b*VLEN]), _mm512_add_ps(_mm512_mul_ps(_mm512_loadu_ps( &(gexp[b*VLEN]) ), vmmf), vbm));
+          _mm512_storeu_ps( &(gv[b*VLEN]), _mm512_add_ps( _mm512_mul_ps( _mm512_loadu_ps( &(gv[b*VLEN]) ), vmmf), _mm512_mul_ps(vnhw_ratio, vbvar)));
         }
 #else
 

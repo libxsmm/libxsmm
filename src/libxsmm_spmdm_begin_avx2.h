@@ -23,15 +23,15 @@
 #define _MM_SET1_INT32 _mm256_set1_epi32
 #define _MM_SET1_INT16 _mm256_set1_epi16
 #define _MM_SET_INT32 _mm256_set_epi32
-#define _MM_LOAD_FP32 _mm256_load_ps
+#define _MM_LOAD_FP32 _mm256_loadu_ps
 #define _MM_LOADU_FP32 _mm256_loadu_ps
-#define _MM_LOAD_INT32 _mm256_load_si256
-#define _MM_STORE_INT32 _mm256_store_si256
+#define _MM_LOAD_INT32 _mm256_loadu_si256
+#define _MM_STORE_INT32 _mm256_storeu_si256
 #define _MM_LOADU_INT32(x) _mm256_loadu_si256( (__m256i const *)(x))
 #define _MM_GATHER_INT32(Addr, idx, scale) _mm256_i32gather_epi32((Addr), (idx), (scale))
 #define _MM_GATHER_FP32(Addr, idx, scale) _mm256_i32gather_ps(((float const *)(Addr)), (idx), (scale))
 #define _MM_CMPNEQ_FP32(v1,v2) _mm256_cmp_ps(v1,v2,12)
-#define _MM_STORE_FP32 _mm256_store_ps
+#define _MM_STORE_FP32 _mm256_storeu_ps
 #define _MM_STOREU_FP32 _mm256_storeu_ps
 #define _MM_ADD_FP32 _mm256_add_ps
 #define _MM_FMADD_FP32 _mm256_fmadd_ps
@@ -139,9 +139,9 @@
 #define COMPRESS_FP32(v, k, m, cnt) { \
   const unsigned int mask = _mm256_movemask_ps(m); \
   const SIMDTYPE_INT32 vk = _MM_SET1_INT16((short)(k)); \
-  const __m256i perm_ctrl = _mm256_load_si256(&shufmasks[mask]); \
+  const __m256i perm_ctrl = _mm256_loadu_si256(&shufmasks[mask]); \
   const __m256 v_packed = _mm256_permutevar8x32_ps(v, perm_ctrl); \
-  const __m256i v_shuff = _mm256_load_si256(&shufmasks2[mask]); \
+  const __m256i v_shuff = _mm256_loadu_si256(&shufmasks2[mask]); \
   const __m256i v_idx = _mm256_add_epi32(vk, v_shuff); \
   _mm256_storeu_ps(values_ptr + (cnt), v_packed); \
   _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx); \
