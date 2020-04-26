@@ -2,22 +2,22 @@
   __m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;
   __m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;
 
-  r0 = _mm512_load_epi32(mat + 0*16);
-  r1 = _mm512_load_epi32(mat + 1*16);
-  r2 = _mm512_load_epi32(mat + 2*16);
-  r3 = _mm512_load_epi32(mat + 3*16);
-  r4 = _mm512_load_epi32(mat + 4*16);
-  r5 = _mm512_load_epi32(mat + 5*16);
-  r6 = _mm512_load_epi32(mat + 6*16);
-  r7 = _mm512_load_epi32(mat + 7*16);
-  r8 = _mm512_load_epi32(mat + 8*16);
-  r9 = _mm512_load_epi32(mat + 9*16);
-  ra = _mm512_load_epi32(mat + 10*16);
-  rb = _mm512_load_epi32(mat + 11*16);
-  rc = _mm512_load_epi32(mat + 12*16);
-  rd = _mm512_load_epi32(mat + 13*16);
-  re = _mm512_load_epi32(mat + 14*16);
-  rf = _mm512_load_epi32(mat + 15*16);
+  r0 = _mm512_loadu_si512(mat + 0*16);
+  r1 = _mm512_loadu_si512(mat + 1*16);
+  r2 = _mm512_loadu_si512(mat + 2*16);
+  r3 = _mm512_loadu_si512(mat + 3*16);
+  r4 = _mm512_loadu_si512(mat + 4*16);
+  r5 = _mm512_loadu_si512(mat + 5*16);
+  r6 = _mm512_loadu_si512(mat + 6*16);
+  r7 = _mm512_loadu_si512(mat + 7*16);
+  r8 = _mm512_loadu_si512(mat + 8*16);
+  r9 = _mm512_loadu_si512(mat + 9*16);
+  ra = _mm512_loadu_si512(mat + 10*16);
+  rb = _mm512_loadu_si512(mat + 11*16);
+  rc = _mm512_loadu_si512(mat + 12*16);
+  rd = _mm512_loadu_si512(mat + 13*16);
+  re = _mm512_loadu_si512(mat + 14*16);
+  rf = _mm512_loadu_si512(mat + 15*16);
 
   t0 = _mm512_unpacklo_epi32(r0,r1); /*   0  16   1  17   4  20   5  21   8  24   9  25  12  28  13  29 */
   t1 = _mm512_unpackhi_epi32(r0,r1); /*   2  18   3  19   6  22   7  23  10  26  11  27  14  30  15  31 */
@@ -87,20 +87,20 @@
   re = _mm512_shuffle_i32x4(t6, te, 0xdd); /*  14 ... */
   rf = _mm512_shuffle_i32x4(t7, tf, 0xdd); /*  15  31  47  63  79  96 111 127 ... 255 */
 
-  _mm512_store_epi32(matT + 0*16, r0);
-  _mm512_store_epi32(matT + 1*16, r1);
-  _mm512_store_epi32(matT + 2*16, r2);
-  _mm512_store_epi32(matT + 3*16, r3);
-  _mm512_store_epi32(matT + 4*16, r4);
-  _mm512_store_epi32(matT + 5*16, r5);
-  _mm512_store_epi32(matT + 6*16, r6);
-  _mm512_store_epi32(matT + 7*16, r7);
-  _mm512_store_epi32(matT + 8*16, r8);
-  _mm512_store_epi32(matT + 9*16, r9);
-  _mm512_store_epi32(matT + 10*16, ra);
-  _mm512_store_epi32(matT + 11*16, rb);
-  _mm512_store_epi32(matT + 12*16, rc);
-  _mm512_store_epi32(matT + 13*16, rd);
-  _mm512_store_epi32(matT + 14*16, re);
-  _mm512_store_epi32(matT + 15*16, rf);
+  _mm512_storeu_si512(matT + 0*16, r0);
+  _mm512_storeu_si512(matT + 1*16, r1);
+  _mm512_storeu_si512(matT + 2*16, r2);
+  _mm512_storeu_si512(matT + 3*16, r3);
+  _mm512_storeu_si512(matT + 4*16, r4);
+  _mm512_storeu_si512(matT + 5*16, r5);
+  _mm512_storeu_si512(matT + 6*16, r6);
+  _mm512_storeu_si512(matT + 7*16, r7);
+  _mm512_storeu_si512(matT + 8*16, r8);
+  _mm512_storeu_si512(matT + 9*16, r9);
+  _mm512_storeu_si512(matT + 10*16, ra);
+  _mm512_storeu_si512(matT + 11*16, rb);
+  _mm512_storeu_si512(matT + 12*16, rc);
+  _mm512_storeu_si512(matT + 13*16, rd);
+  _mm512_storeu_si512(matT + 14*16, re);
+  _mm512_storeu_si512(matT + 15*16, rf);
 }
