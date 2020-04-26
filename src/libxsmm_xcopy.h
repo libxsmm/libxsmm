@@ -67,13 +67,12 @@
   (KERNEL)(SRC, &libxsmm_tcopy_call_uldi_, DST, &libxsmm_tcopy_call_uldo_); \
 }
 
-#define LIBXSMM_XCOPY_LOOP_UNALIGNED(A)
-#define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
+#define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
   /*const*/int libxsmm_xcopy_loop_generic_ = (sizeof(TYPE) != (TYPESIZE)); /* mute warning (constant conditional) */ \
   libxsmm_blasint libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
   if (0 == libxsmm_xcopy_loop_generic_) { /* specific type-size */ \
     for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (libxsmm_blasint)(M1); ++libxsmm_xcopy_loop_i_) { \
-      LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(OUT) \
+      LIBXSMM_PRAGMA_NONTEMPORAL \
       for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < (libxsmm_blasint)(N1); ++libxsmm_xcopy_loop_j_) { \
         XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
           libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); *libxsmm_xcopy_loop_dst_ = *libxsmm_xcopy_loop_src_; \
@@ -82,7 +81,7 @@
   } \
   else { /* generic type-size */ \
     for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (libxsmm_blasint)(M1); ++libxsmm_xcopy_loop_i_) { \
-      LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(OUT) \
+      LIBXSMM_PRAGMA_NONTEMPORAL \
       for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < (libxsmm_blasint)(N1); ++libxsmm_xcopy_loop_j_) { \
         XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
           libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \
@@ -92,46 +91,30 @@
   } \
 }
 
-#define LIBXSMM_MZERO_KERNEL_LOOP_NONJIT(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
-  LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, N0, N1, M0, M1)
-#define LIBXSMM_MCOPY_KERNEL_LOOP_NONJIT(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
-  LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, N0, N1, M0, M1)
-#define LIBXSMM_TCOPY_KERNEL_LOOP_NONJIT(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
-  LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1)
-
-#define LIBXSMM_TCOPY_KERNEL_ALIGN(N0, TYPESIZE) (0 == LIBXSMM_MOD2((N0) * (TYPESIZE), LIBXSMM_ALIGNMENT))
-#define LIBXSMM_MCOPY_KERNEL_ALIGN(N0, TYPESIZE) (1)
-#define LIBXSMM_MZERO_KERNEL_ALIGN(N0, TYPESIZE) (1)
-
-#define LIBXSMM_XCOPY_XALIGN(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
-  if (0 == LIBXSMM_MOD2((uintptr_t)(OUT), LIBXSMM_ALIGNMENT) && \
-      0 == LIBXSMM_MOD2((LDO) * (TYPESIZE), LIBXSMM_ALIGNMENT) && \
-      LIBXSMM_CONCATENATE(XKERNEL,_ALIGN)(N0, TYPESIZE)) \
-  { \
-    LIBXSMM_CONCATENATE(XKERNEL,_LOOP_NONJIT)(TYPE, TYPESIZE, XKERNEL, LIBXSMM_PRAGMA_VALIGNED_VAR, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
-  } \
-  else { /* unaligned store */ \
-    LIBXSMM_CONCATENATE(XKERNEL,_LOOP_NONJIT)(TYPE, TYPESIZE, XKERNEL, LIBXSMM_XCOPY_LOOP_UNALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
-  } \
-}
+#define LIBXSMM_MZERO_KERNEL_LOOP_NONJIT(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
+  LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, N0, N1, M0, M1)
+#define LIBXSMM_MCOPY_KERNEL_LOOP_NONJIT(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
+  LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, N0, N1, M0, M1)
+#define LIBXSMM_TCOPY_KERNEL_LOOP_NONJIT(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
+  LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1)
 
 #define LIBXSMM_XCOPY_NONJIT(XKERNEL, TYPESIZE, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
   switch(TYPESIZE) { \
     case 2: { \
-      LIBXSMM_XCOPY_XALIGN(short, 2, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
+      LIBXSMM_CONCATENATE(XKERNEL,_LOOP_NONJIT)(short, 2, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
     } break; \
     case 4: { \
-      LIBXSMM_XCOPY_XALIGN(float, 4, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
+      LIBXSMM_CONCATENATE(XKERNEL,_LOOP_NONJIT)(float, 4, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
     } break; \
     case 8: { \
-      LIBXSMM_XCOPY_XALIGN(double, 8, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
+      LIBXSMM_CONCATENATE(XKERNEL,_LOOP_NONJIT)(double, 8, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
     } break; \
     case 16: { \
       typedef struct /*libxsmm_xcopy_nonjit_elem_t*/ { double value[2]; } libxsmm_xcopy_nonjit_elem_t; \
-      LIBXSMM_XCOPY_XALIGN(libxsmm_xcopy_nonjit_elem_t, 16, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
+      LIBXSMM_CONCATENATE(XKERNEL,_LOOP_NONJIT)(libxsmm_xcopy_nonjit_elem_t, 16, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
     } break; \
     default: { \
-      LIBXSMM_XCOPY_XALIGN(char, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
+      LIBXSMM_CONCATENATE(XKERNEL,_LOOP_NONJIT)(char, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
     } break; \
   } \
 }
