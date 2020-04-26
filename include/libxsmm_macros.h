@@ -781,6 +781,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <stdio.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
