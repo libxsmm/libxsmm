@@ -92,11 +92,11 @@
   } \
 }
 
-#define LIBXSMM_MZERO_KERNEL_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
+#define LIBXSMM_MZERO_KERNEL_LOOP_NONJIT(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
   LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, N0, N1, M0, M1)
-#define LIBXSMM_MCOPY_KERNEL_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
+#define LIBXSMM_MCOPY_KERNEL_LOOP_NONJIT(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
   LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, N0, N1, M0, M1)
-#define LIBXSMM_TCOPY_KERNEL_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
+#define LIBXSMM_TCOPY_KERNEL_LOOP_NONJIT(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
   LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1)
 
 #define LIBXSMM_TCOPY_KERNEL_ALIGN(N0, TYPESIZE) (0 == LIBXSMM_MOD2((N0) * (TYPESIZE), LIBXSMM_ALIGNMENT))
@@ -108,10 +108,10 @@
       0 == LIBXSMM_MOD2((LDO) * (TYPESIZE), LIBXSMM_ALIGNMENT) && \
       LIBXSMM_CONCATENATE(XKERNEL,_ALIGN)(N0, TYPESIZE)) \
   { \
-    LIBXSMM_CONCATENATE(XKERNEL,_LOOP)(TYPE, TYPESIZE, XKERNEL, LIBXSMM_PRAGMA_VALIGNED_VAR, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
+    LIBXSMM_CONCATENATE(XKERNEL,_LOOP_NONJIT)(TYPE, TYPESIZE, XKERNEL, LIBXSMM_PRAGMA_VALIGNED_VAR, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
   } \
   else { /* unaligned store */ \
-    LIBXSMM_CONCATENATE(XKERNEL,_LOOP)(TYPE, TYPESIZE, XKERNEL, LIBXSMM_XCOPY_LOOP_UNALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
+    LIBXSMM_CONCATENATE(XKERNEL,_LOOP_NONJIT)(TYPE, TYPESIZE, XKERNEL, LIBXSMM_XCOPY_LOOP_UNALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
   } \
 }
 
@@ -142,13 +142,20 @@
 # define LIBXSMM_XCOPY_PRECOND(COND) COND
 #endif
 
+#define LIBXSMM_MZERO_KERNEL_INDEX(I, J) (J)
+#define LIBXSMM_MCOPY_KERNEL_INDEX(I, J) (J)
+#define LIBXSMM_TCOPY_KERNEL_INDEX(I, J) (I)
+
 #define LIBXSMM_XCOPY(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) { \
   libxsmm_blasint libxsmm_xcopy_i_ = M0, libxsmm_xcopy_j_ = N0; \
   LIBXSMM_ASSERT_MSG(0 < (TILE_M) && 0 < (TILE_N), "XCOPY cannot make progress"); \
   if (NULL != (KERNEL)) { /* inner tiles with JIT */ \
     for (; libxsmm_xcopy_i_ < (((libxsmm_blasint)M1) - ((libxsmm_blasint)TILE_M) + 1); libxsmm_xcopy_i_ += TILE_M) { \
       for (libxsmm_xcopy_j_ = N0; libxsmm_xcopy_j_ < (((libxsmm_blasint)N1) - ((libxsmm_blasint)TILE_N) + 1); libxsmm_xcopy_j_ += TILE_N) { \
-        XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_i_, libxsmm_xcopy_j_, libxsmm_xcopy_src_, libxsmm_xcopy_dst_); \
+        XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, \
+          LIBXSMM_CONCATENATE(XKERNEL,_INDEX)(libxsmm_xcopy_i_, libxsmm_xcopy_j_), \
+          LIBXSMM_CONCATENATE(XKERNEL,_INDEX)(libxsmm_xcopy_j_, libxsmm_xcopy_i_), \
+          libxsmm_xcopy_src_, libxsmm_xcopy_dst_); \
         KERNEL_CALL(KERNEL, TYPESIZE, libxsmm_xcopy_src_, LDI, libxsmm_xcopy_dst_, LDO); \
       } \
     } \

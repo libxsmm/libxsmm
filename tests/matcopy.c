@@ -50,7 +50,7 @@ int main(void)
   ELEM_TYPE *c = 0;
 #endif
   void (*matcopy[])(void*, const void*, unsigned int, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint) = {
-      libxsmm_matcopy, libxsmm_matcopy_omp
+    libxsmm_matcopy, libxsmm_matcopy_omp
   };
   int test, fun;
 
@@ -74,6 +74,9 @@ int main(void)
 
   for (fun = 0; fun < 2; ++fun) {
     for (test = start; test < ntests; ++test) {
+      ELEM_TYPE pattern;
+      memset(b, -1, (size_t)(max_size_b * sizeof(ELEM_TYPE)));
+      pattern = b[0]; /* -NaN */
       matcopy[fun](b, NULL, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
       { /* validation */
         unsigned int testerrors = 0;
@@ -83,6 +86,11 @@ int main(void)
             const ELEM_TYPE u = 0;
             const ELEM_TYPE v = b[i*ldo[test]+j];
             if (LIBXSMM_NEQ(u, v)) {
+              ++testerrors;
+            }
+          }
+          for (j = m[test]; j < ldo[test]; ++j) {
+            if (0 != memcmp(&pattern, b + (size_t)i * ldo[test] + j, sizeof(ELEM_TYPE))) {
               ++testerrors;
             }
           }

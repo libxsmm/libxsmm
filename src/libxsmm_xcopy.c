@@ -122,7 +122,7 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
   int tid, int nthreads)
 {
   const unsigned int tm = (0 == km ? m : km);
-  const unsigned int tn = (0 == kn ? 1 : kn);
+  const unsigned int tn = (0 == kn ? LIBXSMM_MIN(1, n) : kn);
   const int mtasks = LIBXSMM_UPDIV(m, tm);
   unsigned int m0, m1, n0, n1;
 
@@ -134,7 +134,8 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
 
   if (nthreads <= mtasks) { /* parallelized over M */
     const unsigned int mt = LIBXSMM_UPDIV(m, nthreads);
-    m0 = LIBXSMM_MIN(tid * mt, m); m1 = LIBXSMM_MIN(m0 + mt, m);
+    m0 = LIBXSMM_MIN(tid * mt, m);
+    m1 = LIBXSMM_MIN(m0 + mt, m);
     n0 = 0; n1 = n;
   }
   else { /* parallelized over M and N */
@@ -165,7 +166,7 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
   int tid, int nthreads)
 {
   const unsigned int tm = (0 == km ? m : km);
-  const unsigned int tn = (0 == kn ? 1 : kn);
+  const unsigned int tn = (0 == kn ? LIBXSMM_MIN(1, n) : kn);
   const int mtasks = LIBXSMM_UPDIV(m, tm);
   unsigned int m0, m1, n0, n1;
 
@@ -269,6 +270,8 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
         tm = LIBXSMM_UPDIV(libxsmm_mzero_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
       }
+      if (0 == tm) tm = m;
+      if (0 == tn) tn = LIBXSMM_MIN(1, n);
       if ((unsigned int)m < tm || (unsigned int)n < tn) {
         if (1 == nthreads) {
           tm = (unsigned int)m; tn = (unsigned int)n;
@@ -349,6 +352,8 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
         unsigned int tm = LIBXSMM_UPDIV(libxsmm_tcopy_mbytes, typesize);
         unsigned int tn = (unsigned int)(libxsmm_tcopy_nscale * tm);
         libxsmm_xtransfunction kernel = NULL;
+        if (0 == tm) tm = m;
+        if (0 == tn) tn = LIBXSMM_MIN(1, n);
         if ((unsigned int)m < tm || (unsigned int)n < tn) {
           if (1 == nthreads) {
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
