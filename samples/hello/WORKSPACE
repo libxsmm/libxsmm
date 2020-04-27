@@ -1,5 +1,4 @@
 local_repository(
     name = "xsmm",
     path = "../..",
-    #build_file = "/mnt/c/Users/hfpab/Documents/projects/libxsmm/xsmm.BUILD",
 )
