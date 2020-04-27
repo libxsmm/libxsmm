@@ -4,7 +4,7 @@ ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../../..
 SRCDIR = .
 INCDIR = .
-BLDDIR = build
+BLDDIR = obj
 OUTDIR = xsmm_lstm
 
 CXXFLAGS = $(NULL)

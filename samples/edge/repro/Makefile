@@ -2,7 +2,7 @@ ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../../..
 SRCDIR = src
 INCDIR = .
-BLDDIR = build
+BLDDIR = obj
 OUTDIR = bin
 
 # settings for reproducer

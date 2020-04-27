@@ -6,13 +6,12 @@ opentuner.db
 bin/libxsmm_generator
 include/libxsmm_version.h
 include/libxsmm.f
-build
 lib/libxsmm*
 lib/module
 ide/GPUCache
 ide/_vs*-*.bat
 ide/.vs
-ide/build
+ide/obj
 ide/r*ah
 samples2
 samples/*/bin
