@@ -19,6 +19,9 @@
 #if !defined(LIBXSMM_XCOPY_TASKSCALE)
 # define LIBXSMM_XCOPY_TASKSCALE 2
 #endif
+#if !defined(LIBXSMM_XCOPY_TILE_MIN)
+# define LIBXSMM_XCOPY_TILE_MIN 2
+#endif
 /* 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy */
 #if !defined(LIBXSMM_XCOPY_JIT)
 # if (defined(_WIN32) || defined(__CYGWIN__))
