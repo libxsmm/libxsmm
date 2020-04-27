@@ -243,13 +243,21 @@ if (handle->upd_linearized_pixels == 1) {
     }
     for (img = my_img_start; img < my_img_end; img++) {
       for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
-        TRANS_OUTPUT_W_TO_VNNI_FORMAT(img, ofm1, 0, handle->ofh);
 #if 0
+        TRANS_OUTPUT_W_TO_VNNI_FORMAT(img, ofm1, 0, handle->ofh);
+#else
         for (oj = 0; oj < handle->ofh; oj++) {
           for (oi = 0; oi < handle->ofw; oi++) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
               LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj, oi/2, ofm2, oi%2, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2) =
                 LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+            }
+          }
+        }
+        if (handle->ofw % 2 == 1) {
+          for (oj = 0; oj < handle->ofh; oj++) {
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
+              LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj, handle->ofw/2, ofm2, handle->ofw%2, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2) = (element_output_type)0;
             }
           }
         }
@@ -341,7 +349,12 @@ if (handle->upd_linearized_pixels == 0) {
     prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
     l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
     n_blocks = handle->batchreduce_h_pixels;
-    br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+    /* Handle case when ofw is odd number...  */
+    if (handle->ofw % 2 == 1) {
+      br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->ofw+1, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+    } else {
+      br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+    }
 
     for (img = my_img_start; img < my_img_end; img++) {
       for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
