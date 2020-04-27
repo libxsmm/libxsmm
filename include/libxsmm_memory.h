@@ -43,7 +43,7 @@
     libxsmm_memcpy127_loop_src_[libxsmm_memcpy127_loop_i_]; \
   } \
 }
-#define LIBXSMM_MEMCPY127_NTS(A, ...)
+#define LIBXSMM_MEMCPY127_NTS(...)
 #define LIBXSMM_MEMCPY127(PTRDST, PTRSRC, SIZE) \
   LIBXSMM_MEMCPY127_LOOP(PTRDST, PTRSRC, SIZE, LIBXSMM_MEMCPY127_NTS)
 #define LIBXSMM_ASSIGN127(PTRDST, PTRSRC) LIBXSMM_ASSERT(sizeof(*(PTRSRC)) <= sizeof(*(PTRDST))); \

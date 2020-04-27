@@ -360,24 +360,24 @@
 # if defined(LIBXSMM_OPENMP_SIMD)
 #   define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(omp simd reduction(EXPRESSION))
 #   define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
-#   define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(omp simd private(A, __VA_ARGS__))
+#   define LIBXSMM_PRAGMA_SIMD_PRIVATE(...) LIBXSMM_PRAGMA(omp simd private(__VA_ARGS__))
 #   define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(omp simd)
 # elif defined(__INTEL_COMPILER)
 #   define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
 #   define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))
-#   define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(simd private(A, __VA_ARGS__))
+#   define LIBXSMM_PRAGMA_SIMD_PRIVATE(...) LIBXSMM_PRAGMA(simd private(__VA_ARGS__))
 #   define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(simd)
 # endif
 #endif
 #if !defined(LIBXSMM_PRAGMA_SIMD)
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION)
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N)
-# define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...)
+# define LIBXSMM_PRAGMA_SIMD_PRIVATE(...)
 # define LIBXSMM_PRAGMA_SIMD
 #endif
 
 #if defined(__INTEL_COMPILER)
-# define LIBXSMM_PRAGMA_NONTEMPORAL(A, ...) LIBXSMM_PRAGMA(vector nontemporal(A, __VA_ARGS__))
+# define LIBXSMM_PRAGMA_NONTEMPORAL(...) LIBXSMM_PRAGMA(vector nontemporal(__VA_ARGS__))
 # define LIBXSMM_PRAGMA_VALIGNED LIBXSMM_PRAGMA(vector aligned)
 # define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(novector)
 # define LIBXSMM_PRAGMA_FORCEINLINE LIBXSMM_PRAGMA(forceinline)
@@ -389,9 +389,9 @@
 /*# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))*/
 #else
 # if defined(LIBXSMM_OPENMP_SIMD) && (201811 <= _OPENMP/*v5.0*/)
-#   define LIBXSMM_PRAGMA_NONTEMPORAL(A, ...) LIBXSMM_PRAGMA(omp simd nontemporal(A, __VA_ARGS__))
+#   define LIBXSMM_PRAGMA_NONTEMPORAL(...) LIBXSMM_PRAGMA(omp simd nontemporal(__VA_ARGS__))
 # else
-#   define LIBXSMM_PRAGMA_NONTEMPORAL(A, ...)
+#   define LIBXSMM_PRAGMA_NONTEMPORAL(...)
 # endif
 # if defined(__clang__)
 #   define LIBXSMM_PRAGMA_VALIGNED_VAR(A)
