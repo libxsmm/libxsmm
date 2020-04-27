@@ -13,13 +13,13 @@ jobs:
   include:
   - os: linux
     compiler: gcc
-    env: INSTALL=install-artifacts OPT=1 PYTHON=python3 LIBXSMM_MALLOC=1
+    env: INSTALL=install-artifacts OPT=1 PYTHON=python3 MALLOC=-1 LIBXSMM_MALLOC=1
   - os: linux
     compiler: gcc
     env: INSTALL=install DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0 ANALYZE=1
   - os: linux
     compiler: clang
-    env: INSTALL=install DBG=1 LIBXSMM_TARGET=sse LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
+    env: INSTALL=install DBG=1 LIBXSMM_TARGET=sse MALLOC=1 LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
   - os: osx
     osx_image: xcode11.3
     compiler: clang
