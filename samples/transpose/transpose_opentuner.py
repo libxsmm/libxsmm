@@ -18,6 +18,7 @@ from opentuner import ConfigurationManipulator
 from opentuner import IntegerParameter
 from opentuner import MeasurementInterface
 from opentuner import Result
+import json
 import time
 import sys
 import re
@@ -77,7 +78,7 @@ class TransposeTune(MeasurementInterface):
         if (0 == run_result["returncode"]):
             match = re.search(
                 "\\s*duration:\\s+([0-9]+(\\.[0-9]*)*)",
-                run_result["stdout"])
+                str(run_result["stdout"]))
             assert(match is not None)
             mseconds = float(match.group(1)) / nruns
             assert(0 < mseconds)
@@ -99,7 +100,9 @@ class TransposeTune(MeasurementInterface):
             time.strftime("-%Y%m%d-%H%M%S") + ".json")
         print("Optimal block size written to " + filename +
               ": ", configuration.data)
-        self.manipulator().save_to_file(configuration.data, filename)
+        # self.manipulator().save_to_file(configuration.data, filename)
+        with open(filename, 'w') as fd:
+            json.dump(configuration.data, fd)
 
 
 if __name__ == "__main__":
