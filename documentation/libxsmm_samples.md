@@ -4,6 +4,29 @@
 
 The first code sample given for LIBXSMM was a performance reproducer exercising the same set of kernels usually generated for CP2K's SMM library. The code sample attempted to model the way "matrix stacks" are processed in CP2K, however there are two different code paths in CP2K: (1) the "main" code path used when processing stacks on the host-side, and (2) a code path targeting offload devices. Beside of the host-sided parallelization via MPI (and perhaps OpenMP), the secondly mentioned code path relies on an additional level of parallelization (which is obviously necessary to drive a potentially highly parallel offload device). Also, the additional level of parallelism is not exactly "nested" in the sense that it participates on sharing the same resources as the host-side. In fact, this "artificial benchmark" (cp2k code sample) is modeling a code path as utilized in the secondly mentioned case (offload device).
 
+## Hello LIBXSMM
+
+This example is focused on a specific functionality but may be considered as "Hello LIBXSMM". Build the example either manually and as described in our [main documentation](https://libxsmm.readthedocs.io/#hello-libxsmm) (see underneath the source code), or use GNU Make:
+
+```bash
+cd /path/to/libxsmm
+make
+
+cd /path/to/libxsmm/samples/hello
+make
+
+./hello
+```
+
+Alternatively, one can use the Bazel build system. To further simplify, [Bazelisk](https://github.com/bazelbuild/bazelisk) is used to boot-strap [Bazel](https://bazel.build/):
+
+```bash
+cd /path/to/libxsmm/samples/hello
+bazelisk build //...
+
+./bazel-bin/hello
+```
+
 ## Magazine
 
 ### Overview
@@ -405,7 +428,7 @@ rm -rf opentuner.db
 ./transpose_opentuner.py --no-dups 7168 8192 6
 ```
 
-The tuning script uses the environment variables `LIBXSMM_XCOPY_M` and `LIBXSMM_XCOPY_N`, which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme inside of LIBXSMM's `libxsmm_otrans_omp` routine.
+The tuning script uses the environment variables `LIBXSMM_TCOPY_M` and `LIBXSMM_TCOPY_N`, which are internal to LIBXSMM. These variables are used to adjust certain thresholds in `libxsmm_otrans` or to request a specific tiling-scheme inside of the `libxsmm_otrans_omp` routine.
 
 ## XGEMM: Tiled GEMM Routines
 
