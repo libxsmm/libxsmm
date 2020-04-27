@@ -764,11 +764,13 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     handle->compute_pixels = compute_pixels;
 
     handle->use_intermediate_f32_wt_tensor = (handle->pixel_blocking == handle->n_used_pixels) ? 0 : 1;
+#if 0
     handle->scratch2_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(float)/2);
     if (handle->use_intermediate_f32_wt_tensor) {
       handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
     }
     handle->scratch3_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(float)/2);
+#endif
 
     if (handle->ofw <= 14) {
       handle->use_hybrid_imgofm_parallelization = 1;
@@ -794,11 +796,13 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     /* coverity[identical_branches] */
     handle->batchreduce_h_pixels = (handle->upd_trans_w_only) ? 1 : 1; /* TODO: identical_branches */
     handle->use_intermediate_f32_wt_tensor = (handle->batchreduce_h_pixels == handle->ofh) ? 0 : 1;
+#if 0
     handle->scratch2_size = (size_t) (handle->desc.N * handle->ofhp*handle->ofwp_extended * handle->desc.K * sizeof(float)/2);
     if (handle->use_intermediate_f32_wt_tensor) {
       handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
     }
     handle->scratch3_size = (size_t) (handle->desc.N * handle->ifhp * handle->ifwp_extended * handle->desc.C * sizeof(float)/2);
+#endif
   }
 
 }
@@ -855,9 +859,13 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_l
       handle->upd_lp_output_full_scratch_size = (size_t) (handle->desc.N * (handle->desc.H+2*handle->desc.pad_h) * ofwp_extended * handle->desc.K * sizeof(handle->datatype_in));
       handle->upd_lp_input_full_scratch_size = (size_t) (handle->desc.N * (handle->desc.H+2*handle->desc.pad_h) * ifwp_extended * handle->desc.C * sizeof(handle->datatype_in));
     }
+
+    handle->upd_lp_filter_full_scratch_size = (size_t)handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads *
+                                                libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32);
   } else {
     handle->upd_lp_output_full_scratch_size = 0;
     handle->upd_lp_input_full_scratch_size = 0;
+    handle->upd_lp_filter_full_scratch_size = 0;
   }
   /* filter scratch */
   handle->upd_filter_scratch_size = (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * LIBXSMM_MAX(handle->desc.threads, handle->desc.N) * sizeof(float);
@@ -871,18 +879,22 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_l
                                              LIBXSMM_CACHELINE - (handle->upd_lp_input_full_scratch_size % LIBXSMM_CACHELINE);
   handle->upd_filter_scratch_size += ( handle->upd_filter_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
                                              LIBXSMM_CACHELINE - (handle->upd_filter_scratch_size % LIBXSMM_CACHELINE);
+  handle->upd_lp_filter_full_scratch_size += ( handle->upd_lp_filter_full_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
+                                             LIBXSMM_CACHELINE - (handle->upd_lp_filter_full_scratch_size % LIBXSMM_CACHELINE);
 
   /* calculate offsets */
   handle->upd_packing_padding_scratch_offset = 0;
   handle->upd_lp_output_full_scratch_offset = handle->upd_packing_padding_scratch_size;
   handle->upd_lp_input_full_scratch_offset = handle->upd_lp_output_full_scratch_offset + handle->upd_lp_output_full_scratch_size;
   handle->upd_filter_scratch_offset = handle->upd_lp_input_full_scratch_offset + handle->upd_lp_input_full_scratch_size;
+  handle->upd_lp_filter_full_scratch_offset = handle->upd_filter_scratch_offset + handle->upd_filter_scratch_size;
 
   /* set overall scratch size for update */
   handle->upd_scratch_size = handle->upd_packing_padding_scratch_size +
                                handle->upd_lp_output_full_scratch_size +
                                handle->upd_lp_input_full_scratch_size +
-                               handle->upd_filter_scratch_size;
+                               handle->upd_filter_scratch_size +
+                               handle->upd_lp_filter_full_scratch_size;
 }
 
 LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_layer* handle ) {
