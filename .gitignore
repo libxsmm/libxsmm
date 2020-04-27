@@ -21,6 +21,7 @@ samples/*/*.dat
 samples/*/*.pdf
 samples/*/*.png
 inspector*
+bazel-*
 python
 html
 site
