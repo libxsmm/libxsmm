@@ -13,9 +13,9 @@
         USE :: LIBXSMM, ONLY: LIBXSMM_BLASINT_KIND,                     &
      &                        libxsmm_timer_duration,                   &
      &                        libxsmm_timer_tick,                       &
-     &                        libxsmm_matcopy_omp,                      &
-     &                        libxsmm_matcopy,                          &
      &                        libxsmm_init,                             &
+     &                        xcopy => libxsmm_xmatcopy,                &
+     &                        ptr0 => libxsmm_ptr_null,                 &
      &                        ptr => libxsmm_ptr
         IMPLICIT NONE
 
@@ -129,7 +129,8 @@
           IF (0.NE.zero) THEN
             start = libxsmm_timer_tick()
             DO h = 1, k
-              CALL libxsmm_matcopy(bn(:,:,h), m=m,n=n, ldi=ldi,ldo=ldo)
+              !CALL libxsmm_xmatcopy(bn(:,:,h), m=m,n=n, ldi=ldi,ldo=ldo)
+              CALL xcopy(ptr(bn(:,:,h)), ptr0(), S, m, n, ldi, ldo)
             END DO
             d = libxsmm_timer_duration(start, libxsmm_timer_tick())
             IF ((0.GE.d).OR.(0.LT.diff(check, m, bn))) THEN
@@ -147,9 +148,9 @@
           IF ((0.EQ.zero).OR.(1.LT.zero)) THEN
             start = libxsmm_timer_tick()
             DO h = 1, k
-              !CALL libxsmm_matcopy(ptr(bn(:,:,h)), ptr(an(:,:,h)), S,   &
-              CALL libxsmm_matcopy(bn(:,:,h), an(:,:,h),                &
-     &        m, n, ldi, ldo)
+              !CALL libxsmm_xmatcopy(bn(:,:,h), an(:,:,h), m,n, ldi,ldo)
+              CALL xcopy(ptr(bn(:,:,h)), ptr(an(:,:,h)),                &
+     &          S, m, n, ldi, ldo)
             END DO
             d = libxsmm_timer_duration(start, libxsmm_timer_tick())
             IF ((0.GE.d).OR.(0.LT.diff(check, m, bn, an))) THEN

@@ -14,7 +14,7 @@
      &    C_DOUBLE, C_FLOAT, C_DOUBLE_COMPLEX, C_FLOAT_COMPLEX,         &
      &    C_LONG_LONG, C_INT, C_SHORT, C_CHAR, C_INT8_T, C_BOOL,        &
      &    C_F_POINTER, C_ASSOCIATED, C_LOC, C_PTR,                      &
-     &    C_FUNPTR, C_NULL_FUNPTR
+     &    C_FUNPTR, C_NULL_FUNPTR, C_NULL_PTR
         IMPLICIT NONE
 
         !> Name of the version (stringized set of version numbers).
@@ -850,6 +850,13 @@
           END INTERFACE
           arch = libxsmmf_get_target_arch(length(1))
           CALL C_F_POINTER(arch, libxsmm_get_target_arch, length)
+        END FUNCTION
+
+        !> Returns C_NULL_PTR.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_null
+        PURE FUNCTION libxsmm_ptr_null()
+          TYPE(C_PTR) :: libxsmm_ptr_null
+          libxsmm_ptr_null = C_NULL_PTR
         END FUNCTION
 
         !> Determines the C-address of the given array.
