@@ -236,6 +236,7 @@ LIBXSMM_API_INTERN void libxsmm_matzero_internal(void* out, unsigned int typesiz
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
 {
+  /* coverity[ptr_arith] */
   LIBXSMM_XCOPY(LIBXSMM_MZERO_KERNEL, LIBXSMM_MZERO_CALL, kernel,
     out, NULL, typesize, 0, ldo, tm, tn, m0, m1, n0, n1);
 }
