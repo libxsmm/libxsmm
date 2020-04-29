@@ -116,7 +116,7 @@ MALLOC ?= 0
 WRAP ?= 1
 
 # JIT backend is enabled by default
-ifeq (,$(filter-out 0,$(PLATFORM)))
+ifeq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
   JIT ?= 1
 else # disabled if platform is forced
 # enable: make PLATFORM=1 JIT=1

@@ -157,7 +157,7 @@ STATIC ?= 0
 PIC ?= pic
 
 PLATFORM ?= 0
-ifneq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" || echo "0")) # NaN
+ifneq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
   DFLAGS += -DLIBXSMM_PLATFORM_FORCE
 endif
 
