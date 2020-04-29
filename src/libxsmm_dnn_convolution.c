@@ -614,6 +614,11 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_upd_ofh_rb( libxsmm_dnn_lay
   if (handle->upd_linearized_tasklist == 1 && handle->upd_use_batchreduce == 1 && handle->upd_avoid_rim_fmas == 1) {
     result = handle->ofh;
   }
+
+  if ((handle->desc.N != handle->desc.threads) && (handle->desc.R > 1 || handle->desc.S > 1 ) && (handle->desc.u > 1 || handle->desc.v > 1 )) {
+    result = 1;
+  }
+
   return result;
 }
 
@@ -803,6 +808,12 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     }
     handle->scratch3_size = (size_t) (handle->desc.N * handle->ifhp * handle->ifwp_extended * handle->desc.C * sizeof(float)/2);
 #endif
+  }
+
+  if (handle->desc.N != handle->desc.threads) {
+    handle->use_intermediate_f32_wt_tensor = 1;
+    handle->use_hybrid_imgofm_parallelization = 0;
+    handle->weight_copies = LIBXSMM_MIN(handle->desc.N, handle->desc.threads);
   }
 
 }
@@ -1081,6 +1092,14 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
 #if 0
   /* Spit out UPD parameters that are selected...  */
   printf("UPD params...\n");
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+    printf("BF16 path...\n");
+    printf("UPD use_hybrid_imgofm_parallelization = %d\n", handle->use_hybrid_imgofm_parallelization);
+    printf("UPD linearized_pixels = %d\n", handle->upd_linearized_pixels);
+    printf("UPD upd_trans_w_only = %d\n", handle->upd_trans_w_only);
+    printf("UPD on_the_fly_input_packing = %d\n", handle->on_the_fly_input_packing);
+    printf("UPD use_intermediate_f32_wt_tensor = %d\n", handle->use_intermediate_f32_wt_tensor);
+  }
   printf("UPD linearized tasks = %d\n", handle->upd_linearized_tasklist);
   printf("UPD avoid rim fmas = %d\n", handle->upd_avoid_rim_fmas);
   printf("UPD Pack input = %d\n", handle->upd_pack_input);

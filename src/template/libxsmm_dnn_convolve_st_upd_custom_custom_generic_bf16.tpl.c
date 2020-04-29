@@ -317,7 +317,7 @@ if (handle->upd_linearized_pixels == 0) {
                     br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);
 
                     /* Convert fully accumulated buffer to bf16 weight buffer in case of full accumulation has happened */
-                    if (oj + handle->batchreduce_h_pixels >= handle->ofh) {
+                    if ((oj + handle->batchreduce_h_pixels >= handle->ofh) && (img == my_img_end - 1)) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
@@ -437,7 +437,7 @@ if (handle->upd_linearized_pixels == 0) {
                     br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);
 
                     /* Convert fully accumulated buffer to bf16 weight buffer in case of full accumulation has happened */
-                    if (oj + handle->batchreduce_h_pixels >= handle->ofh) {
+                    if ((oj + handle->batchreduce_h_pixels >= handle->ofh) && (img == my_img_end - 1)) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
@@ -550,7 +550,7 @@ if (handle->upd_linearized_pixels == 0) {
                     br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);
 
                     /* Convert fully caccumulated buffer to bf16 weight buffer in case of full accumulation has happened */
-                    if (pix + handle->pixel_blocking >= handle->n_used_pixels) {
+                    if ((pix + handle->pixel_blocking >= handle->n_used_pixels) && (img == my_img_end - img_block_size)) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
@@ -612,7 +612,7 @@ if (handle->upd_linearized_pixels == 0) {
                         dst_ptr);
 
                     /* Convert fully accumulated buffer to bf16 weight buffer in case of full accumulation has happened */
-                    if (pix + handle->pixel_blocking >= handle->n_used_pixels) {
+                    if ((pix + handle->pixel_blocking >= handle->n_used_pixels) && (img == my_img_end - 1)) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
@@ -638,12 +638,22 @@ if (handle->upd_linearized_pixels == 0) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->weight_copies > 1) {
+  int active_copies = handle->weight_copies;
   const int filter_size = handle->desc.R  * handle->desc.S * handle->desc.C * handle->desc.K;
   LIBXSMM_VLA_DECL(2, element_filter_type, weight_copies_buffer, (element_filter_type*) ((char*)handle->scratch + handle->upd_filter_scratch_offset), filter_size);
   element_filter_type *weight_global_ptr = (element_filter_type*) handle->grad_filter->data;
+
+  /* In this case calculate how many weight copies have been indeed computed  */
+  if (handle->desc.N != handle->desc.threads) {
+    active_copies = 1;
+    while (active_copies * img_chunksize < handle->desc.N) {
+      active_copies++;
+    }
+  }
+
   for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
     __m512 weight_sum = _mm512_setzero_ps();
-    for ( i = 0; i < handle->weight_copies; i++ ) {
+    for ( i = 0; i < active_copies; i++ ) {
       weight_sum = _mm512_add_ps(weight_sum, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(2, weight_copies_buffer, i, j*16, filter_size)));
     }
     _mm512_storecvtrne_fp32_bf16( ((libxsmm_bfloat16*) weight_global_ptr) + j*16, weight_sum);
