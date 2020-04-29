@@ -93,16 +93,16 @@
       LIBXSMM_XCOPY_LOOP(double, 8, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
     } break; \
     case 16: { \
-      typedef struct /*libxsmm_xcopy_nonjit_elem_t*/ { double value[2]; } libxsmm_xcopy_nonjit_elem_t; \
-      LIBXSMM_XCOPY_LOOP(libxsmm_xcopy_nonjit_elem_t, 16, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
+      typedef struct /*libxsmm_xcopy_tile_elem_t*/ { double value[2]; } libxsmm_xcopy_tile_elem_t; \
+      LIBXSMM_XCOPY_LOOP(libxsmm_xcopy_tile_elem_t, 16, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
     } break; \
     default: { /* generic type-size */ \
-      libxsmm_blasint libxsmm_xcopy_nonjit_i_, libxsmm_xcopy_nonjit_j_; \
-      for (libxsmm_xcopy_nonjit_i_ = M0; libxsmm_xcopy_nonjit_i_ < (libxsmm_blasint)(M1); ++libxsmm_xcopy_nonjit_i_) { \
-        for (libxsmm_xcopy_nonjit_j_ = N0; libxsmm_xcopy_nonjit_j_ < (libxsmm_blasint)(N1); ++libxsmm_xcopy_nonjit_j_) { \
-          XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_nonjit_i_, libxsmm_xcopy_nonjit_j_, \
-            libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \
-          LIBXSMM_MEMCPY127_LOOP(libxsmm_xcopy_loop_dst_, libxsmm_xcopy_loop_src_, TYPESIZE, LIBXSMM_PRAGMA_NONTEMPORAL); \
+      libxsmm_blasint libxsmm_xcopy_tile_i_, libxsmm_xcopy_tile_j_; \
+      for (libxsmm_xcopy_tile_i_ = M0; libxsmm_xcopy_tile_i_ < (libxsmm_blasint)(M1); ++libxsmm_xcopy_tile_i_) { \
+        for (libxsmm_xcopy_tile_j_ = N0; libxsmm_xcopy_tile_j_ < (libxsmm_blasint)(N1); ++libxsmm_xcopy_tile_j_) { \
+          XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_tile_i_, libxsmm_xcopy_tile_j_, \
+            libxsmm_xcopy_tile_src_, libxsmm_xcopy_tile_dst_); \
+          LIBXSMM_MEMCPY127_LOOP(libxsmm_xcopy_tile_dst_, libxsmm_xcopy_tile_src_, TYPESIZE, LIBXSMM_PRAGMA_NONTEMPORAL); \
         } \
       } \
     } \

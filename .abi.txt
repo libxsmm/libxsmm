@@ -382,6 +382,7 @@ libxsmm_ptr_j2
 libxsmm_ptr_l0
 libxsmm_ptr_l1
 libxsmm_ptr_l2
+libxsmm_ptr_null
 libxsmm_ptr_s0
 libxsmm_ptr_s1
 libxsmm_ptr_s2

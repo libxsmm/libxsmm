@@ -17,6 +17,9 @@ LIBXSMM_API libxsmm_dnn_fusedbatchnorm* libxsmm_dnn_create_fusedbatchnorm(libxsm
   libxsmm_dnn_fusedbatchnorm* handle = 0;
   int lpb;
 
+  /* init libxsmm */
+  LIBXSMM_INIT
+
   if ( fusedbatchnorm_desc.partN > fusedbatchnorm_desc.fullN ) {
     *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     return handle;

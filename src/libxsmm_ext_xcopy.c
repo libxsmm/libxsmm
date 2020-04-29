@@ -114,6 +114,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           typesize, out, in, ldi, ldo, 0, m, 0, n);
       }
       else { /* no MT, or small problem-size */
+        /* coverity[ptr_arith] */
         LIBXSMM_XCOPY_NONJIT(LIBXSMM_MZERO_KERNEL,
           typesize, out, in, ldi, ldo, 0, m, 0, n);
       }

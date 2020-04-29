@@ -43,6 +43,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
   int tmp_max_k_block = 32;
   int tmp_block = 0;
 
+  /* init libxsmm */
+  LIBXSMM_INIT
+
   /* C */
   if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE) {
     tmp_max_c_block = 64;
@@ -203,6 +206,10 @@ LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype)
 LIBXSMM_API size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype datatype)
 {
   size_t l_cl_width_bytes;
+
+  /* init libxsmm */
+  LIBXSMM_INIT
+
   if ( libxsmm_target_archid == LIBXSMM_X86_GENERIC ) {
     l_cl_width_bytes = libxsmm_dnn_typesize(datatype);
   } else if ( libxsmm_target_archid == LIBXSMM_X86_SSE3 ||
@@ -272,6 +279,9 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
   unsigned int sign = 0;
   unsigned char rhs = 0;
   unsigned char exp_off = 0;
+
+  /* init libxsmm */
+  LIBXSMM_INIT
 
   /* in case of zero we don't need to do anything */
   if (LIBXSMM_FEQ(input, 0)) {
@@ -347,6 +357,9 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
 LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode ) {
   int i = 0;
 
+  /* init libxsmm */
+  LIBXSMM_INIT
+
   /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
@@ -410,6 +423,9 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
   LIBXSMM_VLA_DECL(6, short, out, out_buffer, C/(cblk_i16*lp_blk), H, W, cblk_i16, lp_blk);
   const unsigned int cblk = C/(cblk_i16*lp_blk);
   int i1 = 0, i2 = 0, i3 = 0, i4 = 0, i5, i6;
+
+  /* init libxsmm */
+  LIBXSMM_INIT
 
   /* some quick and dirty checks */
   assert((C % cblk_f32) == 0);
@@ -520,6 +536,9 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
   assert((K % kblk_f32) == 0);
   assert((K % kblk_i16) == 0);
   assert((lp_blk % 2) == 0);
+
+  /* init libxsmm */
+  LIBXSMM_INIT
 
   /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */

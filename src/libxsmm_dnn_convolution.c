@@ -283,6 +283,8 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_avoid_acc_load( libxsmm_dnn
 
 LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_init_fwd_gemm_flags( libxsmm_dnn_layer* handle ) {
   int result = 0;
+
+#if defined(LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS)
   /* If large image and NOT already loaded in accumulators, tnen use streaming stores */
   if ((handle->ofw >= 56) && (handle->desc.K >= 256) && (handle->avoid_acc_load == 1) && (handle->desc.R == 1) && (handle->desc.S == 1)) {
     result = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
@@ -297,6 +299,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_init_fwd_gemm_flags( libxsm
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
     result = 0;
   }
+#else
+  LIBXSMM_UNUSED(handle);
+#endif
 
   return result;
 }
@@ -912,6 +917,9 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_descriptor_blob blob;
+
+  /* init libxsmm */
+  LIBXSMM_INIT
 
   /* Generic parameter setup  */
   handle->ifmblock = libxsmm_dnn_convolution_setup_ifmblock(handle);

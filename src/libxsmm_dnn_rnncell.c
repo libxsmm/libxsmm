@@ -25,6 +25,9 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
 {
   libxsmm_dnn_rnncell* handle = 0;
 
+  /* init libxsmm */
+  LIBXSMM_INIT
+
   /* some check we can do before allocating the handle */
   if ( (rnncell_desc.datatype_in != rnncell_desc.datatype_out) ||
        ( (rnncell_desc.datatype_in != LIBXSMM_DNN_DATATYPE_BF16) && (rnncell_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32) ) ) {
