@@ -18,7 +18,7 @@ LIBXSMM_API libxsmm_dnn_softmaxloss* libxsmm_dnn_create_softmaxloss(libxsmm_dnn_
   int lpb;
 
   /* init libxsmm */
-  libxsmm_init();
+  LIBXSMM_INIT
 
   if ( (softmaxloss_desc.datatype == LIBXSMM_DNN_DATATYPE_F32) || (softmaxloss_desc.datatype == LIBXSMM_DNN_DATATYPE_BF16) ) {
     handle = (libxsmm_dnn_softmaxloss*)malloc(sizeof(libxsmm_dnn_softmaxloss));

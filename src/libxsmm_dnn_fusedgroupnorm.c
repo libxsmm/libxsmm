@@ -18,7 +18,7 @@ LIBXSMM_API libxsmm_dnn_fusedgroupnorm* libxsmm_dnn_create_fusedgroupnorm(libxsm
   int lpb;
 
   /* init libxsmm */
-  libxsmm_init();
+  LIBXSMM_INIT
 
   if ( ((fusedgroupnorm_desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (fusedgroupnorm_desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) ||
        ((fusedgroupnorm_desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (fusedgroupnorm_desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32))    ) {

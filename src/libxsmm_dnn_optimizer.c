@@ -16,7 +16,7 @@ LIBXSMM_API libxsmm_dnn_optimizer* libxsmm_dnn_create_optimizer(libxsmm_dnn_opti
   libxsmm_dnn_optimizer* handle = 0;
 
   /* init libxsmm */
-  libxsmm_init();
+  LIBXSMM_INIT
 
   if ( (optimizer_desc.datatype == LIBXSMM_DNN_DATATYPE_F32) || (optimizer_desc.datatype == LIBXSMM_DNN_DATATYPE_BF16) ) {
     handle = (libxsmm_dnn_optimizer*)malloc(sizeof(libxsmm_dnn_optimizer));
