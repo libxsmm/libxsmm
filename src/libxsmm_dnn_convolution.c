@@ -890,6 +890,9 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_descriptor_blob blob;
 
+  /* init libxsmm */
+  libxsmm_init();
+
   /* Generic parameter setup  */
   handle->ifmblock = libxsmm_dnn_convolution_setup_ifmblock(handle);
   handle->ofmblock = libxsmm_dnn_convolution_setup_ofmblock(handle);
