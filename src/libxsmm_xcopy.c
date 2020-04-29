@@ -66,36 +66,42 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     if (0 < m) libxsmm_mcopy_mbytes = LIBXSMM_MAX(m, 1);
-    if (0 < n) libxsmm_mcopy_nscale = ((float)n) / libxsmm_mcopy_mbytes;
-    if (1 > (libxsmm_mcopy_nscale * libxsmm_mcopy_mbytes)) {
-      const float stretch = 1.f / libxsmm_mcopy_mbytes;
-      libxsmm_mcopy_nscale = LIBXSMM_MAX(stretch, libxsmm_mcopy_nscale);
+    if (0 != libxsmm_mcopy_mbytes) {
+      if (0 < n) libxsmm_mcopy_nscale = ((float)n) / libxsmm_mcopy_mbytes;
+      if (1 > (libxsmm_mcopy_nscale * libxsmm_mcopy_mbytes)) {
+        const float stretch = 1.f / libxsmm_mcopy_mbytes;
+        libxsmm_mcopy_nscale = LIBXSMM_MAX(stretch, libxsmm_mcopy_nscale);
+      }
+      libxsmm_mcopy_mbytes *= 8; /* measured as if DP */
     }
-    libxsmm_mcopy_mbytes *= 8; /* measured as if DP */
   }
   { /* mzero: load/adjust tile sizes */
     const char* const env_m = getenv("LIBXSMM_MZERO_M"), * const env_n = getenv("LIBXSMM_MZERO_N");
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     if (0 < m) libxsmm_mzero_mbytes = LIBXSMM_MAX(m, 1);
-    if (0 < n) libxsmm_mzero_nscale = ((float)n) / libxsmm_mzero_mbytes;
-    if (1 > (libxsmm_mzero_nscale * libxsmm_mzero_mbytes)) {
-      const float stretch = 1.f / libxsmm_mzero_mbytes;
-      libxsmm_mzero_nscale = LIBXSMM_MAX(stretch, libxsmm_mzero_nscale);
+    if (0 != libxsmm_mzero_mbytes) {
+      if (0 < n) libxsmm_mzero_nscale = ((float)n) / libxsmm_mzero_mbytes;
+      if (1 > (libxsmm_mzero_nscale * libxsmm_mzero_mbytes)) {
+        const float stretch = 1.f / libxsmm_mzero_mbytes;
+        libxsmm_mzero_nscale = LIBXSMM_MAX(stretch, libxsmm_mzero_nscale);
+      }
+      libxsmm_mzero_mbytes *= 8; /* measured as if DP */
     }
-    libxsmm_mzero_mbytes *= 8; /* measured as if DP */
   }
   { /* tcopy: load/adjust tile sizes */
     const char* const env_m = getenv("LIBXSMM_TCOPY_M"), * const env_n = getenv("LIBXSMM_TCOPY_N");
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     if (0 < m) libxsmm_tcopy_mbytes = LIBXSMM_MAX(m, 1);
-    if (0 < n) libxsmm_tcopy_nscale = ((float)n) / libxsmm_tcopy_mbytes;
-    if (1 > (libxsmm_tcopy_nscale * libxsmm_tcopy_mbytes)) {
-      const float stretch = 1.f / libxsmm_tcopy_mbytes;
-      libxsmm_tcopy_nscale = LIBXSMM_MAX(stretch, libxsmm_tcopy_nscale);
+    if (0 != libxsmm_tcopy_mbytes) {
+      if (0 < n) libxsmm_tcopy_nscale = ((float)n) / libxsmm_tcopy_mbytes;
+      if (1 > (libxsmm_tcopy_nscale * libxsmm_tcopy_mbytes)) {
+        const float stretch = 1.f / libxsmm_tcopy_mbytes;
+        libxsmm_tcopy_nscale = LIBXSMM_MAX(stretch, libxsmm_tcopy_nscale);
+      }
+      libxsmm_tcopy_mbytes *= 8; /* measured as if DP */
     }
-    libxsmm_tcopy_mbytes *= 8; /* measured as if DP */
   }
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
   { /* check if JIT-code generation is permitted */

@@ -31,7 +31,7 @@
 #endif
 #define LIBXSMM_MEMZERO127(PTRDST) LIBXSMM_MEMSET127(PTRDST, '\0', sizeof(*(PTRDST)))
 
-#define LIBXSMM_MEMCPY127_LOOP(PTRDST, PTRSRC, SIZE, NTS) { \
+#define LIBXSMM_MEMCPY127_LOOP(PTRDST, PTRSRC, SIZE, NTS) { /* coverity[ptr_arith] */ \
   const unsigned char *const libxsmm_memcpy127_loop_src_ = (const unsigned char*)(PTRSRC); \
   unsigned char *const libxsmm_memcpy127_loop_dst_ = (unsigned char*)(PTRDST); \
   signed char libxsmm_memcpy127_loop_i_; LIBXSMM_ASSERT((SIZE) <= 127); \
