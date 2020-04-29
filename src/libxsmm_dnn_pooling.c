@@ -17,6 +17,9 @@ LIBXSMM_API libxsmm_dnn_pooling* libxsmm_dnn_create_pooling(libxsmm_dnn_pooling_
   libxsmm_dnn_pooling* handle = 0;
   int lpb;
 
+  /* init libxsmm */
+  libxsmm_init();
+
   if ( ((pooling_desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (pooling_desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) ||
        ((pooling_desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (pooling_desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32))    ) {
     handle = (libxsmm_dnn_pooling*)malloc(sizeof(libxsmm_dnn_pooling));
