@@ -264,7 +264,9 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
     0 <= tid && tid < nthreads)
   {
     if (0 < m && 0 < n) {
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
       libxsmm_xmcopyfunction kernel = NULL;
+#endif
       unsigned int tm, tn;
       int prefetch;
       if (NULL != in) { /* mcopy */
@@ -302,10 +304,14 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
           NULL != in ? LIBXSMM_MATCOPY_FLAG_DEFAULT : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
           prefetch, NULL/*default unroll*/));
       }
-#endif
       libxsmm_matcopy_thread_internal(out, in, typesize,
         (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
         tm, tn, kernel, tid, nthreads);
+#else
+      libxsmm_matcopy_thread_internal(out, in, typesize,
+        (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+        tm, tn, NULL/*kernel*/, tid, nthreads);
+#endif
     }
   }
   else {
@@ -358,7 +364,9 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
       if (out != in) {
         unsigned int tm = LIBXSMM_UPDIV(libxsmm_tcopy_mbytes, typesize);
         unsigned int tn = (unsigned int)(libxsmm_tcopy_nscale * tm);
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
         libxsmm_xtransfunction kernel = NULL;
+#endif
         if (0 == tm) tm = m;
         if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
         if ((unsigned int)m < tm || (unsigned int)n < tn) {
@@ -372,8 +380,8 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
               LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
               return; /* fast path */
             }
-#endif
             LIBXSMM_ASSERT(NULL == kernel);
+#endif
             tm = (unsigned int)m; tn = (unsigned int)n;
           }
           else {
@@ -394,9 +402,15 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
 #endif
           }
         }
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
         libxsmm_otrans_thread_internal(out, in, typesize,
           (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
           tm, tn, kernel, tid, nthreads);
+#else
+        libxsmm_otrans_thread_internal(out, in, typesize,
+          (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+          tm, tn, NULL/*kernel*/, tid, nthreads);
+#endif
       }
       else if (ldi == ldo) {
         libxsmm_itrans(out, typesize, m, n, ldi);

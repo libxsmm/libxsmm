@@ -38,8 +38,8 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
       if (0 == tm) tm = m;
       if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
       if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
-        libxsmm_xmcopyfunction kernel = NULL;
 # if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+        libxsmm_xmcopyfunction kernel = NULL;
         const libxsmm_mcopy_descriptor* desc;
         libxsmm_descriptor_blob blob;
         if (0 != (2 & libxsmm_xcopy_jit) /* JIT'ted matrix-copy permitted? */
@@ -62,9 +62,15 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 # endif
           {
 #           pragma omp parallel num_threads(nthreads)
+# if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
             libxsmm_matcopy_thread_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, omp_get_thread_num(), nthreads);
+#else
+            libxsmm_matcopy_thread_internal(out, in, typesize,
+              (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+              tm, tn, NULL/*kernel*/, omp_get_thread_num(), nthreads);
+#endif
           }
 # if defined(LIBXSMM_EXT_TASKS)
           else { /* tasks requested */
@@ -100,10 +106,14 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #           pragma omp taskwait
           }
-# else
+# elif (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
           libxsmm_matcopy_thread_internal(out, in, typesize,
             (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
             tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
+# else
+          libxsmm_matcopy_thread_internal(out, in, typesize,
+            (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+            tm, tn, NULL/*kernel*/, 0/*tid*/, 1/*nthreads*/);
 # endif
         }
       }
