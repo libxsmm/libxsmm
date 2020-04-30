@@ -9,12 +9,10 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-
-CUT=$(command -v cut)
 GIT=$(command -v git)
 
-NAME=$(${GIT} name-rev --name-only HEAD)
-MAIN=$(${GIT} describe --tags --abbrev=0)
-REVC=$(${GIT} describe --tags | ${CUT} -d- -f2)
+NAME=$(${GIT} rev-parse --abbrev-ref HEAD)
+MAIN=$(${GIT} describe --match "[0-9]*" --abbrev=0)
+REVC=$(${GIT} rev-list --count ${MAIN}..HEAD)
 
 echo "${NAME}-${MAIN}-${REVC}"
