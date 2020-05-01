@@ -369,7 +369,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int upd_ofw_rb;
   int upd_ofh_rb;
   int fm_lp_block; /* additional blocking for low precision datatypes of feature maps */
-  int upd_use_external_reduce;
   int filter_transposed;
   int nBImg;
   int nbImg;
