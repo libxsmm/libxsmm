@@ -216,7 +216,6 @@ libxsmm_dnn_softmaxloss_release_scratch
 libxsmm_dnn_softmaxloss_release_tensor
 libxsmm_dnn_trans_reg_bf16_filter
 libxsmm_dnn_trans_reg_filter
-libxsmm_dnn_transpose_filter
 libxsmm_dnn_typesize
 libxsmm_dnn_zero_tensor
 libxsmm_dsqrt
