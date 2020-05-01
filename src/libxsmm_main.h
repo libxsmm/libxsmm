@@ -380,10 +380,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_ofm_parallelization;
   int use_ifm_parallelization;
   int avoid_fmas_in_rim;
-  int avoid_init_weights;
   int upd_use_batchreduce;
   int upd_pack_input;
-  int upd_img_br_block;
   int upd_loop_order;
   int upd_linearized_tasklist;
   int upd_avoid_rim_fmas;
@@ -407,6 +405,14 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int upd_trans_w_only;
   int fwd_padding_copy;
   int upd_padding_copy;
+  int block_fwd_oj;
+  int block_fwd_ifm;
+  int block_fwd_ofm;
+  int block_bwd_oj;
+  int block_bwd_ifm;
+  int block_bwd_ofm;
+  int block_upd_ifm;
+  int block_upd_ofm;
 
   libxsmm_xtransfunction tr_kernel;
 
@@ -478,16 +484,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_code_pointer matcopy_fwd[4];
   libxsmm_code_pointer matcopy_bwd[4];
   libxsmm_code_pointer matcopy_upd[3];
-
-  /* Data structures and metadata related to per-thread private JITing */
-  int block_fwd_oj;
-  int block_fwd_ifm;
-  int block_fwd_ofm;
-  int block_bwd_oj;
-  int block_bwd_ifm;
-  int block_bwd_ofm;
-  int block_upd_ifm;
-  int block_upd_ofm;
 };
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm {
