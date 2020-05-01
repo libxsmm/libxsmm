@@ -362,7 +362,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int blocksifm;
   int blocksofm;
   int fwd_ofw_rb;
-  int fwd_ofw_rb_2;
   int fwd_ofh_rb;
   int bwd_ofw_rb;
   int bwd_ofh_rb;
