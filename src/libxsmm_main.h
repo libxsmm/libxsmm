@@ -376,7 +376,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int pack_input_bwd;
   int spread_input_bwd;
   int weight_copies;
-  int use_lp_kernel;
   int use_vperm_transposes;
   int loop_order;
   int use_ofm_parallelization;
@@ -466,15 +465,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   void* scratch;
   size_t scratch_size;
 
-  void* scratch2;
-  size_t scratch2_size;
-  void* scratch3;
-  size_t scratch3_size;
-  void* scratch7;             /* TLS: filter_scratch (generic WU) */
-  size_t scratch7_size;
-
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
-  libxsmm_code_pointer gemm_fwd2;     /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd2;    /* ability to hoist forward GEMMs */
 
   unsigned long long *A_offsets;
   unsigned long long *B_offsets;
