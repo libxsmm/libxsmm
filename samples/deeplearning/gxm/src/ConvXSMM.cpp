@@ -58,7 +58,7 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
   if(gp->out_data_type == DT_FLOAT)
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
   else if(gp->out_data_type == DT_BF16)
-    conv_desc.options = LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE_OVERWRITE;
+    conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
 
   if(gp->bias_term)
     printf("GxM Error: Fusion for Bias into convolution is not available!\n");
