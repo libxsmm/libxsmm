@@ -9,7 +9,6 @@ CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 
-BLAS = 2
 OMP = 1
 SYM = 1
 
