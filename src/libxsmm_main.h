@@ -346,10 +346,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_conv_fuse_op fuse_ops;
   libxsmm_dnn_conv_option options;
 
-  /* These are the batchnorm handles in case of fusion */
-  libxsmm_dnn_fusedbatchnorm* pre_bn;
-  libxsmm_dnn_fusedbatchnorm* post_bn;
-
   /* additional size for internal data types */
   int ifhp;
   int ifwp;

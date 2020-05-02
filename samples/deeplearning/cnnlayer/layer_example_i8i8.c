@@ -18,7 +18,6 @@
 #endif
 
 #define USE_OVERWRITE
-#define USE_FUSED_RELU
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
