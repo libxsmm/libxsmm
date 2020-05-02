@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="layer_example_i16f32.c" />
+    <ClCompile Include="layer_example_i8i8.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
@@ -45,8 +45,8 @@
     <None Include="run_vgga_hd.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>layer_example_i16f32</ProjectName>
-    <ProjectGuid>{5459B17E-98E4-4290-A222-8181EA3FAF49}</ProjectGuid>
+    <ProjectName>layer_example_i8i8</ProjectName>
+    <ProjectGuid>{E5AF3D43-4860-4F28-8674-D641A954C7C9}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
