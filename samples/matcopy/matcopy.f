@@ -260,7 +260,6 @@
           REAL(T), INTENT(IN), OPTIONAL :: ref(:,:,:)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND) :: h, i, j
-          REAL(T) :: aijh
           diff = Z
           IF (0.NE.check) THEN
             DO h = LBOUND(mat,3), UBOUND(mat,3)
