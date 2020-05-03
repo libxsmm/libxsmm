@@ -102,7 +102,7 @@ void libxsmm_close_function( libxsmm_generated_code* io_generated_code ) {
 }
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_check_x86_gp_reg_name_callee_save( const unsigned int i_gp_reg_number ) {
+unsigned int libxsmm_check_x86_gp_reg_callee_save( const unsigned int i_gp_reg_number ) {
   if ( (i_gp_reg_number == LIBXSMM_X86_GP_REG_RBX) ||
        (i_gp_reg_number == LIBXSMM_X86_GP_REG_RBP) ||
        (i_gp_reg_number == LIBXSMM_X86_GP_REG_R12) ||
@@ -949,26 +949,6 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_NO_AVX512_QFMA:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "there is no QFMA instruction set extension available (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_CALLEE_SAVE_A:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "reg_a cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_CALLEE_SAVE_B:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "reg_b cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_CALLEE_SAVE_C:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "reg_c cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_CALLEE_SAVE_A_PREF:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "reg_a_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_CALLEE_SAVE_B_PREF:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "reg_b_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_NO_INDEX_SCALE_ADDR:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
