@@ -73,7 +73,8 @@ then
                  [ "" = "$(echo ${SYMBOL} | ${SED} -n "/^malloc/p")" ] && \
                  [ "" = "$(echo ${SYMBOL} | ${SED} -n "/^free/p")" ] && \
                  [ "" = "$(echo ${SYMBOL} | ${SED} -n "/^_init/p")" ] && \
-                 [ "" = "$(echo ${SYMBOL} | ${SED} -n "/^_fini/p")" ];
+                 [ "" = "$(echo ${SYMBOL} | ${SED} -n "/^_fini/p")" ] && \
+                 [ "" = "$(echo ${SYMBOL} | ${SED} -n "/^iJIT_/p")" ];
             then
               echo "Error: non-conforming function name"
               echo "${LIB} -> ${SYMBOL}"
