@@ -126,7 +126,7 @@ if (bk % 32 == 0) {
 
     for ( iteri = 0; iteri < handle->bn; ++iteri ) {
       for ( iterj = 0; iterj < handle->bk; iterj += 32 ) {
-        __m512i cur_out_reg = _mm512_load_si512(&LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
+        __m512i cur_out_reg = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
         __m512 cur_out_reg_0, cur_out_reg_1;
         const  __m512 ones = _mm512_set1_ps(1.0f);
@@ -143,7 +143,7 @@ if (bk % 32 == 0) {
         cur_out_reg_1 =  _mm512_mul_ps(cur_out_reg_1, _mm512_sub_ps(ones, cur_out_reg_1));
         cur_out_reg = LIBXSMM_INTRINSICS_MM512_CVT2_FP32_BF16(cur_out_reg_1, cur_out_reg_0);
 #endif
-        _mm512_store_si512(&LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk), cur_out_reg);
+        _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk), cur_out_reg);
       }
     }
 
