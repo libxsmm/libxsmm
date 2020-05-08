@@ -649,7 +649,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRIN
   return _mm512_inserti64x4(_mm512_inserti64x4(_mm512_setzero_si512(), aa, 0), bb, 1);
 }
 
-#if defined(LIBXSMM_X86_AVX512_CPX) /*__AVX512BF16__*/
+#if defined(LIBXSMM_INTRINSICS_AVX512_CPX) /*__AVX512BF16__*/
 # define LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH( A ) _mm512_cvtneps_pbh( A )
 # define LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( A, B ) _mm512_cvtne2ps_pbh( A, B )
 #else
