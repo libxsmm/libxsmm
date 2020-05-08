@@ -423,9 +423,8 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
 
 #undef LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16
 
-#define _mm512_cvt2_fp32_bf16(A, B) LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(A, B)
-
 #if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
+#define _mm512_cvt2_fp32_bf16(A, B) _mm512_cvtne2ps_pbh(A, B)
 #define LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(in, out, length) do { \
   unsigned int full_chunks = length / 32; \
   unsigned int remainder = length % 32; \
@@ -444,6 +443,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   } \
 } while(0)
 #else
+#define _mm512_cvt2_fp32_bf16(A, B) LIBXSMM_INTRINSICS_MM512_CVT2_FP32_BF16(A, B)
 #define LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(in, out, length) do { \
   unsigned int full_chunks = length / 16; \
   unsigned int remainder = length % 16; \
