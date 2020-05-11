@@ -157,8 +157,8 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     ofm1 = ifm1ofm1 / nBlocksIFm;
     ifm1 = ifm1ofm1 % nBlocksIFm;
-    tr_kernel(&LIBXSMM_VLA_ACCESS(4, filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &bk,
-              &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc), &bc);
+    tr_kernel(&LIBXSMM_VLA_ACCESS(4, filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), (const unsigned int*)&bk,
+              &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc), (const unsigned int*)&bc);
 
 #if 0
     for (ofm2 = 0; ofm2 < bk; ++ofm2) {
