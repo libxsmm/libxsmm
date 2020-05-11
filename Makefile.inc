@@ -288,13 +288,13 @@ ifneq (0,$(PYMOD))
   ifneq (,$(PYTHON))
     PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n "$(REVERSION1)p")
     PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
-    PYROOT = $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
-    PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
-    PYLIB = $(call ldclib,$(LD),$(SLDFLAGS),python$(PYVERSION))
-    ifneq (,$(PYINC))
-    ifneq (,$(PYLIB))
-      LDFLAGS += $(PYLIB)
-      IFLAGS += -I$(call qdir,$(PYINC))
+    TESTRES := $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
+    TESTRES := $(wildcard $(TESTRES)/include/python$(PYVERSION)/Python.h)
+    TESTLIB := $(call ldclib,$(LD),$(SLDFLAGS),python$(PYVERSION))
+    ifneq (,$(TESTRES))
+    ifneq (,$(TESTLIB))
+      LDFLAGS += $(TESTLIB)
+      IFLAGS += -I$(call qdir,$(TESTRES))
       DFLAGS += -D__PYTHON
       # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
       ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
@@ -1449,6 +1449,12 @@ else # GCC assumed
   else ifeq (FreeBSD,$(UNAME))
     # avoid include path at begin of compile line
     OMPFLAG_FORCE += -I/usr/local/include
+  else ifneq (0,$(CLANG))
+    TESTRES := $(call qapath,$(call qdir,$(call which,$(CC)))/../compiler)
+    TESTRES := $(wildcard $(TESTRES)/include/omp.h)
+    ifneq (,$(TESTRES))
+      OMPFLAG_FORCE += -I$(call qdir,$(TESTRES))
+    endif
   endif
   # account for missing TLS/OMP
   ifeq (,$(OMPFLAG_FORCE))
@@ -1498,20 +1504,20 @@ else # GCC assumed
       FLDFLAGS += -fopenmp
       FCFLAGS += -fopenmp
     else # mixed toolchain
-      OMPTEST = $(call ldflib,$(FLD),$(SLDFLAGS),$(OMPRT))
-      ifneq (,$(OMPTEST))
-        FLDFLAGS += $(OMPTEST)
+      TESTRES := $(call ldflib,$(FLD),$(SLDFLAGS),$(OMPRT))
+      ifneq (,$(TESTRES))
+        FLDFLAGS += $(TESTRES)
       else
-        OMPTEST = $(call ldflib,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))
-        ifneq (,$(OMPTEST))
-          FLDFLAGS += $(addprefix -L,$(LIBFIND)) $(OMPTEST)
+        TESTRES := $(call ldflib,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))
+        ifneq (,$(TESTRES))
+          FLDFLAGS += $(addprefix -L,$(LIBFIND)) $(TESTRES)
         else # last try
           FLDFLAGS += $(call ldflib,$(FLD),$(SLDFLAGS),gomp)
         endif
       endif
-      OMPTEST = $(call ftest,$(FC),-fopenmp)
-      ifneq (,$(OMPTEST))
-        FCFLAGS += $(OMPTEST)
+      TESTRES := $(call ftest,$(FC),-fopenmp)
+      ifneq (,$(TESTRES))
+        FCFLAGS += $(TESTRES)
       else
         FCFLAGS += $(call ftest,$(FC),$(OMPFLAG_FORCE))
       endif
@@ -2232,8 +2238,8 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% \
     GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX \
     NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
-    LIBPTHREAD CSTD CWARNEXTRA OMPTEST QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION \
-    HEREDIR HOMEDIR UNUSED TESTSIZE SHARED PYMOD MINGW FMAIN VERSION ACC% \
+    LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION \
+    HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% \
     abslib applyif uniqadd uniqmov which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
     ctest ftest ldclib ldflib extname objname unquote quote qapath qndir qdir qsuffix qbname qname \
     BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
