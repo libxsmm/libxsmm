@@ -20,6 +20,9 @@ const int nBlocksMB  = handle->desc.N / bn;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 
+/* Transpose kernel to transpose filters  */
+libxsmm_xtransfunction tr_kernel = handle->tr_kernel;
+
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
 /* number of tasks for transpose that could be run in parallel */
 const int eltwise_work = nBlocksOFm * nBlocksMB;
@@ -154,12 +157,17 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     ofm1 = ifm1ofm1 / nBlocksIFm;
     ifm1 = ifm1ofm1 % nBlocksIFm;
+    tr_kernel(&LIBXSMM_VLA_ACCESS(4, filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &bk,
+              &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc), &bc);
+
+#if 0
     for (ofm2 = 0; ofm2 < bk; ++ofm2) {
       for (ifm2 = 0; ifm2 < bc; ++ifm2) {
         LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, ofm2, ifm2, nBlocksOFm, bk, bc) =
           LIBXSMM_VLA_ACCESS(4, filter,  ofm1, ifm1, ifm2, ofm2, nBlocksIFm, bc, bk);
       }
     }
+#endif
   }
 
   /* wait for transpose to finish */
