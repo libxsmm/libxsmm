@@ -140,6 +140,9 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_emu(libx
   libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_zerobeta = handle->gemm_fwd2.xgemm.bmrs;
   libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_beta = handle->gemm_fwd3.xgemm.bmrs;
 
+  /* some portable macrros fof BF16 <-> FP32 */
+# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #define LIBXSMM_DNN_FC_FWD_FUSE_NONE
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
@@ -171,6 +174,8 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_emu(libx
   } else {
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
+
+# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -191,7 +196,10 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16(libxsmm_
   libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_zerobeta = handle->gemm_fwd2.xgemm.bmrs;
   libxsmm_bmmfunction_reducebatch_strd batchreduce_kernel_beta = handle->gemm_fwd3.xgemm.bmrs;
 
-#define LIBXSMM_DNN_FC_FWD_AVX512_CPX
+#define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+  /* some portable macrros fof BF16 <-> FP32 */
+# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #define LIBXSMM_DNN_FC_FWD_FUSE_NONE
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
@@ -223,7 +231,9 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16(libxsmm_
   } else {
     status = LIBXSMM_DNN_ERR_FC_UNSUPPORTED_FUSION;
   }
-#undef LIBXSMM_DNN_FC_FWD_AVX512_CPX
+
+# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+#undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
