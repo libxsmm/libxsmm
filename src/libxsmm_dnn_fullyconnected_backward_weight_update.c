@@ -779,7 +779,6 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_bf16_bf16(libxs
   /* some portable macrros fof BF16 <-> FP32 */
 # include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
 
-#define LIBXSMM_DNN_FC_BWD_AVX512_CPX
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 # include "template/libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_generic_bf16.tpl.c"
   } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS ) {
