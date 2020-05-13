@@ -38,39 +38,39 @@
     for ( _j = 0; _j < bn; ++_j ) {
       LIBXSMM_PRAGMA_UNROLL_N(4)
       for ( _k = 0; _k < bk; _k += 16 ) {
-        _vdout = _mm512_loadcvt_bf16_fp32( &_dh[(_j*K)+_k] );
-        _vo = _mm512_loadcvt_bf16_fp32( &_o[(_j*K)+_k] );
+        _vdout = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_dh[(_j*K)+_k] ));
+        _vo = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_o[(_j*K)+_k] ));
         _vt1 = _mm512_mul_ps( _vdout, _vo  );
-        _vco = _mm512_loadcvt_bf16_fp32( &_co[(_j*K)+_k] );
+        _vco = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_co[(_j*K)+_k] ));
         _vt2 = _mm512_fnmsub_ps ( _vco, _vco, _neg_ones);
         _vt1 = _mm512_mul_ps( _vt1, _vt2 );
-        _vdcs = _mm512_loadcvt_bf16_fp32( &_dcs[(_j*K)+_k] );
+        _vdcs = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_dcs[(_j*K)+_k] ));
         _vdcp = _mm512_add_ps( _vdcs, _vt1 );
-        _vii = _mm512_loadcvt_bf16_fp32( &_ii[(_j*K)+_k] );
+        _vii = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_ii[(_j*K)+_k] ));
         _vt1 = _mm512_mul_ps( _vii, _vdcp );
-        _vci = _mm512_loadcvt_bf16_fp32( &_ci[(_j*K)+_k] );
+        _vci = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_ci[(_j*K)+_k] ));
         _vt2 = _mm512_fnmsub_ps ( _vci, _vci, _neg_ones);
         _vdci = _mm512_mul_ps( _vt1, _vt2 );
-        _mm512_storecvt_fp32_bf16( &_dci[(_j*K)+_k],  _vdci );
+        _mm256_stream_si256((__m256i*)&_dci[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdci) );
         _vt1 = _mm512_mul_ps( _vci, _vdcp );
         _vt2 = _mm512_sub_ps( _ones, _vii );
         _vdi = _mm512_mul_ps( _vii, _vt2);
         _vdi = _mm512_mul_ps( _vdi, _vt1);
-        _mm512_storecvt_fp32_bf16( &_di[(_j*K)+_k], _vdi );
-        _vcps = _mm512_loadcvt_bf16_fp32( &_cps[(_j*K)+_k] );
+        _mm256_stream_si256((__m256i*)&_di[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdi) );
+        _vcps = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_cps[(_j*K)+_k] ));
         _vt1 = _mm512_mul_ps( _vcps, _vdcp );
-        _vf = _mm512_loadcvt_bf16_fp32( &_f[(_j*K)+_k] );
+        _vf = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_f[(_j*K)+_k] ));
         _vt2 = _mm512_sub_ps( _ones, _vf );
         _vdf = _mm512_mul_ps( _vf, _vt2);
         _vdf = _mm512_mul_ps( _vdf, _vt1);
-        _mm512_storecvt_fp32_bf16( &_df[(_j*K)+_k], _vdf );
+        _mm256_stream_si256((__m256i*)&_df[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdf) );
         _vt1 = _mm512_mul_ps( _vdout, _vco);
         _vt2 = _mm512_sub_ps( _ones, _vo );
         _vt2 = _mm512_mul_ps( _vo, _vt2);
         _vdp = _mm512_mul_ps( _vt1, _vt2 );
-        _mm512_storecvt_fp32_bf16( &_dp[(_j*K)+_k], _vdp );
+        _mm256_stream_si256((__m256i*)&_dp[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdp) );
         _vdcp = _mm512_mul_ps( _vdcp, _vf);
-        _mm512_storecvt_fp32_bf16( &_dcp[(_j*K)+_k], _vdcp );
+        _mm256_stream_si256((__m256i*)&_dcp[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdcp) );
       }
     }
   } else {
@@ -78,40 +78,40 @@
       LIBXSMM_PRAGMA_UNROLL_N(4)
       for ( _k = 0; _k < bk; _k += 16 ) {
         _vdout = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_dout[(_j*K)+_k] );
-        _vdh = _mm512_loadcvt_bf16_fp32( &_dh[(_j*K)+_k] );
+        _vdh = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_dh[(_j*K)+_k] ));
         _vdout = _mm512_add_ps( _vdout, _vdh );
-        _vo = _mm512_loadcvt_bf16_fp32( &_o[(_j*K)+_k] );
+        _vo = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_o[(_j*K)+_k] ));
         _vt1 = _mm512_mul_ps( _vdout, _vo  );
-        _vco = _mm512_loadcvt_bf16_fp32( &_co[(_j*K)+_k] );
+        _vco = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_co[(_j*K)+_k] ));
         _vt2 = _mm512_fnmsub_ps ( _vco, _vco, _neg_ones);
         _vt1 = _mm512_mul_ps( _vt1, _vt2 );
-        _vdcp = _mm512_loadcvt_bf16_fp32( &_dcp[(_j*K)+_k] );
+        _vdcp = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_dcp[(_j*K)+_k] ));
         _vdcp = _mm512_add_ps( _vdcp, _vt1 );
-        _vii = _mm512_loadcvt_bf16_fp32( &_ii[(_j*K)+_k] );
+        _vii = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_ii[(_j*K)+_k] ));
         _vt1 = _mm512_mul_ps( _vii, _vdcp );
-        _vci = _mm512_loadcvt_bf16_fp32( &_ci[(_j*K)+_k] );
+        _vci = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_ci[(_j*K)+_k] ));
         _vt2 = _mm512_fnmsub_ps ( _vci, _vci, _neg_ones);
         _vdci = _mm512_mul_ps( _vt1, _vt2 );
-        _mm512_storecvt_fp32_bf16( &_dci[(_j*K)+_k], _vdci );
+        _mm256_stream_si256((__m256i*)&_dci[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdci) );
         _vt1 = _mm512_mul_ps( _vci, _vdcp );
         _vt2 = _mm512_sub_ps( _ones, _vii );
         _vdi = _mm512_mul_ps( _vii, _vt2);
         _vdi = _mm512_mul_ps( _vdi, _vt1);
-        _mm512_storecvt_fp32_bf16( &_di[(_j*K)+_k], _vdi );
-        _vcps = _mm512_loadcvt_bf16_fp32( &_cps[(_j*K)+_k] );
+        _mm256_stream_si256((__m256i*)&_di[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdi) );
+        _vcps = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_cps[(_j*K)+_k] ));
         _vt1 = _mm512_mul_ps( _vcps, _vdcp );
-        _vf = _mm512_loadcvt_bf16_fp32( &_f[(_j*K)+_k] );
+        _vf = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&_f[(_j*K)+_k] ));
         _vt2 = _mm512_sub_ps( _ones, _vf );
         _vdf = _mm512_mul_ps( _vf, _vt2);
         _vdf = _mm512_mul_ps( _vdf, _vt1);
-        _mm512_storecvt_fp32_bf16( &_df[(_j*K)+_k], _vdf );
+        _mm256_stream_si256((__m256i*)&_df[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdf) );
         _vt1 = _mm512_mul_ps( _vdout, _vco);
         _vt2 = _mm512_sub_ps( _ones, _vo );
         _vt2 = _mm512_mul_ps( _vo, _vt2);
         _vdp = _mm512_mul_ps( _vt1, _vt2 );
-        _mm512_storecvt_fp32_bf16( &_dp[(_j*K)+_k], _vdp );
+        _mm256_stream_si256((__m256i*)&_dp[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdp) );
         _vdcp = _mm512_mul_ps( _vdcp, _vf);
-        _mm512_storecvt_fp32_bf16( &_dcp[(_j*K)+_k], _vdcp );
+        _mm256_stream_si256((__m256i*)&_dcp[(_j*K)+_k], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(_vdcp) );
       }
     }
   }

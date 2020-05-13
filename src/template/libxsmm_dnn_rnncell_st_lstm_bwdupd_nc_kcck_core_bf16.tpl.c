@@ -9,7 +9,6 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 
-#if defined(LIBXSMM_DNN_RNNCELL_BWD_AVX512_CPX)
 #define NATIVE_MATRIX_RNE_CVT_FP32_BFP16_LD(m, n, ld, _src, _dst)  \
 do { \
   float *src = _src; \
@@ -18,26 +17,11 @@ do { \
   __m512bh packed_result; \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=32 ) { \
-    packed_result = _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i])); \
+    packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i])); \
     _mm512_storeu_si512((libxsmm_bfloat16*)&dst[(__j*ld)+__i], (__m512i) packed_result); \
     } \
   } \
 } while (0)
-#else
-#define NATIVE_MATRIX_RNE_CVT_FP32_BFP16_LD(m, n, ld, _src, _dst)  \
-do { \
-  float *src = _src; \
-  libxsmm_bfloat16 *dst = _dst; \
-  libxsmm_blasint __i,__j; \
-  __m256i packed_result; \
-  for ( __j = 0; __j < n; ++__j ) { \
-    for ( __i = 0; __i < m; __i+=16 ) { \
-    packed_result = _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i]) ), 16 ) ); \
-    _mm256_storeu_si256((__m256i*)&dst[(__j*ld)+__i], packed_result); \
-    } \
-  } \
-} while (0)
-#endif
 
 for (j = t-1; j >= 0; --j) {
   /* let's run the cell in blocks for good locality */
@@ -322,10 +306,10 @@ for (j = t-1; j >= 0; --j) {
         dbo_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbo[ik]);
         dbc_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbc[ik]);
         for (in = 0; in < N; in++) {
-          dbi_sum = _mm512_add_ps(dbi_sum, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(2, di,  in, ik, K)));
-          dbf_sum = _mm512_add_ps(dbf_sum, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(2, df,  in, ik, K)));
-          dbo_sum = _mm512_add_ps(dbo_sum, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K)));
-          dbc_sum = _mm512_add_ps(dbc_sum, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K)));
+          dbi_sum = _mm512_add_ps(dbi_sum, LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, di,  in, ik, K))));
+          dbf_sum = _mm512_add_ps(dbf_sum, LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, df,  in, ik, K))));
+          dbo_sum = _mm512_add_ps(dbo_sum, LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K))));
+          dbc_sum = _mm512_add_ps(dbc_sum, LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K))));
         }
         _mm512_storeu_ps(&dbi[ik], dbi_sum);
         _mm512_storeu_ps(&dbf[ik], dbf_sum);
@@ -333,10 +317,10 @@ for (j = t-1; j >= 0; --j) {
         _mm512_storeu_ps(&dbc[ik], dbc_sum);
         /* Downconvert delta bias to bf16 if done with all timesteps */
         if (j == 0) {
-          _mm512_storecvt_fp32_bf16(&dbi_bf16[ik], dbi_sum);
-          _mm512_storecvt_fp32_bf16(&dbf_bf16[ik], dbf_sum);
-          _mm512_storecvt_fp32_bf16(&dbo_bf16[ik], dbo_sum);
-          _mm512_storecvt_fp32_bf16(&dbc_bf16[ik], dbc_sum);
+          _mm256_storeu_si256((__m256i*)&dbi_bf16[ik], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(dbi_sum));
+          _mm256_storeu_si256((__m256i*)&dbf_bf16[ik], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(dbf_sum));
+          _mm256_storeu_si256((__m256i*)&dbo_bf16[ik], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(dbo_sum));
+          _mm256_storeu_si256((__m256i*)&dbc_bf16[ik], LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH(dbc_sum));
         }
       }
     } else {

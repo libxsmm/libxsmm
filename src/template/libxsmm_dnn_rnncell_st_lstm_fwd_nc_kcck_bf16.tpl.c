@@ -12,8 +12,6 @@
 #define PROFILE
 #endif
 
-#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
-
 #define MATRIX_CVT_BF16_FP32_LD(m, n, ld, _src, _dst) \
 do { \
   libxsmm_bfloat16 *src = _src; \
@@ -21,7 +19,7 @@ do { \
   libxsmm_blasint __i,__j; \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=16 ) { \
-      _mm512_storeu_ps((float*)&dst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&src[(__j*ld)+__i])); \
+      _mm512_storeu_ps((float*)&dst[(__j*ld)+__i], LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&src[(__j*ld)+__i]))); \
     } \
   } \
 } while (0)
@@ -33,7 +31,7 @@ do { \
   libxsmm_blasint __i,__j; \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=16 ) { \
-      _mm512_storeu_ps((float*)&srcdst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&colv[__i])); \
+      _mm512_storeu_ps((float*)&srcdst[(__j*ld)+__i], LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&colv[__i]))); \
     } \
   } \
 } while (0)
@@ -46,7 +44,7 @@ do { \
   __m512 vbias = _mm512_set1_ps(const_bias); \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=16 ) { \
-      _mm512_storeu_ps((float*)&srcdst[(__j*ld)+__i], _mm512_add_ps(vbias, _mm512_loadcvt_bf16_fp32(&colv[__i]))); \
+      _mm512_storeu_ps((float*)&srcdst[(__j*ld)+__i], _mm512_add_ps(vbias, LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&colv[__i])))); \
     } \
   } \
 } while (0)
@@ -239,4 +237,3 @@ if (ltid == 0) {
 #undef MATRIX_CVT_BF16_FP32_LD
 #undef MATRIX_BCST_CVT_BF16_FP32_COLVECTOR_LD
 #undef MATRIX_BCST_CVT_BF16_FP32_COLVECTOR_CONST_LD
-#undef _mm512_loadcvt_bf16_fp32
