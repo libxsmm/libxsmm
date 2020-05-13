@@ -110,7 +110,6 @@ float *dst_ptr;
 gemm_br_function br_gemm_kernel = 0;
 
 /* These are used for the vnni reformatting of the f32 output  */
-__m256i c0, c1;
 __m512i c01 = LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32();
 const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
 

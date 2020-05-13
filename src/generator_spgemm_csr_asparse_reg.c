@@ -327,6 +327,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
       /* check k such that we just use columns which actually need to be multiplied */
       for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
         const unsigned int u = i_row_idx[l_m] + l_z;
+        unsigned int l_unique_reg;
         LIBXSMM_ASSERT(u < l_n_row_idx);
 
         /* broadcast unique element of A if not in pre-broadcast mode */
@@ -351,7 +352,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
         }
 
         /* select correct register depending on mode */
-        const unsigned int l_unique_reg = l_unique > 31 ? BCAST_REG : l_unique_pos[u];
+        l_unique_reg = l_unique > 31 ? BCAST_REG : l_unique_pos[u];
 
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                  l_micro_kernel_config.instruction_set,

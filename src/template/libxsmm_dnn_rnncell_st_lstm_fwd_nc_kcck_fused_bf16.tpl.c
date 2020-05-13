@@ -14,7 +14,7 @@ do { \
   float *src = _src; \
   libxsmm_bfloat16 *dst = _dst; \
   libxsmm_blasint __i,__j; \
-  __m512bh packed_result; \
+  __m512i packed_result; \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=32 ) { \
     packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i])); \
