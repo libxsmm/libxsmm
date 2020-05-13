@@ -1069,7 +1069,9 @@ ifneq (0,$(INTEL))
       CFLAGS += -g3 -debug inline-debug-info
     endif
     ifeq (,$(strip $(GFC)))
+    ifeq (0,$(ICX))
       FCFLAGS += -g -traceback
+    endif
     endif
   endif
   ifneq (0,$(shell echo "$$((170000<=$(CXX_VERSION_NUM)))"))
