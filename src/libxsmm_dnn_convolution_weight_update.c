@@ -19,6 +19,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_b
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
 
+
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 void transpose_32x16(const libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int ld_in, int ld_out)
 {
@@ -615,7 +616,13 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16_emu(libxsm
   typedef libxsmm_bfloat16 element_filter_type;
   typedef libxsmm_bsmmfunction gemm_function;
   typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
+
+  /* some portable macrros fof BF16 <-> FP32 */
+# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic_bf16.tpl.c"
+
+# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -635,9 +642,15 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dn
   typedef libxsmm_bfloat16 element_filter_type;
   typedef libxsmm_bsmmfunction gemm_function;
   typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
-#define LIBXSMM_DNN_CONVOLUTION_UPD_AVX512_CPX
+
+#define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+  /* some portable macrros fof BF16 <-> FP32 */
+# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic_bf16.tpl.c"
-#undef LIBXSMM_DNN_CONVOLUTION_UPD_AVX512_CPX
+
+# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+#undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;

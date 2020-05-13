@@ -8,21 +8,6 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#define _mm512_roundbf16rne(A) LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(A)
-
-#if defined(LIBXSMM_DNN_CONVOLUTION_UPD_AVX512_CPX)
-#define _mm512_storecvtrne_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A), (__m256i)_mm512_cvtneps_pbh(B))
-#else
-#define _mm512_storecvtrne_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
-#endif
-
-#define _mm512_loadcvt_bf16_fp32(A)        _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
-
-#if defined(LIBXSMM_DNN_CONVOLUTION_UPD_AVX512_CPX)
-#define _mm512_loadcvtrne_fp32_bf16(A) ((__m256i)_mm512_cvtneps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS(A)))
-#else
-#define _mm512_loadcvtrne_fp32_bf16(A) _mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne(LIBXSMM_INTRINSICS_MM512_LOAD_PS(A)),16))
-#endif
 
 #define TRANS_OUTPUT_TO_VNNI_FORMAT(img, ofm1) do {\
   __m512i zero_reg = _mm512_setzero_si512();\
@@ -321,10 +306,8 @@ if (handle->upd_linearized_pixels == 0) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
-                          c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
-                          c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
-                          c01 = _mm512_inserti64x4(c01, c0, 0);
-                          c01 = _mm512_inserti64x4(c01, c1, 1);
+                          c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock)),
+                                                                        LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock)) );
                           _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                         }
                       }
@@ -441,15 +424,12 @@ if (handle->upd_linearized_pixels == 0) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
-                          c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
-                          c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
-                          c01 = _mm512_inserti64x4(c01, c0, 0);
-                          c01 = _mm512_inserti64x4(c01, c1, 1);
+                          c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock)),
+                                                                        LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock)));
                           _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                         }
                       }
                     }
-
                   }
                 }
               }
@@ -554,10 +534,8 @@ if (handle->upd_linearized_pixels == 0) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
-                          c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
-                          c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
-                          c01 = _mm512_inserti64x4(c01, c0, 0);
-                          c01 = _mm512_inserti64x4(c01, c1, 1);
+                          c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock)),
+                                                                        LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock)) );
                           _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(7, weight_private_group, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                         }
                       }
@@ -616,10 +594,8 @@ if (handle->upd_linearized_pixels == 0) {
                       LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
                       for (ij = 0; ij < handle->ifmblock; ij+=2) {
                         for (ii = 0; ii < handle->ofmblock; ii+=16) {
-                          c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
-                          c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
-                          c01 = _mm512_inserti64x4(c01, c0, 0);
-                          c01 = _mm512_inserti64x4(c01, c1, 1);
+                          c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock)),
+                                                                        LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock)) );
                           _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                         }
                       }
@@ -654,17 +630,12 @@ if (handle->weight_copies > 1) {
   for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
     __m512 weight_sum = _mm512_setzero_ps();
     for ( i = 0; i < active_copies; i++ ) {
-      weight_sum = _mm512_add_ps(weight_sum, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(2, weight_copies_buffer, i, j*16, filter_size)));
+      weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(2, weight_copies_buffer, i, j*16, filter_size))));
     }
-    _mm512_storecvtrne_fp32_bf16( ((libxsmm_bfloat16*) weight_global_ptr) + j*16, weight_sum);
+    _mm256_storeu_si256((__m256i*)(((libxsmm_bfloat16*) weight_global_ptr) + j*16), LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(weight_sum));
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
 #undef TRANS_OUTPUT_W_TO_VNNI_FORMAT
 #undef TRANS_OUTPUT_TO_VNNI_FORMAT
-#undef _mm512_roundbf16rne
-#undef _mm512_storecvtrne_fp32_bf16
-#undef _mm512_loadcvt_bf16_fp32
-#undef _mm512_loadcvtrne_fp32_bf16
-
