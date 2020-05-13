@@ -603,6 +603,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   size_t doutput_scratch_mark;
   void* scratch;
 
+  libxsmm_xtransfunction tr_kernel;
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd2;    /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd3;    /* ability to hoist forward GEMMs */

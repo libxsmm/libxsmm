@@ -4077,6 +4077,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descr
   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values, const unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
   if (NULL != descriptor && NULL != row_ptr && NULL != column_idx && NULL != values) {
     libxsmm_csr_soa_descriptor srsoa;
     libxsmm_build_request request;
@@ -4105,6 +4106,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descr
   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values, const unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
   if (NULL != descriptor && NULL != column_ptr && NULL != row_idx && NULL != values) {
     libxsmm_csc_soa_descriptor scsoa;
     libxsmm_build_request request;
@@ -4132,6 +4134,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descr
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_ac_rm(const libxsmm_gemm_descriptor* descriptor, const unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
   if (NULL != descriptor) {
     libxsmm_pgemm_ac_rm_descriptor pgemmacrm;
     libxsmm_build_request request;
@@ -4156,6 +4159,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_ac_rm(const libxsmm_gemm_de
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_bc_rm(const libxsmm_gemm_descriptor* descriptor, const unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
   if (NULL != descriptor) {
     libxsmm_pgemm_bc_rm_descriptor pgemmbcrm;
     libxsmm_build_request request;
@@ -4181,6 +4185,7 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descr
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
 {
   libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
   if (NULL != descriptor && NULL != row_ptr && NULL != column_idx && NULL != values) {
     libxsmm_csr_reg_descriptor sreg;
     libxsmm_build_request request;
@@ -4208,6 +4213,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values)
 {
   libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
   if (NULL != descriptor && NULL != row_ptr && NULL != column_idx && NULL != values) {
     libxsmm_csr_reg_descriptor sreg;
     libxsmm_build_request request;

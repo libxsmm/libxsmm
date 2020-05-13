@@ -9,51 +9,6 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
-#if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
-#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),(__m256i)_mm512_cvtneps_pbh((B)))
-#else
-#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((B)),16)))
-#endif
-
-#if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
-#define LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(in, out, length) do { \
-  unsigned int full_chunks = length / 32; \
-  unsigned int remainder = length % 32; \
-  int __i = 0; \
-  if (remainder == 0) { \
-    for ( __i = 0; __i < length; __i+= 32) { \
-      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i))); \
-    } \
-  } else { \
-    unsigned int chunk; \
-    for ( chunk = 0; chunk < full_chunks; chunk++) { \
-      __i = chunk * 32; \
-      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i))); \
-    } \
-    libxsmm_rne_convert_fp32_bf16((const float*)in+32*full_chunks, (element_output_type*)out+32*full_chunks, remainder); \
-  } \
-} while(0)
-#else
-#define LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(in, out, length) do { \
-  unsigned int full_chunks = length / 16; \
-  unsigned int remainder = length % 16; \
-  int __i = 0; \
-  if (remainder == 0) { \
-    for ( __i = 0; __i < length; __i+= 16) { \
-      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
-    } \
-  } else { \
-    unsigned int chunk; \
-    for ( chunk = 0; chunk < full_chunks; chunk++) { \
-      __i = chunk * 16; \
-      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
-    } \
-    libxsmm_rne_convert_fp32_bf16((const float*)in+16*full_chunks, (element_output_type*)out+16*full_chunks, remainder); \
-  } \
-} while(0)
-#endif
-
 /* size variables, all const */
 /* here we assume that input and output blocking is similar */
 const int bn = handle->bn;
@@ -141,7 +96,7 @@ if (bk % 32 == 0) {
         cur_out_reg_1 = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(cur_out_reg, 1)),16));
         cur_out_reg_0 =  _mm512_mul_ps(cur_out_reg_0, _mm512_sub_ps(ones, cur_out_reg_0));
         cur_out_reg_1 =  _mm512_mul_ps(cur_out_reg_1, _mm512_sub_ps(ones, cur_out_reg_1));
-        cur_out_reg = LIBXSMM_INTRINSICS_MM512_CVT2_FP32_BF16(cur_out_reg_1, cur_out_reg_0);
+        cur_out_reg = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(cur_out_reg_1, cur_out_reg_0);
 #endif
         _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk), cur_out_reg);
       }
@@ -209,7 +164,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
       for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
         for ( iteri = 0; iteri < handle->bn; ++iteri ) {
           for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-            doutput_reg = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
+            doutput_reg = LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk)));
             dbias_reg = LIBXSMM_INTRINSICS_MM512_LOAD_PS(scratch_dbias+iterj);
             dbias_reg = _mm512_add_ps(dbias_reg, doutput_reg);
             _mm512_storeu_ps(scratch_dbias+iterj, dbias_reg);
@@ -217,7 +172,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
         }
       }
       for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), LIBXSMM_INTRINSICS_MM512_LOAD_PS(scratch_dbias+iterj));
+        _mm256_storeu_si256((__m256i*)&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH( LIBXSMM_INTRINSICS_MM512_LOAD_PS(scratch_dbias+iterj)) );
       }
     }
   } else {
@@ -331,7 +286,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
                   &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
               /* downconvert intermediate f32 tensor to bf 16 and store to final C */
               if ( ofm1 == BF-1  ) {
-                LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
+                LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
               }
             }
           }
@@ -360,7 +315,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
                 &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
             /* downconvert intermediate f32 tensor to bf 16 and store to final C */
             if ( ofm1 == BF-1  ) {
-              LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
+              LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), bn*bc);
             }
           }
         }
@@ -420,48 +375,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
-
-#undef LIBXSMM_DNN_FC_BWD_CONVERT_F32_BF16
-
-#if defined(LIBXSMM_DNN_FC_BWD_AVX512_CPX)
-#define _mm512_cvt2_fp32_bf16(A, B) _mm512_cvtne2ps_pbh(A, B)
-#define LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(in, out, length) do { \
-  unsigned int full_chunks = length / 32; \
-  unsigned int remainder = length % 32; \
-  int __i = 0; \
-  if (remainder == 0) { \
-    for ( __i = 0; __i < length; __i+= 32) { \
-      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i))); \
-    } \
-  } else { \
-    unsigned int chunk; \
-    for ( chunk = 0; chunk < full_chunks; chunk++) { \
-      __i = chunk * 32; \
-      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i))); \
-    } \
-    libxsmm_rne_convert_fp32_bf16((const float*)in+32*full_chunks, (element_output_type*)out+32*full_chunks, remainder); \
-  } \
-} while(0)
-#else
-#define _mm512_cvt2_fp32_bf16(A, B) LIBXSMM_INTRINSICS_MM512_CVT2_FP32_BF16(A, B)
-#define LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(in, out, length) do { \
-  unsigned int full_chunks = length / 16; \
-  unsigned int remainder = length % 16; \
-  int __i = 0; \
-  if (remainder == 0) { \
-    for ( __i = 0; __i < length; __i+= 16) { \
-      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
-    } \
-  } else { \
-    unsigned int chunk; \
-    for ( chunk = 0; chunk < full_chunks; chunk++) { \
-      __i = chunk * 16; \
-      _mm256_storeu_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i) ),16)) ); \
-    } \
-    libxsmm_rne_convert_fp32_bf16((const float*)in+16*full_chunks, (element_output_type*)out+16*full_chunks, remainder); \
-  } \
-} while(0)
-#endif
 
 if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
   /* number of tasks that could be run in parallel */
@@ -618,13 +531,13 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
                   for (jk = 0; jk < bk; jk+=16) {
                     a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, jc+1, jk, nBlocksIFm, bc, bk));
                     b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, jc, jk, nBlocksIFm, bc, bk));
-                    c01 = (__m512i)_mm512_cvt2_fp32_bf16(a01, b01);
+                    c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(a01, b01);
                     _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, jc/lpb, jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
                   }
                 }
               } else {
                 for (jc = 0; jc < bc; jc++) {
-                  LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, jc, 0, nBlocksIFm, bc, bk), &LIBXSMM_VLA_ACCESS(2, dfilter_block, jc, 0, bk), bk);
+                  LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, jc, 0, nBlocksIFm, bc, bk), &LIBXSMM_VLA_ACCESS(2, dfilter_block, jc, 0, bk), bk);
                 }
                 for (ii = 0; ii < bc; ii++) {
                   for (jj = 0; jj < bk; jj++) {
@@ -688,13 +601,13 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
                 for (jk = 0; jk < bbk; jk+=16) {
                   a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc+1, ofm2*bbk+jk, nBlocksIFm, bc, bk));
                   b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk+jk, nBlocksIFm, bc, bk));
-                  c01 = (__m512i)_mm512_cvt2_fp32_bf16(a01, b01);
+                  c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(a01, b01);
                   _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
                 }
               }
             } else {
               for (jc = 0; jc < bbc; jc++) {
-                LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk, nBlocksIFm, bc, bk), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk, bk), bbk);
+                LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk, nBlocksIFm, bc, bk), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk, bk), bbk);
               }
               for (ii = 0; ii < bbc; ii++) {
                 for (jj = 0; jj < bbk; jj++) {
@@ -709,9 +622,4 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
-
-#undef _mm512_loadcvt_bf16_fp32
-#undef _mm512_storecvt_fp32_bf16
-#undef _mm512_cvt2_fp32_bf16
-#undef LIBXSMM_DNN_FC_UPD_CONVERT_F32_BF16
 

@@ -1,7 +1,7 @@
 #include <libxsmm_source.h>
 #include <vector>
 
-int main(int argc, char* argv[])
+int main(/*int argc, char* argv[]*/)
 {
   typedef double value_type;
   int batchsize = 1000, m = 13, n = 5, k = 7;

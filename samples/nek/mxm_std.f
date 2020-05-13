@@ -2151,7 +2151,9 @@
 
       one=1.0
       zero=0.0
-      call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
+      call dgemm('N','N',n1,n3,n2, &
+                 REAL(ONE, KIND=8),A,N1,B,N2, &
+                 REAL(ZERO,KIND=8),C,N1)
       return
       end subroutine mxmd
       !-----------------------------------------------------------------------
@@ -2236,9 +2238,11 @@
           one=1.0
           zero=0.0
           if (wdsize == 4) then
-              call sgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
+              call sgemm('N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
           else
-              call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
+              call dgemm('N','N',n1,n3,n2, &
+                         REAL(ONE, KIND=8),A,N1,B,N2, &
+                         REAL(ZERO,KIND=8),C,N1)
           endif
       endif
       return
@@ -2913,9 +2917,11 @@
           one=1.0
           zero=0.0
           if (wdsize == 4) then
-              call sgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
+              call sgemm('N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
           else
-              call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
+              call dgemm('N','N',n1,n3,n2, &
+                         REAL(ONE, KIND=8),A,N1,B,N2, &
+                         REAL(ZERO,KIND=8),C,N1)
           endif
       endif
       return
