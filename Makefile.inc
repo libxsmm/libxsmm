@@ -891,7 +891,7 @@ ifneq (0,$(DYNAMIC))
     XLD := $(XLD) -dynamic
     LD := $(LD) -dynamic
   endif
-  ifneq (,$(call ctest,$(FLD),-dynamic))
+  ifneq (,$(call ftest,$(FLD),-dynamic))
     EXCLUDE_VALUE += -dynamic
     FLD := $(FLD) -dynamic
   endif
