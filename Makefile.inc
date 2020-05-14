@@ -368,13 +368,21 @@ ifeq (0,$(GNU))
   ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" \
                          | $(CC) $(ECFLAGS) $(EFLAGS) -E -P - 2>/dev/null \
                          | sed "/^[[:space:]]*$$/d" 2>/dev/null))
-    ICX = $(INTEL)
+    ifneq (,$(INTEL))
+      ICX = $(INTEL)
+    else
+      ICX = 1
+    endif
   endif
 endif
 ifneq (,$(shell echo "__INTEL_COMPILER" \
         | $(FC) $(EFCFLAGS) $(EFLAGS) -E -P /dev/stdin 2>/dev/null \
         | sed "/^[[:space:]]*$$/d;/^__INTEL_COMPILER$$/d" 2>/dev/null))
-  ICX = $(shell echo "$$(($(INTEL)+1))")
+  ifneq (,$(INTEL))
+    ICX = $(shell echo "$$(($(INTEL)+1))")
+  else
+    ICX = 1
+  endif
   FIXFC ?= 0
 endif
 ICX ?= 0
@@ -878,16 +886,15 @@ DYNAMIC ?= 0
 
 # CCE: resolve linker issue
 ifneq (0,$(DYNAMIC))
-ifneq (,$(call ctest,$(LD),-dynamic))
-  EXCLUDE_VALUE += -dynamic
-  XLD := $(XLD) -dynamic
-  LD := $(LD) -dynamic
-  ifeq (,$(filter-out 0,$(INTEL) $(ICX)))
-    FLD := $(FLD) -dynamic
-  else ifneq (,$(strip $(GFC)))
+  ifneq (,$(call ctest,$(LD),-dynamic))
+    EXCLUDE_VALUE += -dynamic
+    XLD := $(XLD) -dynamic
+    LD := $(LD) -dynamic
+  endif
+  ifneq (,$(call ctest,$(FLD),-dynamic))
+    EXCLUDE_VALUE += -dynamic
     FLD := $(FLD) -dynamic
   endif
-endif
 endif
 
 # enable MKL (if available)
@@ -1845,8 +1852,8 @@ endif
 
 ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
   ifneq (,$(filter-out 0,$(THREADS) $(BLAS)))
-    CFLAGS += -pthread
     CXXFLAGS += -pthread
+    CFLAGS += -pthread
   endif
   FLDFLAGS += $(XLIB_BEGIN) $(call ldflib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
   ifneq (Windows_NT,$(UNAME))
