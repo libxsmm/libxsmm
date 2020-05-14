@@ -93,7 +93,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
       const libxsmm_blasint nBlocks = N/bn;
       libxsmm_blasint BF, CB_BLOCKS, KB_BLOCKS;
       libxsmm_blasint stride_a, stride_b;
-      int kernel_flags = 0;
+      int kernel_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
 
       /* Blocking reduction domain if it is too large */
       BF = 1;
