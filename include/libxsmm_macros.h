@@ -791,6 +791,20 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(FLT_MAX)
+# if !defined(__FLT_MAX__)
+#   define FLT_MAX 3.40282346638528859811704183484516925e+38F
+# else
+#   define FLT_MAX __FLT_MAX__
+# endif
+#endif
+#if !defined(FLT_MIN)
+# if !defined(__FLT_MIN__)
+#   define FLT_MIN 1.17549435082228750796873653722224568e-38F
+# else
+#   define FLT_MIN __FLT_MIN__
+# endif
+#endif
 #if !defined(_Bool)
 # define _Bool int
 #endif
