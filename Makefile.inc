@@ -278,8 +278,8 @@ ctest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
 # INFILE cannot use leading dot when used with certain F-compiler
 ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
   printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && \
-  $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
-  rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$2))
+  $1 $2 $${INFILE} -o $${INFILE}.x 2>&1 >/dev/null || echo "FAILED"; \
+  rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$(NULL),$2))
 
 ldclib = $(if $1,$(call ctest,$1 $2,-l$3))
 ldflib = $(if $1,$(call ftest,$1 $2,-l$3))
@@ -371,6 +371,12 @@ ifeq (0,$(GNU))
     ICX = $(INTEL)
   endif
 endif
+ifneq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" \
+                        | $(FC) $(EFCFLAGS) $(EFLAGS) -E -P - 2>/dev/null \
+                        | sed "/^[[:space:]]*$$/d" 2>/dev/null))
+  ICX = $(shell echo "$$(($(INTEL)+1))")
+  FIXFC ?= 0
+endif
 ICX ?= 0
 
 # adopt extra flags from C if not set individually
@@ -454,18 +460,18 @@ ifeq (0,$(FORTRAN))
 endif
 
 # fixup FC-default given by MAKE
-FIXFC ?= 0
 ifneq (,$(strip $(FC)))
   ifeq (,$(call which,$(FC)))
-    FIXFC = 1
+    FIXFC ?= 1
   else ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
-    FIXFC = 1
+    FIXFC ?= 1
   else ifneq (gfortran,$(call qndir,$(call which,$(FC))))
     ifeq (g++,$(call qndir,$(call which,$(CXX))))
-      FIXFC = 1
+      FIXFC ?= 1
     endif
   endif
 endif
+FIXFC ?= 0
 ifneq (0,$(FIXFC))
   ifneq (,$(call qndir,$(call which,gfortran)))
     MKL_FCRTL = gf
@@ -845,7 +851,7 @@ endif
 endif
 ifneq (0,$(FREEFORM))
 ifeq (0,$(PGI))
-  FFORM_FLAG ?= -ffree-form
+  FFORM_FLAG ?= $(call ftest,$(FC),-ffree-form)
 endif
 endif
 
@@ -876,7 +882,7 @@ ifneq (,$(call ctest,$(LD),-dynamic))
   EXCLUDE_VALUE += -dynamic
   XLD := $(XLD) -dynamic
   LD := $(LD) -dynamic
-  ifeq (0,$(INTEL))
+  ifeq (,$(filter-out 0,$(INTEL) $(ICX)))
     FLD := $(FLD) -dynamic
   else ifneq (,$(strip $(GFC)))
     FLD := $(FLD) -dynamic
@@ -1164,7 +1170,9 @@ ifneq (0,$(INTEL))
     FMFLAGS += -module
   else
     FCFLAGS += $(OPTFLAG)
-    FMFLAGS += -J
+    ifeq (0,$(ICX))
+      FMFLAGS += -J
+    endif
   endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
@@ -1397,10 +1405,10 @@ else # GCC assumed
         CSTD = -std=c89
       endif
     endif
-    # flag specifying output directory must be last
-    ifeq (0,$(PGI))
-      FMFLAGS += -J
-    endif
+  endif
+  # flag specifying output directory must be last
+  ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI) $(ICX)))
+    FMFLAGS += -J
   else # fallback
     FMFLAGS += -I
   endif
@@ -1739,7 +1747,7 @@ ifeq (0,$(COMPATIBLE))
       CFLAGS += -funroll-loops
       FCFLAGS += -funroll-loops
     endif
-    ifeq (,$(filter-out 0,$(PGI) $(INTEL)))
+    ifeq (,$(filter-out 0,$(PGI) $(INTEL) $(ICX)))
       CXXFLAGS += -ftree-vectorize
       CFLAGS += -ftree-vectorize
       FCFLAGS += -ftree-vectorize
@@ -1786,7 +1794,7 @@ ifeq (0,$(COMPATIBLE))
     ifneq (0,$(OPT))
       CXXFLAGS += -fdata-sections -ffunction-sections
       CFLAGS += -fdata-sections -ffunction-sections
-      ifeq (0,$(INTEL))
+      ifeq (,$(filter-out 0,$(INTEL) $(ICX)))
         FCFLAGS += -fdata-sections -ffunction-sections
       else ifneq (,$(strip $(GFC)))
         FCFLAGS += -fdata-sections -ffunction-sections
