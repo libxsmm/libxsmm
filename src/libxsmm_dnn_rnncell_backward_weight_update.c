@@ -108,7 +108,6 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16(libxsmm_dnn_rnnc
   /* some portable macrros fof BF16 <-> FP32 */
 # include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
 
-  typedef libxsmm_bfloat16 element_filter_type;
   if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_RELU ) {
     status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_SIGMOID ) {
