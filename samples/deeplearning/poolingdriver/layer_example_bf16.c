@@ -10,14 +10,9 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <float.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
-#include <math.h>
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"

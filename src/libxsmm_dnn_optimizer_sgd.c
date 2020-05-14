@@ -11,14 +11,6 @@
 #include "libxsmm_dnn_optimizer_sgd.h"
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <float.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_optimizer_sgd_st_f32_f32(libxsmm_dnn_optimizer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_optimizer_sgd_st_bf16_bf16(libxsmm_dnn_optimizer* handle, int start_thread, int tid);
