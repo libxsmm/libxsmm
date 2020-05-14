@@ -371,9 +371,9 @@ ifeq (0,$(GNU))
     ICX = $(INTEL)
   endif
 endif
-ifneq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" \
-                        | $(FC) $(EFCFLAGS) $(EFLAGS) -E -P - 2>/dev/null \
-                        | sed "/^[[:space:]]*$$/d" 2>/dev/null))
+ifneq (,$(shell echo "__INTEL_COMPILER" \
+        | $(FC) $(EFCFLAGS) $(EFLAGS) -E -P - 2>/dev/null \
+        | sed "/^[[:space:]]*$$/d;/^__INTEL_COMPILER/d" 2>/dev/null))
   ICX = $(shell echo "$$(($(INTEL)+1))")
   FIXFC ?= 0
 endif
