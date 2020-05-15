@@ -1499,11 +1499,17 @@ LIBXSMM_API_INLINE void* internal_xmalloc_xmap(const char* dir, size_t size, int
     /* coverity[secure_temp] */
     i = mkstemp(filename);
     if (0 <= i) {
+#if defined(MAP_LOCKED)
+      const int xflags = (flags | LIBXSMM_MAP_SHARED) & ~MAP_LOCKED;
+#else
+      const int xflags = (flags | LIBXSMM_MAP_SHARED);
+#endif
+
       if (0 == unlink(filename) && 0 == ftruncate(i, size)) {
-        void *const xmap = mmap(*rx, size, PROT_READ | PROT_EXEC, flags | LIBXSMM_MAP_SHARED, i, 0/*offset*/);
+        void *const xmap = mmap(*rx, size, PROT_READ | PROT_EXEC, xflags, i, 0/*offset*/);
         if (MAP_FAILED != xmap) {
           LIBXSMM_ASSERT(NULL != xmap);
-          result = mmap(NULL, size, PROT_READ | PROT_WRITE, flags | LIBXSMM_MAP_SHARED, i, 0/*offset*/);
+          result = mmap(NULL, size, PROT_READ | PROT_WRITE, xflags, i, 0/*offset*/);
           if (MAP_FAILED != result) {
             LIBXSMM_ASSERT(NULL != result);
             internal_xmalloc_mhint(xmap, size);
