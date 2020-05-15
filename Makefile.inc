@@ -957,7 +957,8 @@ libpath = $(strip $(if $1,$(shell $(FLUSH) $1 $2 -l$3 $(call linkopt,$(XLNKVERBO
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
     $(if $(patsubst lib%,%,$(call qname,$(call qndir,$1))), \
-       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1)))), \
+    $(if $(findstring .$(ILIBEXT).,$1),-l:$(call qndir,$1), \
+       -l$(patsubst lib%,%,$(call qname,$(call qndir,$1))))), \
     $(if $(filter $(call qndir,$1),$(call qapath,$1)),$(call qapath,$1),$1)))
 else # Cygwin/MinGW (static)
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
