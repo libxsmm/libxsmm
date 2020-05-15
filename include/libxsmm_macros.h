@@ -632,8 +632,12 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_PRAGMA_OMP(...)
 #endif
-#if defined(_OPENMP) && defined(_MSC_VER) && !defined(LIBXSMM_INTEL_COMPILER)
-# define LIBXSMM_OMP_VAR(A) LIBXSMM_UNUSED(A) /* suppress warning about "unused" variable */
+#if defined(_OPENMP)
+# if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#   define LIBXSMM_OMP_VAR(A) LIBXSMM_UNUSED(A) /* suppress warning about "unused" variable */
+# elif defined(__clang__)
+#   define LIBXSMM_OMP_VAR(A) (A) = 0
+# endif
 #else
 # define LIBXSMM_OMP_VAR(A)
 #endif

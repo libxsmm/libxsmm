@@ -102,7 +102,7 @@ LIBXSMM_INLINE void matrix_transpose(ELEM_TYPE *LIBXSMM_RESTRICT dst, const ELEM
   LIBXSMM_VLA_DECL(2, const ELEM_TYPE, src_2d, src, cols);
   LIBXSMM_VLA_DECL(2, ELEM_TYPE, dst_2d, dst, rows);
 #if defined(_OPENMP)
-  LIBXSMM_OMP_VAR(j);
+  LIBXSMM_OMP_VAR(i); LIBXSMM_OMP_VAR(j);
 # pragma omp parallel for private(i, j)
 #endif
   for (i = 0; i < rows; ++i) {
@@ -154,6 +154,7 @@ int main(int argc, char* argv[])
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
 
 #if defined(_OPENMP)
+    LIBXSMM_OMP_VAR(i);
 #   pragma omp parallel for private(i)
 #endif
     for (i = 0; i < n; ++i) {
