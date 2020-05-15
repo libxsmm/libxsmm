@@ -880,13 +880,13 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
-#if !defined(LIBXSMM_NO_LIBM) && (!defined(__STDC_VERSION__) || (199901L > __STDC_VERSION__) || defined(__cplusplus))
+#if !defined(LIBXSMM_NO_LIBM) /*&& (!defined(__STDC_VERSION__) || (199901L > __STDC_VERSION__) || defined(__cplusplus))*/
 # if defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) /* error including dfp754.h */
 #   include <mathimf.h>
 # endif
 # include <math.h>
 #endif
-#if !defined(M_LN2)
+#if !defined(M_LN2) && 0
 # define M_LN2 0.69314718055994530942
 # if !defined(__cplusplus)
 LIBXSMM_EXTERN double pow(double, double);
@@ -894,7 +894,10 @@ LIBXSMM_EXTERN double frexp(double, int*);
 LIBXSMM_EXTERN double sqrt(double);
 LIBXSMM_EXTERN double tanh(double);
 LIBXSMM_EXTERN double exp(double);
+# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+LIBXSMM_EXTERN float logf(float);
 # endif
+# endif /*!defined(__cplusplus)*/
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
