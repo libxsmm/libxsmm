@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -28,24 +28,16 @@ fi
 
 if [ $# -ne 8 ]
 then
-  echo "Usage: $(basename $0) format=(nc_ck, ${FORMAT}${SUFIXBIN}) bin=(f32, bf16) iters type=(0-fwd, 1-bwd, 2-upd, 3-bwdupd) MB bn bc bk"
+  echo "Usage: $(basename $0) format=(nc_ck, ${FORMAT}${SUFIXBIN}) bin=(f32, bf16) iters type=(0-fwd, 1-bwd, 2-upd, 3-bwdupd)"
   FORMAT=nc_ck
   BIN=f32
   ITERS=${CHECK_DNN_ITERS}
   TYPE=0
-  MB=${CHECK_DNN_MB}
-  BN=32
-  BC=32
-  BK=32
 else
   FORMAT=$1
   BIN=$2
   ITERS=$3
   TYPE=$4
-  MB=$5
-  BN=$6
-  BC=$7
-  BK=$8
 fi
 
 if [ ${BIN} == "f32" ]
@@ -92,14 +84,42 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 512 256 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 128 1024 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 512 512 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 1024 1024 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 2048 2048 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 768 1536 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 1024 512 1 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 256 256 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 512 512 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 4096 4096 5 ${BN} ${BC} ${BK}
+##### using the optimal block size as mentioned in emails
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 10 1024 512 1 10 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 10 1024 512 1 10 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 101  1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 10 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 20 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 30 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 40 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 50 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 60 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 70 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 101 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 10 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 20 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 30 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 40 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 50 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 60 1 32 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 70 1 32 64
+
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 640 1024 512 1 64 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 640 1024 512 1 64 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 101 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 10 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 20 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 30 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 40 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 50 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 60 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 70 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 101 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 10 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 20 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 30 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 40 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 50 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 60 4 64 64
+./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 70 4 64 64
 
