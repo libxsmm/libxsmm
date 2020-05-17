@@ -302,6 +302,14 @@ LIBXSMM_APIVAR_DEFINE(int internal_malloc_kind);
 #if (0 != LIBXSMM_SYNC) && defined(LIBXSMM_MALLOC_SCRATCH_JOIN)
 LIBXSMM_APIVAR_DEFINE(int internal_malloc_join);
 #endif
+#if !defined(_WIN32)
+# if defined(MAP_HUGETLB)
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_hugetlb);
+# endif
+# if defined(MAP_LOCKED)
+LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_plocked);
+# endif
+#endif
 
 
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
@@ -474,6 +482,16 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
 #endif
     }
     if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* update statistics */
+#if !defined(_WIN32)
+      if (0 != (LIBXSMM_MALLOC_FLAG_PHUGE & flags)) { /* page-locked */
+        LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags));
+        LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_hugetlb, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+      }
+      if (0 != (LIBXSMM_MALLOC_FLAG_PLOCK & flags)) { /* page-locked */
+        LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags));
+        LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_plocked, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+      }
+#endif
       if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & flags)) { /* public */
         if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) { /* scratch */
 #if 1
@@ -1703,33 +1721,37 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         }
 #else /* !defined(_WIN32) */
 # if defined(MAP_HUGETLB)
-        static size_t hugetlb = LIBXSMM_SCRATCH_UNLIMITED;
+        static size_t limit_hugetlb = LIBXSMM_SCRATCH_UNLIMITED;
 # endif
 # if defined(MAP_LOCKED)
-        static size_t plocked = LIBXSMM_SCRATCH_UNLIMITED;
+        static size_t limit_plocked = LIBXSMM_SCRATCH_UNLIMITED;
 # endif
 # if defined(MAP_32BIT)
-        static size_t map32 = LIBXSMM_SCRATCH_UNLIMITED;
+        static int map32 = 1;
 # endif
-        const int mflags = 0
+        int mflags = 0
+# if defined(MAP_UNINITIALIZED)
+          | MAP_UNINITIALIZED /* unlikely available */
+# endif
 # if defined(MAP_NORESERVE)
           | (LIBXSMM_MALLOC_ALIGNMAX < size ? 0 : MAP_NORESERVE)
 # endif
-# if defined(MAP_32BIT) /* can be quickly exhausted */
-          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) <= size && size < map32
+# if defined(MAP_32BIT)
+          | ((0 != (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != map32
             && LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid
             && LIBXSMM_X86_AVX512 < libxsmm_target_archid) ? MAP_32BIT : 0)
 # endif
 # if defined(MAP_HUGETLB) /* may fail depending on system settings */
-          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) <= size && size < hugetlb) ? MAP_HUGETLB : 0)
-# endif
-# if defined(MAP_UNINITIALIZED) /* unlikely to be available */
-          | MAP_UNINITIALIZED
+          | ((0 == (LIBXSMM_MALLOC_FLAG_X & flags)
+            && ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) <= size ||
+              0 != (LIBXSMM_MALLOC_FLAG_PHUGE & flags))
+            && (internal_malloc_hugetlb + size) < limit_hugetlb) ? MAP_HUGETLB : 0)
 # endif
 # if defined(MAP_LOCKED)
-          | ((0 == (LIBXSMM_MALLOC_FLAG_X & flags) && size < plocked) ? MAP_LOCKED : 0)
+          | ((0 == (LIBXSMM_MALLOC_FLAG_X & flags)
+            && (internal_malloc_plocked + size) < limit_plocked) ? MAP_LOCKED : 0)
 # endif
-        ;
+        ; /* mflags */
         static int prefault = 0;
 # if defined(MAP_POPULATE)
         if (0 == prefault) { /* prefault only on Linux 3.10.0-327 (and later) to avoid data race in page-fault handler */
@@ -1738,23 +1760,72 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             && 4 == sscanf(osinfo.release, "%u.%u.%u-%u", &version_major, &version_minor, &version_update, &version_patch)
             && LIBXSMM_VERSION4(3, 10, 0, 327) > LIBXSMM_VERSION4(version_major, version_minor, version_update, version_patch))
           {
-            prefault = MAP_POPULATE;
+            mflags |= MAP_POPULATE; prefault = 1;
           }
+          else prefault = -1;
         }
+        else if (1 == prefault) mflags |= MAP_POPULATE;
 # endif
         /* make allocated size at least a multiple of the smallest page-size to avoid split-pages (unmap!) */
         alloc_alignment = libxsmm_lcm(0 == alignment ? libxsmm_alignment(size, alignment) : alignment, LIBXSMM_PAGE_MINSIZE);
         alloc_size = LIBXSMM_UP2(size + extra_size + sizeof(internal_malloc_info_type) + alloc_alignment - 1, alloc_alignment);
         alloc_failed = MAP_FAILED;
         if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* anonymous and non-executable */
+# if defined(MAP_32BIT)
+          LIBXSMM_ASSERT(0 == (MAP_32BIT & flags));
+# endif
 # if 0
           LIBXSMM_ASSERT(NULL != info || NULL == *memory); /* no memory mapping of foreign pointer */
 # endif
           buffer = mmap(NULL == info ? NULL : info->pointer, alloc_size, PROT_READ | PROT_WRITE,
             MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | prefault | mflags, -1, 0/*offset*/);
+# if defined(MAP_HUGETLB)
+          if (0 != (MAP_HUGETLB & mflags)) {
+            if (alloc_failed != buffer && NULL != buffer) { /* successful initially */
+              LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_hugetlb, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+              flags |= LIBXSMM_MALLOC_FLAG_PHUGE;
+            }
+            else { /* retry */
+              buffer = mmap(NULL == info ? NULL : info->pointer, alloc_size, PROT_READ | PROT_WRITE,
+                MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | prefault | (mflags & ~MAP_HUGETLB), -1, 0/*offset*/);
+              if (alloc_failed != buffer && NULL != buffer) { /* successful retry */
+                const size_t watermark = internal_malloc_hugetlb + alloc_size / 2; /* accept data-race */
+                if (watermark < limit_hugetlb) limit_hugetlb = watermark; /* accept data-race */
+                if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity)) {/* muted */
+                  fprintf(stderr, "LIBXSMM WARNING: huge pages are exhaused!\n");
+                }
+              }
+            }
+          }
+# endif
+# if defined(MAP_LOCKED)
+          if (0 != (MAP_LOCKED & mflags)) {
+            if (alloc_failed != buffer && NULL != buffer) { /* successful initially */
+              LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_plocked, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+              flags |= LIBXSMM_MALLOC_FLAG_PLOCK;
+            }
+            else { /* retry */
+              buffer = mmap(NULL == info ? NULL : info->pointer, alloc_size, PROT_READ | PROT_WRITE,
+                MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | prefault | (mflags & ~MAP_LOCKED), -1, 0/*offset*/);
+              if (alloc_failed != buffer && NULL != buffer) { /* successful retry */
+                const size_t watermark = internal_malloc_plocked + alloc_size / 2; /* accept data-race */
+                if (watermark < limit_plocked) limit_plocked = watermark; /* accept data-race */
+                if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity)) {/* muted */
+                  fprintf(stderr, "LIBXSMM WARNING: locked pages are exhaused!\n");
+                }
+              }
+            }
+          }
+# endif
         }
         else { /* executable buffer requested */
           static /*LIBXSMM_TLS*/ int fallback = -1; /* considers fall-back allocation method */
+# if defined(MAP_HUGETLB)
+          LIBXSMM_ASSERT(0 == (MAP_HUGETLB & flags));
+# endif
+# if defined(MAP_LOCKED)
+          LIBXSMM_ASSERT(0 == (MAP_LOCKED & flags));
+# endif
           if (0 > (int)LIBXSMM_ATOMIC_LOAD(&fallback, LIBXSMM_ATOMIC_RELAXED)) {
             const char *const env = getenv("LIBXSMM_SE");
             if (0 == libxsmm_se) {
@@ -1852,24 +1923,6 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
         }
         else { /* allocation failed */
-# if defined(MAP_HUGETLB) /* no further attempts to rely on huge pages */
-          if (0 != (mflags & MAP_HUGETLB)) {
-            flags &= ~LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
-            hugetlb = size;
-          }
-# endif
-# if defined(MAP_LOCKED)
-          if (0 != (mflags & MAP_LOCKED)) {
-            flags &= ~LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
-            plocked = size;
-          }
-# endif
-# if defined(MAP_32BIT) /* no further attempts to map to 32-bit */
-          if (0 != (mflags & MAP_32BIT)) {
-            flags &= ~LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
-            map32 = size;
-          }
-# endif
           if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* ultimate fall-back */
             buffer = (NULL != malloc_fn.function
               ? (NULL == context ? malloc_fn.function(alloc_size) : malloc_fn.ctx_form(alloc_size, context))
