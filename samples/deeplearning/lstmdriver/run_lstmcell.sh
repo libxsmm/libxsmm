@@ -28,7 +28,7 @@ fi
 
 if [ $# -ne 8 ]
 then
-  echo "Usage: $(basename $0) format=(nc_ck, ${FORMAT}${SUFIXBIN}) bin=(f32, bf16) iters type=(0-fwd, 1-bwd, 2-upd, 3-bwdupd) MB bn bc bk"
+  echo "Usage: $(basename $0) format=(nc_ck, nc_kcck) bin=(f32, bf16) iters type=(0-fwd, 1-bwd, 2-upd, 3-bwdupd) MB bn bc bk"
   FORMAT=nc_ck
   BIN=f32
   ITERS=${CHECK_DNN_ITERS}
