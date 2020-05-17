@@ -116,15 +116,6 @@ script:
       done
     done)
 
-  - if [ "knl" = "${PARTITIONS}" ] || [ "knltrb" = "${PARTITIONS}" ]; then exit 0; fi &&
-    make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
-   (export OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
-    export CHECK=1 ITERS=1000 MB=${OMP_NUM_THREADS};
-    for PAD in 0 1; do
-      echo; echo "--- TEST ResNet-50 (precision=16-bit pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
-      ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 F L ${PAD};
-    done)
-
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (echo; echo "--- TEST Quicktest";
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
