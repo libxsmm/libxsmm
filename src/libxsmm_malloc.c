@@ -1756,8 +1756,8 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             && (internal_malloc_plocked + size) < limit_plocked) ? MAP_LOCKED : 0)
 # endif
         ; /* mflags */
-        { static int prefault = 0;
 # if defined(MAP_POPULATE)
+        { static int prefault = 0;
           if (0 == prefault) { /* prefault only on Linux 3.10.0-327 (and later) to avoid data race in page-fault handler */
             struct utsname osinfo; unsigned int version_major = 3, version_minor = 10, version_update = 0, version_patch = 327;
             if (0 <= uname(&osinfo) && 0 == strcmp("Linux", osinfo.sysname)
@@ -1769,8 +1769,8 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             else prefault = -1;
           }
           else if (1 == prefault) mflags |= MAP_POPULATE;
-# endif
         }
+# endif
         /* make allocated size at least a multiple of the smallest page-size to avoid split-pages (unmap!) */
         alloc_alignment = libxsmm_lcm(0 == alignment ? libxsmm_alignment(size, alignment) : alignment, LIBXSMM_PAGE_MINSIZE);
         alloc_size = LIBXSMM_UP2(size + extra_size + sizeof(internal_malloc_info_type) + alloc_alignment - 1, alloc_alignment);
