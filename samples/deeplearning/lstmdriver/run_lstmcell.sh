@@ -48,14 +48,6 @@ else
   BK=$8
 fi
 
-if [ ${BIN} == "f32" ]
-then
-  SUFIXBIN=""
-else
-  SUFIXBIN=_${BIN}
-fi
-
-
 if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
   export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
   export NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
@@ -92,14 +84,14 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 512 256 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 128 1024 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 512 512 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 1024 1024 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 2048 2048 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 768 1536 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 1024 512 1 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 256 256 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 512 512 5 ${BN} ${BC} ${BK}
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} ${MB} 4096 4096 5 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 512 256 5 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 128 1024 5 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 512 512 5 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 1024 1024 5 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 2048 2048 5 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 768 1536 5 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 1024 512 1 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 256 256 5 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 512 512 5 ${BN} ${BC} ${BK}
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${MB} 4096 4096 5 ${BN} ${BC} ${BK}
 

@@ -28,7 +28,7 @@ fi
 
 if [ $# -ne 8 ]
 then
-  echo "Usage: $(basename $0) format=(nc_ck, ${FORMAT}${SUFIXBIN}) bin=(f32, bf16) iters type=(0-fwd, 1-bwd, 2-upd, 3-bwdupd)"
+  echo "Usage: $(basename $0) format=(nc_ck, nc_kcck) bin=(f32, bf16) iters type=(0-fwd, 1-bwd, 2-upd, 3-bwdupd)"
   FORMAT=nc_ck
   BIN=f32
   ITERS=${CHECK_DNN_ITERS}
@@ -39,14 +39,6 @@ else
   ITERS=$3
   TYPE=$4
 fi
-
-if [ ${BIN} == "f32" ]
-then
-  SUFIXBIN=""
-else
-  SUFIXBIN=_${BIN}
-fi
-
 
 if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
   export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
@@ -85,41 +77,41 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
 fi
 
 ##### using the optimal block size as mentioned in emails
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 10 1024 512 1 10 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 10 1024 512 1 10 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 101  1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 10 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 20 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 30 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 40 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 50 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 60 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 256 256 70 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 101 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 10 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 20 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 30 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 40 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 50 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 60 1 32 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 1 512 512 70 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 10 1024 512 1 10 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 10 1024 512 1 10 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 256 256 101  1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 256 256 10 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 256 256 20 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 256 256 30 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 256 256 40 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 256 256 50 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 256 256 60 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 256 256 70 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 512 512 101 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 512 512 10 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 512 512 20 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 512 512 30 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 512 512 40 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 512 512 50 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 512 512 60 1 32 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 1 512 512 70 1 32 64
 
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 640 1024 512 1 64 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 640 1024 512 1 64 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 101 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 10 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 20 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 30 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 40 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 50 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 60 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 256 256 70 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 101 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 10 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 20 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 30 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 40 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 50 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 60 4 64 64
-./lstmdriver_${FORMAT}${SUFIXBIN} ${ITERS} ${TYPE} 64 512 512 70 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 640 1024 512 1 64 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 640 1024 512 1 64 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 256 256 101 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 256 256 10 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 256 256 20 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 256 256 30 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 256 256 40 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 256 256 50 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 256 256 60 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 256 256 70 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 512 512 101 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 512 512 10 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 512 512 20 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 512 512 30 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 512 512 40 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 512 512 50 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 512 512 60 4 64 64
+./lstmdriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} 64 512 512 70 4 64 64
 

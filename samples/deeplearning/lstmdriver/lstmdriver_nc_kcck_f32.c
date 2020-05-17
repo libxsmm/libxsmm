@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   int bc = 64;
 
   const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(0 == env_check ? 0/*disabled by default*/ : atof(env_check));
+  const double check = LIBXSMM_ABS(0 == env_check ? 1/*enable by default*/ : atof(env_check));
 
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads(); /* number of threads */
