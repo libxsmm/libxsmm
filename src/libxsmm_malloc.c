@@ -1776,7 +1776,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         alloc_failed = MAP_FAILED;
         if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* anonymous and non-executable */
 # if defined(MAP_32BIT)
-          LIBXSMM_ASSERT(0 == (MAP_32BIT & flags));
+          LIBXSMM_ASSERT(0 == (MAP_32BIT & mflags));
 # endif
 # if 0
           LIBXSMM_ASSERT(NULL != info || NULL == *memory); /* no memory mapping of foreign pointer */
@@ -1831,10 +1831,10 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         else { /* executable buffer requested */
           static /*LIBXSMM_TLS*/ int fallback = -1; /* considers fall-back allocation method */
 # if defined(MAP_HUGETLB)
-          LIBXSMM_ASSERT(0 == (MAP_HUGETLB & flags));
+          LIBXSMM_ASSERT(0 == (MAP_HUGETLB & mflags));
 # endif
 # if defined(MAP_LOCKED)
-          LIBXSMM_ASSERT(0 == (MAP_LOCKED & flags));
+          LIBXSMM_ASSERT(0 == (MAP_LOCKED & mflags));
 # endif
           if (0 > (int)LIBXSMM_ATOMIC_LOAD(&fallback, LIBXSMM_ATOMIC_RELAXED)) {
             const char *const env = getenv("LIBXSMM_SE");
