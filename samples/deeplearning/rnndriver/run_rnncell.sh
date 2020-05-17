@@ -26,9 +26,9 @@ else # check
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1; fi
 fi
 
-if [ $# -ne 8 ]
+if [ $# -ne 9 ]
 then
-  echo "Usage: $(basename $0) format=(nc_ck, ${FORMAT}${SUFIXBIN}) bin=(f32, bf16) iters type=(0-fwd, 1-bwd, 2-upd, 3-bwdupd) act={1-relu, 2-sigmoid, 3-tanh} MB bn bc bk"
+  echo "Usage: $(basename $0) format=(nc_ck, nc_kcck, ncnc_kcck) bin=(f32, bf16) iters type=(0-fwd, 1-bwd, 2-upd, 3-bwdupd) act={1-relu, 2-sigmoid, 3-tanh} MB bn bc bk"
   FORMAT=nc_ck
   BIN=f32
   ITERS=${CHECK_DNN_ITERS}
