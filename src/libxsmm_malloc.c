@@ -1881,7 +1881,12 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
               if (3 <= fallback) { /* continue with fall-back */
                 if (3 == fallback) { /* 4th try */
                   buffer = mmap(reloc, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
-                    MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (mflags & ~MAP_32BIT), -1, 0/*offset*/);
+# if defined(MAP_32BIT)
+                    MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (mflags & ~MAP_32BIT),
+# else
+                    MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | mflags,
+# endif
+                    -1, 0/*offset*/);
                   if (MAP_FAILED == buffer) fallback = 4;
                 }
                 if (4 == fallback && MAP_FAILED != buffer) { /* final */
