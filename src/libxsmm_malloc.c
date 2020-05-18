@@ -1756,19 +1756,20 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             && (internal_malloc_plocked + size) < limit_plocked) ? MAP_LOCKED : 0)
 # endif
         ; /* mflags */
-        static int prefault = 0;
 # if defined(MAP_POPULATE)
-        if (0 == prefault) { /* prefault only on Linux 3.10.0-327 (and later) to avoid data race in page-fault handler */
-          struct utsname osinfo; unsigned int version_major = 3, version_minor = 10, version_update = 0, version_patch = 327;
-          if (0 <= uname(&osinfo) && 0 == strcmp("Linux", osinfo.sysname)
-            && 4 == sscanf(osinfo.release, "%u.%u.%u-%u", &version_major, &version_minor, &version_update, &version_patch)
-            && LIBXSMM_VERSION4(3, 10, 0, 327) > LIBXSMM_VERSION4(version_major, version_minor, version_update, version_patch))
-          {
-            mflags |= MAP_POPULATE; prefault = 1;
+        { static int prefault = 0;
+          if (0 == prefault) { /* prefault only on Linux 3.10.0-327 (and later) to avoid data race in page-fault handler */
+            struct utsname osinfo; unsigned int version_major = 3, version_minor = 10, version_update = 0, version_patch = 327;
+            if (0 <= uname(&osinfo) && 0 == strcmp("Linux", osinfo.sysname)
+              && 4 == sscanf(osinfo.release, "%u.%u.%u-%u", &version_major, &version_minor, &version_update, &version_patch)
+              && LIBXSMM_VERSION4(3, 10, 0, 327) > LIBXSMM_VERSION4(version_major, version_minor, version_update, version_patch))
+            {
+              mflags |= MAP_POPULATE; prefault = 1;
+            }
+            else prefault = -1;
           }
-          else prefault = -1;
+          else if (1 == prefault) mflags |= MAP_POPULATE;
         }
-        else if (1 == prefault) mflags |= MAP_POPULATE;
 # endif
         /* make allocated size at least a multiple of the smallest page-size to avoid split-pages (unmap!) */
         alloc_alignment = libxsmm_lcm(0 == alignment ? libxsmm_alignment(size, alignment) : alignment, LIBXSMM_PAGE_MINSIZE);
@@ -1782,7 +1783,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           LIBXSMM_ASSERT(NULL != info || NULL == *memory); /* no memory mapping of foreign pointer */
 # endif
           buffer = mmap(NULL == info ? NULL : info->pointer, alloc_size, PROT_READ | PROT_WRITE,
-            MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | prefault | mflags, -1, 0/*offset*/);
+            MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | mflags, -1, 0/*offset*/);
 # if defined(MAP_HUGETLB)
           if (0 != (MAP_HUGETLB & mflags)) {
             if (alloc_failed != buffer && NULL != buffer) { /* successful initially */
@@ -1791,7 +1792,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             }
             else { /* retry */
               buffer = mmap(NULL == info ? NULL : info->pointer, alloc_size, PROT_READ | PROT_WRITE,
-                MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | prefault | (mflags & ~MAP_HUGETLB), -1, 0/*offset*/);
+                MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (mflags & ~MAP_HUGETLB), -1, 0/*offset*/);
               if (alloc_failed != buffer && NULL != buffer) { /* successful retry */
                 const size_t watermark = internal_malloc_hugetlb + alloc_size / 2; /* accept data-race */
                 if (watermark < limit_hugetlb) limit_hugetlb = watermark; /* accept data-race */
@@ -1813,7 +1814,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             }
             else { /* retry */
               buffer = mmap(NULL == info ? NULL : info->pointer, alloc_size, PROT_READ | PROT_WRITE,
-                MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | prefault | (mflags & ~MAP_LOCKED), -1, 0/*offset*/);
+                MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (mflags & ~MAP_LOCKED), -1, 0/*offset*/);
               if (alloc_failed != buffer && NULL != buffer) { /* successful retry */
                 const size_t watermark = internal_malloc_plocked + alloc_size / 2; /* accept data-race */
                 if (watermark < limit_plocked) limit_plocked = watermark; /* accept data-race */
