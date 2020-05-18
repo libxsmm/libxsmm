@@ -90,7 +90,7 @@ if (handle->pack_input == 1) {
       }
     }
   }
-  if ( handle->use_ofm_parallelization == 1 ) {
+  if ( handle->use_ofm_parallelization == 1 || handle->desc.N % handle->desc.threads != 0) {
     libxsmm_barrier_wait(handle->barrier, ltid);
   }
 }
@@ -123,7 +123,7 @@ if (handle->fwd_padding_copy == 1) {
       }
     }
   }
-  if ( handle->use_ofm_parallelization == 1 ) {
+  if ( handle->use_ofm_parallelization == 1 || handle->desc.N % handle->desc.threads != 0 ) {
     libxsmm_barrier_wait(handle->barrier, ltid);
   }
 }
