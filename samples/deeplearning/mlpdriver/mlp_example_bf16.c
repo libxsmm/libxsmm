@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
   printf("TOTAL SIZE MLP:                    %10.2f MiB\n", (4.0*fil_size) + (2.0*act_size) );
 
   /* allocate data */
-  act_libxsmm    = (libxsmm_bfloat16**)malloc( (num_layers+1)*sizeof(libxsmm_bfloat16*) );
+  act_libxsmm    = (libxsmm_bfloat16**)malloc( (num_layers+2)*sizeof(libxsmm_bfloat16*) );
   delact_libxsmm = (libxsmm_bfloat16**)malloc( (num_layers+1)*sizeof(libxsmm_bfloat16*) );
   for ( i = 0 ; i < num_layers+2; ++i ) {
     act_libxsmm[i]                = (libxsmm_bfloat16*)libxsmm_aligned_malloc( MB*C[i]*sizeof(libxsmm_bfloat16), 2097152);
@@ -573,6 +573,8 @@ int main(int argc, char* argv[])
   free( libxsmm_delbias );
   free( libxsmm_relumask );
   free( libxsmm_mafil );
+  free( libxsmm_fc_layer );
+  free( libxsmm_opt );
 
   free( act_libxsmm );
   free( delact_libxsmm );
