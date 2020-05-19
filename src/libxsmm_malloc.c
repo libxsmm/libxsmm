@@ -32,6 +32,10 @@
 # include <intrin.h>
 #else
 # include <sys/mman.h>
+# if defined(__linux__)
+#   include <linux/mman.h>
+#   include <sys/syscall.h>
+# endif
 # if defined(MAP_POPULATE)
 #   include <sys/utsname.h>
 # endif
@@ -168,6 +172,11 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_SCRATCH_JOIN) && 1
 # define LIBXSMM_MALLOC_SCRATCH_JOIN
 #endif
+#if !defined(LIBXSMM_MALLOC_LOCK_ONFAULT) && 0
+# if defined(MLOCK_ONFAULT) && defined(SYS_mlock2)
+#   define LIBXSMM_MALLOC_LOCK_ONFAULT
+# endif
+#endif
 /* protected against double-delete (if possible) */
 #if !defined(LIBXSMM_MALLOC_DELETE_SAFE) && 0
 # define LIBXSMM_MALLOC_DELETE_SAFE
@@ -276,6 +285,18 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     } \
   }
 
+# define INTERNAL_XMALLOC_WATERMARK(NAME, WATERMARK, LIMIT, SIZE) { \
+  const size_t internal_xmalloc_watermark_ = (WATERMARK) + (SIZE) / 2; /* accept data-race */ \
+  if (internal_xmalloc_watermark_ < (LIMIT)) (LIMIT) = internal_xmalloc_watermark_; /* accept data-race */ \
+  if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity)) { /* muted */ \
+    char internal_xmalloc_watermark_buffer_[32]; \
+    /* coverity[check_return] */ \
+    libxsmm_format_size(internal_xmalloc_watermark_buffer_, sizeof(internal_xmalloc_watermark_buffer_), \
+      internal_xmalloc_watermark_, "KM", "B", 10); \
+    fprintf(stderr, "LIBXSMM WARNING: " NAME " watermark reached at %s!\n", internal_xmalloc_watermark_buffer_); \
+  } \
+}
+
 # define INTERNAL_XMALLOC_KIND(KIND, NAME, FLAG, FLAGS, MFLAGS, WATERMARK, LIMIT, INFO, SIZE, BUFFER) \
   if (0 != ((KIND) & (MFLAGS))) { \
     if (MAP_FAILED != (BUFFER)) { \
@@ -287,16 +308,8 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
       (BUFFER) = mmap(NULL == (INFO) ? NULL : (INFO)->pointer, SIZE, PROT_READ | PROT_WRITE, \
         MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | ((MFLAGS) & ~(KIND)), -1, 0/*offset*/); \
       if (MAP_FAILED != (BUFFER)) { /* successful retry */ \
-        const size_t internal_xmalloc_watermark_ = (WATERMARK) + (SIZE) / 2; /* accept data-race */ \
         LIBXSMM_ASSERT(NULL != (BUFFER)); \
-        if (internal_xmalloc_watermark_ < (LIMIT)) (LIMIT) = internal_xmalloc_watermark_; /* accept data-race */ \
-        if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity)) { /* muted */ \
-          char internal_xmalloc_watermark_buffer_[32]; \
-          /* coverity[check_return] */ \
-          libxsmm_format_size(internal_xmalloc_watermark_buffer_, sizeof(internal_xmalloc_watermark_buffer_), \
-            internal_xmalloc_watermark_, "KM", "B", 10); \
-          fprintf(stderr, "LIBXSMM WARNING: " NAME " watermark reached at %s!\n", internal_xmalloc_watermark_buffer_); \
-        } \
+        INTERNAL_XMALLOC_WATERMARK(NAME, WATERMARK, LIMIT, SIZE); \
       } \
     } \
   }
@@ -535,7 +548,7 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
     if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* update statistics */
 #if !defined(_WIN32)
 # if defined(MAP_HUGETLB)
-      if (0 != (LIBXSMM_MALLOC_FLAG_PHUGE & flags)) { /* page-locked */
+      if (0 != (LIBXSMM_MALLOC_FLAG_PHUGE & flags)) { /* huge pages */
         LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags));
         LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_hugetlb, alloc_size, LIBXSMM_ATOMIC_RELAXED);
       }
@@ -1802,7 +1815,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
               0 != (LIBXSMM_MALLOC_FLAG_PHUGE & flags))
             && (internal_malloc_hugetlb + size) < limit_hugetlb) ? MAP_HUGETLB : 0)
 # endif
-# if defined(MAP_LOCKED)
+# if defined(MAP_LOCKED) && !defined(LIBXSMM_MALLOC_LOCK_ONFAULT)
           | ((0 == (LIBXSMM_MALLOC_FLAG_X & flags)
             && (internal_malloc_plocked + size) < limit_plocked) ? MAP_LOCKED : 0)
 # endif
@@ -1839,8 +1852,26 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             internal_malloc_hugetlb, limit_hugetlb, info, alloc_size, buffer);
 # endif
 # if defined(MAP_LOCKED)
+#   if !defined(LIBXSMM_MALLOC_LOCK_ONFAULT)
           INTERNAL_XMALLOC_KIND(MAP_LOCKED, "locked-page", LIBXSMM_MALLOC_FLAG_PLOCK, flags, mflags,
             internal_malloc_plocked, limit_plocked, info, alloc_size, buffer);
+#   else
+          if (0 != (MAP_LOCKED & mflags) && MAP_FAILED != buffer) {
+            LIBXSMM_ASSERT(NULL != buffer);
+#     if 0 /* mlock2 is potentially not exposed */
+            if (0 == mlock2(buffer, alloc_size, MLOCK_ONFAULT))
+#     else
+            if (0 == syscall(SYS_mlock2, buffer, alloc_size, MLOCK_ONFAULT))
+#     endif
+            {
+              LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_plocked, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+              flags |= LIBXSMM_MALLOC_FLAG_PLOCK;
+            }
+            else { /* update watermark */
+              INTERNAL_XMALLOC_WATERMARK("locked-page", internal_malloc_plocked, limit_plocked, alloc_size);
+            }
+          }
+#   endif
 # endif
         }
         else { /* executable buffer requested */
