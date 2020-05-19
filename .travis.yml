@@ -38,6 +38,7 @@ env:
 
 addons:
   apt:
+    update: true
     packages:
     - gfortran
     - libblas-dev
