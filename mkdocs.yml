@@ -20,18 +20,22 @@ theme:
 
 nav:
 - Overview: index.md
-- Domains:
+- LIBXSMM Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
   - "DNN: Deep Neural Networks": libxsmm_dl.md
   - "AUX: Service Functions": libxsmm_aux.md
   - "PROF: Performance Profiling": libxsmm_prof.md
   - "TUNE: Customization": libxsmm_tune.md
   - "BE: Backend": libxsmm_be.md
-- Samples: libxsmm_samples.md
-- Applications:
-  - CP2K Molecular Dynamics: cp2k.md
+- Example Code:
+  - Collection: libxsmm_samples.md
+- Machine Learning (ML):
+  - PlaidML tensor compiler: https://github.com/plaidml/plaidml
+  - Intel Extension for PyTorch: https://github.com/intel/intel-extension-for-pytorch
   - GxM Deeplearning: gxm.md
   - TensorFlow: tensorflow.md
+- Scientific (HPC):
+  - CP2K: cp2k.md
   - SeisSol: https://seissol.readthedocs.io/en/latest/compilation.html#installing-libxsmm
   - SpECTRE: https://sxs-collaboration.github.io/spectre/installation.html
   - libCEED: https://ceed.exascaleproject.org/ceed-code/
