@@ -579,11 +579,6 @@ int main(int argc, char* argv []) {
   libxsmm_matdiff_clear(&l_diff);
 
   /* check argument count for a valid range */
-  if ( argc != 16 && argc != 11 ) {
-    print_help();
-    return EXIT_FAILURE;
-  }
-
   if ( argc == 18 ) {
     /* xgemm sizes */
     l_m = atoi(argv[1]);
