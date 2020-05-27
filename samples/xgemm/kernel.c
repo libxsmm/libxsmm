@@ -682,6 +682,7 @@ int main(int argc, char* argv []) {
   double l_beta = 0;
   int l_br = 1;
   int l_br_type = 0;
+  int l_br_unroll = 0;
 
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
@@ -725,7 +726,7 @@ int main(int argc, char* argv []) {
   libxsmm_matdiff_clear(&l_diff);
 
   /* check argument count for a valid range */
-  if ( argc == 18 ) {
+  if ( argc == 19 ) {
     /* xgemm sizes */
     l_m = atoi(argv[1]);
     l_n = atoi(argv[2]);
@@ -745,7 +746,8 @@ int main(int argc, char* argv []) {
     /* arch specific stuff */
     l_precision = argv[14];
     l_br = atoi(argv[16]);
-    g_reps = atoi(argv[17]);
+    l_br_unroll = atoi(argv[17]);
+    g_reps = atoi(argv[18]);
 
     /* set value of prefetch flag */
     if (strcmp("nopf", argv[13]) == 0) {
@@ -793,7 +795,7 @@ int main(int argc, char* argv []) {
 
     l_file_input = 0;
     l_run_check = 1;
-  } else if ( argc == 13 ) {
+  } else if ( argc == 14 ) {
     l_file_input = 1;
     l_file_name = argv[1];
     l_alpha = atof(argv[2]);
@@ -804,6 +806,7 @@ int main(int argc, char* argv []) {
     l_trans_b = atoi(argv[7]);
     l_precision = argv[8];
     l_br = atoi(argv[10]);
+    l_br_unroll = atoi(argv[11]);
     if (strcmp("nobr", argv[9]) == 0) {
       l_br_type = 0;
     }
@@ -820,8 +823,8 @@ int main(int argc, char* argv []) {
       print_help();
       return EXIT_FAILURE;
     }
-    g_reps = atoi(argv[11]);
-    l_run_check = atoi(argv[12]);
+    g_reps = atoi(argv[12]);
+    l_run_check = atoi(argv[13]);
     l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   } else {
     print_help();
@@ -830,6 +833,7 @@ int main(int argc, char* argv []) {
 
   l_br = (l_br < 1) ? 1 : l_br;
   l_br = (l_br_type == 0) ? 1 : l_br;
+  l_br_unroll = (l_br_type == 0) ? 0 : l_br_unroll;
 
   if ( l_trans_b != 0 ) {
     l_flags |= LIBXSMM_GEMM_FLAG_TRANS_B;
@@ -859,11 +863,11 @@ int main(int argc, char* argv []) {
   } else {
     if ( l_trans_b == 0 ) {
       printf("------------------------------------------------\n");
-      printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+      printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s, BR=%i\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision, l_br);
       printf("------------------------------------------------\n");
     } else {
       printf("------------------------------------------------\n");
-      printf("RUNNING (%ix%i) X (%ix%i)^T = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+      printf("RUNNING (%ix%i) X (%ix%i)^T = (%ix%i), %s, BR=%i\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision, l_br);
       printf("------------------------------------------------\n");
     }
   }
@@ -897,7 +901,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.prefetch = l_prefetch;
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
-      l_gemm_def.br_unroll = 0;
+      l_gemm_def.br_unroll = l_br_unroll;
 
       l_a_d = (double*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(double), 64);
       l_b_d = (double*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(double), 64);
@@ -999,7 +1003,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.prefetch = l_prefetch;
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
-      l_gemm_def.br_unroll = 0;
+      l_gemm_def.br_unroll = l_br_unroll;
 
       l_a_d = (double*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(double), 64);
       l_b_d = (double*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * (size_t)l_br * sizeof(double), 64);
