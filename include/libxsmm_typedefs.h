@@ -522,13 +522,61 @@ typedef enum libxsmm_kernel_kind {
   LIBXSMM_KERNEL_UNREGISTERED = 9
 } libxsmm_kernel_kind;
 
+/** argument struct for matrix-eltwise: copy */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_copy_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_copy_param;
+
+/** argument struct for matrix-eltwise: zero */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_zero_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_zero_param;
+
+/** argument struct for matrix-eltwise: add */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_add_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_add_param;
+
+/** argument struct for matrix-eltwise: mul */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_mul_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_mul_param;
+
+/** argument struct for matrix-eltwise: relu */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_relu_param {
+  void* in_ptr;         /* input pointer */
+  void* mask_ptr;       /* pointer to load/store ReLU mask */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_relu_param;
+
+/** argument struct for matrix-eltwise: cvtfp32bf16 */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cvtfp32bf16_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_cvtfp32bf16_param;
+
 /** Specialized function for matrix-copy (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmcopyfunction)(
   const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
 
 /** Specialized function for matrix-eltw (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmeltwfunction)(
-  const void* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_copy)(const libxsmm_meltw_copy_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_zero)(const libxsmm_meltw_zero_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_add)(const libxsmm_meltw_add_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_mul)(const libxsmm_meltw_mul_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_relu)(const libxsmm_meltw_relu_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16)(const libxsmm_meltw_cvtfp32bf16_param* in_struct);
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
+  void (*xmeltw)(const void* in_struct);
+  libxsmm_meltwfunction_copy meltw_copy; libxsmm_meltwfunction_zero meltw_zero;
+  libxsmm_meltwfunction_add meltw_add; libxsmm_meltwfunction_mul meltw_mul;
+  libxsmm_meltwfunction_relu meltw_relu; libxsmm_meltwfunction_cvtfp32bf16 meltw_cvtfp32bf16;
+} libxsmm_xmeltwfunction;
 
 /** Specialized function for transpose (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(
@@ -608,55 +656,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_info {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info {
   size_t capacity, size, nbytes, nstatic, ncache;
 } libxsmm_registry_info;
-
-/** argument struct for matrix-eltwise: copy */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_copy_desc {
-  short argc;           /* number of arguments in desc struct */
-  short size;           /* size of the desc struct */
-  void* in_ptr;         /* input pointer */
-  void* out_ptr;        /* output pointer */
-} libxsmm_meltw_copy_desc;
-
-/** argument struct for matrix-eltwise: copy */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_zero_desc {
-  short argc;           /* number of arguments in desc struct */
-  short size;           /* size of the desc struct */
-  void* in_ptr;         /* input pointer */
-  void* out_ptr;        /* output pointer */
-} libxsmm_meltw_zero_desc;
-
-/** argument struct for matrix-eltwise: copy */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_add_desc {
-  short argc;           /* number of arguments in desc struct */
-  short size;           /* size of the desc struct */
-  void* in_ptr;         /* input pointer */
-  void* out_ptr;        /* output pointer */
-} libxsmm_meltw_add_desc;
-
-/** argument struct for matrix-eltwise: copy */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_mul_desc {
-  short argc;           /* number of arguments in desc struct */
-  short size;           /* size of the desc struct */
-  void* in_ptr;         /* input pointer */
-  void* out_ptr;        /* output pointer */
-} libxsmm_meltw_mul_desc;
-
-/** argument struct for matrix-eltwise: copy */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_relu_desc {
-  short argc;           /* number of arguments in desc struct */
-  short size;           /* size of the desc struct */
-  void* in_ptr;         /* input pointer */
-  void* mask_ptr;       /* pointer to load/store ReLU mask */
-  void* out_ptr;        /* output pointer */
-} libxsmm_meltw_relu_desc;
-
-/** argument struct for matrix-eltwise: copy */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cvtfp32bf16_desc {
-  short argc;           /* number of arguments in desc struct */
-  short size;           /* size of the desc struct */
-  void* in_ptr;         /* input pointer */
-  void* out_ptr;        /* output pointer */
-} libxsmm_meltw_cvtfp32bf16_desc;
 
 #endif /*LIBXSMM_TYPEDEFS_H*/
 

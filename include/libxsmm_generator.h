@@ -85,8 +85,10 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
 
 /** Initialize transpose descriptor as used by low-level routines. */
 LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_descriptor_blob* blob,
-  libxsmm_datatype in_type, libxsmm_datatype out_type, unsigned int m, unsigned int n, unsigned int ldo,
-  unsigned int ldi, int flags, int operation);
+  libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
+  unsigned int m, unsigned int n,
+  unsigned int ldo, unsigned int ldi, unsigned ldx, unsigned ldy,
+  int flags, int operation);
 
 /** Initialize packed trsm descriptor as used by low-level routines. */
 LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,

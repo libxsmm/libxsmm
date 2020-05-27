@@ -413,8 +413,10 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
 
 
 LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_descriptor_blob* blob,
-  libxsmm_datatype in_type, libxsmm_datatype out_type, unsigned int m, unsigned int n, unsigned int ldo,
-  unsigned int ldi, int flags, int operation)
+  libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
+  unsigned int m, unsigned int n,
+  unsigned int ldo, unsigned int ldi, unsigned ldx, unsigned ldy,
+  int flags, int operation)
 {
   union {
     libxsmm_meltw_descriptor* ptr;
@@ -423,10 +425,13 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
   result.ptr->datatype = LIBXSMM_GETENUM(in_type, out_type);
+  result.ptr->datatype2 = LIBXSMM_GETENUM(in2_type, out2_type);
   result.ptr->flags = (unsigned char)flags;
   result.ptr->operation = (unsigned char)operation;
   result.ptr->ldi = ldi;
   result.ptr->ldo = ldo;
+  result.ptr->ldx = ldx;
+  result.ptr->ldy = ldy;
   result.ptr->m = m;
   result.ptr->n = n;
   return result.ptr;
