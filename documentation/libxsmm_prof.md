@@ -26,7 +26,7 @@ mpirun -gtool 'vtune -r resultdir -data-limit 0 -collect hotspots \
                      -knob enable-stack-collection=true \
                      -knob sampling-mode=hw \
                      -knob stack-size=0:4=exclusive' \
-  [...] .myapplication
+  [...] ./myapplication
 ```
 
 The `:4=exclusive` is related to Intel MPI or mpirun's gtool arguments and unrelated to VTune's command line syntax (see `vtune --help` or `amplxe-cl --help` with older versions); such argument(s) need to appear at the end of the gtool-string. For instance, the shown command line selects the 5th rank (zero-based) along with exclusive usage of the performance monitoring unit (PMU) such that only one event-collector runs for all ranks (without rank-number, all ranks are sampled).
