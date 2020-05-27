@@ -4049,9 +4049,6 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
 #endif
     LIBXSMM_ASSIGN127(&wrap.meltw.desc, descriptor);
     wrap.kind = LIBXSMM_KERNEL_KIND_MELTW;
-#if defined(_WIN32) || defined(__CYGWIN__)
-    wrap.meltw.desc.prefetch = 0;
-#endif
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xmateltw;
   }
   else {
