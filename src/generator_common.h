@@ -400,10 +400,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matcopy_kernel_config_struct {
 
 /* structure for storing the current gp reg mapping for mateltwise */
 LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
+  unsigned int gp_reg_param_struct;
   unsigned int gp_reg_in;
   unsigned int gp_reg_ldi;
   unsigned int gp_reg_out;
-  unsigned int gp_reg_ldb;
   unsigned int gp_reg_ldo;
   unsigned int gp_reg_m_loop;
   unsigned int gp_reg_n_loop;
