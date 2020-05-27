@@ -107,6 +107,9 @@ LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libx
 /** Get information about the matrix copy kernel. */
 LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libxsmm_mcopykernel_info* info);
 
+/** Get information about the matrix eltwise kernel. */
+LIBXSMM_API int libxsmm_get_meltwkernel_info(libxsmm_xmeltwfunction kernel, libxsmm_meltwkernel_info* info);
+
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
@@ -452,6 +455,9 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_end(void);
 
 /** Code generation routine for matrix-copy using a descriptor. */
 LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_descriptor* descriptor);
+
+/** Code generation routine for matrix-eltwise using a descriptor. */
+LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_descriptor* descriptor);
 
 /** Code generation routine for transposes using a descriptor */
 LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor);
