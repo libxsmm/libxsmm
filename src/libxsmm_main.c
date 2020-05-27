@@ -4052,9 +4052,135 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xmateltw;
   }
   else {
-    result = NULL;
+    result.xmeltw = NULL;
   }
   return result;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_xmeltwfunction result;
+  libxsmm_meltw_descriptor desc;
+
+  desc.m = m;
+  desc.n = n;
+  desc.ldi = (ldi == NULL) ? m : *ldi;
+  desc.ldo = (ldo == NULL) ? m : *ldo;
+  desc.ldx = 0;
+  desc.ldy = 0;
+  desc.flags = 0;
+  desc.datatype = LIBXSMM_GETENUM(in_type, out_type);
+  desc.datatype2 = 0;
+  desc.flags = 0;
+  desc.operation = LIBXSMM_MELTW_OPERATION_COPY;
+  result = libxsmm_dispatch_meltw(&desc);
+
+  return result.meltw_copy;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_zero libxsmm_dispatch_meltw_zero(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_xmeltwfunction result;
+  libxsmm_meltw_descriptor desc;
+
+  desc.m = m;
+  desc.n = n;
+  desc.ldi = (ldi == NULL) ? m : *ldi;
+  desc.ldo = (ldo == NULL) ? m : *ldo;
+  desc.ldx = 0;
+  desc.ldy = 0;
+  desc.flags = 0;
+  desc.datatype = LIBXSMM_GETENUM(in_type, out_type);
+  desc.datatype2 = 0;
+  desc.flags = 0;
+  desc.operation = LIBXSMM_MELTW_OPERATION_ZERO;
+  result = libxsmm_dispatch_meltw(&desc);
+
+  return result.meltw_zero;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_add libxsmm_dispatch_meltw_add(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_xmeltwfunction result;
+  libxsmm_meltw_descriptor desc;
+
+  desc.m = m;
+  desc.n = n;
+  desc.ldi = (ldi == NULL) ? m : *ldi;
+  desc.ldo = (ldo == NULL) ? m : *ldo;
+  desc.ldx = 0;
+  desc.ldy = 0;
+  desc.flags = 0;
+  desc.datatype = LIBXSMM_GETENUM(in_type, out_type);
+  desc.datatype2 = 0;
+  desc.flags = 0;
+  desc.operation = LIBXSMM_MELTW_OPERATION_ADD;
+  result = libxsmm_dispatch_meltw(&desc);
+
+  return result.meltw_add;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_mul libxsmm_dispatch_meltw_mul(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_xmeltwfunction result;
+  libxsmm_meltw_descriptor desc;
+
+  desc.m = m;
+  desc.n = n;
+  desc.ldi = (ldi == NULL) ? m : *ldi;
+  desc.ldo = (ldo == NULL) ? m : *ldo;
+  desc.ldx = 0;
+  desc.ldy = 0;
+  desc.flags = 0;
+  desc.datatype = LIBXSMM_GETENUM(in_type, out_type);
+  desc.datatype2 = 0;
+  desc.flags = 0;
+  desc.operation = LIBXSMM_MELTW_OPERATION_MUL;
+  result = libxsmm_dispatch_meltw(&desc);
+
+  return result.meltw_mul;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_xmeltwfunction result;
+  libxsmm_meltw_descriptor desc;
+
+  desc.m = m;
+  desc.n = n;
+  desc.ldi = (ldi == NULL) ? m : *ldi;
+  desc.ldo = (ldo == NULL) ? m : *ldo;
+  desc.ldx = 0;
+  desc.ldy = 0;
+  desc.flags = 0;
+  desc.datatype = LIBXSMM_GETENUM(in_type, out_type);
+  desc.datatype2 = 0;
+  desc.flags = 0;
+  desc.operation = LIBXSMM_MELTW_OPERATION_RELU;
+  result = libxsmm_dispatch_meltw(&desc);
+
+  return result.meltw_relu;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_metlw_cvtfp32bf16(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_xmeltwfunction result;
+  libxsmm_meltw_descriptor desc;
+
+  desc.m = m;
+  desc.n = n;
+  desc.ldi = (ldi == NULL) ? m : *ldi;
+  desc.ldo = (ldo == NULL) ? m : *ldo;
+  desc.ldx = 0;
+  desc.ldy = 0;
+  desc.flags = 0;
+  desc.datatype = LIBXSMM_GETENUM(in_type, out_type);
+  desc.datatype2 = 0;
+  desc.flags = 0;
+  desc.operation = LIBXSMM_MELTW_OPERATION_CVTFP32BF16;
+  result = libxsmm_dispatch_meltw(&desc);
+
+  return result.meltw_cvtfp32bf16;
 }
 
 
