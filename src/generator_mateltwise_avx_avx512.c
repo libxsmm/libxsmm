@@ -275,6 +275,16 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
 
   unsigned int i = 0, im, m, n, m_trips, use_m_masking, mask_in_count, mask_out_count, reg_0, reg_1;
 
+  /* Some rudimentary checking of M, N and LDs*/
+  if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) || (i_mateltwise_desc->m > i_mateltwise_desc->ldo) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
+    return;  
+  }
+  if ( (i_mateltwise_desc->m < 0) || (i_mateltwise_desc->n < 0) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;  
+  }
+
   /* Configure the register mapping for this eltwise kernel */
   i_gp_reg_mapping->gp_reg_in     = LIBXSMM_X86_GP_REG_R8;
   i_gp_reg_mapping->gp_reg_out    = LIBXSMM_X86_GP_REG_R9;
@@ -483,7 +493,6 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   libxsmm_mateltwise_kernel_config  l_kernel_config;
   libxsmm_mateltwise_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker        l_loop_label_tracker;
-
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
@@ -503,7 +512,17 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
 
   /* Depending on the elementwise function, dispatch the proper code JITer */
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) {
-    libxsmm_generator_cvtfp32bf16_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+    if ( (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
+      libxsmm_generator_cvtfp32bf16_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+    } else {
+      /* This should not happen  */
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return; 
+    }
+  } else {
+    /* This should not happen  */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;   
   }
 
   /* close asm */
