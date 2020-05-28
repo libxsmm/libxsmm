@@ -231,6 +231,7 @@ LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_med);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_mnk);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_gemv);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_mcopy);
+LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_meltw);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_tcopy);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_trsm);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_trmm);
@@ -701,6 +702,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
           if (0 != ngemms) { fprintf(stderr, "gemm=%u", ngemms); s = sep; }
           if (0 != internal_statistic_num_gemv) { fprintf(stderr, "%sgemv=%u", s, internal_statistic_num_gemv); s = sep; }
           if (0 != internal_statistic_num_mcopy) { fprintf(stderr, "%smcopy=%u", s, internal_statistic_num_mcopy); s = sep; }
+          if (0 != internal_statistic_num_meltw) { fprintf(stderr, "%smeltw=%u", s, internal_statistic_num_meltw); s = sep; }
           if (0 != internal_statistic_num_tcopy) { fprintf(stderr, "%stcopy=%u", s, internal_statistic_num_tcopy); s = sep; }
           if (0 != libxsmm_statistic_num_spmdm) { fprintf(stderr, "%sspmdm=%u", s, libxsmm_statistic_num_spmdm); s = sep; }
           if (0 != internal_statistic_num_user) { fprintf(stderr, "%suser=%u", s, internal_statistic_num_user); s = sep; }
@@ -1284,6 +1286,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             case LIBXSMM_KERNEL_KIND_MCOPY: {
               ++internal_statistic_num_mcopy;
             } break;
+            case LIBXSMM_KERNEL_KIND_MELTW: {
+              ++internal_statistic_num_meltw;
+            } break;
             case LIBXSMM_KERNEL_KIND_TRANS: {
               ++internal_statistic_num_tcopy;
             } break;
@@ -1308,9 +1313,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
               fprintf(stderr, "LIBXSMM ERROR: code registry is corrupted!\n");
             }
             if (LIBXSMM_CAPACITY_REGISTRY == (rest + errors + internal_statistic_num_gemv +
-              internal_statistic_num_mcopy + internal_statistic_num_tcopy +
-              internal_statistic_num_trsm + internal_statistic_num_trmm +
-              internal_statistic_num_user))
+              internal_statistic_num_mcopy + internal_statistic_num_meltw +
+              internal_statistic_num_tcopy + internal_statistic_num_trsm +
+              internal_statistic_num_trmm + internal_statistic_num_user))
             {
               fprintf(stderr, "LIBXSMM WARNING: code registry was exhausted!\n");
             }
@@ -1880,6 +1885,26 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_p%u.mcopy", target_arch, tsizename,
             request->descriptor.mcopy->m, request->descriptor.mcopy->n, request->descriptor.mcopy->ldi, request->descriptor.mcopy->ldo,
             (unsigned int)request->descriptor.mcopy->prefetch);
+        }
+      }
+    } break;
+    case LIBXSMM_BUILD_KIND_MELTW: { /* matcopy kernel */
+      LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
+# if 0 /* TODO: backend supports typesize <= 4, but kernels for typesize < 4 are incorrect */
+      if (4 == request->descriptor.meltw->typesize)
+# endif
+      {
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_mateltwise_kernel, &generated_code, request->descriptor.meltw);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          char tsizename[4];
+          internal_get_typesize_string(tsizename, sizeof(tsizename), request->descriptor.meltw->datatype);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_p%u.meltw", target_arch, tsizename,
+            request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo,
+            (unsigned int)request->descriptor.meltw->operation);
         }
       }
     } break;
@@ -2498,6 +2523,46 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
   return result;
 }
 
+
+LIBXSMM_API int libxsmm_get_meltwkernel_info(libxsmm_xmeltwfunction kernel, libxsmm_meltwkernel_info* info)
+{
+  libxsmm_code_pointer code;
+  static int error_once = 0;
+  int result;
+  code.xmateltw = kernel;
+  if (NULL != info) {
+    const libxsmm_descriptor* desc;
+    if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
+        NULL != desc && LIBXSMM_KERNEL_KIND_MELTW == desc->kind)
+    {
+      info->datatype = desc->meltw.desc.datatype;
+      info->operation = desc->meltw.desc.operation;
+      info->flags = desc->meltw.desc.flags;
+      info->ldi = desc->meltw.desc.ldi;
+      info->ldo = desc->meltw.desc.ldo;
+      info->m = desc->meltw.desc.m;
+      info->n = desc->meltw.desc.n;
+      result = EXIT_SUCCESS;
+    }
+    else {
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM ERROR: invalid kernel cannot be inspected!\n");
+      }
+      result = EXIT_FAILURE;
+    }
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: invalid argument!\n");
+    }
+    result = EXIT_FAILURE;
+  }
+  return result;
+}
 
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
 {
@@ -3970,6 +4035,98 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
     result = NULL;
   }
   return result;
+}
+
+
+LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_descriptor* descriptor)
+{
+  libxsmm_xmeltwfunction result;
+  LIBXSMM_INIT /* verbosity */
+  if (NULL != descriptor) {
+    libxsmm_descriptor wrap;
+#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
+#endif
+    LIBXSMM_ASSIGN127(&wrap.meltw.desc, descriptor);
+    wrap.kind = LIBXSMM_KERNEL_KIND_MELTW;
+    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xmateltw;
+  }
+  else {
+    result.xmeltw = NULL;
+  }
+  return result;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_descriptor_blob blob;
+  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
+    in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
+    0, LIBXSMM_MELTW_OPERATION_COPY);
+
+  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
+
+  return result.meltw_copy;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_zero libxsmm_dispatch_meltw_zero(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_descriptor_blob blob;
+  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
+    in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
+    0, LIBXSMM_MELTW_OPERATION_ZERO);
+
+  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
+
+  return result.meltw_zero;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_add libxsmm_dispatch_meltw_add(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_descriptor_blob blob;
+  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
+    in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
+    0, LIBXSMM_MELTW_OPERATION_ADD);
+
+  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
+
+  return result.meltw_add;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_mul libxsmm_dispatch_meltw_mul(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_descriptor_blob blob;
+  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
+    in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
+    0, LIBXSMM_MELTW_OPERATION_MUL);
+
+  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
+
+  return result.meltw_mul;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_descriptor_blob blob;
+  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
+    in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
+    0, LIBXSMM_MELTW_OPERATION_RELU);
+
+  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
+
+  return result.meltw_relu;
+}
+
+
+LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_metlw_cvtfp32bf16(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+  libxsmm_descriptor_blob blob;
+  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
+    in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
+    0, LIBXSMM_MELTW_OPERATION_CVTFP32BF16);
+
+  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
+
+  return result.meltw_cvtfp32bf16;
 }
 
 

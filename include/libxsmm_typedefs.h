@@ -123,6 +123,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor libxsmm_gemm_descriptor;
 /** Structure storing arguments of the matrix-copy routine. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor libxsmm_mcopy_descriptor;
+/** Structure storing arguments of the matrix-eltw routine. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_descriptor libxsmm_meltw_descriptor;
 /** Structure storing arguments of the transpose routine. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor libxsmm_trans_descriptor;
 /** Structure storing arguments of packed TRSM. */
@@ -155,6 +157,15 @@ typedef enum libxsmm_gemm_precision {
   LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16,
   LIBXSMM_GEMM_PRECISION_I8   = LIBXSMM_DATATYPE_I8
 } libxsmm_gemm_precision;
+
+typedef enum libxsmm_metlw_operation {
+  LIBXSMM_MELTW_OPERATION_COPY        = 0,
+  LIBXSMM_MELTW_OPERATION_ZERO        = 1,
+  LIBXSMM_MELTW_OPERATION_ADD         = 2,
+  LIBXSMM_MELTW_OPERATION_MUL         = 3,
+  LIBXSMM_MELTW_OPERATION_RELU        = 4,
+  LIBXSMM_MELTW_OPERATION_CVTFP32BF16 = 5
+} libxsmm_meltw_operation;
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
@@ -493,25 +504,79 @@ typedef enum libxsmm_kernel_kind {
   LIBXSMM_KERNEL_KIND_MATMUL  = 0,
   /** Matcopy kernel kind */
   LIBXSMM_KERNEL_KIND_MCOPY   = 1,
+  /** Mateltw kernel kind */
+  LIBXSMM_KERNEL_KIND_MELTW   = 2,
   /** Transpose kernel kind */
-  LIBXSMM_KERNEL_KIND_TRANS   = 2,
+  LIBXSMM_KERNEL_KIND_TRANS   = 3,
   /** GEMM/packed kernel kind */
-  LIBXSMM_KERNEL_KIND_PGEMM   = 3,
+  LIBXSMM_KERNEL_KIND_PGEMM   = 4,
   /** GEMM/packed kernel kind */
-  LIBXSMM_KERNEL_KIND_GETRF   = 4,
+  LIBXSMM_KERNEL_KIND_GETRF   = 5,
   /** TRMM kernel kind */
-  LIBXSMM_KERNEL_KIND_TRMM    = 5,
+  LIBXSMM_KERNEL_KIND_TRMM    = 6,
   /** TRSM kernel kind */
-  LIBXSMM_KERNEL_KIND_TRSM    = 6,
+  LIBXSMM_KERNEL_KIND_TRSM    = 7,
   /** User-defined kernels */
-  LIBXSMM_KERNEL_KIND_USER    = 7,
+  LIBXSMM_KERNEL_KIND_USER    = 8,
   /** Not a JIT kernel */
-  LIBXSMM_KERNEL_UNREGISTERED = 8
+  LIBXSMM_KERNEL_UNREGISTERED = 9
 } libxsmm_kernel_kind;
+
+/** argument struct for matrix-eltwise: copy */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_copy_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_copy_param;
+
+/** argument struct for matrix-eltwise: zero */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_zero_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_zero_param;
+
+/** argument struct for matrix-eltwise: add */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_add_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_add_param;
+
+/** argument struct for matrix-eltwise: mul */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_mul_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_mul_param;
+
+/** argument struct for matrix-eltwise: relu */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_relu_param {
+  void* in_ptr;         /* input pointer */
+  void* mask_ptr;       /* pointer to load/store ReLU mask */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_relu_param;
+
+/** argument struct for matrix-eltwise: cvtfp32bf16 */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cvtfp32bf16_param {
+  void* in_ptr;         /* input pointer */
+  void* out_ptr;        /* output pointer */
+} libxsmm_meltw_cvtfp32bf16_param;
 
 /** Specialized function for matrix-copy (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmcopyfunction)(
   const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
+
+/** Specialized function for matrix-eltw (weak-typed). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_copy)(const libxsmm_meltw_copy_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_zero)(const libxsmm_meltw_zero_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_add)(const libxsmm_meltw_add_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_mul)(const libxsmm_meltw_mul_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_relu)(const libxsmm_meltw_relu_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16)(const libxsmm_meltw_cvtfp32bf16_param* in_struct);
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
+  void (*xmeltw)(const void* in_struct);
+  libxsmm_meltwfunction_copy meltw_copy; libxsmm_meltwfunction_zero meltw_zero;
+  libxsmm_meltwfunction_add meltw_add; libxsmm_meltwfunction_mul meltw_mul;
+  libxsmm_meltwfunction_relu meltw_relu; libxsmm_meltwfunction_cvtfp32bf16 meltw_cvtfp32bf16;
+} libxsmm_xmeltwfunction;
 
 /** Specialized function for transpose (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(
@@ -566,6 +631,18 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopykernel_info {
   /** Set of flags. */
   int flags;
 } libxsmm_mcopykernel_info;
+
+/** Structure to receive information about matrix-eltw kernels (libxsmm_get_mcopykernel_info). */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltwkernel_info {
+  /** LDx, M, and N. */
+  unsigned int ldi, ldo, m, n;
+  /** Size of data element. */
+  unsigned int datatype;
+  /** Set of flags. */
+  unsigned int flags;
+  /** Set of operation. */
+  unsigned int operation;
+} libxsmm_meltwkernel_info;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_info {
   libxsmm_kernel_kind kind;

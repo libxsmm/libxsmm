@@ -83,6 +83,18 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo,
   unsigned int ldi, int flags, int prefetch, const int* unroll);
 
+/** Initialize transpose descriptor as used by low-level routines. */
+LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_datatype in_type, libxsmm_datatype out_type,
+  libxsmm_blasint m, libxsmm_blasint n,
+  libxsmm_blasint ldo, libxsmm_blasint ldi,
+  int flags, int operation);
+LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_descriptor_blob* blob,
+  libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
+  libxsmm_blasint m, libxsmm_blasint n,
+  libxsmm_blasint ldo, libxsmm_blasint ldi, libxsmm_blasint ldx, libxsmm_blasint ldy,
+  int flags, int operation);
+
 /** Initialize packed trsm descriptor as used by low-level routines. */
 LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
@@ -240,6 +252,10 @@ LIBXSMM_API
 void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*            io_generated_code,
                                        const libxsmm_mcopy_descriptor*    i_matcopy_desc,
                                        const char*                        i_arch );
+
+LIBXSMM_API
+void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*            io_generated_code,
+                                          const libxsmm_meltw_descriptor*    i_mateltw_desc );
 
 LIBXSMM_API
 void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_generated_code,

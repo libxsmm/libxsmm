@@ -40,6 +40,7 @@
 #include "../src/generator_gemm_sse3_microkernel.c"
 #include "../src/generator_matcopy.c"
 #include "../src/generator_matcopy_avx_avx512.c"
+#include "../src/generator_mateltwise.c"
 #include "../src/generator_packed.c"
 #include "../src/generator_packed_gemm_ac_rm_avx_avx2_avx512.c"
 #include "../src/generator_packed_gemm_avx_avx512.c"
