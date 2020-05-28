@@ -27,8 +27,8 @@ f1.close()
 f2.close()
 END
 
-taskset -c 10 ./kernel ${TESTFILE1} 1 1 0 0 0 1 DP nobr 1 1 1
-taskset -c 10 ./kernel ${TESTFILE2} 1 1 0 0 0 1 DP nobr 1 1 1
+taskset -c 10 ./kernel ${TESTFILE1} 1 1 0 0 0 1 DP nobr 1 0 1 1
+taskset -c 10 ./kernel ${TESTFILE2} 1 1 0 0 0 1 DP nobr 1 0 1 1
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}

@@ -104,7 +104,11 @@ double run_jit_double( const gemm_def*     i_gemm_def,
   if ( i_gemm_def->br_type == 2 ) {
     for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
       l_a_offs[l_r] = l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * sizeof(double);
-      l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * sizeof(double);
+      if (i_gemm_def->trans_b == 0) {
+        l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * sizeof(double);
+      } else {
+        l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k * sizeof(double);
+      }
     }
   }
 
@@ -146,13 +150,25 @@ double run_jit_double( const gemm_def*     i_gemm_def,
     }
   } else if (i_gemm_def->br_type == 3) {
     if (i_gemm_def->br_unroll == 0) {
-      l_test_jit.dmrs = libxsmm_dmmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(double), i_gemm_def->ldb*i_gemm_def->n*sizeof(double),
-                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
-                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      if (i_gemm_def->trans_b == 0) {
+        l_test_jit.dmrs = libxsmm_dmmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(double), i_gemm_def->ldb*i_gemm_def->n*sizeof(double),
+                                                               &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                               &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      } else {
+        l_test_jit.dmrs = libxsmm_dmmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(double), i_gemm_def->ldb*i_gemm_def->k*sizeof(double),
+                                                               &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                               &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      }
     } else {
-      l_test_jit.dmrs = libxsmm_dmmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(double), i_gemm_def->ldb*i_gemm_def->n*sizeof(double), i_gemm_def->br_count,
-                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
-                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      if (i_gemm_def->trans_b == 0) {
+        l_test_jit.dmrs = libxsmm_dmmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(double), i_gemm_def->ldb*i_gemm_def->n*sizeof(double), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      } else {
+        l_test_jit.dmrs = libxsmm_dmmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(double), i_gemm_def->ldb*i_gemm_def->k*sizeof(double), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      }
     }
   } else {
     /* nothing */
@@ -177,7 +193,11 @@ double run_jit_double( const gemm_def*     i_gemm_def,
       for (l_t = 0; l_t < g_reps; l_t++) {
         for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
           l_a_addr[l_r] = (double*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
-          l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+          if (i_gemm_def->trans_b == 0) {
+            l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+          } else {
+            l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
+          }
         }
         l_test_jit.dmra(l_a_addr, l_b_addr, o_c, &l_br);
       }
@@ -199,7 +219,11 @@ double run_jit_double( const gemm_def*     i_gemm_def,
       for (l_t = 0; l_t < g_reps; l_t++) {
         for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
           l_a_addr[l_r] = (double*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
-          l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+          if (i_gemm_def->trans_b == 0) {
+            l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+          } else {
+            l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
+          }
         }
         l_test_jit.dmra(l_a_addr, l_b_addr, o_c, &l_br);
       }
@@ -230,26 +254,105 @@ double run_jit_double( const gemm_def*     i_gemm_def,
 
 
 LIBXSMM_INLINE
-double run_jit_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                      const float*                   i_a,
-                      const float*                   i_b,
-                      float*                         o_c,
-                      const unsigned int             i_br,
-                      const unsigned int             i_print_jit_info ) {
+double run_jit_float( const gemm_def*     i_gemm_def,
+                      const float*        i_a,
+                      const float*        i_b,
+                      float*              o_c,
+                      const unsigned int  i_print_jit_info ) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   double l_jittime, l_runtime;
-  int l_t;
+  size_t l_t, l_r;
+  const float** l_a_addr = (const float**)malloc(i_gemm_def->br_count*sizeof(float*));
+  const float** l_b_addr = (const float**)malloc(i_gemm_def->br_count*sizeof(float*));
+  unsigned long long* l_a_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  unsigned long long* l_b_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  float l_alpha = (float)i_gemm_def->alpha;
+  float l_beta = (float)i_gemm_def->beta;
+  unsigned long long l_br = (unsigned long long)i_gemm_def->br_count;
 
-  if (0 == i_xgemm_desc) {
+  if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
     return EXIT_FAILURE;
   }
 
+  /* setup brgemm offsets */
+  if ( i_gemm_def->br_type == 2 ) {
+    for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+      l_a_offs[l_r] = l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * sizeof(float);
+      if (i_gemm_def->trans_b == 0) {
+        l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * sizeof(float);
+      } else {
+        l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k * sizeof(float);
+      }
+    }
+  }
+
+  /* set up the flags */
+  if ( i_gemm_def->trans_b != 0 ) {
+    l_flags |= LIBXSMM_GEMM_FLAG_TRANS_B;
+  }
+  if ( i_gemm_def->trans_a != 0 ) {
+    fprintf(stderr, "trans_a needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
+  l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+
+
   l_start = libxsmm_timer_tick();
-  l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
+  if (i_gemm_def->br_type == 0) {
+    l_test_jit.smm = libxsmm_smmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                         &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                         &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+  } else if (i_gemm_def->br_type == 1) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.smra = libxsmm_smmdispatch_reducebatch_addr(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.smra = libxsmm_smmdispatch_reducebatch_addr_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 2) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.smro = libxsmm_smmdispatch_reducebatch_offs(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.smro = libxsmm_smmdispatch_reducebatch_offs_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 3) {
+    if (i_gemm_def->br_unroll == 0) {
+      if (i_gemm_def->trans_b == 0) {
+        l_test_jit.smrs = libxsmm_smmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(float), i_gemm_def->ldb*i_gemm_def->n*sizeof(float),
+                                                               &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                               &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      } else {
+        l_test_jit.smrs = libxsmm_smmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(float), i_gemm_def->ldb*i_gemm_def->k*sizeof(float),
+                                                               &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                               &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      }
+    } else {
+      if (i_gemm_def->trans_b == 0) {
+        l_test_jit.smrs = libxsmm_smmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(float), i_gemm_def->ldb*i_gemm_def->n*sizeof(float), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      } else {
+        l_test_jit.smrs = libxsmm_smmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(float), i_gemm_def->ldb*i_gemm_def->k*sizeof(float), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+      }
+    }
+  } else {
+    /* nothing */
+  }
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   if (l_test_jit.xmm == 0) {
@@ -262,12 +365,56 @@ double run_jit_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
 
   l_start = libxsmm_timer_tick();
   if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
-    for (l_t = 0; l_t < g_reps; l_t++) {
-      l_test_jit.smm(i_a, i_b, o_c);
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.smm(i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (float*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          if (i_gemm_def->trans_b == 0) {
+            l_b_addr[l_r] = (float*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+          } else {
+            l_b_addr[l_r] = (float*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
+          }
+        }
+        l_test_jit.smra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.smro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.smrs(i_a, i_b, o_c, &l_br);
+      }
     }
   } else {
-    for (l_t = 0; l_t < g_reps; l_t++) {
-      l_test_jit.smm(i_a, i_b, o_c, i_a, i_b, o_c);
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.smm(i_a, i_b, o_c, i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (float*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          if (i_gemm_def->trans_b == 0) {
+            l_b_addr[l_r] = (float*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+          } else {
+            l_b_addr[l_r] = (float*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
+          }
+        }
+        l_test_jit.smra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.smro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.smrs(i_a, i_b, o_c, &l_br);
+      }
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -277,31 +424,100 @@ double run_jit_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
     printf("%fs for creating jit\n", l_jittime);
   }
 
+  free( l_a_addr );
+  free( l_b_addr );
+  free( l_a_offs );
+  free( l_b_offs );
+
   return l_runtime;
 }
 
 
 LIBXSMM_INLINE
-double run_jit_short_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                          const short*                   i_a,
-                          const short*                   i_b,
-                          int*                           o_c,
-                          const unsigned int             i_br,
-                          const unsigned int             i_print_jit_info ) {
+double run_jit_short_int( const gemm_def*     i_gemm_def,
+                          const short*        i_a,
+                          const short*        i_b,
+                          int*                o_c,
+                          const unsigned int  i_print_jit_info ) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   double l_jittime, l_runtime;
-  int l_t;
+  size_t l_t, l_r;
+  const short** l_a_addr = (const short**)malloc(i_gemm_def->br_count*sizeof(short*));
+  const short** l_b_addr = (const short**)malloc(i_gemm_def->br_count*sizeof(short*));
+  unsigned long long* l_a_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  unsigned long long* l_b_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  int l_alpha = (int)i_gemm_def->alpha;
+  int l_beta = (int)i_gemm_def->beta;
+  unsigned long long l_br = (unsigned long long)i_gemm_def->br_count;
+  l_flags |= LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
 
-  if (0 == i_xgemm_desc) {
+  if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
     return EXIT_FAILURE;
   }
 
+  /* setup brgemm offsets */
+  if ( i_gemm_def->br_type == 2 ) {
+    for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+      l_a_offs[l_r] = l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * sizeof(short);
+      l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * sizeof(short);
+    }
+  }
+
+  /* set up the flags */
+  if ( i_gemm_def->trans_b != 0 ) {
+    fprintf(stderr, "trans_b needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  if ( i_gemm_def->trans_a != 0 ) {
+    fprintf(stderr, "trans_a needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
+  l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+
   l_start = libxsmm_timer_tick();
-  l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
+  if (i_gemm_def->br_type == 0) {
+    l_test_jit.wimm = libxsmm_wimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                         &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                         &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+  } else if (i_gemm_def->br_type == 1) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.wimra = libxsmm_wimmdispatch_reducebatch_addr(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.wimra = libxsmm_wimmdispatch_reducebatch_addr_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 2) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.wimro = libxsmm_wimmdispatch_reducebatch_offs(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.wimro = libxsmm_wimmdispatch_reducebatch_offs_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 3) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.wimrs = libxsmm_wimmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(short), i_gemm_def->ldb*i_gemm_def->n*sizeof(short),
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.wimrs = libxsmm_wimmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(short), i_gemm_def->ldb*i_gemm_def->n*sizeof(short), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else {
+    /* nothing */
+  }
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   if (l_test_jit.xmm == 0) {
@@ -313,13 +529,49 @@ double run_jit_short_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
-  if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.wimm(i_a, i_b, o_c, NULL, NULL, NULL);
+  if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.wimm(i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (short*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (short*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.wimra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.wimro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.wimrs(i_a, i_b, o_c, &l_br);
+      }
     }
   } else {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.wimm(i_a, i_b, o_c, i_a, i_b, o_c);
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.wimm(i_a, i_b, o_c, i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (short*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (short*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.wimra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.wimro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.wimrs(i_a, i_b, o_c, &l_br);
+      }
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -329,31 +581,100 @@ double run_jit_short_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
     printf("%fs for creating jit\n", l_jittime);
   }
 
+  free( l_a_addr );
+  free( l_b_addr );
+  free( l_a_offs );
+  free( l_b_offs );
+
   return l_runtime;
 }
 
 
 LIBXSMM_INLINE
-double run_jit_uschar_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                           const unsigned char*           i_a,
-                           const char*                    i_b,
-                           int*                           o_c,
-                           const unsigned int             i_br,
-                           const unsigned int             i_print_jit_info ) {
+double run_jit_uschar_int( const gemm_def*      i_gemm_def,
+                           const unsigned char* i_a,
+                           const char*          i_b,
+                           int*                 o_c,
+                           const unsigned int   i_print_jit_info ) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   double l_jittime, l_runtime;
-  int l_t;
+  size_t l_t, l_r;
+  const unsigned char** l_a_addr = (const unsigned char**)malloc(i_gemm_def->br_count*sizeof(unsigned char*));
+  const char** l_b_addr = (const char**)malloc(i_gemm_def->br_count*sizeof(char*));
+  unsigned long long* l_a_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  unsigned long long* l_b_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  int l_alpha = (int)i_gemm_def->alpha;
+  int l_beta = (int)i_gemm_def->beta;
+  unsigned long long l_br = (unsigned long long)i_gemm_def->br_count;
+  l_flags |= LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
 
-  if (0 == i_xgemm_desc) {
+  if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
     return EXIT_FAILURE;
   }
 
+  /* setup brgemm offsets */
+  if ( i_gemm_def->br_type == 2 ) {
+    for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+      l_a_offs[l_r] = l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * sizeof(unsigned char);
+      l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * sizeof(char);
+    }
+  }
+
+  /* set up the flags */
+  if ( i_gemm_def->trans_b != 0 ) {
+    fprintf(stderr, "trans_b needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  if ( i_gemm_def->trans_a != 0 ) {
+    fprintf(stderr, "trans_a needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
+  l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+
   l_start = libxsmm_timer_tick();
-  l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
+  if (i_gemm_def->br_type == 0) {
+    l_test_jit.usbimm = libxsmm_usbimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                         &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                         &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+  } else if (i_gemm_def->br_type == 1) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.usbimra = libxsmm_usbimmdispatch_reducebatch_addr(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.usbimra = libxsmm_usbimmdispatch_reducebatch_addr_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 2) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.usbimro = libxsmm_usbimmdispatch_reducebatch_offs(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.usbimro = libxsmm_usbimmdispatch_reducebatch_offs_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 3) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.usbimrs = libxsmm_usbimmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(unsigned char), i_gemm_def->ldb*i_gemm_def->n*sizeof(char),
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.usbimrs = libxsmm_usbimmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(unsigned char), i_gemm_def->ldb*i_gemm_def->n*sizeof(char), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else {
+    /* nothing */
+  }
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   if (l_test_jit.xmm == 0) {
@@ -365,13 +686,49 @@ double run_jit_uschar_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
-  if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.usbimm(i_a, i_b, o_c, NULL, NULL, NULL);
+  if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.usbimm(i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (unsigned char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (char*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.usbimra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.usbimro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.usbimrs(i_a, i_b, o_c, &l_br);
+      }
     }
   } else {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.usbimm(i_a, i_b, o_c, i_a, i_b, o_c);
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.usbimm(i_a, i_b, o_c, i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (unsigned char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (char*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.usbimra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.usbimro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.usbimrs(i_a, i_b, o_c, &l_br);
+      }
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -381,31 +738,100 @@ double run_jit_uschar_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
     printf("%fs for creating jit\n", l_jittime);
   }
 
+  free( l_a_addr );
+  free( l_b_addr );
+  free( l_a_offs );
+  free( l_b_offs );
+
   return l_runtime;
 }
 
 
 LIBXSMM_INLINE
-double run_jit_suchar_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                           const char*                    i_a,
-                           const unsigned char*           i_b,
-                           int*                           o_c,
-                           const unsigned int             i_br,
-                           const unsigned int             i_print_jit_info ) {
+double run_jit_suchar_int( const gemm_def*      i_gemm_def,
+                           const char*          i_a,
+                           const unsigned char* i_b,
+                           int*                 o_c,
+                           const unsigned int   i_print_jit_info ) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   double l_jittime, l_runtime;
-  int l_t;
+  size_t l_t, l_r;
+  const char** l_a_addr = (const char**)malloc(i_gemm_def->br_count*sizeof(char*));
+  const unsigned char** l_b_addr = (const unsigned char**)malloc(i_gemm_def->br_count*sizeof(unsigned char*));
+  unsigned long long* l_a_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  unsigned long long* l_b_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  int l_alpha = (int)i_gemm_def->alpha;
+  int l_beta = (int)i_gemm_def->beta;
+  unsigned long long l_br = (unsigned long long)i_gemm_def->br_count;
+  l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
 
-  if (0 == i_xgemm_desc) {
+  if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
     return EXIT_FAILURE;
   }
 
+  /* setup brgemm offsets */
+  if ( i_gemm_def->br_type == 2 ) {
+    for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+      l_a_offs[l_r] = l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * sizeof(char);
+      l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * sizeof(unsigned char);
+    }
+  }
+
+  /* set up the flags */
+  if ( i_gemm_def->trans_b != 0 ) {
+    fprintf(stderr, "trans_b needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  if ( i_gemm_def->trans_a != 0 ) {
+    fprintf(stderr, "trans_a needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
+  l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+
   l_start = libxsmm_timer_tick();
-  l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
+  if (i_gemm_def->br_type == 0) {
+    l_test_jit.subimm = libxsmm_subimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                         &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                         &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+  } else if (i_gemm_def->br_type == 1) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.subimra = libxsmm_subimmdispatch_reducebatch_addr(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.subimra = libxsmm_subimmdispatch_reducebatch_addr_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 2) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.subimro = libxsmm_subimmdispatch_reducebatch_offs(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.subimro = libxsmm_subimmdispatch_reducebatch_offs_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 3) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.subimrs = libxsmm_subimmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(char), i_gemm_def->ldb*i_gemm_def->n*sizeof(unsigned char),
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.subimrs = libxsmm_subimmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(char), i_gemm_def->ldb*i_gemm_def->n*sizeof(unsigned char), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else {
+    /* nothing */
+  }
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   if (l_test_jit.xmm == 0) {
@@ -417,13 +843,49 @@ double run_jit_suchar_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
-  if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.subimm(i_a, i_b, o_c, NULL, NULL, NULL);
+  if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.subimm(i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (unsigned char*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.subimra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.subimro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.subimrs(i_a, i_b, o_c, &l_br);
+      }
     }
   } else {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.subimm(i_a, i_b, o_c, i_a, i_b, o_c);
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.subimm(i_a, i_b, o_c, i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (unsigned char*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.subimra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.subimro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.subimrs(i_a, i_b, o_c, &l_br);
+      }
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -433,86 +895,113 @@ double run_jit_suchar_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
     printf("%fs for creating jit\n", l_jittime);
   }
 
+  free( l_a_addr );
+  free( l_b_addr );
+  free( l_a_offs );
+  free( l_b_offs );
+
   return l_runtime;
 }
+
 
 #if 0
 LIBXSMM_INLINE
-double run_jit_uschar_uchar( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                             const unsigned char*           i_a,
-                             const char*                    i_b,
-                             unsigned char*                 o_c,
-                             const unsigned int             i_br,
-                             const unsigned int             i_print_jit_info ) {
-  /* define function pointer */
-  libxsmm_xmmfunction l_test_jit;
-  libxsmm_timer_tickint l_start;
-  libxsmm_mmkernel_info l_info;
-  double l_jittime, l_runtime;
-  int l_t;
-  float l_scf = 1.0;
-
-  if (0 == i_xgemm_desc) {
-    fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
-    return EXIT_FAILURE;
-  }
-
-  l_start = libxsmm_timer_tick();
-  l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
-  l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-
-  if (l_test_jit.xmm == 0) {
-    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
-    exit(EXIT_FAILURE);
-  }
-
-  /* receive kernel information */
-  libxsmm_get_mmkernel_info(l_test_jit, &l_info);
-
-  l_start = libxsmm_timer_tick();
-  if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.usbubmm(i_a, i_b, o_c, &l_scf, NULL, NULL, NULL);
-    }
-  } else {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.usbubmm(i_a, i_b, o_c, &l_scf, i_a, i_b, o_c);
-    }
-  }
-  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-
-  if ( i_print_jit_info == 0 ) {
-    printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
-    printf("%fs for creating jit\n", l_jittime);
-  }
-
-  return l_runtime;
+double run_jit_uschar_uchar( const gemm_def*       i_gemm_def,
+                             const unsigned char*  i_a,
+                             const char*           i_b,
+                             unsigned char*        o_c,
+                             const unsigned int    i_print_jit_info ) {
+  return 0.0;
 }
 #endif
 
 
 LIBXSMM_INLINE
-double run_jit_suchar_uchar( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                             const char*                    i_a,
-                             const unsigned char*           i_b,
-                             unsigned char*                 o_c,
-                             float                          i_scf,
-                             const unsigned int             i_br,
-                             const unsigned int             i_print_jit_info ) {
+double run_jit_suchar_uchar( const gemm_def*        i_gemm_def,
+                             const char*            i_a,
+                             const unsigned char*   i_b,
+                             unsigned char*         o_c,
+                             float                  i_scf,
+                             const unsigned int     i_print_jit_info ) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   double l_jittime, l_runtime;
-  int l_t;
+  size_t l_t, l_r;
+  const char** l_a_addr = (const char**)malloc(i_gemm_def->br_count*sizeof(char*));
+  const unsigned char** l_b_addr = (const unsigned char**)malloc(i_gemm_def->br_count*sizeof(unsigned char*));
+  unsigned long long* l_a_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  unsigned long long* l_b_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  int l_alpha = (int)i_gemm_def->alpha;
+  int l_beta = (int)i_gemm_def->beta;
+  unsigned long long l_br = (unsigned long long)i_gemm_def->br_count;
+  l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_C_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
 
-  if (0 == i_xgemm_desc) {
+  if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
     return EXIT_FAILURE;
   }
 
+  /* setup brgemm offsets */
+  if ( i_gemm_def->br_type == 2 ) {
+    for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+      l_a_offs[l_r] = l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * sizeof(char);
+      l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * sizeof(unsigned char);
+    }
+  }
+
+  /* set up the flags */
+  if ( i_gemm_def->trans_b != 0 ) {
+    fprintf(stderr, "trans_b needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  if ( i_gemm_def->trans_a != 0 ) {
+    fprintf(stderr, "trans_a needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
+  l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+
   l_start = libxsmm_timer_tick();
-  l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
+  if (i_gemm_def->br_type == 0) {
+    l_test_jit.sububmm = libxsmm_sububmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                         &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                         &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+  } else if (i_gemm_def->br_type == 1) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.sububmra = libxsmm_sububmmdispatch_reducebatch_addr(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.sububmra = libxsmm_sububmmdispatch_reducebatch_addr_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 2) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.sububmro = libxsmm_sububmmdispatch_reducebatch_offs(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.sububmro = libxsmm_sububmmdispatch_reducebatch_offs_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 3) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.sububmrs = libxsmm_sububmmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(char), i_gemm_def->ldb*i_gemm_def->n*sizeof(unsigned char),
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.sububmrs = libxsmm_sububmmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(char), i_gemm_def->ldb*i_gemm_def->n*sizeof(unsigned char), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else {
+    /* nothing */
+  }
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   if (l_test_jit.xmm == 0) {
@@ -524,13 +1013,49 @@ double run_jit_suchar_uchar( const libxsmm_gemm_descriptor* i_xgemm_desc,
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
-  if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.sububmm(i_a, i_b, o_c, &i_scf, NULL, NULL, NULL);
+  if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.sububmm(i_a, i_b, o_c, &i_scf);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (unsigned char*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.sububmra(l_a_addr, l_b_addr, o_c, &l_br, &i_scf);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.sububmro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs, &i_scf);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.sububmrs(i_a, i_b, o_c, &l_br, &i_scf);
+      }
     }
   } else {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.sububmm(i_a, i_b, o_c, &i_scf, i_a, i_b, o_c);
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.sububmm(i_a, i_b, o_c, &i_scf);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (char*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (unsigned char*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.sububmra(l_a_addr, l_b_addr, o_c, &l_br, &i_scf);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.sububmro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs, &i_scf);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.sububmrs(i_a, i_b, o_c, &l_br, &i_scf);
+      }
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -539,31 +1064,101 @@ double run_jit_suchar_uchar( const libxsmm_gemm_descriptor* i_xgemm_desc,
     printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
     printf("%fs for creating jit\n", l_jittime);
   }
+
+  free( l_a_addr );
+  free( l_b_addr );
+  free( l_a_offs );
+  free( l_b_offs );
 
   return l_runtime;
 }
 
+
 LIBXSMM_INLINE
-double run_jit_bfloat16_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                               const libxsmm_bfloat16*        i_a,
-                               const libxsmm_bfloat16*        i_b,
-                               float*                         o_c,
-                               const unsigned int             i_br,
-                               const unsigned int             i_print_jit_info ) {
+double run_jit_bfloat16_float( const gemm_def*         i_gemm_def,
+                               const libxsmm_bfloat16* i_a,
+                               const libxsmm_bfloat16* i_b,
+                               float*                  o_c,
+                               const unsigned int      i_print_jit_info ) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   double l_jittime, l_runtime;
-  int l_t;
+  size_t l_t, l_r;
+  const libxsmm_bfloat16** l_a_addr = (const libxsmm_bfloat16**)malloc(i_gemm_def->br_count*sizeof(libxsmm_bfloat16*));
+  const libxsmm_bfloat16** l_b_addr = (const libxsmm_bfloat16**)malloc(i_gemm_def->br_count*sizeof(libxsmm_bfloat16*));
+  unsigned long long* l_a_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  unsigned long long* l_b_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  float l_alpha = (float)i_gemm_def->alpha;
+  float l_beta = (float)i_gemm_def->beta;
+  unsigned long long l_br = (unsigned long long)i_gemm_def->br_count;
+  l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
 
-  if (0 == i_xgemm_desc) {
+  if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
     return EXIT_FAILURE;
   }
 
+  /* setup brgemm offsets */
+  if ( i_gemm_def->br_type == 2 ) {
+    for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+      l_a_offs[l_r] = l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * sizeof(libxsmm_bfloat16);
+      l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * sizeof(libxsmm_bfloat16);
+    }
+  }
+
+  /* set up the flags */
+  if ( i_gemm_def->trans_b != 0 ) {
+    fprintf(stderr, "trans_b needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  if ( i_gemm_def->trans_a != 0 ) {
+    fprintf(stderr, "trans_a needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
+  l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+
   l_start = libxsmm_timer_tick();
-  l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
+  if (i_gemm_def->br_type == 0) {
+    l_test_jit.bsmm = libxsmm_bsmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                         &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                         &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+  } else if (i_gemm_def->br_type == 1) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.bsmra = libxsmm_bsmmdispatch_reducebatch_addr(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.bsmra = libxsmm_bsmmdispatch_reducebatch_addr_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 2) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.bsmro = libxsmm_bsmmdispatch_reducebatch_offs(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.bsmro = libxsmm_bsmmdispatch_reducebatch_offs_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 3) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(libxsmm_bfloat16), i_gemm_def->ldb*i_gemm_def->n*sizeof(libxsmm_bfloat16),
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(libxsmm_bfloat16), i_gemm_def->ldb*i_gemm_def->n*sizeof(libxsmm_bfloat16), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else {
+    /* nothing */
+  }
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   if (l_test_jit.xmm == 0) {
@@ -575,13 +1170,49 @@ double run_jit_bfloat16_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
-  if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.bsmm(i_a, i_b, o_c, NULL, NULL, NULL);
+  if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bsmm(i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (libxsmm_bfloat16*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (libxsmm_bfloat16*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.bsmra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bsmro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bsmrs(i_a, i_b, o_c, &l_br);
+      }
     }
   } else {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.bsmm(i_a, i_b, o_c, i_a, i_b, o_c);
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bsmm(i_a, i_b, o_c, i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (libxsmm_bfloat16*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (libxsmm_bfloat16*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.bsmra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bsmro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bsmrs(i_a, i_b, o_c, &l_br);
+      }
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -590,32 +1221,101 @@ double run_jit_bfloat16_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
     printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
     printf("%fs for creating jit\n", l_jittime);
   }
+
+  free( l_a_addr );
+  free( l_b_addr );
+  free( l_a_offs );
+  free( l_b_offs );
 
   return l_runtime;
 }
 
 
 LIBXSMM_INLINE
-double run_jit_bfloat16( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                         const libxsmm_bfloat16*        i_a,
-                         const libxsmm_bfloat16*        i_b,
-                               libxsmm_bfloat16*        o_c,
-                         const unsigned int             i_br,
-                         const unsigned int             i_print_jit_info ) {
+double run_jit_bfloat16( const gemm_def*         i_gemm_def,
+                         const libxsmm_bfloat16* i_a,
+                         const libxsmm_bfloat16* i_b,
+                               libxsmm_bfloat16* o_c,
+                         const unsigned int      i_print_jit_info ) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   double l_jittime, l_runtime;
-  int l_t;
+  size_t l_t, l_r;
+  const libxsmm_bfloat16** l_a_addr = (const libxsmm_bfloat16**)malloc(i_gemm_def->br_count*sizeof(libxsmm_bfloat16*));
+  const libxsmm_bfloat16** l_b_addr = (const libxsmm_bfloat16**)malloc(i_gemm_def->br_count*sizeof(libxsmm_bfloat16*));
+  unsigned long long* l_a_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  unsigned long long* l_b_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  float l_alpha = (float)i_gemm_def->alpha;
+  float l_beta = (float)i_gemm_def->beta;
+  unsigned long long l_br = (unsigned long long)i_gemm_def->br_count;
+  l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
 
-  if (0 == i_xgemm_desc) {
+  if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
     return EXIT_FAILURE;
   }
 
+  /* setup brgemm offsets */
+  if ( i_gemm_def->br_type == 2 ) {
+    for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+      l_a_offs[l_r] = l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * sizeof(libxsmm_bfloat16);
+      l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * sizeof(libxsmm_bfloat16);
+    }
+  }
+
+  /* set up the flags */
+  if ( i_gemm_def->trans_b != 0 ) {
+    fprintf(stderr, "trans_b needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  if ( i_gemm_def->trans_a != 0 ) {
+    fprintf(stderr, "trans_a needs to be 0\n");
+    return EXIT_FAILURE;
+  }
+  l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
+  l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+
   l_start = libxsmm_timer_tick();
-  l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
+  if (i_gemm_def->br_type == 0) {
+    l_test_jit.bmm = libxsmm_bmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                         &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                         &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+  } else if (i_gemm_def->br_type == 1) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.bmra = libxsmm_bmmdispatch_reducebatch_addr(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.bmra = libxsmm_bmmdispatch_reducebatch_addr_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 2) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.bmro = libxsmm_bmmdispatch_reducebatch_offs(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.bmro = libxsmm_bmmdispatch_reducebatch_offs_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->br_count,
+                                                                    &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                    &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else if (i_gemm_def->br_type == 3) {
+    if (i_gemm_def->br_unroll == 0) {
+      l_test_jit.bmrs = libxsmm_bmmdispatch_reducebatch_strd(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(libxsmm_bfloat16), i_gemm_def->ldb*i_gemm_def->n*sizeof(libxsmm_bfloat16),
+                                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                             &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    } else {
+      l_test_jit.bmrs = libxsmm_bmmdispatch_reducebatch_strd_unroll(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k, i_gemm_def->lda*i_gemm_def->k*sizeof(libxsmm_bfloat16), i_gemm_def->ldb*i_gemm_def->n*sizeof(libxsmm_bfloat16), i_gemm_def->br_count,
+                                                                      &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                                                      &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    }
+  } else {
+    /* nothing */
+  }
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   if (l_test_jit.xmm == 0) {
@@ -627,13 +1327,49 @@ double run_jit_bfloat16( const libxsmm_gemm_descriptor* i_xgemm_desc,
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   l_start = libxsmm_timer_tick();
-  if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.bmm(i_a, i_b, o_c, NULL, NULL, NULL);
+  if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bmm(i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (libxsmm_bfloat16*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (libxsmm_bfloat16*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.bmra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bmro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bmrs(i_a, i_b, o_c, &l_br);
+      }
     }
   } else {
-    for ( l_t = 0; l_t < g_reps; l_t++ ) {
-      l_test_jit.bmm(i_a, i_b, o_c, i_a, i_b, o_c);
+    if (i_gemm_def->br_type == 0) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bmm(i_a, i_b, o_c, i_a, i_b, o_c);
+      }
+    } else if (i_gemm_def->br_type == 1) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
+          l_a_addr[l_r] = (libxsmm_bfloat16*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_b_addr[l_r] = (libxsmm_bfloat16*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+        }
+        l_test_jit.bmra(l_a_addr, l_b_addr, o_c, &l_br);
+      }
+    } else if (i_gemm_def->br_type == 2) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bmro(i_a, i_b, o_c, &l_br, l_a_offs, l_b_offs);
+      }
+    } else if (i_gemm_def->br_type == 3) {
+      for (l_t = 0; l_t < g_reps; l_t++) {
+        l_test_jit.bmrs(i_a, i_b, o_c, &l_br);
+      }
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -642,6 +1378,11 @@ double run_jit_bfloat16( const libxsmm_gemm_descriptor* i_xgemm_desc,
     printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
     printf("%fs for creating jit\n", l_jittime);
   }
+
+  free( l_a_addr );
+  free( l_b_addr );
+  free( l_a_offs );
+  free( l_b_offs );
 
   return l_runtime;
 }
@@ -658,11 +1399,9 @@ int main(int argc, char* argv []) {
   double l_beta = 0;
   int l_br = 1;
   int l_br_type = 0;
+  int l_br_unroll = 0;
 
-  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
-  libxsmm_descriptor_blob l_xgemm_blob;
   libxsmm_matdiff_info l_diff;
   gemm_def l_gemm_def;
   size_t l_i = 0, l_j = 0, l_s = 0, l_t = 0, l_r = 0;
@@ -701,7 +1440,7 @@ int main(int argc, char* argv []) {
   libxsmm_matdiff_clear(&l_diff);
 
   /* check argument count for a valid range */
-  if ( argc == 18 ) {
+  if ( argc == 19 ) {
     /* xgemm sizes */
     l_m = atoi(argv[1]);
     l_n = atoi(argv[2]);
@@ -721,7 +1460,8 @@ int main(int argc, char* argv []) {
     /* arch specific stuff */
     l_precision = argv[14];
     l_br = atoi(argv[16]);
-    g_reps = atoi(argv[17]);
+    l_br_unroll = atoi(argv[17]);
+    g_reps = atoi(argv[18]);
 
     /* set value of prefetch flag */
     if (strcmp("nopf", argv[13]) == 0) {
@@ -769,7 +1509,7 @@ int main(int argc, char* argv []) {
 
     l_file_input = 0;
     l_run_check = 1;
-  } else if ( argc == 13 ) {
+  } else if ( argc == 14 ) {
     l_file_input = 1;
     l_file_name = argv[1];
     l_alpha = atof(argv[2]);
@@ -780,6 +1520,7 @@ int main(int argc, char* argv []) {
     l_trans_b = atoi(argv[7]);
     l_precision = argv[8];
     l_br = atoi(argv[10]);
+    l_br_unroll = atoi(argv[11]);
     if (strcmp("nobr", argv[9]) == 0) {
       l_br_type = 0;
     }
@@ -796,8 +1537,8 @@ int main(int argc, char* argv []) {
       print_help();
       return EXIT_FAILURE;
     }
-    g_reps = atoi(argv[11]);
-    l_run_check = atoi(argv[12]);
+    g_reps = atoi(argv[12]);
+    l_run_check = atoi(argv[13]);
     l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   } else {
     print_help();
@@ -806,17 +1547,7 @@ int main(int argc, char* argv []) {
 
   l_br = (l_br < 1) ? 1 : l_br;
   l_br = (l_br_type == 0) ? 1 : l_br;
-
-  if ( l_trans_b != 0 ) {
-    l_flags |= LIBXSMM_GEMM_FLAG_TRANS_B;
-  }
-  if ( l_trans_a != 0 ) {
-    fprintf(stderr, "trans_a needs to be 0\n");
-    return EXIT_FAILURE;
-  }
-
-  l_flags |= (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
-  l_flags |= (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+  l_br_unroll = (l_br_type == 0) ? 0 : l_br_unroll;
 
   /* check alpha */
   if ( LIBXSMM_NEQ(l_alpha, 1.0) ) {
@@ -835,11 +1566,11 @@ int main(int argc, char* argv []) {
   } else {
     if ( l_trans_b == 0 ) {
       printf("------------------------------------------------\n");
-      printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+      printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s, BR=%i\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision, l_br);
       printf("------------------------------------------------\n");
     } else {
       printf("------------------------------------------------\n");
-      printf("RUNNING (%ix%i) X (%ix%i)^T = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+      printf("RUNNING (%ix%i) X (%ix%i)^T = (%ix%i), %s, BR=%i\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision, l_br);
       printf("------------------------------------------------\n");
     }
   }
@@ -873,14 +1604,14 @@ int main(int argc, char* argv []) {
       l_gemm_def.prefetch = l_prefetch;
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
-      l_gemm_def.br_unroll = 0;
+      l_gemm_def.br_unroll = l_br_unroll;
 
       l_a_d = (double*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(double), 64);
       l_b_d = (double*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(double), 64);
       l_c_d = (double*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(double), 64);
       l_c_gold_d = (double*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(double), 64);
       /* touch A */
-      for ( l_r = 0; l_r < l_br; l_r++) {
+      for (l_r = 0; l_r < l_br; l_r++) {
         for (l_i = 0; l_i < l_lda; l_i++) {
           for (l_j = 0; l_j < l_k; l_j++) {
             l_a_d[(l_r * l_lda * l_k) + ((l_j * l_lda) + l_i)] = libxsmm_rng_f64();
@@ -888,7 +1619,7 @@ int main(int argc, char* argv []) {
         }
       }
       /* touch B */
-      for ( l_r = 0; l_r < l_br; l_r++) {
+      for (l_r = 0; l_r < l_br; l_r++) {
         for (l_i = 0; l_i < l_ldb; l_i++) {
           for (l_j = 0; l_j < l_n; l_j++) {
             l_b_d[(l_r * l_ldb * l_n) + ((l_j * l_ldb) + l_i)] = libxsmm_rng_f64();
@@ -973,24 +1704,28 @@ int main(int argc, char* argv []) {
       l_gemm_def.aligned_a = l_aligned_a;
       l_gemm_def.aligned_c = l_aligned_c;
       l_gemm_def.prefetch = l_prefetch;
-      l_gemm_def.br_type = 0;
-      l_gemm_def.br_count = 1;
-      l_gemm_def.br_unroll = 0;
+      l_gemm_def.br_type = l_br_type;
+      l_gemm_def.br_count = l_br;
+      l_gemm_def.br_unroll = l_br_unroll;
 
-      l_a_d = (double*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(double), 64);
-      l_b_d = (double*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * sizeof(double), 64);
+      l_a_d = (double*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(double), 64);
+      l_b_d = (double*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * (size_t)l_br * sizeof(double), 64);
       l_c_d = (double*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(double), 64);
       l_c_gold_d = (double*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(double), 64);
       /* touch A */
-      for (l_i = 0; l_i < l_lda; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          l_a_d[(l_j * l_lda) + l_i] = libxsmm_rng_f64();
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_lda; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            l_a_d[(l_r * l_lda * l_k) + (l_j * l_lda) + l_i] = libxsmm_rng_f64();
+          }
         }
       }
       /* touch B */
-      for (l_i = 0; l_i < l_ldb; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          l_b_d[(l_j * l_ldb) + l_i] = libxsmm_rng_f64();
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_ldb; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            l_b_d[(l_r * l_ldb * l_k) + (l_j * l_ldb) + l_i] = libxsmm_rng_f64();
+          }
         }
       }
       /* touch C */
@@ -1006,10 +1741,13 @@ int main(int argc, char* argv []) {
       if ( l_run_check == 1 ) {
         l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
-          for (l_j = 0; l_j < l_n; l_j++) {
-            for (l_s = 0; l_s < l_k; l_s++) {
-              for (l_i = 0; l_i < l_m; l_i++) {
-                l_c_gold_d[(l_j * l_ldc) + l_i] += l_a_d[(l_s * l_lda) + l_i] * l_b_d[(l_s * l_ldb) + l_j];
+          for (l_r = 0; l_r < l_br; l_r++) {
+            for (l_j = 0; l_j < l_n; l_j++) {
+              for (l_s = 0; l_s < l_k; l_s++) {
+                for (l_i = 0; l_i < l_m; l_i++) {
+                  l_c_gold_d[(l_j * l_ldc) + l_i] += l_a_d[(l_r * l_lda * l_k) + (l_s * l_lda) + l_i] *
+                                                     l_b_d[(l_r * l_ldb * l_k) + (l_s * l_ldb) + l_j];
+                }
               }
             }
           }
@@ -1020,15 +1758,15 @@ int main(int argc, char* argv []) {
 
       if ( l_file_input == 0 ) {
         printf("%fs for C\n", l_runtime_c);
-        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_c * 1.0e9));
+        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_c * 1.0e9));
         printf("%fs for libxsmm\n", l_runtime_libxsmm);
-        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1055,22 +1793,42 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-      l_a_f = (float*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(float), 64);
-      l_b_f = (float*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(float), 64);
+
+      l_gemm_def.m = l_m;
+      l_gemm_def.n = l_n;
+      l_gemm_def.k = l_k;
+      l_gemm_def.lda = l_lda;
+      l_gemm_def.ldb = l_ldb;
+      l_gemm_def.ldc = l_ldc;
+      l_gemm_def.alpha = l_alpha;
+      l_gemm_def.beta = l_beta;
+      l_gemm_def.trans_a = l_trans_a;
+      l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.aligned_a = l_aligned_a;
+      l_gemm_def.aligned_c = l_aligned_c;
+      l_gemm_def.prefetch = l_prefetch;
+      l_gemm_def.br_type = l_br_type;
+      l_gemm_def.br_count = l_br;
+      l_gemm_def.br_unroll = l_br_unroll;
+
+      l_a_f = (float*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(float), 64);
+      l_b_f = (float*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(float), 64);
       l_c_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
       l_c_gold_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
       /* touch A */
-      for (l_i = 0; l_i < l_lda; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          l_a_f[(l_j * l_lda) + l_i] = (float)libxsmm_rng_f64();
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_lda; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            l_a_f[(l_r * l_lda * l_k) + (l_j * l_lda) + l_i] = (float)libxsmm_rng_f64();
+          }
         }
       }
       /* touch B */
-      for (l_i = 0; l_i < l_ldb; l_i++) {
-        for (l_j = 0; l_j < l_n; l_j++) {
-          l_b_f[(l_j * l_ldb) + l_i] = (float)libxsmm_rng_f64();
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_ldb; l_i++) {
+          for (l_j = 0; l_j < l_n; l_j++) {
+            l_b_f[(l_r * l_ldb * l_n) + (l_j * l_ldb) + l_i] = (float)libxsmm_rng_f64();
+          }
         }
       }
       /* touch C */
@@ -1081,15 +1839,18 @@ int main(int argc, char* argv []) {
         }
       }
 
-      l_runtime_libxsmm = run_jit_float( l_xgemm_desc, l_a_f, l_b_f, l_c_f, l_br, l_file_input );
+      l_runtime_libxsmm = run_jit_float( &l_gemm_def, l_a_f, l_b_f, l_c_f, l_file_input );
 
       if ( l_run_check == 1 ) {
         l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
-          for (l_j = 0; l_j < l_n; l_j++) {
-            for (l_s = 0; l_s < l_k; l_s++) {
-              for (l_i = 0; l_i < l_m; l_i++) {
-                l_c_gold_f[(l_j * l_ldc) + l_i] += l_a_f[(l_s * l_lda) + l_i] * l_b_f[(l_j * l_ldb) + l_s];
+          for (l_r = 0; l_r < l_br; l_r++) {
+            for (l_j = 0; l_j < l_n; l_j++) {
+              for (l_s = 0; l_s < l_k; l_s++) {
+                for (l_i = 0; l_i < l_m; l_i++) {
+                  l_c_gold_f[(l_j * l_ldc) + l_i] += l_a_f[(l_r * l_lda * l_k) + (l_s * l_lda) + l_i] *
+                                                     l_b_f[(l_r * l_ldb * l_n) + (l_j * l_ldb) + l_s];
+                }
               }
             }
           }
@@ -1100,15 +1861,15 @@ int main(int argc, char* argv []) {
 
       if ( l_file_input == 0 ) {
         printf("%fs for C\n", l_runtime_c);
-        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_c * 1.0e9));
+        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_c * 1.0e9));
         printf("%fs for libxsmm\n", l_runtime_libxsmm);
-        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1135,22 +1896,42 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-      l_a_f = (float*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(float), 64);
-      l_b_f = (float*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * sizeof(float), 64);
+
+      l_gemm_def.m = l_m;
+      l_gemm_def.n = l_n;
+      l_gemm_def.k = l_k;
+      l_gemm_def.lda = l_lda;
+      l_gemm_def.ldb = l_ldb;
+      l_gemm_def.ldc = l_ldc;
+      l_gemm_def.alpha = l_alpha;
+      l_gemm_def.beta = l_beta;
+      l_gemm_def.trans_a = l_trans_a;
+      l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.aligned_a = l_aligned_a;
+      l_gemm_def.aligned_c = l_aligned_c;
+      l_gemm_def.prefetch = l_prefetch;
+      l_gemm_def.br_type = l_br_type;
+      l_gemm_def.br_count = l_br;
+      l_gemm_def.br_unroll = l_br_unroll;
+
+      l_a_f = (float*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(float), 64);
+      l_b_f = (float*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * (size_t)l_br * sizeof(float), 64);
       l_c_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
       l_c_gold_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
       /* touch A */
-      for (l_i = 0; l_i < l_lda; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          l_a_f[(l_j * l_lda) + l_i] = (float)libxsmm_rng_f64();
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_lda; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            l_a_f[(l_r * l_lda * l_k) + (l_j * l_lda) + l_i] = (float)libxsmm_rng_f64();
+          }
         }
       }
       /* touch B */
-      for (l_i = 0; l_i < l_ldb; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          l_b_f[(l_j * l_ldb) + l_i] = (float)libxsmm_rng_f64();
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_ldb; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            l_b_f[(l_r * l_ldb * l_k) + (l_j * l_ldb) + l_i] = (float)libxsmm_rng_f64();
+          }
         }
       }
       /* touch C */
@@ -1161,15 +1942,18 @@ int main(int argc, char* argv []) {
         }
       }
 
-      l_runtime_libxsmm = run_jit_float( l_xgemm_desc, l_a_f, l_b_f, l_c_f, l_br, l_file_input );
+      l_runtime_libxsmm = run_jit_float( &l_gemm_def, l_a_f, l_b_f, l_c_f, l_file_input );
 
       if ( l_run_check == 1 ) {
         l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
-          for (l_j = 0; l_j < l_n; l_j++) {
-            for (l_s = 0; l_s < l_k; l_s++) {
-              for (l_i = 0; l_i < l_m; l_i++) {
-                l_c_gold_f[(l_j * l_ldc) + l_i] += l_a_f[(l_s * l_lda) + l_i] * l_b_f[(l_s * l_ldb) + l_j];
+          for (l_r = 0; l_r < l_br; l_r++) {
+            for (l_j = 0; l_j < l_n; l_j++) {
+              for (l_s = 0; l_s < l_k; l_s++) {
+                for (l_i = 0; l_i < l_m; l_i++) {
+                  l_c_gold_f[(l_j * l_ldc) + l_i] += l_a_f[(l_r * l_lda * l_k) + (l_s * l_lda) + l_i] *
+                                                     l_b_f[(l_r * l_ldb * l_k) + (l_s * l_ldb) + l_j];
+                }
               }
             }
           }
@@ -1180,15 +1964,15 @@ int main(int argc, char* argv []) {
 
       if ( l_file_input == 0 ) {
         printf("%fs for C\n", l_runtime_c);
-        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_c * 1.0e9));
+        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_c * 1.0e9));
         printf("%fs for libxsmm\n", l_runtime_libxsmm);
-        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1217,25 +2001,43 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
-        LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_I32,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-      l_a_w = (short*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(short), 64);
-      l_b_w = (short*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(short), 64);
+
+      l_gemm_def.m = l_m;
+      l_gemm_def.n = l_n;
+      l_gemm_def.k = l_k;
+      l_gemm_def.lda = l_lda;
+      l_gemm_def.ldb = l_ldb;
+      l_gemm_def.ldc = l_ldc;
+      l_gemm_def.alpha = l_alpha;
+      l_gemm_def.beta = l_beta;
+      l_gemm_def.trans_a = l_trans_a;
+      l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.aligned_a = l_aligned_a;
+      l_gemm_def.aligned_c = l_aligned_c;
+      l_gemm_def.prefetch = l_prefetch;
+      l_gemm_def.br_type = l_br_type;
+      l_gemm_def.br_count = l_br;
+      l_gemm_def.br_unroll = l_br_unroll;
+
+      l_a_w = (short*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(short), 64);
+      l_b_w = (short*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(short), 64);
       l_c_w_i = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
       l_c_gold_w_i = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
 
       /* touch A */
-      for (l_i = 0; l_i < l_lda; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          l_a_w[(l_j * l_lda) + l_i] = (short)(libxsmm_rng_f64() * 10.0);
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_lda; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            l_a_w[(l_r * l_lda * l_k) + (l_j * l_lda) + l_i] = (short)(libxsmm_rng_f64() * 10.0);
+          }
         }
       }
       /* touch B */
-      for (l_i = 0; l_i < l_ldb; l_i++) {
-        for (l_j = 0; l_j < l_n; l_j++) {
-          l_b_w[(l_j * l_ldb) + l_i] = (short)(libxsmm_rng_f64() * 10.0);
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_ldb; l_i++) {
+          for (l_j = 0; l_j < l_n; l_j++) {
+            l_b_w[(l_r * l_ldb * l_n) + (l_j * l_ldb) + l_i] = (short)(libxsmm_rng_f64() * 10.0);
+          }
         }
       }
       /* touch C */
@@ -1246,16 +2048,19 @@ int main(int argc, char* argv []) {
         }
       }
 
-      l_runtime_libxsmm = run_jit_short_int(l_xgemm_desc, l_a_w, l_b_w, l_c_w_i, l_br, l_file_input );
+      l_runtime_libxsmm = run_jit_short_int( &l_gemm_def, l_a_w, l_b_w, l_c_w_i, l_file_input );
 
       if ( l_run_check == 1 ) {
         l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
-          for (l_j = 0; l_j < l_n; l_j++) {
-            for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-              for (l_i = 0; l_i < l_m; l_i++) {
-                for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-                  l_c_gold_w_i[(l_j * l_ldc) + l_i] += l_a_w[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] * l_b_w[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+          for (l_r = 0; l_r < l_br; l_r++) {
+            for (l_j = 0; l_j < l_n; l_j++) {
+              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
+                for (l_i = 0; l_i < l_m; l_i++) {
+                  for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+                    l_c_gold_w_i[(l_j * l_ldc) + l_i] += l_a_w[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                                                         l_b_w[(l_r * l_ldb * l_n) + (l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+                  }
                 }
               }
             }
@@ -1273,15 +2078,15 @@ int main(int argc, char* argv []) {
 
       if ( l_file_input == 0 ) {
         printf("%fs for C\n", l_runtime_c);
-        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_c * 1.0e9));
+        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_c * 1.0e9));
         printf("%fs for libxsmm\n", l_runtime_libxsmm);
-        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9));
-        printf("max. error: %f\n", l_max_error);
+        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_max_error );
+          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1310,25 +2115,43 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_flags |= LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
-        LIBXSMM_GEMM_PRECISION_I8, LIBXSMM_GEMM_PRECISION_I32,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-      l_ua_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(unsigned char), 64);
-      l_sb_b = (char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(char), 64);
+
+      l_gemm_def.m = l_m;
+      l_gemm_def.n = l_n;
+      l_gemm_def.k = l_k;
+      l_gemm_def.lda = l_lda;
+      l_gemm_def.ldb = l_ldb;
+      l_gemm_def.ldc = l_ldc;
+      l_gemm_def.alpha = l_alpha;
+      l_gemm_def.beta = l_beta;
+      l_gemm_def.trans_a = l_trans_a;
+      l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.aligned_a = l_aligned_a;
+      l_gemm_def.aligned_c = l_aligned_c;
+      l_gemm_def.prefetch = l_prefetch;
+      l_gemm_def.br_type = l_br_type;
+      l_gemm_def.br_count = l_br;
+      l_gemm_def.br_unroll = l_br_unroll;
+
+      l_ua_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(unsigned char), 64);
+      l_sb_b = (char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(char), 64);
       l_c_b_i = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
       l_c_gold_b_i = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
 
       /* touch A */
-      for (l_i = 0; l_i < l_lda; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          l_ua_b[(l_j * l_lda) + l_i] = (unsigned char)(libxsmm_rng_f64() * 5.0);
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_lda; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            l_ua_b[(l_r * l_lda * l_k) + (l_j * l_lda) + l_i] = (unsigned char)(libxsmm_rng_f64() * 5.0);
+          }
         }
       }
       /* touch B */
-      for (l_i = 0; l_i < l_ldb; l_i++) {
-        for (l_j = 0; l_j < l_n; l_j++) {
-          l_sb_b[(l_j * l_ldb) + l_i] = (char)(libxsmm_rng_f64() * 5.0);
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_ldb; l_i++) {
+          for (l_j = 0; l_j < l_n; l_j++) {
+            l_sb_b[(l_r * l_ldb * l_n) + (l_j * l_ldb) + l_i] = (char)(libxsmm_rng_f64() * 5.0);
+          }
         }
       }
       /* touch C */
@@ -1339,16 +2162,19 @@ int main(int argc, char* argv []) {
         }
       }
 
-      l_runtime_libxsmm = run_jit_uschar_int(l_xgemm_desc, l_ua_b, l_sb_b, l_c_b_i, l_br, l_file_input );
+      l_runtime_libxsmm = run_jit_uschar_int( &l_gemm_def, l_ua_b, l_sb_b, l_c_b_i, l_file_input );
 
       if ( l_run_check == 1 ) {
         l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
-          for (l_j = 0; l_j < l_n; l_j++) {
-            for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-              for (l_i = 0; l_i < l_m; l_i++) {
-                for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-                  l_c_gold_b_i[(l_j * l_ldc) + l_i] += l_ua_b[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] * l_sb_b[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+          for (l_r = 0; l_r < l_br; l_r++) {
+            for (l_j = 0; l_j < l_n; l_j++) {
+              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
+                for (l_i = 0; l_i < l_m; l_i++) {
+                  for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+                    l_c_gold_b_i[(l_j * l_ldc) + l_i] += l_ua_b[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                                                         l_sb_b[(l_r * l_ldb * l_n) + (l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+                  }
                 }
               }
             }
@@ -1366,15 +2192,15 @@ int main(int argc, char* argv []) {
 
       if ( l_file_input == 0 ) {
         printf("%fs for C\n", l_runtime_c);
-        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_c * 1.0e9));
+        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_c * 1.0e9));
         printf("%fs for libxsmm\n", l_runtime_libxsmm);
-        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9));
-        printf("max. error: %f\n", l_max_error);
+        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_max_error );
+          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1403,25 +2229,43 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
-        LIBXSMM_GEMM_PRECISION_I8, LIBXSMM_GEMM_PRECISION_I32,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-      l_sa_b = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(char), 64);
-      l_ub_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(unsigned char), 64);
+
+      l_gemm_def.m = l_m;
+      l_gemm_def.n = l_n;
+      l_gemm_def.k = l_k;
+      l_gemm_def.lda = l_lda;
+      l_gemm_def.ldb = l_ldb;
+      l_gemm_def.ldc = l_ldc;
+      l_gemm_def.alpha = l_alpha;
+      l_gemm_def.beta = l_beta;
+      l_gemm_def.trans_a = l_trans_a;
+      l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.aligned_a = l_aligned_a;
+      l_gemm_def.aligned_c = l_aligned_c;
+      l_gemm_def.prefetch = l_prefetch;
+      l_gemm_def.br_type = l_br_type;
+      l_gemm_def.br_count = l_br;
+      l_gemm_def.br_unroll = l_br_unroll;
+
+      l_sa_b = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(char), 64);
+      l_ub_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(unsigned char), 64);
       l_c_b_i = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
       l_c_gold_b_i = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
 
       /* touch A */
-      for (l_i = 0; l_i < l_lda; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          l_sa_b[(l_j * l_lda) + l_i] = (char)(libxsmm_rng_f64() * 5.0);
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_lda; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            l_sa_b[(l_r * l_lda * l_k) + (l_j * l_lda) + l_i] = (char)(libxsmm_rng_f64() * 5.0);
+          }
         }
       }
       /* touch B */
-      for (l_i = 0; l_i < l_ldb; l_i++) {
-        for (l_j = 0; l_j < l_n; l_j++) {
-          l_ub_b[(l_j * l_ldb) + l_i] = (unsigned char)(libxsmm_rng_f64() * 5.0);
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_ldb; l_i++) {
+          for (l_j = 0; l_j < l_n; l_j++) {
+            l_ub_b[(l_r * l_ldb * l_n) + (l_j * l_ldb) + l_i] = (unsigned char)(libxsmm_rng_f64() * 5.0);
+          }
         }
       }
       /* touch C */
@@ -1432,16 +2276,19 @@ int main(int argc, char* argv []) {
         }
       }
 
-      l_runtime_libxsmm = run_jit_suchar_int(l_xgemm_desc, l_sa_b, l_ub_b, l_c_b_i, l_br, l_file_input );
+      l_runtime_libxsmm = run_jit_suchar_int( &l_gemm_def, l_sa_b, l_ub_b, l_c_b_i, l_file_input );
 
       if ( l_run_check == 1 ) {
         l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
-          for (l_j = 0; l_j < l_n; l_j++) {
-            for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-              for (l_i = 0; l_i < l_m; l_i++) {
-                for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-                  l_c_gold_b_i[(l_j * l_ldc) + l_i] += l_sa_b[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] * l_ub_b[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+          for (l_r = 0; l_r < l_br; l_r++) {
+            for (l_j = 0; l_j < l_n; l_j++) {
+              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
+                for (l_i = 0; l_i < l_m; l_i++) {
+                  for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+                    l_c_gold_b_i[(l_j * l_ldc) + l_i] += l_sa_b[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                                                         l_ub_b[(l_r * l_ldb * l_n) + (l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+                  }
                 }
               }
             }
@@ -1459,15 +2306,15 @@ int main(int argc, char* argv []) {
 
       if ( l_file_input == 0 ) {
         printf("%fs for C\n", l_runtime_c);
-        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_c * 1.0e9));
+        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_c * 1.0e9));
         printf("%fs for libxsmm\n", l_runtime_libxsmm);
-        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9));
-        printf("max. error: %f\n", l_max_error);
+        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_max_error );
+          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1496,25 +2343,43 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_flags |= LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_C_UNSIGNED | LIBXSMM_GEMM_FLAG_VNNI_A;
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
-        LIBXSMM_GEMM_PRECISION_I8, LIBXSMM_GEMM_PRECISION_I8,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-      l_sa_b = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(char), 64);
-      l_ub_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(unsigned char), 64);
+
+      l_gemm_def.m = l_m;
+      l_gemm_def.n = l_n;
+      l_gemm_def.k = l_k;
+      l_gemm_def.lda = l_lda;
+      l_gemm_def.ldb = l_ldb;
+      l_gemm_def.ldc = l_ldc;
+      l_gemm_def.alpha = l_alpha;
+      l_gemm_def.beta = l_beta;
+      l_gemm_def.trans_a = l_trans_a;
+      l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.aligned_a = l_aligned_a;
+      l_gemm_def.aligned_c = l_aligned_c;
+      l_gemm_def.prefetch = l_prefetch;
+      l_gemm_def.br_type = l_br_type;
+      l_gemm_def.br_count = l_br;
+      l_gemm_def.br_unroll = l_br_unroll;
+
+      l_sa_b = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(char), 64);
+      l_ub_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(unsigned char), 64);
       l_c_b_ub = (unsigned char*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(unsigned char), 64);
       l_c_gold_b_ub = (unsigned char*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(unsigned char), 64);
 
       /* touch A */
-      for (l_i = 0; l_i < l_lda; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          l_sa_b[(l_j * l_lda) + l_i] = (char)(libxsmm_rng_f64() * 2.0);
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_lda; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            l_sa_b[(l_r * l_lda * l_k) + (l_j * l_lda) + l_i] = (char)(libxsmm_rng_f64() * 2.0);
+          }
         }
       }
       /* touch B */
-      for (l_i = 0; l_i < l_ldb; l_i++) {
-        for (l_j = 0; l_j < l_n; l_j++) {
-          l_ub_b[(l_j * l_ldb) + l_i] = (unsigned char)(libxsmm_rng_f64() * 2.0);
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_ldb; l_i++) {
+          for (l_j = 0; l_j < l_n; l_j++) {
+            l_ub_b[(l_r * l_ldb * l_n) + (l_j * l_ldb) + l_i] = (unsigned char)(libxsmm_rng_f64() * 2.0);
+          }
         }
       }
       /* touch C */
@@ -1525,23 +2390,26 @@ int main(int argc, char* argv []) {
         }
       }
 
-      l_runtime_libxsmm = run_jit_suchar_uchar(l_xgemm_desc, l_sa_b, l_ub_b, l_c_b_ub, l_scf, l_br, l_file_input );
+      l_runtime_libxsmm = run_jit_suchar_uchar( &l_gemm_def, l_sa_b, l_ub_b, l_c_b_ub, l_scf, l_file_input );
 
       if ( l_run_check == 1 ) {
         l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
-          for (l_j = 0; l_j < l_n; l_j++) {
-            for (l_i = 0; l_i < l_m; l_i++) {
-              int tmp = (int)l_c_gold_b_ub[(l_j * l_ldc) + l_i];
-              float ftmp;
-              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-                for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-                  tmp += l_sa_b[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] * l_ub_b[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+          for (l_r = 0; l_r < l_br; l_r++) {
+            for (l_j = 0; l_j < l_n; l_j++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                int tmp = (int)l_c_gold_b_ub[(l_j * l_ldc) + l_i];
+                float ftmp;
+                for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
+                  for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+                    tmp += l_sa_b[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                           l_ub_b[(l_r * l_ldb * l_n) + (l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+                  }
                 }
+                ftmp = (float)tmp;
+                ftmp *= l_scf;
+                l_c_gold_b_ub[(l_j * l_ldc) + l_i] = (unsigned char)ftmp;
               }
-              ftmp = (float)tmp;
-              ftmp *= l_scf;
-              l_c_gold_b_ub[(l_j * l_ldc) + l_i] = (unsigned char)ftmp;
             }
           }
         }
@@ -1557,15 +2425,15 @@ int main(int argc, char* argv []) {
 
       if ( l_file_input == 0 ) {
         printf("%fs for C\n", l_runtime_c);
-        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_c * 1.0e9));
+        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_c * 1.0e9));
         printf("%fs for libxsmm\n", l_runtime_libxsmm);
-        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9));
-        printf("max. error: %f\n", l_max_error);
+        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_max_error );
+          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1594,28 +2462,46 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
-        LIBXSMM_GEMM_PRECISION_BF16, LIBXSMM_GEMM_PRECISION_F32,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-      l_a_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(libxsmm_bfloat16), 64);
-      l_b_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(libxsmm_bfloat16), 64);
+
+      l_gemm_def.m = l_m;
+      l_gemm_def.n = l_n;
+      l_gemm_def.k = l_k;
+      l_gemm_def.lda = l_lda;
+      l_gemm_def.ldb = l_ldb;
+      l_gemm_def.ldc = l_ldc;
+      l_gemm_def.alpha = l_alpha;
+      l_gemm_def.beta = l_beta;
+      l_gemm_def.trans_a = l_trans_a;
+      l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.aligned_a = l_aligned_a;
+      l_gemm_def.aligned_c = l_aligned_c;
+      l_gemm_def.prefetch = l_prefetch;
+      l_gemm_def.br_type = l_br_type;
+      l_gemm_def.br_count = l_br;
+      l_gemm_def.br_unroll = l_br_unroll;
+
+      l_a_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(libxsmm_bfloat16), 64);
+      l_b_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(libxsmm_bfloat16), 64);
       l_c_bf_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
       l_c_gold_bf_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
       /* touch A */
-      for (l_i = 0; l_i < l_lda; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          union libxsmm_bfloat16_hp tmp;
-          tmp.f = (float)libxsmm_rng_f64();
-          l_a_bf[(l_j * l_lda) + l_i] = tmp.i[1];
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_lda; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            union libxsmm_bfloat16_hp tmp;
+            tmp.f = (float)libxsmm_rng_f64();
+            l_a_bf[(l_r * l_lda * l_k) + (l_j * l_lda) + l_i] = tmp.i[1];
+          }
         }
       }
       /* touch B */
-      for (l_i = 0; l_i < l_ldb; l_i++) {
-        for (l_j = 0; l_j < l_n; l_j++) {
-          union libxsmm_bfloat16_hp tmp;
-          tmp.f = (float)libxsmm_rng_f64();
-          l_b_bf[(l_j * l_ldb) + l_i] = tmp.i[1];
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_ldb; l_i++) {
+          for (l_j = 0; l_j < l_n; l_j++) {
+            union libxsmm_bfloat16_hp tmp;
+            tmp.f = (float)libxsmm_rng_f64();
+            l_b_bf[(l_r * l_ldb * l_n) + (l_j * l_ldb) + l_i] = tmp.i[1];
+          }
         }
       }
       /* touch C */
@@ -1626,22 +2512,24 @@ int main(int argc, char* argv []) {
         }
       }
 
-      l_runtime_libxsmm = run_jit_bfloat16_float(l_xgemm_desc, l_a_bf, l_b_bf, l_c_bf_f, l_br, l_file_input );
+      l_runtime_libxsmm = run_jit_bfloat16_float( &l_gemm_def, l_a_bf, l_b_bf, l_c_bf_f, l_file_input );
 
       if ( l_run_check == 1 ) {
         l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
-          for (l_j = 0; l_j < l_n; l_j++) {
-            for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-              for (l_i = 0; l_i < l_m; l_i++) {
-                for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-                  union libxsmm_bfloat16_hp tmp_a_f;
-                  union libxsmm_bfloat16_hp tmp_b_f;
-                  tmp_a_f.i[1] = l_a_bf[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2];
-                  tmp_a_f.i[0] = 0;
-                  tmp_b_f.i[1] = l_b_bf[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
-                  tmp_b_f.i[0] = 0;
-                  l_c_gold_bf_f[(l_j * l_ldc) + l_i] += (float)(tmp_a_f.f * tmp_b_f.f);
+          for (l_r = 0; l_r < l_br; l_r++) {
+            for (l_j = 0; l_j < l_n; l_j++) {
+              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
+                for (l_i = 0; l_i < l_m; l_i++) {
+                  for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+                    union libxsmm_bfloat16_hp tmp_a_f;
+                    union libxsmm_bfloat16_hp tmp_b_f;
+                    tmp_a_f.i[1] = l_a_bf[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+                    tmp_a_f.i[0] = 0;
+                    tmp_b_f.i[1] = l_b_bf[(l_r * l_ldb * l_n) + (l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+                    tmp_b_f.i[0] = 0;
+                    l_c_gold_bf_f[(l_j * l_ldc) + l_i] += (float)(tmp_a_f.f * tmp_b_f.f);
+                  }
                 }
               }
             }
@@ -1659,15 +2547,15 @@ int main(int argc, char* argv []) {
 
       if ( l_file_input == 0 ) {
         printf("%fs for C\n", l_runtime_c);
-        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_c * 1.0e9));
+        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_c * 1.0e9));
         printf("%fs for libxsmm\n", l_runtime_libxsmm);
-        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9));
-        printf("max. error: %f\n", l_max_error);
+        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_max_error );
+          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1696,28 +2584,46 @@ int main(int argc, char* argv []) {
         }
         if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
-      l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
-      l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
-        LIBXSMM_GEMM_PRECISION_BF16, LIBXSMM_GEMM_PRECISION_BF16,
-        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-      l_a_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(libxsmm_bfloat16), 64);
-      l_b_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(libxsmm_bfloat16), 64);
+
+      l_gemm_def.m = l_m;
+      l_gemm_def.n = l_n;
+      l_gemm_def.k = l_k;
+      l_gemm_def.lda = l_lda;
+      l_gemm_def.ldb = l_ldb;
+      l_gemm_def.ldc = l_ldc;
+      l_gemm_def.alpha = l_alpha;
+      l_gemm_def.beta = l_beta;
+      l_gemm_def.trans_a = l_trans_a;
+      l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.aligned_a = l_aligned_a;
+      l_gemm_def.aligned_c = l_aligned_c;
+      l_gemm_def.prefetch = l_prefetch;
+      l_gemm_def.br_type = l_br_type;
+      l_gemm_def.br_count = l_br;
+      l_gemm_def.br_unroll = l_br_unroll;
+
+      l_a_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(libxsmm_bfloat16), 64);
+      l_b_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(libxsmm_bfloat16), 64);
       l_c_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(libxsmm_bfloat16), 64);
       l_c_gold_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(libxsmm_bfloat16), 64);
       /* touch A */
-      for (l_i = 0; l_i < l_lda; l_i++) {
-        for (l_j = 0; l_j < l_k; l_j++) {
-          union libxsmm_bfloat16_hp tmp;
-          tmp.f = (float)libxsmm_rng_f64();
-          l_a_bf[(l_j * l_lda) + l_i] = tmp.i[1];
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_lda; l_i++) {
+          for (l_j = 0; l_j < l_k; l_j++) {
+            union libxsmm_bfloat16_hp tmp;
+            tmp.f = (float)libxsmm_rng_f64();
+            l_a_bf[(l_r * l_lda * l_k) + (l_j * l_lda) + l_i] = tmp.i[1];
+          }
         }
       }
       /* touch B */
-      for (l_i = 0; l_i < l_ldb; l_i++) {
-        for (l_j = 0; l_j < l_n; l_j++) {
-          union libxsmm_bfloat16_hp tmp;
-          tmp.f = (float)libxsmm_rng_f64();
-          l_b_bf[(l_j * l_ldb) + l_i] = tmp.i[1];
+      for (l_r = 0; l_r < l_br; l_r++) {
+        for (l_i = 0; l_i < l_ldb; l_i++) {
+          for (l_j = 0; l_j < l_n; l_j++) {
+            union libxsmm_bfloat16_hp tmp;
+            tmp.f = (float)libxsmm_rng_f64();
+            l_b_bf[(l_r * l_ldb * l_n) + (l_j * l_ldb) + l_i] = tmp.i[1];
+          }
         }
       }
       /* touch C */
@@ -1730,28 +2636,30 @@ int main(int argc, char* argv []) {
         }
       }
 
-      l_runtime_libxsmm = run_jit_bfloat16(l_xgemm_desc, l_a_bf, l_b_bf, l_c_bf, l_br, l_file_input );
+      l_runtime_libxsmm = run_jit_bfloat16( &l_gemm_def, l_a_bf, l_b_bf, l_c_bf, l_file_input );
 
       if ( l_run_check == 1 ) {
         l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
-          for (l_j = 0; l_j < l_n; l_j++) {
-            for (l_i = 0; l_i < l_m; l_i++) {
-              union libxsmm_bfloat16_hp fprod;
-              fprod.i[1] = l_c_gold_bf[(l_j * l_ldc) + l_i];
-              fprod.i[0] = 0;
-              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-                for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-                  union libxsmm_bfloat16_hp tmp_a_f;
-                  union libxsmm_bfloat16_hp tmp_b_f;
-                  tmp_a_f.i[1] = l_a_bf[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2];
-                  tmp_a_f.i[0] = 0;
-                  tmp_b_f.i[1] = l_b_bf[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
-                  tmp_b_f.i[0] = 0;
-                  fprod.f += (float)(tmp_a_f.f * tmp_b_f.f);
+          for (l_r = 0; l_r < l_br; l_r++) {
+            for (l_j = 0; l_j < l_n; l_j++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                union libxsmm_bfloat16_hp fprod;
+                fprod.i[1] = l_c_gold_bf[(l_j * l_ldc) + l_i];
+                fprod.i[0] = 0;
+                for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
+                  for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+                    union libxsmm_bfloat16_hp tmp_a_f;
+                    union libxsmm_bfloat16_hp tmp_b_f;
+                    tmp_a_f.i[1] = l_a_bf[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+                    tmp_a_f.i[0] = 0;
+                    tmp_b_f.i[1] = l_b_bf[(l_r * l_ldb * l_n) + (l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+                    tmp_b_f.i[0] = 0;
+                    fprod.f += (float)(tmp_a_f.f * tmp_b_f.f);
+                  }
                 }
+                l_c_gold_bf[(l_j * l_ldc) + l_i] = fprod.i[1];
               }
-              l_c_gold_bf[(l_j * l_ldc) + l_i] = fprod.i[1];
             }
           }
         }
@@ -1775,15 +2683,15 @@ int main(int argc, char* argv []) {
 
       if ( l_file_input == 0 ) {
         printf("%fs for C\n", l_runtime_c);
-        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_c * 1.0e9));
+        printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_c * 1.0e9));
         printf("%fs for libxsmm\n", l_runtime_libxsmm);
-        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9));
-        printf("max. error: %f\n", l_max_error);
+        printf("%f GFLOPS for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_max_error );
+          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
