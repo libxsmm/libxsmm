@@ -56,12 +56,11 @@ void libxsmm_generator_mateltwise_footer_n_loop( libxsmm_generated_code*        
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code*            io_generated_code,
     const unsigned int                       i_gp_reg_tmp,
-    const libxsmm_meltw_descriptor*          i_mateltwise_desc,
     const unsigned int                       i_mask_reg,
     const unsigned int                       i_mask_count,
     const unsigned int                       i_precision) {
 
-  unsigned long long l_mask;
+  unsigned long long l_mask = 0;
   if (i_precision == LIBXSMM_GEMM_PRECISION_F32) {
     l_mask = 0xffff;
   } else if (i_precision == LIBXSMM_GEMM_PRECISION_BF16) {
@@ -204,10 +203,10 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
     /* If the remaining elements are >= 16, then we read a partial vector at the last m trip  */
     /* Calculate mask reg 1 for input-reading */
     mask_in_count = ( (m % 32) > 16) ? 32 - (m % 32) : 16 - (m % 32);
-    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R12, i_mateltwise_desc, 1, mask_in_count, LIBXSMM_GEMM_PRECISION_F32);
+    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R12, 1, mask_in_count, LIBXSMM_GEMM_PRECISION_F32);
     /* Calculate mask reg 2 for output-writing */
     mask_out_count = 32 - (m % 32);
-    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R12, i_mateltwise_desc, 2, mask_out_count, LIBXSMM_GEMM_PRECISION_BF16);
+    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R12, 2, mask_out_count, LIBXSMM_GEMM_PRECISION_BF16);
   }
 
   if (n > 1) {
