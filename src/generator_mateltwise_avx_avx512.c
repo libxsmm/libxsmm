@@ -257,7 +257,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         im * 32 * i_micro_kernel_config->datatype_size_out,
         i_micro_kernel_config->vector_name,
-        reg_0, (im == (m_trips-1)) ? use_m_masking : 0, 2, 1 );
+        reg_0, (im == (m_trips-1)) ? use_m_masking * 2 : 0, 0, 1 );
   }
 
   if (n > 1) {
