@@ -241,13 +241,23 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
    }
 
     /* Downconvert to BF16  */
-    libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-        i_micro_kernel_config->instruction_set,
-        LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
-        i_micro_kernel_config->vector_name,
-        reg_0, reg_1,
-        reg_0,
-        0);
+    if (!((use_m_masking == 1) && (im == m_trips-1) && (m % 32 <= 16))) {
+      libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
+          i_micro_kernel_config->vector_name,
+          reg_0, reg_1,
+          reg_0,
+          0);
+    } else {
+      libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
+          i_micro_kernel_config->vector_name,
+          reg_0, LIBXSMM_X86_VEC_REG_UNDEF,
+          reg_0,
+          0);
+    }
 
     /* Store the result  */
     libxsmm_x86_instruction_vec_move( io_generated_code,
