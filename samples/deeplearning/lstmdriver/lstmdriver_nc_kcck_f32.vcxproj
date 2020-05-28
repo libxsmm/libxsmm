@@ -27,14 +27,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="rnndriver_nc_ck.c" />
+    <ClCompile Include="lstmdriver_nc_kcck_f32.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>rnndriver_nc_ck</ProjectName>
-    <ProjectGuid>{9776BA53-EEDA-4A39-89A8-9DAB45F4D82A}</ProjectGuid>
+    <ProjectName>lstmdriver_nc_kcck_f32</ProjectName>
+    <ProjectGuid>{4B1FF769-DEE3-441D-9939-C60F5487F2A0}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

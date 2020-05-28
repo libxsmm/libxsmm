@@ -812,6 +812,9 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_softmaxloss_st_fwd_ncnc_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\scripts\libxsmm_specialized.py">
