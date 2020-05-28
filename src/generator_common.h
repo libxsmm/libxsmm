@@ -413,9 +413,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
 LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
-  unsigned int vector_length;
-  unsigned int datatype_size;
-  unsigned int vmove_instruction;
+  unsigned int vector_length_in;
+  unsigned int vector_length_out;
+  unsigned int datatype_size_in;
+  unsigned int datatype_size_out;
+  unsigned int vmove_instruction_in;
+  unsigned int vmove_instruction_out;
   unsigned int alu_add_instruction;
   unsigned int alu_cmp_instruction;
   unsigned int alu_jmp_instruction;
