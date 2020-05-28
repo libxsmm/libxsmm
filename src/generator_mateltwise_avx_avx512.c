@@ -61,14 +61,14 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
     const unsigned int                       i_mask_count,
     const unsigned int                       i_precision) {
 
-  unsigned int l_mask;
+  unsigned long long l_mask;
   if (i_precision == LIBXSMM_GEMM_PRECISION_F32) {
     l_mask = 0xffff;
   } else if (i_precision == LIBXSMM_GEMM_PRECISION_BF16) {
     l_mask = 0xffffffff;
   } else if (i_precision == LIBXSMM_GEMM_PRECISION_I8) {
     l_mask = 0xffffffffffffffff;
-  } 
+  }
   /* shift right by "inverse" remainder */
   l_mask = l_mask >> i_mask_count;
 
@@ -77,7 +77,7 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
       LIBXSMM_X86_INSTR_MOVQ,
       i_gp_reg_tmp,
       l_mask );
-  
+
   if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE  ) {
     if ( LIBXSMM_GEMM_PRECISION_F32 == i_precision ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
@@ -106,11 +106,12 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_mateltwise_kernel_config*    io_micro_kernel_config,
+void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_generated_code*         io_generated_code,
+    libxsmm_mateltwise_kernel_config*    io_micro_kernel_config,
     const unsigned int              i_arch,
     const libxsmm_meltw_descriptor* i_mateltwise_desc) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
-  if ( i_arch >= LIBXSMM_X86_AVX512_CORE ) { 
+  if ( i_arch >= LIBXSMM_X86_AVX512_CORE ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_CORE;
     io_micro_kernel_config->vector_reg_count = 16;
     /* Configure input specific microkernel options */
@@ -166,7 +167,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
-  unsigned int m, n, m_trips, use_m_masking, mask_in_count, mask_out_count, reg_0, reg_1;
+  unsigned int im, m, n, m_trips, use_m_masking, mask_in_count, mask_out_count, reg_0, reg_1;
 
   /* Configure the register mapping for this eltwise kernel */
   i_gp_reg_mapping->gp_reg_in     = LIBXSMM_X86_GP_REG_R8;
@@ -218,7 +219,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
     /* Load in zmm_i and zmm_i+16 the two input fp32 zmms  */
     reg_0 = im % 15;
     reg_1 = (im % 15)+16;
-    
+
     libxsmm_x86_instruction_vec_move( io_generated_code,
         i_micro_kernel_config->instruction_set,
         i_micro_kernel_config->vmove_instruction_in,
@@ -257,7 +258,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         im * 32 * i_micro_kernel_config->datatype_size_out,
         i_micro_kernel_config->vector_name,
-        reg_0, (im == (m_trips-1)) ? use_m_masking : 0, 2, 1 );  
+        reg_0, (im == (m_trips-1)) ? use_m_masking : 0, 2, 1 );
   }
 
   if (n > 1) {
@@ -271,7 +272,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         i_micro_kernel_config->alu_add_instruction,
         i_gp_reg_mapping->gp_reg_out,
         i_mateltwise_desc->ldo *  i_micro_kernel_config->datatype_size_out);
-    
+
     /* close n loop */
     libxsmm_generator_mateltwise_footer_n_loop(  io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop, n);
   }
@@ -288,7 +289,7 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define gp register mapping */
-  memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping)); 
+  memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping));
 #if defined(_WIN32) || defined(__CYGWIN__)
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RCX;
 #else /* match calling convention on Linux */
@@ -296,10 +297,10 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
 #endif
 
   /* define mateltwise kernel config */
-  libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( &l_kernel_config, io_generated_code->arch, i_mateltwise_desc);
+  libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, io_generated_code->arch, i_mateltwise_desc);
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_mateltwise( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, io_generated_code->arch );
+  libxsmm_x86_instruction_open_stream_mateltwise( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, NULL );
 
   /* Depending on the elementwise function, dispatch the proper code JITer */
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) {
@@ -307,6 +308,6 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_mateltwise( io_generated_code, io_generated_code->arch );
+  libxsmm_x86_instruction_close_stream_mateltwise( io_generated_code, NULL );
 }
 
