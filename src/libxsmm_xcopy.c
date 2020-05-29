@@ -266,16 +266,17 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
     if (0 < m && 0 < n) {
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
       libxsmm_xmcopyfunction kernel = NULL;
+      int prefetch = 0;
 #endif
       unsigned int tm, tn;
-      int prefetch;
       if (NULL != in) { /* mcopy */
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
         prefetch = libxsmm_mcopy_prefetch;
+#endif
         tm = LIBXSMM_UPDIV(libxsmm_mcopy_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
       }
       else { /* mzero */
-        prefetch = 0;
         tm = LIBXSMM_UPDIV(libxsmm_mzero_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
       }
