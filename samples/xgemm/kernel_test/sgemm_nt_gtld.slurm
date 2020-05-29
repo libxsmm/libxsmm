@@ -29,5 +29,23 @@ END
 taskset -c 10 ./kernel ${TESTFILE1} 1 1 0 0 0 1 SP nobr 1 0 1 1
 taskset -c 10 ./kernel ${TESTFILE2} 1 1 0 0 0 1 SP nobr 1 0 1 1
 
+taskset -c 10 ./kernel ${TESTFILE1} 1 1 0 0 0 1 SP addrbr 7 0 1 1
+taskset -c 10 ./kernel ${TESTFILE2} 1 1 0 0 0 1 SP addrbr 7 0 1 1
+
+taskset -c 10 ./kernel ${TESTFILE1} 1 1 0 0 0 1 SP offsbr 7 0 1 1
+taskset -c 10 ./kernel ${TESTFILE2} 1 1 0 0 0 1 SP offsbr 7 0 1 1
+
+taskset -c 10 ./kernel ${TESTFILE1} 1 1 0 0 0 1 SP strdbr 7 0 1 1
+taskset -c 10 ./kernel ${TESTFILE2} 1 1 0 0 0 1 SP strdbr 7 0 1 1
+
+taskset -c 10 ./kernel ${TESTFILE1} 1 1 0 0 0 1 SP addrbr 7 1 1 1
+taskset -c 10 ./kernel ${TESTFILE2} 1 1 0 0 0 1 SP addrbr 7 1 1 1
+
+taskset -c 10 ./kernel ${TESTFILE1} 1 1 0 0 0 1 SP offsbr 7 1 1 1
+taskset -c 10 ./kernel ${TESTFILE2} 1 1 0 0 0 1 SP offsbr 7 1 1 1
+
+taskset -c 10 ./kernel ${TESTFILE1} 1 1 0 0 0 1 SP strdbr 7 1 1 1
+taskset -c 10 ./kernel ${TESTFILE2} 1 1 0 0 0 1 SP strdbr 7 1 1 1
+
 rm ${TESTFILE1}
 rm ${TESTFILE2}
