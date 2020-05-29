@@ -901,6 +901,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_l
 LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const libxsmm_trans_descriptor* tr_desc = 0;
+  libxsmm_blasint _ldi = 64, _ldo = 64;
   libxsmm_descriptor_blob blob;
 
   /* init libxsmm */
@@ -932,6 +933,13 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->code_fwd[0].ptr = 0;
   handle->code_fwd[1].ptr = 0;
   handle->code_fwd[2].ptr = 0;
+
+  /* JIT cvt eltwise functions for fwd convolutions */
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+    _ldi = handle->ofmblock * handle->ofwp;
+    _ldo = handle->ofmblock * handle->ofwp;
+    handle->fwd_cvtfp32bf16_kernel = libxsmm_dispatch_metlw_cvtfp32bf16(handle->ofmblock * handle->fwd_ofw_rb, handle->fwd_ofh_rb, &_ldi, &_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
+  }
 
   /* Create strided BRGEMMs for i8i32 convolutions  */
   if ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) {

@@ -398,6 +398,35 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matcopy_kernel_config_struct {
   char vector_name;
 } libxsmm_matcopy_kernel_config;
 
+/* structure for storing the current gp reg mapping for mateltwise */
+LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
+  unsigned int gp_reg_param_struct;
+  unsigned int gp_reg_in;
+  unsigned int gp_reg_ldi;
+  unsigned int gp_reg_out;
+  unsigned int gp_reg_ldo;
+  unsigned int gp_reg_m_loop;
+  unsigned int gp_reg_n_loop;
+} libxsmm_mateltwise_gp_reg_mapping;
+
+/* mateltwise kernel configuration */
+LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
+  unsigned int instruction_set;
+  unsigned int vector_reg_count;
+  unsigned int vector_length_in;
+  unsigned int vector_length_out;
+  unsigned int datatype_size_in;
+  unsigned int datatype_size_out;
+  unsigned int vmove_instruction_in;
+  unsigned int vmove_instruction_out;
+  unsigned int alu_add_instruction;
+  unsigned int alu_cmp_instruction;
+  unsigned int alu_jmp_instruction;
+  unsigned int alu_mov_instruction;
+  unsigned int vxor_instruction;
+  char vector_name;
+} libxsmm_mateltwise_kernel_config;
+
 /* structure for storing the current gp reg mapping for transpose */
 LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_gp_reg_mapping_struct {
   unsigned int gp_reg_a;

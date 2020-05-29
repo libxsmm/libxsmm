@@ -426,6 +426,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int block_upd_ofm;
 
   libxsmm_xtransfunction tr_kernel;
+  libxsmm_meltwfunction_cvtfp32bf16 fwd_cvtfp32bf16_kernel;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
