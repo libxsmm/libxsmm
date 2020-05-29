@@ -1661,9 +1661,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1764,9 +1764,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1867,9 +1867,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -1970,9 +1970,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -2084,9 +2084,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -2198,9 +2198,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -2312,9 +2312,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -2431,9 +2431,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -2446,7 +2446,7 @@ int main(int argc, char* argv []) {
       libxsmm_free(l_c_b_ub);
       libxsmm_free(l_c_gold_b_ub);
     } while ( l_keep_going );
-   } else if (strcmp(l_precision, "BF16F32") == 0) {
+  } else if (strcmp(l_precision, "BF16F32") == 0) {
     const int l_k_block = 2;
     double l_max_error = 0;
     int l_k2;
@@ -2553,9 +2553,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -2689,9 +2689,9 @@ int main(int argc, char* argv []) {
         printf("max. error: %f\n", l_diff.linf_abs);
       } else {
         if ( l_run_check == 1 ) {
-          printf("%i %i %i %i %i %i %i %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
+          printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), l_diff.linf_abs );
         } else {
-          printf("%i %i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+          printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
       }
 
@@ -2715,7 +2715,9 @@ int main(int argc, char* argv []) {
   /* Print total max error */
   printf("\n\n Total Max Error %f\n\n", l_total_max_error );
 
-  if ( l_total_max_error >= 0.00005 ) {
+  if ( l_total_max_error >= 0.00005 && l_br_type == 1) {
+    return EXIT_FAILURE;
+  } else if ( l_total_max_error >= 0.0005 && l_br_type > 1) {
     return EXIT_FAILURE;
   } else {
     return EXIT_SUCCESS;
