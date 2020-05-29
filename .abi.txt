@@ -83,6 +83,13 @@ libxsmm_diff_i8
 libxsmm_diff_n
 libxsmm_dispatch_getrf
 libxsmm_dispatch_mcopy
+libxsmm_dispatch_meltw
+libxsmm_dispatch_meltw_add
+libxsmm_dispatch_meltw_copy
+libxsmm_dispatch_meltw_mul
+libxsmm_dispatch_meltw_relu
+libxsmm_dispatch_meltw_zero
+libxsmm_dispatch_metlw_cvtfp32bf16
 libxsmm_dispatch_pgemm
 libxsmm_dispatch_trans
 libxsmm_dispatch_trmm
@@ -246,6 +253,7 @@ libxsmm_generator_gemm_inlineasm
 libxsmm_generator_gemm_kernel
 libxsmm_generator_getrf_kernel
 libxsmm_generator_matcopy_kernel
+libxsmm_generator_mateltwise_kernel
 libxsmm_generator_packed_gemm_ac_rm
 libxsmm_generator_packed_gemm_bc_rm
 libxsmm_generator_pgemm_kernel
@@ -267,6 +275,7 @@ libxsmm_get_malloc
 libxsmm_get_malloc_info
 libxsmm_get_malloc_xinfo
 libxsmm_get_mcopykernel_info
+libxsmm_get_meltwkernel_info
 libxsmm_get_mmkernel_info
 libxsmm_get_pid
 libxsmm_get_registry_info
@@ -320,6 +329,8 @@ libxsmm_matdiff_clear_
 libxsmm_matdiff_reduce
 libxsmm_matdiff_reduce_
 libxsmm_mcopy_descriptor_init
+libxsmm_meltw_descriptor_init
+libxsmm_meltw_descriptor_init2
 libxsmm_memcmp
 libxsmm_mhd_element_comparison
 libxsmm_mhd_element_conversion
