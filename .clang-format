@@ -1,22 +1,20 @@
-BasedOnStyle: LLVM
-AlignAfterOpenBracket: false
-AllowShortBlocksOnASingleLine: true
-AllowShortCaseLabelsOnASingleLine: true
-BinPackArguments: true
-BreakBeforeBraces: Custom
-BraceWrapping:
-  AfterFunction: true
-  BeforeElse: true
-ColumnLimit: 0
-ContinuationIndentWidth: 2
-IndentCaseLabels: false
+﻿---
+AlignAfterOpenBracket: AlwaysBreak
+AlignConsecutiveAssignments: 'true'
+AlignEscapedNewlines: DontAlign
+AlignTrailingComments: 'false'
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: 'true'
+BreakBeforeBraces: Stroustrup
+ColumnLimit: '132'
+ContinuationIndentWidth: '2'
+IndentCaseLabels: 'true'
 IndentPPDirectives: AfterHash
-IndentWidth: 2
-Language: Cpp
-MaxEmptyLinesToKeep: 2
+IndentWidth: '2'
+MaxEmptyLinesToKeep: '2'
 PointerAlignment: Left
-PenaltyExcessCharacter: 1
-ReflowComments: false
-SortIncludes: false
-TabWidth: 2
+ReflowComments: 'false'
+SortIncludes: 'false'
 UseTab: Never
+
+...
