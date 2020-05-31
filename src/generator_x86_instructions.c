@@ -6006,6 +6006,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*       io_generated_code,
                                                    const char*                   i_arch) {
   /* @TODO add checks in debug mode */
+  LIBXSMM_ASSERT(NULL != i_arch);
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO this is a very simple System V ABI 64 interface */
     unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
