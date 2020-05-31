@@ -424,7 +424,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   } result;
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
-  result.ptr->datatype = LIBXSMM_GETENUM(in_type, out_type);
+  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in_type, out_type);
   result.ptr->datatype2 = 0;
   result.ptr->flags = (unsigned char)flags;
   result.ptr->operation = (unsigned char)operation;
@@ -450,8 +450,8 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   } result;
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
-  result.ptr->datatype = LIBXSMM_GETENUM(in_type, out_type);
-  result.ptr->datatype2 = LIBXSMM_GETENUM(in2_type, out2_type);
+  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in_type, out_type);
+  result.ptr->datatype2 = (unsigned char)LIBXSMM_GETENUM(in2_type, out2_type);
   result.ptr->flags = (unsigned char)flags;
   result.ptr->operation = (unsigned char)operation;
   result.ptr->ldi = ldi;
