@@ -11,6 +11,7 @@ ContinuationIndentWidth: '2'
 IndentCaseLabels: 'true'
 IndentPPDirectives: AfterHash
 IndentWidth: '2'
+KeepEmptyLinesAtTheStartOfBlocks: 'false'
 MaxEmptyLinesToKeep: '2'
 PointerAlignment: Left
 ReflowComments: 'false'
