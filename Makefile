@@ -211,7 +211,6 @@ include $(ROOTDIR)/Makefile.inc
 
 # necessary include directories
 IFLAGS += -I$(call quote,$(INCDIR))
-IFLAGS += -I$(call quote,$(BLDDIR))
 IFLAGS += -I$(call quote,$(ROOTDIR)/$(SRCDIR))
 
 # Version numbers according to interface (version.txt)
@@ -760,7 +759,7 @@ ifneq (0,$(MPSS))
 $(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h,-mmic \
-  $(DFLAGS) $(IFLAGS) $(CFLAGS))))
+  $(DFLAGS) $(IFLAGS) $(call applyif,1,libxsmm_main,$(OBJ),-I$(BLDDIR)) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h,-mmic \
@@ -775,13 +774,12 @@ endif
 endif
 
 # build rules that include target flags
-# individual flags: $(call applyif,$(CONDITION),libxsmm_malloc,$(OBJ),-Dindividual_flag>)
 $(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
   $(CTARGET) $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
-  $(DFLAGS) $(IFLAGS) $(CTARGET) $(CFLAGS))))
+  $(DFLAGS) $(IFLAGS) $(call applyif,1,libxsmm_main,$(OBJ),-I$(BLDDIR)) $(CTARGET) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
