@@ -2241,7 +2241,7 @@ FLDFLAGS   := $(call cleanld,$(FLDFLAGS))
 
 .SUFFIXES:
 
-# applyif(A1,A2,A3,A4) evaluates to A4 if the basenames (A1, A2) match and if A1 is non-zero (precondition)
+# applyif(A1,A2,A3,A4) evaluates to A4 if A1 (precondition) is non-zero and if the basenames (A2, A3) match
 applyif = $(if $(filter 0,$1),$(NULL),$(if $(filter $2,$(call qname,$(call qndir,$3))),$(if $1,$4)))
 # derives the extension of a filename
 extname = $(subst .,,$(call qsuffix,$(1)))
