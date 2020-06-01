@@ -195,7 +195,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                          (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
                       cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                       cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                      cvt_kernel(&cvt_params);                      
+                      cvt_kernel(&cvt_params);
                     }
                   }
                 } else {
@@ -217,7 +217,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                          (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
                       cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                       cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                      cvt_kernel(&cvt_params);                      
+                      cvt_kernel(&cvt_params);
                     }
                   }
                 }
@@ -281,7 +281,7 @@ if (handle->use_fallback_fwd_loops == 1) {
               if (ifm2 == handle->blocksifm && kj == handle->desc.R && ki == handle->desc.S) {
                 cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS( 5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                 cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                cvt_kernel(&cvt_params);                
+                cvt_kernel(&cvt_params);
               }
             }
           }
@@ -358,7 +358,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                                    (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
                                 cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                                 cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                                cvt_kernel(&cvt_params);  
+                                cvt_kernel(&cvt_params);
                               }
                             }
                           } else if (oi == handle->ofw-handle->fwd_ofw_rb  && ki == handle->desc.S-1) {
@@ -380,7 +380,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                                    (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
                                 cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                                 cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                                cvt_kernel(&cvt_params);                                  
+                                cvt_kernel(&cvt_params);
                               }
                             }
                           } else {
@@ -474,7 +474,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                         if (kj1 == handle->desc.R && ki1 == handle->desc.S && ifm2 == handle->blocksifm) {
                           cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                           cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                          cvt_kernel(&cvt_params);                          
+                          cvt_kernel(&cvt_params);
                         }
                       }
                     }
@@ -542,7 +542,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                       if (kj == handle->desc.R && ki == handle->desc.S && ifm2 == handle->blocksifm) {
                         cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                         cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                        cvt_kernel(&cvt_params);   
+                        cvt_kernel(&cvt_params);
                       }
                     }
                   }

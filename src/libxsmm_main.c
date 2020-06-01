@@ -4140,7 +4140,7 @@ LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_reduce(const lib
   return result.meltw_reduce;
 }
 
-LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_scale(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type, unsigned short flags) {
+LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type, unsigned short flags) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
