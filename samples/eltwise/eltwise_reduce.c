@@ -39,8 +39,8 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, nerrs, result_size, i, j;
-  libxsmm_blasint ld_in = 64, ld_out = 64;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, i, j;
+  libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
   unsigned short jit_flags = 0;
   libxsmm_meltwfunction_reduce kernel;
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
-  ld_in = LIBXSMM_MAX(ld_in,m);
+  ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
   result_size = (reduce_rows == 1) ? n : m;
 
   /* Allocate arrays  */
