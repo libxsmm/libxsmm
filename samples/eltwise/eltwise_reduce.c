@@ -84,6 +84,16 @@ int main(int argc, char* argv[])
         ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
       }
     }
+  } else {
+    /* In this case we reduce columns */
+    for (i = 0; i < m; i++) {
+      ref_result_reduce_elts[i] = 0;
+      ref_result_reduce_elts_squared[i] = 0;
+      for (j = 0; j < n; j++) {
+        ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+        ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+      }
+    }
   }
 
   /* Generate JITED kernel */
