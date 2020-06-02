@@ -215,6 +215,9 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid);
 /** Finalizes the transpose functionality; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_xcopy_finalize(void);
 
+/** Returns a data-type that is suitable for xcopy-kernels. */
+LIBXSMM_API libxsmm_datatype libxsmm_xcopy_type(unsigned int typesize, libxsmm_blasint* scale);
+
 LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsigned int typesize,
   unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo,
   unsigned int km, unsigned int kn, libxsmm_xcopykernel kernel,

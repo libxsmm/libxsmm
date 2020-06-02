@@ -303,16 +303,16 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
 # endif
       if (0 != (2 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
 # if defined(LIBXSMM_XCOPY_MELTW)
-        const libxsmm_datatype typesize_type = libxsmm_typesize_type((unsigned char)typesize);
-        if (NULL != in) {
+        const libxsmm_blasint sldi = ldi * typesize, sldo = ldo * typesize;
+        if (NULL != in) { /* mcopy */
           kernel.meltw_copy = libxsmm_dispatch_meltw_copy(
-            (libxsmm_blasint)tm, (libxsmm_blasint)tn,
-            &ldi, &ldo, typesize_type, typesize_type);
+            (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
+            &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
         }
-        else {
+        else { /* mzero */
           kernel.meltw_zero = libxsmm_dispatch_meltw_zero(
-            (libxsmm_blasint)tm, (libxsmm_blasint)tn,
-            &ldi, &ldo, typesize_type, typesize_type);
+            (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
+            &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
         }
 # else
         libxsmm_descriptor_blob blob;
