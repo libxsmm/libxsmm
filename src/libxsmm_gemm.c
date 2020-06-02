@@ -1121,8 +1121,8 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
       const size_t size_b = libxsmm_gemm_handle_get_scratch_size_b(handle);
       const size_t size_c = libxsmm_gemm_handle_get_scratch_size_c(handle);
       char *const at = (char*)scratch + (size_a + size_b + size_c) * vtid;
-      char *const bt = at + size_a;
-      char *const ct = bt + size_b;
+      char *const bt = at + size_a, *const ct = bt + size_b;
+      const libxsmm_xcopykernel kernel = { NULL };
       /* loop induction variables and other variables */
       unsigned int om = handle->otypesize * m0, im = m0, in = n0, ik = k0, im1, in1, ik1;
       LIBXSMM_ASSERT_MSG(mtid < handle->mt && ntid < handle->nt && ktid < handle->kt, "Invalid task-ID");
@@ -1169,13 +1169,13 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
             if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
               const unsigned int km = handle->kn, kn = handle->km;
               libxsmm_otrans_internal(ct/*out*/, c0/*in*/, handle->otypesize, handle->ldc/*ldi*/, kn/*ldo*/,
-                0, km, 0, kn, km/*tile*/, kn/*tile*/, NULL/*kernel*/);
+                0, km, 0, kn, km/*tile*/, kn/*tile*/, kernel);
               ci = ct;
             }
             else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_C & handle->flags)) {
               if (0 == (handle->gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0)) { /* copy-in only if beta!=0 */
                 libxsmm_matcopy_internal(ct/*out*/, c0/*in*/, handle->otypesize, handle->ldc/*ldi*/, handle->km/*ldo*/,
-                  0, handle->km, 0, handle->kn, handle->km/*tile*/, handle->kn/*tile*/, NULL/*kernel*/);
+                  0, handle->km, 0, handle->kn, handle->km/*tile*/, handle->kn/*tile*/, kernel);
               }
               ci = ct;
             }
@@ -1192,12 +1192,12 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
               {
                 LIBXSMM_ASSERT(ldo == handle->km);
                 libxsmm_otrans_internal(at/*out*/, a0/*in*/, handle->itypesize, handle->lda/*ldi*/, ldo,
-                  0, handle->kk, 0, handle->km, handle->kk/*tile*/, handle->km/*tile*/, NULL/*kernel*/);
+                  0, handle->kk, 0, handle->km, handle->kk/*tile*/, handle->km/*tile*/, kernel);
                 ai = at;
               }
               else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_A & handle->flags)) {
                 libxsmm_matcopy_internal(at/*out*/, a0/*in*/, handle->itypesize, handle->lda/*ldi*/, ldo,
-                  0, handle->km, 0, handle->kk, handle->km/*tile*/, handle->kk/*tile*/, NULL/*kernel*/);
+                  0, handle->km, 0, handle->kk, handle->km/*tile*/, handle->kk/*tile*/, kernel);
                 ai = at;
               }
             }
@@ -1210,12 +1210,12 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
                  (LIBXSMM_GEMM_FLAG_TRANS_B & handle->gemm_flags) != 0) /* pure B-transpose */
               {
                 libxsmm_otrans_internal(bt/*out*/, b0/*in*/, handle->itypesize, handle->ldb/*ldi*/, handle->kk/*ldo*/,
-                  0, handle->kn, 0, handle->kk, handle->kn/*tile*/, handle->kk/*tile*/, NULL/*kernel*/);
+                  0, handle->kn, 0, handle->kk, handle->kn/*tile*/, handle->kk/*tile*/, kernel);
                 bi = bt;
               }
               else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_B & handle->flags)) {
                 libxsmm_matcopy_internal(bt/*out*/, b0/*in*/, handle->itypesize, handle->ldb/*ldi*/, handle->kk/*ldo*/,
-                  0, handle->kk, 0, handle->kn, handle->kk/*tile*/, handle->kn/*tile*/, NULL/*kernel*/);
+                  0, handle->kk, 0, handle->kn, handle->kk/*tile*/, handle->kn/*tile*/, kernel);
                 bi = bt;
               }
             }
@@ -1232,11 +1232,11 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
           if (NULL == handle->copy_o.ptr_const) {
             if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
               libxsmm_otrans_internal(c0/*out*/, ct/*in*/, handle->otypesize, handle->km/*ldi*/, handle->ldc/*ldo*/,
-                0, handle->km, 0, handle->kn, handle->km/*tile*/, handle->kn/*tile*/, NULL/*kernel*/);
+                0, handle->km, 0, handle->kn, handle->km/*tile*/, handle->kn/*tile*/, kernel);
             }
             else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_C & handle->flags)) {
               libxsmm_matcopy_internal(c0/*out*/, ct/*in*/, handle->otypesize, handle->km/*ldi*/, handle->ldc/*ldo*/,
-                0, handle->km, 0, handle->kn, handle->km/*tile*/, handle->kn/*tile*/, NULL/*kernel*/);
+                0, handle->km, 0, handle->kn, handle->km/*tile*/, handle->kn/*tile*/, kernel);
             }
           }
           else { /* MCOPY/TCOPY kernel */
