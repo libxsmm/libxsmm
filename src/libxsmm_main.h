@@ -917,6 +917,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 
 /** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+/** Returns a data-type that matches the given typesize. */
+LIBXSMM_API libxsmm_datatype libxsmm_typesize_type(unsigned char typesize);
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_xinfo {
   /** Non-zero of kernel is registered. */

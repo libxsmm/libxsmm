@@ -1559,6 +1559,25 @@ LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
 }
 
 
+LIBXSMM_API libxsmm_datatype libxsmm_typesize_type(unsigned char typesize)
+{
+  switch (typesize) {
+    case 8: return LIBXSMM_DATATYPE_F64;
+    case 4: return LIBXSMM_DATATYPE_F32;
+    case 2: return LIBXSMM_DATATYPE_I16;
+    case 1: return LIBXSMM_DATATYPE_I8;
+    default: {
+      static int error_once = 0;
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+        fprintf(stderr, "LIBXSMM ERROR: unsupported type-size!\n");
+      }
+    }
+  }
+  LIBXSMM_ASSERT_MSG(0, "unsupported typesize");
+  return LIBXSMM_DATATYPE_UNSUPPORTED;
+}
+
+
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue)
 {
   int result = EXIT_SUCCESS;
