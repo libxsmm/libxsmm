@@ -1421,24 +1421,26 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
       }
     }
 
-    /* Adjust input and output pointer */
-    libxsmm_x86_instruction_alu_imm(  io_generated_code,
-        i_micro_kernel_config->alu_add_instruction,
-        i_gp_reg_mapping->gp_reg_in,
-        16 * i_mateltwise_desc->ldi *  i_micro_kernel_config->datatype_size_in);
-
-    if ( compute_plain_vals_reduce > 0 ) {
+    if ((n_full_trips >  1) || (n % 16 != 0)) {
+      /* Adjust input and output pointer */
       libxsmm_x86_instruction_alu_imm(  io_generated_code,
-        i_micro_kernel_config->alu_add_instruction,
-        i_gp_reg_mapping->gp_reg_reduced_elts,
-        16 * i_micro_kernel_config->datatype_size_out);
-    }
+          i_micro_kernel_config->alu_add_instruction,
+          i_gp_reg_mapping->gp_reg_in,
+          16 * i_mateltwise_desc->ldi *  i_micro_kernel_config->datatype_size_in);
 
-    if ( compute_squared_vals_reduce > 0 ) {
-      libxsmm_x86_instruction_alu_imm(  io_generated_code,
-        i_micro_kernel_config->alu_add_instruction,
-        i_gp_reg_mapping->gp_reg_reduced_elts_squared,
-        16 * i_micro_kernel_config->datatype_size_out);
+      if ( compute_plain_vals_reduce > 0 ) {
+        libxsmm_x86_instruction_alu_imm(  io_generated_code,
+          i_micro_kernel_config->alu_add_instruction,
+          i_gp_reg_mapping->gp_reg_reduced_elts,
+          16 * i_micro_kernel_config->datatype_size_out);
+      }
+
+      if ( compute_squared_vals_reduce > 0 ) {
+        libxsmm_x86_instruction_alu_imm(  io_generated_code,
+          i_micro_kernel_config->alu_add_instruction,
+          i_gp_reg_mapping->gp_reg_reduced_elts_squared,
+          16 * i_micro_kernel_config->datatype_size_out);
+      }
     }
 
     if (n_full_trips > 1) {
