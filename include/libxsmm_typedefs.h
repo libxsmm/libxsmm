@@ -176,7 +176,12 @@ typedef enum libxsmm_meltw_flags {
   LIBXSMM_MELTW_REDUCE_ROWS             = 8,
   LIBXSMM_MELTW_REDUCE_COLS             = 16,
   LIBXSMM_MELTW_REDUCE_ELTS             = 32,
-  LIBXSMM_MELTW_REDUCE_ELTS_SQUARED     = 64
+  LIBXSMM_MELTW_REDUCE_ELTS_SQUARED     = 64,
+  LIBXSMM_MELTW_SCALE_MULT              = 128,
+  LIBXSMM_MELTW_SCALE_SHIFT             = 256,
+  LIBXSMM_MELTW_SCALE_ADD_BIAS          = 512,
+  LIBXSMM_MELTW_SCALE_ROWS              = 1024,
+  LIBXSMM_MELTW_SCALE_COLS              = 2048
 } libxsmm_meltw_flags;
 
 /** Flag enumeration which can be binary ORed. */
@@ -580,10 +585,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_param 
 
 /** argument struct for matrix-eltwise: scale */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_scale_param {
-  const void* in_ptr_0;   /* input pointer */
-  void* out_ptr_0;        /* output pointer */
-  const void* in_ptr_1;   /* input pointer */
-  void* out_ptr_1;        /* output pointer */
+  const void* in_ptr;           /* input pointer */
+  const void* shift_vals_ptr;   /* pointer to shift values array */
+  const void* scale_vals_ptr;   /* pointer to scale values array */
+  const void* bias_vals_ptr;    /* pointer to bias values array*/
+  void* out_ptr;                /* output pointer */
 } libxsmm_meltw_scale_param;
 
 /** Specialized function for matrix-copy (weak-typed). */
