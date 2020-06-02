@@ -75,11 +75,11 @@ MAKE ?= make
 PYTHON3 ?= $(call which,python3)
 # Python3 by default
 ifneq (,$(PYTHON3))
-  #SHELL := $(ENVBIN) PATH=$(MAKEINC):$(PATH) $(SHELL)
-  #PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null; command -v python)
   PYTHON ?= $(PYTHON3)
-else
-  PYTHON ?= $(call which,python)
+else ifneq (,$(call which,python))
+  SHELL := $(ENVBIN) PATH=$(MAKEINC):$(PATH) $(SHELL)
+  PYTHON3 := $(shell ln -s $(call which,python) $(MAKEINC)/python3 2>/dev/null)
+  PYTHON ?= $(call which,python3)
 endif
 
 ifneq (Darwin,$(UNAME))
