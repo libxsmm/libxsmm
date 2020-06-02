@@ -46,6 +46,8 @@ int main(int argc, char* argv[])
   libxsmm_meltw_reduce_param params;
   libxsmm_matdiff_info norms_elts, norms_elts_squared;
 
+  libxsmm_init();
+
   libxsmm_matdiff_clear(&norms_elts);
   libxsmm_matdiff_clear(&norms_elts_squared);
 
@@ -94,10 +96,11 @@ int main(int argc, char* argv[])
   }
   if (reduce_elts_squared == 1) {
     jit_flags |=  LIBXSMM_MELTW_REDUCE_ELTS_SQUARED;
-  } 
+  }
+
 
   printf("JITing reduce kernel... \n");
-  kernel = libxsmm_dispatch_meltw_reduce(m, n, &ld_in, &_ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_flags);
+  kernel = libxsmm_dispatch_meltw_reduce(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_flags);
 
   /* Call JITed kernel and compare result  */
   printf("Calling JITed reduce kernel... \n");
