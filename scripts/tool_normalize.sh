@@ -53,7 +53,7 @@ then
   echo "Warning: some Python scripts do not pass flake8 check (${HERE})!"
 fi
 
-if [ ! "${FMTBIN}" ] || [ "$(${FMTBIN} --style=file -dump-config >/dev/null)" ]; then
+if [ ! "${FMTBIN}" ] || [ "$(${FMTBIN} --style=file -dump-config 2>&1 >/dev/null)" ]; then
   echo "Warning: missing compatible \"clang-format\" command!"
   FMTBIN=""
 fi
