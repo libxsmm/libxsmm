@@ -21,8 +21,6 @@ HERE=$(cd "$(dirname "$0")"; pwd -P)
 REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
-FMTFILE=${REPO}/.clang-format
-FMTOPTS="--style=file"
 # separate multiple patterns with space
 FMTDIRS=${2:-"samples src tests"}
 FMTXPAT="/gxm/"
@@ -55,8 +53,9 @@ then
   echo "Warning: some Python scripts do not pass flake8 check (${HERE})!"
 fi
 
-if [ ! "${FMTBIN}" ]; then
-  echo "Warning: missing \"clang-format\" command!"
+if [ ! "${FMTBIN}" ] || [ "$(${FMTBIN} --style=file -dump-config >/dev/null)" ]; then
+  echo "Warning: missing compatible \"clang-format\" command!"
+  FMTBIN=""
 fi
 
 if [ "${SED}" ] && [ "${CUT}" ] && [ "${TR}" ] && \
@@ -76,7 +75,7 @@ then
     #
     if [[ ${FILE} != *"Makefile"* ]]; then
       REFORMAT=0
-      if [[ "${FMTBIN}" && (-e "${FMTFILE}") \
+      if [[ "${FMTBIN}" && (-e ${REPO}/.clang-format) \
          && ((${FILE} = *".c"*) || (${FILE} = *".h"*)) ]];
       then
         if [ "" = "${FMTDIRS}" ]; then REFORMAT=1; fi
@@ -94,7 +93,7 @@ then
         fi
       fi
       if [ "0" != "${REFORMAT}" ]; then
-        if [ "0" = "$(${FMTBIN} ${FMTOPTS} ${FILE} > ${TMPF}; echo $?)" ] && \
+        if [ "0" = "$(${FMTBIN} --style=file ${FILE} > ${TMPF}; echo $?)" ] && \
            [ "1" = "$(${DIFF} ${FILE} ${TMPF} >/dev/null; echo $?)" ];
         then
           ${CP} ${TMPF} ${FILE}
