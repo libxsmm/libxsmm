@@ -489,7 +489,7 @@ LIBXSMM_API libxsmm_trsm_xfunction libxsmm_dispatch_trsm(const libxsmm_trsm_desc
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
-   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values, const unsigned int packed_width);
+  const unsigned int* row_ptr, const unsigned int* column_idx, const void* values, const unsigned int packed_width);
 
 /**
  * Code generation routine for the CSC format which multiplies a dense SOA matrix (each element holds a SIMD-width
@@ -498,7 +498,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descr
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor* descriptor,
-   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values, const unsigned int packed_width);
+  const unsigned int* column_ptr, const unsigned int* row_idx, const void* values, const unsigned int packed_width);
 
 /**
  * Code generation routine for row-major format B matrix which is multiplied by a dense packed matrix (each element holds a SIMD-width
@@ -522,7 +522,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_bc_rm(const libxsmm_gemm_de
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
 LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
-   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
+  const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
 
 /**
  * Code generation routine for the CSR format which multiplies a dense matrix B into a dense matrix C.
@@ -530,7 +530,7 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descr
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
 LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
-   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values);
+  const unsigned int* row_ptr, const unsigned int* column_idx, const float* values);
 
 /**
  * Deallocates the JIT'ted code as returned by libxsmm_create_* functions,

@@ -1,21 +1,26 @@
 ﻿---
-AlignAfterOpenBracket: AlwaysBreak
-AlignConsecutiveAssignments: 'true'
+AlignAfterOpenBracket: DontAlign
 AlignEscapedNewlines: DontAlign
-AlignTrailingComments: 'false'
+AlignTrailingComments: false
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: WithoutElse
-AllowShortLoopsOnASingleLine: 'true'
-BreakBeforeBraces: Stroustrup
-ColumnLimit: '132'
-ContinuationIndentWidth: '2'
-IndentCaseLabels: 'true'
+AllowShortLoopsOnASingleLine: true
+BraceWrapping:
+  BeforeCatch:     true
+  BeforeElse:      true
+BreakBeforeBraces: Custom
+ColumnLimit: 132
+ConstructorInitializerIndentWidth: 0
+ContinuationIndentWidth: 2
+IndentCaseLabels: true
 IndentPPDirectives: AfterHash
-IndentWidth: '2'
-KeepEmptyLinesAtTheStartOfBlocks: 'false'
-MaxEmptyLinesToKeep: '2'
+IndentWidth: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
 PointerAlignment: Left
-ReflowComments: 'false'
-SortIncludes: 'false'
+ReflowComments: false
+SortIncludes: false
+SpaceAfterTemplateKeyword: false
 UseTab: Never
 
 ...
