@@ -407,6 +407,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_ldo;
   unsigned int gp_reg_reduced_elts;
   unsigned int gp_reg_reduced_elts_squared;
+  unsigned int gp_reg_scale_vals;
+  unsigned int gp_reg_shift_vals;
+  unsigned int gp_reg_bias_vals;
   unsigned int gp_reg_m_loop;
   unsigned int gp_reg_n_loop;
 } libxsmm_mateltwise_gp_reg_mapping;

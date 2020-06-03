@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/$(OUTNAME)
+XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_scale
 
 .PHONY: all
 all: $(XFILES)
@@ -45,8 +45,11 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBDEP)
-	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/eltwise_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_reduce-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_scale: $(OUTDIR)/.make $(BLDDIR)/eltwise_scale-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_scale-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
