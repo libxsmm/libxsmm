@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
         if (perform_shift) out += shift;
         if (perform_scale) out *= scale;
         if (perform_bias)  out += bias;
-        sout[j*ld_out + i] = out;
+        ref_out[j*ld_out + i] = out;
       }
     }
   } else {
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
         if (perform_shift) out += shift;
         if (perform_scale) out *= scale;
         if (perform_bias)  out += bias;
-        sout[j*ld_out + i] = out;
+        ref_out[j*ld_out + i] = out;
       }
     }
   }
