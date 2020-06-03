@@ -39,13 +39,15 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, i, j;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, i, j, k, iters = 10000;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
   unsigned short jit_flags = 0;
   libxsmm_meltwfunction_reduce kernel;
   libxsmm_meltw_reduce_param params;
   libxsmm_matdiff_info norms_elts, norms_elts_squared;
+  unsigned long long l_start, l_end;
+  double l_total = 0.0, l_total2 = 0.0;
 
   libxsmm_init();
 
@@ -58,6 +60,7 @@ int main(int argc, char* argv[])
   if ( argc > 4 ) reduce_elts = atoi(argv[4]);
   if ( argc > 5 ) reduce_elts_squared = atoi(argv[5]);
   if ( argc > 6 ) reduce_rows = atoi(argv[6]);
+  if ( argc > 7 ) iters = atoi(argv[7]);
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
@@ -145,6 +148,44 @@ int main(int argc, char* argv[])
   printf("Linf abs.error: %.24f\n", norms_elts_squared.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_elts_squared.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_elts_squared.normf_rel);
+
+
+  l_start = libxsmm_timer_tick();
+  /* Calculate reference results...  */
+  for (k = 0; k < iters; k++) {
+    if (reduce_rows == 1) {
+      for (j = 0; j < n; j++) {
+        ref_result_reduce_elts[j] = 0;
+        ref_result_reduce_elts_squared[j] = 0;
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[j] += sinp[j*ld_in + i];
+          ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+        }
+      }
+    } else {
+      /* In this case we reduce columns */
+      for (i = 0; i < m; i++) {
+        ref_result_reduce_elts[i] = 0;
+        ref_result_reduce_elts_squared[i] = 0;
+        for (j = 0; j < n; j++) {
+          ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+          ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+        }
+      }
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Reference time = %.5g\n", ((double)(l_total)));
+
+  l_start = libxsmm_timer_tick();
+  for (k = 0; k < iters; k++) {
+    kernel( &params );
+  }
+  l_end = libxsmm_timer_tick();
+  l_total2 = libxsmm_timer_duration(l_start, l_end);
+  printf("Optimized time = %.5g\n", ((double)(l_total2)));
+  printf("Speedup is = %.5g\n", ((double)(l_total/l_total2)));
 
   free(sinp);
   free(result_reduce_elts);

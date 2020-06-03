@@ -39,14 +39,15 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, perform_scale = 1, perform_shift = 1, perform_bias = 1, scale_rows = 1, vectors_size, i, j;
-
+  unsigned int m = 64, n = 64, perform_scale = 1, perform_shift = 1, perform_bias = 1, scale_rows = 1, vectors_size, i, j, k, iters = 10000;
   libxsmm_blasint ld_in = 64, ld_out = 64;
   float  *sinp, *sout, *scale_vals, *shift_vals, *bias_vals, *ref_out;
   unsigned short jit_flags = 0;
   libxsmm_meltwfunction_scale kernel;
   libxsmm_meltw_scale_param params;
   libxsmm_matdiff_info norms_out;
+  unsigned long long l_start, l_end;
+  double l_total = 0.0, l_total2 = 0.0;
 
   libxsmm_init();
 
@@ -60,6 +61,7 @@ int main(int argc, char* argv[])
   if ( argc > 6 ) perform_scale = atoi(argv[6]);
   if ( argc > 7 ) perform_bias  = atoi(argv[7]);
   if ( argc > 8 ) scale_rows    = atoi(argv[8]);
+  if ( argc > 9 ) iters         = atoi(argv[9]);
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
@@ -155,6 +157,56 @@ int main(int argc, char* argv[])
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+  l_start = libxsmm_timer_tick();
+  /* Calculate reference results...  */
+  for (k = 0; k < iters; k++) {
+    /* Calculate reference results...  */
+    if (scale_rows == 1) {
+      for (j = 0; j < n; j++) {
+        float scale = scale_vals[j];
+        float shift = shift_vals[j];
+        float bias  = bias_vals[j];
+        for (i = 0; i < m; i++) {
+          float out;
+          out = sinp[j*ld_in + i];
+          if (perform_shift) out += shift;
+          if (perform_scale) out *= scale;
+          if (perform_bias)  out += bias;
+          ref_out[j*ld_out + i] = out;
+        }
+      }
+    } else {
+      /* In this case we reduce columns */
+      for (i = 0; i < m; i++) {
+        float scale = scale_vals[i];
+        float shift = shift_vals[i];
+        float bias  = bias_vals[i];
+        for (j = 0; j < n; j++) {
+          float out;
+          out = sinp[j*ld_in + i];
+          if (perform_shift) out += shift;
+          if (perform_scale) out *= scale;
+          if (perform_bias)  out += bias;
+          ref_out[j*ld_out + i] = out;
+        }
+      }
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Reference time = %.5g\n", ((double)(l_total)));
+
+  l_start = libxsmm_timer_tick();
+  for (k = 0; k < iters; k++) {
+    kernel( &params );
+  }
+  l_end = libxsmm_timer_tick();
+  l_total2 = libxsmm_timer_duration(l_start, l_end);
+  printf("Optimized time = %.5g\n", ((double)(l_total2)));
+  printf("Speedup is = %.5g\n", ((double)(l_total/l_total2)));
+
+
 
   free(sinp);
   free(sout);
