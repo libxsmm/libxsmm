@@ -2734,7 +2734,7 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
         if ( perform_scale > 0 ) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
-                                               LIBXSMM_X86_INSTR_MULPS,
+                                               LIBXSMM_X86_INSTR_VMULPS,
                                                i_micro_kernel_config->vector_name,
                                                reg_n, reg_scale, reg_n );
         }
@@ -2859,7 +2859,7 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
         if ( perform_scale > 0 ) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
-                                               LIBXSMM_X86_INSTR_MULPS,
+                                               LIBXSMM_X86_INSTR_VMULPS,
                                                i_micro_kernel_config->vector_name,
                                                reg_n, reg_scale, reg_n );
         }
@@ -2951,7 +2951,7 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
       if ( perform_scale > 0 ) {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                              i_micro_kernel_config->instruction_set,
-                                             LIBXSMM_X86_INSTR_MULPS,
+                                             LIBXSMM_X86_INSTR_VMULPS,
                                              i_micro_kernel_config->vector_name,
                                              reg_m, reg_scale, reg_m );
       }

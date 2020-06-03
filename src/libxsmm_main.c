@@ -1902,9 +1902,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           char tsizename[4];
           internal_get_typesize_string(tsizename, sizeof(tsizename), request->descriptor.meltw->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_p%u.meltw", target_arch, tsizename,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_opcode%u_flags%u.meltw", target_arch, tsizename,
             request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo,
-            (unsigned int)request->descriptor.meltw->operation);
+            (unsigned int)request->descriptor.meltw->operation, (unsigned int)request->descriptor.meltw->flags);
         }
       }
     } break;
