@@ -14,23 +14,83 @@ HERE=$(cd "$(dirname $0)"; pwd -P)
 if [ "" = "${GIT_DIR}" ]; then
   GIT_DIR=${HERE}/../../.git
 fi
-LOCKFILE=${GIT_DIR}/.commit
-CODEFILE=.codefile
+REPO=${GIT_DIR}/..
+
+FMTSTYLE=${REPO}/.clang-format
+# separate multiple patterns with space
+FMTDIRS=${2:-"samples src tests"}
+FMTXPAT="/gxm/"
+# used by degraded policy
+CODEFILE=${REPO}/.codefile
 BANNED_CHARS="\t"
 
+GIT=$(command -v git)
 TOUCH=$(command -v touch)
 GREP=$(command -v grep)
-GIT=$(command -v git)
-SED=$(command -v sed)
-CAT=$(command -v cat)
-WC=$(command -v wc)
-TR=$(command -v tr)
 RM=$(command -v rm)
+if [ "" = "${GIT}" ] || [ "" = "${RM}" ] || [ "" = "${TOUCH}" ] || [ "" = "${GREP}" ]; then
+  >&2 echo "ERROR: command not found, skipping pre-commit hook!"
+  exit 0
+fi
 
-if [ "" != "${GIT}" ]; then
-  if [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${CAT}" ] && \
-     [ "" != "${WC}" ] && [ "" != "${TR}" ] && \
-     [ "" != "$(${GIT} rev-parse --verify HEAD 2>/dev/null)" ];
+# control version-update
+LOCKFILE=${GIT_DIR}/.commit
+VSCRIPT=${REPO}/.github/version.sh
+if [ -e ${VSCRIPT} ] && [ "" = "$(${GIT} diff --cached --name-only | ${GREP} version.txt)" ]; then
+  # update the version file
+  ${VSCRIPT} > version.txt
+  # add file and trigger amending the commit
+  ${GIT} add version.txt
+  ${TOUCH} "${LOCKFILE}-version"
+else # cleanup
+  ${RM} -f "${LOCKFILE}-version"
+fi
+
+GITDIFF="${GIT} diff-index --cached --diff-filter=ACMRTUXB"
+FMTBIN=$(command -v clang-format)
+CHECK=1
+if [ "0" = "${CHECK}" ] && [ "${FMTBIN}" ] && [ -e ${FMTSTYLE} ] && \
+   [ "" = "$(${FMTBIN} --style=file -dump-config 2>&1 >/dev/null)" ];
+then
+  for FILE in $(${GITDIFF} --name-only HEAD); do
+    REFORMAT=0
+    if [[ ${FILE} = *".c"* ]] || [[ ${FILE} = *".h"* ]]; then
+      if [ "" = "${FMTDIRS}" ]; then REFORMAT=1; fi
+      for FMTDIR in ${FMTDIRS}; do
+        if [[ ${FILE} = "${FMTDIR}/"* ]]; then
+          REFORMAT=1; break
+        fi
+      done
+      if [ "0" != "${REFORMAT}" ]; then
+        for XPAT in ${FMTXPAT}; do
+          if [[ ${FILE} = *"${XPAT}"* ]]; then
+            REFORMAT=0; break
+          fi
+        done
+      fi
+    fi
+    if [ "0" != "${REFORMAT}" ]; then
+      ${FMTBIN} --style=file -i ${FILE}
+      # add file and trigger amending the commit
+      ${GIT} add ${FILE}
+      ${TOUCH} "${LOCKFILE}-format"
+    else
+      CHECK=1
+    fi
+  done
+elif [ "0" = "${CHECK}" ]; then
+  >&2 echo "WARNING: clang-format not found or outdated, proceeding with degraded policy!"
+  CHECK=1
+fi
+
+if [ "0" != "${CHECK}" ]; then
+  SED=$(command -v sed)
+  CAT=$(command -v cat)
+  WC=$(command -v wc)
+  TR=$(command -v tr)
+  if [ "${GREP}" ] && [ "${SED}" ] && [ "${CAT}" ] && \
+     [ "${WC}" ] && [ "${TR}" ] && \
+     [ "$(${GIT} rev-parse --verify HEAD 2>/dev/null)" ];
   then
     if [ -e ${CODEFILE} ]; then
       # transform wildcard-style patterns to regular expressions
@@ -43,45 +103,45 @@ if [ "" != "${GIT}" ]; then
       IFS="${IFS_BACKUP}"
       # determine the filename of the patch snippet
       MATCH=$(echo "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2>/dev/null)
-      if [ "" != "${MATCH}" ] && [ -e ${MATCH} ]; then # file must exist i.e., not a deletion
+      if [ "${MATCH}" ] && [ -e ${MATCH} ]; then # file must exist i.e., not a deletion
         # check if problem is with a permitted file type
         for PATTERN in ${PATTERNS}; do
           MATCHOK=$(echo "${MATCH}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
-          if [ "" != "${MATCHOK}" ]; then
-            FILENAME=${MATCHOK}
+          if [ "${MATCHOK}" ]; then
+            FILE=${MATCHOK}
             break
           fi
         done
-      elif [ "" != "${FILENAME}" ]; then
+      elif [ "${FILE}" ]; then
         # check against banned characters
-        MATCH=$(${CAT} -n ${FILENAME} | ${SED} -n "s/^ *\([0-9][0-9]*\)\t.*[${BANNED_CHARS}]..*$/\1/p" 2>/dev/null)
-        if [ "" != "${MATCH}" ]; then
+        MATCH=$(${CAT} -n ${FILE} | ${SED} -n "s/^ *\([0-9][0-9]*\)\t.*[${BANNED_CHARS}]..*$/\1/p" 2>/dev/null)
+        if [ "${MATCH}" ]; then
           N=$(echo ${MATCH} | ${WC} -w)
           if [ "1" = "${N}" ]; then # single occurrence
-            >&2 echo "Issue: ${FILENAME}:${MATCH} contains a banned character."
+            >&2 echo "Issue: ${FILE}:${MATCH} contains a banned character."
           else # multiple occurrences
             LOCATION=$(echo ${MATCH} | ${TR} " " ",")
-            >&2 echo "Issue: ${FILENAME}:${LOCATION} contains banned characters."
+            >&2 echo "Issue: ${FILE}:${LOCATION} contains banned characters."
           fi
           ISSUES=$((ISSUES+N))
         fi
         # check against trailing whitespace(s)
-        MATCH=$(${CAT} -n ${FILENAME} | ${SED} -n "s/^ *\([0-9][0-9]*\)\t.*[[:space:]][[:space:]]*$/\1/p" 2>/dev/null)
-        if [ "" != "${MATCH}" ]; then
+        MATCH=$(${CAT} -n ${FILE} | ${SED} -n "s/^ *\([0-9][0-9]*\)\t.*[[:space:]][[:space:]]*$/\1/p" 2>/dev/null)
+        if [ "${MATCH}" ]; then
           N=$(echo ${MATCH} | ${WC} -w)
           if [ "1" = "${N}" ]; then # single occurrence
-            >&2 echo "Issue: ${FILENAME}:${MATCH} has a trailing whitespace."
+            >&2 echo "Issue: ${FILE}:${MATCH} has a trailing whitespace."
           else # multiple occurrences
             LOCATION=$(echo ${MATCH} | ${TR} " " ",")
-            >&2 echo "Issue: ${FILENAME}:${LOCATION} has trailing spaces."
+            >&2 echo "Issue: ${FILE}:${LOCATION} has trailing spaces."
           fi
           ISSUES=$((ISSUES+N))
         fi
         # checks are finished for this file
-        FILENAME=""
+        FILE=""
       fi
       IFS=""
-    done < <(${GIT} diff-index -p -M --cached HEAD)
+    done < <(${GIT} diff-index --cached -p -M HEAD)
     IFS="${IFS_BACKUP}"
     # reject commit in case of an issue
     if [ "0" != "${ISSUES}" ]; then
@@ -93,15 +153,7 @@ if [ "" != "${GIT}" ]; then
       >&2 echo " found - consider ./scripts/tool_normalize.sh!"
       exit 1
     fi
-  fi
-
-  if [ "" != "${TOUCH}" ] && [ "" != "${GREP}" ] && [ "" != "${RM}" ]; then
-    if [ "" = "$(${GIT} diff --cached --name-only | ${GREP} version.txt)" ]; then
-      # trigger updating the version file
-      ${TOUCH} "${LOCKFILE}-version"
-    else # cleanup
-      ${RM} -f "${LOCKFILE}-version"
-    fi
+  else
+    >&2 echo "WARNING: prerequisites not found; skipping pre-commit hook!"
   fi
 fi
-
