@@ -23,14 +23,15 @@ for (i = 0; i < nn; ++i) {
   for (j = 0; j < mm; ++j) {
     const double ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
     const double ri = real_ref[i*ldr+j];
+    const double ta = LIBXSMM_ABS(ti);
+    const double ra = LIBXSMM_ABS(ri);
 
     /* minimum/maximum of reference set */
     if (ri < info->min_ref) info->min_ref = ri;
     if (ri > info->max_ref) info->max_ref = ri;
 
-    if (LIBXSMM_NOTNAN(ti) && inf > LIBXSMM_ABS(ti)) {
+    if (LIBXSMM_NOTNAN(ti) && inf > ta) {
       const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
-      const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
 
       /* minimum/maximum of test set */
       if (ti < info->min_tst) info->min_tst = ti;
@@ -94,7 +95,7 @@ for (i = 0; i < nn; ++i) {
     else { /* NaN */
       info->m = j;
       info->n = i;
-      result_nan = LIBXSMM_NOTNAN(ri) && inf > LIBXSMM_ABS(ri) ? 1 : 2;
+      result_nan = LIBXSMM_NOTNAN(ri) && inf > ra ? 1 : 2;
       break;
     }
   }
