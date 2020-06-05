@@ -26,20 +26,25 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 # if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT)) && !defined(LIBXSMM_XCOPY_MELTW)
       int prefetch = 0;
 # endif
-      unsigned int tm, tn;
+      unsigned int tm, tn, ts;
       if (NULL != in) { /* mcopy */
 # if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT)) && !defined(LIBXSMM_XCOPY_MELTW)
         prefetch = libxsmm_mcopy_prefetch;
 # endif
         tm = LIBXSMM_UPDIV(libxsmm_mcopy_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
+        ts = libxsmm_mcopy_mbytes;
       }
       else { /* mzero */
         tm = LIBXSMM_UPDIV(libxsmm_mzero_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
+        ts = libxsmm_mzero_mbytes;
       }
       if (0 == tm) tm = m;
       if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
+      if (0 != ts && ts < (tm * tn * typesize)) {
+        tm = LIBXSMM_MAX(ts / (tn * typesize), LIBXSMM_XCOPY_TILE_MIN);
+      }
       if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
         libxsmm_xcopykernel kernel;
         kernel.ptr = NULL;
@@ -190,6 +195,9 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         unsigned int tn = (unsigned int)(libxsmm_tcopy_nscale * tm);
         if (0 == tm) tm = m;
         if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
+        if (0 != libxsmm_tcopy_mbytes && libxsmm_tcopy_mbytes < (tm * tn * typesize)) {
+          tm = LIBXSMM_MAX(libxsmm_tcopy_mbytes / (tn * typesize), LIBXSMM_XCOPY_TILE_MIN);
+        }
         if (tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
           libxsmm_xcopykernel kernel;
           kernel.ptr = NULL;

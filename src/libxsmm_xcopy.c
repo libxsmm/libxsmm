@@ -39,8 +39,8 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
       libxsmm_mcopy_nscale = 0.f;
       libxsmm_mzero_mbytes = 0;
       libxsmm_mzero_nscale = 0.f;
-      libxsmm_tcopy_mbytes = 16;
-      libxsmm_tcopy_nscale = 32.f;
+      libxsmm_tcopy_mbytes = 32768;
+      libxsmm_tcopy_nscale = 0.f;
     }
     else if (LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > archid) {
       libxsmm_mcopy_prefetch = 1;
@@ -48,8 +48,8 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
       libxsmm_mcopy_nscale = 0.f;
       libxsmm_mzero_mbytes = 0;
       libxsmm_mzero_nscale = 0.f;
-      libxsmm_tcopy_mbytes = 16;
-      libxsmm_tcopy_nscale = 32.f;
+      libxsmm_tcopy_mbytes = 32768;
+      libxsmm_tcopy_nscale = 0.f;
     }
     else { /* avx2 */
       libxsmm_mcopy_prefetch = 0;
@@ -57,50 +57,47 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
       libxsmm_mcopy_nscale = 0.f;
       libxsmm_mzero_mbytes = 0;
       libxsmm_mzero_nscale = 0.f;
-      libxsmm_tcopy_mbytes = 16;
-      libxsmm_tcopy_nscale = 32.f;
+      libxsmm_tcopy_mbytes = 32768;
+      libxsmm_tcopy_nscale = 0.f;
     }
   }
-  { /* mcopy: load/adjust tile sizes */
+  { /* mcopy: load/adjust tile sizes (measured as if DP) */
     const char* const env_m = getenv("LIBXSMM_MCOPY_M"), * const env_n = getenv("LIBXSMM_MCOPY_N");
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
-    if (0 < m) libxsmm_mcopy_mbytes = LIBXSMM_MAX(m, 1);
-    if (0 != libxsmm_mcopy_mbytes) {
-      if (0 < n) libxsmm_mcopy_nscale = ((float)n) / libxsmm_mcopy_mbytes;
+    if (0 < m) libxsmm_mcopy_mbytes = LIBXSMM_MAX(m, 1) * 8/*DP*/;
+    if (0 != libxsmm_mcopy_mbytes && 0 != libxsmm_mcopy_nscale) {
+      if (0 < n) libxsmm_mcopy_nscale = ((float)(n * 8/*DP*/)) / libxsmm_mcopy_mbytes;
       if (1 > (libxsmm_mcopy_nscale * libxsmm_mcopy_mbytes)) {
         const float stretch = 1.f / libxsmm_mcopy_mbytes;
         libxsmm_mcopy_nscale = LIBXSMM_MAX(stretch, libxsmm_mcopy_nscale);
       }
-      libxsmm_mcopy_mbytes *= 8; /* measured as if DP */
     }
   }
-  { /* mzero: load/adjust tile sizes */
+  { /* mzero: load/adjust tile sizes (measured as if DP) */
     const char* const env_m = getenv("LIBXSMM_MZERO_M"), * const env_n = getenv("LIBXSMM_MZERO_N");
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
-    if (0 < m) libxsmm_mzero_mbytes = LIBXSMM_MAX(m, 1);
-    if (0 != libxsmm_mzero_mbytes) {
-      if (0 < n) libxsmm_mzero_nscale = ((float)n) / libxsmm_mzero_mbytes;
+    if (0 < m) libxsmm_mzero_mbytes = LIBXSMM_MAX(m, 1) * 8/*DP*/;
+    if (0 != libxsmm_mzero_mbytes && 0 != libxsmm_mzero_nscale) {
+      if (0 < n) libxsmm_mzero_nscale = ((float)(n * 8/*DP*/)) / libxsmm_mzero_mbytes;
       if (1 > (libxsmm_mzero_nscale * libxsmm_mzero_mbytes)) {
         const float stretch = 1.f / libxsmm_mzero_mbytes;
         libxsmm_mzero_nscale = LIBXSMM_MAX(stretch, libxsmm_mzero_nscale);
       }
-      libxsmm_mzero_mbytes *= 8; /* measured as if DP */
     }
   }
-  { /* tcopy: load/adjust tile sizes */
+  { /* tcopy: load/adjust tile sizes (measured as if DP) */
     const char* const env_m = getenv("LIBXSMM_TCOPY_M"), * const env_n = getenv("LIBXSMM_TCOPY_N");
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
-    if (0 < m) libxsmm_tcopy_mbytes = LIBXSMM_MAX(m, 1);
-    if (0 != libxsmm_tcopy_mbytes) {
-      if (0 < n) libxsmm_tcopy_nscale = ((float)n) / libxsmm_tcopy_mbytes;
+    if (0 < m) libxsmm_tcopy_mbytes = LIBXSMM_MAX(m, 1) * 8/*DP*/;
+    if (0 != libxsmm_tcopy_mbytes && 0 != libxsmm_tcopy_nscale) {
+      if (0 < n) libxsmm_tcopy_nscale = ((float)(n * 8/*DP*/)) / libxsmm_tcopy_mbytes;
       if (1 > (libxsmm_tcopy_nscale * libxsmm_tcopy_mbytes)) {
         const float stretch = 1.f / libxsmm_tcopy_mbytes;
         libxsmm_tcopy_nscale = LIBXSMM_MAX(stretch, libxsmm_tcopy_nscale);
       }
-      libxsmm_tcopy_mbytes *= 8; /* measured as if DP */
     }
   }
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
@@ -266,7 +263,7 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
     0 <= tid && tid < nthreads)
   {
     if (0 < m && 0 < n) {
-      unsigned int tm, tn;
+      unsigned int tm, tn, ts;
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT)) && !defined(LIBXSMM_XCOPY_MELTW)
       int prefetch = 0;
 #endif
@@ -278,13 +275,18 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
 #endif
         tm = LIBXSMM_UPDIV(libxsmm_mcopy_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
+        ts = libxsmm_mcopy_mbytes;
       }
       else { /* mzero */
         tm = LIBXSMM_UPDIV(libxsmm_mzero_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
+        ts = libxsmm_mzero_mbytes;
       }
       if (0 == tm) tm = m;
       if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
+      if (0 != ts && ts < (tm * tn * typesize)) {
+        tm = LIBXSMM_MAX(ts / (tn * typesize), LIBXSMM_XCOPY_TILE_MIN);
+      }
       if ((unsigned int)m < tm || (unsigned int)n < tn) {
         if (1 == nthreads) {
           tm = (unsigned int)m; tn = (unsigned int)n;
@@ -382,6 +384,9 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
         kernel.ptr = NULL;
         if (0 == tm) tm = m;
         if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
+        if (0 != libxsmm_tcopy_mbytes && libxsmm_tcopy_mbytes < (tm * tn * typesize)) {
+          tm = LIBXSMM_MAX(libxsmm_tcopy_mbytes / (tn * typesize), LIBXSMM_XCOPY_TILE_MIN);
+        }
         if ((unsigned int)m < tm || (unsigned int)n < tn) {
           if (1 == nthreads) {
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
