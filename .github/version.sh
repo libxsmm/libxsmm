@@ -11,8 +11,13 @@
 ###############################################################################
 GIT=$(command -v git)
 
+SHIFT=0
+if [ "$1" ]; then
+  SHIFT=$1
+fi
+
 NAME=$(${GIT} rev-parse --abbrev-ref HEAD)
 MAIN=$(${GIT} describe --match "[0-9]*" --abbrev=0)
 REVC=$(${GIT} rev-list --count ${MAIN}..HEAD)
 
-echo "${NAME}-${MAIN}-${REVC}"
+echo "${NAME}-${MAIN}-$((REVC+SHIFT))"
