@@ -17,11 +17,11 @@
 LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
+  LIBXSMM_INIT
   if (0 < typesize && 256 > typesize && m <= ldi && m <= ldo && out != in &&
     ((NULL != out && 0 < m && 0 < n) || (0 == m && 0 == n)))
   {
-    LIBXSMM_INIT
-    {
+    if (0 < m && 0 < n) {
 #if defined(_OPENMP)
 # if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT)) && !defined(LIBXSMM_XCOPY_MELTW)
       int prefetch = 0;
@@ -152,7 +152,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
   }
   else {
     static int error_once = 0;
-    if ( 0 != libxsmm_get_verbosity() /* library code is expected to be mute */
+    if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (NULL == out) {
@@ -179,111 +179,113 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   static int error_once = 0;
+  LIBXSMM_INIT
   if (0 < typesize && 256 > typesize && m <= ldi && n <= ldo &&
     ((NULL != out && NULL != in && 0 < m && 0 < n) || (0 == m && 0 == n)))
   {
-    LIBXSMM_INIT
-    if (out != in) {
+    if (0 < m && 0 < n) {
+      if (out != in) {
 #if defined(_OPENMP)
-      unsigned int tm = LIBXSMM_UPDIV(libxsmm_tcopy_mbytes, typesize);
-      unsigned int tn = (unsigned int)(libxsmm_tcopy_nscale * tm);
-      if (0 == tm) tm = m;
-      if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
-      if (tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
-        libxsmm_xcopykernel kernel;
-        kernel.ptr = NULL;
+        unsigned int tm = LIBXSMM_UPDIV(libxsmm_tcopy_mbytes, typesize);
+        unsigned int tn = (unsigned int)(libxsmm_tcopy_nscale * tm);
+        if (0 == tm) tm = m;
+        if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
+        if (tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
+          libxsmm_xcopykernel kernel;
+          kernel.ptr = NULL;
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-        if (0 == omp_get_active_level())
+          if (0 == omp_get_active_level())
 # else
-        if (0 == omp_in_parallel())
+          if (0 == omp_in_parallel())
 # endif
-        { /* enable internal parallelization */
-          const int nthreads = omp_get_max_threads();
+          { /* enable internal parallelization */
+            const int nthreads = omp_get_max_threads();
 # if defined(LIBXSMM_EXT_TASKS)
-          if (0 >= libxsmm_xcopy_taskscale)
+            if (0 >= libxsmm_xcopy_taskscale)
 # endif
-          {
-#           pragma omp parallel num_threads(nthreads)
-            { /* coverity[divide_by_zero] */
-              libxsmm_otrans_thread_internal(out, in, typesize,
-                (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-                tm, tn, kernel, omp_get_thread_num(), nthreads);
+            {
+#             pragma omp parallel num_threads(nthreads)
+              { /* coverity[divide_by_zero] */
+                libxsmm_otrans_thread_internal(out, in, typesize,
+                  (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+                  tm, tn, kernel, omp_get_thread_num(), nthreads);
+              }
             }
-          }
 # if defined(LIBXSMM_EXT_TASKS)
-          else { /* tasks requested */
-            const int ntasks = nthreads * libxsmm_xcopy_taskscale;
-#           pragma omp parallel num_threads(nthreads)
-            { /* first thread discovering work will launch all tasks */
-#             pragma omp single nowait /* anyone is good */
-              { int tid;
-                for (tid = 0; tid < ntasks; ++tid) {
-#                 pragma omp task untied
-                  libxsmm_otrans_thread_internal(out, in, typesize,
-                    (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-                    tm, tn, kernel, tid, ntasks);
+            else { /* tasks requested */
+              const int ntasks = nthreads * libxsmm_xcopy_taskscale;
+#             pragma omp parallel num_threads(nthreads)
+              { /* first thread discovering work will launch all tasks */
+#               pragma omp single nowait /* anyone is good */
+                { int tid;
+                  for (tid = 0; tid < ntasks; ++tid) {
+#                   pragma omp task untied
+                    libxsmm_otrans_thread_internal(out, in, typesize,
+                      (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+                      tm, tn, kernel, tid, ntasks);
+                  }
                 }
               }
             }
-          }
 # endif
-        }
-        else { /* assume external parallelization */
+          }
+          else { /* assume external parallelization */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-          const int nthreads = omp_get_num_threads();
-          const int ntasks = (0 == libxsmm_xcopy_taskscale
-            ? (LIBXSMM_XCOPY_TASKSCALE)
-            : libxsmm_xcopy_taskscale) * nthreads;
-          int tid;
-          for (tid = 0; tid < ntasks; ++tid) {
-#           pragma omp task untied
+            const int nthreads = omp_get_num_threads();
+            const int ntasks = (0 == libxsmm_xcopy_taskscale
+              ? (LIBXSMM_XCOPY_TASKSCALE)
+              : libxsmm_xcopy_taskscale) * nthreads;
+            int tid;
+            for (tid = 0; tid < ntasks; ++tid) {
+#             pragma omp task untied
+              libxsmm_otrans_thread_internal(out, in, typesize,
+                (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+                tm, tn, kernel, tid, ntasks);
+            }
+            if (0 == libxsmm_nosync) { /* allow to omit synchronization */
+#             pragma omp taskwait
+            }
+# else    /* coverity[divide_by_zero] */
             libxsmm_otrans_thread_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-              tm, tn, kernel, tid, ntasks);
-          }
-          if (0 == libxsmm_nosync) { /* allow to omit synchronization */
-#           pragma omp taskwait
-          }
-# else    /* coverity[divide_by_zero] */
-          libxsmm_otrans_thread_internal(out, in, typesize,
-            (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-            tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
+              tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # endif
-        }
-      }
-      else
-#endif /*defined(_OPENMP)*/
-      { /* no MT, or small problem-size */
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
-        libxsmm_xcopykernel kernel;
-        const libxsmm_trans_descriptor* desc;
-        libxsmm_descriptor_blob blob;
-        kernel.ptr = NULL;
-        if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
-          && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo))
-          && NULL != (kernel.xtrans = libxsmm_dispatch_trans(desc))) /* JIT-kernel available */
-        {
-          LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
+          }
         }
         else
+#endif /*defined(_OPENMP)*/
+        { /* no MT, or small problem-size */
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+          libxsmm_xcopykernel kernel;
+          const libxsmm_trans_descriptor* desc;
+          libxsmm_descriptor_blob blob;
+          kernel.ptr = NULL;
+          if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
+            && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo))
+            && NULL != (kernel.xtrans = libxsmm_dispatch_trans(desc))) /* JIT-kernel available */
+          {
+            LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
+          }
+          else
 #endif
-        {
-          LIBXSMM_XCOPY_NONJIT(LIBXSMM_TCOPY_KERNEL,
-            typesize, out, in, ldi, ldo, 0, m, 0, n);
+          {
+            LIBXSMM_XCOPY_NONJIT(LIBXSMM_TCOPY_KERNEL,
+              typesize, out, in, ldi, ldo, 0, m, 0, n);
+          }
         }
       }
-    }
-    else if (ldi == ldo) {
-      libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ldi);
-    }
-    else if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
+      else if (ldi == ldo) {
+        libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ldi);
+      }
+      else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
+      }
     }
   }
   else {
-    if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (NULL == out || NULL == in) {
