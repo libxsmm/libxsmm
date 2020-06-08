@@ -83,6 +83,7 @@ elif [ "0" = "${CHECK}" ]; then
   CHECK=1
 fi
 
+CHECK=0
 if [ "0" != "${CHECK}" ]; then
   SED=$(command -v sed)
   CAT=$(command -v cat)
