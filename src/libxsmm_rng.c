@@ -238,9 +238,10 @@ LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
 }
 
 
-LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint count)
+LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint nbytes)
 {
-  unsigned char* dst = (unsigned char*)data, *end = dst + (count & 0xFFFFFFFFFFFFFFFC);
+  unsigned char* dst = (unsigned char*)data;
+  unsigned char* end = dst + (nbytes & 0xFFFFFFFFFFFFFFFC);
   unsigned int r;
   for (; dst < end; dst += 4) {
 #if defined(LIBXSMM_RNG_DRAND48)
@@ -251,7 +252,7 @@ LIBXSMM_API void libxsmm_rng_seq(void* data, libxsmm_blasint count)
 #endif
     LIBXSMM_MEMCPY127(dst, &r, 4);
   }
-  end = (unsigned char*)data + count;
+  end = (unsigned char*)data + nbytes;
   if (dst < end) {
 #if defined(LIBXSMM_RNG_DRAND48)
     r = (unsigned int)lrand48();
