@@ -26,6 +26,8 @@ html
 site
 bin
 tmp
+obj
+.couscous
 .vscode
 .state
 .make
