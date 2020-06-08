@@ -4118,11 +4118,11 @@ LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(const libxsmm
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_meltw_cvtfp32bf16(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_meltw_cvtfp32bf16(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type, unsigned short flags) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    0, LIBXSMM_MELTW_OPERATION_CVTFP32BF16);
+    flags, LIBXSMM_MELTW_OPERATION_CVTFP32BF16);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 

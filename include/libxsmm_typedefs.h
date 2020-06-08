@@ -181,7 +181,8 @@ typedef enum libxsmm_meltw_flags {
   LIBXSMM_MELTW_SCALE_SHIFT             = 256,
   LIBXSMM_MELTW_SCALE_ADD_BIAS          = 512,
   LIBXSMM_MELTW_SCALE_ROWS              = 1024,
-  LIBXSMM_MELTW_SCALE_COLS              = 2048
+  LIBXSMM_MELTW_SCALE_COLS              = 2048,
+  LIBXSMM_MELTW_FUSE_RELU               = 4096
 } libxsmm_meltw_flags;
 
 /** Flag enumeration which can be binary ORed. */
@@ -574,6 +575,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_relu_param {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cvtfp32bf16_param {
   const void* in_ptr;     /* input pointer */
   void* out_ptr;          /* output pointer */
+  void* relumask_ptr;     /* output pointer for relu mask in case relu is fused into the convert */
 } libxsmm_meltw_cvtfp32bf16_param;
 
 /** argument struct for matrix-eltwise: reduce */
