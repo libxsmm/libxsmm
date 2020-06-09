@@ -274,7 +274,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
   unsigned int i = 0, im, in, m, n, n_trips, m_trips, use_m_masking, mask_in_count, mask_out_count, reg_0, reg_1, unroll_iter = 0, zero_reg = 0;
-  unsigned int reserved_zmms = 0, max_nm_unrolling = 32, reserved_mask_regs = 1, current_mask_reg = 1;
+  unsigned int reserved_zmms = 0, max_nm_unrolling = 31, reserved_mask_regs = 1, current_mask_reg = 1;
   unsigned int n_unroll_factor = 1, eager_result_store = 0;
 
   /* Some rudimentary checking of M, N and LDs*/
