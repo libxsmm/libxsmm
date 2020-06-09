@@ -337,7 +337,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
                                              i_micro_kernel_config->vector_name,
                                              zero_reg, zero_reg, zero_reg );
   }
-  
+
   /* We fully unroll in M dimension, calculate mask if there is remainder */
   m                 = i_mateltwise_desc->m;
   n                 = i_mateltwise_desc->n;
@@ -419,7 +419,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
       unroll_iter = in * m_trips + im;
       if (unroll_iter + reserved_zmms < 16) {
         reg_0 = unroll_iter % (16-reserved_zmms) + reserved_zmms;
-        reg_1 = unroll_iter % (16-reserved_zmms) + reserved_zmms + 16;        
+        reg_1 = unroll_iter % (16-reserved_zmms) + reserved_zmms + 16;
       } else {
         reg_0 = 16 + (unroll_iter % 16);
         reg_1 = reg_0 + 1;
@@ -515,7 +515,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
             zero_reg,
             reg_0,
             reg_0,
-            6, current_mask_reg, 0 );        
+            6, current_mask_reg, 0 );
 
         /* Store relu mask */
         libxsmm_x86_instruction_mask_move_mem( io_generated_code,
@@ -526,7 +526,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
             (im * 32 + in * i_mateltwise_desc->ldo)/8,
             current_mask_reg,
             1 );
-        
+
         /* Blend output result with zero reg based on relu mask */
         libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
             i_micro_kernel_config->instruction_set,
