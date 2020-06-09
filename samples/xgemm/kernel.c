@@ -81,7 +81,7 @@ double run_jit_double( const gemm_def*     i_gemm_def,
                        double*             o_c,
                        const unsigned int  i_print_jit_info) {
   /* define function pointer */
-  libxsmm_xmmfunction l_test_jit;
+  libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -192,11 +192,11 @@ double run_jit_double( const gemm_def*     i_gemm_def,
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
         for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
-          l_a_addr[l_r] = (double*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_a_addr[l_r] = (const double*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
           if (i_gemm_def->trans_b == 0) {
-            l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+            l_b_addr[l_r] = (const double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
           } else {
-            l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
+            l_b_addr[l_r] = (const double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
           }
         }
         l_test_jit.dmra(l_a_addr, l_b_addr, o_c, &l_br);
@@ -218,11 +218,11 @@ double run_jit_double( const gemm_def*     i_gemm_def,
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
         for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
-          l_a_addr[l_r] = (double*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
+          l_a_addr[l_r] = (const double*)i_a + (l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k);
           if (i_gemm_def->trans_b == 0) {
-            l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
+            l_b_addr[l_r] = (const double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n);
           } else {
-            l_b_addr[l_r] = (double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
+            l_b_addr[l_r] = (const double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
           }
         }
         l_test_jit.dmra(l_a_addr, l_b_addr, o_c, &l_br);
@@ -244,10 +244,10 @@ double run_jit_double( const gemm_def*     i_gemm_def,
     printf("%fs for creating jit\n", l_jittime);
   }
 
-  free( l_a_addr );
-  free( l_b_addr );
-  free( l_a_offs );
-  free( l_b_offs );
+  free( (void*)l_a_addr );
+  free( (void*)l_b_addr );
+  free( (void*)l_a_offs );
+  free( (void*)l_b_offs );
 
   return l_runtime;
 }
@@ -260,7 +260,7 @@ double run_jit_float( const gemm_def*     i_gemm_def,
                       float*              o_c,
                       const unsigned int  i_print_jit_info ) {
   /* define function pointer */
-  libxsmm_xmmfunction l_test_jit;
+  libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -424,10 +424,10 @@ double run_jit_float( const gemm_def*     i_gemm_def,
     printf("%fs for creating jit\n", l_jittime);
   }
 
-  free( l_a_addr );
-  free( l_b_addr );
-  free( l_a_offs );
-  free( l_b_offs );
+  free( (void*)l_a_addr );
+  free( (void*)l_b_addr );
+  free( (void*)l_a_offs );
+  free( (void*)l_b_offs );
 
   return l_runtime;
 }
@@ -440,7 +440,7 @@ double run_jit_short_int( const gemm_def*     i_gemm_def,
                           int*                o_c,
                           const unsigned int  i_print_jit_info ) {
   /* define function pointer */
-  libxsmm_xmmfunction l_test_jit;
+  libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -581,10 +581,10 @@ double run_jit_short_int( const gemm_def*     i_gemm_def,
     printf("%fs for creating jit\n", l_jittime);
   }
 
-  free( l_a_addr );
-  free( l_b_addr );
-  free( l_a_offs );
-  free( l_b_offs );
+  free( (void*)l_a_addr );
+  free( (void*)l_b_addr );
+  free( (void*)l_a_offs );
+  free( (void*)l_b_offs );
 
   return l_runtime;
 }
@@ -597,7 +597,7 @@ double run_jit_uschar_int( const gemm_def*      i_gemm_def,
                            int*                 o_c,
                            const unsigned int   i_print_jit_info ) {
   /* define function pointer */
-  libxsmm_xmmfunction l_test_jit;
+  libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -738,10 +738,10 @@ double run_jit_uschar_int( const gemm_def*      i_gemm_def,
     printf("%fs for creating jit\n", l_jittime);
   }
 
-  free( l_a_addr );
-  free( l_b_addr );
-  free( l_a_offs );
-  free( l_b_offs );
+  free( (void*)l_a_addr );
+  free( (void*)l_b_addr );
+  free( (void*)l_a_offs );
+  free( (void*)l_b_offs );
 
   return l_runtime;
 }
@@ -754,7 +754,7 @@ double run_jit_suchar_int( const gemm_def*      i_gemm_def,
                            int*                 o_c,
                            const unsigned int   i_print_jit_info ) {
   /* define function pointer */
-  libxsmm_xmmfunction l_test_jit;
+  libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -895,10 +895,10 @@ double run_jit_suchar_int( const gemm_def*      i_gemm_def,
     printf("%fs for creating jit\n", l_jittime);
   }
 
-  free( l_a_addr );
-  free( l_b_addr );
-  free( l_a_offs );
-  free( l_b_offs );
+  free( (void*)l_a_addr );
+  free( (void*)l_b_addr );
+  free( (void*)l_a_offs );
+  free( (void*)l_b_offs );
 
   return l_runtime;
 }
@@ -924,7 +924,7 @@ double run_jit_suchar_uchar( const gemm_def*        i_gemm_def,
                              float                  i_scf,
                              const unsigned int     i_print_jit_info ) {
   /* define function pointer */
-  libxsmm_xmmfunction l_test_jit;
+  libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -1065,10 +1065,10 @@ double run_jit_suchar_uchar( const gemm_def*        i_gemm_def,
     printf("%fs for creating jit\n", l_jittime);
   }
 
-  free( l_a_addr );
-  free( l_b_addr );
-  free( l_a_offs );
-  free( l_b_offs );
+  free( (void*)l_a_addr );
+  free( (void*)l_b_addr );
+  free( (void*)l_a_offs );
+  free( (void*)l_b_offs );
 
   return l_runtime;
 }
@@ -1081,7 +1081,7 @@ double run_jit_bfloat16_float( const gemm_def*         i_gemm_def,
                                float*                  o_c,
                                const unsigned int      i_print_jit_info ) {
   /* define function pointer */
-  libxsmm_xmmfunction l_test_jit;
+  libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -1222,10 +1222,10 @@ double run_jit_bfloat16_float( const gemm_def*         i_gemm_def,
     printf("%fs for creating jit\n", l_jittime);
   }
 
-  free( l_a_addr );
-  free( l_b_addr );
-  free( l_a_offs );
-  free( l_b_offs );
+  free( (void*)l_a_addr );
+  free( (void*)l_b_addr );
+  free( (void*)l_a_offs );
+  free( (void*)l_b_offs );
 
   return l_runtime;
 }
@@ -1238,7 +1238,7 @@ double run_jit_bfloat16( const gemm_def*         i_gemm_def,
                                libxsmm_bfloat16* o_c,
                          const unsigned int      i_print_jit_info ) {
   /* define function pointer */
-  libxsmm_xmmfunction l_test_jit;
+  libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -1379,10 +1379,10 @@ double run_jit_bfloat16( const gemm_def*         i_gemm_def,
     printf("%fs for creating jit\n", l_jittime);
   }
 
-  free( l_a_addr );
-  free( l_b_addr );
-  free( l_a_offs );
-  free( l_b_offs );
+  free( (void*)l_a_addr );
+  free( (void*)l_b_addr );
+  free( (void*)l_a_offs );
+  free( (void*)l_b_offs );
 
   return l_runtime;
 }
