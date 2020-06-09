@@ -73,45 +73,43 @@ then
     #
     # Reformat code (fallback: check for banned characters).
     #
-    if [[ ${FILE} != *"Makefile"* ]]; then
-      REFORMAT=0
-      if [[ "${FMTBIN}" && (-e ${REPO}/.clang-format) \
-         && ((${FILE} = *".c"*) || (${FILE} = *".h"*)) ]];
-      then
-        if [ "" = "${FMTDIRS}" ]; then REFORMAT=1; fi
-        for FMTDIR in ${FMTDIRS}; do
-          if [[ ${FILE} = "${FMTDIR}/"* ]]; then
-            REFORMAT=1; break
+    REFORMAT=0
+    if [[ "${FMTBIN}" && (-e ${REPO}/.clang-format) \
+       && ((${FILE} = *".c"*) || (${FILE} = *".h"*)) ]];
+    then
+      if [ "" = "${FMTDIRS}" ]; then REFORMAT=1; fi
+      for FMTDIR in ${FMTDIRS}; do
+        if [[ ${FILE} = "${FMTDIR}/"* ]]; then
+          REFORMAT=1; break
+        fi
+      done
+      if [ "0" != "${REFORMAT}" ]; then
+        for XPAT in ${FMTXPAT}; do
+          if [[ ${FILE} = *"${XPAT}"* ]]; then
+            REFORMAT=0; break
           fi
         done
-        if [ "0" != "${REFORMAT}" ]; then
-          for XPAT in ${FMTXPAT}; do
-            if [[ ${FILE} = *"${XPAT}"* ]]; then
-              REFORMAT=0; break
-            fi
-          done
-        fi
       fi
-      if [ "0" != "${REFORMAT}" ]; then
-        if [ "0" = "$(${FMTBIN} --style=file ${FILE} > ${TMPF}; echo $?)" ] && \
-           [ "1" = "$(${DIFF} ${FILE} ${TMPF} >/dev/null; echo $?)" ];
-        then
-          ${CP} ${TMPF} ${FILE}
-          echo -n " : reformatted"
-        else
-          REFORMAT=0
-        fi
-      elif [ "$(${SED} -n "${PATBAN}x/p" ${FILE} 2>/dev/null)" ]; then
-        echo -n " : has banned characters"
-        REFORMAT=1
-      fi
-    else
-      if [ "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" ${FILE})" ]; then
-        ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" ${FILE} > ${TMPF}
+    fi
+    if [ "0" != "${REFORMAT}" ]; then
+      if [ "0" = "$(${FMTBIN} --style=file ${FILE} > ${TMPF}; echo $?)" ] && \
+         [ "1" = "$(${DIFF} ${FILE} ${TMPF} >/dev/null; echo $?)" ];
+      then
         ${CP} ${TMPF} ${FILE}
-        echo -n " : removed tabs"
-        REFORMAT=1
+        echo -n " : reformatted"
+      else
+        REFORMAT=0
       fi
+    elif [[ ${FILE} != *"Makefile"* ]] && \
+         [ "$(${SED} -n "${PATBAN}x/p" ${FILE} 2>/dev/null)" ];
+    then
+      echo -n " : has banned characters"
+      REFORMAT=1
+    elif [ "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" ${FILE})" ]; then
+      ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" ${FILE} > ${TMPF}
+      ${CP} ${TMPF} ${FILE}
+      echo -n " : removed tabs"
+      REFORMAT=1
     fi
     #
     # Check for non-UNIX line-endings.
