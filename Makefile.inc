@@ -77,9 +77,13 @@ PYTHON3 ?= $(call which,python3)
 ifneq (,$(PYTHON3))
   PYTHON ?= $(PYTHON3)
 else ifneq (,$(call which,python))
-  SHELL := $(ENVBIN) PATH=$(MAKEINC):$(PATH) $(SHELL)
-  PYTHON3 := $(shell ln -s $(call which,python) $(MAKEINC)/python3 2>/dev/null)
-  PYTHON ?= $(call which,python3)
+  ifneq (Windows_NT,$(UNAME))
+    SHELL := $(ENVBIN) PATH=$(MAKEINC)):$(PATH) $(SHELL)
+    PYTHON3 := $(shell ln -s $(call which,python) $(MAKEINC)/python3 2>/dev/null)
+    PYTHON ?= $(call which,python3)
+  else
+    PYTHON ?= python
+  endif
 endif
 
 ifneq (Darwin,$(UNAME))
