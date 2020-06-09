@@ -421,7 +421,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         reg_0 = unroll_iter % (16-reserved_zmms) + reserved_zmms;
         reg_1 = unroll_iter % (16-reserved_zmms) + reserved_zmms + 16;        
       } else {
-        reg_0 = 15 + (unroll_iter % 16);
+        reg_0 = 16 + (unroll_iter % 16);
         reg_1 = reg_0 + 1;
       }
 
@@ -562,7 +562,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         if (unroll_iter + reserved_zmms < 16) {
           reg_0 = unroll_iter % (16-reserved_zmms) + reserved_zmms;
         } else {
-          reg_0 = 16 + (unroll_iter % 15);
+          reg_0 = 16 + (unroll_iter % 16);
         }
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
