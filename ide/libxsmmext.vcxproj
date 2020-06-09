@@ -188,10 +188,7 @@
     </Link>
     <ProjectReference />
     <ProjectReference />
-    <Lib>
-      <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
-    </Lib>
+    <Lib />
     <BuildLog />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">
@@ -233,10 +230,7 @@
     </Link>
     <ProjectReference />
     <ProjectReference />
-    <Lib>
-      <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
-    </Lib>
+    <Lib />
     <BuildLog />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
@@ -278,10 +272,7 @@
     </Link>
     <ProjectReference />
     <ProjectReference />
-    <Lib>
-      <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
-    </Lib>
+    <Lib />
     <BuildLog />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">
@@ -325,10 +316,7 @@
     </Link>
     <ProjectReference />
     <ProjectReference />
-    <Lib>
-      <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
-    </Lib>
+    <Lib />
     <BuildLog />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">
@@ -363,10 +351,7 @@
     </Link>
     <ProjectReference />
     <ProjectReference />
-    <Lib>
-      <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
-    </Lib>
+    <Lib />
     <BuildLog />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
@@ -403,10 +388,7 @@
     </Link>
     <ProjectReference />
     <ProjectReference />
-    <Lib>
-      <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
-    </Lib>
+    <Lib />
     <BuildLog />
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
