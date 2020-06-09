@@ -40,7 +40,9 @@
 #   pragma warning(disable: 4091)
 # endif
 # include <DbgHelp.h>
-# pragma comment(lib, "dbghelp")
+# if defined(_MSC_VER)
+#   pragma comment(lib, "dbghelp")
+# endif
 # if defined(_MSC_VER)
 #   pragma warning(pop)
 # endif
