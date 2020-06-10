@@ -4133,7 +4133,7 @@ LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16_act libxsmm_dispatch_meltw_cvtfp32
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    flags, LIBXSMM_MELTW_OPERATION_CVTFP32BF16);
+    flags, LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
