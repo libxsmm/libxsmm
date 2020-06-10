@@ -618,7 +618,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cvtfp32bf16_p
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cvtfp32bf16_act_param {
   const void* in_ptr;     /* input pointer */
   void* out_ptr;          /* output pointer */
-  void* relumask_ptr;     /* output pointer for relu mask in case relu is fused into the convert */
+  void* actstore_ptr;     /* output pointer for relu mask in case relu is fused into the convert */
 } libxsmm_meltw_cvtfp32bf16_act_param;
 
 /** argument struct for matrix-eltwise: reduce */
