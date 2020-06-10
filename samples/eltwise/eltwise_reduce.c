@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
   unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, i, j, k, iters = 10000;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
-  unsigned short jit_flags = 0;
+  libxsmm_meltw_redu_flags jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
   libxsmm_meltwfunction_reduce kernel;
   libxsmm_meltw_reduce_param params;
   libxsmm_matdiff_info norms_elts, norms_elts_squared;
@@ -101,15 +101,15 @@ int main(int argc, char* argv[])
 
   /* Generate JITED kernel */
   if (reduce_rows == 1) {
-    jit_flags = LIBXSMM_MELTW_REDUCE_OP_ADD | LIBXSMM_MELTW_REDUCE_ROWS;
+    jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
   } else {
-    jit_flags = LIBXSMM_MELTW_REDUCE_OP_ADD | LIBXSMM_MELTW_REDUCE_COLS;
+    jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_COLS;
   }
   if (reduce_elts == 1) {
-    jit_flags |=  LIBXSMM_MELTW_REDUCE_ELTS;
+    jit_flags |=  LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
   }
   if (reduce_elts_squared == 1) {
-    jit_flags |=  LIBXSMM_MELTW_REDUCE_ELTS_SQUARED;
+    jit_flags |=  LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
   }
 
 

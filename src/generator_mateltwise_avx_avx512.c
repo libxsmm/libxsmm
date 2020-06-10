@@ -288,7 +288,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   i_gp_reg_mapping->gp_reg_out    = LIBXSMM_X86_GP_REG_R9;
   i_gp_reg_mapping->gp_reg_m_loop = LIBXSMM_X86_GP_REG_R10;
   i_gp_reg_mapping->gp_reg_n_loop = LIBXSMM_X86_GP_REG_R11;
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FUSE_RELU) > 0 ) {
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0 ) {
     i_gp_reg_mapping->gp_reg_relumask = LIBXSMM_X86_GP_REG_R13;
   }
 
@@ -309,7 +309,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
       i_gp_reg_mapping->gp_reg_out,
       0 );
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FUSE_RELU) > 0 ) {
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0 ) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
@@ -320,7 +320,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   }
 
   /* Dependong on the fusion and available instructions, calculate reserved zmms */
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FUSE_RELU) > 0 ) {
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0 ) {
     reserved_zmms++;
   }
   if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
@@ -329,7 +329,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   }
 
   /* Set zero register neede for relu  */
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FUSE_RELU) > 0 ) {
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0 ) {
     zero_reg = reserved_zmms - 1;
     libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                              i_micro_kernel_config->instruction_set,
@@ -501,7 +501,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         }
       }
 
-      if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FUSE_RELU) > 0 ) {
+      if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0 ) {
         /* Compute relu mask */
         if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) {
           current_mask_reg = reserved_mask_regs + (unroll_iter % (8-reserved_mask_regs));
@@ -589,7 +589,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         i_mateltwise_desc->ldo *  n_unroll_factor * i_micro_kernel_config->datatype_size_out);
 
     /* In case of fused relu adjust also relu ptr, datatype for relumask tensor is "bit" and also it has always the same shape as output  */
-    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FUSE_RELU) > 0 ) {
+    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0 ) {
       libxsmm_x86_instruction_alu_imm(  io_generated_code,
           i_micro_kernel_config->alu_add_instruction,
           i_gp_reg_mapping->gp_reg_relumask,
@@ -624,13 +624,13 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
     return;
   }
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_REDUCE_ELTS) > 0 ) {
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ELTS) > 0 ) {
     compute_plain_vals_reduce= 1;
   } else {
     compute_plain_vals_reduce= 0;
   }
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_REDUCE_ELTS_SQUARED) > 0 ) {
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED) > 0 ) {
     compute_squared_vals_reduce = 1;
   } else {
     compute_squared_vals_reduce = 0;
@@ -877,13 +877,13 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
     return;
   }
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_REDUCE_ELTS) > 0 ) {
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ELTS) > 0 ) {
     compute_plain_vals_reduce= 1;
   } else {
     compute_plain_vals_reduce= 0;
   }
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_REDUCE_ELTS_SQUARED) > 0 ) {
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED) > 0 ) {
     compute_squared_vals_reduce = 1;
   } else {
     compute_squared_vals_reduce = 0;
@@ -2708,19 +2708,19 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
     return;
   }
 
-  if ( (((i_mateltwise_desc->flags & LIBXSMM_MELTW_SCALE_ROWS) > 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_SCALE_COLS) > 0)) ||
-       (((i_mateltwise_desc->flags & LIBXSMM_MELTW_SCALE_ROWS) == 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_SCALE_COLS) == 0)) ) {
+  if ( (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS) > 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_COLS) > 0)) ||
+       (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS) == 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_COLS) == 0)) ) {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
 
   /* Determine what operations to perform */
-  scale_rows    = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_SCALE_ROWS) > 0) ? 1 : 0;
-  scale_cols    = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_SCALE_COLS) > 0) ? 1 : 0;
-  perform_scale = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_SCALE_MULT) > 0) ? 1 : 0;
-  perform_shift = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_SCALE_SHIFT) > 0) ? 1 : 0;
-  perform_addbias = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_SCALE_ADD_BIAS) > 0) ? 1 : 0;
+  scale_rows    = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS) > 0) ? 1 : 0;
+  scale_cols    = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_COLS) > 0) ? 1 : 0;
+  perform_scale = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_MULT) > 0) ? 1 : 0;
+  perform_shift = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_SHIFT) > 0) ? 1 : 0;
+  perform_addbias = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS) > 0) ? 1 : 0;
 
   /* Configure the register mapping for this eltwise kernel */
   i_gp_reg_mapping->gp_reg_in                     = LIBXSMM_X86_GP_REG_R8;
@@ -3175,9 +3175,9 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
     }
   } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE) {
     if ( (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
-      if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_REDUCE_ROWS) > 0) {
+      if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ROWS) > 0) {
         libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-      } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_REDUCE_COLS) > 0) {
+      } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_COLS) > 0) {
         libxsmm_generator_reduce_cols_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
       } else {
         /* This should not happen  */

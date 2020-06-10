@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
   unsigned int m = 64, n = 64, perform_scale = 1, perform_shift = 1, perform_bias = 1, scale_rows = 1, vectors_size, i, j, k, iters = 10000;
   libxsmm_blasint ld_in = 64, ld_out = 64;
   float  *sinp, *sout, *scale_vals, *shift_vals, *bias_vals, *ref_out;
-  unsigned short jit_flags = 0;
+  libxsmm_meltw_scal_flags jit_flags = 0;
   libxsmm_meltwfunction_scale kernel;
   libxsmm_meltw_scale_param params;
   libxsmm_matdiff_info norms_out;
@@ -119,18 +119,18 @@ int main(int argc, char* argv[])
 
   /* Generate JITED kernel */
   if (scale_rows == 1) {
-    jit_flags = LIBXSMM_MELTW_SCALE_ROWS;
+    jit_flags = LIBXSMM_MELTW_FLAG_SCALE_ROWS;
   } else {
-    jit_flags = LIBXSMM_MELTW_SCALE_COLS;
+    jit_flags = LIBXSMM_MELTW_FLAG_SCALE_COLS;
   }
   if (perform_scale == 1) {
-    jit_flags |=  LIBXSMM_MELTW_SCALE_MULT;
+    jit_flags |=  LIBXSMM_MELTW_FLAG_SCALE_MULT;
   }
   if (perform_shift == 1) {
-    jit_flags |=  LIBXSMM_MELTW_SCALE_SHIFT;
+    jit_flags |=  LIBXSMM_MELTW_FLAG_SCALE_SHIFT;
   }
   if (perform_bias == 1) {
-    jit_flags |=  LIBXSMM_MELTW_SCALE_ADD_BIAS;
+    jit_flags |=  LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS;
   }
 
   printf("JITing scale kernel... \n");
