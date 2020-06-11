@@ -187,11 +187,12 @@ void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*      
                                         i_micro_kernel_config->vector_name,
                                         i_vec_x, i_vec_x, i_vec_x2 );
 
+  /* TODO: replace with zmm movs  */
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                         i_micro_kernel_config->instruction_set,
                                         LIBXSMM_X86_INSTR_VMULPS,
                                         i_micro_kernel_config->vector_name,
-                                        i_vec_c3, i_vec_ones, i_vec_nom );
+                                        i_vec_x, i_vec_x, i_vec_nom );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                        i_micro_kernel_config->instruction_set,
