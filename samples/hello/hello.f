@@ -22,9 +22,6 @@
         TYPE(LIBXSMM_MMFUNCTION) :: xmm
 
         ALLOCATE(a(m,k,batchsize), b(k,n,batchsize), c(m,n))
-        ! generates and dispatches a matrix multiplication kernel
-        CALL libxsmm_mmdispatch(xmm, m, n, k,                           &
-     &    alpha=REAL(1, T), beta=REAL(1, T))
         ! initialize input
         DO i = 1, batchsize
           DO ki = 1, k
@@ -37,6 +34,9 @@
           END DO
         END DO
         c(:,:) = 0
+        ! generates and dispatches a matrix multiplication kernel
+        CALL libxsmm_mmdispatch(xmm, m, n, k,                           &
+     &    alpha=REAL(1, T), beta=REAL(1, T))
         ! kernel multiplies and accumulates matrices: C += Ai * Bi
         DO i = 1, batchsize
           CALL libxsmm_mmcall(xmm, a(:,:,i), b(:,:,i), c)
