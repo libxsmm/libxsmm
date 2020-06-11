@@ -1307,6 +1307,31 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_vreg2 = l_vreg1;
           l_vreg1 = 0;
           break;
+       case LIBXSMM_X86_INSTR_VRCP14PS:
+          l_fpadj2 -= 0x80;
+          l_fpadj -= 0x0D;
+          l_second += 1;
+          if ( l_vreg2 != LIBXSMM_X86_VEC_REG_UNDEF )
+          {
+             LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
+#if 0
+             fprintf(stderr,"Please call VRCP14PS with regs 0 and 1. Use UNDEF with reg 2\n");
+#endif
+             exit(-1);
+          }
+          l_vreg2 = l_vreg1;
+          l_vreg1 = 0;
+          break;
+       case LIBXSMM_X86_INSTR_VPMAXSD:
+          l_second += 0x01;
+          l_fpadj  -= 0x1C;
+          l_fpadj2 -= 0x80;
+          break;
+       case LIBXSMM_X86_INSTR_VPMINSD:
+          l_second += 0x01;
+          l_fpadj  -= 0x20;
+          l_fpadj2 -= 0x80;
+          break;
        case LIBXSMM_X86_INSTR_VSUBPD:
           l_fpadj = 3;
           break;
