@@ -46,7 +46,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/$(OUTNAME)f
+XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/$(OUTNAME)f $(OUTDIR)/$(OUTNAME)f_udt
 
 .PHONY: all
 all: $(XFILES)
@@ -55,8 +55,11 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
-$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP)
-	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(MAINLIB) \
+$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(BLDDIR)/dispatch-f.o $(FORTDEP) $(LIBDEP) $(EXTDEP)
+	$(FLD) -o $@ $(BLDDIR)/dispatch-f.o $(FORTLIB) $(MAINLIB) \
+		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+$(OUTDIR)/$(OUTNAME)f_udt: $(OUTDIR)/.make $(BLDDIR)/dispatch_udt-f.o $(FORTDEP) $(LIBDEP) $(EXTDEP)
+	$(FLD) -o $@ $(BLDDIR)/dispatch_udt-f.o $(FORTLIB) $(MAINLIB) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
