@@ -14,7 +14,7 @@
      &    C_DOUBLE, C_FLOAT, C_DOUBLE_COMPLEX, C_FLOAT_COMPLEX,         &
      &    C_LONG_LONG, C_INT, C_SHORT, C_CHAR, C_INT8_T, C_BOOL,        &
      &    C_F_POINTER, C_ASSOCIATED, C_LOC, C_PTR,                      &
-     &    C_FUNPTR, C_NULL_FUNPTR
+     &    C_FUNPTR, C_NULL_FUNPTR, C_NULL_PTR
         IMPLICIT NONE
 
         !> Name of the version (stringized set of version numbers).
