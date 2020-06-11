@@ -13,8 +13,8 @@
         USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
      &    C_DOUBLE, C_FLOAT, C_DOUBLE_COMPLEX, C_FLOAT_COMPLEX,         &
      &    C_LONG_LONG, C_INT, C_SHORT, C_CHAR, C_INT8_T, C_BOOL,        &
-     &    C_F_POINTER, C_LOC, C_PTR, C_INTPTR_T,                        &
-     &    C_FUNPTR, C_NULL_FUNPTR, C_NULL_PTR
+     &    C_F_POINTER, C_ASSOCIATED, C_LOC, C_PTR,                      &
+     &    C_FUNPTR, C_NULL_FUNPTR
         IMPLICIT NONE
 
         !> Name of the version (stringized set of version numbers).
@@ -135,18 +135,18 @@
      &    LIBXSMM_X86_AVX512_CPX  = 1022
 
         !> Generic function type (double-precision).
-        TYPE :: LIBXSMM_DMMFUNCTION
-          INTEGER(C_INTPTR_T) :: handle = 0
+        TYPE, BIND(C) :: LIBXSMM_DMMFUNCTION
+          TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
         !> Generic function type (single-precision).
-        TYPE :: LIBXSMM_SMMFUNCTION
-          INTEGER(C_INTPTR_T) :: handle = 0
+        TYPE, BIND(C) :: LIBXSMM_SMMFUNCTION
+          TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
         !> Generic function type (low-precision)
-        TYPE :: LIBXSMM_WIMMFUNCTION
-          INTEGER(C_INTPTR_T) :: handle = 0
+        TYPE, BIND(C) :: LIBXSMM_WIMMFUNCTION
+          TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
         !> Generic function types with certain arity.
@@ -296,8 +296,8 @@
           !> INTEGER(8) :: kernel
           SUBROUTINE libxsmm_release_kernel(kernel)                     &
      &    BIND(C, NAME="libxsmm_release_kernel_")
-            IMPORT :: C_INTPTR_T
-            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
+            IMPORT :: C_FUNPTR
+            TYPE(C_FUNPTR), INTENT(IN) :: kernel
           END SUBROUTINE
 
           !> Type-generic (unsafe) code dispatch (trylock: impure routine).
@@ -309,8 +309,8 @@
           SUBROUTINE libxsmm_xmmdispatch(kernel, gemm_precision,        &
      &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
      &    BIND(C, NAME="libxsmm_xmmdispatch_")
-            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
-            INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
+            IMPORT :: C_FUNPTR, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            TYPE(C_FUNPTR), INTENT(OUT) :: kernel
             INTEGER(C_INT), INTENT(IN)  :: gemm_precision
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
@@ -327,8 +327,8 @@
           SUBROUTINE libxsmm_xmmdispatch2(kernel, iprec, oprec,         &
      &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
      &    BIND(C, NAME="libxsmm_xmmdispatch2_")
-            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
-            INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
+            IMPORT :: C_FUNPTR, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            TYPE(C_FUNPTR), INTENT(OUT) :: kernel
             INTEGER(C_INT), INTENT(IN)  :: iprec, oprec
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
@@ -342,8 +342,8 @@
           !> INTEGER(8) :: kernel
           PURE SUBROUTINE libxsmm_xmmcall_abc(kernel, a, b, c)          &
      &    BIND(C, NAME="libxsmm_xmmcall_abc_")
-            IMPORT C_INTPTR_T, C_PTR
-            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
+            IMPORT C_FUNPTR, C_PTR
+            TYPE(C_FUNPTR), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
           END SUBROUTINE
 
@@ -354,8 +354,8 @@
           PURE SUBROUTINE libxsmm_xmmcall_prf(kernel,                   &
      &    a, b, c, pa, pb, pc)                                          &
      &    BIND(C, NAME="libxsmm_xmmcall_prf_")
-            IMPORT C_INTPTR_T, C_PTR
-            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
+            IMPORT C_FUNPTR, C_PTR
+            TYPE(C_FUNPTR), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
           END SUBROUTINE
 
@@ -1142,7 +1142,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
         LOGICAL FUNCTION libxsmm_dmmavailable(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
-          libxsmm_dmmavailable = (0.NE.kernel%handle)
+          libxsmm_dmmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !> Checks if the given kernel was generated. JIT code is guaranteed
@@ -1151,7 +1151,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
         LOGICAL FUNCTION libxsmm_smmavailable(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
-          libxsmm_smmavailable = (0.NE.kernel%handle)
+          libxsmm_smmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !> Checks if the given kernel was generated. JIT code is guaranteed
@@ -1160,7 +1160,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmavailable
         LOGICAL FUNCTION libxsmm_wimmavailable(kernel)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
-          libxsmm_wimmavailable = (0.NE.kernel%handle)
+          libxsmm_wimmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !> Calls the kernel with the given arguments. Alternatively,
