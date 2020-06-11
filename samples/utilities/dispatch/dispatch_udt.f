@@ -47,22 +47,25 @@
      &    C_LOC(key), SIZE(key) * LIBXSMM_BLASINT_KIND)
 
         IF (C_ASSOCIATED(ptr)) THEN
-          !CALL C_F_POINTER(ptr, udt, (/SIZE(xmm)/))
-        ELSE
-          ptr = libxsmm_xregister(                                      &
-     &      C_LOC(key), SIZE(key) * LIBXSMM_BLASINT_KIND,               &
-     &      SIZE(xmm) * 8)
+          CALL C_F_POINTER(ptr, udt, (/SIZE(xmm)/))
+        ELSE ! no value registered
+          ! generate and dispatch a series of kernels
           CALL libxsmm_mmdispatch(xmm(1), m, n, k,                      &
      &      alpha=REAL(1, T), beta=REAL(1, T))
           CALL libxsmm_mmdispatch(xmm(2), m, n, k + 2,                  &
      &      alpha=REAL(1, T), beta=REAL(1, T))
+          ! register content of xmm-array
+          ptr = libxsmm_xregister(                                      &
+     &      C_LOC(key), SIZE(key) * LIBXSMM_BLASINT_KIND,               &
+     &      SIZE(xmm) * 8, C_LOC(xmm))
+          ! point udt to xmm (below code uses udt to refer to kernels
           udt => xmm
         END IF
-        ! generates and dispatches a matrix multiplication kernel
 
         ! kernel multiplies and accumulates matrices: C += Ai * Bi
         DO i = 1, batchsize
-          !CALL libxsmm_mmcall(xmm, a(:,:,i), b(:,:,i), c)
+          ! call one of the kernels (real code may call all kernels)
+          CALL libxsmm_mmcall(udt(1), a(:,:,i), b(:,:,i), c)
         END DO
         DEALLOCATE(a, b, c)
       END PROGRAM
