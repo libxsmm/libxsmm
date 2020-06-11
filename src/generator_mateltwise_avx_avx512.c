@@ -163,6 +163,11 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const unsigned int                             i_vec_x,
+    const unsigned int                             i_vec_x2,
+    const unsigned int                             i_vec_nom,
+    const unsigned int                             i_vec_denom,
+    const unsigned int                             i_mask_hi,
+    const unsigned int                             i_mask_lo, 
     const unsigned int                             i_vec_c0,
     const unsigned int                             i_vec_c1,
     const unsigned int                             i_vec_c2,
@@ -175,6 +180,26 @@ void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*      
     const unsigned int                             i_vec_ones,
     const unsigned int                             i_vec_neg_ones
     ) {
+
+  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                        i_micro_kernel_config->instruction_set,
+                                        LIBXSMM_X86_INSTR_VMULPS,
+                                        i_micro_kernel_config->vector_name,
+                                        i_vec_x, i_vec_x, i_vec_x2 );
+
+  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                        i_micro_kernel_config->instruction_set,
+                                        LIBXSMM_X86_INSTR_VMULPS,
+                                        i_micro_kernel_config->vector_name,
+                                        i_vec_c3, i_vec_ones, i_vec_nom );
+
+  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                       i_micro_kernel_config->instruction_set,
+                                       LIBXSMM_X86_INSTR_VFMADD231PS,
+                                       i_micro_kernel_config->vector_name,
+                                       i_vec_c2, i_vec_x2, i_vec_nom );
+
+
 }
 
 
