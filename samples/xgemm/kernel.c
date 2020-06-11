@@ -54,7 +54,8 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
   printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
-  printf("    brsize: 1 - N\n");
+  printf("    BRsize: 1 - N\n");
+  printf("    BRunroll: 0/1\n");
   printf("    #repetitions\n");
   printf("\n\n");
   printf("2. Usage (dense*dense=dense, performance only option available):\n");
@@ -67,7 +68,8 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: B normal, 1: B trans\n");
   printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
-  printf("    brsize: 1 - N\n");
+  printf("    BRsize: 1 - N\n");
+  printf("    BRunroll: 0/1\n");
   printf("    #repetitions\n");
   printf("    0: no check, otherwise: run check\n");
   printf("\n\n");

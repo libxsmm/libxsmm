@@ -416,7 +416,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   libxsmm_datatype in_type, libxsmm_datatype out_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldi, libxsmm_blasint ldo,
-  unsigned short flags, int operation)
+  int flags, int operation)
 {
   union {
     libxsmm_meltw_descriptor* ptr;
@@ -442,7 +442,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldx, libxsmm_blasint ldy,
-  unsigned short flags, int operation)
+  int flags, int operation)
 {
   union {
     libxsmm_meltw_descriptor* ptr;

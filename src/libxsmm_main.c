@@ -663,8 +663,9 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
-    fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
-      LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
+    fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH,
+      0 != *(LIBXSMM_BRANCH) ? "-" : "", 0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured",
+      LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
       libxsmm_scratch_info scratch_info; size_t size_scratch = 0, size_private = 0;
@@ -1181,7 +1182,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           else {
             libxsmm_timer_scale = 0;
             internal_timer_start = s0;
-#if !defined(NDEBUG)
+#if defined(_DEBUG)
             libxsmm_se = 1;
 #endif
           }
@@ -4058,7 +4059,7 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
@@ -4070,7 +4071,7 @@ LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(const libxsmm
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_zero libxsmm_dispatch_meltw_zero(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+LIBXSMM_API libxsmm_meltwfunction_zero libxsmm_dispatch_meltw_zero(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
@@ -4082,7 +4083,7 @@ LIBXSMM_API libxsmm_meltwfunction_zero libxsmm_dispatch_meltw_zero(const libxsmm
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_add libxsmm_dispatch_meltw_add(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+LIBXSMM_API libxsmm_meltwfunction_add libxsmm_dispatch_meltw_add(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
@@ -4094,7 +4095,7 @@ LIBXSMM_API libxsmm_meltwfunction_add libxsmm_dispatch_meltw_add(const libxsmm_b
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_mul libxsmm_dispatch_meltw_mul(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+LIBXSMM_API libxsmm_meltwfunction_mul libxsmm_dispatch_meltw_mul(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
@@ -4106,7 +4107,7 @@ LIBXSMM_API libxsmm_meltwfunction_mul libxsmm_dispatch_meltw_mul(const libxsmm_b
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
@@ -4118,7 +4119,7 @@ LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(const libxsmm
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_meltw_cvtfp32bf16(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type) {
+LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_meltw_cvtfp32bf16(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
@@ -4129,7 +4130,8 @@ LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_meltw_cvtfp32bf16
   return result.meltw_cvtfp32bf16;
 }
 
-LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16_act libxsmm_dispatch_meltw_cvtfp32bf16_act(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_meltw_cvta_flags flags) {
+
+LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16_act libxsmm_dispatch_meltw_cvtfp32bf16_act(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_cvta_flags flags) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
@@ -4140,7 +4142,8 @@ LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16_act libxsmm_dispatch_meltw_cvtfp32
   return result.meltw_cvtfp32bf16_act;
 }
 
-LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_reduce(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_meltw_redu_flags flags) {
+
+LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_reduce(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_redu_flags flags) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
@@ -4151,7 +4154,8 @@ LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_reduce(const lib
   return result.meltw_reduce;
 }
 
-LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_meltw_scal_flags flags) {
+
+LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_scal_flags flags) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
@@ -4161,6 +4165,7 @@ LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(const libxs
 
   return result.meltw_scale;
 }
+
 
 LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor)
 {
@@ -4263,7 +4268,7 @@ LIBXSMM_API libxsmm_trsm_xfunction libxsmm_dispatch_trsm(const libxsmm_trsm_desc
 
 
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
-  const unsigned int* row_ptr, const unsigned int* column_idx, const void* values, const unsigned int packed_width)
+  const unsigned int* row_ptr, const unsigned int* column_idx, const void* values, unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
@@ -4292,7 +4297,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descr
 
 
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor* descriptor,
-  const unsigned int* column_ptr, const unsigned int* row_idx, const void* values, const unsigned int packed_width)
+  const unsigned int* column_ptr, const unsigned int* row_idx, const void* values, unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
@@ -4320,7 +4325,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descr
 }
 
 
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_ac_rm(const libxsmm_gemm_descriptor* descriptor, const unsigned int packed_width)
+LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_ac_rm(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
@@ -4345,7 +4350,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_ac_rm(const libxsmm_gemm_de
 }
 
 
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_bc_rm(const libxsmm_gemm_descriptor* descriptor, const unsigned int packed_width)
+LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_bc_rm(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
