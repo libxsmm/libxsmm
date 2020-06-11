@@ -135,17 +135,17 @@
      &    LIBXSMM_X86_AVX512_CPX  = 1022
 
         !> Generic function type (double-precision).
-        TYPE :: LIBXSMM_DMMFUNCTION
+        TYPE, BIND(C) :: LIBXSMM_DMMFUNCTION
           TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
         !> Generic function type (single-precision).
-        TYPE :: LIBXSMM_SMMFUNCTION
+        TYPE, BIND(C) :: LIBXSMM_SMMFUNCTION
           TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
         !> Generic function type (low-precision)
-        TYPE :: LIBXSMM_WIMMFUNCTION
+        TYPE, BIND(C) :: LIBXSMM_WIMMFUNCTION
           TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
