@@ -1529,6 +1529,18 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           }
           l_bytes = 5;
           break;
+       case LIBXSMM_X86_INSTR_VFMADD213PS:
+          l_second += 0x21;
+          l_fpadj  += 0x4f;
+          if ( i_vector_name == 'z' )
+          {
+             l_second -= 0x20;
+             l_fpadj2 -= 0x80;
+          } else if ( l_vreg0 > 7 ) {
+             l_second -= 0x20;
+          }
+          l_bytes = 5;
+          break;
        case LIBXSMM_X86_INSTR_VFMSUB231PS:
           l_second += 0x21;
           l_fpadj  += 0x61;
