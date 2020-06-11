@@ -658,7 +658,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   libxsmm_meltwfunction_add meltw_add; libxsmm_meltwfunction_mul meltw_mul;
   libxsmm_meltwfunction_relu meltw_relu; libxsmm_meltwfunction_cvtfp32bf16 meltw_cvtfp32bf16;
   libxsmm_meltwfunction_reduce meltw_reduce; libxsmm_meltwfunction_scale meltw_scale;
-  libxsmm_meltwfunction_cvtfp32bf16_act meltw_cvtfp32bf16_act; 
+  libxsmm_meltwfunction_cvtfp32bf16_act meltw_cvtfp32bf16_act;
 } libxsmm_xmeltwfunction;
 
 /** Specialized function for transpose (weak-typed). */
