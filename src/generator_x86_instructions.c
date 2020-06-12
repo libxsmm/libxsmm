@@ -1331,6 +1331,9 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
              //fprintf(stderr,"Please call VMOVDQU64 with regs 0 and 1. Use UNDEF with reg 2\n");
              exit(-1);
           }
+          if ( (i_vector_name == 'x') && (l_vreg0 < 16) ) l_fourth -= 0x40;
+          if ( (i_vector_name == 'y') && (l_vreg0 < 16) ) l_fourth -= 0x20;
+          l_bytes = 6;
           l_vreg2 = l_vreg1;
           l_vreg1 = 0;
           break;
