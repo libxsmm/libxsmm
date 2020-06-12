@@ -701,6 +701,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
                                                   reg_1, vec_halves, reg_1 );
           
           }
+        }
       }
 
       /* Downconvert to BF16  */
@@ -863,7 +864,6 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
   }
-
 }
 
 LIBXSMM_API_INTERN
