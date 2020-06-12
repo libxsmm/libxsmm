@@ -852,11 +852,11 @@ LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_intrinsics_mm512_rng_state1[16]);
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
 
-/** Generate random number in the interval [0, 1); not thread-safe.
- *  this is based on xoshiro128+ 1.0, e.g. http://prng.di.unimi.it/xoshiro128plus.c */
 # if defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC) && 0
 LIBXSMM_PRAGMA_OPTIMIZE_OFF /* avoid ICE in case of symbols (-g) */
 # endif
+/** Generate random number in the interval [0, 1); not thread-safe.
+ *  this is based on xoshiro128+ 1.0, e.g. http://prng.di.unimi.it/xoshiro128plus.c */
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EPI32(void) {
   const __m512i result = _mm512_add_epi32(LIBXSMM_INTRINSICS_MM512_RNG_STATE(0), LIBXSMM_INTRINSICS_MM512_RNG_STATE(3));
   const __m512i s = _mm512_slli_epi32(LIBXSMM_INTRINSICS_MM512_RNG_STATE(1), 9);
@@ -873,6 +873,36 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRIN
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_RNG_PS(void) {
   const __m512i rng_mantissa = _mm512_srli_epi32( LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EPI32(), 9 );
+  const __m512 one = _mm512_set1_ps(1.0f);
+  return _mm512_sub_ps(_mm512_castsi512_ps(_mm512_or_epi32(_mm512_set1_epi32(0x3f800000), rng_mantissa)), one);
+}
+
+/** Generate random number in the interval [0, 1); thread save, state needs to be managed by user.
+ *  this is based on xoshiro128+ 1.0, e.g. http://prng.di.unimi.it/xoshiro128plus.c */
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32( unsigned int* stateptr ) {
+  __m512i state_0 = _mm512_loadu_si512( stateptr    );
+  __m512i state_1 = _mm512_loadu_si512( stateptr+16 ); 
+  __m512i state_2 = _mm512_loadu_si512( stateptr+32 ); 
+  __m512i state_3 = _mm512_loadu_si512( stateptr+48 ); 
+  const __m512i result = _mm512_add_epi32(state_0, state_3);
+  const __m512i s = _mm512_slli_epi32(state_1, 9);
+  __m512i t;
+  state_2 = _mm512_xor_epi32(state_2, state_0);
+  state_3 = _mm512_xor_epi32(state_3, state_1);
+  state_1 = _mm512_xor_epi32(state_1, state_2);
+  state_0 = _mm512_xor_epi32(state_0, state_3);
+  state_2 = _mm512_xor_epi32(state_2, s);
+  _mm512_storeu_si512( stateptr   , state_0 );
+  _mm512_storeu_si512( stateptr+16, state_1 );
+  _mm512_storeu_si512( stateptr+32, state_2 );
+  t = _mm512_slli_epi32(state_3, 11);
+  state_3 = _mm512_or_epi32(t, _mm512_srli_epi32(state_3, 32 - 11));
+  _mm512_storeu_si512( stateptr+48, state_3 );
+  return result;
+}
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS( unsigned int* stateptr) {
+  const __m512i rng_mantissa = _mm512_srli_epi32( LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32( stateptr ), 9 );
   const __m512 one = _mm512_set1_ps(1.0f);
   return _mm512_sub_ps(_mm512_castsi512_ps(_mm512_or_epi32(_mm512_set1_epi32(0x3f800000), rng_mantissa)), one);
 }
