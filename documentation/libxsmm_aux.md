@@ -53,9 +53,37 @@ libxsmm_timer_tickint libxsmm_timer_ncycles(
   libxsmm_timer_tickint tick1);
 ```
 
+### User-Data Dispatch
+
+To register a user-defined key-value pair with LIBXSMM's fast key-value store, the key must be binary reproducible. Structured key-data (`struct` or `class` type) that is potentially padded in a compiler/platform-specific fashion must be fully initialized before registration and dispatch/query, i.e., all gaps may be zero-filled before initializing data members (`memset(&mykey, 0, sizeof(mykey))`). This is because some compilers leave padded data uninitialized, which breaks binary reproducible keys. The size of the key is limited to LIBXSMM_DESCRIPTOR_MAXSIZE (64 Byte), otherwise the size of the value can be arbitrary. The given value is copied by LIBXSMM and may be initialized at registration-time or when dispatched. Registered data is released at program termination but can be manually unregistered and released (`libxsmm_xrelease`), e.g., to register a larger value for an existing key.
+
+```C
+void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init);
+void* libxsmm_xdispatch(const void* key, size_t key_size);
+```
+
+The Fortran interface is designed to follow the same flow as the C&#160;language: (1)&#160;`libxsmm_xdispatch` is used to query the value, and (2)&#160;if the value is a NULL-pointer, it is registered per `libxsmm_xregister`. Similar to C (`memset`), structured key-data must be zero-filled (`libxsmm_xclear`) even when followed by an element-wise initialization. A key based on a contiguous array has no gaps by definition and it is enough to initialize the array elements. A [Fortran example](https://github.com/hfp/libxsmm/blob/master/samples/utilities/dispatch/dispatch_udt.f) is given as part of the [Dispatch Microbenchmark](https://github.com/hfp/libxsmm/tree/master/samples/utilities/dispatch).
+
+```Fortran
+FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
+  TYPE(C_PTR), INTENT(IN), VALUE :: key
+  TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: valinit
+  INTEGER(C_INT), INTENT(IN) :: keysize, valsize
+  TYPE(C_PTR) :: libxsmm_xregister
+END FUNCTION
+
+FUNCTION libxsmm_xdispatch(key, keysize)
+  TYPE(C_PTR), INTENT(IN), VALUE :: key
+  INTEGER(C_INT), INTENT(IN) :: keysize
+  TYPE(C_PTR) :: libxsmm_xdispatch
+END FUNCTION
+```
+
+**NOTE**: This functionality can be used to, e.g., dispatch multiple kernels in one step if a code location relies on multiple kernels. This way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels used by this task. However, the functionality is not limited to multiple kernels but any data can be registered and queried. User-data dispatch uses the same implementation as regular code-dispatch.
+
 ### Memory Allocation
 
-The C interface ([libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h#L37)) provides functions for aligned memory one of which allows to specify the alignment (or to request an automatically selected alignment). The automatic alignment is also available with a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
+The C interface ([libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h)) provides functions for aligned memory one of which allows to specify the alignment (or to request an automatically selected alignment). The automatic alignment is also available with a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
 **NOTE**: The function `libxsmm_free` must be used to deallocate buffers allocated by LIBXSMM's allocation functions.
 
 ```C

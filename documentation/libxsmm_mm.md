@@ -181,32 +181,7 @@ void libxsmm_dgemm_batch(const char transa_array[], const char transb_array[],
 
 ### User-Data Dispatch
 
-It can be desired to dispatch user-defined data, i.e., to query a value based on a key. To register a user-defined key-value pair with LIBXSMM's fast key-value store, the key must be binary reproducible. Structured key-data (`struct` or `class` type) that is potentially padded in a compiler/platform-specific fashion must be fully initialized before registration and dispatch/query, i.e., all gaps may be zeroed before initializing data members (`memset(&mykey, 0, sizeof(mykey))`). This is because some compilers leave padded data uninitialized, which breaks binary reproducible keys. The size of the key is limited to LIBXSMM_DESCRIPTOR_MAXSIZE (64 Byte), otherwise the size of the value can be arbitrary. The given value is copied by LIBXSMM and may be initialized at registration-time or when dispatched. Registered data is released at program termination but can be manually unregistered and released (`libxsmm_xrelease`), e.g., to register a larger value for an existing key.
-
-```C
-void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init);
-void* libxsmm_xdispatch(const void* key, size_t key_size);
-```
-
-The Fortran interface is designed to follow the same flow as the C&#160;language: (1)&#160;`libxsmm_xdispatch` is used to query the value, and (2)&#160;if the value is a NULL-pointer, it is registered per `libxsmm_xregister`. Similat to C (`memset`), structured data must be zero-filled (`libxsmm_xclear`) before an element-wise initialization.
-
-
-```Fortran
-FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
-  TYPE(C_PTR), INTENT(IN), VALUE :: key
-  TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: valinit
-  INTEGER(C_INT), INTENT(IN) :: keysize, valsize
-  TYPE(C_PTR) :: libxsmm_xregister
-END FUNCTION
-
-FUNCTION libxsmm_xdispatch(key, keysize)
-  TYPE(C_PTR), INTENT(IN), VALUE :: key
-  INTEGER(C_INT), INTENT(IN) :: keysize
-  TYPE(C_PTR) :: libxsmm_xdispatch
-END FUNCTION
-```
-
-**NOTE**: This functionality can be used to dispatch multiple kernels in one step, e.g., if a single task relies on multiple kernels. This way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels used by this task.
+It can be desired to dispatch user-defined data, i.e., to query a value based on a key. This functionality can be used to, e.g., dispatch multiple kernels in one step if a code location relies on multiple kernels. This way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels used by this task. This functionality is detailed in the section about [Service Functions](libxsmm_aux.md#user-data-dispatch).
 
 ### Call Wrapper
 
