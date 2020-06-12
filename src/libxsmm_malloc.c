@@ -288,13 +288,17 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define INTERNAL_XMALLOC_WATERMARK(NAME, WATERMARK, LIMIT, SIZE) { \
   const size_t internal_xmalloc_watermark_ = (WATERMARK) + (SIZE) / 2; /* accept data-race */ \
   if (internal_xmalloc_watermark_ < (LIMIT)) { \
+    static size_t internal_xmalloc_watermark_verbose_ = 0; \
     (LIMIT) = internal_xmalloc_watermark_; /* accept data-race */ \
-    if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity)) { /* muted */ \
+    if (internal_xmalloc_watermark_verbose_ < internal_xmalloc_watermark_ && \
+      (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity)) \
+    { /* muted */ \
       char internal_xmalloc_watermark_buffer_[32]; \
       /* coverity[check_return] */ \
       libxsmm_format_size(internal_xmalloc_watermark_buffer_, sizeof(internal_xmalloc_watermark_buffer_), \
         internal_xmalloc_watermark_, "KM", "B", 10); \
       fprintf(stderr, "LIBXSMM WARNING: " NAME " watermark reached at %s!\n", internal_xmalloc_watermark_buffer_); \
+      internal_xmalloc_watermark_verbose_ = internal_xmalloc_watermark_; \
     } \
   } \
 }
@@ -1800,7 +1804,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         static int map32 = 1;
 # endif
         int mflags = 0
-# if defined(MAP_UNINITIALIZED)
+# if defined(MAP_UNINITIALIZED) && 0/*fails with WSL*/
           | MAP_UNINITIALIZED /* unlikely available */
 # endif
 # if defined(MAP_NORESERVE)
