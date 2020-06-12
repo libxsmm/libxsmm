@@ -410,17 +410,20 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   unsigned int reserved_zmms = 0, max_nm_unrolling = 31, reserved_mask_regs = 1, current_mask_reg = 1;
   unsigned int n_unroll_factor = 1, eager_result_store = 0;
   unsigned int vec_x2 = 0, vec_nom = 0, vec_denom = 0, vec_c0 = 0, vec_c1 = 0, vec_c2 = 0, vec_c3 = 0, vec_c1_d = 0, vec_c2_d = 0, vec_c3_d = 0, vec_hi_bound = 0, vec_lo_bound = 0, vec_ones = 0, vec_neg_ones = 0, vec_halves = 0, mask_hi = 0, mask_lo = 0;
-  unsigned int fuse_tanh = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_TANH) > 0 ) ? 1 : 0;
-  unsigned int fuse_sigmoid = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_SIGM) > 0 ) ? 1 : 0;
-  unsigned int fuse_relu = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0 ) ? 1 : 0;
-
-  if ((fuse_tanh == 1) && (fuse_sigmoid == 1)) {
+  unsigned int fuse_tanh_before_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_ACVT_FUSE_TANH) > 0) ) ? 1 : 0;
+  unsigned int fuse_sigmoid_before_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) &&  ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM) > 0) ) ? 1 : 0;
+  unsigned int fuse_relu_after_cvt = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0) ) ? 1 : 0;
+  unsigned int fuse_tanh_after_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_TANH) > 0) ) ? 1 : 0;
+  unsigned int fuse_sigmoid_after_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) &&  ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_SIGM) > 0) ) ? 1 : 0;
+  
+  if ((fuse_tanh_before_cvt == 1) && (fuse_sigmoid_before_cvt == 1)) {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
 
-  if (((fuse_tanh == 1) || (fuse_sigmoid == 1)) && (fuse_relu == 1)) {
+  /* For now the below options are not supported in JITer */
+  if ((fuse_tanh_after_cvt == 1) || (fuse_sigmoid_after_cvt == 1)) {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
@@ -437,7 +440,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   i_gp_reg_mapping->gp_reg_out    = LIBXSMM_X86_GP_REG_R9;
   i_gp_reg_mapping->gp_reg_m_loop = LIBXSMM_X86_GP_REG_R10;
   i_gp_reg_mapping->gp_reg_n_loop = LIBXSMM_X86_GP_REG_R11;
-  if ( fuse_relu == 1 ) {
+  if ( fuse_relu_after_cvt == 1 ) {
     i_gp_reg_mapping->gp_reg_relumask = LIBXSMM_X86_GP_REG_R13;
   }
 
@@ -458,7 +461,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
       i_gp_reg_mapping->gp_reg_out,
       0 );
 
-  if ( fuse_relu == 1 ) {
+  if ( fuse_relu_after_cvt == 1 ) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
@@ -474,7 +477,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   }
 
   /* Determine the names of the reserved registers and load with constants when applicable... */
-  if ( (fuse_tanh == 1) || (fuse_sigmoid == 1) ) {
+  if ( (fuse_tanh_before_cvt == 1) || (fuse_sigmoid_before_cvt == 1) ) {
     float c0_array[16] = { 2027025.0f, 2027025.0f, 52027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f };
     float c1_array[16] = { 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f };    
     float c2_array[16] = { 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f };    
@@ -488,7 +491,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
     float neg_ones_array[16] = { -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f }; 
 
     reserved_zmms += 14;
-    if (fuse_sigmoid == 1) {
+    if (fuse_sigmoid_before_cvt == 1) {
       reserved_zmms++;
     }
     vec_x2        = reserved_zmms - 1;
@@ -516,7 +519,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) ones_array, "ones_array_", i_micro_kernel_config->vector_name, vec_ones);
     vec_neg_ones  = reserved_zmms - 14;
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) neg_ones_array, "neg_ones_array_", i_micro_kernel_config->vector_name, vec_neg_ones);
-    if (fuse_sigmoid == 1) {
+    if (fuse_sigmoid_before_cvt == 1) {
       float halves_array[16] = { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
       vec_halves  = reserved_zmms - 15;
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) halves_array, "halves_array_", i_micro_kernel_config->vector_name, vec_halves);
@@ -524,7 +527,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   }
 
   /* Set zero register neede for relu  */
-  if ( fuse_relu == 1 ) {
+  if ( fuse_relu_after_cvt == 1 ) {
     reserved_zmms++;    
     zero_reg = reserved_zmms - 1;
     libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -572,7 +575,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   }
 
   /* Determine the names of the reserved registers... */
-  if ( (fuse_tanh == 1) || (fuse_sigmoid == 1) ) {
+  if ( (fuse_tanh_before_cvt == 1) || (fuse_sigmoid_before_cvt == 1) ) {
     reserved_mask_regs += 2;
     mask_hi            = reserved_mask_regs - 1;
     mask_lo            = reserved_mask_regs - 2;
@@ -649,8 +652,8 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
             reg_1, (im == (m_trips-1)) ? use_m_masking : 0, 1, 0 );
       }
       
-      if ( (fuse_tanh == 1) || (fuse_sigmoid == 1) ) {
-        if (fuse_sigmoid == 1) {
+      if ( (fuse_tanh_before_cvt == 1) || (fuse_sigmoid_before_cvt == 1) ) {
+        if (fuse_sigmoid_before_cvt == 1) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                 i_micro_kernel_config->instruction_set,
                                                 LIBXSMM_X86_INSTR_VMULPS,
@@ -661,7 +664,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         libxsmm_generator_tanh_ps_rational_78_avx512(io_generated_code, i_micro_kernel_config, reg_0, vec_x2, vec_nom, vec_denom, mask_hi, mask_lo,
                                                      vec_c0, vec_c1, vec_c2, vec_c3, vec_c1_d, vec_c2_d, vec_c3_d, vec_hi_bound, vec_lo_bound, vec_ones, vec_neg_ones);
 
-        if (fuse_sigmoid == 1) {
+        if (fuse_sigmoid_before_cvt == 1) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                 i_micro_kernel_config->instruction_set,
                                                 LIBXSMM_X86_INSTR_VADDPS,
@@ -676,7 +679,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         }
 
         if (!((use_m_masking == 1) && (im == m_trips-1) && (m % 32 <= 16))) {
-          if (fuse_sigmoid == 1) {
+          if (fuse_sigmoid_before_cvt == 1) {
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                   i_micro_kernel_config->instruction_set,
                                                   LIBXSMM_X86_INSTR_VMULPS,
@@ -687,7 +690,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
           libxsmm_generator_tanh_ps_rational_78_avx512(io_generated_code, i_micro_kernel_config, reg_1, vec_x2, vec_nom, vec_denom, mask_hi, mask_lo,
                                                        vec_c0, vec_c1, vec_c2, vec_c3, vec_c1_d, vec_c2_d, vec_c3_d, vec_hi_bound, vec_lo_bound, vec_ones, vec_neg_ones);
 
-          if (fuse_sigmoid == 1) {
+          if (fuse_sigmoid_before_cvt == 1) {
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                   i_micro_kernel_config->instruction_set,
                                                   LIBXSMM_X86_INSTR_VADDPS,
@@ -759,7 +762,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         }
       }
 
-      if ( fuse_relu == 1 ) {
+      if ( fuse_relu_after_cvt == 1 ) {
         /* Compute relu mask */
         if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) {
           current_mask_reg = reserved_mask_regs + (unroll_iter % (8-reserved_mask_regs));
@@ -847,7 +850,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         i_mateltwise_desc->ldo *  n_unroll_factor * i_micro_kernel_config->datatype_size_out);
 
     /* In case of fused relu adjust also relu ptr, datatype for relumask tensor is "bit" and also it has always the same shape as output  */
-    if ( fuse_relu == 1 ) {
+    if ( fuse_relu_after_cvt == 1 ) {
       libxsmm_x86_instruction_alu_imm(  io_generated_code,
           i_micro_kernel_config->alu_add_instruction,
           i_gp_reg_mapping->gp_reg_relumask,
@@ -3422,7 +3425,7 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   libxsmm_x86_instruction_open_stream_mateltwise( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, NULL );
 
   /* Depending on the elementwise function, dispatch the proper code JITer */
-  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT)) {
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16)) {
     if ( (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
       libxsmm_generator_cvtfp32bf16_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
     } else {
