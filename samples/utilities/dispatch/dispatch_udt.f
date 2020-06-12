@@ -67,7 +67,7 @@
           END IF
 
           ! here we executed libxsmm_xdispatch one time (for this round)
-          ! all kernels are dispatched at once instead of multiple times
+          ! all kernels have been dispatched at once (udt)
           DO i = 1, batchsize
             CALL libxsmm_mmcall(udt(1), a(:,:,i), b(:,:,i), c)
           END DO
