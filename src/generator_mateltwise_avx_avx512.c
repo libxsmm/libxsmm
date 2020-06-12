@@ -409,6 +409,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   unsigned int i = 0, im, in, m, n, n_trips, m_trips, use_m_masking, mask_in_count, mask_out_count, reg_0, reg_1, unroll_iter = 0, zero_reg = 0;
   unsigned int reserved_zmms = 0, max_nm_unrolling = 31, reserved_mask_regs = 1, current_mask_reg = 1;
   unsigned int n_unroll_factor = 1, eager_result_store = 0;
+  unsigned int vec_x2 = 0, vec_nom = 0, vec_denom = 0, vec_c0 = 0, vec_c1 = 0, vec_c2 = 0, vec_c3 = 0, vec_c1_d = 0, vec_c2_d = 0, vec_c3_d = 0, vec_hi_bound = 0, vec_lo_bound = 0, vec_ones = 0, vec_neg_ones = 0, mask_hi = 0, mask_lo = 0;
 
   /* Some rudimentary checking of M, N and LDs*/
   if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) || (i_mateltwise_desc->m > i_mateltwise_desc->ldo) ) {
@@ -452,13 +453,56 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         0 );
   }
 
-  /* Dependong on the fusion and available instructions, calculate reserved zmms */
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0 ) {
-    reserved_zmms++;
-  }
   if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
     reserved_zmms += 3;
     reserved_mask_regs += 2;
+  }
+
+  /* Determine the names of the reserved registers and load with constants when applicable... */
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_TANH) > 0 ) {
+    float c0_array[16] = { 2027025.0f, 2027025.0f, 52027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f };
+    float c1_array[16] = { 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f };    
+    float c2_array[16] = { 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f };    
+    float c3_array[16] = { 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f };   
+    float c1_d_array[16] = { 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f, 945945.0f };    
+    float c2_d_array[16] = { 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f, 51975.0f };    
+    float c3_d_array[16] = { 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f, 630.0f };   
+    float hi_b_array[16] = { 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f, 4.97f }; 
+    float lo_b_array[16] = { -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f, -4.97f }; 
+    float ones_array[16] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; 
+    float neg_ones_array[16] = { -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f }; 
+
+    reserved_zmms += 14;
+    vec_x2        = reserved_zmms - 1;
+    vec_nom       = reserved_zmms - 2;
+    vec_denom     = reserved_zmms - 3;
+    vec_c0        = reserved_zmms - 4;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c0_array, "c0_array_", i_micro_kernel_config->vector_name, vec_c0);
+    vec_c1        = reserved_zmms - 5;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c1_array, "c1_array_", i_micro_kernel_config->vector_name, vec_c1);
+    vec_c2        = reserved_zmms - 6;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_array, "c2_array_", i_micro_kernel_config->vector_name, vec_c2);
+    vec_c3        = reserved_zmms - 7;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c3_array, "c3_array_", i_micro_kernel_config->vector_name, vec_c3);
+    vec_c1_d      = reserved_zmms - 8;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c1_d_array, "c1_d_array_", i_micro_kernel_config->vector_name, vec_c1_d);
+    vec_c2_d      = reserved_zmms - 9;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_d_array, "c2_d_array_", i_micro_kernel_config->vector_name, vec_c2_d);
+    vec_c3_d      = reserved_zmms - 10;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c3_d_array, "c3_d_array_", i_micro_kernel_config->vector_name, vec_c3_d);
+    vec_hi_bound  = reserved_zmms - 11;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) hi_b_array, "hi_b_array_", i_micro_kernel_config->vector_name, vec_hi_bound);
+    vec_lo_bound  = reserved_zmms - 12;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) lo_b_array, "lo_b_array_", i_micro_kernel_config->vector_name, vec_lo_bound);
+    vec_ones      = reserved_zmms - 13;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) ones_array, "ones_array_", i_micro_kernel_config->vector_name, vec_ones);
+    vec_neg_ones  = reserved_zmms - 14;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) neg_ones_array, "neg_ones_array_", i_micro_kernel_config->vector_name, vec_neg_ones);
+  }
+
+  /* Dependong on the fusion and available instructions, calculate reserved zmms */
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0 ) {
+    reserved_zmms++;
   }
 
   /* Set zero register neede for relu  */
@@ -506,6 +550,13 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
     mask_out_count = 32 - (m % 32);
     libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R12, 2, mask_out_count, LIBXSMM_GEMM_PRECISION_BF16);
     reserved_mask_regs += 2;
+  }
+
+  /* Determine the names of the reserved registers... */
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_TANH) > 0 ) {
+    reserved_mask_regs += 2;
+    mask_hi            = reserved_mask_regs - 1;
+    mask_lo            = reserved_mask_regs - 2;
   }
 
   /* In this case we have to use CPX replacement sequence for downconverts... */
@@ -577,6 +628,15 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
             (im * 32 + 16 + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
             i_micro_kernel_config->vector_name,
             reg_1, (im == (m_trips-1)) ? use_m_masking : 0, 1, 0 );
+      }
+      
+      if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_TANH) > 0 ) {
+        libxsmm_generator_tanh_ps_rational_78_avx512(io_generated_code, i_micro_kernel_config, reg_0, vec_x2, vec_nom, vec_denom, mask_hi, mask_lo,
+                                                     vec_c0, vec_c1, vec_c2, vec_c3, vec_c1_d, vec_c2_d, vec_c3_d, vec_hi_bound, vec_lo_bound, vec_ones, vec_neg_ones);
+        if (!((use_m_masking == 1) && (im == m_trips-1) && (m % 32 <= 16))) {
+          libxsmm_generator_tanh_ps_rational_78_avx512(io_generated_code, i_micro_kernel_config, reg_1, vec_x2, vec_nom, vec_denom, mask_hi, mask_lo,
+                                                       vec_c0, vec_c1, vec_c2, vec_c3, vec_c1_d, vec_c2_d, vec_c3_d, vec_hi_bound, vec_lo_bound, vec_ones, vec_neg_ones);
+        }
       }
 
       /* Downconvert to BF16  */
