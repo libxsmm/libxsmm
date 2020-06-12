@@ -1322,6 +1322,18 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_vreg2 = l_vreg1;
           l_vreg1 = 0;
           break;
+       case LIBXSMM_X86_INSTR_VMOVDQU64:
+          l_fpadj2 += 0x01;
+          l_fpadj += 0x16;
+          if ( l_vreg2 != LIBXSMM_X86_VEC_REG_UNDEF )
+          {
+             LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
+             //fprintf(stderr,"Please call VMOVDQU64 with regs 0 and 1. Use UNDEF with reg 2\n");
+             exit(-1);
+          }
+          l_vreg2 = l_vreg1;
+          l_vreg1 = 0;
+          break;
        case LIBXSMM_X86_INSTR_VPMAXSD:
           l_second += 0x01;
           l_fpadj  -= 0x1C;
