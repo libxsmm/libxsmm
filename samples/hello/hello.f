@@ -16,7 +16,7 @@
         IMPLICIT NONE
         INTEGER, PARAMETER :: T = KIND(0D0)
         INTEGER :: batchsize = 1000, i
-        INTEGER(LIBXSMM_BLASINT_KIND) :: mi, ki, ni
+        INTEGER(LIBXSMM_BLASINT_KIND) :: j, ki
         INTEGER(LIBXSMM_BLASINT_KIND) :: m = 13, n = 5, k = 7
         REAL(T), ALLOCATABLE :: a(:,:,:), b(:,:,:), c(:,:)
         TYPE(LIBXSMM_MMFUNCTION) :: xmm
@@ -25,11 +25,11 @@
         ! initialize input
         DO i = 1, batchsize
           DO ki = 1, k
-            DO mi = 1, m
-              a(mi,ki,i) = REAL(1, T) / REAL(MOD(i+mi+ki, 25), T)
+            DO j = 1, m
+              a(j,ki,i) = REAL(1, T) / REAL(MOD(i+j+ki, 25), T)
             END DO
-            DO ni = 1, n
-              b(ki,ni,i) = REAL(7, T) / REAL(MOD(i+ki+ni, 75), T)
+            DO j = 1, n
+              b(ki,j,i) = REAL(7, T) / REAL(MOD(i+j+ki, 75), T)
             END DO
           END DO
         END DO
