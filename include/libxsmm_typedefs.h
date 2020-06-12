@@ -167,7 +167,8 @@ typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_CVTFP32BF16     = 5,
   LIBXSMM_MELTW_OPERATION_REDUCE          = 6,
   LIBXSMM_MELTW_OPERATION_SCALE           = 7,
-  LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT = 8
+  LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT = 8,
+  LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16 = 9
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
@@ -217,11 +218,18 @@ typedef enum libxsmm_meltw_cvta_flags {
   LIBXSMM_MELTW_FLAG_CVTA_FUSE_SIGM      = 4
 } libxsmm_meltw_cvta_flags;
 
+typedef enum libxsmm_meltw_acvt_flags {
+  LIBXSMM_MELTW_FLAG_ACVT_NONE           = 0,
+  LIBXSMM_MELTW_FLAG_ACVT_FUSE_TANH      = 1,
+  LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM      = 2
+} libxsmm_meltw_acvt_flags;
+
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
   libxsmm_meltw_null_flags elt_null;
   libxsmm_meltw_redu_flags elt_redu;
   libxsmm_meltw_scal_flags elt_scal;
   libxsmm_meltw_cvta_flags elt_cvta;
+  libxsmm_meltw_acvt_flags elt_acvt;
 } libxsmm_xmelt_flags;
 
 /** Flag enumeration which can be binary ORed. */
@@ -620,8 +628,15 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cvtfp32bf16_p
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cvtfp32bf16_act_param {
   const void* in_ptr;     /* input pointer */
   void* out_ptr;          /* output pointer */
-  void* actstore_ptr;     /* output pointer for relu mask in case relu is fused into the convert */
+  void* actstore_ptr;     /* output pointer for activation if it is fused into the convert */
 } libxsmm_meltw_cvtfp32bf16_act_param;
+
+/** argument struct for matrix-eltwise: act_cvtfp32bf16 */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_act_cvtfp32bf16_param {
+  const void* in_ptr;     /* input pointer */
+  void* out_ptr;          /* output pointer */
+  void* actstore_ptr;     /* output pointer for activation if it is fused into the convert */
+} libxsmm_meltw_act_cvtfp32bf16_param;
 
 /** argument struct for matrix-eltwise: reduce */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_param {
@@ -653,6 +668,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_reduce)(const libxsmm_meltw_reduce_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_scale)(const libxsmm_meltw_scale_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16_act)(const libxsmm_meltw_cvtfp32bf16_act_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_act_cvtfp32bf16)(const libxsmm_meltw_act_cvtfp32bf16_param* in_struct);
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   void (*xmeltw)(const void* in_struct);
@@ -661,6 +677,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   libxsmm_meltwfunction_relu meltw_relu; libxsmm_meltwfunction_cvtfp32bf16 meltw_cvtfp32bf16;
   libxsmm_meltwfunction_reduce meltw_reduce; libxsmm_meltwfunction_scale meltw_scale;
   libxsmm_meltwfunction_cvtfp32bf16_act meltw_cvtfp32bf16_act;
+  libxsmm_meltwfunction_act_cvtfp32bf16 meltw_act_cvtfp32bf16;
 } libxsmm_xmeltwfunction;
 
 /** Specialized function for transpose (weak-typed). */
