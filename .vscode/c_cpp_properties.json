@@ -1,0 +1,17 @@
+{
+  "configurations": [
+    {
+      "name": "libxsmm",
+      "includePath": [
+        "${workspaceRoot}/include",
+        "${workspaceRoot}/src"
+      ],
+      "defines": [],
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "c89",
+      "intelliSenseMode": "gcc-x64",
+      "cppStandard": "c++11"
+    }
+  ],
+  "version": 4
+}
