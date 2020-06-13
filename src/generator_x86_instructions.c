@@ -1328,7 +1328,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( l_vreg2 != LIBXSMM_X86_VEC_REG_UNDEF )
           {
              LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
-             //fprintf(stderr,"Please call VMOVDQU64 with regs 0 and 1. Use UNDEF with reg 2\n");
+             /*fprintf(stderr,"Please call VMOVDQU64 with regs 0 and 1. Use UNDEF with reg 2\n");*/
              exit(-1);
           }
           if ( (i_vector_name == 'x') && (l_vreg0 < 16) ) l_fourth -= 0x40;
