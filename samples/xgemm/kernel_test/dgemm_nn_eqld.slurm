@@ -10,12 +10,14 @@ else
 fi
 
 ${PYTHON} << END
+import numpy as np
+randnum = np.random.randint(1,101,18)
 f1 = open("${TESTFILE1}", "w+")
 f2 = open("${TESTFILE2}", "w+")
 i = 0
-for m in range(2, 101, 2):
-    for n in range(2, 101, 2):
-        for k in range(2, 101, 2):
+for m in randnum:
+    for n in randnum:
+        for k in randnum:
             line = str(m) + ' ' + str(n) + ' ' + str(k) + ' ' \
                  + str(m) + ' ' + str(k) + ' ' + str(m) + '\n'
             if 0 == (i % 2):
