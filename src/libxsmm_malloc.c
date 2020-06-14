@@ -1890,18 +1890,6 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 # endif
           if (0 > (int)LIBXSMM_ATOMIC_LOAD(&fallback, LIBXSMM_ATOMIC_RELAXED)) {
             const char *const env = getenv("LIBXSMM_SE");
-            if (0 == libxsmm_se) {
-              FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
-              if (NULL != selinux) {
-                if (1 == fread(&libxsmm_se, 1/*sizeof(char)*/, 1/*count*/, selinux)) {
-                  libxsmm_se = ('0' != libxsmm_se ? 1 : 0);
-                }
-                else { /* conservative assumption in case of read-error */
-                  libxsmm_se = 1;
-                }
-                fclose(selinux);
-              }
-            }
             LIBXSMM_ATOMIC_STORE(&fallback, NULL == env
               /* libxsmm_se decides */
               ? (0 == libxsmm_se ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK)

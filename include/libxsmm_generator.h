@@ -268,6 +268,8 @@ LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_ninit);
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_target_archid);
 /** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_verbosity);
+/** Security-enhanced environment. */
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_se);
 
 #endif /*LIBXSMM_GENERATOR_H*/
 

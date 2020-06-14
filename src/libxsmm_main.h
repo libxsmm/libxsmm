@@ -973,8 +973,6 @@ LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
 /** Counts the maximum number of thread that have been active. */
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
-/** Security-enhanced environment. */
-LIBXSMM_APIVAR_PRIVATE(int libxsmm_se);
 
 #if (0 != LIBXSMM_SYNC)
 LIBXSMM_APIVAR_PRIVATE(LIBXSMM_TLS_TYPE libxsmm_tlskey);

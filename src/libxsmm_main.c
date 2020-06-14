@@ -263,7 +263,6 @@ LIBXSMM_APIVAR_PRIVATE_DEF(double libxsmm_scratch_scale);
 LIBXSMM_APIVAR_PRIVATE_DEF(double libxsmm_timer_scale);
 LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_statistic_num_spmdm);
 LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_thread_count);
-LIBXSMM_APIVAR_PRIVATE_DEF(int libxsmm_se);
 /* definition of corresponding variables */
 LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_nosync);
@@ -1182,7 +1181,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           else {
             libxsmm_timer_scale = 0;
             internal_timer_start = s0;
-#if defined(_DEBUG)
+#if !defined(NDEBUG)
             libxsmm_se = 1;
 #endif
           }

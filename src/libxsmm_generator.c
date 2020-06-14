@@ -26,6 +26,7 @@ LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_ninit);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_target_archid);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_verbosity);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_se);
 
 
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
