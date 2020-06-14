@@ -31,7 +31,7 @@
         REAL(T), POINTER :: an(:,:,:), bn(:,:,:)
         DOUBLE PRECISION :: d, duration(4)
         INTEGER(8) :: start
-        INTEGER :: r, nrepeat, error
+        INTEGER :: r, nrepeat, ncount, error
         INTEGER :: k, nmb
         INTEGER :: nbytes
 
@@ -84,7 +84,7 @@
           CALL GET_COMMAND_ARGUMENT(5, argv)
           READ(argv, "(I32)") nrepeat
         ELSE
-          nrepeat = 5
+          nrepeat = 6
         END IF
         IF (6 <= argc) THEN
           CALL GET_COMMAND_ARGUMENT(6, argv)
@@ -137,7 +137,7 @@
               error = 1
               EXIT
             END IF
-            duration(1) = duration(1) + d
+            IF (1.LT.r) duration(1) = duration(1) + d
             IF (0.NE.check) THEN
               WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "LIBXSMM (zero):", 1D3 &
      &          * d, " ms", CHAR(9), REAL(1 * k, 8) * REAL(nbytes, 8)   &
@@ -157,7 +157,7 @@
               error = 2
               EXIT
             END IF
-            duration(2) = duration(2) + d
+            IF (1.LT.r) duration(2) = duration(2) + d
             IF (0.NE.check) THEN
               WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "LIBXSMM (copy):", 1D3 &
      &          * d, " ms", CHAR(9), REAL(2 * k, 8) * REAL(nbytes, 8)   &
@@ -177,7 +177,7 @@
               error = 3
               EXIT
             END IF
-            duration(3) = duration(3) + d
+            IF (1.LT.r) duration(3) = duration(3) + d
             WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "FORTRAN (zero):", 1D3   &
      &        * d, " ms", CHAR(9), REAL(1 * k, 8) * REAL(nbytes, 8)     &
      &        / (REAL(ISHFT(1, 20), 8) * d), " MB/s"
@@ -193,7 +193,7 @@
               error = 4
               EXIT
             END IF
-            duration(4) = duration(4) + d
+            IF (1.LT.r) duration(4) = duration(4) + d
             WRITE(*, "(A,F10.1,A,1A,F10.1,A)") "FORTRAN (copy):", 1D3   &
      &        * d, " ms", CHAR(9), REAL(2 * k, 8) * REAL(nbytes, 8)     &
      &        / (REAL(ISHFT(1, 20), 8) * d), " MB/s"
@@ -206,29 +206,30 @@
 
         IF (0.EQ.error) THEN
           IF ((1.LT.nrepeat).OR.(0.EQ.check)) THEN
-            IF (1.LT.nrepeat) THEN
+            ncount = MERGE(nrepeat - 1, nrepeat, 2.LT.nrepeat)
+            IF (1.LT.ncount) THEN
               WRITE(*, "(A,I0,A)") "Arithmetic average of ",            &
-     &          nrepeat, " iterations"
+     &          ncount, " iterations"
               WRITE(*, "(A)") REPEAT("-", W)
             END IF
             IF (0.LT.duration(1)) THEN
               WRITE(*, "(A,F10.1,A)") "LIBXSMM (zero):",                &
-     &          (REAL(1*k*nrepeat, 8) * REAL(nbytes, 8))                &
+     &          (REAL(1*k*ncount, 8) * REAL(nbytes, 8))                 &
      &        / (REAL(ISHFT(1, 20), 8) * duration(1)), " MB/s"
             END IF
             IF (0.LT.duration(2)) THEN
               WRITE(*, "(A,F10.1,A)") "LIBXSMM (copy):",                &
-     &          (REAL(2*k*nrepeat, 8) * REAL(nbytes, 8))                &
+     &          (REAL(2*k*ncount, 8) * REAL(nbytes, 8))                 &
      &        / (REAL(ISHFT(1, 20), 8) * duration(2)), " MB/s"
             END IF
             IF (0.LT.duration(3)) THEN
               WRITE(*, "(A,F10.1,A)") "FORTRAN (zero):",                &
-     &          (REAL(1*k*nrepeat, 8) * REAL(nbytes, 8))                &
+     &          (REAL(1*k*ncount, 8) * REAL(nbytes, 8))                 &
      &        / (REAL(ISHFT(1, 20), 8) * duration(3)), " MB/s"
             END IF
             IF (0.LT.duration(4)) THEN
               WRITE(*, "(A,F10.1,A)") "FORTRAN (copy):",                &
-     &          (REAL(2*k*nrepeat, 8) * REAL(nbytes, 8))                &
+     &          (REAL(2*k*ncount, 8) * REAL(nbytes, 8))                 &
      &        / (REAL(ISHFT(1, 20), 8) * duration(4)), " MB/s"
             END IF
             WRITE(*, "(A)") REPEAT("-", W)
