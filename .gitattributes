@@ -1,5 +1,6 @@
 .env export-ignore
 .theme export-ignore
+.vscode export-ignore
 .github export-ignore
 .abi.txt export-ignore
 .codefile export-ignore
@@ -13,8 +14,11 @@ CODE_OF_CONDUCT.md export-ignore
 documentation/*.pptx export-ignore
 documentation/*.pptm export-ignore
 scripts/tool_scan.sh export-ignore
+scripts/tool_addforks.sh export-ignore
+scripts/tool_checkabi.sh export-ignore
 scripts/tool_normalize.sh export-ignore
 scripts/tool_changelog.sh export-ignore
+scripts/tool_envrestore.sh export-ignore
 samples/xgemm/kernel_test* export-ignore
 PULL_REQUEST_TEMPLATE.md export-ignore
 samples/seissol/*.orient export-ignore
