@@ -13,9 +13,10 @@
 PATTERNS="*.c *.cc *.cpp *.cxx *.h *.hpp *.hxx *.f *.F90 *.fh *.py *.sh *.env *.yml *.txt *.slurm"
 BANNED_CHARS="\t"
 
-PATBAN="s/[${BANNED_CHARS}]/"
-PATEOL="s/\r$/"
 PATSPC="s/[[:space:]][[:space:]]*$/"
+PATBAN="s/[${BANNED_CHARS}]/"
+PATCMT="s/[[:space:]]\/\//"
+PATEOL="s/\r$/"
 
 HERE=$(cd "$(dirname "$0")"; pwd -P)
 REPO=${HERE}/..
@@ -74,23 +75,32 @@ then
     # Reformat code (fallback: check for banned characters).
     #
     REFORMAT=0
-    if [[ "${FMTBIN}" && (-e ${REPO}/.clang-format) \
-       && ((${FILE} = *".c"*) || (${FILE} = *".h"*)) ]];
-    then
-      if [ "" = "${FMTDIRS}" ]; then REFORMAT=1; fi
-      for FMTDIR in ${FMTDIRS}; do
-        if [[ ${FILE} = "${FMTDIR}/"* ]]; then
-          REFORMAT=1; break
-        fi
-      done
-      if [ "0" != "${REFORMAT}" ]; then
-        for XPAT in ${FMTXPAT}; do
-          if [[ ${FILE} = *"${XPAT}"* ]]; then
-            REFORMAT=0; break
+    if [[ (${FILE} = *".c"*) || (${FILE} = *".h"*) ]]; then
+      if [ "${FMTBIN}" ] && [ -e ${REPO}/.clang-format ]; then
+        if [ "" = "${FMTDIRS}" ]; then REFORMAT=1; fi
+        for FMTDIR in ${FMTDIRS}; do
+          if [[ ${FILE} = "${FMTDIR}/"* ]]; then
+            REFORMAT=1; break
           fi
         done
       fi
+      EXCLUDE=0
+      for XPAT in ${FMTXPAT}; do
+        if [[ ${FILE} = *"${XPAT}"* ]]; then
+          EXCLUDE=1; break
+        fi
+      done
+      if [ "0" != "${EXCLUDE}" ]; then
+        REFORMAT=0
+      elif [[ (${FILE} = *".c") || (${FILE} = *".h") ]] && \
+           [ "$(${SED} -n "${PATCMT}x/p" ${FILE})" ];
+      then
+        echo " : has C++ comments"
+        exit 1
+      fi
     fi
+    # remove or comment the following line to enable reformat
+    REFORMAT=0
     if [ "0" != "${REFORMAT}" ]; then
       if [ "0" = "$(${FMTBIN} --style=file ${FILE} > ${TMPF}; echo $?)" ] && \
          [ "1" = "$(${DIFF} ${FILE} ${TMPF} >/dev/null; echo $?)" ];
@@ -103,8 +113,8 @@ then
     elif [[ ${FILE} != *"Makefile"* ]] && \
          [ "$(${SED} -n "${PATBAN}x/p" ${FILE} 2>/dev/null)" ];
     then
-      echo -n " : has banned characters"
-      REFORMAT=1
+      echo " : has banned characters"
+      exit 1
     elif [ "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" ${FILE})" ]; then
       ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" ${FILE} > ${TMPF}
       ${CP} ${TMPF} ${FILE}
@@ -115,9 +125,12 @@ then
     # Check for non-UNIX line-endings.
     #
     if [ "$(${SED} -n "${PATEOL}x/p" ${FILE} 2>/dev/null | ${TR} -d "\n")" ]; then
-      echo -n " : has non-UNIX line endings"
-      REFORMAT=1
+      echo " : has non-UNIX line endings"
+      exit 1
     fi
+    #
+    # Check and fix for trailing spaces.
+    #
     if [ "$(${SED} -n "${PATSPC}x/p" ${FILE})" ]; then
       ${SED} -e "${PATSPC}/" ${FILE} > ${TMPF}
       ${CP} ${TMPF} ${FILE}
