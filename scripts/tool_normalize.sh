@@ -99,7 +99,7 @@ then
         exit 1
       fi
     fi
-    # remove or comment the following line to enable reformat
+    # remove or comment the following line to enable reformat (do not set REFORMAT=1)
     REFORMAT=0
     if [ "0" != "${REFORMAT}" ]; then
       if [ "0" = "$(${FMTBIN} --style=file ${FILE} > ${TMPF}; echo $?)" ] && \
