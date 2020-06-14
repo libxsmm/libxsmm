@@ -55,9 +55,9 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
       libxsmm_mcopy_prefetch = 0;
       libxsmm_mcopy_mbytes = 0;
       libxsmm_mcopy_nscale = 0.f;
-      libxsmm_mzero_mbytes = 0;
+      libxsmm_mzero_mbytes = 8192;
       libxsmm_mzero_nscale = 0.f;
-      libxsmm_tcopy_mbytes = 32768;
+      libxsmm_tcopy_mbytes = 512;
       libxsmm_tcopy_nscale = 0.f;
     }
   }
