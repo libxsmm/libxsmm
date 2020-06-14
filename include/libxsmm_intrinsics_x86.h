@@ -881,9 +881,9 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
  *  this is based on xoshiro128+ 1.0, e.g. http://prng.di.unimi.it/xoshiro128plus.c */
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32( unsigned int* stateptr ) {
   __m512i state_0 = _mm512_loadu_si512( stateptr    );
-  __m512i state_1 = _mm512_loadu_si512( stateptr+16 ); 
-  __m512i state_2 = _mm512_loadu_si512( stateptr+32 ); 
-  __m512i state_3 = _mm512_loadu_si512( stateptr+48 ); 
+  __m512i state_1 = _mm512_loadu_si512( stateptr+16 );
+  __m512i state_2 = _mm512_loadu_si512( stateptr+32 );
+  __m512i state_3 = _mm512_loadu_si512( stateptr+48 );
   const __m512i result = _mm512_add_epi32(state_0, state_3);
   const __m512i s = _mm512_slli_epi32(state_1, 9);
   __m512i t;

@@ -51,4 +51,4 @@ void lstm_fwd_destroy( void* libxsmm_handle_ );
 }
 #endif
 
-#endif //_LSTM_FWD_H_
+#endif /*_LSTM_FWD_H_*/

@@ -64,4 +64,4 @@ void lstm_bwd_destroy( void* libxsmm_handle_ );
 }
 #endif
 
-#endif //_LSTM_BWD_H_
+#endif /*_LSTM_BWD_H_*/
