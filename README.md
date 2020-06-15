@@ -16,7 +16,7 @@ For a list questions and answers, please also have a look at [https://github.com
 
 **<a name="what-is-a-small-convolution"></a>What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy to use invocation of small (direct) convolutions, which are intended for CNN training and classification.
 
-**<a name="getting-started"></a><a name="hello-libxsmm"></a>Getting Started**: The following code is focused on a specific functionality but may be considered as "Hello LIBXSMM". Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile with `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
+**<a name="getting-started"></a><a name="hello-libxsmm"></a>Getting Started**: The following C++ code is focused on a specific functionality but may be considered as [Hello LIBXSMM](https://github.com/hfp/libxsmm/tree/master/samples/hello). Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile with `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
 
 ```cpp
 #include <libxsmm.h>
@@ -40,6 +40,8 @@ int main(/*int argc, char* argv[]*/) {
   for (int i = 0; i < batchsize; ++i) kernel(&a[i * m * k], &b[i * k * n], &c[0]);
 }
 ```
+
+A plain [C code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.c) of the above is almost the same except for the `std::vector` and using a function rather a functor. Of course, the [Fortran code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.f) resembles a "Hello LIBXSMM" as well as C/C++.
 
 ## Interfaces and Domains<a name="interfaces"></a>
 
@@ -86,6 +88,7 @@ The [service function domain (AUX)](documentation/libxsmm_aux.md) contains routi
 * [Getting and setting the target architecture](documentation/libxsmm_aux.md#getting-and-setting-the-target-architecture)
 * [Getting and setting the verbosity](documentation/libxsmm_aux.md#getting-and-setting-the-verbosity)
 * [Measuring time durations (timer)](documentation/libxsmm_aux.md#timer-facility)
+* [Dispatching user-data and multiple kernels](documentation/libxsmm_aux.md#user-data-dispatch)
 * [Loading and storing data (I/O)](documentation/libxsmm_aux.md#meta-image-file-io)
 * [Allocating memory](documentation/libxsmm_aux.md#memory-allocation)
 
