@@ -13,6 +13,16 @@
 
 #include "libxsmm_typedefs.h"
 
+/** 
+ * create a new external state for thread-save execution managed
+ * by the user. We don't provide a function for drawing the random numbers
+ * the user is supposed to call the LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS 
+ * or LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32 intrinsic.
+ * */
+LIBXSMM_API unsigned int* libxsmm_rng_create_avx512_extstate(unsigned int/*uint32_t*/ seed);
+
+/** free a previously created rng_avx512_extstate */
+LIBXSMM_API void libxsmm_rng_destroy_avx512_extstate(unsigned int* stateptr);
 
 /** Set the seed of libxsmm_rng_* (similar to srand). */
 LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed);
