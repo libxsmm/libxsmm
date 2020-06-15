@@ -239,9 +239,9 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descr
   unsigned char datatype;
   unsigned char datatype2;
   /** Set of flags */
-  unsigned short flags;
+  unsigned char flags;
   /** operation specifier */
-  unsigned short operation;
+  unsigned char operation;
 };
 
 /* compressed meltw reduce structure */
@@ -998,6 +998,16 @@ LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks(
   int C, int K, int* C_block, int* K_block, int* fm_lp_block,
   libxsmm_dnn_datatype datatype_in, libxsmm_dnn_datatype datatype_out);
+
+/** helper functions for compressing and decompressing meltw flags */
+LIBXSMM_API_INTERN libxsmm_meltw_comp_redu_flags internal_libxsmm_get_meltw_comp_redu_flags( libxsmm_meltw_redu_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_redu_flags internal_libxsmm_get_meltw_redu_flags( libxsmm_meltw_comp_redu_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_comp_scal_flags internal_libxsmm_get_meltw_comp_scal_flags( libxsmm_meltw_scal_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_scal_flags internal_libxsmm_get_meltw_scal_flags( libxsmm_meltw_comp_scal_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_comp_cvta_flags internal_libxsmm_get_meltw_comp_cvta_flags( libxsmm_meltw_cvta_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_cvta_flags internal_libxsmm_get_meltw_cvta_flags( libxsmm_meltw_comp_cvta_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_comp_acvt_flags internal_libxsmm_get_meltw_comp_acvt_flags( libxsmm_meltw_acvt_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_acvt_flags internal_libxsmm_get_meltw_acvt_flags( libxsmm_meltw_comp_acvt_flags flags );
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
