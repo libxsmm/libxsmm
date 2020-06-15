@@ -325,32 +325,32 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     }
     for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
       /* check k such that we just use columns which actually need to be multiplied */
-      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-        const unsigned int u = i_row_idx[l_m] + l_z;
-        unsigned int l_unique_reg;
-        LIBXSMM_ASSERT(u < l_n_row_idx);
+      const unsigned int u = i_row_idx[l_m] + l_z;
+      unsigned int l_unique_reg;
+      LIBXSMM_ASSERT(u < l_n_row_idx);
 
-        /* broadcast unique element of A if not in pre-broadcast mode */
-        if (l_unique > 31 ) {
-          if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-            libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-                                                    l_micro_kernel_config.instruction_set,
-                                                    LIBXSMM_X86_INSTR_VPERMD,
-                                                    l_micro_kernel_config.vector_name,
-                                                    l_unique_pos[u] / 8,
-                                                    LIBXSMM_SPGEMM_ASPARSE_REG_PERM_FIRST_REG_OP_DP + l_unique_pos[u] % 8,
-                                                    LIBXSMM_SPGEMM_ASPARSE_REG_BCAST_REG);
-          } else {
-            libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-                                                    l_micro_kernel_config.instruction_set,
-                                                    LIBXSMM_X86_INSTR_VPERMD,
-                                                    l_micro_kernel_config.vector_name,
-                                                    l_unique_pos[u] / 16,
-                                                    LIBXSMM_SPGEMM_ASPARSE_REG_PERM_FIRST_REG_OP_SP + l_unique_pos[u] % 16,
-                                                    LIBXSMM_SPGEMM_ASPARSE_REG_BCAST_REG);
-          }
+      /* broadcast unique element of A if not in pre-broadcast mode */
+      if (l_unique > 31 ) {
+        if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+          libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
+                                                  l_micro_kernel_config.instruction_set,
+                                                  LIBXSMM_X86_INSTR_VPERMD,
+                                                  l_micro_kernel_config.vector_name,
+                                                  l_unique_pos[u] / 8,
+                                                  LIBXSMM_SPGEMM_ASPARSE_REG_PERM_FIRST_REG_OP_DP + l_unique_pos[u] % 8,
+                                                  LIBXSMM_SPGEMM_ASPARSE_REG_BCAST_REG);
+        } else {
+          libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
+                                                  l_micro_kernel_config.instruction_set,
+                                                  LIBXSMM_X86_INSTR_VPERMD,
+                                                  l_micro_kernel_config.vector_name,
+                                                  l_unique_pos[u] / 16,
+                                                  LIBXSMM_SPGEMM_ASPARSE_REG_PERM_FIRST_REG_OP_SP + l_unique_pos[u] % 16,
+                                                  LIBXSMM_SPGEMM_ASPARSE_REG_BCAST_REG);
         }
+      }
 
+      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
         /* select correct register depending on mode */
         l_unique_reg = l_unique > 31 ? LIBXSMM_SPGEMM_ASPARSE_REG_BCAST_REG : l_unique_pos[u];
 
