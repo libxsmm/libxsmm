@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include "generator_spgemm_csr_asparse_reg.h"
 #include <libxsmm_fsspmdm.h>
 #include "libxsmm_main.h"
 
@@ -100,7 +101,22 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
-  /* nothing to do */
+    assert( a_nnz <= LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_L1_DP );
+    /* allocate 8 * 512-bit permute operands if not stored in registers */
+    if (a_nnz > LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_REG_DP) {
+      new_handle->permute_operands = (unsigned int*)libxsmm_aligned_malloc(8*16*sizeof(unsigned int), 64);
+      /* store permute operands */
+      for (i = 0; i < 8; i++) {
+        j = 0;
+        /* repeat pattern to select 64-bits using vpermd */
+        while (j < 16) {
+          new_handle->permute_operands[i*16+(j)] = i*2;
+          j++;
+          new_handle->permute_operands[i*16+(j)] = i*2 + 1;
+          j++;
+        }
+      }
+    }
   /* attempt to JIT dense kernel as sparse_reg failed */
   } else {
     new_handle->N_chunksize = 16;
@@ -211,7 +227,20 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
-  /* nothing to do */
+    assert( a_nnz <= LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_L1_SP );
+    /* allocate 16 * 512-bit permute operands if not stored in registers */
+    if (a_nnz > LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_REG_SP) {
+      new_handle->permute_operands = (unsigned int*)libxsmm_aligned_malloc(16*16*sizeof(unsigned int), 64);
+      /* store permute operands */
+      for (i = 0; i < 16; i++) {
+        j = 0;
+        /* repeat pattern to select 32-bits using vpermd */
+        while (j < 16) {
+          new_handle->permute_operands[i*16+j] = i;
+          j++;
+        }
+      }
+    }
   /* attempt to JIT dense kernel as sparse_reg failed */
   } else {
     new_handle->N_chunksize = 16;
@@ -241,7 +270,7 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
 
   if ( handle->a_dense == 0 ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( handle->a_dense, B+i, C+i );
+      handle->kernel( (double*)handle->permute_operands, B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
@@ -258,7 +287,7 @@ LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const
 
   if ( handle->a_dense == 0 ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( handle->a_dense, B+i, C+i );
+      handle->kernel( (float*)handle->permute_operands, B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
@@ -275,6 +304,9 @@ LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
   if (handle->a_dense != 0) {
     libxsmm_free(handle->a_dense);
   } else {
+    if (handle->permute_operands != 0) {
+      libxsmm_free(handle->permute_operands);
+    }
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
@@ -294,6 +326,9 @@ LIBXSMM_API void libxsmm_sfsspmdm_destroy( libxsmm_sfsspmdm* handle )
   if (handle->a_dense != 0) {
     libxsmm_free(handle->a_dense);
   } else {
+    if (handle->permute_operands != 0) {
+      libxsmm_free(handle->permute_operands);
+    }
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
