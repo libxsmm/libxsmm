@@ -240,6 +240,7 @@ LIBXSMM_APIVAR_DEFINE(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR_DEFINE(const char* internal_build_state);
 /** Time stamp (startup time of library). */
 LIBXSMM_APIVAR_DEFINE(libxsmm_timer_tickint internal_timer_start);
+LIBXSMM_APIVAR_DEFINE(libxsmm_cpuid_x86_info internal_cpuid_info);
 
 #if defined(_WIN32)
 # define INTERNAL_SINGLETON_HANDLE HANDLE
@@ -666,9 +667,17 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       0 != *(LIBXSMM_BRANCH) ? "-" : "", 0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured",
       LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
-      const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
-      libxsmm_scratch_info scratch_info; size_t size_scratch = 0, size_private = 0;
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
+      const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
+      size_t size_scratch = 0, size_private = 0;
+      libxsmm_scratch_info scratch_info;
+      libxsmm_cpuid_x86_info info;
+      libxsmm_cpuid_x86(&info);
+      if ((LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) &&
+        internal_cpuid_info.has_context < info.has_context)
+      {
+        fprintf(stderr, "\nLIBXSMM: CPU features have been promoted.");
+      }
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
       }
@@ -1158,14 +1167,13 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       { /* calibrate timer */
         int register_termination_proc;
         libxsmm_timer_tickint s1, t1;
-        libxsmm_cpuid_x86_info info;
         internal_init(); /* must be first to initialize verbosity, etc. */
         if (INTERNAL_SINGLETON(internal_singleton_handle)) { /* after internal_init */
           internal_dump(stdout, 1/*urgent*/);
         }
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* mid-timing */
-        libxsmm_cpuid_x86(&info);
-        if (0 != info.constant_tsc && t0 < t1) {
+        libxsmm_cpuid_x86(&internal_cpuid_info);
+        if (0 != internal_cpuid_info.constant_tsc && t0 < t1) {
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
         register_termination_proc = atexit(internal_finalize);
