@@ -4348,6 +4348,10 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
           l_second += 0x28;
           l_third += 0x28;
           break;
+       case LIBXSMM_X86_INSTR_ANDQ:
+          l_second += 0x20;
+          l_third += 0x20;
+          break;
        case LIBXSMM_X86_INSTR_MOVQ:
           l_second += 0x46;
           l_extra += 0x46;
@@ -4379,7 +4383,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
        /* four bytes */
        unsigned char *l_cptr = (unsigned char *) &i_immediate;
        buf[i++] = (unsigned char)(0x48 + l_first);
-       if ( i_gp_reg_number==0 && ((i_alu_instr==LIBXSMM_X86_INSTR_SUBQ) || (i_alu_instr==LIBXSMM_X86_INSTR_CMPQ) || (i_alu_instr==LIBXSMM_X86_INSTR_ADDQ)) )
+       if ( i_gp_reg_number==0 && ((i_alu_instr==LIBXSMM_X86_INSTR_SUBQ) || (i_alu_instr==LIBXSMM_X86_INSTR_CMPQ) || (i_alu_instr==LIBXSMM_X86_INSTR_ADDQ) || (i_alu_instr==LIBXSMM_X86_INSTR_ANDQ)) )
        {
           /* special case for %rax! */
           buf[i++] = (unsigned char)(0x05 + l_second);
@@ -4508,6 +4512,9 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
           break;
        case LIBXSMM_X86_INSTR_CMPQ:
           l_second += 0x38;
+          break;
+       case LIBXSMM_X86_INSTR_ANDQ:
+          l_second += 0x20;
           break;
        case LIBXSMM_X86_INSTR_CMOVZ:
           l_second += 0x0e;
