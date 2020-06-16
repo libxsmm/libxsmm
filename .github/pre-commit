@@ -26,9 +26,11 @@ BANNED_CHARS="\t"
 
 GIT=$(command -v git)
 TOUCH=$(command -v touch)
-GREP=$(command -v grep)
+SED=$(command -v sed)
 RM=$(command -v rm)
-if [ "" = "${GIT}" ] || [ "" = "${RM}" ] || [ "" = "${TOUCH}" ] || [ "" = "${GREP}" ]; then
+if [ "" = "${GIT}" ] || [ "" = "${RM}" ] || \
+   [ "" = "${SED}" ] || [ "" = "${TOUCH}" ];
+then
   >&2 echo "ERROR: command not found, skipping pre-commit hook!"
   exit 0
 fi
@@ -36,7 +38,7 @@ fi
 # control version-update
 LOCKFILE=${GIT_DIR}/.commit
 VSCRIPT=${REPO}/.github/version.sh
-if [ -e ${VSCRIPT} ] && [ "" = "$(${GIT} diff --cached --name-only | ${GREP} version.txt)" ]; then
+if [ -e ${VSCRIPT} ] && [ "" = "$(${GIT} diff --cached --name-only | ${SED} -n '/version.txt/p')" ]; then
   # update version file (since this is a pre-commit hook, shift by one to next version)
   ${VSCRIPT} 1 > version.txt
   # add file and trigger amending the commit
@@ -48,6 +50,8 @@ fi
 
 GITDIFF="${GIT} diff-index --cached --diff-filter=ACMRTUXB"
 FMTBIN=$(command -v clang-format)
+ISSUES=0
+# set CHECK=0 to enable reformat
 CHECK=1
 if [ "0" = "${CHECK}" ] && [ "${FMTBIN}" ] && [ -e ${FMTSTYLE} ] && \
    [ "" = "$(${FMTBIN} --style=file -dump-config 2>&1 >/dev/null)" ];
@@ -61,12 +65,19 @@ then
           REFORMAT=1; break
         fi
       done
-      if [ "0" != "${REFORMAT}" ]; then
-        for XPAT in ${FMTXPAT}; do
-          if [[ ${FILE} = *"${XPAT}"* ]]; then
-            REFORMAT=0; break
-          fi
-        done
+      EXCLUDE=0
+      for XPAT in ${FMTXPAT}; do
+        if [[ ${FILE} = *"${XPAT}"* ]]; then
+          EXCLUDE=1; break
+        fi
+      done
+      if [ "0" != "${EXCLUDE}" ]; then
+        REFORMAT=0
+      elif [[ (${FILE} = *".c") || (${FILE} = *".h") ]] && \
+           [ "$(${SED} -n "s/[[:space:]]\/\//x/p" ${FILE})" ];
+      then
+        >&2 echo "Issue: ${FILE} has C++ comments."
+        ISSUES=$((ISSUES+1))
       fi
     fi
     if [ "0" != "${REFORMAT}" ]; then
@@ -83,21 +94,19 @@ elif [ "0" = "${CHECK}" ]; then
   CHECK=1
 fi
 
-CHECK=0
+# remove or comment the following line to enable degraded policy (do not set CHECK=1)
+#CHECK=0
 if [ "0" != "${CHECK}" ]; then
-  SED=$(command -v sed)
   CAT=$(command -v cat)
   WC=$(command -v wc)
   TR=$(command -v tr)
-  if [ "${GREP}" ] && [ "${SED}" ] && [ "${CAT}" ] && \
-     [ "${WC}" ] && [ "${TR}" ] && \
+  if [ "${CAT}" ] && [ "${WC}" ] && [ "${TR}" ] && \
      [ "$(${GIT} rev-parse --verify HEAD 2>/dev/null)" ];
   then
     if [ -e ${CODEFILE} ]; then
       # transform wildcard-style patterns to regular expressions
       PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${CODEFILE} 2>/dev/null)"
     fi
-    ISSUES=0
     IFS_BACKUP="${IFS}"
     IFS=""
     while read -r LINE; do
@@ -107,7 +116,7 @@ if [ "0" != "${CHECK}" ]; then
       if [ "${MATCH}" ] && [ -e ${MATCH} ]; then # file must exist i.e., not a deletion
         # check if problem is with a permitted file type
         for PATTERN in ${PATTERNS}; do
-          MATCHOK=$(echo "${MATCH}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
+          MATCHOK=$(echo "${MATCH}" | ${SED} -n "/${PATTERN}/p" 2>/dev/null)
           if [ "${MATCHOK}" ]; then
             FILE=${MATCHOK}
             break
@@ -144,17 +153,18 @@ if [ "0" != "${CHECK}" ]; then
       IFS=""
     done < <(${GIT} diff-index --cached -p -M HEAD)
     IFS="${IFS_BACKUP}"
-    # reject commit in case of an issue
-    if [ "0" != "${ISSUES}" ]; then
-      if [ "1" = "${ISSUES}" ]; then # single issue
-        >&2 echo -n "Error: 1 issue"
-      else # multiple issues
-        >&2 echo -n "Error: ${ISSUES} issues"
-      fi
-      >&2 echo " found - consider ./scripts/tool_normalize.sh!"
-      exit 1
-    fi
   else
     >&2 echo "WARNING: prerequisites not found; skipping pre-commit hook!"
   fi
+fi
+
+# reject commit in case of an issue
+if [ "0" != "${ISSUES}" ]; then
+  if [ "1" = "${ISSUES}" ]; then # single issue
+    >&2 echo -n "Error: 1 issue"
+  else # multiple issues
+    >&2 echo -n "Error: ${ISSUES} issues"
+  fi
+  >&2 echo " found - consider ./scripts/tool_normalize.sh!"
+  exit 1
 fi

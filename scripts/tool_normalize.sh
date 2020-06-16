@@ -72,7 +72,7 @@ then
     if [[ "${DIR}" && (${FILE} != "${DIR}/"*) ]]; then continue; fi
     echo -n "${FILE}"
     #
-    # Reformat code (fallback: check for banned characters).
+    # Reformat code (fallback: check for banned characters, etc.).
     #
     REFORMAT=0
     if [[ (${FILE} = *".c"*) || (${FILE} = *".h"*) ]]; then
