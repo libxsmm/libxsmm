@@ -1183,8 +1183,8 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
     }
 
     if ( (i_vector_name!='z') && ((l_vreg0>15) || (l_vreg1>15) || (l_vreg2>15)) ) {
-       printf(stderr,"vec_compute_reg() doesn't work with AVX512VL instructions where xmm or ymm registers exceed 15. Please submit a request, or just use zmm registers.\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_AVX512VL );
+       return;
     }
 
     switch ( i_vec_instr ) {

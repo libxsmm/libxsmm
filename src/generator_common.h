@@ -344,6 +344,7 @@
 #define LIBXSMM_ERR_LDB_TRANS             90040
 #define LIBXSMM_ERR_VNNI_A                90041
 #define LIBXSMM_ERR_VNNI_B                90042
+#define LIBXSMM_ERR_NO_AVX512VL           90043
 
 #if defined(LIBXSMM_HANDLE_ERROR_QUIET)
 # define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE)
