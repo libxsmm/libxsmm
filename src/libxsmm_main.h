@@ -239,9 +239,9 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descr
   unsigned char datatype;
   unsigned char datatype2;
   /** Set of flags */
-  unsigned short flags;
+  unsigned char flags;
   /** operation specifier */
-  unsigned short operation;
+  unsigned char operation;
 };
 
 /** Packed structure storing the transpose argument description. */
@@ -731,6 +731,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
   int ldb;
   int ldc;
   int N_chunksize;
+  unsigned int* permute_operands;
   double* a_dense;
   libxsmm_dmmfunction kernel;
 };
@@ -742,6 +743,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
   int ldb;
   int ldc;
   int N_chunksize;
+  unsigned int* permute_operands;
   float* a_dense;
   libxsmm_smmfunction kernel;
 };

@@ -509,6 +509,59 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
   libxsmm_jump_source label_source[32];
 } libxsmm_jump_label_tracker;
 
+/* compressed meltw reduce structure */
+typedef enum libxsmm_meltw_comp_redu_flags {
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_NONE         = 0,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD       = 1,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_MAX       = 2,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_MUL       = 3,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_ROWS         = 4,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_COLS         = 5,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_ELTS         = 6,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_ELTS_SQUARED = 7,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_ROWS  = 8,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_COLS  = 9
+} libxsmm_meltw_comp_redu_flags;
+
+/* compressed meltw scale structure */
+typedef enum libxsmm_meltw_comp_scal_flags {
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_NONE                     = 0,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT                     = 1,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT                    = 2,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS                 = 3,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_ROWS                     = 4,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_COLS                     = 5,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ROWS                = 6,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT_ROWS               = 7,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_ROWS            = 8,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ROWS          = 9,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_SHIFT_ROWS      = 10,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ADD_BIAS_ROWS       = 11,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS = 12,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_COLS                = 13,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT_COLS               = 14,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_COLS            = 15,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_COLS          = 16,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_SHIFT_COLS      = 17,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ADD_BIAS_COLS       = 18,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_COLS = 19
+} libxsmm_meltw_comp_scal_flags;
+
+/* compressed metlw cvta strcuture */
+typedef enum libxsmm_meltw_comp_cvta_flags {
+  LIBXSMM_MELTW_COMP_FLAG_CVTA_NONE           = 0,
+  LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_RELU      = 1,
+  LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_TANH      = 2,
+  LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_SIGM      = 3
+} libxsmm_meltw_comp_cvta_flags;
+
+/* compressed meltw acvt structure */
+typedef enum libxsmm_meltw_comp_acvt_flags {
+  LIBXSMM_MELTW_COMP_FLAG_ACVT_NONE           = 0,
+  LIBXSMM_MELTW_COMP_FLAG_ACVT_FUSE_TANH      = 1,
+  LIBXSMM_MELTW_COMP_FLAG_ACVT_FUSE_SIGM      = 2
+} libxsmm_meltw_comp_acvt_flags;
+
 LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker );
 
@@ -564,6 +617,16 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   unsigned int i_size, unsigned int i_max_block,
   unsigned int* o_range_1, unsigned int* o_block_1,
   unsigned int* o_range_2, unsigned int* o_block_2 );
+
+/** helper functions for compressing and decompressing meltw flags */
+LIBXSMM_API_INTERN libxsmm_meltw_comp_redu_flags libxsmm_get_meltw_comp_redu_flags( libxsmm_meltw_redu_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_redu_flags libxsmm_get_meltw_redu_flags( libxsmm_meltw_comp_redu_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_comp_scal_flags libxsmm_get_meltw_comp_scal_flags( libxsmm_meltw_scal_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_scal_flags libxsmm_get_meltw_scal_flags( libxsmm_meltw_comp_scal_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_comp_cvta_flags libxsmm_get_meltw_comp_cvta_flags( libxsmm_meltw_cvta_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_cvta_flags libxsmm_get_meltw_cvta_flags( libxsmm_meltw_comp_cvta_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_comp_acvt_flags libxsmm_get_meltw_comp_acvt_flags( libxsmm_meltw_acvt_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_acvt_flags libxsmm_get_meltw_acvt_flags( libxsmm_meltw_comp_acvt_flags flags );
 
 #endif /* GENERATOR_COMMON_H */
 
