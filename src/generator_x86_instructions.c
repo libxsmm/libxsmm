@@ -1394,36 +1394,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name == 'z' )
           {
              l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD213PD:
-          l_second += 0x21;
-          l_fpadj  += 0x4f;
-          l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD132PD:
-          l_second += 0x21;
-          l_fpadj  += 0x3f;
-          l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
+             l_fpadj2 -= 0x80;
           } else if ( l_vreg0 > 7 ) {
              l_second -= 0x20;
           }
@@ -1436,36 +1407,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name == 'z' )
           {
              l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB213PD:
-          l_second += 0x21;
-          l_fpadj  += 0x51;
-          l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB132PD:
-          l_second += 0x21;
-          l_fpadj  += 0x41;
-          l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
+             l_fpadj2 -= 0x80;
           } else if ( l_vreg0 > 7 ) {
              l_second -= 0x20;
           }
@@ -1478,36 +1420,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name == 'z' )
           {
              l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( i_vec_reg_number_0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD213PD:
-          l_second += 0x21;
-          l_fpadj  += 0x53;
-          l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( i_vec_reg_number_0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD132PD:
-          l_second += 0x21;
-          l_fpadj  += 0x43;
-          l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
+             l_fpadj2 -= 0x80;
           } else if ( i_vec_reg_number_0 > 7 ) {
              l_second -= 0x20;
           }
@@ -1520,36 +1433,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name == 'z' )
           {
              l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB213PD:
-          l_second += 0x21;
-          l_fpadj  += 0x55;
-          l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB132PD:
-          l_second += 0x21;
-          l_fpadj  += 0x45;
-          l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
+             l_fpadj2 -= 0x80;
           } else if ( l_vreg0 > 7 ) {
              l_second -= 0x20;
           }
@@ -1574,127 +1458,13 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_second += 0x21;
           l_fpadj  += 0x60;
           l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) l_second -= 0x20; 
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD213SD:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFMADD213SD and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x50;
-          l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD132SD:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFMADD132SD and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x40;
-          l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD213SS:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFMADD213SS and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x50;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD132SS:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFMADD132SS and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x40;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB213SS:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFMSUB213SS and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x52;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB132SS:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFMSUB132SS and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x42;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD213SS:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFNMADD213SS and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x54;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD132SS:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFNMADD132SS and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x44;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB213SS:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFNMSUB213SS and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x56;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB132SS:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFNMSUB132SS and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x46;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD213SD:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFNMADD213SD and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x54;
-          l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD132SD:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFNMADD132SD and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x44;
-          l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB213SD:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFMSUB213SD and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x52;
-          l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB132SD:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFMSUB132SD and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x42;
-          l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB213SD:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFNMSUB213SD and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x56;
-          l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB132SD:
-          if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Really? VFNMSUB132SD and ymm/zmm?\n");
-          l_second += 0x21;
-          l_fpadj  += 0x46;
-          l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) l_second -= 0x20;
+          if ( i_vector_name == 'z' )
+          {
+             l_second -= 0x20;
+             l_fpadj2 -= 0x80;
+          } else if ( l_vreg0 > 7 ) {
+             l_second -= 0x20;
+          }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFMSUB231SD:
@@ -1702,7 +1472,13 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_second += 0x21;
           l_fpadj  += 0x62;
           l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) { l_second -= 0x20; }
+          if ( i_vector_name == 'z' )
+          {
+             l_second -= 0x20;
+             l_fpadj2 -= 0x80;
+          } else if ( l_vreg0 > 7 ) {
+             l_second -= 0x20;
+          }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFNMADD231SD:
@@ -1710,7 +1486,13 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_second += 0x21;
           l_fpadj  += 0x64;
           l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) { l_second -= 0x20; }
+          if ( i_vector_name == 'z' )
+          {
+             l_second -= 0x20;
+             l_fpadj2 -= 0x80;
+          } else if ( l_vreg0 > 7 ) {
+             l_second -= 0x20;
+          }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFNMSUB231SD:
@@ -1718,7 +1500,13 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_second += 0x21;
           l_fpadj  += 0x66;
           l_fpadj2 += 0x80;
-          if ( l_vreg0 > 7 ) { l_second -= 0x20; }
+          if ( i_vector_name == 'z' )
+          {
+             l_second -= 0x20;
+             l_fpadj2 -= 0x80;
+          } else if ( l_vreg0 > 7 ) {
+             l_second -= 0x20;
+          }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VXORPS:
@@ -1755,8 +1543,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name == 'z' )
           {
              l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
+             l_fpadj2 -= 0x80;
           } else if ( l_vreg0 > 7 ) {
              l_second -= 0x20;
           }
@@ -1768,99 +1555,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name == 'z' )
           {
              l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD132PS:
-          l_second += 0x21;
-          l_fpadj  += 0x3f;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD213PS:
-          l_second += 0x21;
-          l_fpadj  += 0x53;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD132PS:
-          l_second += 0x21;
-          l_fpadj  += 0x43;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB213PS:
-          l_second += 0x21;
-          l_fpadj  += 0x55;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB132PS:
-          l_second += 0x21;
-          l_fpadj  += 0x45;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB213PS:
-          l_second += 0x21;
-          l_fpadj  += 0x51;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
-          } else if ( l_vreg0 > 7 ) {
-             l_second -= 0x20;
-          }
-          l_bytes = 5;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB132PS:
-          l_second += 0x21;
-          l_fpadj  += 0x41;
-          if ( i_vector_name == 'z' )
-          {
-             l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
+             l_fpadj2 -= 0x80;
           } else if ( l_vreg0 > 7 ) {
              l_second -= 0x20;
           }
@@ -1872,8 +1567,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name == 'z' )
           {
              l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
+             l_fpadj2 -= 0x80;
           } else if ( l_vreg0 > 7 ) {
              l_second -= 0x20;
           }
@@ -1885,8 +1579,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name == 'z' )
           {
              l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
+             l_fpadj2 -= 0x80;
           } else if ( l_vreg0 > 7 ) {
              l_second -= 0x20;
           }
@@ -1898,8 +1591,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name == 'z' )
           {
              l_second -= 0x20;
-             if ( l_vreg1 > 15 ) l_second += 0x20;
-             if ( l_vreg2 > 15 ) { l_second += 0x20; l_fourth += 0x20; }
+             l_fpadj2 -= 0x80;
           } else if ( l_vreg0 > 7 ) {
              l_second -= 0x20;
           }
@@ -1929,21 +1621,39 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: VFMADD231SS and ymm/zmm?\n");
           l_second += 0x21;
           l_fpadj  += 0x60;
-          if ( l_vreg0 > 7 ) { l_second -= 0x20; }
+          if ( i_vector_name == 'z' )
+          {
+             l_second -= 0x20;
+             l_fpadj2 -= 0x80;
+          } else if ( l_vreg0 > 7 ) {
+             l_second -= 0x20;
+          }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFMSUB231SS:
           if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: VFMSUB231SS and ymm/zmm?\n");
           l_second += 0x21;
           l_fpadj  += 0x62;
-          if ( l_vreg0 > 7 ) { l_second -= 0x20; }
+          if ( i_vector_name == 'z' )
+          {
+             l_second -= 0x20;
+             l_fpadj2 -= 0x80;
+          } else if ( l_vreg0 > 7 ) {
+             l_second -= 0x20;
+          }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFNMADD231SS:
           if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: VFNMADD231SS and ymm/zmm?\n");
           l_second += 0x21;
           l_fpadj  += 0x64;
-          if ( i_vec_reg_number_0 > 7 ) { l_second -= 0x20; }
+          if ( i_vector_name == 'z' )
+          {
+             l_second -= 0x20;
+             l_fpadj2 -= 0x80;
+          } else if ( i_vec_reg_number_0 > 7 ) {
+             l_second -= 0x20;
+          }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VPERMT2W:
@@ -1966,7 +1676,13 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: VFNMSUB231SS and ymm/zmm?\n");
           l_second += 0x21;
           l_fpadj  += 0x66;
-          if ( l_vreg0 > 7 ) { l_second -= 0x20; }
+          if ( i_vector_name == 'z' )
+          {
+             l_second -= 0x20;
+             l_fpadj2 -= 0x80;
+          } else if ( l_vreg0 > 7 ) {
+             l_second -= 0x20;
+          }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VPXORD:
