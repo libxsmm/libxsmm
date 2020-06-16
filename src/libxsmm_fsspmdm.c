@@ -304,13 +304,13 @@ LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
   if (handle->a_dense != 0) {
     libxsmm_free(handle->a_dense);
   } else {
-    if (handle->permute_operands != 0) {
-      libxsmm_free(handle->permute_operands);
-    }
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
     void* fp;
+    if (handle->permute_operands != 0) {
+      libxsmm_free(handle->permute_operands);
+    }
     LIBXSMM_ASSIGN127(&fp, &handle->kernel);
     libxsmm_free(fp);
   }
@@ -326,13 +326,13 @@ LIBXSMM_API void libxsmm_sfsspmdm_destroy( libxsmm_sfsspmdm* handle )
   if (handle->a_dense != 0) {
     libxsmm_free(handle->a_dense);
   } else {
-    if (handle->permute_operands != 0) {
-      libxsmm_free(handle->permute_operands);
-    }
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
     void* fp;
+    if (handle->permute_operands != 0) {
+      libxsmm_free(handle->permute_operands);
+    }
     LIBXSMM_ASSIGN127(&fp, &handle->kernel);
     libxsmm_free(fp);
   }
