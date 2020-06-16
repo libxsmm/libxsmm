@@ -674,7 +674,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       libxsmm_cpuid_x86_info info;
       libxsmm_cpuid_x86(&info);
       if ((LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) &&
-        internal_cpuid_info.has_context < info.has_context)
+        0 == internal_cpuid_info.has_context && 0 != info.has_context)
       {
         fprintf(stderr, "\nLIBXSMM: CPU features have been promoted.");
       }
