@@ -1626,226 +1626,6 @@ LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
 }
 
 
-LIBXSMM_API_INTERN libxsmm_meltw_comp_redu_flags internal_libxsmm_get_meltw_comp_redu_flags( libxsmm_meltw_redu_flags flags )
-{
-  switch ( flags ) {
-    case LIBXSMM_MELTW_FLAG_REDUCE_NONE:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_NONE;
-    case LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD;
-    case LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_MAX;
-    case LIBXSMM_MELTW_FLAG_REDUCE_OP_MUL:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_MUL;
-    case LIBXSMM_MELTW_FLAG_REDUCE_ROWS:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_ROWS;
-    case LIBXSMM_MELTW_FLAG_REDUCE_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_COLS;
-    case LIBXSMM_MELTW_FLAG_REDUCE_ELTS:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_ELTS;
-    case LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_ELTS_SQUARED;
-    case LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_ROWS:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_ROWS;
-    case LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_COLS;
-    default:
-      return LIBXSMM_MELTW_COMP_FLAG_REDUCE_NONE;
-  }
-}
-
-
-LIBXSMM_API_INTERN libxsmm_meltw_redu_flags internal_libxsmm_get_meltw_redu_flags( libxsmm_meltw_comp_redu_flags flags )
-{
-  switch ( flags ) {
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_NONE:
-      return LIBXSMM_MELTW_FLAG_REDUCE_NONE;
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD:
-      return LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD;
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_MAX:
-      return LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX;
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_MUL:
-      return LIBXSMM_MELTW_FLAG_REDUCE_OP_MUL;
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_ROWS:
-      return LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_COLS:
-      return LIBXSMM_MELTW_FLAG_REDUCE_COLS;
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_ELTS:
-      return LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_ELTS_SQUARED:
-      return LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_ROWS:
-      return LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_COLS:
-      return LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_COLS;
-    default:
-      return LIBXSMM_MELTW_FLAG_REDUCE_NONE;
-  }
-}
-
-
-LIBXSMM_API_INTERN libxsmm_meltw_comp_scal_flags internal_libxsmm_get_meltw_comp_scal_flags( libxsmm_meltw_scal_flags flags )
-{
-  switch( flags ) {
-    case LIBXSMM_MELTW_FLAG_SCALE_NONE:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_NONE;
-    case LIBXSMM_MELTW_FLAG_SCALE_MULT:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT;
-    case LIBXSMM_MELTW_FLAG_SCALE_SHIFT:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT;
-    case LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS;
-    case LIBXSMM_MELTW_FLAG_SCALE_ROWS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_ROWS;
-    case LIBXSMM_MELTW_FLAG_SCALE_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_COLS;
-    case LIBXSMM_MELTW_FLAG_SCALE_MULT_ROWS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ROWS;
-    case LIBXSMM_MELTW_FLAG_SCALE_SHIFT_ROWS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT_ROWS;
-    case LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_ROWS: 
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_ROWS;
-    case LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ROWS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ROWS;
-    case LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_SHIFT_ROWS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_SHIFT_ROWS;
-    case LIBXSMM_MELTW_FLAG_SCALE_MULT_ADD_BIAS_ROWS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ADD_BIAS_ROWS;
-    case LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS;
-    case LIBXSMM_MELTW_FLAG_SCALE_MULT_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_COLS;
-    case LIBXSMM_MELTW_FLAG_SCALE_SHIFT_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT_COLS;
-    case LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_COLS;
-    case LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_COLS;
-    case LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_SHIFT_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_SHIFT_COLS;
-    case LIBXSMM_MELTW_FLAG_SCALE_MULT_ADD_BIAS_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ADD_BIAS_COLS;
-    case LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_COLS:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_COLS;
-    default:
-      return LIBXSMM_MELTW_COMP_FLAG_SCALE_NONE;
-  }
-}
-
-
-LIBXSMM_API_INTERN libxsmm_meltw_scal_flags internal_libxsmm_get_meltw_scal_flags( libxsmm_meltw_comp_scal_flags flags )
-{
-  switch( flags ) {
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_NONE:
-      return LIBXSMM_MELTW_FLAG_SCALE_NONE;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT:
-      return LIBXSMM_MELTW_FLAG_SCALE_MULT;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT:
-      return LIBXSMM_MELTW_FLAG_SCALE_SHIFT;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS:
-      return LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_ROWS:
-      return LIBXSMM_MELTW_FLAG_SCALE_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_COLS:
-      return LIBXSMM_MELTW_FLAG_SCALE_COLS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ROWS:
-      return LIBXSMM_MELTW_FLAG_SCALE_MULT_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT_ROWS:
-      return LIBXSMM_MELTW_FLAG_SCALE_SHIFT_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_ROWS: 
-      return LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ROWS:
-      return LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_SHIFT_ROWS:
-      return LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_SHIFT_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ADD_BIAS_ROWS:
-      return LIBXSMM_MELTW_FLAG_SCALE_MULT_ADD_BIAS_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS:
-      return LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_COLS:
-      return LIBXSMM_MELTW_FLAG_SCALE_MULT_COLS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT_COLS:
-      return LIBXSMM_MELTW_FLAG_SCALE_SHIFT_COLS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_COLS:
-      return LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_COLS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_COLS:
-      return LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_COLS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_SHIFT_COLS:
-      return LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_SHIFT_COLS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ADD_BIAS_COLS:
-      return LIBXSMM_MELTW_FLAG_SCALE_MULT_ADD_BIAS_COLS;
-    case LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_COLS:
-      return LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_COLS;
-    default:
-      return LIBXSMM_MELTW_FLAG_SCALE_NONE;
-  }
-}
-
-
-LIBXSMM_API_INTERN libxsmm_meltw_comp_cvta_flags internal_libxsmm_get_meltw_comp_cvta_flags( libxsmm_meltw_cvta_flags flags )
-{
-  switch ( flags ) {
-    case LIBXSMM_MELTW_FLAG_CVTA_NONE:
-      return LIBXSMM_MELTW_COMP_FLAG_CVTA_NONE;
-    case LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU:
-      return LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_RELU;
-    case LIBXSMM_MELTW_FLAG_CVTA_FUSE_TANH:
-      return LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_TANH;
-    case LIBXSMM_MELTW_FLAG_CVTA_FUSE_SIGM:
-      return LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_SIGM;
-    default:
-      return LIBXSMM_MELTW_COMP_FLAG_CVTA_NONE;
-  }
-}
-
-
-LIBXSMM_API_INTERN libxsmm_meltw_cvta_flags internal_libxsmm_get_meltw_cvta_flags( libxsmm_meltw_comp_cvta_flags flags )
-{
-  switch ( flags ) {
-    case LIBXSMM_MELTW_COMP_FLAG_CVTA_NONE:
-      return LIBXSMM_MELTW_FLAG_CVTA_NONE;
-    case LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_RELU:
-      return LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU;
-    case LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_TANH:
-      return LIBXSMM_MELTW_FLAG_CVTA_FUSE_TANH;
-    case LIBXSMM_MELTW_COMP_FLAG_CVTA_FUSE_SIGM:
-      return LIBXSMM_MELTW_FLAG_CVTA_FUSE_SIGM;
-    default:
-      return LIBXSMM_MELTW_FLAG_CVTA_NONE;
-  }
-}
-
-
-LIBXSMM_API_INTERN libxsmm_meltw_comp_acvt_flags internal_libxsmm_get_meltw_comp_acvt_flags( libxsmm_meltw_acvt_flags flags )
-{
-  switch ( flags ) {
-    case LIBXSMM_MELTW_FLAG_ACVT_NONE:
-      return LIBXSMM_MELTW_COMP_FLAG_ACVT_NONE;
-    case LIBXSMM_MELTW_FLAG_ACVT_FUSE_TANH:
-      return LIBXSMM_MELTW_COMP_FLAG_ACVT_FUSE_TANH;
-    case LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM:
-      return LIBXSMM_MELTW_COMP_FLAG_ACVT_FUSE_SIGM;
-    default:
-      return LIBXSMM_MELTW_COMP_FLAG_ACVT_NONE;
-  }
-}
-
-
-LIBXSMM_API_INTERN libxsmm_meltw_acvt_flags internal_libxsmm_get_meltw_acvt_flags( libxsmm_meltw_comp_acvt_flags flags )
-{
-  switch ( flags ) {
-    case LIBXSMM_MELTW_COMP_FLAG_ACVT_NONE:
-      return LIBXSMM_MELTW_FLAG_ACVT_NONE;
-    case LIBXSMM_MELTW_COMP_FLAG_ACVT_FUSE_TANH:
-      return LIBXSMM_MELTW_FLAG_ACVT_FUSE_TANH;
-    case LIBXSMM_MELTW_COMP_FLAG_ACVT_FUSE_SIGM:
-      return LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM;
-    default:
-      return LIBXSMM_MELTW_FLAG_ACVT_NONE;
-  }
-}
-
-
 LIBXSMM_API_INLINE void internal_get_typesize_string(char buffer[4], int buffer_size, size_t typesize)
 {
   LIBXSMM_ASSERT(256 > typesize && 4 <= buffer_size);
@@ -4362,7 +4142,7 @@ LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16_act libxsmm_dispatch_meltw_cvtfp32
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    internal_libxsmm_get_meltw_comp_cvta_flags( flags ), LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT);
+    libxsmm_get_meltw_comp_cvta_flags( flags ), LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4373,7 +4153,7 @@ LIBXSMM_API libxsmm_meltwfunction_act_cvtfp32bf16 libxsmm_dispatch_meltw_act_cvt
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    internal_libxsmm_get_meltw_comp_acvt_flags( flags ), LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16);
+    libxsmm_get_meltw_comp_acvt_flags( flags ), LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4384,7 +4164,7 @@ LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_reduce(libxsmm_b
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    internal_libxsmm_get_meltw_comp_redu_flags( flags ), LIBXSMM_MELTW_OPERATION_REDUCE);
+    libxsmm_get_meltw_comp_redu_flags( flags ), LIBXSMM_MELTW_OPERATION_REDUCE);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4396,7 +4176,7 @@ LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(libxsmm_bla
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    internal_libxsmm_get_meltw_comp_scal_flags( flags ), LIBXSMM_MELTW_OPERATION_SCALE);
+    libxsmm_get_meltw_comp_scal_flags( flags ), LIBXSMM_MELTW_OPERATION_SCALE);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
