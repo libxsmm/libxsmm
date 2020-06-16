@@ -410,11 +410,13 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   unsigned int reserved_zmms = 0, max_nm_unrolling = 31, reserved_mask_regs = 1, current_mask_reg = 1;
   unsigned int n_unroll_factor = 1, eager_result_store = 0;
   unsigned int vec_x2 = 0, vec_nom = 0, vec_denom = 0, vec_c0 = 0, vec_c1 = 0, vec_c2 = 0, vec_c3 = 0, vec_c1_d = 0, vec_c2_d = 0, vec_c3_d = 0, vec_hi_bound = 0, vec_lo_bound = 0, vec_ones = 0, vec_neg_ones = 0, vec_halves = 0, mask_hi = 0, mask_lo = 0;
-  unsigned int fuse_tanh_before_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_ACVT_FUSE_TANH) > 0) ) ? 1 : 0;
-  unsigned int fuse_sigmoid_before_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) &&  ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM) > 0) ) ? 1 : 0;
-  unsigned int fuse_relu_after_cvt = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0) ) ? 1 : 0;
-  unsigned int fuse_tanh_after_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_TANH) > 0) ) ? 1 : 0;
-  unsigned int fuse_sigmoid_after_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) &&  ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_SIGM) > 0) ) ? 1 : 0;
+  unsigned int acvt_flags = (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) ? libxsmm_get_meltw_acvt_flags( (libxsmm_meltw_comp_acvt_flags)i_mateltwise_desc->flags ) : LIBXSMM_MELTW_FLAG_ACVT_NONE;
+  unsigned int cvta_flags = (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) ? libxsmm_get_meltw_cvta_flags( (libxsmm_meltw_comp_cvta_flags)i_mateltwise_desc->flags ) : LIBXSMM_MELTW_FLAG_CVTA_NONE;
+  unsigned int fuse_tanh_before_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) && ((acvt_flags & LIBXSMM_MELTW_FLAG_ACVT_FUSE_TANH) > 0) ) ? 1 : 0;
+  unsigned int fuse_sigmoid_before_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) &&  ((acvt_flags & LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM) > 0) ) ? 1 : 0;
+  unsigned int fuse_relu_after_cvt = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) && ((cvta_flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0) ) ? 1 : 0;
+  unsigned int fuse_tanh_after_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) && ((cvta_flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_TANH) > 0) ) ? 1 : 0;
+  unsigned int fuse_sigmoid_after_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) &&  ((cvta_flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_SIGM) > 0) ) ? 1 : 0;
 
   if ((fuse_tanh_before_cvt == 1) && (fuse_sigmoid_before_cvt == 1)) {
     /* This should not happen  */
@@ -884,13 +886,13 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
     return;
   }
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ELTS) > 0 ) {
+  if ( (libxsmm_get_meltw_redu_flags((libxsmm_meltw_comp_redu_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_REDUCE_ELTS) > 0 ) {
     compute_plain_vals_reduce= 1;
   } else {
     compute_plain_vals_reduce= 0;
   }
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED) > 0 ) {
+  if ( (libxsmm_get_meltw_redu_flags((libxsmm_meltw_comp_redu_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED) > 0 ) {
     compute_squared_vals_reduce = 1;
   } else {
     compute_squared_vals_reduce = 0;
@@ -1137,13 +1139,13 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
     return;
   }
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ELTS) > 0 ) {
+  if ( (libxsmm_get_meltw_redu_flags((libxsmm_meltw_comp_redu_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_REDUCE_ELTS) > 0 ) {
     compute_plain_vals_reduce= 1;
   } else {
     compute_plain_vals_reduce= 0;
   }
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED) > 0 ) {
+  if ( (libxsmm_get_meltw_redu_flags((libxsmm_meltw_comp_redu_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED) > 0 ) {
     compute_squared_vals_reduce = 1;
   } else {
     compute_squared_vals_reduce = 0;
@@ -2968,19 +2970,19 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
     return;
   }
 
-  if ( (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS) > 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_COLS) > 0)) ||
-       (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS) == 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_COLS) == 0)) ) {
+  if ( (((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ROWS) > 0) && ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_COLS) > 0)) ||
+       (((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ROWS) == 0) && ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_COLS) == 0)) ) {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
 
   /* Determine what operations to perform */
-  scale_rows    = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS) > 0) ? 1 : 0;
-  scale_cols    = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_COLS) > 0) ? 1 : 0;
-  perform_scale = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_MULT) > 0) ? 1 : 0;
-  perform_shift = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_SHIFT) > 0) ? 1 : 0;
-  perform_addbias = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS) > 0) ? 1 : 0;
+  scale_rows    = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ROWS) > 0) ? 1 : 0;
+  scale_cols    = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_COLS) > 0) ? 1 : 0;
+  perform_scale = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_MULT) > 0) ? 1 : 0;
+  perform_shift = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_SHIFT) > 0) ? 1 : 0;
+  perform_addbias = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS) > 0) ? 1 : 0;
 
   /* Configure the register mapping for this eltwise kernel */
   i_gp_reg_mapping->gp_reg_in                     = LIBXSMM_X86_GP_REG_R8;
@@ -3435,9 +3437,9 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
     }
   } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE) {
     if ( (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
-      if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ROWS) > 0) {
+      if ((libxsmm_get_meltw_redu_flags((libxsmm_meltw_comp_redu_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_REDUCE_ROWS) > 0) {
         libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-      } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_COLS) > 0) {
+      } else if ((libxsmm_get_meltw_redu_flags((libxsmm_meltw_comp_redu_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_REDUCE_COLS) > 0) {
         libxsmm_generator_reduce_cols_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
       } else {
         /* This should not happen  */

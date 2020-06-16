@@ -239,9 +239,9 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descr
   unsigned char datatype;
   unsigned char datatype2;
   /** Set of flags */
-  unsigned short flags;
+  unsigned char flags;
   /** operation specifier */
-  unsigned short operation;
+  unsigned char operation;
 };
 
 /** Packed structure storing the transpose argument description. */

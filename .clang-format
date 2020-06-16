@@ -17,6 +17,7 @@ IndentPPDirectives: AfterHash
 IndentWidth: 2
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 2
+PenaltyBreakAssignment: 50
 PointerAlignment: Left
 ReflowComments: false
 SortIncludes: false
