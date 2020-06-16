@@ -1182,7 +1182,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
        return;
     }
 
-    if ( (i_vector_name!='z') && ((l_vreg0>15) || (l_vreg1>15) || (l_vreg2>15)) ) {
+    if ( (i_vector_name!='z') && ((l_vreg0>15) || (l_vreg1>15) || (l_vreg2>15)) && (l_vreg2 != LIBXSMM_X86_VEC_REG_UNDEF) ) {
        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_AVX512VL );
        return;
     }
