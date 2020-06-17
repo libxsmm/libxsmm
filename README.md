@@ -41,7 +41,7 @@ int main(/*int argc, char* argv[]*/) {
 }
 ```
 
-A plain [C code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.c) of the above is almost the same except for the `std::vector` and using a function rather a functor. Of course, the [Fortran code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.f) resembles a "Hello LIBXSMM" as well as C/C++.
+Plain [C code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.c) as well as [Fortran code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.f) resemble the same [example](https://github.com/hfp/libxsmm/tree/master/samples/hello).
 
 ## Interfaces and Domains<a name="interfaces"></a>
 
