@@ -564,6 +564,25 @@ typedef enum libxsmm_meltw_comp_acvt_flags {
   LIBXSMM_MELTW_COMP_FLAG_ACVT_FUSE_SIGM      = 2
 } libxsmm_meltw_comp_acvt_flags;
 
+/* compressed meltw cbiasact strcuture */
+typedef enum libxsmm_meltw_comp_cbiasact_flags {
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_NONE                         =  0,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS                      =  1,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_RELU                     =  2,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_TANH                     =  3,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_SIGM                     =  4,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_GELU                     =  5,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_OVERWRITE_C                  =  6,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_RELU             =  7,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_TANH             =  8,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_SIGM             =  9,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_GELU             = 10,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_RELU_OVERWRITE_C = 11,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_TANH_OVERWRITE_C = 12,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_SIGM_OVERWRITE_C = 13,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_GELU_OVERWRITE_C = 14
+} libxsmm_meltw_comp_cbiasact_flags;
+
 LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker );
 
@@ -629,6 +648,8 @@ LIBXSMM_API_INTERN libxsmm_meltw_comp_cvta_flags libxsmm_get_meltw_comp_cvta_fla
 LIBXSMM_API_INTERN libxsmm_meltw_cvta_flags libxsmm_get_meltw_cvta_flags( libxsmm_meltw_comp_cvta_flags flags );
 LIBXSMM_API_INTERN libxsmm_meltw_comp_acvt_flags libxsmm_get_meltw_comp_acvt_flags( libxsmm_meltw_acvt_flags flags );
 LIBXSMM_API_INTERN libxsmm_meltw_acvt_flags libxsmm_get_meltw_acvt_flags( libxsmm_meltw_comp_acvt_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_comp_cbiasact_flags libxsmm_get_meltw_comp_cbiasact_flags( libxsmm_meltw_cbiasact_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_cbiasact_flags libxsmm_get_meltw_cbiasact_flags( libxsmm_meltw_comp_cbiasact_flags flags );
 
 #endif /* GENERATOR_COMMON_H */
 
