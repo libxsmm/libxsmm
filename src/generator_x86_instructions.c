@@ -2229,7 +2229,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
     switch ( i_vector_name ) {
        case 'x':
           l_sizereg = 1;
-          if ( l_broadcast != 0 )
+          if ( l_broadcast == 1 )
           {
              fprintf(stderr, "libxsmm_instruction_vec_compute_mem: broadcasts aren't enabled with xmm yet\n");
              exit(-1);
@@ -2237,7 +2237,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           break;
        case 'y':
           l_sizereg = 1;
-          if ( l_broadcast != 0 )
+          if ( l_broadcast == 1 )
           {
              fprintf(stderr, "libxsmm_instruction_vec_compute_mem: broadcasts aren't enabled with ymm yet\n");
              exit(-1);
@@ -2250,7 +2250,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown sort of fp registers\n");
           exit(-1);
     }
-    if ( l_broadcast != 0 ) l_sizereg = 8;
+    if ( l_broadcast == 1 ) l_sizereg = 8;
     switch ( i_vec_instr ) {
        case LIBXSMM_X86_INSTR_VXORPD:
           l_fpadj = -2;
@@ -2263,7 +2263,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VPANDD:
           l_fpadj = 0x82;
           l_fpadj2 = 0x80;
-          if ( l_broadcast != 0 ) l_sizereg = 4;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           break;
        case LIBXSMM_X86_INSTR_VSUBPD:
           l_fpadj = 3;
@@ -2708,7 +2708,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
              l_fourth -= 0x20;
              l_sizereg = 32;
           }
-          if ( l_broadcast != 0 ) l_sizereg = 4;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           l_fpadj += 0x96;
           l_fpadj2 += 0x80;
           break;
@@ -2723,7 +2723,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
              l_fourth -= 0x20;
              l_sizereg = 32;
           }
-          if ( l_broadcast != 0 ) l_sizereg = 4;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           l_fpadj += 0x92;
           l_fpadj2 += 0x80;
           break;
@@ -2993,7 +2993,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
 /*     if ( l_vec_1 >= 8 ) { l_second -= 0x80; } */
        if ( l_vec_1 >= 16) { l_second += 0x70; }
        if ( l_vec_1 >= 24) { l_second -= 0x80; }
-       if ( l_broadcast != 0 ) { l_fourth += 0x10; }
+       if ( l_broadcast == 1 ) { l_fourth += 0x10; }
 
        buf[i++] = 0x62;
        buf[i++] = (unsigned char)(0xf1 + l_second);
