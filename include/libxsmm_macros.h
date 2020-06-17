@@ -471,7 +471,7 @@
 #define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
 
 /** Makes some functions available independent of C99 support. */
-#if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+#if defined(__STDC_VERSION__) && (199901L/*C99*/ <= __STDC_VERSION__)
 # if defined(__PGI)
 #   define LIBXSMM_POWF(A, B) ((float)pow((float)(A), (float)(B)))
 # else
@@ -884,7 +884,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # endif
 #endif
 #if !defined(LIBXSMM_NO_LIBM)
-# if defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) /* error including dfp754.h */
+# if (defined(LIBXSMM_INTEL_COMPILER) && (1800 <= LIBXSMM_INTEL_COMPILER)) \
+  && !defined(_WIN32) /* error including dfp754.h */
 #   include <mathimf.h>
 # endif
 # include <math.h>
