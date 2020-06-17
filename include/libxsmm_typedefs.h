@@ -159,16 +159,17 @@ typedef enum libxsmm_gemm_precision {
 } libxsmm_gemm_precision;
 
 typedef enum libxsmm_meltw_operation {
-  LIBXSMM_MELTW_OPERATION_COPY            = 0,
-  LIBXSMM_MELTW_OPERATION_ZERO            = 1,
-  LIBXSMM_MELTW_OPERATION_ADD             = 2,
-  LIBXSMM_MELTW_OPERATION_MUL             = 3,
-  LIBXSMM_MELTW_OPERATION_RELU            = 4,
-  LIBXSMM_MELTW_OPERATION_CVTFP32BF16     = 5,
-  LIBXSMM_MELTW_OPERATION_REDUCE          = 6,
-  LIBXSMM_MELTW_OPERATION_SCALE           = 7,
-  LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT = 8,
-  LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16 = 9
+  LIBXSMM_MELTW_OPERATION_COPY            =  0,
+  LIBXSMM_MELTW_OPERATION_ZERO            =  1,
+  LIBXSMM_MELTW_OPERATION_ADD             =  2,
+  LIBXSMM_MELTW_OPERATION_MUL             =  3,
+  LIBXSMM_MELTW_OPERATION_RELU            =  4,
+  LIBXSMM_MELTW_OPERATION_CVTFP32BF16     =  5,
+  LIBXSMM_MELTW_OPERATION_REDUCE          =  6,
+  LIBXSMM_MELTW_OPERATION_SCALE           =  7,
+  LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT =  8,
+  LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16 =  9,
+  LIBXSMM_MELTW_OPERATION_COLBIAS_ACT     = 10
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
@@ -224,12 +225,20 @@ typedef enum libxsmm_meltw_acvt_flags {
   LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM      = 2
 } libxsmm_meltw_acvt_flags;
 
+typedef enum libxsmm_meltw_cbiasact_flags {
+  LIBXSMM_MELTW_FLAG_CBIASACT_NONE           = 0,
+  LIBXSMM_MELTW_FLAG_CBIASACT_FUSE_RELU      = 1,
+  LIBXSMM_MELTW_FLAG_CBIASACT_FUSE_TANH      = 2,
+  LIBXSMM_MELTW_FLAG_CBIASACT_FUSE_SIGM      = 4
+} libxsmm_meltw_cbiasact_flags;
+
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
-  libxsmm_meltw_null_flags elt_null;
-  libxsmm_meltw_redu_flags elt_redu;
-  libxsmm_meltw_scal_flags elt_scal;
-  libxsmm_meltw_cvta_flags elt_cvta;
-  libxsmm_meltw_acvt_flags elt_acvt;
+  libxsmm_meltw_null_flags     elt_null;
+  libxsmm_meltw_redu_flags     elt_redu;
+  libxsmm_meltw_scal_flags     elt_scal;
+  libxsmm_meltw_cvta_flags     elt_cvta;
+  libxsmm_meltw_acvt_flags     elt_acvt;
+  libxsmm_meltw_cbiasact_flags elt_cbiasact;
 } libxsmm_xmelt_flags;
 
 /** Flag enumeration which can be binary ORed. */
@@ -653,6 +662,18 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_scale_param {
   const void* bias_vals_ptr;    /* pointer to bias values array*/
   void* out_ptr;                /* output pointer */
 } libxsmm_meltw_scale_param;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cbiasact_param {
+  const void* in_ptr;           /* input pointer */
+  const void* bias_ptr;         /* col-bias pointer */
+  void* mask_ptr;               /* pointer to load/store ReLU mask */
+  void* out_ptr;                /* output pointer */
+} libxsmm_meltw_cbiasact_param;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cbiasact_gemm_param {
+  const void* bias_ptr;         /* col-bias pointer */
+  void* mask_ptr;               /* pointer to load/store ReLU mask */
+} libxsmm_meltw_cbiasact_gemm_param;
 
 /** Specialized function for matrix-copy (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmcopyfunction)(
