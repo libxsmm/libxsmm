@@ -377,6 +377,30 @@ typedef enum libxsmm_matcopy_flags {
   LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE = 1
 } libxsmm_matcopy_flags;
 
+/** Determines the kernel kind. */
+typedef enum libxsmm_kernel_kind {
+  /** Matrix multiplication kernel */
+  LIBXSMM_KERNEL_KIND_MATMUL  = 0,
+  /** Matcopy kernel kind */
+  LIBXSMM_KERNEL_KIND_MCOPY   = 1,
+  /** Mateltw kernel kind */
+  LIBXSMM_KERNEL_KIND_MELTW   = 2,
+  /** Transpose kernel kind */
+  LIBXSMM_KERNEL_KIND_TRANS   = 3,
+  /** GEMM/packed kernel kind */
+  LIBXSMM_KERNEL_KIND_PGEMM   = 4,
+  /** GEMM/packed kernel kind */
+  LIBXSMM_KERNEL_KIND_GETRF   = 5,
+  /** TRMM kernel kind */
+  LIBXSMM_KERNEL_KIND_TRMM    = 6,
+  /** TRSM kernel kind */
+  LIBXSMM_KERNEL_KIND_TRSM    = 7,
+  /** User-defined kernels */
+  LIBXSMM_KERNEL_KIND_USER    = 8,
+  /** Not a JIT kernel */
+  LIBXSMM_KERNEL_UNREGISTERED = 9
+} libxsmm_kernel_kind;
+
 typedef enum libxsmm_dnn_tensor_format {
   /* use LIBXSMM internal format, we need to copy data into that */
   LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM  = 1,
@@ -595,10 +619,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cbiasact_gemm
   void* out_ptr;                /* pointer to output after eltwise. if requested, need for some activation functions, assumed to have the same shape as C matrix */
 } libxsmm_meltw_cbiasact_gemm_param;
 
-/** Specialized function for matrix-copy (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmcopyfunction)(
-  const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
-
 /** Specialized function for matrix-eltw (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_copy)(const libxsmm_meltw_copy_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_zero)(const libxsmm_meltw_zero_param* in_struct);
@@ -689,29 +709,9 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   libxsmm_sububmmfunction_reducebatch_strd sububmrs;
 } libxsmm_xmmfunction;
 
-/** Determines the kernel kind. */
-typedef enum libxsmm_kernel_kind {
-  /** Matrix multiplication kernel */
-  LIBXSMM_KERNEL_KIND_MATMUL  = 0,
-  /** Matcopy kernel kind */
-  LIBXSMM_KERNEL_KIND_MCOPY   = 1,
-  /** Mateltw kernel kind */
-  LIBXSMM_KERNEL_KIND_MELTW   = 2,
-  /** Transpose kernel kind */
-  LIBXSMM_KERNEL_KIND_TRANS   = 3,
-  /** GEMM/packed kernel kind */
-  LIBXSMM_KERNEL_KIND_PGEMM   = 4,
-  /** GEMM/packed kernel kind */
-  LIBXSMM_KERNEL_KIND_GETRF   = 5,
-  /** TRMM kernel kind */
-  LIBXSMM_KERNEL_KIND_TRMM    = 6,
-  /** TRSM kernel kind */
-  LIBXSMM_KERNEL_KIND_TRSM    = 7,
-  /** User-defined kernels */
-  LIBXSMM_KERNEL_KIND_USER    = 8,
-  /** Not a JIT kernel */
-  LIBXSMM_KERNEL_UNREGISTERED = 9
-} libxsmm_kernel_kind;
+/** Specialized function for matrix-copy (weak-typed). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmcopyfunction)(
+  const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
 
 /** Specialized function for transpose (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(
