@@ -607,7 +607,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
       short perm_array[32] = { 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31};
       short selector_array[32] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,0 ,0, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
       for (i = 0; i < 32; i++) {
-        perm_array[i] = perm_array[i] | selector_array[i];
+        perm_array[i] = (short)(perm_array[i] | selector_array[i]);
       }
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
           (const unsigned char *) perm_array,
