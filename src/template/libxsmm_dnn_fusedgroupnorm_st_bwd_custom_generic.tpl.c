@@ -153,6 +153,7 @@ for ( img = thr_begin; img < thr_end; ++img ) {
               element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
         const element_stats_type*  bmean_ptr         = &LIBXSMM_VLA_ACCESS(2, bmean,     img, 0, nG);
         const element_stats_type*  brstd_ptr         = &LIBXSMM_VLA_ACCESS(2, brstd,     img, 0, nG);
+        const element_stats_type*  gamma_ptr         = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, nFmBlock);
 
         for ( v=0; v < nFmBlock; v++ ) {
           g = ((fm*nFmBlock)+v)/nFmG;
@@ -173,8 +174,8 @@ for ( img = thr_begin; img < thr_end; ++img ) {
           input_f32.i[1] = input_ptr[v];
           lcl_gamma_ptr[v] += (input_f32.f - bmean_ptr[g]) * del_output_f32.f * brstd_ptr[g];
           lcl_beta_ptr[v]  += del_output_f32.f;
-          d1_val_img_ptr[g] += (input_f32.f - bmean_ptr[g]) * del_output_f32.f;
-          d2_val_img_ptr[g] +=  del_output_f32.f;
+          d1_val_img_ptr[g] += (input_f32.f - bmean_ptr[g]) * del_output_f32.f * gamma_ptr[v];
+          d2_val_img_ptr[g] +=  del_output_f32.f * gamma_ptr[v];
 #else
 #if defined(LIBXSMM_DNN_FUSEDGN_BWD_ENABLE_RELU)
           del_output_ptr[v] = LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v];
@@ -187,8 +188,8 @@ for ( img = thr_begin; img < thr_end; ++img ) {
 #endif
           lcl_gamma_ptr[v] += (input_ptr[v] - bmean_ptr[g]) * del_output_ptr[v] * brstd_ptr[g];
           lcl_beta_ptr[v]  += del_output_ptr[v];
-          d1_val_img_ptr[g] += (input_ptr[v] - bmean_ptr[g]) * del_output_ptr[v];
-          d2_val_img_ptr[g] += del_output_ptr[v];
+          d1_val_img_ptr[g] += (input_ptr[v] - bmean_ptr[g]) * del_output_ptr[v] * gamma_ptr[v];
+          d2_val_img_ptr[g] += del_output_ptr[v] * gamma_ptr[v];
 #endif
         }
       }
@@ -220,14 +221,14 @@ for ( img = thr_begin; img < thr_end; ++img ) {
         for ( v=0; v < nFmBlock; v++ ) {
           element_stats_type t0_val;
           g = ((fm*nFmBlock)+v)/nFmG;
-          t0_val = gamma_ptr[v] * brstd_ptr[g] * recp_ghw;
+          t0_val = brstd_ptr[g] * recp_ghw;
 #if defined(LIBXSMM_DNN_FUSEDGN_BWD_BF16)
           del_output_f32.i[1] = del_output_ptr[v];
           input_f32.i[1] = input_ptr[v];
-          del_input_f32.f = t0_val * ((ghw * del_output_f32.f) - d2_val_img_ptr[g] - ((input_f32.f - bmean_ptr[g]) * d1_val_img_ptr[g] * (1.0f/(variance_ptr[g] + eps))));
+          del_input_f32.f = t0_val * ((gamma_ptr[v] * ghw * del_output_f32.f) - d2_val_img_ptr[g] - ((input_f32.f - bmean_ptr[g]) * d1_val_img_ptr[g] * (1.0f/(variance_ptr[g] + eps))));
           del_input_ptr[v] = del_input_f32.i[1];
 #else
-          del_input_ptr[v] = t0_val * ((ghw * del_output_ptr[v]) - d2_val_img_ptr[g] - ((input_ptr[v] - bmean_ptr[g]) * d1_val_img_ptr[g] * (1.0f/(variance_ptr[g] + eps))));
+          del_input_ptr[v] = t0_val * ((gamma_ptr[v] * ghw * del_output_ptr[v]) - d2_val_img_ptr[g] - ((input_ptr[v] - bmean_ptr[g]) * d1_val_img_ptr[g] * (1.0f/(variance_ptr[g] + eps))));
 #endif
         }
       }
