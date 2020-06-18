@@ -244,10 +244,14 @@ int main(void)
 #endif
     }
   }
-#if defined(_DEBUG) || defined(USE_VERBOSE)
-  if (0 != ndup) fprintf(stderr, "Info: %i kernel%s duplicated.\n", ndup, 1 != ndup ? "s" : "");
+#if (defined(LIBXSMM_CONFIG_TRY) && (0 != LIBXSMM_CONFIG_TRY))
+  if (0 != ndup) {
+# if defined(_DEBUG) || defined(USE_VERBOSE)
+    fprintf(stderr, "Info: %i kernel%s duplicated.\n", ndup, 1 != ndup ? "s" : "");
+# endif
+    result = EXIT_FAILURE;
+  }
 #endif
-
   /* test unregistering and freeing kernels */
   if (EXIT_SUCCESS == result) {
     for (i = 0; i < nkernels; ++i) {
