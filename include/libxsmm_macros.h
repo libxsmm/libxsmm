@@ -137,10 +137,12 @@
 #   define LIBXSMM_UNPACKED
 # endif
 #endif
-#if defined(LIBXSMM_UNPACKED)
-# define LIBXSMM_PAD(EXPR)
-#else /* no braces around EXPR */
+#if !defined(LIBXSMM_UNPACKED) && 0
+/* no braces around EXPR */
 # define LIBXSMM_PAD(EXPR) EXPR;
+#endif
+#if !defined(LIBXSMM_PAD)
+# define LIBXSMM_PAD(EXPR)
 #endif
 
 #if defined(__INTEL_COMPILER)
