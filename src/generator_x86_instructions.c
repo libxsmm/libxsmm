@@ -2517,7 +2517,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
                l_fpadj2 = -0x81;
           }
           l_fpadj2 += 0x02;
-          l_fpadj = -7;
+          l_fpadj = 0x19;
           l_second += 1;
           l_third += 1;
           l_bytes = 6;
@@ -2877,7 +2877,11 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        if ( l_bytes < 5 ) l_bytes = 5;
        /* else l_iregoff -= 0x20; */
     }
-    l_regi = i_gp_reg_idx;
+    if ( (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) || (i_gp_reg_idx < 0) || (i_gp_reg_idx > 15) ) {
+       l_regi = 0;
+    } else {
+       l_regi = i_gp_reg_idx;
+    }
     if ( (i_gp_reg_idx  >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) )
     {
        if ( l_bytes < 5 ) l_bytes = 5;
@@ -2945,7 +2949,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        buf[i++] = 0xc5;
        buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_second + l_xreg + l_fpadj2);
        buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF )
+       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && (i_gp_reg_idx >=0) && (i_gp_reg_idx <=15) )
        {
           buf[i++] = (unsigned char)(0x04 + 8*l_reg2);
           l_place = i-1;
@@ -2970,7 +2974,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        buf[i++] = (unsigned char)(0xc1 + l_second);
        buf[i++] = (unsigned char)(0x7d - 8*l_reg1   + l_third + l_xreg + l_fpadj2);
        buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF )
+       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && (i_gp_reg_idx >=0) && (i_gp_reg_idx <=15) )
        {
           buf[i++] = (unsigned char)(0x04 + 8*l_reg2);
           l_place = i-1;
@@ -2981,7 +2985,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
     } else if ( l_bytes == 6 )
     {
        if ( i_gp_reg_base >= 8 ) { l_second -= 0x20; }
-       if ( (i_gp_reg_idx >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) )
+       if ( (i_gp_reg_idx >= 8) && (i_gp_reg_idx <= 15) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) )
        {
           l_second -= 0x40;
        }
@@ -3000,7 +3004,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_fpadj2);
        buf[i++] = (unsigned char)(0x48 + l_fourth);
        buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF )
+       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && (i_gp_reg_idx >=0) && (i_gp_reg_idx <=15) )
        {
           buf[i++] = (unsigned char)(0x04 + 8*l_reg2);
           l_place = i-1;
