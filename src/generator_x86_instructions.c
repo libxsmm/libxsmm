@@ -2877,7 +2877,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        if ( l_bytes < 5 ) l_bytes = 5;
        /* else l_iregoff -= 0x20; */
     }
-    if ( (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) || (i_gp_reg_idx < 0) || (i_gp_reg_idx > 15) ) {
+    /* i_gp_reg_idx is an unsigned number hence no comparison against negative range */
+    if ( (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) /*|| (i_gp_reg_idx < 0)*/ || (i_gp_reg_idx > 15) ) {
        l_regi = 0;
     } else {
        l_regi = i_gp_reg_idx;
@@ -2949,7 +2950,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        buf[i++] = 0xc5;
        buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_second + l_xreg + l_fpadj2);
        buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && (i_gp_reg_idx >=0) && (i_gp_reg_idx <=15) )
+       /* i_gp_reg_idx is an unsigned number hence no comparison against negative range */
+       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) /*&& (i_gp_reg_idx >=0)*/ && (i_gp_reg_idx <=15) )
        {
           buf[i++] = (unsigned char)(0x04 + 8*l_reg2);
           l_place = i-1;
@@ -2974,7 +2976,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        buf[i++] = (unsigned char)(0xc1 + l_second);
        buf[i++] = (unsigned char)(0x7d - 8*l_reg1   + l_third + l_xreg + l_fpadj2);
        buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && (i_gp_reg_idx >=0) && (i_gp_reg_idx <=15) )
+       /* i_gp_reg_idx is an unsigned number hence no comparison against negative range */
+       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) /*&& (i_gp_reg_idx >=0)*/ && (i_gp_reg_idx <=15) )
        {
           buf[i++] = (unsigned char)(0x04 + 8*l_reg2);
           l_place = i-1;
@@ -3004,7 +3007,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_fpadj2);
        buf[i++] = (unsigned char)(0x48 + l_fourth);
        buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && (i_gp_reg_idx >=0) && (i_gp_reg_idx <=15) )
+       /* i_gp_reg_idx is an unsigned number hence no comparison against negative range */
+       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) /*&& (i_gp_reg_idx >=0)*/ && (i_gp_reg_idx <=15) )
        {
           buf[i++] = (unsigned char)(0x04 + 8*l_reg2);
           l_place = i-1;
@@ -6167,5 +6171,3 @@ void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*   
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 }
-
-
