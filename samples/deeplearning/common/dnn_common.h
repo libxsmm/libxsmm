@@ -2456,8 +2456,8 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
             const float  input_val      =  LIBXSMM_VLA_ACCESS(5,      input, img, g, fmg, hi, wi, nG, nFMG, ifh, ifw);
             const float  del_output_val =  LIBXSMM_VLA_ACCESS(5,    doutput, img, g, fmg, ho, wo, nG, nFMG, ofh, ofw);
 
-            d1_val += del_output_val * (input_val - expectval_ptr[img*nG+g]);
-            d2_val += del_output_val;
+            d1_val += del_output_val * (input_val - expectval_ptr[img*nG+g]) * gamma_ptr[g*nFMG+fmg];
+            d2_val += del_output_val * gamma_ptr[g*nFMG+fmg];
           }
         }
       }
@@ -2469,8 +2469,8 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
             const float  del_output_val =  LIBXSMM_VLA_ACCESS(5,    doutput, img, g, fmg, ho, wo, nG, nFMG, ofh, ofw);
                   float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(5,     dinput, img, g, fmg, hi, wi, nG, nFMG, ifh, ifw);
 
-            float t0_val = gamma_ptr[g*nFMG+fmg] * rcpstddev_ptr[img*nG+g] * recp_ghw;
-            *del_input_ptr = t0_val * ((ghw * del_output_val) - d2_val - ((input_val - expectval_ptr[img*nG+g]) * d1_val * (1.0f/(variance_ptr[img*nG+g]+eps))));
+            float t0_val = rcpstddev_ptr[img*nG+g] * recp_ghw;
+            *del_input_ptr = t0_val * ((gamma_ptr[g*nFMG+fmg] * ghw * del_output_val) - d2_val - ((input_val - expectval_ptr[img*nG+g]) * d1_val * (1.0f/(variance_ptr[img*nG+g]+eps))));
           }
         }
       }
