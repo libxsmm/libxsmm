@@ -244,7 +244,7 @@ int main(void)
 #endif
     }
   }
-#if (defined(LIBXSMM_CONFIG_TRY) && (0 != LIBXSMM_CONFIG_TRY))
+#if (!defined(LIBXSMM_CONFIG_TRY) || (0 == LIBXSMM_CONFIG_TRY))
   if (0 != ndup) {
 # if defined(_DEBUG) || defined(USE_VERBOSE)
     fprintf(stderr, "Info: %i kernel%s duplicated.\n", ndup, 1 != ndup ? "s" : "");
