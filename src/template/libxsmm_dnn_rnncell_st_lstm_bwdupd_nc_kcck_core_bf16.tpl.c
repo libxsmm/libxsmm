@@ -9,16 +9,16 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 
-#define NATIVE_MATRIX_RNE_CVT_FP32_BFP16_LD(m, n, ld, _src, _dst)  \
+#define NATIVE_MATRIX_RNE_CVT_FP32_BFP16_LD(m, n, ld, _src, _dst) \
 do { \
-  float *src = _src; \
-  libxsmm_bfloat16 *dst = _dst; \
-  libxsmm_blasint __i,__j; \
+  float *const src = _src; \
+  libxsmm_bfloat16 *const dst = _dst; \
+  libxsmm_blasint __i, __j; \
   __m512i packed_result; \
   for ( __j = 0; __j < n; ++__j ) { \
     for ( __i = 0; __i < m; __i+=32 ) { \
-    packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i])); \
-    _mm512_storeu_si512((libxsmm_bfloat16*)&dst[(__j*ld)+__i], (__m512i) packed_result); \
+      packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i])); \
+      _mm512_storeu_si512(&dst[(__j*ld)+__i], packed_result); \
     } \
   } \
 } while (0)
