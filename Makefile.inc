@@ -1521,6 +1521,11 @@ else # GCC assumed
         CXXFLAGS += $(OMPFLAG_FORCE)
         CFLAGS += $(OMPFLAG_FORCE)
       endif
+    else ifneq (0,$(CLANG))
+      CXXLDFLAGS += $(OMPFLAG_FORCE)
+      CXXFLAGS += $(OMPFLAG_FORCE)
+      CLDFLAGS += $(OMPFLAG_FORCE)
+      CFLAGS += $(OMPFLAG_FORCE)
     endif
     ifeq (3,$(GCC)) # pure GNU toolchain
       FLDFLAGS += -fopenmp
