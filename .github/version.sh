@@ -16,8 +16,8 @@ if [ "$1" ]; then
   SHIFT=$1
 fi
 
-NAME=$(${GIT} rev-parse --abbrev-ref HEAD)
-MAIN=$(${GIT} describe --match "[0-9]*" --abbrev=0)
-REVC=$(${GIT} rev-list --count ${MAIN}..HEAD)
+NAME=$(${GIT} rev-parse --abbrev-ref HEAD 2>/dev/null)
+MAIN=$(${GIT} describe --tags --match "[0-9]*" --abbrev=0 2>/dev/null)
+REVC=$(${GIT} rev-list --count ${MAIN}..HEAD 2>/dev/null)
 
 echo "${NAME}-${MAIN}-$((REVC+SHIFT))"
