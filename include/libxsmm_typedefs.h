@@ -615,9 +615,12 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cbiasact_para
 } libxsmm_meltw_cbiasact_param;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cbiasact_gemm_param {
-  const void* bias_ptr;         /* col-bias pointer */
-  void* mask_ptr;               /* pointer to load/store ReLU mask */
-  void* out_ptr;                /* pointer to output after eltwise. if requested, need for some activation functions, assumed to have the same shape as C matrix */
+  const void* bias_ptr;        /* optional, col-bias pointer */
+  void* out_ptr;               /* optional, pointer to output after eltwise (contains mask in case of ReLU); */
+                               /* Need for some activation functions, assumed to have the same shape as C matrix, */
+                               /* may not be set when OVERWRITE_C option is chosen */
+                               /* If OVERWRITE_C is false: out_ptr contains the post-act output, C has the pre-act output */
+                               /* If OVERWRITE_C is true:  C contains post-act output, out_ptr contains the ReLU mask (only when act was ReLU) for other act unused */
 } libxsmm_meltw_cbiasact_gemm_param;
 
 /** Specialized function for matrix-eltw (weak-typed). */
