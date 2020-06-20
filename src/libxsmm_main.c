@@ -59,6 +59,9 @@
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
 # define LIBXSMM_ENABLE_DEREG
 #endif
+#if !defined(LIBXSMM_REGLOCK_TRY) && 0
+# define LIBXSMM_REGLOCK_TRY
+#endif
 #if !defined(LIBXSMM_UNIFY_LOCKS) && 1
 # define LIBXSMM_UNIFY_LOCKS
 #endif
@@ -160,7 +163,7 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) {
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) }
 #else
-# if (defined(LIBXSMM_CONFIG_TRY) && (0 != LIBXSMM_CONFIG_TRY))
+# if defined(LIBXSMM_REGLOCK_TRY)
 #   define INTERNAL_REGLOCK_TRY(DIFF, CODE) \
     if (1 != internal_reglock_count) { /* (re-)try and get (meanwhile) generated code */ \
       LIBXSMM_ASSERT(NULL != internal_registry); /* engine is not shut down */ \
@@ -1089,7 +1092,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       /* coverity[check_return] */
       LIBXSMM_TLS_CREATE(&libxsmm_tlskey);
       { /* construct and initialize locks */
-# if (defined(LIBXSMM_CONFIG_TRY) && (0 != LIBXSMM_CONFIG_TRY))
+# if defined(LIBXSMM_REGLOCK_TRY)
         const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
 # endif
         LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) attr_global;
@@ -1111,7 +1114,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &attr_global);
         LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
         /* control number of locks needed; LIBXSMM_TRYLOCK implies only 1 lock */
-# if (defined(LIBXSMM_CONFIG_TRY) && (0 != LIBXSMM_CONFIG_TRY))
+# if defined(LIBXSMM_REGLOCK_TRY)
         if (NULL == env_trylock || 0 == *env_trylock)
 # endif
         { /* no LIBXSMM_TRYLOCK */
@@ -1126,7 +1129,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           internal_reglock_count = 0;
 # endif
         }
-# if (defined(LIBXSMM_CONFIG_TRY) && (0 != LIBXSMM_CONFIG_TRY))
+# if defined(LIBXSMM_REGLOCK_TRY)
         else { /* LIBXSMM_TRYLOCK environment variable specified */
           internal_reglock_count = (0 != atoi(env_trylock) ? 1
 #   if (1 < INTERNAL_REGLOCK_MAXN)
