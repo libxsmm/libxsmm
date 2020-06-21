@@ -18,6 +18,13 @@ fi
 
 NAME=$(${GIT} rev-parse --abbrev-ref HEAD 2>/dev/null)
 MAIN=$(${GIT} describe --tags --match "[0-9]*" --abbrev=0 2>/dev/null)
-REVC=$(${GIT} rev-list --count ${MAIN}..HEAD 2>/dev/null)
 
-echo "${NAME}-${MAIN}-$((REVC+SHIFT))"
+if [ "${MAIN}" ]; then
+  VERSION="${NAME}-${MAIN}"
+  REVC=$(${GIT} rev-list --count ${MAIN}..HEAD 2>/dev/null)
+else
+  VERSION=${NAME}
+  REVC=$(${GIT} rev-list --count HEAD 2>/dev/null)
+fi
+
+echo "${VERSION}-$((REVC+SHIFT))"
