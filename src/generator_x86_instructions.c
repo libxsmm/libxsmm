@@ -3127,7 +3127,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VPMOVDW:
           if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
           {
-             //LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
+             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
              fprintf(stderr,"Please call VPMOVDW with vector reg 0 only. Use UNDEF with reg 1\n");
 #ifdef ERROR_EXIT
              exit(-1);
@@ -3151,7 +3151,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VPMOVSXWD:
           if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
           {
-             //LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
+             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
              fprintf(stderr,"Please call VPMOVSXWD with vector reg 0 only. Use UNDEF with reg 1\n");
 #ifdef ERROR_EXIT
              exit(-1);
@@ -3166,7 +3166,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VPMOVZXWD:
           if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
           {
-             //LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
+             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
              fprintf(stderr,"Please call VPMOVZXWD with vector reg 0 only. Use UNDEF with reg 1\n");
 #ifdef ERROR_EXIT
              exit(-1);
@@ -3181,7 +3181,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VPMOVSXBD:
           if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
           {
-             //LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
+             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
              fprintf(stderr,"Please call VPMOVSXBD with vector reg 0 only. Use UNDEF with reg 1\n");
 #ifdef ERROR_EXIT
              exit(-1);
@@ -3196,7 +3196,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VPMOVZXBD:
           if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
           {
-             //LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
+             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
              fprintf(stderr,"Please call VPMOVZXBD with vector reg 0 only. Use UNDEF with reg 1\n");
 #ifdef ERROR_EXIT
              exit(-1);
@@ -3378,7 +3378,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
                 l_second += 0x80;
                 l_third -= 0x80;
              }
-          } 
+          }
           if ( l_broadcast == 1 ) l_sizereg = 4;
           break;
        case LIBXSMM_X86_INSTR_MOVAPD:
