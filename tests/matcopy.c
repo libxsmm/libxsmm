@@ -29,7 +29,7 @@
 #   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'n', \
         (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))
-# elif defined(__OPENBLAS77)
+# elif defined(__OPENBLAS77) && 0/* issue #390 */
 #   include <f77blas.h>
 #   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) { \
       /*const*/char matcopy_gold_tc_ = 'C', matcopy_gold_tt_ = 'n'; \

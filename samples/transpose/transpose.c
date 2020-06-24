@@ -17,16 +17,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#if defined(__MKL)
-# include <mkl_trans.h>
-#elif defined(__OPENBLAS77)
-# include <f77blas.h>
-#endif
 #if defined(_OPENMP)
 # include <omp.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 #if !defined(ELEM_TYPE)
@@ -50,6 +42,7 @@
 #if defined(__BLAS) && (0 != __BLAS) && \
   (LIBXSMM_EQUAL(ELEM_TYPE, float) || LIBXSMM_EQUAL(ELEM_TYPE, double))
 # if defined(__MKL)
+#   include <mkl_trans.h>
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'T', \
         (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))
@@ -59,7 +52,8 @@
 #   if !defined(USE_REFERENCE)
 #     define USE_REFERENCE
 #   endif
-# elif defined(__OPENBLAS77)
+# elif defined(__OPENBLAS77) && 0/* issue #390 */
+#   include <f77blas.h>
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) { \
       /*const*/char otrans_gold_tc_ = 'C', otrans_gold_tt_ = 'T'; \
       /*const*/ELEM_TYPE otrans_gold_alpha_ = 1; \
@@ -78,6 +72,9 @@
 #     define USE_REFERENCE
 #   endif
 # endif
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 
