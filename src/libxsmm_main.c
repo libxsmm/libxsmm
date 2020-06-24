@@ -2622,7 +2622,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t val
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size) {
     libxsmm_descriptor wrap;
     void* dst;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
@@ -2674,7 +2674,7 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
 #endif
   {
     libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
@@ -2706,10 +2706,12 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 {
   libxsmm_xmmfunction result;
   LIBXSMM_INIT /* verbosity */
+#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
+#endif
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.gemm.desc, descriptor);
@@ -4028,10 +4030,12 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
 {
   libxsmm_xmcopyfunction result;
   LIBXSMM_INIT /* verbosity */
+#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
+#endif
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.mcopy.desc, descriptor);
@@ -4052,10 +4056,12 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
 {
   libxsmm_xmeltwfunction result;
   LIBXSMM_INIT /* verbosity */
+#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
+#endif
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.meltw.desc, descriptor);
@@ -4191,10 +4197,12 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
 {
   libxsmm_xtransfunction result;
   LIBXSMM_INIT /* verbosity */
+#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
+#endif
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.trans.desc, descriptor);
@@ -4212,10 +4220,12 @@ LIBXSMM_API libxsmm_pgemm_xfunction libxsmm_dispatch_pgemm(const libxsmm_pgemm_d
 {
   libxsmm_trmm_xfunction result;
   LIBXSMM_INIT /* verbosity */
+#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
+#endif
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.pgemm.desc, descriptor);
@@ -4233,10 +4243,12 @@ LIBXSMM_API libxsmm_getrf_xfunction libxsmm_dispatch_getrf(const libxsmm_getrf_d
 {
   libxsmm_trmm_xfunction result;
   LIBXSMM_INIT /* verbosity */
+#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
+#endif
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.getrf.desc, descriptor);
@@ -4254,10 +4266,12 @@ LIBXSMM_API libxsmm_trmm_xfunction libxsmm_dispatch_trmm(const libxsmm_trmm_desc
 {
   libxsmm_trmm_xfunction result;
   LIBXSMM_INIT /* verbosity */
+#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
+#endif
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.trmm.desc, descriptor);
@@ -4275,10 +4289,12 @@ LIBXSMM_API libxsmm_trsm_xfunction libxsmm_dispatch_trsm(const libxsmm_trsm_desc
 {
   libxsmm_trsm_xfunction result;
   LIBXSMM_INIT /* verbosity */
+#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
+#endif
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.trsm.desc, descriptor);
