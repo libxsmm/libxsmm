@@ -450,6 +450,7 @@ else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 	$(info --------------------------------------------------------------------------------)
 endif
 ifneq (2,$(INTRINSICS))
+ifeq (0,$(COMPATIBLE))
 ifeq (0,$(AVX))
 	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
 else
@@ -461,6 +462,7 @@ else # Intel Compiler
 	$(info Intel Compiler does not require adjusting INTRINSICS.)
 endif
 	$(info --------------------------------------------------------------------------------)
+endif
 endif
 ifneq (0,$(MSGJITPROFILING))
 ifneq (,$(strip $(LIBJITPROFILING)))
