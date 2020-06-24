@@ -3239,9 +3239,15 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           if ( i_vector_name=='y' ) { l_sizereg = 32; l_fourth -= 0x20; }
           if ( i_vector_name=='x' ) { l_sizereg = 16; l_fourth -= 0x40; }
           if ( l_broadcast == 1 ) l_sizereg = 4;
+#if 0 /* if/else branches with same outcome */
           if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
+#endif
+          {
                l_fpadj2 = -0x81;
+          }
+#if 0 /* if/else branches with same outcome */
           else l_fpadj2 = -0x81;
+#endif
           l_fpadj2 += 0x02;
           l_fpadj = 0x19;
           l_second += 1;
