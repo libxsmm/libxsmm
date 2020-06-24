@@ -166,6 +166,7 @@ ifneq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || ech
 endif
 
 # Intrinsics support level
+# 0: None, 1: Static, 2: Dynamic
 INTRINSICS ?= 2
 
 OFFLOAD ?= 0
@@ -787,7 +788,9 @@ else
     LDFLAGS += -hsystem_alloc
     CRAY ?= 1
     # prevent codegen issues
-    #SYM = 1
+    ifeq (0,$(OPT))
+      override OPT = 1
+    endif
   endif
   endif
 endif
@@ -1487,6 +1490,7 @@ else # GCC assumed
     OMPRT = gomp
   endif
   OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
+  ifeq (0,$(CRAY))
   ifeq (,$(OMPLIBFILE))
   ifneq (,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
       printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" > $${INFILE} && \
@@ -1494,6 +1498,7 @@ else # GCC assumed
       rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
     LDFLAGS += $(addprefix -L,$(LIBFIND))
     OMPLIBFILE = -l$(OMPRT)
+  endif
   endif
   endif
   ifneq (0,$(OMP))
@@ -2168,7 +2173,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
     BLASREF ?= 0
     ifneq (0,$(BLASREF)) # BLAS (reference)
-      ifeq (0,$(PGI))
+      ifneq (,$(GFC)$(filter-out 0,$(GCC)))
         ifneq (0,$(DEPSTATIC))
           ifneq (,$(LIBGFORTRAN))
             BLASTEST += $(XLIB_BEGIN) $(LIBGFORTRAN) $(LIBM) $(XLIB_END)
@@ -2185,7 +2190,7 @@ else ifneq (0,$(BLAS)) # generic
         else
           BLAS_CLDFLAGS += $(BLASTEST)
         endif
-      else # PGI
+      else ifneq (0,$(PGI))
         BLAS_FLAGS += -D__CBLAS
       endif
     endif
