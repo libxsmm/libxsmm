@@ -151,6 +151,11 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 #elif !defined(LIBXSMM_CACHE_MAXSIZE)
 # define LIBXSMM_CACHE_MAXSIZE LIBXSMM_CAPACITY_CACHE
 #endif
+#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
+# define LIBXSMM_CACHE_STRIDE LIBXSMM_MAX(sizeof(libxsmm_descriptor), LIBXSMM_DESCRIPTOR_MAXSIZE)
+#else
+# define LIBXSMM_CACHE_STRIDE LIBXSMM_DESCRIPTOR_MAXSIZE
+#endif
 
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
 # define INTERNAL_FIND_CODE_CACHE_GROW(RESULT_INDEX, CACHE_SIZE) \
@@ -2110,21 +2115,21 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   internal_pad_descriptor(desc, size);
   LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
   LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), xdesc, cache->entry.keys,
-    LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
+    LIBXSMM_DIFF_SIZE, LIBXSMM_CACHE_STRIDE, cache->entry.hit, cache->entry.size);
 #   else
   internal_pad_descriptor(desc, size);
   cache_index = (unsigned char)libxsmm_diff_n(desc, cache->entry.keys,
-    LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
+    LIBXSMM_DIFF_SIZE, LIBXSMM_CACHE_STRIDE, cache->entry.hit, cache->entry.size);
 #   endif
 # elif defined(LIBXSMM_DESC_INLINE)
   LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
   LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
   LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), xdesc, cache->entry.keys,
-    size, LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
+    size, LIBXSMM_CACHE_STRIDE, cache->entry.hit, cache->entry.size);
 # else
   LIBXSMM_ASSERT(NULL != desc);
   cache_index = (unsigned char)libxsmm_diff_n(desc, cache->entry.keys,
-    size, LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
+    size, LIBXSMM_CACHE_STRIDE, cache->entry.hit, cache->entry.size);
 # endif
   if (cache->entry.id == libxsmm_ninit && cache_index < cache->entry.size) { /* valid hit */
     flux_entry = cache->entry.code[cache_index];
