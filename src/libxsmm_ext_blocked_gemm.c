@@ -11,16 +11,7 @@
 ******************************************************************************/
 #include "libxsmm_blocked_gemm_types.h"
 #include "libxsmm_main.h"
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
+#include "libxsmm_ext.h"
 
 
 LIBXSMM_APIEXT void libxsmm_blocked_gemm_omp(const libxsmm_blocked_gemm_handle* handle,
