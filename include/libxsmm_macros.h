@@ -810,9 +810,6 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   define FLT_MIN __FLT_MIN__
 # endif
 #endif
-#if !defined(_Bool)
-# define _Bool int
-#endif
 #if defined(_WIN32) && 0
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
 #elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
