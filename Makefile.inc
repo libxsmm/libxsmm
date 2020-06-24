@@ -1540,8 +1540,18 @@ else # GCC assumed
         TESTRES := $(call ldflib,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))
         ifneq (,$(TESTRES))
           FLDFLAGS += $(addprefix -L,$(LIBFIND)) $(TESTRES)
-        else # last try
-          FLDFLAGS += $(call ldflib,$(FLD),$(SLDFLAGS),gomp)
+        else
+          TESTRES := $(call ldflib,$(FLD),$(SLDFLAGS),gomp)
+          ifneq (,$(TESTRES))
+            FLDFLAGS += $(TESTRES)
+          else
+            TESTRES := $(call ftest,$(FLD),-fopenmp)
+            ifneq (,$(TESTRES))
+              FLDFLAGS += $(TESTRES)
+            else # last try
+              FLDFLAGS += $(OMPFLAG_FORCE)
+            endif
+          endif
         endif
       endif
       TESTRES := $(call ftest,$(FC),-fopenmp)
@@ -1685,7 +1695,8 @@ endif
 
 ifeq (0,$(SYM))
 ifneq (Darwin,$(UNAME))
-  LDFLAGS += $(call ctest,$(LD),-s)
+  CLDFLAGS += $(call ctest,$(CC),-s)
+  FLDFLAGS += $(call ctest,$(FC),-s)
 endif
 endif
 
@@ -1764,6 +1775,8 @@ ifeq (0,$(COMPATIBLE))
     ifeq (,$(filter-out 0,$(PGI)))
       CXXFLAGS += -funroll-loops
       CFLAGS += -funroll-loops
+    endif
+    ifneq (,$(GFC)$(filter-out 0 1 2,$(GCC)))
       FCFLAGS += -funroll-loops
     endif
     ifeq (,$(filter-out 0,$(PGI) $(INTEL) $(ICX)))
