@@ -1563,13 +1563,15 @@ else # GCC assumed
           endif
         endif
       endif
+      ifeq (,$(TESTRESC)) # fallback
+        FLDFLAGS += $(if $(GFC),-fopenmp,$(OMPFLAG_FORCE))
+      endif
       TESTRESD := $(call ftest,$(FC),-fopenmp)
       ifneq (,$(TESTRESD))
         FCFLAGS += $(TESTRESD)
       else
         FCFLAGS += $(call ftest,$(FC),$(OMPFLAG_FORCE))
       endif
-$(info DEBUG: $(TESTRESC) $(TESTRESD))
     endif
   endif
   endif
