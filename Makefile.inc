@@ -1274,9 +1274,9 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(OMPFLAG_FORCE)
     CFLAGS += $(OMPFLAG_FORCE)
     ifneq (,$(strip $(GFC)))
-      LDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),$(OMPRT)) $(XLIB_END)
+      CLDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),$(OMPRT)) $(XLIB_END)
     else
-      LDFLAGS += $(OMPFLAG_FORCE)
+      CLDFLAGS += $(OMPFLAG_FORCE)
     endif
   endif
   ifneq (0,$(SIMD))
@@ -1496,7 +1496,7 @@ else # GCC assumed
       printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" > $${INFILE} && \
       $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
       rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-    LDFLAGS += $(addprefix -L,$(LIBFIND))
+    CLDFLAGS += $(addprefix -L,$(LIBFIND))
     OMPLIBFILE = -l$(OMPRT)
   endif
   endif
@@ -1983,15 +1983,6 @@ ifneq (0,$(BLAS_STATIC))
   BLASLIBEXT ?= $(SLIBEXT)
 else # shared (DLL)
   BLASLIBEXT ?= $(ILIBEXT)
-endif
-
-ifeq (Darwin,$(UNAME))
-ifneq (,$(OMPLIBFILE))
-  ifeq (0,$(ABSLIBS))
-    LDFLAGS += $(call abslibrpath,$(OMPLIBFILE))
-  endif
-  LDFLAGS += $(call abslib,$(OMPLIBFILE))
-endif
 endif
 
 ifneq (,$(strip $(MKLROOT)))
