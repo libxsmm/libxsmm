@@ -32,10 +32,10 @@ ifeq (0,$(MAKE_PARALLEL))
 else ifeq (,$(strip $(MAKE_PARALLEL)))
 ifneq (0,$(shell echo "$$((38200>$(MAKE_VERSION_INT)))"))
 .NOTPARALLEL:
-else ifneq (0,$(shell echo "$$((40000<=$(MAKE_VERSION_INT)))"))
+else ifneq (0,$(shell echo "$$((40201<$(MAKE_VERSION_INT)))"))
 MAKEFLAGS += -O
 endif
-else ifneq (0,$(shell echo "$$((40000<=$(MAKE_VERSION_INT)))"))
+else ifneq (0,$(shell echo "$$((40201<$(MAKE_VERSION_INT)))"))
 MAKEFLAGS += -O
 endif
 
@@ -286,20 +286,20 @@ ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
   $1 $2 $${INFILE} -o $${INFILE}.x 2>&1 >/dev/null || echo "FAILED"; \
   rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$(NULL),$2))
 
-ldclib = $(if $1,$(call ctest,$1 $2,-l$3))
-ldflib = $(if $1,$(call ftest,$1 $2,-l$3))
+ldclib = $(if $1,$(call ctest,$1 $2,-l$(strip $3)))
+ldflib = $(if $1,$(call ftest,$1 $2,-l$(strip $3)))
 
 ifneq (0,$(PYMOD))
   ifneq (,$(PYTHON))
     PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n "$(REVERSION1)p")
     PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
-    TESTRES := $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
-    TESTRES := $(wildcard $(TESTRES)/include/python$(PYVERSION)/Python.h)
+    TESTRESA := $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
+    TESTRESA := $(wildcard $(TESTRESA)/include/python$(PYVERSION)/Python.h)
     TESTLIB := $(call ldclib,$(LD),$(SLDFLAGS),python$(PYVERSION))
-    ifneq (,$(TESTRES))
+    ifneq (,$(TESTRESA))
     ifneq (,$(TESTLIB))
       LDFLAGS += $(TESTLIB)
-      IFLAGS += -I$(call qdir,$(TESTRES))
+      IFLAGS += -I$(call qdir,$(TESTRESA))
       DFLAGS += -D__PYTHON
       # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
       ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
@@ -957,9 +957,9 @@ ifneq (0,$(ABSLIBS))
 endif
 abslibpath ?= $(call absliblpath,$1)
 
-libpath = $(strip $(if $1,$(shell $(FLUSH) $1 $2 -l$3 $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
+libpath = $(call qapath,$(strip $(if $1,$(shell $(FLUSH) $1 $2 -l$(strip $3) $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
   | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
-  | xargs -I {} sh -c "ls -pd {} 2>/dev/null || ls -pd {}.* 2>/dev/null" | grep -v /$$ | tail -n1)))
+  | xargs -I {} sh -c "ls -pd {} 2>/dev/null || ls -pd {}.* 2>/dev/null" | grep -v /$$ | tail -n1))))
 
 ifneq (Windows_NT1,$(UNAME)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
@@ -1475,10 +1475,10 @@ else # GCC assumed
     # avoid include path at begin of compile line
     OMPFLAG_FORCE += -I/usr/local/include
   else ifneq (0,$(CLANG))
-    TESTRES := $(call qapath,$(call qdir,$(call which,$(CC)))/../compiler)
-    TESTRES := $(wildcard $(TESTRES)/include/omp.h)
-    ifneq (,$(TESTRES))
-      OMPFLAG_FORCE += -I$(call qdir,$(TESTRES))
+    TESTRESB := $(call qapath,$(call qdir,$(call which,$(CC)))/../compiler)
+    TESTRESB := $(wildcard $(TESTRESB)/include/omp.h)
+    ifneq (,$(TESTRESB))
+      OMPFLAG_FORCE += -I$(call qdir,$(TESTRESB))
     endif
   endif
   # account for missing TLS/OMP
@@ -1538,30 +1538,34 @@ else # GCC assumed
       FLDFLAGS += -fopenmp
       FCFLAGS += -fopenmp
     else # mixed toolchain
-      TESTRES := $(call ldflib,$(FLD),$(SLDFLAGS),$(OMPRT))
-      ifneq (,$(TESTRES))
-        FLDFLAGS += $(TESTRES)
+      TESTRESC := $(if $(GFC), \
+        $(call libpath,$(FLD),$(SLDFLAGS) -fopenmp,gomp), \
+        $(call libpath,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT)))
+      ifeq (,$(TESTRESC))
+        TESTRESC := $(call ldflib,$(FLD),$(SLDFLAGS) \
+          $(if $(GFC),-fopenmp,$(addprefix -L,$(LIBFIND))), \
+          $(if $(GFC),gomp,$(OMPRT)))
+      endif
+      ifneq (,$(TESTRESC))
+        FLDFLAGS += $(if $(GFC),$(NULL),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
       else
-        TESTRES := $(call ldflib,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))
-        ifneq (,$(TESTRES))
-          FLDFLAGS += $(addprefix -L,$(LIBFIND)) $(TESTRES)
+        TESTRESC := $(call ldflib,$(FLD),$(SLDFLAGS) \
+          $(if $(GFC),$(addprefix -L,$(LIBFIND)),$(OMPFLAG_FORCE)), \
+          $(if $(GFC),$(OMPRT),gomp))
+        ifneq (,$(TESTRESC))
+          FLDFLAGS += $(if $(GFC),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
         else
-          TESTRES := $(call ldflib,$(FLD),$(SLDFLAGS),gomp)
-          ifneq (,$(TESTRES))
-            FLDFLAGS += $(TESTRES)
-          else
-            TESTRES := $(call ftest,$(FLD),-fopenmp)
-            ifneq (,$(TESTRES))
-              FLDFLAGS += $(TESTRES)
-            else # last try
-              FLDFLAGS += $(OMPFLAG_FORCE)
-            endif
+          TESTRESC := $(call ftest,$(FLD),-fopenmp)
+          ifneq (,$(TESTRESC))
+            FLDFLAGS += $(TESTRESC)
+          else # last try
+            FLDFLAGS += $(OMPFLAG_FORCE)
           endif
         endif
       endif
-      TESTRES := $(call ftest,$(FC),-fopenmp)
-      ifneq (,$(TESTRES))
-        FCFLAGS += $(TESTRES)
+      TESTRESD := $(call ftest,$(FC),-fopenmp)
+      ifneq (,$(TESTRESD))
+        FCFLAGS += $(TESTRESD)
       else
         FCFLAGS += $(call ftest,$(FC),$(OMPFLAG_FORCE))
       endif
@@ -2160,7 +2164,10 @@ else ifneq (0,$(BLAS)) # generic
       endif
       BLASREF ?= 1
     else ifneq (,$(call ctest,$(LD),-framework Accelerate)) # macOS
-      BLAS_INCFILE = $(shell $(LD) $(call linkopt,-v) 2>&1 | grep -i frameworks 2>/dev/null | xargs -I {} find {} -name cblas.h 2>/dev/null | head -n1)
+      BLAS_INCFILE = $(shell $(LD) $(call linkopt,-v) 2>&1 \
+                     | grep -i frameworks 2>/dev/null \
+                     | xargs -I {} find {} -name cblas.h 2>/dev/null \
+                     | head -n1)
       ifneq (,$(BLAS_INCFILE))
         BLAS_FLAGS += -I$(call qapath,$(call qdir,$(BLAS_INCFILE)))
       endif
