@@ -957,9 +957,9 @@ ifneq (0,$(ABSLIBS))
 endif
 abslibpath ?= $(call absliblpath,$1)
 
-libpath = $(call qapath,$(strip $(if $1,$(shell $(FLUSH) $1 $2 -l$(strip $3) $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
+libpath = $(strip $(if $1,$(shell $(FLUSH) $1 $2 -l$(strip $3) $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
   | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
-  | xargs -I {} sh -c "ls -pd {} 2>/dev/null || ls -pd {}.* 2>/dev/null" | grep -v /$$ | tail -n1))))
+  | xargs -I {} sh -c "ls -pd {} 2>/dev/null || ls -pd {}.* 2>/dev/null" | grep -v /$$ | tail -n1)))
 
 ifneq (Windows_NT1,$(UNAME)$(DEPSTATIC))
   abslibfile = $(strip $(if $(findstring .$(ILIBEXT),$1), \
@@ -1453,11 +1453,11 @@ else # GCC assumed
     ifneq (0,$(PGI))
       OMPFLAG_FORCE = -mp
       OMPRT = omp
-    else ifneq (0,$(GCC))
-      OMPFLAG_FORCE = -fopenmp
     else ifeq (0,$(INTEL))
       ifneq (Darwin,$(UNAME))
-        ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION_NUM)))"))
+        ifneq (0,$(GCC))
+          OMPFLAG_FORCE = -fopenmp
+        else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION_NUM)))"))
           OMPFLAG_FORCE = -fopenmp
           OMPRT = omp
         endif
