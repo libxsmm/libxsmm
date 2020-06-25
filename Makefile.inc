@@ -957,7 +957,7 @@ ifneq (0,$(ABSLIBS))
 endif
 abslibpath ?= $(call absliblpath,$1)
 
-libpath = $(strip $(if $1,$(shell $(FLUSH) $1 $2 -l$(strip $3) $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
+libpath = $(call qapath,$(if $1,$(shell $(FLUSH) $1 $2 -l$(strip $3) $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
   | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
   | xargs -I {} sh -c "ls -pd {} 2>/dev/null || ls -pd {}.* 2>/dev/null" | grep -v /$$ | tail -n1)))
 
@@ -2238,18 +2238,20 @@ LDFLAGS := $(call uniqadd,LDFLAGS,LIBRT,$(XLIB_BEGIN) $(LIBRT) $(XLIB_END))
 LDFLAGS := $(call uniqadd,LDFLAGS,LIBDL,$(XLIB_BEGIN) $(LIBDL) $(XLIB_END))
 
 # no-BLAS flags: cleanup and extra flags; merged ("=" rather than ":=")
-NOBLAS_CXXCLEAN := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_CXXFLAGS  = $(NOBLAS_CXXCLEAN)
-NOBLAS_FCCLEAN  := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS   = $(NOBLAS_FCCLEAN)
-NOBLAS_CCLEAN   := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS    = $(NOBLAS_CCLEAN)
-NOBLAS_FLAGS     = $(call cleanup,$(filter-out -D__BLAS%,$(DFLAGS)))
-NOBLAS_LDCLEAN  := $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
-NOBLAS_LDFLAGS   = $(NOBLAS_LDCLEAN)
-NOBLAS_CLDCLEAN := $(call cleanld,$(CLDFLAGS))
-NOBLAS_CLDFLAGS  = $(NOBLAS_CLDCLEAN)
-NOBLAS_IFLAGS    = $(call cleanup,$(IFLAGS))
+NOBLAS_CXXCLEAN   := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_CXXFLAGS    = $(NOBLAS_CXXCLEAN)
+NOBLAS_FCCLEAN    := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS     = $(NOBLAS_FCCLEAN)
+NOBLAS_CCLEAN     := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS      = $(NOBLAS_CCLEAN)
+NOBLAS_FLAGS       = $(call cleanup,$(filter-out -D__BLAS%,$(DFLAGS)))
+NOBLAS_LDCLEAN    := $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
+NOBLAS_LDFLAGS     = $(NOBLAS_LDCLEAN)
+NOBLAS_CLDCLEAN   := $(call cleanld,$(CLDFLAGS))
+NOBLAS_CLDFLAGS    = $(NOBLAS_CLDCLEAN)
+NOBLAS_IFLAGS      = $(call cleanup,$(IFLAGS))
+NOBLAS_CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
+NOBLAS_FLDFLAGS   := $(call cleanld,$(FLDFLAGS))
 
 # regular flags: cleanup
 CXXFLAGS   := $(call cleanup,$(BLAS_CXXFLAGS) $(NOBLAS_CXXFLAGS))
@@ -2259,8 +2261,8 @@ DFLAGS     := $(call cleanup,$(BLAS_FLAGS) $(NOBLAS_FLAGS))
 IFLAGS     := $(call cleanup,$(BLAS_IFLAGS) $(NOBLAS_IFLAGS))
 CLDFLAGS   := $(call cleanld,$(BLAS_CLDFLAGS) $(NOBLAS_CLDFLAGS))
 LDFLAGS    := $(call cleanld,$(BLAS_LDFLAGS) $(NOBLAS_LDFLAGS))
-CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
-FLDFLAGS   := $(call cleanld,$(FLDFLAGS))
+CXXLDFLAGS := $(call cleanld,$(NOBLAS_CXXLDFLAGS))
+FLDFLAGS   := $(call cleanld,$(NOBLAS_FLDFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
