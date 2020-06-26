@@ -1538,27 +1538,27 @@ else # GCC assumed
       FLDFLAGS += -fopenmp
       FCFLAGS += -fopenmp
     else # mixed toolchain
-      TESTRESC := $(if $(GFC), \
+      TESTRESC := $(strip $(if $(GFC), \
         $(call libpath,$(FLD),$(SLDFLAGS) -fopenmp,gomp), \
-        $(call libpath,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT)))
-$(info DEBUG: $(TESTRESC))
+        $(call libpath,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))))
+$(info DEBUG: $(TESTRESC) $(OMPRT) $(OMPFLAG_FORCE) $(OMP))
       ifeq (,$(TESTRESC))
-        TESTRESC := $(call ldflib,$(FLD),$(SLDFLAGS) \
+        TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) \
           $(if $(GFC),-fopenmp,$(addprefix -L,$(LIBFIND))), \
-          $(if $(GFC),gomp,$(OMPRT)))
+          $(if $(GFC),gomp,$(OMPRT))))
       endif
 $(info DEBUG: $(TESTRESC))
       ifneq (,$(TESTRESC))
         FLDFLAGS += $(if $(GFC),$(NULL),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
       else
-        TESTRESC := $(call ldflib,$(FLD),$(SLDFLAGS) \
+        TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) \
           $(if $(GFC),$(addprefix -L,$(LIBFIND)),$(OMPFLAG_FORCE)), \
-          $(if $(GFC),$(OMPRT),gomp))
+          $(if $(GFC),$(OMPRT),gomp)))
 $(info DEBUG: $(TESTRESC))
         ifneq (,$(TESTRESC))
           FLDFLAGS += $(if $(GFC),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
         else
-          TESTRESC := $(call ftest,$(FLD),-fopenmp)
+          TESTRESC := $(strip $(call ftest,$(FLD),-fopenmp))
 $(info DEBUG: $(TESTRESC))
           ifneq (,$(TESTRESC))
             FLDFLAGS += $(TESTRESC)
