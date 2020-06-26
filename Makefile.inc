@@ -1121,7 +1121,7 @@ ifneq (0,$(INTEL))
   else ifneq (1,$(ICX))
     CPEDANTIC += -diag-disable 593,1599,2415
   endif
-  CPEDANTIC += -diag-disable 177,1419,1572,2547,10382
+  CPEDANTIC += -diag-disable 177,981,1419,1572,2547,10382
   CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
     ifeq (,$(filter-out 0,$(FORCE_CXX)))
@@ -1274,9 +1274,9 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(OMPFLAG_FORCE)
     CFLAGS += $(OMPFLAG_FORCE)
     ifneq (,$(strip $(GFC)))
-      CLDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),$(OMPRT)) $(XLIB_END)
+      LDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),$(OMPRT)) $(XLIB_END)
     else
-      CLDFLAGS += $(OMPFLAG_FORCE)
+      LDFLAGS += $(OMPFLAG_FORCE)
     endif
   endif
   ifneq (0,$(SIMD))
