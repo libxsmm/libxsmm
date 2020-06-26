@@ -1549,18 +1549,11 @@ else # GCC assumed
       ifneq (,$(TESTRESC))
         FLDFLAGS += $(if $(GFC),$(NULL),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
       else
-        TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) \
-          $(if $(GFC),$(addprefix -L,$(LIBFIND)),$(OMPFLAG_FORCE)), \
-          $(if $(GFC),$(OMPRT),gomp)))
+        TESTRESC := $(call ftest,$(FLD),-fopenmp)
         ifneq (,$(TESTRESC))
-          FLDFLAGS += $(if $(GFC),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
-        else
-          TESTRESC := $(call ftest,$(FLD),-fopenmp)
-          ifneq (,$(TESTRESC))
-            FLDFLAGS += $(TESTRESC)
-          else # last try
-            FLDFLAGS += $(OMPFLAG_FORCE)
-          endif
+          FLDFLAGS += $(TESTRESC)
+        else # last try
+          FLDFLAGS += $(OMPFLAG_FORCE)
         endif
       endif
       TESTRESD := $(call ftest,$(FC),-fopenmp)
