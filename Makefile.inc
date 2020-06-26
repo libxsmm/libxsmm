@@ -276,15 +276,15 @@ endif
 uniqadd = $(if $($2),$(filter-out $($2),$($1)) $(if $3,$3,$($2)),$(filter-out $2,$($1)) $(if $3,$3,$2))
 uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
 
-ctest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
+ctest = $(strip $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   echo "int main(void) { return 0; }" > $${INFILE} && \
   $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
-  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.c.* 2>/dev/null),$2))
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.c.* 2>/dev/null),$2)))
 # INFILE cannot use leading dot when used with certain F-compiler
-ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
+ftest = $(strip $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
   printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && \
   $1 $2 $${INFILE} -o $${INFILE}.x 2>&1 >/dev/null || echo "FAILED"; \
-  rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$(NULL),$2))
+  rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$(NULL),$2)))
 
 ldclib = $(if $1,$(call ctest,$1 $2,-l$(strip $3)))
 ldflib = $(if $1,$(call ftest,$1 $2,-l$(strip $3)))
@@ -1538,28 +1538,24 @@ else # GCC assumed
       FLDFLAGS += -fopenmp
       FCFLAGS += -fopenmp
     else # mixed toolchain
-      TESTRESC := $(strip $(if $(GFC), \
+      TESTRESC := $(if $(GFC), \
         $(call libpath,$(FLD),$(SLDFLAGS) -fopenmp,gomp), \
-        $(call libpath,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))))
-$(info DEBUG: $(TESTRESC) $(OMPRT) $(OMPFLAG_FORCE) $(OMP))
+        $(call libpath,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT)))
       ifeq (,$(TESTRESC))
-        TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) \
+        TESTRESC := $(call ldflib,$(FLD),$(SLDFLAGS) \
           $(if $(GFC),-fopenmp,$(addprefix -L,$(LIBFIND))), \
-          $(if $(GFC),gomp,$(OMPRT))))
+          $(if $(GFC),gomp,$(OMPRT)))
       endif
-$(info DEBUG: $(TESTRESC))
       ifneq (,$(TESTRESC))
         FLDFLAGS += $(if $(GFC),$(NULL),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
       else
-        TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) \
+        TESTRESC := $(call ldflib,$(FLD),$(SLDFLAGS) \
           $(if $(GFC),$(addprefix -L,$(LIBFIND)),$(OMPFLAG_FORCE)), \
-          $(if $(GFC),$(OMPRT),gomp)))
-$(info DEBUG: $(TESTRESC))
+          $(if $(GFC),$(OMPRT),gomp))
         ifneq (,$(TESTRESC))
           FLDFLAGS += $(if $(GFC),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
         else
-          TESTRESC := $(strip $(call ftest,$(FLD),-fopenmp))
-$(info DEBUG: $(TESTRESC))
+          TESTRESC := $(call ftest,$(FLD),-fopenmp)
           ifneq (,$(TESTRESC))
             FLDFLAGS += $(TESTRESC)
           else # last try
@@ -1567,7 +1563,6 @@ $(info DEBUG: $(TESTRESC))
           endif
         endif
       endif
-$(info DEBUG: $(FLDFLAGS))
       TESTRESD := $(call ftest,$(FC),-fopenmp)
       ifneq (,$(TESTRESD))
         FCFLAGS += $(TESTRESD)
@@ -2266,7 +2261,6 @@ CLDFLAGS   := $(call cleanld,$(BLAS_CLDFLAGS) $(NOBLAS_CLDFLAGS))
 LDFLAGS    := $(call cleanld,$(BLAS_LDFLAGS) $(NOBLAS_LDFLAGS))
 CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
 FLDFLAGS   := $(call cleanld,$(FLDFLAGS))
-$(info DEBUG: $(FLDFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
