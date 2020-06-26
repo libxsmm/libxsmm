@@ -1541,21 +1541,25 @@ else # GCC assumed
       TESTRESC := $(if $(GFC), \
         $(call libpath,$(FLD),$(SLDFLAGS) -fopenmp,gomp), \
         $(call libpath,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT)))
+$(info DEBUG: $(TESTRESC))
       ifeq (,$(TESTRESC))
         TESTRESC := $(call ldflib,$(FLD),$(SLDFLAGS) \
           $(if $(GFC),-fopenmp,$(addprefix -L,$(LIBFIND))), \
           $(if $(GFC),gomp,$(OMPRT)))
       endif
+$(info DEBUG: $(TESTRESC))
       ifneq (,$(TESTRESC))
         FLDFLAGS += $(if $(GFC),$(NULL),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
       else
         TESTRESC := $(call ldflib,$(FLD),$(SLDFLAGS) \
           $(if $(GFC),$(addprefix -L,$(LIBFIND)),$(OMPFLAG_FORCE)), \
           $(if $(GFC),$(OMPRT),gomp))
+$(info DEBUG: $(TESTRESC))
         ifneq (,$(TESTRESC))
           FLDFLAGS += $(if $(GFC),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
         else
           TESTRESC := $(call ftest,$(FLD),-fopenmp)
+$(info DEBUG: $(TESTRESC))
           ifneq (,$(TESTRESC))
             FLDFLAGS += $(TESTRESC)
           else # last try
@@ -1709,7 +1713,6 @@ ifneq (Darwin,$(UNAME))
   FLDFLAGS += $(call ctest,$(FC),-s)
 endif
 endif
-$(info DEBUG: $(FLDFLAGS))
 
 ifneq (0,$(INSTRUMENT))
 ifneq (Darwin1,$(UNAME)$(INSTRUMENT))
@@ -1885,7 +1888,6 @@ ifeq (Darwin,$(UNAME))
   FLDFLAGS += -Wa,-q
   FCFLAGS += -Wa,-q
 endif
-$(info DEBUG: $(FLDFLAGS))
 
 ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
   ifneq (,$(filter-out 0,$(THREADS) $(BLAS)))
@@ -1909,7 +1911,6 @@ ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
 else ifneq (0,$(PGI))
   LIBATOMIC ?= 1
 endif
-$(info DEBUG: $(FLDFLAGS))
 
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
     printf "$(CHAR_HASH)include <features.h>\n$(CHAR_HASH)if !defined(__GNU_LIBRARY__) && !defined(__GLIBC__)\n0\n$(CHAR_HASH)endif\n" > $${INFILE} && \
