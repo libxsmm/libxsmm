@@ -1457,7 +1457,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
-    else if (0 == strcmp("spr", arch)) {
+    else if (0 == strcmp("spr", arch) || 0 == strcmp("amx", arch)) {
       target_archid = LIBXSMM_X86_AVX512_SPR;
     }
     else if (0 == strcmp("cpx", arch)) {
