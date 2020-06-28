@@ -93,7 +93,7 @@ tr_input_kernel(&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocks
   }\
 } while(0)
 
-int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, j_br, img_br, i, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix;
+int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, /*j_br, img_br,*/ i, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 
@@ -245,7 +245,7 @@ if (handle->upd_linearized_pixels == 1) {
       }
     }
   } else {
-    int img_tile_id, img_in_tile, init_offset, pix_id, images_in_tile = handle->desc.N/handle->weight_copies;
+    int img_tile_id, img_in_tile, init_offset, /*pix_id,*/ images_in_tile = handle->desc.N/handle->weight_copies;
     /* Zero out the input padding pixels  */
     for (img = my_img_start; img < my_img_end; img++) {
       img_tile_id = img/images_in_tile;
@@ -333,7 +333,6 @@ if (handle->upd_linearized_pixels == 1) {
         _n_full_pixel_pairs = _trans_pixels/2;
         _half_pixel_pair = _trans_pixels%2;
         for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
-          __m512i zero_reg = _mm512_setzero_si512();
           src_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, init_pixel_pos, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
           tr_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(4, tr_output_3, ofm1, pix_id/2, 0, 0, handle->output_pixels/2, handle->ofmblock, 2);
           for (pixel_pair = 0; pixel_pair < _n_full_pixel_pairs; pixel_pair++) {

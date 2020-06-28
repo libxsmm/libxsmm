@@ -928,13 +928,11 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_bf16_bf16_amx(l
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
   libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.bsmrs;
-  libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_bwd_zerobeta = handle->gemm_bwd2.xgemm.bsmrs;
   libxsmm_bmmfunction_reducebatch_strd bf16_batchreduce_kernel_bwd_zerobeta = handle->gemm_bwd3.xgemm.bmrs;
   libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_upd = handle->gemm_upd.xgemm.bsmrs;
-  libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_upd_zerobeta = handle->gemm_upd2.xgemm.bsmrs;
   libxsmm_bmmfunction_reducebatch_strd bf16_batchreduce_kernel_upd_zerobeta = handle->gemm_upd3.xgemm.bmrs;
   libxsmm_bsmmfunction bwd_tile_config_kernel = handle->bwd_config_kernel;
-  libxsmm_bsmmfunction upd_tile_config_kernel = handle->upd_config_kernel;
+  /*libxsmm_bsmmfunction upd_tile_config_kernel = handle->upd_config_kernel;*/
 
 #define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
   /* some portable macrros fof BF16 <-> FP32 */
@@ -989,11 +987,11 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwdupd_ncnc_kcck_bf16_bf16_amx(l
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
   libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_bwd = handle->gemm_bwd.xgemm.bsmrs;
-  libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_bwd_zerobeta = handle->gemm_bwd2.xgemm.bsmrs;
+  libxsmm_bmmfunction_reducebatch_strd bf16_batchreduce_kernel_bwd_zerobeta = handle->gemm_bwd3.xgemm.bmrs;
   libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_upd = handle->gemm_upd.xgemm.bsmrs;
-  libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_upd_zerobeta = handle->gemm_upd2.xgemm.bsmrs;
+  libxsmm_bmmfunction_reducebatch_strd bf16_batchreduce_kernel_upd_zerobeta = handle->gemm_upd3.xgemm.bmrs;
   libxsmm_bsmmfunction bwd_tile_config_kernel = handle->bwd_config_kernel;
-  libxsmm_bsmmfunction upd_tile_config_kernel = handle->upd_config_kernel;
+  /*libxsmm_bsmmfunction upd_tile_config_kernel = handle->upd_config_kernel;*/
 
   /* some portable macrros fof BF16 <-> FP32 */
 # include "template/libxsmm_dnn_bf16_macros_define.tpl.c"

@@ -234,7 +234,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   LIBXSMM_VLA_DECL(4,        element_input_type,    dinput, (element_input_type* )handle->grad_input->data, nBlocksIFm, bn, bc);
   LIBXSMM_VLA_DECL(5,       element_filter_type, filter_tr, (element_filter_type*)handle->scratch, nBlocksOFm, bk_lp, bc, lpb);
   float* temp_output = (float*)handle->scratch + (handle->desc.C * handle->desc.K)/2;
-  float* gemm_scratch = (float*)handle->scratch + (handle->desc.C * handle->desc.K)/2 + ltid*bn*bc;
   LIBXSMM_VLA_DECL(4,        float,    dinput_f32, (float*) temp_output, nBlocksIFm, bn, bc);
 
   unsigned long long  blocks = nBlocksOFm;
@@ -394,13 +393,11 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   /* Set up tensors for transposing/scratch before vnni reformatting dfilter */
   element_input_type  *tr_inp_ptr = (element_input_type*) ((element_output_type*)handle->scratch + handle->desc.N * handle->desc.K);
   float               *dfilter_f32_ptr = (float*) ((element_input_type*)tr_inp_ptr + handle->desc.N * handle->desc.C);
-  float               *gemm_scratch_ptr = (float*) ((element_input_type*)tr_inp_ptr + handle->desc.N * handle->desc.C) + ltid * bc *bk;
   element_filter_type *dfilter_scratch = (element_filter_type*) ((float*)dfilter_f32_ptr + handle->desc.C * handle->desc.K) + ltid * bc * bk;
 
   LIBXSMM_VLA_DECL(4, element_input_type,  input_tr,    (element_input_type*)tr_inp_ptr, nBlocksMB, bc, bn);
   LIBXSMM_VLA_DECL(4,       float, dfilter_f32,  (float*)dfilter_f32_ptr, nBlocksIFm, bc, bk);
   LIBXSMM_VLA_DECL(2, element_filter_type, dfilter_block,  (element_filter_type*)dfilter_scratch, bk);
-  LIBXSMM_VLA_DECL(2,               float, gemm_scratch,  (float*)gemm_scratch_ptr, bk);
 
   const int tr_out_work = nBlocksMB * nBlocksOFm;
   const int tr_out_chunksize = (tr_out_work % handle->desc.threads == 0) ? (tr_out_work / handle->desc.threads) : ((tr_out_work / handle->desc.threads) + 1);
@@ -413,7 +410,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   const int tr_inp_thr_end = ((ltid + 1) * tr_inp_chunksize < tr_inp_work) ? ((ltid + 1) * tr_inp_chunksize) : tr_inp_work;
 
   /* These are used for the vnni reformatting of the f32 output  */
-  __m256i c0, c1;
   __m512 a01, b01;
   __m512i c01 = LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32();
   const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
