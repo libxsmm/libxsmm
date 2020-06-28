@@ -33,7 +33,7 @@
 #endif
 
 /* helper variables */
-libxsmm_blasint j, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable*/, jc, ek, en, ec, BF, KB_BLOCKS, KB;
+libxsmm_blasint j, ik, ikb, in, inb, icb, jk, jb, jc, BF, KB_BLOCKS, KB;
 const int fake_threads = handle->desc.threads;
 /* tensor dimensions */
 libxsmm_blasint K = handle->desc.K;
@@ -270,7 +270,6 @@ float total_time = 0.0;
 int bcbk_multiples_of_16 = ((bc % 16 == 0) && (bk % 16 == 0)) ? 1 : 0;
 
 libxsmm_blasint ikic, inic, inik, icin, ikin;
-__m256i c0, c1;
 __m512i c01;
 const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
 

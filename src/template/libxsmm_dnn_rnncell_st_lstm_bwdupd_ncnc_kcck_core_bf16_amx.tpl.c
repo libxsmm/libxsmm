@@ -30,14 +30,14 @@
 ******************************************************************************/
 #define NATIVE_MATRIX_RNE_CVT_FP32_BFP16_LD(m, n, ld, _src, _dst) \
 do { \
-  float *src = _src; \
-  libxsmm_bfloat16 *dst = _dst; \
-  libxsmm_blasint i,j; \
-  __m512i packed_result; \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=32 ) { \
-    packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i])); \
-    _mm512_storeu_si512((libxsmm_bfloat16*)&dst[(j*ld)+i], (__m512i) packed_result); \
+  float *const __src = _src; \
+  libxsmm_bfloat16 *__dst = _dst; \
+  libxsmm_blasint __i, __j; \
+  __m512i __packed_result; \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=32 ) { \
+    __packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&__src[(__j*ld)+__i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&__src[(__j*ld)+__i])); \
+    _mm512_storeu_si512((libxsmm_bfloat16*)&__dst[(__j*ld)+__i], (__m512i) __packed_result); \
     } \
   } \
 } while (0)
@@ -64,7 +64,6 @@ for (j = t-1; j >= 0; --j) {
         trans_act((short int*)&LIBXSMM_VLA_ACCESS(5, x, j, inb, icb, 0, 0, nBlocks, cBlocks, bn, bc), (short int*)&LIBXSMM_VLA_ACCESS(4, xT, icb, inb, 0, 0, nBlocks, bc, bn));
       } else {
         in = inb*bn;
-        ic = icb*bc;
         for (jc = 0; jc < bc; ++jc) {
           for (jb = 0; jb < bn; ++jb) {
             LIBXSMM_VLA_ACCESS(4, xT, icb, inb, jc, jb, nBlocks, bc, bn) =  LIBXSMM_VLA_ACCESS(5, x, j, inb, icb, jb, jc, nBlocks, cBlocks, bn, bc);
@@ -119,7 +118,6 @@ for (j = t-1; j >= 0; --j) {
         inb = inic % (N/bn);
         in = inb*bn;
         icb = inic / (N/bn);
-        ic = icb*bc;
 
         batchreduce_kernela(&LIBXSMM_VLA_ACCESS(5, wiT, icb, KB*KB_BLOCKS, 0, 0, 0, kBlocks, bk_lp, bc, lpb),
             &LIBXSMM_VLA_ACCESS(4, di, inb, KB*KB_BLOCKS, 0, 0, kBlocks, bn, bk),
@@ -186,7 +184,6 @@ for (j = t-1; j >= 0; --j) {
       /* Use blocked format for di, dci, df and db */
       for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
         icb = ikic / (K/bk);
-        ic = icb*bk;
         ikb = ikic % (K/bk);
         ik = ikb*bk;
         batchreduce_kernelb(&LIBXSMM_VLA_ACCESS(5, diB, ikb, 0, 0, 0, 0, nBlocks, bn_lp, bk, lpb),
@@ -289,7 +286,6 @@ for (j = t-1; j >= 0; --j) {
     } else {
       for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
         icb = ikic / (K/bk);
-        ic = icb*bk;
         ikb = ikic % (K/bk);
         ik = ikb*bk;
         batchreduce_kernelb(&LIBXSMM_VLA_ACCESS(5, diB, ikb, 0, 0, 0, 0, nBlocks, bn_lp, bk, lpb),
@@ -343,7 +339,6 @@ for (j = t-1; j >= 0; --j) {
 
       for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
         icb = ikic / (K/bk);
-        ic = icb*bc;
         ikb = ikic % (K/bk);
         ik = ikb*bk;
         batchreduce_kernelc(&LIBXSMM_VLA_ACCESS(5, diB, ikb, 0, 0, 0, 0, nBlocks, bn_lp, bk, lpb),
