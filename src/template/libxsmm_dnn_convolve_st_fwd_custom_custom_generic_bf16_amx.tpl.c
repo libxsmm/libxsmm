@@ -28,8 +28,8 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind, ofm11, ki1, kj1, ojj, oii, spread_out = 1;
-int last_ki, last_kj, next_kj;
+int img, ofm1, /*ofm2, ifm1, ifm2,*/ oj, oi, /*kj, ki, oi_use, oj_use, ii_use, ij_use,*/ ofmb, /*ifmb,*/ ojb, myOfmId, nOfmBlocks, /*ind, ofm11, ki1, kj1,*/ ojj, /*oii,*/ spread_out = 1;
+/*int last_ki, last_kj, next_kj;*/
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;

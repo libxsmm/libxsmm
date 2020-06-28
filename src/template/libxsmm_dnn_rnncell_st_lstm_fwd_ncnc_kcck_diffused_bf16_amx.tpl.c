@@ -30,14 +30,14 @@
 ******************************************************************************/
 #define NATIVE_MATRIX_RNE_CVT_FP32_BFP16_LD(m, n, ld, _src, _dst) \
 do { \
-  float *src = _src; \
-  libxsmm_bfloat16 *dst = _dst; \
-  libxsmm_blasint i,j; \
-  __m512bh packed_result; \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=32 ) { \
-    packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i])); \
-    _mm512_storeu_si512((libxsmm_bfloat16*)&dst[(j*ld)+i], (__m512i) packed_result); \
+  float *__src = _src; \
+  libxsmm_bfloat16 *__dst = _dst; \
+  libxsmm_blasint __i, __j; \
+  __m512i __packed_result; \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=32 ) { \
+      __packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&__src[(__j*ld)+__i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&__src[(__j*ld)+__i])); \
+      _mm512_storeu_si512((libxsmm_bfloat16*)&__dst[(__j*ld)+__i], (__m512i) __packed_result); \
     } \
   } \
 } while (0)
@@ -157,7 +157,6 @@ for (CB = 0; CB < BF; CB++) {
       float* _ci = &LIBXSMM_VLA_ACCESS(5, ci, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
       libxsmm_bfloat16 *dst = &LIBXSMM_VLA_ACCESS(5, ci_out, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
       __m512 _vci0, _vci1;
-      const __m512 _halves = _mm512_set1_ps( (LIBXSMM_DNN_ELTWISE_FTYPE)0.5 );
       for ( _j = 0; _j < bn; ++_j ) {
         for ( _k = 0; _k < bk; _k += 32 ) {
           _vci0 = LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_ci[(_j*bk)+_k] ));
@@ -222,8 +221,6 @@ for (CB = 0; CB < BF; CB++) {
       float* _ci = &LIBXSMM_VLA_ACCESS(5, ci, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
       float* _cps = &LIBXSMM_VLA_ACCESS(4, cp, inb, ikb, 0, 0, kBlocks, bn, bk);
       float* _cs = &LIBXSMM_VLA_ACCESS(5, cs, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
-      float* _h = &LIBXSMM_VLA_ACCESS(5, h, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
-      float* _co = &LIBXSMM_VLA_ACCESS(5, co, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
       libxsmm_bfloat16 *dst_o = &LIBXSMM_VLA_ACCESS(5, o_out, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
       libxsmm_bfloat16 *dst_cs = &LIBXSMM_VLA_ACCESS(5, cs_out, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
       libxsmm_bfloat16 *dst_h = &LIBXSMM_VLA_ACCESS(5, h_out, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
@@ -325,7 +322,6 @@ for (j = 1; j < t; ++j) {
         float* _ci = &LIBXSMM_VLA_ACCESS(5, ci, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
         libxsmm_bfloat16 *dst = &LIBXSMM_VLA_ACCESS(5, ci_out, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
         __m512 _vci0, _vci1;
-        const __m512 _halves = _mm512_set1_ps( (LIBXSMM_DNN_ELTWISE_FTYPE)0.5 );
         for ( _j = 0; _j < bn; ++_j ) {
           for ( _k = 0; _k < bk; _k += 32 ) {
             _vci0 = LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_ci[(_j*bk)+_k] ));
@@ -390,8 +386,6 @@ for (j = 1; j < t; ++j) {
         float* _ci = &LIBXSMM_VLA_ACCESS(5, ci, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
         float* _cps = &LIBXSMM_VLA_ACCESS(5, cs, j-1, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
         float* _cs = &LIBXSMM_VLA_ACCESS(5, cs, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
-        float* _h = &LIBXSMM_VLA_ACCESS(5, h, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
-        float* _co = &LIBXSMM_VLA_ACCESS(5, co, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
         libxsmm_bfloat16 *dst_o = &LIBXSMM_VLA_ACCESS(5, o_out, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
         libxsmm_bfloat16 *dst_cs = &LIBXSMM_VLA_ACCESS(5, cs_out, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);
         libxsmm_bfloat16 *dst_h = &LIBXSMM_VLA_ACCESS(5, h_out, j, inb, ikb, 0, 0, nBlocks, kBlocks, bn, bk);

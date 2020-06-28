@@ -34,37 +34,37 @@
 
 #define MATRIX_CVT_BF16_FP32_LD(m, n, ld, _src, _dst) \
 do { \
-  libxsmm_bfloat16 *src = _src; \
-  float *dst = _dst; \
-  libxsmm_blasint i,j; \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=16 ) { \
-      _mm512_store_ps((float*)&dst[(j*ld)+i], _mm512_loadcvt_bf16_fp32(&src[(j*ld)+i])); \
+  libxsmm_bfloat16 *__src = _src; \
+  float *__dst = _dst; \
+  libxsmm_blasint __i, __j; \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=16 ) { \
+      _mm512_store_ps((float*)&__dst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&__src[(__j*ld)+__i])); \
     } \
   } \
 } while (0)
 
 #define MATRIX_BCST_CVT_BF16_FP32_COLVECTOR_LD(m, n, ld, _srcdst, _colv) \
 do { \
-  libxsmm_bfloat16 *colv = _colv; \
-  float *srcdst = _srcdst; \
-  libxsmm_blasint i,j; \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=16 ) { \
-      _mm512_store_ps((float*)&srcdst[(j*ld)+i], _mm512_loadcvt_bf16_fp32(&colv[i])); \
+  libxsmm_bfloat16 *__colv = _colv; \
+  float *__srcdst = _srcdst; \
+  libxsmm_blasint __i, __j; \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=16 ) { \
+      _mm512_store_ps((float*)&__srcdst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&__colv[__i])); \
     } \
   } \
 } while (0)
 
 #define MATRIX_BCST_CVT_BF16_FP32_COLVECTOR_CONST_LD(m, n, ld, _srcdst, _colv, const_bias) \
 do { \
-  libxsmm_bfloat16 *colv = _colv; \
-  float *srcdst = _srcdst; \
-  libxsmm_blasint i,j; \
-  __m512 vbias = _mm512_set1_ps(const_bias); \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=16 ) { \
-      _mm512_store_ps((float*)&srcdst[(j*ld)+i], _mm512_add_ps(vbias, _mm512_loadcvt_bf16_fp32(&colv[i]))); \
+  libxsmm_bfloat16 *__colv = _colv; \
+  float *__srcdst = _srcdst; \
+  libxsmm_blasint __i, __j; \
+  __m512 __vbias = _mm512_set1_ps(const_bias); \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=16 ) { \
+      _mm512_store_ps((float*)&__srcdst[(__j*ld)+__i], _mm512_add_ps(__vbias, _mm512_loadcvt_bf16_fp32(&__colv[__i]))); \
     } \
   } \
 } while (0)
