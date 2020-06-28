@@ -30,14 +30,14 @@
 ******************************************************************************/
 #define NATIVE_MATRIX_RNE_CVT_FP32_BFP16_LD(m, n, ld, _src, _dst) \
 do { \
-  float *src = _src; \
-  libxsmm_bfloat16 *dst = _dst; \
-  libxsmm_blasint i,j; \
-  __m512i packed_result; \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=32 ) { \
-    packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i])); \
-    _mm512_storeu_si512((libxsmm_bfloat16*)&dst[(j*ld)+i], (__m512i) packed_result); \
+  float *const __src = _src; \
+  libxsmm_bfloat16 *__dst = _dst; \
+  libxsmm_blasint __i, __j; \
+  __m512i __packed_result; \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=32 ) { \
+      __packed_result = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&__src[(__j*ld)+__i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&__src[(__j*ld)+__i])); \
+      _mm512_storeu_si512((libxsmm_bfloat16*)&__dst[(__j*ld)+__i], (__m512i) __packed_result); \
     } \
   } \
 } while (0)
