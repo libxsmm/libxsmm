@@ -20,8 +20,8 @@ void trans_act(short int *in, short int *out)
   __m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;
   __m512i v0, v1, v2, v3, v4, v5, v6, v7;
   const __m512i idx_v  = _mm512_set_epi64(13, 12, 7, 6, 9, 8, 3, 2);
-  const __mmask8 mask0 = _cvtu32_mask8(204);
-  const __mmask8 mask1 = _cvtu32_mask8(51);
+  const __mmask8 mask0 = LIBXSMM_INTRINSICS_MM512_CVTU32_MASK8(204);
+  const __mmask8 mask1 = LIBXSMM_INTRINSICS_MM512_CVTU32_MASK8(51);
   const int in_width = 32, out_width = 32;
 
   r0 = _mm512_loadu_si512(in + 0*in_width);
