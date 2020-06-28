@@ -28,8 +28,8 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-int img, ofm1, ofm2, ifm1, ifm2, oj, ojj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myIfmId, nIfmBlocks, ind, task;
-int last_ki, last_kj, next_kj;
+int img, ofm1, ofm2, ifm1, ifm2, oj, ojj, oi, kj, ki, /*oi_use, oj_use, ii_use, ij_use, ofmb,*/ ifmb, ojb, myIfmId, nIfmBlocks, /*ind,*/ task;
+/*int last_ki, last_kj, next_kj;*/
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -59,10 +59,8 @@ int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((
 /* offset output pointer in case of physical  padding */
 const int IFW = (handle->pack_input_bwd == 1) ? handle->ofw : handle->ifwp;
 const int IFH = (handle->pack_input_bwd == 1) ? handle->ofh : handle->ifhp;
-const int ifwp_scratch = (handle->spread_input_bwd == 1) ? handle->desc.v * handle->bwd_ofw_rb : handle->bwd_ofw_rb;
 
 /* Auxiliary fp32 accumulators */
-float *del_inp_ptr;
 float *out_ptr;
 //float *del_inp_fp32 = (float*)handle->scratch6 + ((size_t)handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock;
 float *del_inp_scratch = (float*)((char*)handle->scratch + handle->bwd_lp_input_full_scratch_offset) + ltid * handle->bwd_gemm_pixels * handle->ifmblock;
