@@ -139,7 +139,7 @@
     /* Store di/dci/df/dp to diB/dciB/dfB/dpB which is CNNC AND vnni format */
     const __m512i perm_idx = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
     __m256i c0, c1;
-    __m512i c01;
+    __m512i _c01;
     LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, di_, _di, bk);
     LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, df_, _df, bk);
     LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dp_, _dp, bk);
@@ -152,24 +152,24 @@
       for (_k = 0; _k < bk; _k+=16) {
         c0 = _mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(2, di_, _j, _k, bk));
         c1 = _mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(2, di_, _j+1, _k, bk));
-        c01 = _mm512_inserti64x4 (LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), c0, 0);
-        c01 = _mm512_inserti64x4 (c01, c1, 1);
-        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(3, diB_, _j/_lpb, _k, 0, bk, _lpb), _mm512_permutexvar_epi16(perm_idx, c01));
+        _c01 = _mm512_inserti64x4 (LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), c0, 0);
+        _c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(3, diB_, _j/_lpb, _k, 0, bk, _lpb), _mm512_permutexvar_epi16(perm_idx, _c01));
         c0 = _mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(2, df_, _j, _k, bk));
         c1 = _mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(2, df_, _j+1, _k, bk));
-        c01 = _mm512_inserti64x4 (LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), c0, 0);
-        c01 = _mm512_inserti64x4 (c01, c1, 1);
-        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(3, dfB_, _j/_lpb, _k, 0, bk, _lpb), _mm512_permutexvar_epi16(perm_idx, c01));
+        _c01 = _mm512_inserti64x4 (LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), c0, 0);
+        _c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(3, dfB_, _j/_lpb, _k, 0, bk, _lpb), _mm512_permutexvar_epi16(perm_idx, _c01));
         c0 = _mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(2, dp_, _j, _k, bk));
         c1 = _mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(2, dp_, _j+1, _k, bk));
-        c01 = _mm512_inserti64x4 (LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), c0, 0);
-        c01 = _mm512_inserti64x4 (c01, c1, 1);
-        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(3, dpB_, _j/_lpb, _k, 0, bk, _lpb), _mm512_permutexvar_epi16(perm_idx, c01));
+        _c01 = _mm512_inserti64x4 (LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), c0, 0);
+        _c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(3, dpB_, _j/_lpb, _k, 0, bk, _lpb), _mm512_permutexvar_epi16(perm_idx, _c01));
         c0 = _mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(2, dci_, _j, _k, bk));
         c1 = _mm256_loadu_si256((const __m256i*)&LIBXSMM_VLA_ACCESS(2, dci_, _j+1, _k, bk));
-        c01 = _mm512_inserti64x4 (LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), c0, 0);
-        c01 = _mm512_inserti64x4 (c01, c1, 1);
-        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(3, dciB_, _j/_lpb, _k, 0, bk, _lpb), _mm512_permutexvar_epi16(perm_idx, c01));
+        _c01 = _mm512_inserti64x4 (LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), c0, 0);
+        _c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(3, dciB_, _j/_lpb, _k, 0, bk, _lpb), _mm512_permutexvar_epi16(perm_idx, _c01));
       }
     }
   }

@@ -173,6 +173,22 @@ gemm_function tile_config_kernel = 0;
 
 const int img_work = handle->desc.N;
 const int img_chunksize = (img_work % handle->desc.threads == 0) ? (img_work / handle->desc.threads) : (img_work / handle->desc.threads) + 1;
+
+/* select kernel */
+if (handle->upd_linearized_pixels == 0) {
+  br_gemm_kernel = handle->upd_compute_kernel_brgemm_no_linearized_pixels;
+} else {
+  if (handle->use_hybrid_imgofm_parallelization == 0) {
+    gemm_kernel = handle->upd_compute_kernel_gemm_linearized_pixels_no_hybrid_par;
+  } else {
+    if (handle->pack_to_cnhw == 1) {
+      gemm_kernel = handle->upd_compute_kernel_gemm_linearized_pixels_hybrid_par_cnhw;
+    } else {
+      br_gemm_kernel = handle->upd_compute_kernel_brgemm_linearized_pixels_hybrid_par_no_cnhw;
+    }
+  }
+}
+
 my_img_start = (ltid * img_chunksize < img_work) ? (ltid * img_chunksize) : img_work;
 my_img_end = ((ltid + 1) * img_chunksize < img_work) ? ((ltid + 1) * img_chunksize) : img_work;
 
@@ -630,11 +646,13 @@ if (handle->upd_linearized_pixels == 0) {
                       &LIBXSMM_VLA_ACCESS(3, tr_input_3, ifm1, 0, tile_id * handle->pixel_blocking, handle->ifmblock, handle->input_pixels),
                       dst_ptr);
                   /* Convert fully caccumulated buffer to bf16 weight buffer in case of full accumulation has happened */
-                  LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
-                  for (ij = 0; ij < handle->ifmblock; ij+=2) {
-                    for (ii = 0; ii < handle->ofmblock; ii+=16) {
-                      c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock)), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock)));
-                      _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_private_group, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, (__m512i)c01));
+                  {
+                    LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
+                    for (ij = 0; ij < handle->ifmblock; ij+=2) {
+                      for (ii = 0; ii < handle->ofmblock; ii+=16) {
+                        c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock)), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock)));
+                        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_private_group, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, (__m512i)c01));
+                      }
                     }
                   }
                 }

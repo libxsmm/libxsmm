@@ -46,12 +46,12 @@ unsigned long long n_blocks;
 
 /* offset output pointer in case of physical output padding */
 element_output_type* out = (element_output_type*)handle->reg_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
-//float* out_fp32 = (float*)handle->scratch6 + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
+/*float* out_fp32 = (float*)handle->scratch6 + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;*/
 float* out_ptr;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-//LIBXSMM_VLA_DECL(5, float, output_fp32, out_fp32, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+/*LIBXSMM_VLA_DECL(5, float, output_fp32, out_fp32, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);*/
 int scratch_ofwp = (handle->fwd_gemm_pixels == (handle->fwd_ofw_rb * handle->fwd_ofh_rb)) ? handle->fwd_ofw_rb : handle->ofwp;
-//float scratch_stack_fp32[8*16*16];
+/*float scratch_stack_fp32[8*16*16];*/
 float *out_scratch = (float*)((char*)handle->scratch + handle->fwd_lp_output_full_scratch_offset) + ltid * handle->fwd_gemm_pixels * handle->ofmblock;
 LIBXSMM_VLA_DECL(3, float, scratch_fp32, out_scratch, scratch_ofwp, handle->ofmblock);
 element_input_type *input_ptr = (handle->pack_input == 1) ?(element_input_type*)((char*)handle->scratch + handle->fwd_packing_padding_scratch_offset) : (element_input_type*)handle->reg_input->data;
