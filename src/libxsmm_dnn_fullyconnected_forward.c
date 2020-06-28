@@ -259,7 +259,6 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_amx(libx
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
   libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel              = handle->gemm_fwd.xgemm.bsmrs;
-  libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_zerobeta     = handle->gemm_fwd2.xgemm.bsmrs;
   libxsmm_bmmfunction_reducebatch_strd bf16_batchreduce_kernel_zerobeta = handle->gemm_fwd3.xgemm.bmrs;
   libxsmm_bsmmfunction tile_config_kernel = handle->fwd_config_kernel;
 #define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
@@ -321,7 +320,6 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_amx(libx
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
   libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel              = handle->gemm_fwd.xgemm.bsmrs;
-  libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_zerobeta     = handle->gemm_fwd2.xgemm.bsmrs;
   libxsmm_bmmfunction_reducebatch_strd bf16_batchreduce_kernel_zerobeta = handle->gemm_fwd3.xgemm.bmrs;
   libxsmm_bsmmfunction tile_config_kernel = handle->fwd_config_kernel;
 

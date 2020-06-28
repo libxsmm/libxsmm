@@ -37,8 +37,7 @@ LIBXSMM_VLA_DECL(4, element_output_type,       output,  (element_output_type*)ha
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,   (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(5, const element_filter_type, filter,  (element_filter_type*)handle->reg_filter->data, nBlocksIFm, bc_lp, handle->bk, lpb);
 float* temp_output = (float*)handle->scratch;
-float* gemm_scratch = (float*)handle->scratch + ltid*bn*bk;
-LIBXSMM_VLA_DECL(4,        float,    output_f32, (float*) temp_output, nBlocksOFm, bn, bk);
+LIBXSMM_VLA_DECL(4, float, output_f32, (float*) temp_output, nBlocksOFm, bn, bk);
 
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
 libxsmm_meltw_cbiasact_gemm_param gemm_eltwise_params;
