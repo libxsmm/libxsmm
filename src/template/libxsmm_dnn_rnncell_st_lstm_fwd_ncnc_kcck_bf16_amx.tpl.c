@@ -70,7 +70,7 @@ do { \
 } while (0)
 
 /* helper variables */
-libxsmm_blasint j, ik, ikb, in, inb, ic, icb, inik, BF, CB, CB_BLOCKS, KB_BLOCKS;
+libxsmm_blasint j, ik, ikb, /*in,*/ inb, /*ic, icb,*/ inik, BF, CB, CB_BLOCKS, KB_BLOCKS;
 /* input sizes */
 const libxsmm_blasint K =  handle->desc.K;
 const libxsmm_blasint N =  handle->desc.N;
@@ -85,7 +85,7 @@ const libxsmm_blasint nBlocks = N/bn;
 const int lpb = 2;
 const int bc_lp = bc/lpb;
 const int bk_lp = bk/lpb;
-unsigned long long blocks, blocksa, blocksb;
+unsigned long long blocks/*, blocksa, blocksb*/;
 
 /* define tensors */
 element_input_type  *xt  = (element_input_type* )handle->xt->data;
@@ -97,12 +97,12 @@ element_output_type *b   = (element_output_type*)handle->b->data;
 
 /* These buffers are scratch for fp32 output of gemms (intermmediate results) */
 float *cst = (float*)handle->cst_scratch;
-float *ht  = (float*)handle->ht_scratch;
+/*float *ht  = (float*)handle->ht_scratch;*/
 float *it  = (float*)handle->it_scratch;
 float *ft  = (float*)handle->ft_scratch;
 float *ot  = (float*)handle->ot_scratch;
 float *cit = (float*)handle->cit_scratch;
-float *cot = (float*)handle->cot_scratch;
+/*float *cot = (float*)handle->cot_scratch;*/
 /* This has to be also upconverted since it is used in the elementwise functions  */
 float *csp_f32 = (float*)handle->csp_scratch;
 /* These are the output bf16 data  */
@@ -239,9 +239,7 @@ if (ltid == 0) reformat_start = _rdtsc();
 /* Upconvert the cp input to fp32 that is used for elementwise stuff */
 for (inik = thr_begin; inik < thr_end; ++inik ) {
   inb = inik % (N/bn);
-  in = inb*bn;
   ikb = inik / (N/bn);
-  ik = ikb*bk;
   MATRIX_CVT_BF16_FP32_LD( bk, bn, bk, &LIBXSMM_VLA_ACCESS(4, cp_bf16, inb, ikb, 0, 0, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(4, cp, inb, ikb, 0, 0, kBlocks, bn, bk));
 }
 

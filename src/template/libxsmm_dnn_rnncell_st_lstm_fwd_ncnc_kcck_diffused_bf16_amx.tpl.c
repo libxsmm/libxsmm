@@ -50,7 +50,6 @@ for (j = 0; j < t; ++j) {
   for (CB = 0; CB < BF; CB++) {
     for (inik = thr_begin; inik < thr_end; ++inik ) {
       inb = inik % (N/bn);
-      in = inb*bn;
       ikb = inik / (N/bn);
       ik = ikb*bk;
       /* initialize i with bi */
@@ -103,7 +102,6 @@ j = 0;
 for (CB = 0; CB < BF; CB++) {
   for (inik = thr_begin; inik < thr_end; ++inik ) {
     inb = inik % (N/bn);
-    in = inb*bn;
     ikb = inik / (N/bn);
     ik = ikb*bk;
 #ifdef PROFILE
@@ -268,7 +266,6 @@ for (j = 1; j < t; ++j) {
   for (CB = 0; CB < BF; CB++) {
     for (inik = thr_begin; inik < thr_end; ++inik ) {
       inb = inik % (N/bn);
-      in = inb*bn;
       ikb = inik / (N/bn);
       ik = ikb*bk;
 #ifdef PROFILE
