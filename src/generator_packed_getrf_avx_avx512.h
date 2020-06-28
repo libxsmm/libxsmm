@@ -20,4 +20,3 @@ void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*  
                                                        const char*                      i_arch );
 
 #endif /*GENERATOR_PACKED_GETRF_AVX_AVX512_H*/
-

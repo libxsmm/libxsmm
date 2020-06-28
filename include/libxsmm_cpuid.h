@@ -30,6 +30,7 @@
 #define LIBXSMM_X86_AVX512_CORE  1020 /* SKX */
 #define LIBXSMM_X86_AVX512_CLX   1021
 #define LIBXSMM_X86_AVX512_CPX   1022
+#define LIBXSMM_X86_AVX512_SPR   1023
 #define LIBXSMM_X86_ALLFEAT      1999 /* all features supported which are used anywhere in LIBXSMM, this value should never be used to set arch, only for compares */
 
 /** A zero-initialized structure assumes conservative properties. */

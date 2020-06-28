@@ -203,14 +203,14 @@ void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*      
                                                 i_vec_x,
                                                 i_vec_x,
                                                 30, i_mask_lo, 0 );
-  /* TODO: replace with zmm movs  */
-  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                        i_micro_kernel_config->instruction_set,
-                                        LIBXSMM_X86_INSTR_VMULPS,
-                                        i_micro_kernel_config->vector_name,
-                                        i_vec_x, i_vec_x, i_vec_nom );
 
-  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                       i_micro_kernel_config->instruction_set,
+                                       LIBXSMM_X86_INSTR_VMOVDQU64,
+                                       i_micro_kernel_config->vector_name,
+                                       i_vec_x2, i_vec_nom, LIBXSMM_X86_VEC_REG_UNDEF );
+
+   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                        i_micro_kernel_config->instruction_set,
                                        LIBXSMM_X86_INSTR_VFMADD213PS,
                                        i_micro_kernel_config->vector_name,
@@ -480,7 +480,7 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
 
   /* Determine the names of the reserved registers and load with constants when applicable... */
   if ( (fuse_tanh_before_cvt == 1) || (fuse_sigmoid_before_cvt == 1) ) {
-    float c0_array[16] = { 2027025.0f, 2027025.0f, 52027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f };
+    float c0_array[16] = { 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f, 2027025.0f };
     float c1_array[16] = { 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f, 270270.0f };
     float c2_array[16] = { 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f, 6930.0f };
     float c3_array[16] = { 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f, 36.0f };

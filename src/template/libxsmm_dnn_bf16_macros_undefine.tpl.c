@@ -13,4 +13,16 @@
 #undef LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32
 #undef LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH
 #undef LIBXSMM_INTRINSISCS_MM512_CVTNEPS_PBH
+#undef _mm512_loadcvt_bf16_fp32
+#undef _mm512_storecvt_fp32_bf16
+#undef _mm512_streamstorecvt_fp32_bf16
+
+#ifdef USE_CLDEMOTE
+#undef USE_CLDEMOTE
+#endif
+
+#ifdef WR_PREFETCH_OUTPUT
+#undef prefetchwt_chunk
+#undef WR_PREFETCH_OUTPUT
+#endif
 

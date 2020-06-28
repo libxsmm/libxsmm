@@ -31,6 +31,8 @@
 #endif
 #include "../src/generator_common.c"
 #include "../src/generator_gemm.c"
+#include "../src/generator_gemm_amx.c"
+#include "../src/generator_gemm_amx_microkernel.c"
 #include "../src/generator_gemm_avx2_microkernel.c"
 #include "../src/generator_gemm_avx512_microkernel.c"
 #include "../src/generator_gemm_avx_microkernel.c"

@@ -1,10 +1,30 @@
 /******************************************************************************
-* Copyright (c) Intel Corporation - All rights reserved.                      *
-* This file is part of the LIBXSMM library.                                   *
-*                                                                             *
-* For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
-* SPDX-License-Identifier: BSD-3-Clause                                       *
+** Copyright (c) 2017-2018, Intel Corporation                                **
+** All rights reserved.                                                      **
+**                                                                           **
+** Redistribution and use in source and binary forms, with or without        **
+** modification, are permitted provided that the following conditions        **
+** are met:                                                                  **
+** 1. Redistributions of source code must retain the above copyright         **
+**    notice, this list of conditions and the following disclaimer.          **
+** 2. Redistributions in binary form must reproduce the above copyright      **
+**    notice, this list of conditions and the following disclaimer in the    **
+**    documentation and/or other materials provided with the distribution.   **
+** 3. Neither the name of the copyright holder nor the names of its          **
+**    contributors may be used to endorse or promote products derived        **
+**    from this software without specific prior written permission.          **
+**                                                                           **
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
+** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
+** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
+** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
+** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
+** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
+** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
+** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
+** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
 /* Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
@@ -16,10 +36,10 @@
 do { \
   libxsmm_bfloat16 *src = _src; \
   float *dst = _dst; \
-  libxsmm_blasint __i,__j; \
-  for ( __j = 0; __j < n; ++__j ) { \
-    for ( __i = 0; __i < m; __i+=16 ) { \
-      _mm512_storeu_ps((float*)&dst[(__j*ld)+__i], LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&src[(__j*ld)+__i]))); \
+  libxsmm_blasint i,j; \
+  for ( j = 0; j < n; ++j ) { \
+    for ( i = 0; i < m; i+=16 ) { \
+      _mm512_store_ps((float*)&dst[(j*ld)+i], _mm512_loadcvt_bf16_fp32(&src[(j*ld)+i])); \
     } \
   } \
 } while (0)
@@ -28,10 +48,10 @@ do { \
 do { \
   libxsmm_bfloat16 *colv = _colv; \
   float *srcdst = _srcdst; \
-  libxsmm_blasint __i,__j; \
-  for ( __j = 0; __j < n; ++__j ) { \
-    for ( __i = 0; __i < m; __i+=16 ) { \
-      _mm512_storeu_ps((float*)&srcdst[(__j*ld)+__i], LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&colv[__i]))); \
+  libxsmm_blasint i,j; \
+  for ( j = 0; j < n; ++j ) { \
+    for ( i = 0; i < m; i+=16 ) { \
+      _mm512_store_ps((float*)&srcdst[(j*ld)+i], _mm512_loadcvt_bf16_fp32(&colv[i])); \
     } \
   } \
 } while (0)
@@ -40,17 +60,17 @@ do { \
 do { \
   libxsmm_bfloat16 *colv = _colv; \
   float *srcdst = _srcdst; \
-  libxsmm_blasint __i,__j; \
+  libxsmm_blasint i,j; \
   __m512 vbias = _mm512_set1_ps(const_bias); \
-  for ( __j = 0; __j < n; ++__j ) { \
-    for ( __i = 0; __i < m; __i+=16 ) { \
-      _mm512_storeu_ps((float*)&srcdst[(__j*ld)+__i], _mm512_add_ps(vbias, LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)&colv[__i])))); \
+  for ( j = 0; j < n; ++j ) { \
+    for ( i = 0; i < m; i+=16 ) { \
+      _mm512_store_ps((float*)&srcdst[(j*ld)+i], _mm512_add_ps(vbias, _mm512_loadcvt_bf16_fp32(&colv[i]))); \
     } \
   } \
 } while (0)
 
 /* helper variables */
-libxsmm_blasint j, ik, ikb, in, ic, /*icb,*/ inik, BF, CB, CB_BLOCKS, KB_BLOCKS, ikic, jk, jc;
+libxsmm_blasint j, ik, ikb, in, ic, icb, inik, BF, CB, CB_BLOCKS, KB_BLOCKS, ikic, jk, jc;
 /* input sizes */
 const libxsmm_blasint K =  handle->desc.K;
 const libxsmm_blasint N =  handle->desc.N;
@@ -68,13 +88,13 @@ unsigned long long blocks, blocksa, blocksb;
 
 /* define tensors */
 element_input_type  *xt  = (element_input_type* )handle->xt->data;
-element_input_type  *hpD = (element_input_type* )handle->hp->data;
-element_output_type *b   = (element_output_type*)handle->b->data;
 element_input_type  *csp = (element_input_type* )handle->csp->data;
+element_input_type  *hpD = (element_input_type* )handle->hp->data;
 element_filter_type *w   = (element_filter_type*)handle->w->data;
 element_filter_type *r   = (element_filter_type*)handle->r->data;
 element_filter_type *w_scratch   = (element_filter_type*)handle->scratch_w;
 element_filter_type *r_scratch   = (element_filter_type*)handle->scratch_r;
+element_output_type *b   = (element_output_type*)handle->b->data;
 /* These buffers are scratch for fp32 output of gemms (intermmediate results) */
 float *cst = (float*)handle->cst_scratch;
 float *ht  = (float*)handle->ht_scratch;
@@ -93,6 +113,7 @@ element_output_type *ft_bf16  = (element_output_type*)handle->ft->data;
 element_output_type *ot_bf16  = (element_output_type*)handle->ot->data;
 element_output_type *cit_bf16 = (element_output_type*)handle->cit->data;
 element_output_type *cot_bf16 = (element_output_type*)handle->cot->data;
+
 element_filter_type *wiD = &(w[0]);
 element_filter_type *wcD = &(w[K]);
 element_filter_type *wfD = &(w[2*K]);
@@ -147,10 +168,33 @@ LIBXSMM_VLA_DECL(3, element_output_type, f_out, ft_bf16, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, o_out, ot_bf16, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, ci_out, cit_bf16, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, co_out, cot_bf16, N, K);
-/* define batch-reduce gemm kernels */
-const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernela = handle->fwd_kernela;
-const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernelb = handle->fwd_kernelb;
 
+#if 0
+int tci;
+char tc_buf[64];
+int bktc = 42;
+const libxsmm_bsmmfunction_reducebatch batchreduce_kernela_tc = libxsmm_bsmmdispatch_reducebatch( bktc, bktc, bktc, &bktc, &bktc, &bktc, NULL, NULL, NULL, NULL );
+for (tci=0; tci<64; tci++) {
+  tc_buf[tci] = 0;
+}
+tc_buf[0] = 1;
+for (tci = 0; tci<8; tci++) {
+  tc_buf[16+tci*2] = 16*4;
+  tc_buf[48+tci] = 16;
+}
+batchreduce_kernela_tc((element_input_type*)tc_buf, NULL, NULL, NULL);
+#endif
+
+/* define batch-reduce gemm kernels */
+const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernela = handle->fwd_kernela; /*= libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bc, &bk, &C, &K, NULL, NULL, &kernel_flags, NULL );*/
+const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernelb = handle->fwd_kernelb; /* libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL );*/
+const libxsmm_bsmmfunction_reducebatch_addr tile_config_kernel = handle->fwd_tileconfig; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL );*/
+
+/* Auxiliary arrays for batch-reduce gemms */
+#if 0
+const element_filter_type *A_array[1024];
+const element_input_type  *B_array[1024];
+#endif
 float *cps_ptr = NULL;
 
 /* parallelize over C-blocks */
@@ -186,6 +230,11 @@ const int use_fused_implementation = (C == 2048 && K == 2048) ? 1 : 0;
 __int64_t eltwise_start, eltwise_end, eltwise_cycles = 0, gemm_start, gemm_end, gemm_cycles = 0, gemm_cycles2 = 0, reformat_start, reformat_end, reformat_cycles = 0;
 float total_time = 0.0;
 #endif
+
+/* Hoist tileconfig if possible */
+if ((bk % 32 == 0) && (bc % 32 == 0) && (bn % 32 == 0)) {
+  tile_config_kernel(NULL, NULL, NULL, NULL);
+}
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
@@ -249,7 +298,7 @@ for (inik = thr_begin; inik < thr_end; ++inik ) {
   in = (inik % (N/bn))*bn;
   ikb = inik / (N/bn);
   ik = ikb*bk;
-  libxsmm_internal_matrix_cvt_bf16_fp32_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, cp_bf16, in, ik, K), &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K));
+  MATRIX_CVT_BF16_FP32_LD( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, cp_bf16, in, ik, K), &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K));
 }
 
 libxsmm_barrier_wait(handle->barrier, (int)ltid);
@@ -261,9 +310,9 @@ if (ltid == 0) {
 #endif
 
 if (use_fused_implementation) {
-#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_fused_bf16.tpl.c"
+#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_fused_bf16_amx.tpl.c"
 } else {
-#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_diffused_bf16.tpl.c"
+#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_diffused_bf16_amx.tpl.c"
 }
 
 #ifdef PROFILE

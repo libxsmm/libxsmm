@@ -39,6 +39,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   libxsmm_blasint bk;
   libxsmm_blasint bn;
   libxsmm_blasint bc;
+  int use_fwd_fused_impl;
+  int fwd_block;
+  int bwdupd_block;
   libxsmm_dnn_rnncell_type cell_type;       /* cell type RNN ReLU, RNN Sigmoid, RNN Tanh, LSTM, GRU */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */

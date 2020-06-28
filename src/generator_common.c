@@ -498,6 +498,45 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VMOVNTDQ:
       libxsmm_strncpy(o_instr_name, "vmovntdq", i_instr_name_max_length, 8 );
       break;
+    /* CPUID: AMX-TILE INTERCEPT: SPR */
+    case LIBXSMM_X86_INSTR_LDTILECFG:
+      libxsmm_strncpy(o_instr_name, "ldtilecfg", i_instr_name_max_length, 9 );
+      break;
+    case LIBXSMM_X86_INSTR_STTILECFG:
+      libxsmm_strncpy(o_instr_name, "sttilecfg", i_instr_name_max_length, 9 );
+      break;
+    case LIBXSMM_X86_INSTR_TILERELEASE:
+      libxsmm_strncpy(o_instr_name, "tilerelease", i_instr_name_max_length, 11 );
+      break;
+    case LIBXSMM_X86_INSTR_TILELOADD:
+      libxsmm_strncpy(o_instr_name, "tileloadd", i_instr_name_max_length, 9 );
+      break;
+    case LIBXSMM_X86_INSTR_TILELOADDT1:
+      libxsmm_strncpy(o_instr_name, "tileloaddt1", i_instr_name_max_length, 11 );
+      break;
+    case LIBXSMM_X86_INSTR_TILESTORED:
+      libxsmm_strncpy(o_instr_name, "tilestored", i_instr_name_max_length, 10 );
+      break;
+    case LIBXSMM_X86_INSTR_TILEZERO:
+      libxsmm_strncpy(o_instr_name, "tilezero", i_instr_name_max_length, 8 );
+      break;
+    /* CPUID: AMX-INT8 INTERCEPT: SPR */
+    case LIBXSMM_X86_INSTR_TDPBSSD:
+      libxsmm_strncpy(o_instr_name, "tdpbssd", i_instr_name_max_length, 7 );
+      break;
+    case LIBXSMM_X86_INSTR_TDPBSUD:
+      libxsmm_strncpy(o_instr_name, "tdpbsud", i_instr_name_max_length, 7 );
+      break;
+    case LIBXSMM_X86_INSTR_TDPBUSD:
+      libxsmm_strncpy(o_instr_name, "tdpbusd", i_instr_name_max_length, 7 );
+      break;
+    case LIBXSMM_X86_INSTR_TDPBUUD:
+      libxsmm_strncpy(o_instr_name, "tdpbuud", i_instr_name_max_length, 7 );
+      break;
+    /* CPUID: AMX-BF16 INTERCEPT: SPR */
+    case LIBXSMM_X86_INSTR_TDPBF16PS:
+      libxsmm_strncpy(o_instr_name, "tdpbf16ps", i_instr_name_max_length, 9 );
+      break;
     /* default, we didn't had a match */
     default:
       fprintf(stderr, "libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);
@@ -1338,6 +1377,16 @@ LIBXSMM_API_INTERN libxsmm_meltw_comp_cbiasact_flags libxsmm_get_meltw_comp_cbia
       return LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_GELU;
     case LIBXSMM_MELTW_FLAG_CBIASACT_OVERWRITE_C:
       return LIBXSMM_MELTW_COMP_FLAG_CBIASACT_OVERWRITE_C;
+    case LIBXSMM_MELTW_FLAG_CBIASACT_COLBIAS_OVERWRITE_C:
+      return LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_OVERWRITE_C;
+    case LIBXSMM_MELTW_FLAG_CBIASACT_ACT_RELU_OVERWRITE_C:
+      return LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_RELU_OVERWRITE_C;
+    case LIBXSMM_MELTW_FLAG_CBIASACT_ACT_TANH_OVERWRITE_C:
+      return LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_TANH_OVERWRITE_C;
+    case LIBXSMM_MELTW_FLAG_CBIASACT_ACT_SIGM_OVERWRITE_C:
+      return LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_SIGM_OVERWRITE_C;
+    case LIBXSMM_MELTW_FLAG_CBIASACT_ACT_GELU_OVERWRITE_C:
+      return LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_GELU_OVERWRITE_C;
     case LIBXSMM_MELTW_FLAG_CBIASACT_COLBIAS_ACT_RELU:
       return LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_RELU;
     case LIBXSMM_MELTW_FLAG_CBIASACT_COLBIAS_ACT_TANH:
@@ -1377,6 +1426,16 @@ LIBXSMM_API_INTERN libxsmm_meltw_cbiasact_flags libxsmm_get_meltw_cbiasact_flags
       return LIBXSMM_MELTW_FLAG_CBIASACT_ACT_GELU;
     case LIBXSMM_MELTW_COMP_FLAG_CBIASACT_OVERWRITE_C:
       return LIBXSMM_MELTW_FLAG_CBIASACT_OVERWRITE_C;
+    case LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_OVERWRITE_C:
+      return LIBXSMM_MELTW_FLAG_CBIASACT_COLBIAS_OVERWRITE_C;
+    case LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_RELU_OVERWRITE_C:
+      return LIBXSMM_MELTW_FLAG_CBIASACT_ACT_RELU_OVERWRITE_C;
+    case LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_TANH_OVERWRITE_C:
+      return LIBXSMM_MELTW_FLAG_CBIASACT_ACT_TANH_OVERWRITE_C;
+    case LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_SIGM_OVERWRITE_C:
+      return LIBXSMM_MELTW_FLAG_CBIASACT_ACT_SIGM_OVERWRITE_C;
+    case LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_GELU_OVERWRITE_C:
+      return LIBXSMM_MELTW_FLAG_CBIASACT_ACT_GELU_OVERWRITE_C;
     case LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_RELU:
       return LIBXSMM_MELTW_FLAG_CBIASACT_COLBIAS_ACT_RELU;
     case LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_TANH:

@@ -5711,10 +5711,537 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
 
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generated_code,
+                                           const unsigned int         i_id,
+                                           const unsigned int         i_instruction_set,
+                                           const unsigned int         i_tcontrol_instr,
+                                           const unsigned int         i_gp_reg_base,
+                                           const int                  i_displacement,
+                                           const libxsmm_tile_config* i_tile_config ) {
+  char tile_config_imm[64];
+  unsigned int i;
+
+  /* Can move these variables into the API if we choose: */
+  const unsigned int i_gp_reg_idx = LIBXSMM_X86_GP_REG_UNDEF;
+  const unsigned int i_scale = 1;
+
+  if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config == NULL) && (i_tcontrol_instr != LIBXSMM_X86_INSTR_TILERELEASE) ) {
+    fprintf(stderr, "invalid tile control!\n");
+    exit(-1);
+  }
+
+  if (i_tcontrol_instr == LIBXSMM_X86_INSTR_LDTILECFG && i_tile_config != NULL) {
+    /* zeroing out imm structure as there are many reserved bytes */
+    for ( i = 0; i < 64; i++ ) {
+      tile_config_imm[i] = 0;
+    }
+
+    /* lets set tile_config_imm */
+    tile_config_imm[0]                  = i_tile_config->palette_id;
+    tile_config_imm[16]                 = i_tile_config->tile0rows;
+    tile_config_imm[48]                 = i_tile_config->tile0cols;
+    tile_config_imm[18]                 = i_tile_config->tile1rows;
+    tile_config_imm[49]                 = i_tile_config->tile1cols;
+    tile_config_imm[20]                 = i_tile_config->tile2rows;
+    tile_config_imm[50]                 = i_tile_config->tile2cols;
+    tile_config_imm[22]                 = i_tile_config->tile3rows;
+    tile_config_imm[51]                 = i_tile_config->tile3cols;
+    tile_config_imm[24]                 = i_tile_config->tile4rows;
+    tile_config_imm[52]                 = i_tile_config->tile4cols;
+    tile_config_imm[26]                 = i_tile_config->tile5rows;
+    tile_config_imm[53]                 = i_tile_config->tile5cols;
+    tile_config_imm[28]                 = i_tile_config->tile6rows;
+    tile_config_imm[54]                 = i_tile_config->tile6cols;
+    tile_config_imm[30]                 = i_tile_config->tile7rows;
+    tile_config_imm[55]                 = i_tile_config->tile7cols;
+  }
+
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @Greg please add encodings here */
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    int l_regbas0 = i_gp_reg_base % 8;
+    int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
+    int l_third = 0;
+    int l_fifth = 0;
+    int l_place;
+    int l_forced_offset = 0;
+    int j;
+
+    if ( l_maxsize - i < 80 )
+    {
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+       return;
+    }
+
+    switch ( i_tcontrol_instr ) {
+      case LIBXSMM_X86_INSTR_LDTILECFG:
+        /* here we need two cases:
+         * a) gpr parameter is undefined, and i_tile_config != 0 -> use RIP as below in the assembly replacement
+         * b) gpr parameter has some valid value and i_tile_config == 0 -> use gpr to address the tileconfig
+         */
+        break;
+      case LIBXSMM_X86_INSTR_STTILECFG:
+        /* here we alwyas it the gpr */
+        l_third = 0x1;
+        break;
+      case LIBXSMM_X86_INSTR_TILERELEASE:
+        l_fifth = 0xc0;
+        l_gp8 = 0;
+        l_regbas0 = 0;
+        break;
+      default:
+        fprintf(stderr,"Unknown instruction in libxsmm_x86_instruction_tile_control. This is bad\n");
+        break;
+    }
+    if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && ((i_gp_reg_idx < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15)) )
+    {
+       fprintf(stderr,"libxsmm_x86_instruction_tile_control is using a bogus i_gp_reg_idx\n");
+       exit(-1);
+    }
+    if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config != NULL) && (i_tcontrol_instr == LIBXSMM_X86_INSTR_LDTILECFG) )
+    { /* Special case where we load from data segment */
+       /* Jump past the next 64 bytes */
+       buf[i++] = (unsigned char)(0xeb);
+       buf[i++] = (unsigned char)(0x40);
+       for ( j = i; j < i+64; j++ ) {
+          buf[j] = (unsigned char)(tile_config_imm[j-i]);
+       }
+       i += 64;
+       /* ldtilecfg .data1(%rip) where data1 is 64 bytes previous */
+       buf[i++] = (unsigned char)(0xc4);
+       buf[i++] = (unsigned char)(0xe2);
+       buf[i++] = (unsigned char)(0x78);
+       buf[i++] = (unsigned char)(0x49);
+       buf[i++] = (unsigned char)(0x05);
+       buf[i++] = (unsigned char)(0xb7);
+       buf[i++] = (unsigned char)(0xff);
+       buf[i++] = (unsigned char)(0xff);
+       buf[i++] = (unsigned char)(0xff);
+       io_generated_code->code_size = i;
+    } else {
+       if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
+       {
+          buf[i++] = (unsigned char)(0xc4);
+          buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20);
+          buf[i++] = (unsigned char)(0x78 + l_third);
+          buf[i++] = (unsigned char)(0x49);
+          l_place = i - 1;
+          buf[i++] = (unsigned char)(0x00 + l_regbas0 + l_fifth);
+          if ( l_regbas0 == 4 ) buf[i++] = (unsigned char)(0x24);
+       } else {
+          int l_regidx  = i_gp_reg_idx  % 8;
+          int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
+          int l_sca=0;
+
+          if (i_scale==2) l_sca=0x40;
+          else if (i_scale==4) l_sca=0x80;
+          else if (i_scale==8) l_sca=0xc0;
+
+          buf[i++] = (unsigned char)(0xc4);
+          buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20 - l_ix8 * 0x40);
+          buf[i++] = (unsigned char)(0x78 + l_third);
+          buf[i++] = (unsigned char)(0x49);
+          buf[i++] = (unsigned char)(0x04);
+          l_place  = i - 1;
+          buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+       }
+
+       if ( (l_regbas0 == 5) && (i_displacement==0) )
+       {
+           l_forced_offset = 1;
+       }
+       if ( i_tcontrol_instr != LIBXSMM_X86_INSTR_TILERELEASE )
+       {
+           /* All the other instructions have a memory offset */
+           i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, 1, buf );
+       }
+       io_generated_code->code_size = i;
+     }
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_gp_reg_base[4];
+
+    switch (i_tcontrol_instr) {
+      case LIBXSMM_X86_INSTR_LDTILECFG:
+      {
+        if ( i_tile_config != NULL ) {
+          if ( io_generated_code->code_type == 0 ) {
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"jmp .continued_tconf_%i\\n\\t\"\n", i_id );
+            libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".data_tconf_%i:\\n\\t\"\n", i_id );
+            libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+            for ( i = 0; i < 64; i += 4 ) {
+              l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\\n\\t\"\n",
+                                                                                                          tile_config_imm[i  ], tile_config_imm[i+1],
+                                                                                                          tile_config_imm[i+2], tile_config_imm[i+3]    );
+              libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+            }
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".continued_tconf_%i:\\n\\t\"\n", i_id );
+            libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"ldtilecfg .data_tconf_%i(%%%%rip)\\n\\t\"\n", i_id );
+            libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+          } else {
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       jmp .continued_tconf_%i\n", i_id );
+            libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .data_tconf_%i:\n", i_id );
+            libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+            for ( i = 0; i < 64; i += 4 ) {
+              l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",
+                                                                                                      tile_config_imm[i  ], tile_config_imm[i+1],
+                                                                                                      tile_config_imm[i+2], tile_config_imm[i+3]    );
+              libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+            }
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .continued_tconf_%i:\n", i_id );
+            libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       ldtilecfg .data_tconf_%i(%%rip)\n", i_id );
+            libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+          }
+        } else {
+          if ( i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF ) {
+            libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base, 3 );
+            if ( io_generated_code->code_type == 0 ) {
+              l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"ldtilecfg %i(%%%%%s)\\n\\t\"\n",
+                                                           i_displacement, l_gp_reg_base );
+            } else {
+              l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       ldtilecfg %i(%%%s)\n",
+                                                           i_displacement, l_gp_reg_base );
+            }
+            libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+          } else {
+            /* @TODO handle error */
+          }
+        }
+        break;
+      }
+      case LIBXSMM_X86_INSTR_STTILECFG:
+      {
+        if ( i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF ) {
+          libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base, 3 );
+          if ( io_generated_code->code_type == 0 ) {
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"sttilecfg %i(%%%%%s)\\n\\t\"\n",
+                                                         i_displacement, l_gp_reg_base );
+          } else {
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       sttilecfg %i(%%%s)\n",
+                                                         i_displacement, l_gp_reg_base );
+          }
+          libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+        } else {
+          /* @TODO handle error */
+        }
+        break;
+      }
+      case LIBXSMM_X86_INSTR_TILERELEASE:
+      {
+        if ( io_generated_code->code_type == 0 ) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"tilerelease\\n\\t\"\n");
+        } else {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       tilerelease\n");
+        }
+        break;
+      }
+      default:
+      {
+        /* this is an error */
+        break;
+      }
+    }
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_code,
+                                        const unsigned int      i_instruction_set,
+                                        const unsigned int      i_tmove_instr,
+                                        const unsigned int      i_gp_reg_base,
+                                        const unsigned int      i_gp_reg_idx,
+                                        const unsigned int      i_scale,
+                                        const int               i_displacement,
+                                        const unsigned int      i_tile_reg_number ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @Greg please add encodings here */
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    int l_regbas0 = i_gp_reg_base % 8;
+    int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
+    int l_vecval0 = i_tile_reg_number;
+    int l_third = 0;
+    int l_fourth = 0;
+    int l_place;
+
+    if ( l_maxsize - i < 20 )
+    {
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+       return;
+    }
+
+    switch ( i_tmove_instr ) {
+      case LIBXSMM_X86_INSTR_TILELOADD:
+        l_third = 0x3;
+        l_fourth = 0x2;
+        break;
+      case LIBXSMM_X86_INSTR_TILELOADDT1:
+        l_third = 0x1;
+        l_fourth = 0x2;
+        break;
+      case LIBXSMM_X86_INSTR_TILESTORED:
+        l_third = 0x2;
+        l_fourth = 0x2;
+        break;
+      case LIBXSMM_X86_INSTR_TILEZERO:
+        l_third = 0x3;
+        if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF )
+        {
+           fprintf(stderr,"Bogus i_gp_reg_idx value in libxsmm_x86_instruction_tile_move() for a tilezero instruction\n");
+           exit(-1);
+        }
+        break;
+      default:
+        fprintf(stderr,"Unknown instruction in libxsmm_x86_instruction_tile_move\n");
+        break;
+    }
+    if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && ((i_gp_reg_idx < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15)) )
+    {
+       fprintf(stderr,"libxsmm_x86_instruction_tile_move is using a bogus i_gp_reg_idx\n");
+       exit(-1);
+    }
+    if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
+    {
+       buf[i++] = (unsigned char)(0xc4);
+       buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20);
+       buf[i++] = (unsigned char)(0x78 + l_third);
+       buf[i++] = (unsigned char)(0x49 + l_fourth);
+       if ( i_tmove_instr != LIBXSMM_X86_INSTR_TILEZERO )
+       {
+          buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
+          l_place = i - 1;
+          buf[i++] = (unsigned char)(0x20 + l_regbas0);
+       } else {
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0*8);
+       }
+    } else {
+       int l_regidx  = i_gp_reg_idx  % 8;
+       int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
+       int l_sca=0;
+
+       if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_RSP )
+       {
+          fprintf(stderr,"Please try to avoid using rsp as the idx register\n");
+          /* exit(-1); */
+       }
+
+       if (i_scale==2) l_sca=0x40;
+       else if (i_scale==4) l_sca=0x80;
+       else if (i_scale==8) l_sca=0xc0;
+
+       buf[i++] = (unsigned char)(0xc4);
+       buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20 - l_ix8 * 0x40);
+       buf[i++] = (unsigned char)(0x78 + l_third);
+       buf[i++] = (unsigned char)(0x49 + l_fourth);
+       buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
+       l_place  = i - 1;
+       buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+    }
+    int l_forced_offset = 0;
+    if ( (l_regbas0 == 5) && (i_displacement==0) )
+    {
+        l_forced_offset = 1;
+    }
+    if ( i_tmove_instr != LIBXSMM_X86_INSTR_TILEZERO )
+    {
+        i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, 1, buf );
+    }
+
+    io_generated_code->code_size = i;
+
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_instr_name[24];
+    char l_gp_reg_base[4];
+    char l_gp_reg_idx[4];
+    libxsmm_get_x86_instr_name( i_tmove_instr, l_instr_name, 23 );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base, 3 );
+
+    switch ( i_tmove_instr ) {
+      case LIBXSMM_X86_INSTR_TILELOADD:
+      case LIBXSMM_X86_INSTR_TILELOADDT1:
+      {
+        /* check that SIB addressing is set */
+        if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
+          libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx, 3 );
+          if ( io_generated_code->code_type == 0 ) {
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%u), %%%%tmm%u\\n\\t\"\n",
+                                                         l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_tile_reg_number );
+          } else {
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%u), %%tmm%u\n",
+                                                         l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_tile_reg_number );
+          }
+          libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+        } else {
+          /* @TODO handle error */
+        }
+        break;
+      }
+      case LIBXSMM_X86_INSTR_TILESTORED:
+      {
+        /* check that SIB addressing is set */
+        if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
+          libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx, 3 );
+          if ( io_generated_code->code_type == 0 ) {
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u, %i(%%%%%s,%%%%%s,%u)\\n\\t\"\n",
+                                                         l_instr_name, i_tile_reg_number, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale );
+          } else {
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%tmm%u, %i(%%%s,%%%s,%u)\n",
+                                                         l_instr_name, i_tile_reg_number, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale );
+          }
+          libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+        } else {
+          /* @TODO handle error */
+        }
+        break;
+      }
+      case LIBXSMM_X86_INSTR_TILEZERO:
+        if ( io_generated_code->code_type == 0 ) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u\\n\\t\"\n",
+                                                       l_instr_name, i_tile_reg_number );
+        } else {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%tmm%u\n",
+                                                       l_instr_name, i_tile_reg_number );
+        }
+        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      default:
+        break;
+    }
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_instruction_set,
+                                           const unsigned int      i_tcompute_instr,
+                                           const unsigned int      i_tile_src_reg_number_0,
+                                           const unsigned int      i_tile_src_reg_number_1,
+                                           const unsigned int      i_tile_dst_reg_number ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @Greg please add encodings here */
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    /* int i = *loc; */
+    /* unsigned int l_maxsize = 1024; */
+    int l_vecval0;
+    int l_vecval1;
+    int l_vecval2;
+    int l_instroff = 0, l_instroff2 = 0, l_instroff3 = 0;
+
+    if ( l_maxsize - i < 20 )
+    {
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+       return;
+    }
+
+    /* This routine is strange in that it takes 3 input tile parameters, but *
+       some of the instructions it takes will only use 1 or 2 of them and    *
+       the others might be set to bogus values like UNDEF=-1. So let's first *
+       only use tile values that are in a reasonable range.                  */
+    if ( i_tile_src_reg_number_0 < 0 || i_tile_src_reg_number_0 > 7 )
+    {
+       l_vecval0 = 0;
+    } else {
+       l_vecval0 = i_tile_src_reg_number_0;
+    }
+    if ( i_tile_src_reg_number_1 < 0 || i_tile_src_reg_number_1 > 7 )
+    {
+       l_vecval1 = 0;
+    } else {
+       l_vecval1 = i_tile_src_reg_number_1;
+    }
+    if ( i_tile_dst_reg_number < 0 || i_tile_dst_reg_number > 7 )
+    {
+       l_vecval2 = 0;
+    } else {
+       l_vecval2 = i_tile_dst_reg_number;
+    }
+
+    switch ( i_tcompute_instr ) {
+      case LIBXSMM_X86_INSTR_TDPBSSD:
+        l_instroff  = 0x03;
+        l_instroff2 = 0x16;
+        break;
+      case LIBXSMM_X86_INSTR_TDPBSUD:
+        l_instroff = 0x02;
+        l_instroff2 = 0x16;
+        break;
+      case LIBXSMM_X86_INSTR_TDPBUSD:
+        l_instroff = 0x01;
+        l_instroff2 = 0x16;
+        break;
+      case LIBXSMM_X86_INSTR_TDPBUUD:
+        l_instroff2 = 0x16;
+        break;
+      case LIBXSMM_X86_INSTR_TDPBF16PS:
+        l_instroff = 0x02;
+        l_instroff2 = 0x14;
+        break;
+      default:
+        fprintf(stderr,"Unknown instruction. This is bad\n");
+        break;
+    }
+
+    buf[i++] = (unsigned char)(0xc4);
+    buf[i++] = (unsigned char)(0xe2 + l_instroff3);
+    buf[i++] = (unsigned char)(0x78 + l_instroff - l_vecval0*8);
+    buf[i++] = (unsigned char)(0x48 + l_instroff2);
+    buf[i++] = (unsigned char)(0xc0 + l_vecval1 + l_vecval2*8);
+
+    io_generated_code->code_size = i;
+    /*    *loc = i; */
+
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_instr_name[24];
+    libxsmm_get_x86_instr_name( i_tcompute_instr, l_instr_name, 23 );
+
+    switch ( i_tcompute_instr ) {
+      case LIBXSMM_X86_INSTR_TDPBSSD:
+      case LIBXSMM_X86_INSTR_TDPBSUD:
+      case LIBXSMM_X86_INSTR_TDPBUSD:
+      case LIBXSMM_X86_INSTR_TDPBUUD:
+      case LIBXSMM_X86_INSTR_TDPBF16PS:
+      {
+        if ( io_generated_code->code_type == 0 ) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u, %%%%tmm%u, %%%%tmm%u\\n\\t\"\n",
+                                                       l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
+        } else {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%tmm%u, %%tmm%u, %%tmm%u\n",
+                                                       l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
+        }
+        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+        break;
+      }
+      default:
+        break;
+    }
+  }
+}
+
 void libxsmm_x86_instruction_register_jump_back_label( libxsmm_generated_code*     io_generated_code,
                                                   libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   /* check if we still have label we can jump to */
-  if ( io_loop_label_tracker->label_count == 32 ) {
+  if ( io_loop_label_tracker->label_count == 512 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
@@ -5814,7 +6341,7 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
                                                   const unsigned int          i_label_no,
                                                   libxsmm_jump_label_tracker* io_jump_label_tracker ) {
   /* check if the label we are trying to set inside of bounds */
-  if ( i_label_no >= 32 ) {
+  if ( i_label_no >= 512 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
@@ -5867,13 +6394,13 @@ void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_gener
   unsigned int l_pos;
 
   /* check if the label we are trying to set inside of bounds */
-  if ( (i_label_no < 32) == 0 ) {
+  if ( (i_label_no < 512) == 0 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
 
   /* check if we still have label we can jump to */
-  if ( io_jump_label_tracker->label_source[i_label_no].ref_count == 32-1 ) {
+  if ( io_jump_label_tracker->label_source[i_label_no].ref_count == 512-1 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
@@ -6110,27 +6637,29 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
       return;
     }
 
-    /* push callee save registers */
-    /* push rbx */
-    l_code_buffer[l_code_size++] = 0x53;
-    /* push r12 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x54;
-    /* push r13 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x55;
-    /* push r14 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x56;
-    /* push r15 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x57;
+    if ( io_generated_code->arch < LIBXSMM_X86_AVX512_SPR ) {
+      /* push callee save registers */
+      /* push rbx */
+      l_code_buffer[l_code_size++] = 0x53;
+      /* push r12 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x54;
+      /* push r13 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x55;
+      /* push r14 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x56;
+      /* push r15 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x57;
 
-    /* update code length */
-    io_generated_code->code_size = l_code_size;
+      /* update code length */
+      io_generated_code->code_size = l_code_size;
 
-    /* adjust stack frame size */
-    io_generated_code->sf_size += 40;
+      /* adjust stack frame size */
+      io_generated_code->sf_size += 40;
+    }
   } else if ( io_generated_code->code_type == 1 ) {
     /* @TODO this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
@@ -6199,9 +6728,11 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
   }
 
   /* reset loop counters */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_mloop, 0 );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_nloop, 0 );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_kloop, 0 );
+  if ( io_generated_code->arch < LIBXSMM_X86_AVX512_SPR ) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_mloop, 0 );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_nloop, 0 );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_kloop, 0 );
+  }
 }
 
 
@@ -6221,24 +6752,26 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
       return;
     }
 
-    /* pop callee save registers */
-    /* pop r15 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5f;
-    /* pop r14 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5e;
-    /* pop r13 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5d;
-    /* pop r12 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5c;
-    /* pop rbx */
-    l_code_buffer[l_code_size++] = 0x5b;
+    if ( io_generated_code->arch < LIBXSMM_X86_AVX512_SPR ) {
+      /* pop callee save registers */
+      /* pop r15 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5f;
+      /* pop r14 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5e;
+      /* pop r13 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5d;
+      /* pop r12 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5c;
+      /* pop rbx */
+      l_code_buffer[l_code_size++] = 0x5b;
 
-    /* adjust stack frame size */
-    io_generated_code->sf_size -= 40;
+      /* adjust stack frame size */
+      io_generated_code->sf_size -= 40;
+    }
 
     /* retq */
     /* @TODO: I don't know if this is the correct placement in the generation process */

@@ -276,7 +276,7 @@ int main(int argc, char* argv[])
     }
     /* run naive convolutions */
     if (type == 'A' || type == 'U') {
-      naive_conv_wu(&naive_param, naive_input_save, naive_output_save, naive_filter_wu);
+      naive_conv_wu(&naive_param, naive_input, naive_output_bp, naive_filter_wu);
     }
     printf("##########################################\n");
     printf("#      Computing Reference ... done      #\n");

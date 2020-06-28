@@ -14,6 +14,86 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack_var ) {
+  /* The stack at exit of setup looks like this:
+   *
+   *      10th param (if applicable)                <-- RBP+40
+   *      9th param (if applicable)                 <-- RBP+32
+   *      8th param (if applicable)                 <-- RBP+24
+   *      7th param (if applicable)                 <-- RBP+16
+   *      Return address                            <-- RBP+8
+   *      Entry/saved RBP                           <-- RBP
+   *      prefetch A ptr                            <-- RBP-8
+   *      prefetch B ptr                            <-- RBP-16
+   *      Offset A array ptr                        <-- RBP-24
+   *      Offset B array ptr                        <-- RBP-32
+   *      Int8 scaling factor                       <-- RBP-40
+   *      GEMM_scratch ptr in stack (to be filled)  <-- RBP-48
+   *      Eltwise bias ptr                          <-- RBP-56
+   *      Eltwise output_ptr                        <-- RBP-64
+   */
+
+  switch ( stack_var ) {
+    case LIBXSMM_GEMM_STACK_VAR_NONE:
+      return 0;
+    case LIBXSMM_GEMM_STACK_VAR_PFA_PTR:
+      return -8;
+    case LIBXSMM_GEMM_STACK_VAR_PFB_PTR:
+      return -16;
+    case LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR:
+      return -24;
+    case LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR:
+      return -32;
+    case LIBXSMM_GEMM_STACK_VAR_INT8_SCF:
+      return -40;
+    case LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR:
+      return -48;
+    case LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR:
+      return -56;
+    case LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR:
+      return -64;
+    case LIBXSMM_GEMM_STACK_VAR_ARG_7:
+      return 16;
+    case LIBXSMM_GEMM_STACK_VAR_ARG_8:
+      return 24;
+    case LIBXSMM_GEMM_STACK_VAR_ARG_9:
+      return 32;
+    case LIBXSMM_GEMM_STACK_VAR_ARG_10:
+      return 40;
+    default:
+      return 0;
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_getval_stack_var( libxsmm_generated_code*             io_generated_code,
+                                              const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                              libxsmm_gemm_stack_var              stack_var,
+                                              unsigned int                        i_gp_reg ) {
+  int offset = libxsmm_generator_gemm_get_rbp_relative_offset(stack_var);
+  /* make sure we requested a legal stack var */
+  if (offset == 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+  libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, offset, i_gp_reg, 0 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setval_stack_var( libxsmm_generated_code*             io_generated_code,
+                                              const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                              libxsmm_gemm_stack_var              stack_var,
+                                              unsigned int                        i_gp_reg ) {
+  int offset = libxsmm_generator_gemm_get_rbp_relative_offset(stack_var);
+  /* make sure we requested to set  a legal stack var */
+  if (offset >= 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+  libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, offset, i_gp_reg, 1 );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
     const unsigned int             i_arch,
     const libxsmm_gemm_descriptor* i_xgemm_desc,

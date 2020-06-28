@@ -156,6 +156,36 @@ LIBXSMM_INLINE void rne_mask_fp32_bf16(float* in, float* out, unsigned int len) 
   }
 }
 
+/* it's fine to alias in and out */
+LIBXSMM_INLINE void rne_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
+  unsigned int i = 0;
+
+  /* rnaz buffer to bfp16 */
+  for ( i = 0; i < len; ++i ) {
+    unsigned int int_round = 0;
+    unsigned int do_round = 1;
+    const void *const ptr = &int_round;
+
+    int_round = *((unsigned int*)&(in[i]));
+
+    /* we don't round NaN and inf */
+    if ( (int_round & 0x7f800000) == 0x7f800000 ) {
+      do_round = 0;
+    }
+
+    /* perform round nearest tie even */
+    if ( do_round != 0 ) {
+      unsigned int fixup = (int_round >> 16) & 1;
+      int_round = int_round + 0x00007fff + fixup;
+    }
+
+    /* chop bits to create BFP16 in FP32 */
+    int_round = int_round & 0xffff0000;
+
+    out[i] = *((float*)ptr);
+  }
+}
+
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
 #if defined(_OPENMP)

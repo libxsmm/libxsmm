@@ -194,7 +194,6 @@
   START libxsmm_trmm_descriptor MODIFIER trmm; \
   START libxsmm_trsm_descriptor MODIFIER trsm
 
-
 /**
 * Packed structure, which stores the argument description of GEMM routines.
 * The size of the structure is padded to LIBXSMM_DESCRIPTOR_MAXSIZE.
@@ -360,6 +359,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE segment_t {
   int segment_type;
   int n_convs;
   int aux_index;
+  int img;
+  int ofm;
+  int ifm;
 } segment_t;
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
@@ -408,9 +410,12 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int upd_linearized_tasklist;
   int upd_avoid_rim_fmas;
   int fwd_flags;
+  int bwd_flags;
   int shuffle_filter_accesses;
   int use_fallback_fwd_loops;
   int use_fallback_bwd_loops;
+  int fwd_gemm_pixels;
+  int bwd_gemm_pixels;
   int input_pixels;
   int output_pixels;
   int n_used_pixels;
@@ -423,6 +428,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int on_the_fly_input_packing;
   int upd_pack_input_upfront;
   int use_hybrid_imgofm_parallelization;
+  int remainder_pixels;
+  int pack_to_cnhw;
+  int fuse_upd_transposes;
   int compute_pixels;
   int upd_trans_w_only;
   int fwd_padding_copy;
@@ -438,6 +446,57 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 
   libxsmm_xtransfunction tr_kernel;
   libxsmm_meltwfunction_cvtfp32bf16 fwd_cvtfp32bf16_kernel;
+  libxsmm_xtransfunction tr_input_upd_kernel;
+
+  /* Hoisting the compute kernels for FWD  */
+  libxsmm_bsmmfunction fwd_config_kernel;
+  libxsmm_bsmmfunction_reducebatch_addr fwd_compute_kernel_addr;
+  libxsmm_bsmmfunction_reducebatch_offs fwd_compute_kernel_offs;
+  libxsmm_bsmmfunction_reducebatch_strd fwd_compute_kernel_strd;
+
+  /* Hoisting the compute kernels for BWD  */
+  libxsmm_bsmmfunction bwd_config_kernel;
+  libxsmm_bsmmfunction_reducebatch_addr bwd_compute_kernel_addr;
+  libxsmm_bsmmfunction_reducebatch_offs bwd_compute_kernel_offs;
+  libxsmm_bsmmfunction_reducebatch_strd bwd_compute_kernel_strd;
+
+  /* Hoisting the compute kernels for UPD  */
+  libxsmm_bsmmfunction                  upd_config_kernel;
+  libxsmm_bsmmfunction_reducebatch_strd upd_compute_kernel_brgemm_no_linearized_pixels;
+  libxsmm_bsmmfunction_reducebatch_strd upd_compute_kernel_brgemm_linearized_pixels_hybrid_par_no_cnhw;
+  libxsmm_bsmmfunction                  upd_compute_kernel_gemm_linearized_pixels_hybrid_par_cnhw;
+  libxsmm_bsmmfunction                  upd_compute_kernel_gemm_linearized_pixels_no_hybrid_par;
+
+  libxsmm_bsmmfunction tilerelease_kernel;
+
+  unsigned long long *A_offsets;
+  unsigned long long *B_offsets;
+  unsigned long long *A_offsets_bwd;
+  unsigned long long *B_offsets_bwd;
+
+  /* AMX specific fields */
+  int x_rows;
+  int n_pixel_tiles;
+  int n_ofm_tiles;
+  int wrb_1;
+  int wrb_2;
+  int wrb_3;
+  int wrb_4;
+  int hrb_1;
+  int hrb_2;
+  int n_compute_pixels;
+  int pixels;
+  int linearize_pixels;
+  int split_pixel;
+  int reconfig;
+  int zero_rim;
+  char tc[64];
+  char tc2[64];
+  char tc_upd[64];
+  int input_padded_pixels;
+  int output_padded_pixels;
+  int blocks_pixels;
+  /* End of AMX specific fields  */
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
@@ -496,13 +555,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd2;    /* ability to hoist forward GEMMs */
 
-  unsigned long long *A_offsets;
-  unsigned long long *B_offsets;
-
   /* JIT-generated convolution code */
   libxsmm_code_pointer code_fwd[3];
   libxsmm_code_pointer code_bwd[3];
-  libxsmm_code_pointer code_upd[2];
+  libxsmm_code_pointer code_upd[5];
 
   libxsmm_code_pointer matcopy_fwd[4];
   libxsmm_code_pointer matcopy_bwd[4];
@@ -630,14 +686,33 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   size_t doutput_scratch_mark;
   void* scratch;
 
+  libxsmm_bsmmfunction fwd_config_kernel;
+  libxsmm_bsmmfunction bwd_config_kernel;
+  libxsmm_bsmmfunction upd_config_kernel;
+  libxsmm_bsmmfunction tilerelease_kernel;
+
   libxsmm_xtransfunction tr_kernel;
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd2;    /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd3;    /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd4;    /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd5;    /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd6;    /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd7;    /* ability to hoist forward GEMMs */
+  libxsmm_code_pointer gemm_fwd8;    /* ability to hoist forward GEMMs */
+
   libxsmm_code_pointer gemm_bwd;     /* ability to hoist backward GEMMs */
   libxsmm_code_pointer gemm_bwd2;    /* ability to hoist backward GEMMs */
+  libxsmm_code_pointer gemm_bwd3;    /* ability to hoist backward GEMMs */
   libxsmm_code_pointer gemm_upd;     /* ability to hoist update GEMMs */
   libxsmm_code_pointer gemm_upd2;    /* ability to hoist update GEMMs */
+  libxsmm_code_pointer gemm_upd3;    /* ability to hoist update GEMMs */
+
+  /* JITed eltwise kernels... */
+  libxsmm_meltwfunction_cvtfp32bf16     fwd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_cvtfp32bf16     bwd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_cvtfp32bf16_act fwd_cvtfp32bf16_relu_kernel;
+  libxsmm_meltwfunction_act_cvtfp32bf16 fwd_sigmoid_cvtfp32bf16_kernel;
 };
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
@@ -723,15 +798,22 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   void* ot_scratch;
   void* cit_scratch;
   void* cot_scratch;
-
+  /* options */
+  int use_fwd_fused_impl;
+  int fwd_block;
+  int bwdupd_block;
+  int fwd_generic;
+  int bwdupd_generic;
   /* Ability to hoist GEMMs */
   libxsmm_bsmmfunction_reducebatch_strd fwd_kernela;
   libxsmm_bsmmfunction_reducebatch_strd fwd_kernelb;
+  libxsmm_bsmmfunction_reducebatch_addr fwd_tileconfig;
   libxsmm_bsmmfunction_reducebatch_strd bwdupd_kernela;
   libxsmm_bsmmfunction_reducebatch_strd bwdupd_kernelb;
   libxsmm_bsmmfunction_reducebatch_strd bwdupd_kernelc;
   libxsmm_bsmmfunction_reducebatch_strd bwdupd_kerneld;
-
+  libxsmm_bsmmfunction_reducebatch_addr bwdupd_tileconfig;
+  libxsmm_bsmmfunction tilerelease_kernel;
   libxsmm_barrier* barrier; /* barrier */
 };
 

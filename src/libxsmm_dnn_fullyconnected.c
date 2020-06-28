@@ -314,6 +314,91 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           handle->ifm_subtasks = 1;
           handle->ofm_subtasks = 1;
 
+          if (handle->desc.threads == 14) {
+            handle->fwd_bf = 1;
+            handle->bwd_bf = 1;
+            handle->upd_bf = 1;
+            handle->fwd_2d_blocking = 1;
+            handle->bwd_2d_blocking = 1;
+            handle->upd_2d_blocking = 0;
+            handle->fwd_row_teams = 2;
+            handle->fwd_column_teams = 7;
+            handle->bwd_row_teams = 2;
+            handle->bwd_column_teams = 7;
+            handle->upd_row_teams = 1;
+            handle->upd_column_teams = 1;
+            handle->ifm_subtasks = 1;
+            handle->ofm_subtasks = 1;
+          }
+
+          if (handle->desc.threads == 2) {
+            handle->fwd_bf = 1;
+            handle->bwd_bf = 1;
+            handle->upd_bf = 1;
+            handle->fwd_2d_blocking = 1;
+            handle->bwd_2d_blocking = 1;
+            handle->upd_2d_blocking = 0;
+            handle->fwd_row_teams = 2;
+            handle->fwd_column_teams = 1;
+            handle->bwd_row_teams = 2;
+            handle->bwd_column_teams = 1;
+            handle->upd_row_teams = 1;
+            handle->upd_column_teams = 1;
+            handle->ifm_subtasks = 1;
+            handle->ofm_subtasks = 1;
+          }
+
+          if (handle->desc.threads == 4) {
+            handle->fwd_bf = 1;
+            handle->bwd_bf = 1;
+            handle->upd_bf = 1;
+            handle->fwd_2d_blocking = 1;
+            handle->bwd_2d_blocking = 1;
+            handle->upd_2d_blocking = 0;
+            handle->fwd_row_teams = 2;
+            handle->fwd_column_teams = 2;
+            handle->bwd_row_teams = 2;
+            handle->bwd_column_teams = 2;
+            handle->upd_row_teams = 1;
+            handle->upd_column_teams = 1;
+            handle->ifm_subtasks = 1;
+            handle->ofm_subtasks = 1;
+          }
+
+          if (handle->desc.threads == 8) {
+            handle->fwd_bf = 1;
+            handle->bwd_bf = 1;
+            handle->upd_bf = 1;
+            handle->fwd_2d_blocking = 1;
+            handle->bwd_2d_blocking = 1;
+            handle->upd_2d_blocking = 0;
+            handle->fwd_row_teams = 2;
+            handle->fwd_column_teams = 4;
+            handle->bwd_row_teams = 2;
+            handle->bwd_column_teams = 4;
+            handle->upd_row_teams = 1;
+            handle->upd_column_teams = 1;
+            handle->ifm_subtasks = 1;
+            handle->ofm_subtasks = 1;
+          }
+
+           if (handle->desc.threads == 16) {
+            handle->fwd_bf = 1;
+            handle->bwd_bf = 1;
+            handle->upd_bf = 1;
+            handle->fwd_2d_blocking = 1;
+            handle->bwd_2d_blocking = 1;
+            handle->upd_2d_blocking = 0;
+            handle->fwd_row_teams = 2;
+            handle->fwd_column_teams = 8;
+            handle->bwd_row_teams = 2;
+            handle->bwd_column_teams = 8;
+            handle->upd_row_teams = 1;
+            handle->upd_column_teams = 1;
+            handle->ifm_subtasks = 1;
+            handle->ofm_subtasks = 1;
+          }
+
           if (handle->desc.C == 100 && handle->desc.K == 1024 && handle->desc.threads == 28) {
             handle->fwd_bf = 1/*((handle->desc.C/handle->bc) % 1 == 0) ? 1 : 1*/;
             handle->fwd_2d_blocking = 1;
@@ -557,15 +642,20 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       /* create barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
 
+      /* If in SPR, generate tilerelease kernel */
+      if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) {
+        int l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
+        handle->tilerelease_kernel = libxsmm_bsmmdispatch(handle->bk, handle->bk, handle->bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
+      }
       /* calculate scratch size */
       if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
         handle->scratch_size = sizeof(float) * ( ( (size_t)handle->desc.C * (size_t)handle->desc.N ) + ( (size_t)handle->desc.C * (size_t)handle->desc.K ) );
       } else if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)  ) {
         /* Let's allocate maximum required scratch  */
-        size_t size_fwd = sizeof(float) * handle->desc.K * handle->desc.N;
+        size_t size_fwd = sizeof(float) *  LIBXSMM_MAX(handle->desc.K * handle->desc.N, handle->desc.threads * LIBXSMM_MAX(handle->bk * handle->bn, handle->desc.K));
         /* In case of K = 1 we pad A and B to "bk=2" */
-        size_t size_bwd = (handle->desc.K != 1) ? ( sizeof(float) * handle->desc.C * handle->desc.N + sizeof(libxsmm_bfloat16) * handle->desc.C * handle->desc.K ) : ( sizeof(float) * handle->desc.C * handle->desc.N + sizeof(libxsmm_bfloat16) * handle->desc.C * 2 + sizeof(libxsmm_bfloat16) * 2 * handle->desc.N );
-        size_t size_upd = sizeof(float) * handle->desc.C * handle->desc.K + sizeof(libxsmm_bfloat16) * handle->desc.threads * handle->bk * handle->bc + sizeof(libxsmm_bfloat16) * (handle->desc.N * (handle->desc.C + handle->desc.K));
+        size_t size_bwd = (handle->desc.K != 1) ? ( sizeof(float) * LIBXSMM_MAX(handle->desc.C * handle->desc.N, handle->desc.threads * handle->bc * handle->bn) + sizeof(libxsmm_bfloat16) * handle->desc.C * handle->desc.K ) : ( sizeof(float) * handle->desc.C * handle->desc.N + sizeof(libxsmm_bfloat16) * handle->desc.C * 2 + sizeof(libxsmm_bfloat16) * 2 * handle->desc.N );
+        size_t size_upd = sizeof(float) * LIBXSMM_MAX(handle->desc.C * handle->desc.K, handle->desc.threads * handle->bc * handle->bk) + sizeof(libxsmm_bfloat16) * handle->desc.threads * handle->bk * handle->bc + sizeof(libxsmm_bfloat16) * (handle->desc.N * (handle->desc.C + handle->desc.K));
         handle->scratch_size = LIBXSMM_MAX(LIBXSMM_MAX(size_fwd, size_bwd), size_upd);
         handle->doutput_scratch_mark = handle->scratch_size;
         handle->scratch_size += 2 * sizeof(libxsmm_bfloat16) * handle->desc.N *  handle->desc.K;
@@ -615,23 +705,76 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
           libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
 
-          handle->gemm_fwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
-          handle->gemm_fwd2.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
-          handle->gemm_fwd3.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+            libxsmm_meltw_cbiasact_flags fusion_flags;
+            libxsmm_blasint l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
+            libxsmm_blasint l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
+            int unroll_hint = (handle->desc.C/handle->bc)/handle->fwd_bf;
+            handle->gemm_fwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
+            handle->gemm_fwd2.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+            handle->fwd_config_kernel = libxsmm_bsmmdispatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
+
+            handle->gemm_fwd3.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+
+            fusion_flags = LIBXSMM_MELTW_FLAG_CBIASACT_COLBIAS_OVERWRITE_C;
+            handle->gemm_fwd4.xgemm.bmrs_scbiasact = libxsmm_bmmdispatch_reducebatch_strd_scbiasact_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+            fusion_flags = LIBXSMM_MELTW_FLAG_CBIASACT_ACT_RELU_OVERWRITE_C;
+            handle->gemm_fwd5.xgemm.bmrs_scbiasact = libxsmm_bmmdispatch_reducebatch_strd_scbiasact_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+            fusion_flags = LIBXSMM_MELTW_FLAG_CBIASACT_ACT_SIGM_OVERWRITE_C;
+            handle->gemm_fwd6.xgemm.bmrs_scbiasact = libxsmm_bmmdispatch_reducebatch_strd_scbiasact_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+            fusion_flags = LIBXSMM_MELTW_FLAG_CBIASACT_COLBIAS_ACT_RELU_OVERWRITE_C;
+            handle->gemm_fwd7.xgemm.bmrs_scbiasact = libxsmm_bmmdispatch_reducebatch_strd_scbiasact_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+            fusion_flags = LIBXSMM_MELTW_FLAG_CBIASACT_COLBIAS_ACT_SIGM_OVERWRITE_C;
+            handle->gemm_fwd8.xgemm.bmrs_scbiasact = libxsmm_bmmdispatch_reducebatch_strd_scbiasact_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+
+            /* Also JIT eltwise functions... */
+            handle->fwd_cvtfp32bf16_kernel          = libxsmm_dispatch_meltw_cvtfp32bf16(handle->bk, handle->bn, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
+            handle->fwd_cvtfp32bf16_relu_kernel     = libxsmm_dispatch_meltw_cvtfp32bf16_act(handle->bk, handle->bn, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU);
+            handle->fwd_sigmoid_cvtfp32bf16_kernel  = libxsmm_dispatch_meltw_act_cvtfp32bf16(handle->bk, handle->bn, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM);
+          } else {
+            handle->gemm_fwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+            handle->gemm_fwd2.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
+            handle->gemm_fwd3.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+          }
+
           /* Special bwd kernels for K == 1 */
           if (handle->desc.K == 1) {
             libxsmm_blasint _bk = 2;
             handle->gemm_bwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(handle->bc, handle->bn, _bk, _bk*handle->bc*sizeof(libxsmm_bfloat16), _bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &_bk, &ldb, &alpha, &beta, NULL, NULL);
             handle->gemm_bwd2.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bc, handle->bn, _bk, _bk*handle->bc*sizeof(libxsmm_bfloat16), _bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &_bk, &ldb, &alpha, &zerobeta, NULL, NULL);
           } else {
-            handle->gemm_bwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &lda, &ldb, &alpha, &beta, NULL, NULL);
-            handle->gemm_bwd2.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &lda, &ldb, &alpha, &zerobeta, NULL, NULL);
+            if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+              libxsmm_blasint l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
+              libxsmm_blasint l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
+              int unroll_hint = (handle->desc.K/handle->bk)/handle->bwd_bf;
+              handle->gemm_bwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &ldb, &lda, &ldb, &alpha, &beta, &l_flags, NULL);
+              handle->gemm_bwd2.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &ldb, &lda, &ldb, &alpha, &zerobeta, &l_flags, NULL);
+              handle->bwd_config_kernel = libxsmm_bsmmdispatch(handle->bc, handle->bn, handle->bk, &ldb, &lda, &ldb, NULL, &beta, &l_tc_flags, NULL);
+              handle->gemm_bwd3.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd_unroll(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &ldb, &lda, &ldb, &alpha, &zerobeta, &l_flags, NULL);
+              /* Also JIT eltwise functions... */
+              handle->bwd_cvtfp32bf16_kernel  = libxsmm_dispatch_meltw_cvtfp32bf16(handle->bc, handle->bn, &ldb, &ldb, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
+            } else {
+              handle->gemm_bwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &lda, &ldb, &alpha, &beta, NULL, NULL);
+              handle->gemm_bwd2.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &lda, &ldb, &alpha, &zerobeta, NULL, NULL);
+            }
           }
           lda = (libxsmm_blasint)handle->bk;
           ldb = (libxsmm_blasint)handle->bn;
           ldc = (libxsmm_blasint)handle->bk;
-          handle->gemm_upd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(M, N, handle->bn, handle->bk*handle->bn*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
-          handle->gemm_upd2.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(M, N, handle->bn, handle->bk*handle->bn*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+            libxsmm_blasint l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
+            libxsmm_blasint l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
+            int unroll_hint = (handle->desc.N/handle->bn)/handle->upd_bf;
+            handle->gemm_upd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(M, N, handle->bn, handle->bk*handle->bn*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
+            handle->gemm_upd2.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(M, N, handle->bn, handle->bk*handle->bn*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+            handle->upd_config_kernel = libxsmm_bsmmdispatch(M, N, handle->bn, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
+            l_flags = l_flags | LIBXSMM_GEMM_FLAG_VNNI_C;
+            handle->gemm_upd3.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd_unroll(M, N, handle->bn, handle->bk*handle->bn*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+          } else {
+            handle->gemm_upd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(M, N, handle->bn, handle->bk*handle->bn*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+            handle->gemm_upd2.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(M, N, handle->bn, handle->bk*handle->bn*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), &lda, &ldb, &ldc, &alpha, &zerobeta, NULL, NULL);
+
+          }
         } else {
 
         }

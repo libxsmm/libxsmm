@@ -65,9 +65,12 @@ int main(int argc, char* argv[])
   int C = 512;      /* number of inputs */
   int K = 512;      /* number of outputs */
   int t = 50;       /* number of time steps (>= 1) */
-  int bn = 24;
-  int bk = 64;
-  int bc = 64;
+  int bn = 32;
+  int bk = 32;
+  int bc = 32;
+  int use_fwd_fused_impl = 0;
+  int bwdupd_block = 1;
+  int fwd_block = 1;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1/*enable by default*/ : atof(env_check));
@@ -139,6 +142,8 @@ int main(int argc, char* argv[])
   if (argc > j) bn    = atoi(argv[j++]);
   if (argc > j) bc    = atoi(argv[j++]);
   if (argc > j) bk    = atoi(argv[j++]);
+  if (argc > j) use_fwd_fused_impl    = atoi(argv[j++]);
+  if (argc > j) fwd_block    = atoi(argv[j++]);
 
   if (t <= 0) {
     printf("time_steps %d should be greater than or equal to 1\n\n", t);
@@ -390,6 +395,9 @@ int main(int argc, char* argv[])
     lstmcell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_BF16;
     lstmcell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NC;
     lstmcell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED;
+    lstmcell_desc.fwd_block = fwd_block;
+    lstmcell_desc.bwdupd_block = bwdupd_block;
+    lstmcell_desc.use_fwd_fused_impl = use_fwd_fused_impl;
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( lstmcell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );

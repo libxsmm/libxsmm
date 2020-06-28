@@ -301,6 +301,23 @@
 /* Mask compute instructions */
 #define LIBXSMM_X86_INSTR_KXNORW         45000
 
+/* Tile instructions */
+/* CPUID: AMX-TILE INTERCEPT: SPR */
+#define LIBXSMM_X86_INSTR_LDTILECFG          50001
+#define LIBXSMM_X86_INSTR_STTILECFG          50002
+#define LIBXSMM_X86_INSTR_TILERELEASE        50003
+#define LIBXSMM_X86_INSTR_TILELOADD          50004
+#define LIBXSMM_X86_INSTR_TILELOADDT1        50005
+#define LIBXSMM_X86_INSTR_TILESTORED         50006
+#define LIBXSMM_X86_INSTR_TILEZERO           50007
+/* CPUID: AMX-INT8 INTERCEPT: SPR */
+#define LIBXSMM_X86_INSTR_TDPBSSD            50008
+#define LIBXSMM_X86_INSTR_TDPBSUD            50009
+#define LIBXSMM_X86_INSTR_TDPBUSD            50010
+#define LIBXSMM_X86_INSTR_TDPBUUD            50011
+/* CPUID: AMX-BF16 INTERCEPT: SPR */
+#define LIBXSMM_X86_INSTR_TDPBF16PS          50012
+
 /* define error codes */
 #define LIBXSMM_ERR_GENERAL               90000
 #define LIBXSMM_ERR_ALLOC                 90001
@@ -379,12 +396,57 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int alu_jmp_instruction;
   unsigned int alu_mov_instruction;
   char vector_name;
+
+  /* Auxiliary variables for GEMM fusion info  */
+  unsigned int fused_eltwise;
+  unsigned int m_loop_exists;
+  unsigned int n_loop_exists;
+  unsigned int fused_bcolbias;
+  unsigned int fused_scolbias;
+  unsigned int fused_relu;
+  unsigned int fused_sigmoid;
+  unsigned int overwrite_C;
+  unsigned int vnni_format_C;
+
+  /* Register names/logistics for fusion boo-keeping  */
+  unsigned int reserved_zmms;
+  unsigned int reserved_mask_regs;
+  unsigned int vnni_perm_reg;
+  unsigned int zero_reg;
+  unsigned int vec_x2;
+  unsigned int vec_nom;
+  unsigned int vec_denom;
+  unsigned int vec_c0;
+  unsigned int vec_c1;
+  unsigned int vec_c2;
+  unsigned int vec_c3;
+  unsigned int vec_c1_d;
+  unsigned int vec_c2_d;
+  unsigned int vec_c3_d;
+  unsigned int vec_hi_bound;
+  unsigned int vec_lo_bound;
+  unsigned int vec_ones;
+  unsigned int vec_neg_ones;
+  unsigned int vec_halves;
+  unsigned int mask_hi;
+  unsigned int mask_lo;
+
+  /* Auxiliary arrays for micro-kernel iteration space traversal */
+  int use_paired_tilestores;
+  int _im[4];
+  int _in[4];
+  int _C_tile_id[4];
+  int _C_tile_mate_id[4];
+  int _im_offset_prefix_sums[4];
+  int _in_offset_prefix_sums[4];
 } libxsmm_micro_kernel_config;
 
 /* structure for storing the current gp reg mapping */
 LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
+  unsigned int gp_reg_a_base;
   unsigned int gp_reg_b;
+  unsigned int gp_reg_b_base;
   unsigned int gp_reg_c;
   unsigned int gp_reg_a_prefetch;
   unsigned int gp_reg_a_offset;
@@ -396,6 +458,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_kloop;
   unsigned int gp_reg_reduce_count;
   unsigned int gp_reg_reduce_loop;
+  unsigned int gp_reg_a_ptrs;
+  unsigned int gp_reg_b_ptrs;
+  unsigned int gp_reg_lda;
+  unsigned int gp_reg_ldb;
+  unsigned int gp_reg_ldc;
   unsigned int gp_reg_scf;
   unsigned int gp_reg_help_0;
   unsigned int gp_reg_help_1;
@@ -494,22 +561,46 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_kernel_config_struct {
 
 /* structure for tracking local labels in assembly we don't allow overlapping loops */
 LIBXSMM_EXTERN_C typedef struct libxsmm_loop_label_tracker_struct {
-  unsigned int label_address[32];
+  unsigned int label_address[512];
   unsigned int label_count;
 } libxsmm_loop_label_tracker;
 
 /* structure to save jump properties to the same destination */
 LIBXSMM_EXTERN_C typedef struct libxsmm_jump_source_struct {
-  unsigned int instr_type[32];
-  unsigned int instr_addr[32];
+  unsigned int instr_type[512];
+  unsigned int instr_addr[512];
   unsigned int ref_count;
 } libxsmm_jump_source;
 
 /* structure for tracking arbitrary jump labels in assembly code */
 LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
-  unsigned int        label_address[32];
-  libxsmm_jump_source label_source[32];
+  unsigned int        label_address[512];
+  libxsmm_jump_source label_source[512];
 } libxsmm_jump_label_tracker;
+
+LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
+  unsigned int tiles;
+  unsigned int sizes[4];
+  unsigned int blocking;
+  unsigned int block_size;
+} libxsmm_blocking_info_t;
+
+/* Auxiliary stach variable enumeration in GEMM */
+typedef enum libxsmm_gemm_stack_var {
+  LIBXSMM_GEMM_STACK_VAR_NONE               =  0,
+  LIBXSMM_GEMM_STACK_VAR_PFA_PTR            =  1,
+  LIBXSMM_GEMM_STACK_VAR_PFB_PTR            =  2,
+  LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR  =  3,
+  LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR  =  4,
+  LIBXSMM_GEMM_STACK_VAR_INT8_SCF           =  5,
+  LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR   =  6,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR       =  7,
+  LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR     =  8,
+  LIBXSMM_GEMM_STACK_VAR_ARG_7              =  9,
+  LIBXSMM_GEMM_STACK_VAR_ARG_8              = 10,
+  LIBXSMM_GEMM_STACK_VAR_ARG_9              = 11,
+  LIBXSMM_GEMM_STACK_VAR_ARG_10             = 12
+} libxsmm_gemm_stack_var;
 
 /* compressed meltw reduce structure */
 typedef enum libxsmm_meltw_comp_redu_flags {
@@ -580,7 +671,12 @@ typedef enum libxsmm_meltw_comp_cbiasact_flags {
   LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_RELU_OVERWRITE_C = 11,
   LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_TANH_OVERWRITE_C = 12,
   LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_SIGM_OVERWRITE_C = 13,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_GELU_OVERWRITE_C = 14
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_GELU_OVERWRITE_C = 14,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_OVERWRITE_C          = 15,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_RELU_OVERWRITE_C         = 16,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_TANH_OVERWRITE_C         = 17,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_SIGM_OVERWRITE_C         = 18,
+  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_GELU_OVERWRITE_C         = 19
 } libxsmm_meltw_comp_cbiasact_flags;
 
 LIBXSMM_API_INTERN

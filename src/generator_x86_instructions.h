@@ -572,5 +572,91 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*       io_generated_code,
                                                      const char*                   i_arch );
 
+
+/* tile config structure */
+typedef struct libxsmm_tile_config {
+  unsigned char  palette_id;
+  unsigned char  tile0rows;
+  unsigned char  tile0cols;
+  unsigned char  tile1rows;
+  unsigned char  tile1cols;
+  unsigned char  tile2rows;
+  unsigned char  tile2cols;
+  unsigned char  tile3rows;
+  unsigned char  tile3cols;
+  unsigned char  tile4rows;
+  unsigned char  tile4cols;
+  unsigned char  tile5rows;
+  unsigned char  tile5cols;
+  unsigned char  tile6rows;
+  unsigned char  tile6cols;
+  unsigned char  tile7rows;
+  unsigned char  tile7cols;
+} libxsmm_tile_config;
+
+
+/**
+ * Generates ld/stconfig/tilerelease instructions
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_id id of AMX region
+ * @param i_instruction_set requested instruction set to encode
+ * @param i_tcontrol_instr actual tile mem instruction variant
+ * @param i_gp_reg_base base register which address where to store/load tile config
+ * @param i_displacement displacement to i_gp_reg_base
+ * @param i_tile_config pointer to tile config structure
+ */
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generated_code,
+                                           const unsigned int         i_id,
+                                           const unsigned int         i_instruction_set,
+                                           const unsigned int         i_tcontrol_instr,
+                                           const unsigned int         i_gp_reg_base,
+                                           const int                  i_displacement,
+                                           const libxsmm_tile_config* i_tile_config );
+
+
+/**
+ * Generates tilemove/tilestore instructions
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_instruction_set requested instruction set to encode
+ * @param i_tmove_instr actual tile mem instruction variant
+ * @param i_gp_reg_base the base register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
+ * @param i_gp_reg_idx the base register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
+ * @param i_scale scaling factor of idx
+ * @param i_displacement the offset to the base address
+ * @param i_tile_reg_number_0 the tile register number (tmm: 0-7)
+ */
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_code,
+                                        const unsigned int      i_instruction_set,
+                                        const unsigned int      i_tmove_instr,
+                                        const unsigned int      i_gp_reg_base,
+                                        const unsigned int      i_gp_reg_idx,
+                                        const unsigned int      i_scale,
+                                        const int               i_displacement,
+                                        const unsigned int      i_tile_reg_number );
+
+
+/**
+ * Generates tilecompute instructions
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_instruction_set requested instruction set to encode
+ * @param i_tcompute_instr actual tile compute instruction variant
+ * @param i_tile_src_reg_number_0 the 1st src tile register number (tmm: 0-7)
+ * @param i_tile_src_reg_number_1 the 2nd src tile register number (tmm: 0-7) (might be ignored by some instuctions)
+ * @param i_tile_dst_reg_number the dst tile register number (tmm: 0-7)
+ */
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_code,
+                                           const unsigned int      i_instruction_set,
+                                           const unsigned int      i_tcompute_instr,
+                                           const unsigned int      i_tile_src_reg_number_0,
+                                           const unsigned int      i_tile_src_reg_number_1,
+                                           const unsigned int      i_tile_dst_reg_number );
+
+
 #endif /* GENERATOR_X86_INSTRUCTIONS_H */
 
