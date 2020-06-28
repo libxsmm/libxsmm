@@ -355,7 +355,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_amx(libx
 #undef LIBXSMM_DNN_FC_FWD_FUSE_RELU
 #undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
   } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID ) {
-    libxsmm_bmmfunction_scbiasact_reducebatch_strd bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd8.xgemm.bmrs_scbiasact;
+    libxsmm_bmmfunction_reducebatch_strd_scbiasact bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd8.xgemm.bmrs_scbiasact;
 #define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
 #define LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_amx.tpl.c"
