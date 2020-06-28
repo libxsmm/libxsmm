@@ -647,8 +647,8 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16_emu_amx(li
 
   typedef libxsmm_bsmmfunction_reducebatch_strd gemm_br_function;
   gemm_function tile_config_kernel = handle->upd_config_kernel;
-  gemm_function gemm_kernel;
-  gemm_br_function br_gemm_kernel;
+  gemm_function gemm_kernel = NULL;
+  gemm_br_function br_gemm_kernel = NULL;
   if (handle->upd_linearized_pixels == 0) {
     br_gemm_kernel = handle->upd_compute_kernel_brgemm_no_linearized_pixels;
   } else {
@@ -723,8 +723,8 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16_amx(libxsm
 
   typedef libxsmm_bsmmfunction_reducebatch_strd gemm_br_function;
   gemm_function tile_config_kernel = handle->upd_config_kernel;
-  gemm_function gemm_kernel;
-  gemm_br_function br_gemm_kernel;
+  gemm_function gemm_kernel = NULL;
+  gemm_br_function br_gemm_kernel = NULL;
   if (handle->upd_linearized_pixels == 0) {
     br_gemm_kernel = handle->upd_compute_kernel_brgemm_no_linearized_pixels;
   } else {
