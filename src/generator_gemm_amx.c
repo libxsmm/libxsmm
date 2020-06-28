@@ -489,9 +489,10 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info ) {
 
-  int im, in, acc_id = 0, i_n_offset, i_m_offset, col = 0, zmm_reg = 0;
+  int im, in, acc_id = 0, i_n_offset, i_m_offset, zmm_reg = 0;
   int m_tiles = m_blocking_info->tiles;
   int n_tiles = n_blocking_info->tiles;
+  unsigned int col = 0;
   unsigned int gp_reg_bias = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
 
   if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
@@ -841,6 +842,8 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
   unsigned int reserved_zmms      = 0;
   unsigned int reserved_mask_regs = 1;
+  LIBXSMM_UNUSED(i_gp_reg_mapping);
+
   i_micro_kernel_config->fused_bcolbias = 0;
   i_micro_kernel_config->fused_scolbias = 0;
   i_micro_kernel_config->fused_relu     = 0;
@@ -974,6 +977,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   unsigned int temp_reg               = LIBXSMM_X86_GP_REG_R10;
   unsigned int gemm_scratch_size      = 0;
   unsigned int scratch_pad_size       = 0;
+  LIBXSMM_UNUSED(i_gp_reg_mapping);
 
   if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) {
     if (libxsmm_get_meltw_cbiasact_flags(i_xgemm_desc->meltw_flags) != (unsigned int)LIBXSMM_MELTW_COMP_FLAG_CBIASACT_NONE) {
@@ -1256,6 +1260,8 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
     const libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+  LIBXSMM_UNUSED(i_gp_reg_mapping);
+
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
@@ -1528,20 +1534,20 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
     libxsmm_blocking_info_t*           m_blocking_info ) {
 
   void (*l_generator_kloop)(libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,  libxsmm_blocking_info_t*,  libxsmm_blocking_info_t*, unsigned int, unsigned int);
-  l_generator_kloop = libxsmm_generator_gemm_amx_kernel_kloop;
-
   unsigned int l_m_done = 0;
   unsigned int l_m_count = 0;
   unsigned int l_m_blocking = m_blocking_info[0].blocking;
   unsigned int l_m_block_size = 0;
   unsigned int m_assembly_loop_exists = (l_m_blocking == i_xgemm_desc->m) ? 0 : 1;
   unsigned int fully_unroll_k = 1;
-  libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_START = 0;
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_END = 1;
   unsigned int i;
   unsigned int A_offs = 0, B_offs = 0;
+
+  libxsmm_jump_label_tracker l_jump_label_tracker;
+  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
+  l_generator_kloop = libxsmm_generator_gemm_amx_kernel_kloop;
 
   /* apply m_blocking */
   while (l_m_done != (unsigned int)i_xgemm_desc->m) {
