@@ -528,10 +528,9 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
     int                                in_offset,
     int                                n_cols) {
 
-  unsigned int col = 0, reg_0 = 0, reg_1 = 0;
+  unsigned int col = 0, reg_0 = 0;
   unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
   unsigned int reserved_zmms       = i_micro_kernel_config->reserved_zmms;
-  unsigned int max_unrolling       = 31;
   unsigned int fused_eltwise       = ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_sigmoid == 1)) ? 1 : 0;
 
   if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
@@ -668,10 +667,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int pf_dist = i_xgemm_desc->c3;
   int emit_tilestores = ((i_brgemm_loop == (i_xgemm_desc->c3 - 1)) && (is_last_k == 1)) ? 1 : 0;
   int use_paired_tilestores = ((LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0)) ? 1 : 0;
-  int im_store, in_store;
-  int min_mate_C_id;
   int n_CL_to_pf;
-  unsigned int tile_compute_instr;
+  unsigned int tile_compute_instr = 0;
 
   /* Tiles in the kernel are organized as indicated below when we use 2x2 2D blocking
    *
@@ -697,21 +694,21 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
    *
    */
   /* Arrays that indicate the tile traversals in the microkernel */
-  int _im[4];
-  int _in[4];
-  int _in_tileloads_B[4];
-  int _A_tile_id[4];
-  int _B_tile_id[4];
-  int _C_tile_id[4];
-  int _C_tile_mate_id[4];
+  int _im[4] = { 0 };
+  int _in[4] = { 0 };
+  int _in_tileloads_B[4] = { 0 };
+  int _A_tile_id[4] = { 0 };
+  int _B_tile_id[4] = { 0 };
+  int _C_tile_id[4] = { 0 };
+  int _C_tile_mate_id[4] = { 0 };
   int _C_tile_done[4] = { 0 };
-  int _A_tile_id_load[4];
-  int _B_tile_id_load[4];
-  int _A_tileload_instr[4];
-  int _B_tileload_instr[4];
-  int _C_tilecomp_instr[4];
-  int _A_offsets[4];
-  int _B_offsets[4];
+  int _A_tile_id_load[4] = { 0 };
+  int _B_tile_id_load[4] = { 0 };
+  int _A_tileload_instr[4] = { 0 };
+  int _B_tileload_instr[4] = { 0 };
+  int _C_tilecomp_instr[4] = { 0 };
+  int _A_offsets[4] = { 0 };
+  int _B_offsets[4] = { 0 };
   int _im_offset_prefix_sums[4] = { 0 };
   int _in_offset_prefix_sums[4] = { 0 };
 
@@ -753,6 +750,10 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     } else {
       tile_compute_instr = LIBXSMM_X86_INSTR_TDPBSSD;
     }
+  } else {
+    /* Should not happen  */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+    return;
   }
 
   if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0)  && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0)) {

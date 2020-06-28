@@ -976,7 +976,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   unsigned int scratch_pad_size       = 0;
 
   if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) {
-    if (libxsmm_get_meltw_cbiasact_flags(i_xgemm_desc->meltw_flags) != LIBXSMM_MELTW_COMP_FLAG_CBIASACT_NONE) {
+    if (libxsmm_get_meltw_cbiasact_flags(i_xgemm_desc->meltw_flags) != (unsigned int)LIBXSMM_MELTW_COMP_FLAG_CBIASACT_NONE) {
       has_colbias_act_fused = 1;
     }
   }
