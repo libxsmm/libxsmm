@@ -172,7 +172,10 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_SCRATCH_JOIN) && 1
 # define LIBXSMM_MALLOC_SCRATCH_JOIN
 #endif
-#if !defined(LIBXSMM_MALLOC_LOCK_ONFAULT) && 0
+#if !defined(LIBXSMM_MALLOC_LOCK_PAGES) && 0
+# define LIBXSMM_MALLOC_LOCK_PAGES
+#endif
+#if !defined(LIBXSMM_MALLOC_LOCK_ONFAULT) && defined(LIBXSMM_MALLOC_LOCK_PAGES)
 # if defined(MLOCK_ONFAULT) && defined(SYS_mlock2)
 #   define LIBXSMM_MALLOC_LOCK_ONFAULT
 # endif
@@ -317,8 +320,10 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
         LIBXSMM_ASSERT(NULL != (BUFFER)); \
         INTERNAL_XMALLOC_WATERMARK(NAME, WATERMARK, LIMIT, SIZE); \
       } \
+      (FLAGS) &= ~(FLAG); \
     } \
-  }
+  } \
+  else (FLAGS) &= ~(FLAG)
 #endif
 
 
@@ -376,7 +381,7 @@ LIBXSMM_APIVAR_DEFINE(int internal_malloc_join);
 # if defined(MAP_HUGETLB)
 LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_hugetlb);
 # endif
-# if defined(MAP_LOCKED) && 0
+# if defined(MAP_LOCKED) && defined(LIBXSMM_MALLOC_LOCK_PAGES)
 LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_plocked);
 # endif
 #endif
@@ -559,7 +564,7 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
         LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_hugetlb, alloc_size, LIBXSMM_ATOMIC_RELAXED);
       }
 # endif
-# if defined(MAP_LOCKED) && 0
+# if defined(MAP_LOCKED) && defined(LIBXSMM_MALLOC_LOCK_PAGES)
       if (0 != (LIBXSMM_MALLOC_FLAG_PLOCK & flags)) { /* page-locked */
         LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags));
         LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_plocked, alloc_size, LIBXSMM_ATOMIC_RELAXED);
@@ -1797,7 +1802,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 # if defined(MAP_HUGETLB)
         static size_t limit_hugetlb = LIBXSMM_SCRATCH_UNLIMITED;
 # endif
-# if defined(MAP_LOCKED) && 0
+# if defined(MAP_LOCKED) && defined(LIBXSMM_MALLOC_LOCK_PAGES)
         static size_t limit_plocked = LIBXSMM_SCRATCH_UNLIMITED;
 # endif
 # if defined(MAP_32BIT)
@@ -1821,8 +1826,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
               0 != (LIBXSMM_MALLOC_FLAG_PHUGE & flags))
             && (internal_malloc_hugetlb + size) < limit_hugetlb) ? MAP_HUGETLB : 0)
 # endif
-# if defined(MAP_LOCKED) && !defined(LIBXSMM_MALLOC_LOCK_ONFAULT) && 0
-          | ((0 == (LIBXSMM_MALLOC_FLAG_X & flags)
+# if defined(MAP_LOCKED) && defined(LIBXSMM_MALLOC_LOCK_PAGES) && !defined(LIBXSMM_MALLOC_LOCK_ONFAULT)
+          | (((defined(LIBXSMM_MALLOC_FLAG_PLOCK)
+            || (0 == (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)))
             && (internal_malloc_plocked + size) < limit_plocked) ? MAP_LOCKED : 0)
 # endif
         ; /* mflags */
@@ -1857,7 +1863,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           INTERNAL_XMALLOC_KIND(MAP_HUGETLB, "huge-page", LIBXSMM_MALLOC_FLAG_PHUGE, flags, mflags,
             internal_malloc_hugetlb, limit_hugetlb, info, alloc_size, buffer);
 # endif
-# if defined(MAP_LOCKED) && 0
+# if defined(MAP_LOCKED) && defined(LIBXSMM_MALLOC_LOCK_PAGES)
 #   if !defined(LIBXSMM_MALLOC_LOCK_ONFAULT)
           INTERNAL_XMALLOC_KIND(MAP_LOCKED, "locked-page", LIBXSMM_MALLOC_FLAG_PLOCK, flags, mflags,
             internal_malloc_plocked, limit_plocked, info, alloc_size, buffer);
@@ -1875,6 +1881,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             }
             else { /* update watermark */
               INTERNAL_XMALLOC_WATERMARK("locked-page", internal_malloc_plocked, limit_plocked, alloc_size);
+              flags &= ~LIBXSMM_MALLOC_FLAG_PLOCK;
             }
           }
 #   endif
@@ -1885,7 +1892,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 # if defined(MAP_HUGETLB)
           LIBXSMM_ASSERT(0 == (MAP_HUGETLB & mflags));
 # endif
-# if defined(MAP_LOCKED) && 0
+# if defined(MAP_LOCKED) && defined(LIBXSMM_MALLOC_LOCK_PAGES)
           LIBXSMM_ASSERT(0 == (MAP_LOCKED & mflags));
 # endif
           if (0 > (int)LIBXSMM_ATOMIC_LOAD(&fallback, LIBXSMM_ATOMIC_RELAXED)) {
