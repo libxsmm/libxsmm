@@ -796,36 +796,36 @@ LIBXSMM_API_INTERN
 void libxsmm_setup_tile( unsigned int tile_id, unsigned int n_rows, unsigned int n_cols, libxsmm_tile_config *tc) {
   switch (tile_id) {
     case 0:
-      tc->tile0rows = n_rows * 4;
-      tc->tile0cols = n_cols;
+      tc->tile0rows = (char)(n_rows * 4);
+      tc->tile0cols = (char)n_cols;
       break;
     case 1:
-      tc->tile1rows = n_rows * 4;
-      tc->tile1cols = n_cols;
+      tc->tile1rows = (char)(n_rows * 4);
+      tc->tile1cols = (char)n_cols;
       break;
     case 2:
-      tc->tile2rows = n_rows * 4;
-      tc->tile2cols = n_cols;
+      tc->tile2rows = (char)(n_rows * 4);
+      tc->tile2cols = (char)n_cols;
       break;
     case 3:
-      tc->tile3rows = n_rows * 4;
-      tc->tile3cols = n_cols;
+      tc->tile3rows = (char)(n_rows * 4);
+      tc->tile3cols = (char)n_cols;
       break;
     case 4:
-      tc->tile4rows = n_rows * 4;
-      tc->tile4cols = n_cols;
+      tc->tile4rows = (char)(n_rows * 4);
+      tc->tile4cols = (char)n_cols;
       break;
     case 5:
-      tc->tile5rows = n_rows * 4;
-      tc->tile5cols = n_cols;
+      tc->tile5rows = (char)(n_rows * 4);
+      tc->tile5cols = (char)n_cols;
       break;
     case 6:
-      tc->tile6rows = n_rows * 4;
-      tc->tile6cols = n_cols;
+      tc->tile6rows = (char)(n_rows * 4);
+      tc->tile6cols = (char)n_cols;
       break;
     case 7:
-      tc->tile7rows = n_rows * 4;
-      tc->tile7cols = n_cols;
+      tc->tile7rows = (char)(n_rows * 4);
+      tc->tile7cols = (char)n_cols;
       break;
     default:
       fprintf(stderr, "Invalid tile id in setp tile!!!\n");

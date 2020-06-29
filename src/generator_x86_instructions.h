@@ -572,29 +572,6 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*       io_generated_code,
                                                      const char*                   i_arch );
 
-
-/* tile config structure */
-typedef struct libxsmm_tile_config {
-  unsigned char  palette_id;
-  unsigned char  tile0rows;
-  unsigned char  tile0cols;
-  unsigned char  tile1rows;
-  unsigned char  tile1cols;
-  unsigned char  tile2rows;
-  unsigned char  tile2cols;
-  unsigned char  tile3rows;
-  unsigned char  tile3cols;
-  unsigned char  tile4rows;
-  unsigned char  tile4cols;
-  unsigned char  tile5rows;
-  unsigned char  tile5cols;
-  unsigned char  tile6rows;
-  unsigned char  tile6cols;
-  unsigned char  tile7rows;
-  unsigned char  tile7cols;
-} libxsmm_tile_config;
-
-
 /**
  * Generates ld/stconfig/tilerelease instructions
  *

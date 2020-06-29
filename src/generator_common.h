@@ -585,6 +585,27 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
   unsigned int block_size;
 } libxsmm_blocking_info_t;
 
+/* tile config structure */
+typedef struct libxsmm_tile_config {
+  unsigned char  palette_id;
+  unsigned char  tile0rows;
+  unsigned char  tile0cols;
+  unsigned char  tile1rows;
+  unsigned char  tile1cols;
+  unsigned char  tile2rows;
+  unsigned char  tile2cols;
+  unsigned char  tile3rows;
+  unsigned char  tile3cols;
+  unsigned char  tile4rows;
+  unsigned char  tile4cols;
+  unsigned char  tile5rows;
+  unsigned char  tile5cols;
+  unsigned char  tile6rows;
+  unsigned char  tile6cols;
+  unsigned char  tile7rows;
+  unsigned char  tile7cols;
+} libxsmm_tile_config;
+
 /* Auxiliary stach variable enumeration in GEMM */
 typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_NONE               =  0,

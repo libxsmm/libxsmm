@@ -308,7 +308,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
 
     /* In this case also save the result before doing any eltwise */
     if ((i_micro_kernel_config->fused_sigmoid == 1) && (overwrite_C == 0) ) {
-      char vname = (tile1 >= 0) ? i_micro_kernel_config->vector_name : 'y';
+      char vname = (char)((tile1 >= 0) ? i_micro_kernel_config->vector_name : 'y');
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
@@ -397,7 +397,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
               reg_1, reg_0, reg_0, 0);
 
     } else {
-      char vname = (tile1 >= 0) ? i_micro_kernel_config->vector_name : 'y';
+      char vname = (char)((tile1 >= 0) ? i_micro_kernel_config->vector_name : 'y');
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
@@ -461,7 +461,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
     }
 
     if (eager_result_store == 1) {
-      char vname = (tile1 >= 0) ? i_micro_kernel_config->vector_name : 'y';
+      char vname = (char)((tile1 >= 0) ? i_micro_kernel_config->vector_name : 'y');
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
           LIBXSMM_X86_INSTR_VMOVUPS,

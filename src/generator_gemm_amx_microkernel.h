@@ -58,6 +58,17 @@ void libxsmm_generator_gemm_tanh_ps_rational_78_avx512( libxsmm_generated_code* 
     const unsigned int                             i_vec_neg_ones);
 
 LIBXSMM_API_INTERN
+void fill_array_4_entries(int *array, int v0, int v1, int v2, int v3);
+
+LIBXSMM_API_INTERN
+void prefetch_tile_in_L2(libxsmm_generated_code*     io_generated_code,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int tile_cols,
+    unsigned int LD,
+    unsigned int base_reg,
+    unsigned int offset);
+
+LIBXSMM_API_INTERN
 void paired_tilestore( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
