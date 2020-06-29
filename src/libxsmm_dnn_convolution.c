@@ -873,7 +873,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
 
 }
 
-LIBXSMM_API_INTERN void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_layer* handle ) {
   /* JIT related variables...  */
   libxsmm_blasint LDA = handle->ofmblock;
   libxsmm_blasint LDB = handle->input_pixels;
