@@ -189,7 +189,7 @@ void prefetch_tile_in_L2(libxsmm_generated_code*     io_generated_code,
     unsigned int LD,
     unsigned int base_reg,
     unsigned int offset) {
-  int i;
+  unsigned int i;
   for (i=0; i<tile_cols; i++) {
     libxsmm_x86_instruction_prefetch(io_generated_code,
         LIBXSMM_X86_INSTR_PREFETCHT1,
@@ -273,9 +273,9 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
   }
 
   /* Fully unroll in N dimension  */
-  eager_result_store = ( (n_cols > (max_unrolling - reserved_zmms)) || (fuse_relu == 0) || (tile1 < 0) ) ? 1 : 0;
+  eager_result_store = ( ((unsigned int)n_cols > (max_unrolling - reserved_zmms)) || (fuse_relu == 0) || (tile1 < 0) ) ? 1 : 0;
 
-  for (col = 0; col < n_cols; col++) {
+  for (col = 0; col < (unsigned int)n_cols; col++) {
     if (tile1 >= 0) {
       if (col + reserved_zmms < 16) {
         reg_0 = col % (16-reserved_zmms) + reserved_zmms;
@@ -475,7 +475,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
 
   /* Store all the downconverted results if we are in "lazy" store mode ... */
   if (eager_result_store == 0) {
-    for (col = 0; col < n_cols; col++) {
+    for (col = 0; col < (unsigned int)n_cols; col++) {
       if (col + reserved_zmms < 16) {
         reg_0 = col % (16-reserved_zmms) + reserved_zmms;
       } else {
@@ -565,7 +565,7 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
             tile);
 
         if (i_micro_kernel_config->vnni_format_C == 0) {
-          for (col = 0; col < n_cols; col++) {
+          for (col = 0; col < (unsigned int)n_cols; col++) {
             reg_0 = col % (16-reserved_zmms) + reserved_zmms;
 
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -595,7 +595,7 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
                 reg_0, 0, 0, 1 );
           }
         } else {
-          for (col = 0; col < n_cols; col += 2) {
+          for (col = 0; col < (unsigned int)n_cols; col += 2) {
             reg_0 = col % (32-reserved_zmms) + reserved_zmms;
 
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -974,6 +974,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
   unsigned int offset_B = 0;
   int i_brgemm_loop = -2;
   int is_last_k = 0;
+  LIBXSMM_UNUSED( io_loop_label_tracker );
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
     i_brgemm_loop = A_offs/i_xgemm_desc->c1;

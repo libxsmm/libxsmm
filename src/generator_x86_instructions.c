@@ -5719,11 +5719,13 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
                                            const int                  i_displacement,
                                            const libxsmm_tile_config* i_tile_config ) {
   char tile_config_imm[64];
-  unsigned int i;
 
   /* Can move these variables into the API if we choose: */
   const unsigned int i_gp_reg_idx = LIBXSMM_X86_GP_REG_UNDEF;
   const unsigned int i_scale = 1;
+
+  /* @TODO: check instruction set */
+  LIBXSMM_UNUSED( i_instruction_set );
 
   if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config == NULL) && (i_tcontrol_instr != LIBXSMM_X86_INSTR_TILERELEASE) ) {
     fprintf(stderr, "invalid tile control!\n");
@@ -5731,6 +5733,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
   }
 
   if (i_tcontrol_instr == LIBXSMM_X86_INSTR_LDTILECFG && i_tile_config != NULL) {
+    unsigned int i;
     /* zeroing out imm structure as there are many reserved bytes */
     for ( i = 0; i < 64; i++ ) {
       tile_config_imm[i] = 0;
@@ -5760,7 +5763,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
   if ( io_generated_code->code_type > 1 ) {
     /* @Greg please add encodings here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
+    unsigned int i = io_generated_code->code_size;
     unsigned int l_maxsize = io_generated_code->buffer_size;
     int l_regbas0 = i_gp_reg_base % 8;
     int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
@@ -5796,11 +5799,13 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
         fprintf(stderr,"Unknown instruction in libxsmm_x86_instruction_tile_control. This is bad\n");
         break;
     }
+#if 0
     if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && ((i_gp_reg_idx < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15)) )
     {
        fprintf(stderr,"libxsmm_x86_instruction_tile_control is using a bogus i_gp_reg_idx\n");
        exit(-1);
     }
+#endif
     if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config != NULL) && (i_tcontrol_instr == LIBXSMM_X86_INSTR_LDTILECFG) )
     { /* Special case where we load from data segment */
        /* Jump past the next 64 bytes */
@@ -5865,6 +5870,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_base[4];
+    unsigned int i;
 
     switch (i_tcontrol_instr) {
       case LIBXSMM_X86_INSTR_LDTILECFG:
@@ -5963,6 +5969,9 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
                                         const unsigned int      i_scale,
                                         const int               i_displacement,
                                         const unsigned int      i_tile_reg_number ) {
+  /* @TODO: check instruction set */
+  LIBXSMM_UNUSED( i_instruction_set );
+
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @Greg please add encodings here */
@@ -5975,6 +5984,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
     int l_third = 0;
     int l_fourth = 0;
     int l_place;
+    int l_forced_offset = 0;
 
     if ( l_maxsize - i < 20 )
     {
@@ -6007,7 +6017,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
         fprintf(stderr,"Unknown instruction in libxsmm_x86_instruction_tile_move\n");
         break;
     }
-    if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && ((i_gp_reg_idx < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15)) )
+    if ( i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15 )
     {
        fprintf(stderr,"libxsmm_x86_instruction_tile_move is using a bogus i_gp_reg_idx\n");
        exit(-1);
@@ -6049,7 +6059,6 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
        l_place  = i - 1;
        buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
     }
-    int l_forced_offset = 0;
     if ( (l_regbas0 == 5) && (i_displacement==0) )
     {
         l_forced_offset = 1;
@@ -6153,21 +6162,21 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
 
     /* This routine is strange in that it takes 3 input tile parameters, but *
        some of the instructions it takes will only use 1 or 2 of them and    *
-       the others might be set to bogus values like UNDEF=-1. So let's first *
+       the others might be set to bogus values like UNDEF. So let's first *
        only use tile values that are in a reasonable range.                  */
-    if ( i_tile_src_reg_number_0 < 0 || i_tile_src_reg_number_0 > 7 )
+    if ( i_tile_src_reg_number_0 > 7 )
     {
        l_vecval0 = 0;
     } else {
        l_vecval0 = i_tile_src_reg_number_0;
     }
-    if ( i_tile_src_reg_number_1 < 0 || i_tile_src_reg_number_1 > 7 )
+    if ( i_tile_src_reg_number_1 > 7 )
     {
        l_vecval1 = 0;
     } else {
        l_vecval1 = i_tile_src_reg_number_1;
     }
-    if ( i_tile_dst_reg_number < 0 || i_tile_dst_reg_number > 7 )
+    if ( i_tile_dst_reg_number > 7 )
     {
        l_vecval2 = 0;
     } else {

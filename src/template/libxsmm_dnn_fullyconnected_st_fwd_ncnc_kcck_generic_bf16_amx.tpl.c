@@ -47,7 +47,7 @@ float* fp32_bias_scratch = (float*)handle->scratch + ltid * handle->desc.K;
 LIBXSMM_VLA_DECL(2, const element_input_type, bias, (element_input_type*) handle->reg_bias->data, handle->bk);
 #endif
 #if defined(LIBXSMM_DNN_FC_FWD_FUSE_RELU)
-LIBXSMM_VLA_DECL(4, __mmask32,  relubitmask,     (__mmask16*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/32);
+LIBXSMM_VLA_DECL(4, __mmask32,  relubitmask,     (__mmask32*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/32);
 libxsmm_meltwfunction_cvtfp32bf16_act eltwise_kernel = handle->fwd_cvtfp32bf16_relu_kernel;
 libxsmm_meltw_cvtfp32bf16_act_param   eltwise_params;
 #elif defined(LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID)

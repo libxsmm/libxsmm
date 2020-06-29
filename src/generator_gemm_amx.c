@@ -1260,6 +1260,7 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
     const libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+  LIBXSMM_UNUSED(i_xgemm_desc);
   LIBXSMM_UNUSED(i_gp_reg_mapping);
 
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
