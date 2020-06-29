@@ -6017,7 +6017,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
         fprintf(stderr,"Unknown instruction in libxsmm_x86_instruction_tile_move\n");
         break;
     }
-    if ( i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15 )
+    if ( (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15) && (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) )
     {
        fprintf(stderr,"libxsmm_x86_instruction_tile_move is using a bogus i_gp_reg_idx\n");
        exit(-1);
