@@ -5983,7 +5983,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
     int l_vecval0 = i_tile_reg_number;
     int l_third = 0;
     int l_fourth = 0;
-    int l_place;
+    int l_place = 0;
     int l_forced_offset = 0;
 
     if ( l_maxsize - i < 20 )
