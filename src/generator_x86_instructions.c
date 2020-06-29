@@ -5765,13 +5765,13 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     unsigned int i = io_generated_code->code_size;
     unsigned int l_maxsize = io_generated_code->buffer_size;
+    unsigned int j;
     int l_regbas0 = i_gp_reg_base % 8;
     int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
     int l_third = 0;
     int l_fifth = 0;
     int l_place;
     int l_forced_offset = 0;
-    int j;
 
     if ( l_maxsize - i < 80 )
     {
@@ -6141,6 +6141,9 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
                                            const unsigned int      i_tile_src_reg_number_0,
                                            const unsigned int      i_tile_src_reg_number_1,
                                            const unsigned int      i_tile_dst_reg_number ) {
+  /* @TODO: check instruction set */
+  LIBXSMM_UNUSED( i_instruction_set );
+
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @Greg please add encodings here */

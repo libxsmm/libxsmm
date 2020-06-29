@@ -40,8 +40,8 @@ int my_ofm_start = 0;
 int my_ofm_end = handle->blocksofm;
 int ifmblock_lp =  handle->ifmblock/handle->fm_lp_block;
 /* Batch reduce related variables */
-//const element_filter_type *A_ptrs[1024];
-//const element_input_type  *B_ptrs[1024];
+/*const element_filter_type *A_ptrs[1024];*/
+/*const element_input_type  *B_ptrs[1024];*/
 unsigned long long n_blocks;
 
 /* offset output pointer in case of physical output padding */
