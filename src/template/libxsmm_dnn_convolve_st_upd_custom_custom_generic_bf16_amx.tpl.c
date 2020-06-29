@@ -177,13 +177,17 @@ const int img_chunksize = (img_work % handle->desc.threads == 0) ? (img_work / h
 /* select kernel */
 if (handle->upd_linearized_pixels == 0) {
   br_gemm_kernel = handle->upd_compute_kernel_brgemm_no_linearized_pixels;
+  gemm_kernel = handle->upd_compute_kernel_gemm_linearized_pixels_no_hybrid_par; /* @TODO: ci check */
 } else {
   if (handle->use_hybrid_imgofm_parallelization == 0) {
     gemm_kernel = handle->upd_compute_kernel_gemm_linearized_pixels_no_hybrid_par;
+    br_gemm_kernel = handle->upd_compute_kernel_brgemm_no_linearized_pixels; /* @TODO: ci check */
   } else {
     if (handle->pack_to_cnhw == 1) {
       gemm_kernel = handle->upd_compute_kernel_gemm_linearized_pixels_hybrid_par_cnhw;
+      br_gemm_kernel = handle->upd_compute_kernel_brgemm_linearized_pixels_hybrid_par_no_cnhw; /* @TODO: ci check */
     } else {
+      gemm_kernel = handle->upd_compute_kernel_gemm_linearized_pixels_hybrid_par_cnhw; /* @TODO: ci check */
       br_gemm_kernel = handle->upd_compute_kernel_brgemm_linearized_pixels_hybrid_par_no_cnhw;
     }
   }
