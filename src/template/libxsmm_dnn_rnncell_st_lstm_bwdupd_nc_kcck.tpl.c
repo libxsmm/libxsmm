@@ -248,6 +248,7 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   libxsmm_internal_matrix_zero(K*4,   db,  start_thread, tid, handle->desc.threads);
 }
 
+/* Here we assume that the weight tensors come in transposed from framework */
 #if 0
 #ifdef PROFILE
 if (ltid == 0) _start = _rdtsc();

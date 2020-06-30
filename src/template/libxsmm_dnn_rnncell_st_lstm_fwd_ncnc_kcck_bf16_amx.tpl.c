@@ -137,13 +137,6 @@ const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernela = handle->fwd_ke
 const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernelb = handle->fwd_kernelb; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL );*/
 const libxsmm_bsmmfunction_reducebatch_addr tile_config_kernel = handle->fwd_tileconfig; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL );*/
 
-/* Auxiliary arrays for batch-reduce gemms */
-#if 0
-const element_filter_type *A_array[1024];
-const element_input_type  *B_array[1024];
-float *cps_ptr = NULL;
-#endif
-
 /* parallelize over C-blocks */
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
@@ -154,24 +147,6 @@ const libxsmm_blasint chunksize = (work % (libxsmm_blasint)handle->desc.threads 
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-
-#if 0
-/* number of tasks that could be run in parallel for C and K blocks*/
-const libxsmm_blasint work_ck = (C/bc) * (K/bk);
-/* compute chunk size */
-const libxsmm_blasint chunksize_ck = (work_ck % (libxsmm_blasint)handle->desc.threads == 0) ? (work_ck / (libxsmm_blasint)handle->desc.threads) : ((work_ck / (libxsmm_blasint)handle->desc.threads) + 1);
-/* compute thr_begin and thr_end */
-const libxsmm_blasint thr_begin_ck = (ltid * chunksize_ck < work_ck) ? (ltid * chunksize_ck) : work_ck;
-const libxsmm_blasint thr_end_ck = ((ltid + 1) * chunksize_ck < work_ck) ? ((ltid + 1) * chunksize_ck) : work_ck;
-/* number of tasks that could be run in parallel for K and K blocks*/
-const libxsmm_blasint work_kk = (K/bk) * (K/bk);
-/* compute chunk size */
-const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.threads == 0) ? (work_kk / (libxsmm_blasint)handle->desc.threads) : ((work_kk / (libxsmm_blasint)handle->desc.threads) + 1);
-/* compute thr_begin and thr_end */
-const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * chunksize_kk) : work_kk;
-const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
-const int use_fused_implementation = handle->use_fwd_fused_impl; /*(C == 2048 && K == 2048) ? 1 : 0;*/
-#endif
 
 #ifdef PROFILE
 __int64_t eltwise_start, eltwise_end, eltwise_cycles = 0, gemm_start, gemm_end, gemm_cycles = 0, gemm_cycles2 = 0, reformat_start, reformat_end, reformat_cycles = 0;

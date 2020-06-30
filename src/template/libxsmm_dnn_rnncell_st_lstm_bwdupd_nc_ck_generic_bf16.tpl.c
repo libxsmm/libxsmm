@@ -217,14 +217,6 @@ int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_ta
 const libxsmm_blasint k_thr_begin = (ltid * k_chunksize * 16 < K) ? (ltid * k_chunksize * 16) : K;
 const libxsmm_blasint k_thr_end = ((ltid + 1) * k_chunksize * 16 < K) ? ((ltid + 1) * k_chunksize * 16) : K;
 __m512 dbi_sum, dbf_sum, dbo_sum, dbc_sum;
-/* number of tasks that could be run in parallel for K blocks*/
-/* compute chunk size */
-#if 0
-const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);
-/* compute thr_begin and thr_end */
-const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
-const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
-#endif
 #ifdef PROFILE
 __int64_t _start, _end, eltwise_cycles = 0, dout_cycles = 0, weight_trans_cycles = 0, act_trans_cycles = 0, dx_cycles = 0, dwdr_cycles = 0, gradient_cycles = 0, reformat_cycles = 0;
 float total_time = 0.0;

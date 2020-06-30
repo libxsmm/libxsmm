@@ -149,32 +149,11 @@ LIBXSMM_VLA_DECL(3, element_output_type, o_out, ot_bf16, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, ci_out, cit_bf16, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, co_out, cot_bf16, N, K);
 
-#if 0
-int tci;
-char tc_buf[64];
-int bktc = 42;
-const libxsmm_bsmmfunction_reducebatch batchreduce_kernela_tc = libxsmm_bsmmdispatch_reducebatch( bktc, bktc, bktc, &bktc, &bktc, &bktc, NULL, NULL, NULL, NULL );
-for (tci=0; tci<64; tci++) {
-  tc_buf[tci] = 0;
-}
-tc_buf[0] = 1;
-for (tci = 0; tci<8; tci++) {
-  tc_buf[16+tci*2] = 16*4;
-  tc_buf[48+tci] = 16;
-}
-batchreduce_kernela_tc((element_input_type*)tc_buf, NULL, NULL, NULL);
-#endif
-
 /* define batch-reduce gemm kernels */
 const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernela = handle->fwd_kernela; /*= libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bc, &bk, &C, &K, NULL, NULL, &kernel_flags, NULL );*/
 const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernelb = handle->fwd_kernelb; /* libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL );*/
 const libxsmm_bsmmfunction_reducebatch_addr tile_config_kernel = handle->fwd_tileconfig; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL );*/
 
-/* Auxiliary arrays for batch-reduce gemms */
-#if 0
-const element_filter_type *A_array[1024];
-const element_input_type  *B_array[1024];
-#endif
 float *cps_ptr = NULL;
 
 /* parallelize over C-blocks */
