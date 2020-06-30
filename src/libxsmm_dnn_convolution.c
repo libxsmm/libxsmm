@@ -1412,12 +1412,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
 
   /* Transpose kernel used for filter transpose in bwd pass  */
   tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
-#if 1
   handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
-#else
-  handle->tr_kernel = NULL;
-  LIBXSMM_UNUSED( tr_desc );
-#endif
 
   /* UPD parameter setup */
   handle->upd_linearized_tasklist = libxsmm_dnn_convolution_setup_linearized_tasklist_upd(handle);
