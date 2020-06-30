@@ -7,6 +7,7 @@ GREP=$(command -v grep)
 CUT=$(command -v cut)
 WC=$(command -v wc)
 TR=$(command -v tr)
+NUMA=-1
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_MB}" ]; then CHECK_DNN_MB=64; fi
@@ -60,6 +61,20 @@ else
   export NN=${NS}
 fi
 
+CPUFLAGS=$(if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2-; fi)
+if [ "" != "${GREP}" ] && [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
+  if [ "0" != "$((0>NUMA))" ] && [ "0" != "$((NS<NN))" ]; then
+    NUMACTL="numactl --preferred=${NS} ${TOOL_COMMAND}"
+  elif [ "0" != "$((0<=NUMA && NUMA<NN))" ]; then
+    NUMACTL="numactl --preferred=${NUMA} ${TOOL_COMMAND}"
+  elif [ "1" != "${NS}" ]; then
+    #NUMACTL="numactl -i all ${TOOL_COMMAND}"
+    NUMACTL="${TOOL_COMMAND}"
+  fi
+else
+  NUMACTL="${TOOL_COMMAND}"
+fi
+
 if [ "" = "${OMP_NUM_THREADS}" ] || [ "0" = "${OMP_NUM_THREADS}" ]; then
   if [ "" = "${KMP_AFFINITY}" ]; then
     export KMP_AFFINITY=compact,granularity=fine KMP_HW_SUBSET=1T
@@ -76,8 +91,8 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-./layer_example_${BIN} ${ITERS} ${MB} 128 256 ${FUSE} ${TYPE} ${FORMAT} ${BN} ${BK} ${BC}
-./layer_example_${BIN} ${ITERS} ${MB} 512 1024 ${FUSE} ${TYPE} ${FORMAT} ${BN} ${BK} ${BC}
-./layer_example_${BIN} ${ITERS} ${MB} 1024 1024 ${FUSE} ${TYPE} ${FORMAT} ${BN} ${BK} ${BC}
-./layer_example_${BIN} ${ITERS} ${MB} 2048 512 ${FUSE} ${TYPE} ${FORMAT} ${BN} ${BK} ${BC}
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 128 256 ${FUSE} ${TYPE} ${FORMAT} ${BN} ${BK} ${BC}
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 1024 ${FUSE} ${TYPE} ${FORMAT} ${BN} ${BK} ${BC}
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 1024 ${FUSE} ${TYPE} ${FORMAT} ${BN} ${BK} ${BC}
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 2048 512 ${FUSE} ${TYPE} ${FORMAT} ${BN} ${BK} ${BC}
 

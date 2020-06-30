@@ -17,6 +17,7 @@ GREP=$(command -v grep)
 CUT=$(command -v cut)
 WC=$(command -v wc)
 TR=$(command -v tr)
+NUMA=-1
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_MB}" ]; then CHECK_DNN_MB=256; fi
@@ -70,6 +71,20 @@ else
   export NN=${NS}
 fi
 
+CPUFLAGS=$(if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2-; fi)
+if [ "" != "${GREP}" ] && [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
+  if [ "0" != "$((0>NUMA))" ] && [ "0" != "$((NS<NN))" ]; then
+    NUMACTL="numactl --preferred=${NS} ${TOOL_COMMAND}"
+  elif [ "0" != "$((0<=NUMA && NUMA<NN))" ]; then
+    NUMACTL="numactl --preferred=${NUMA} ${TOOL_COMMAND}"
+  elif [ "1" != "${NS}" ]; then
+    #NUMACTL="numactl -i all ${TOOL_COMMAND}"
+    NUMACTL="${TOOL_COMMAND}"
+  fi
+else
+  NUMACTL="${TOOL_COMMAND}"
+fi
+
 if [ "" = "${OMP_NUM_THREADS}" ] || [ "0" = "${OMP_NUM_THREADS}" ]; then
   if [ "" = "${KMP_AFFINITY}" ]; then
     export KMP_AFFINITY=compact,granularity=fine KMP_HW_SUBSET=1T
@@ -86,9 +101,9 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB}  256   256  5 ${BN} ${BC} ${BK}
-./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB}  512   512  5 ${BN} ${BC} ${BK}
-./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB} 1024  1024  5 ${BN} ${BC} ${BK}
-./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB} 2048  2048  5 ${BN} ${BC} ${BK}
-./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB} 4096  4096  5 ${BN} ${BC} ${BK}
+${NUMACTL} ./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB}  256   256  5 ${BN} ${BC} ${BK}
+${NUMACTL} ./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB}  512   512  5 ${BN} ${BC} ${BK}
+${NUMACTL} ./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB} 1024  1024  5 ${BN} ${BC} ${BK}
+${NUMACTL} ./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB} 2048  2048  5 ${BN} ${BC} ${BK}
+${NUMACTL} ./rnndriver_${FORMAT}_${BIN} ${ITERS} ${TYPE} ${ACT} ${MB} 4096  4096  5 ${BN} ${BC} ${BK}
 
