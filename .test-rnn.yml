@@ -20,7 +20,9 @@ script:
    (echo; echo "--- TEST LSTM (NC-CK)"; CHECK=1 ./run_lstmcell.sh nc_ck f32 100 0 256 32 32 32 ) &&
    (echo; echo "--- TEST LSTM (NC-CK)"; CHECK=1 ./run_lstmcell.sh nc_ck f32 100 3 256 32 32 32 ) &&
    (echo; echo "--- TEST LSTM (NC-KCCK)"; CHECK=1 ./run_lstmcell.sh nc_kcck f32 100 0 256 32 32 32 ) &&
-   (echo; echo "--- TEST LSTM (NC-KCCK)"; CHECK=1 ./run_lstmcell.sh nc_kcck f32 100 3 256 32 32 32 ) &&
+   (echo; echo "--- TEST LSTM (NC-KCCK)"; CHECK=1 ./run_lstmcell.sh nc_kcck f32 100 3 256 32 32 32 )
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/lstmdriver && make -e ${MAKEJ} &&
    (echo; echo "--- TEST LSTM (NC-CK/BF16)"; CHECK=1 CHECK_SCALE=0.001 ./run_lstmcell.sh nc_ck bf16 100 0 256 32 32 32 ) &&
    (echo; echo "--- TEST LSTM (NC-CK/BF16)"; CHECK=1 CHECK_SCALE=0.001 ./run_lstmcell.sh nc_ck bf16 100 3 256 32 32 32 ) &&
    (echo; echo "--- TEST LSTM (NC-KCCK/BF16)"; CHECK=1 CHECK_SCALE=0.001 ./run_lstmcell.sh nc_kcck bf16 100 0 256 32 32 32 ) &&
