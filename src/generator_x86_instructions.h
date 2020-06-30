@@ -26,6 +26,10 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                           unsigned int                  i_prefetch );
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_open_stream_amx( libxsmm_generated_code*   io_generated_code,
+                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                          unsigned int                  i_prefetch );
 /**
  * Closes the inline assembly section / jit stream
  *
@@ -35,6 +39,11 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
+                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                           unsigned int                  i_prefetch );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_close_stream_amx( libxsmm_generated_code*   io_generated_code,
                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                            unsigned int                  i_prefetch );
 

@@ -1459,7 +1459,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
   }
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
   /* Setup stack frame...  */
   libxsmm_generator_gemm_amx_setup_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
   libxsmm_generator_gemm_amx_setup_fusion_infra( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
@@ -1501,7 +1501,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
   /* Properly destroy stack frame...  */
   libxsmm_generator_gemm_amx_destroy_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
   /* close asm */
-  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 }
 
 
