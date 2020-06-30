@@ -150,8 +150,7 @@ const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_threa
 /* number of tasks that could be run in parallel */
 const libxsmm_blasint work = (N/bn) * (K/bk);
 /* compute chunk size */
-const libxsmm_blasint fake_threads = handle->desc.threads;
-const libxsmm_blasint chunksize = (work % (libxsmm_blasint)fake_threads == 0) ? (work / (libxsmm_blasint)fake_threads) : ((work / (libxsmm_blasint)fake_threads) + 1);
+const libxsmm_blasint chunksize = (work % (libxsmm_blasint)handle->desc.threads == 0) ? (work / (libxsmm_blasint)handle->desc.threads) : ((work / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;

@@ -14,7 +14,6 @@
 
 /* helper variables */
 libxsmm_blasint j, ik, ikb, in, inb, icb, jk, jb, jc, BF, KB_BLOCKS, KB;
-const int fake_threads = handle->desc.threads;
 /* tensor dimensions */
 libxsmm_blasint K = handle->desc.K;
 libxsmm_blasint N = handle->desc.N;
@@ -197,7 +196,7 @@ const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_threa
 /* number of tasks that could be run in parallel for N and K blocks*/
 const libxsmm_blasint work_nk = (N/bn) * (K/bk);
 /* compute chunk size */
-const libxsmm_blasint chunksize_nk = (work_nk % (libxsmm_blasint)fake_threads == 0) ? (work_nk / (libxsmm_blasint)fake_threads) : ((work_nk / (libxsmm_blasint)fake_threads) + 1);
+const libxsmm_blasint chunksize_nk = (work_nk % (libxsmm_blasint)handle->desc.threads == 0) ? (work_nk / (libxsmm_blasint)handle->desc.threads) : ((work_nk / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin_nk = (ltid * chunksize_nk < work_nk) ? (ltid * chunksize_nk) : work_nk;
 const libxsmm_blasint thr_end_nk = ((ltid + 1) * chunksize_nk < work_nk) ? ((ltid + 1) * chunksize_nk) : work_nk;
@@ -205,7 +204,7 @@ const libxsmm_blasint thr_end_nk = ((ltid + 1) * chunksize_nk < work_nk) ? ((lti
 /* number of tasks that could be run in parallel for N and C blocks*/
 const libxsmm_blasint work_nc = (N/bn) * (C/bc);
 /* compute chunk size */
-const libxsmm_blasint chunksize_nc = (work_nc % (libxsmm_blasint)fake_threads == 0) ? (work_nc / (libxsmm_blasint)fake_threads) : ((work_nc / (libxsmm_blasint)fake_threads) + 1);
+const libxsmm_blasint chunksize_nc = (work_nc % (libxsmm_blasint)handle->desc.threads == 0) ? (work_nc / (libxsmm_blasint)handle->desc.threads) : ((work_nc / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin_nc = (ltid * chunksize_nc < work_nc) ? (ltid * chunksize_nc) : work_nc;
 const libxsmm_blasint thr_end_nc = ((ltid + 1) * chunksize_nc < work_nc) ? ((ltid + 1) * chunksize_nc) : work_nc;
@@ -213,7 +212,7 @@ const libxsmm_blasint thr_end_nc = ((ltid + 1) * chunksize_nc < work_nc) ? ((lti
 /* number of tasks that could be run in parallel for C and K blocks*/
 const libxsmm_blasint work_ck = (C/bc) * (K/bk);
 /* compute chunk size */
-const libxsmm_blasint chunksize_ck = (work_ck % (libxsmm_blasint)fake_threads == 0) ? (work_ck / (libxsmm_blasint)fake_threads) : ((work_ck / (libxsmm_blasint)fake_threads) + 1);
+const libxsmm_blasint chunksize_ck = (work_ck % (libxsmm_blasint)handle->desc.threads == 0) ? (work_ck / (libxsmm_blasint)handle->desc.threads) : ((work_ck / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin_ck = (ltid * chunksize_ck < work_ck) ? (ltid * chunksize_ck) : work_ck;
 const libxsmm_blasint thr_end_ck = ((ltid + 1) * chunksize_ck < work_ck) ? ((ltid + 1) * chunksize_ck) : work_ck;
@@ -221,7 +220,7 @@ const libxsmm_blasint thr_end_ck = ((ltid + 1) * chunksize_ck < work_ck) ? ((lti
 /* number of tasks that could be run in parallel for K and K blocks*/
 const libxsmm_blasint work_kk = (K/bk) * (K/bk);
 /* compute chunk size */
-const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)fake_threads == 0) ? (work_kk / (libxsmm_blasint)fake_threads) : ((work_kk / (libxsmm_blasint)fake_threads) + 1);
+const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.threads == 0) ? (work_kk / (libxsmm_blasint)handle->desc.threads) : ((work_kk / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * chunksize_kk) : work_kk;
 const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
@@ -229,7 +228,7 @@ const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((lti
 #if defined(LIBXSMM_RNN_CELL_AVX512)
 element_output_type *cps_ptr = NULL;
 int k_tasks = K/16;
-int k_chunksize = (k_tasks % (libxsmm_blasint)fake_threads == 0) ? (k_tasks / (libxsmm_blasint)fake_threads) : ((k_tasks / (libxsmm_blasint)fake_threads) + 1);
+int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_tasks / (libxsmm_blasint)handle->desc.threads) : ((k_tasks / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const libxsmm_blasint k_thr_begin = (ltid * k_chunksize * 16 < K) ? (ltid * k_chunksize * 16) : K;
 const libxsmm_blasint k_thr_end = ((ltid + 1) * k_chunksize * 16 < K) ? ((ltid + 1) * k_chunksize * 16) : K;
@@ -238,7 +237,7 @@ __m512 dbi_sum, dbf_sum, dbo_sum, dbc_sum;
 /* number of tasks that could be run in parallel for K blocks*/
 /* compute chunk size */
 #if 0
-const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)fake_threads == 0) ? (K / (libxsmm_blasint)fake_threads) : ((K / (libxsmm_blasint)fake_threads) + 1);
+const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
 const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
@@ -282,14 +281,14 @@ KB_BLOCKS = kBlocks/BF;
 
 /* initialization is done at the beginning */
 if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-  libxsmm_internal_matrix_zero(N*C*t, dxD, start_thread, tid, fake_threads);
+  libxsmm_internal_matrix_zero(N*C*t, dxD, start_thread, tid, handle->desc.threads);
 }
 
 /* initialization is done at the beginning */
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-  libxsmm_internal_matrix_zero(C*K*4, w_scratch,  start_thread, tid, fake_threads);
-  libxsmm_internal_matrix_zero(K*K*4, r_scratch,  start_thread, tid, fake_threads);
-  libxsmm_internal_matrix_zero(K*4,   db,  start_thread, tid, fake_threads);
+  libxsmm_internal_matrix_zero(C*K*4, w_scratch,  start_thread, tid, handle->desc.threads);
+  libxsmm_internal_matrix_zero(K*K*4, r_scratch,  start_thread, tid, handle->desc.threads);
+  libxsmm_internal_matrix_zero(K*4,   db,  start_thread, tid, handle->desc.threads);
 }
 
 #if 0
