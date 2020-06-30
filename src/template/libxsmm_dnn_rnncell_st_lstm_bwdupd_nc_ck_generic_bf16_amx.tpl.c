@@ -172,35 +172,12 @@ LIBXSMM_VLA_DECL(5, element_filter_type, rfT, scratch_rfT, kBlocks, bk_lp, bk, l
 LIBXSMM_VLA_DECL(5, element_filter_type, roT, scratch_roT, kBlocks, bk_lp, bk, lpb);
 LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
 float *dout_ptr = NULL;
-
-#if 0
-int tci;
-char tc_buf[64];
-int bktc = 42;
-const libxsmm_bsmmfunction_reducebatch batchreduce_kernela_tc = libxsmm_bsmmdispatch_reducebatch( bktc, bktc, bktc, &bktc, &bktc, &bktc, NULL, NULL, NULL, NULL );
-for (tci=0; tci<64; tci++) {
-  tc_buf[tci] = 0;
-}
-tc_buf[0] = 1;
-for (tci = 0; tci<8; tci++) {
-  tc_buf[16+tci*2] = 16*4;
-  tc_buf[48+tci] = 16;
-}
-batchreduce_kernela_tc((element_input_type*)tc_buf, NULL, NULL, NULL);
-#endif
-
 /* define batch-reduce gemm kernels */
 const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernela = handle->bwdupd_kernela; /*libxsmm_bsmmdispatch_reducebatch_addr( bc, bn, bk, &bc, &K, &C, NULL, NULL, &kernel_flags, NULL);*/
 const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernelb = handle->bwdupd_kernelb; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bk, bn, &bk, &N, &bk, NULL, NULL, &kernel_flags, NULL);*/
 const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernelc = handle->bwdupd_kernelc; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bc, bn, &bk, &N, &bk, NULL, NULL, &kernel_flags, NULL);*/
 const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kerneld = handle->bwdupd_kerneld; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL);*/
 libxsmm_bsmmfunction_reducebatch_addr tile_config_kernel = handle->bwdupd_tileconfig; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL);*/
-
-/* Auxiliary arrays for batch-reduce gemm calls */
-#if 0
-const element_filter_type *A_array[1024];
-const element_output_type *B_array[1024];
-#endif
 
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
@@ -245,14 +222,6 @@ int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_ta
 const libxsmm_blasint k_thr_begin = (ltid * k_chunksize * 16 < K) ? (ltid * k_chunksize * 16) : K;
 const libxsmm_blasint k_thr_end = ((ltid + 1) * k_chunksize * 16 < K) ? ((ltid + 1) * k_chunksize * 16) : K;
 __m512 dbi_sum, dbf_sum, dbo_sum, dbc_sum;
-#endif
-/* number of tasks that could be run in parallel for K blocks*/
-/* compute chunk size */
-#if 0
-const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);
-/* compute thr_begin and thr_end */
-const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
-const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
 #endif
 #ifdef PROFILE
 __int64_t _start, _end, eltwise_cycles = 0, dout_cycles = 0, weight_trans_cycles = 0, act_trans_cycles = 0, dx_cycles = 0, dwdr_cycles = 0, gradient_cycles = 0, reformat_cycles = 0;

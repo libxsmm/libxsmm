@@ -184,12 +184,6 @@ const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernelc = handle->bwdupd
 const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kerneld = handle->bwdupd_kerneld; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL);*/
 libxsmm_bsmmfunction_reducebatch_addr tile_config_kernel = handle->bwdupd_tileconfig; /*libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL);*/
 
-/* Auxiliary arrays for batch-reduce gemm calls */
-#if 0
-const element_filter_type *A_array[1024];
-const element_output_type *B_array[1024];
-#endif
-
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
 
@@ -233,14 +227,6 @@ int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_ta
 const libxsmm_blasint k_thr_begin = (ltid * k_chunksize * 16 < K) ? (ltid * k_chunksize * 16) : K;
 const libxsmm_blasint k_thr_end = ((ltid + 1) * k_chunksize * 16 < K) ? ((ltid + 1) * k_chunksize * 16) : K;
 __m512 dbi_sum, dbf_sum, dbo_sum, dbc_sum;
-#endif
-/* number of tasks that could be run in parallel for K blocks*/
-/* compute chunk size */
-#if 0
-const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);
-/* compute thr_begin and thr_end */
-const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
-const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
 #endif
 #ifdef PROFILE
 __int64_t _start, _end, eltwise_cycles = 0, dout_cycles = 0, weight_trans_cycles = 0, act_trans_cycles = 0, dx_cycles = 0, dwdr_cycles = 0, gradient_cycles = 0, reformat_cycles = 0;
@@ -289,6 +275,7 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   libxsmm_internal_matrix_zero(K*4,   db,  start_thread, tid, handle->desc.threads);
 }
 
+/* Here we assume that the weight tensors come in transposed from framework */
 #if 0
 #ifdef PROFILE
 if (ltid == 0) _start = _rdtsc();
@@ -336,6 +323,7 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
 #endif
   /* Store result weight matrices in KCCK bf16 format and downcovert to bf16 */
 #if defined(LIBXSMM_RNN_CELL_AVX512)
+  /* Below is the commented reference code */
 #if 0
   for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
     icb = ikic / (K/bk);
