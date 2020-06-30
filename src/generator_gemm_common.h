@@ -122,6 +122,9 @@ void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*     
                                                     const unsigned int                 i_mask_count );
 
 LIBXSMM_API_INTERN
+int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack_var );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_getval_stack_var( libxsmm_generated_code*             io_generated_code,
                                               const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                               libxsmm_gemm_stack_var              stack_var,

@@ -5877,9 +5877,9 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
       {
         if ( i_tile_config != NULL ) {
           if ( io_generated_code->code_type == 0 ) {
-            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"jmp .continued_tconf_%i\\n\\t\"\n", i_id );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"jmp .continued_tconf_%u\\n\\t\"\n", i_id );
             libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".data_tconf_%i:\\n\\t\"\n", i_id );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".data_tconf_%u:\\n\\t\"\n", i_id );
             libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
             for ( i = 0; i < 64; i += 4 ) {
               l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\\n\\t\"\n",
@@ -5887,14 +5887,14 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
                                                                                                           tile_config_imm[i+2], tile_config_imm[i+3]    );
               libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
             }
-            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".continued_tconf_%i:\\n\\t\"\n", i_id );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".continued_tconf_%u:\\n\\t\"\n", i_id );
             libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"ldtilecfg .data_tconf_%i(%%%%rip)\\n\\t\"\n", i_id );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"ldtilecfg .data_tconf_%u(%%%%rip)\\n\\t\"\n", i_id );
             libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
           } else {
-            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       jmp .continued_tconf_%i\n", i_id );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       jmp .continued_tconf_%u\n", i_id );
             libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .data_tconf_%i:\n", i_id );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .data_tconf_%u:\n", i_id );
             libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
             for ( i = 0; i < 64; i += 4 ) {
               l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",
@@ -5902,9 +5902,9 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
                                                                                                       tile_config_imm[i+2], tile_config_imm[i+3]    );
               libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
             }
-            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .continued_tconf_%i:\n", i_id );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .continued_tconf_%u:\n", i_id );
             libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       ldtilecfg .data_tconf_%i(%%rip)\n", i_id );
+            l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       ldtilecfg .data_tconf_%u(%%rip)\n", i_id );
             libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
           }
         } else {
