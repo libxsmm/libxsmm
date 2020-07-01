@@ -76,22 +76,32 @@ void BlockSpMatStep2(int K, int C, int KB, int CB, unsigned int *colptr,
 }
 
 int main(int argc, char **argv) {
-    int N = (argc > 1) ? atoi(argv[1]) : 32;
-    int H = (argc > 2) ? atoi(argv[1]) : 14;
-    int W = (argc > 3) ? atoi(argv[1]) : 14;
-    int C = (argc > 4) ? atoi(argv[2]) : 256;
-    int K = (argc > 5) ? atoi(argv[3]) : 256;
-    int NB = (argc > 6) ? atoi(argv[4]) : 32;
-    int CB = (argc > 7) ? atoi(argv[5]) : 32;
-    int KB = (argc > 8) ? atoi(argv[6]) : 32;
-    int nb = (argc > 9) ? atoi(argv[7]) : 16;
-    double sparse_frac = (argc > 10) ? atof(argv[8]) : 0.90;
-    unsigned int REPS = (argc > 11) ? atoi(argv[9]) : 10;
+    int N   = (argc > 1) ? atoi(argv[1]) : 32;
+    int H   = (argc > 2) ? atoi(argv[2]) : 14;
+    int W   = (argc > 3) ? atoi(argv[3]) : 14;
+    int C   = (argc > 4) ? atoi(argv[4]) : 256;
+    int K   = (argc > 5) ? atoi(argv[5]) : 256;
+    int R   = (argc > 6) ? atoi(argv[6]) : 1;
+    int S   = (argc > 7) ? atoi(argv[7]) : 1;
+    int sh  = (argc > 8) ? atoi(argv[8]) : 1;
+    int sw  = (argc > 9) ? atoi(argv[9]) : 1;
+    int pad = (argc > 10) ? atoi(argv[10]) : 0;
+    int NB  = (argc > 11) ? atoi(argv[11]) : 32;
+    int CB  = (argc > 12) ? atoi(argv[12]) : 32;
+    int KB  = (argc > 13) ? atoi(argv[13]) : 32;
+    int nb  = (argc > 14) ? atoi(argv[14]) : 16;
+    double sparse_frac = (argc > 15) ? atof(argv[15]) : 0.90;
+    unsigned int REPS = (argc > 16) ? atoi(argv[16]) : 10;
     if (N < NB ||
         H < 1  ||
         W < 1  ||
         K < KB ||
         C < CB ||
+        R < 1  ||
+        S < 1  ||
+        sh < 1 ||
+        sw < 1 ||
+        pad < 0 ||
         NB < nb ||
         C % CB != 0 ||
         N % NB != 0 ||
@@ -102,10 +112,10 @@ int main(int argc, char **argv) {
         REPS <= 0) {
         return -1;
     }
-    int l_n, l_h, l_w, l_p, l_q, l_c, l_nn, l_cc, l_nnn, l_k, l_kk, blk_idx;
+    int l_n, l_h, l_w, l_p, l_q, l_c, l_r, l_s, l_nn, l_cc, l_nnn, l_k, l_kk, blk_idx;
     int i, k, n, c;
-    int P = H;
-    int Q = W;
+    int P = H/sh;
+    int Q = W/sw;
 
     libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
     int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -120,7 +130,7 @@ int main(int argc, char **argv) {
 
     /* print sizes */
     printf("Sparse Convolution kernel FWD\n");
-    printf("N: %i, H:%i, W: %i, C: %i, K: %i\n", N, H, W, C, K);
+    printf("N: %i, H:%i, W: %i, C: %i, K: %i, P: %i, Q: %i, R: %i, S: %i, sh: %i, sw: %i, pad: %i\n", N, H, W, C, K, P, Q, R, S, sh, sw, pad);
 
     /* touch A */
     for (l_n = 0; l_n < N / NB; ++l_n) {
@@ -221,7 +231,9 @@ int main(int argc, char **argv) {
     /* dense routine */
     for (l_n = 0; l_n < N / NB; ++l_n) {
       for (l_p = 0; l_p < P; ++l_p) {
+        l_h = l_p*sh;
         for (l_q = 0; l_q < Q; ++l_q) {
+          l_w = l_p*sw;
           for (l_k = 0; l_k < K / KB; ++l_k) {
             for (l_c = 0; l_c < C / CB; ++l_c) {
               for (l_nn = 0; l_nn < NB / nb; ++l_nn) {
@@ -232,7 +244,7 @@ int main(int argc, char **argv) {
                     for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
                       LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_p, l_q, l_k,
                           l_nn, l_kk, l_nnn, P, Q, K / KB, NB / nb, KB, nb) +=
-                        LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_p, l_q, l_c,
+                        LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_h, l_w, l_c,
                           l_nn, l_cc, l_nnn, H, H, C / CB, NB / nb, CB, nb) *
                         l_B[k * C + c];
                     }
@@ -264,14 +276,16 @@ int main(int argc, char **argv) {
                                     (const void *)b_values[blk_idx], nb).smm;
     }
 #ifdef _OPENMP
-#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_p,l_q)
+#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_p,l_q,l_h,l_w)
 #endif
     for (k = 0; k < K / KB; ++k) {
       for (n = 0; n < N / NB; ++n) {
         for (l_p = 0; l_p < P; ++l_p) {
           for (l_q = 0; l_q < Q; ++l_q) {
+            l_h = l_p*sh;
+            l_w = l_q*sw;
             for (c = 0; c < C / CB; ++c) {
-              mykernel[k * C / CB + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_p, l_q, c, 0, 0, 0, H, H, C / CB, NB / nb, CB, nb)),
+              mykernel[k * C / CB + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h, l_w, c, 0, 0, 0, H, H, C / CB, NB / nb, CB, nb)),
                                          b_values[k * C / CB + c],
                                        &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, l_p, l_q, k, 0, 0, 0, P, Q, K / KB, NB / nb, KB, nb)) );
             }
@@ -291,14 +305,16 @@ int main(int argc, char **argv) {
     unsigned long long l_start = libxsmm_timer_tick();
     for (i = 0; i < (int)REPS; ++i) {
 #ifdef _OPENMP
-#       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_p,l_q)
+#       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_p,l_q,l_h,l_w)
 #endif
       for (k = 0; k < K / KB; ++k) {
         for (n = 0; n < N / NB; ++n) {
           for (l_p = 0; l_p < P; ++l_p) {
             for (l_q = 0; l_q < Q; ++l_q) {
+              l_h = l_p*sh;
+              l_w = l_q*sw;
               for (c = 0; c < C / CB; ++c) {
-                mykernel[k * C / CB + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_p, l_q, c, 0, 0, 0, H, H, C / CB, NB / nb, CB, nb)),
+                mykernel[k * C / CB + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h, l_w, c, 0, 0, 0, H, H, C / CB, NB / nb, CB, nb)),
                                            b_values[k * C / CB + c],
                                          &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, l_p, l_q, k, 0, 0, 0, P, Q, K / KB, NB / nb, KB, nb)) );
               }
