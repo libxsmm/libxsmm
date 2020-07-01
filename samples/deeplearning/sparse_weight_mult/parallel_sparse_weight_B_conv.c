@@ -83,15 +83,16 @@ int main(int argc, char **argv) {
     int K   = (argc > 5) ? atoi(argv[5]) : 256;
     int R   = (argc > 6) ? atoi(argv[6]) : 1;
     int S   = (argc > 7) ? atoi(argv[7]) : 1;
-    int sh  = (argc > 8) ? atoi(argv[8]) : 1;
-    int sw  = (argc > 9) ? atoi(argv[9]) : 1;
-    int pad = (argc > 10) ? atoi(argv[10]) : 0;
-    int NB  = (argc > 11) ? atoi(argv[11]) : 32;
-    int CB  = (argc > 12) ? atoi(argv[12]) : 32;
-    int KB  = (argc > 13) ? atoi(argv[13]) : 32;
-    int nb  = (argc > 14) ? atoi(argv[14]) : 16;
-    double sparse_frac = (argc > 15) ? atof(argv[15]) : 0.90;
-    unsigned int REPS = (argc > 16) ? atoi(argv[16]) : 10;
+    int padh = (argc > 8) ? atoi(argv[8]) : 0;
+    int padw = (argc > 9) ? atoi(argv[9]) : 0;
+    int sh  = (argc > 10) ? atoi(argv[10]) : 1;
+    int sw  = (argc > 11) ? atoi(argv[11]) : 1;
+    int NB  = (argc > 12) ? atoi(argv[12]) : 32;
+    int CB  = (argc > 13) ? atoi(argv[13]) : 32;
+    int KB  = (argc > 14) ? atoi(argv[14]) : 32;
+    int nb  = (argc > 15) ? atoi(argv[15]) : 16;
+    double sparse_frac = (argc > 16) ? atof(argv[16]) : 0.90;
+    unsigned int REPS = (argc > 17) ? atoi(argv[17]) : 10;
     if (N < NB ||
         H < 1  ||
         W < 1  ||
@@ -101,7 +102,8 @@ int main(int argc, char **argv) {
         S < 1  ||
         sh < 1 ||
         sw < 1 ||
-        pad < 0 ||
+        padh < 0 ||
+        padw < 0 ||
         NB < nb ||
         C % CB != 0 ||
         N % NB != 0 ||
@@ -130,7 +132,7 @@ int main(int argc, char **argv) {
 
     /* print sizes */
     printf("Sparse Convolution kernel FWD\n");
-    printf("N: %i, H:%i, W: %i, C: %i, K: %i, P: %i, Q: %i, R: %i, S: %i, sh: %i, sw: %i, pad: %i\n", N, H, W, C, K, P, Q, R, S, sh, sw, pad);
+    printf("N: %i, H:%i, W: %i, C: %i, K: %i, P: %i, Q: %i, R: %i, S: %i, sh: %i, sw: %i, padh: %i, padw: %i\n", N, H, W, C, K, P, Q, R, S, sh, sw, padh, padw);
 
     /* touch A */
     for (l_n = 0; l_n < N / NB; ++l_n) {
