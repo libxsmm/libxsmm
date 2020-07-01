@@ -247,7 +247,7 @@ int main(int argc, char **argv) {
                       LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_p, l_q, l_k,
                           l_nn, l_kk, l_nnn, P, Q, K / KB, NB / nb, KB, nb) +=
                         LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_h, l_w, l_c,
-                          l_nn, l_cc, l_nnn, H, H, C / CB, NB / nb, CB, nb) *
+                          l_nn, l_cc, l_nnn, H, W, C / CB, NB / nb, CB, nb) *
                         l_B[k * C + c];
                     }
                   }
@@ -287,7 +287,7 @@ int main(int argc, char **argv) {
             l_h = l_p*sh;
             l_w = l_q*sw;
             for (c = 0; c < C / CB; ++c) {
-              mykernel[k * C / CB + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h, l_w, c, 0, 0, 0, H, H, C / CB, NB / nb, CB, nb)),
+              mykernel[k * C / CB + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h, l_w, c, 0, 0, 0, H, W, C / CB, NB / nb, CB, nb)),
                                          b_values[k * C / CB + c],
                                        &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, l_p, l_q, k, 0, 0, 0, P, Q, K / KB, NB / nb, KB, nb)) );
             }
@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
               l_h = l_p*sh;
               l_w = l_q*sw;
               for (c = 0; c < C / CB; ++c) {
-                mykernel[k * C / CB + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h, l_w, c, 0, 0, 0, H, H, C / CB, NB / nb, CB, nb)),
+                mykernel[k * C / CB + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h, l_w, c, 0, 0, 0, H, W, C / CB, NB / nb, CB, nb)),
                                            b_values[k * C / CB + c],
                                          &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, l_p, l_q, k, 0, 0, 0, P, Q, K / KB, NB / nb, KB, nb)) );
               }
