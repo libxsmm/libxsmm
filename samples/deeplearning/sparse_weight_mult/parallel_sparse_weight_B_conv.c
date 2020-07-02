@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
       for (l_p = 0; l_p < P; ++l_p) {
         l_h = l_p*sh;
         for (l_q = 0; l_q < Q; ++l_q) {
-          l_w = l_p*sw;
+          l_w = l_q*sw;
           for (l_k = 0; l_k < K / KB; ++l_k) {
             for (l_c = 0; l_c < C / CB; ++l_c) {
               for (l_nn = 0; l_nn < NB / nb; ++l_nn) {
@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
     }
     /* check error */
     float l_max_error = 0.0f;
-    for (i = 0; i < N * K; ++i) {
+    for (i = 0; i < N * P * Q * K; ++i) {
         if (fabs(l_C[i] - l_C_gold[i]) > l_max_error) {
             l_max_error = (float)fabs(l_C[i] - l_C_gold[i]);
         }
