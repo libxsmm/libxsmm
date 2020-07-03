@@ -300,7 +300,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
 
   /* check if we are on AVX512 */
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  if ( handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
+  if ( handle->target_archid >= LIBXSMM_X86_AVX512 ) {
     if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_convolve_st_fwd_custom_custom_f32_f32( handle, start_thread, tid);
     } else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
@@ -309,17 +309,17 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
       status = libxsmm_dnn_convolve_st_fwd_custom_custom_i8_i8( handle, start_thread, tid);
     }
 #if defined(LIBXSMM_INTRINSICS_AVX512_CPX) /*__AVX512F__,__AVX512BW__,__AVX512DQ__,__AVX512BF16__*/
-    else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE && handle->libxsmm_target_archid < LIBXSMM_X86_AVX512_CPX) {
+    else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->target_archid >= LIBXSMM_X86_AVX512_CORE && handle->target_archid < LIBXSMM_X86_AVX512_CPX) {
       status = libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16_emu( handle, start_thread, tid);
-    } else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512_CPX && handle->libxsmm_target_archid < LIBXSMM_X86_AVX512_SPR) {
+    } else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->target_archid >= LIBXSMM_X86_AVX512_CPX && handle->target_archid < LIBXSMM_X86_AVX512_SPR) {
       status = libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16( handle, start_thread, tid);
-    } else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) {
+    } else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->target_archid >= LIBXSMM_X86_AVX512_SPR) {
       status = libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16_amx( handle, start_thread, tid);
     }
 #elif defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512F__,__AVX512BW__,__AVX512DQ__*/
-    else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE && handle->libxsmm_target_archid < LIBXSMM_X86_AVX512_SPR) {
+    else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->target_archid >= LIBXSMM_X86_AVX512_CORE && handle->target_archid < LIBXSMM_X86_AVX512_SPR) {
       status = libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16_emu( handle, start_thread, tid);
-    } else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) {
+    } else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 && handle->target_archid >= LIBXSMM_X86_AVX512_SPR) {
       status = libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16_emu_amx( handle, start_thread, tid);
     }
 #endif
@@ -366,7 +366,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_custom(lib
 
   /* check if we are on AVX512 */
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  if ( handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
+  if ( handle->target_archid >= LIBXSMM_X86_AVX512 ) {
     if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_convolve_st_fwd_nhwc_custom_f32_f32( handle, start_thread, tid);
     } else {
@@ -414,7 +414,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(libxs
 
   /* check if we are on AVX512 */
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  if ( handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
+  if ( handle->target_archid >= LIBXSMM_X86_AVX512 ) {
     if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_convolve_st_fwd_nhwc_rsck_f32_f32( handle, start_thread, tid);
     } else {
