@@ -129,7 +129,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_ofh_rb( libxsmm_dnn_lay
     result = 1;
   }
 
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
     if (handle->ofw == 7 && handle->ofh == 7 && handle->desc.R == 3 && handle->desc.S == 3) {
       result = 7;
     }
@@ -144,7 +144,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_ofh_rb( libxsmm_dnn_lay
 LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_pixels_gemm( libxsmm_dnn_layer* handle ) {
   int result = handle->fwd_ofw_rb * handle->fwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
     if (handle->desc.R != 1 || handle->desc.R != 1) {
       if (handle->ofw < 24) {
         result = (handle->fwd_ofw_rb+2*handle->desc.pad_w) * (handle->fwd_ofh_rb-2) + 2 * (handle->fwd_ofw_rb+handle->desc.pad_w);
@@ -157,7 +157,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_pixels_gemm( libxsmm_dn
 LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_block_H( libxsmm_dnn_layer* handle ) {
   int result = 14;
 
-  if (libxsmm_target_archid < LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid < LIBXSMM_X86_AVX512_SPR) {
     /* Block H only for large images  */
     if (handle->ofh >= 28) {
       result = 4;
@@ -186,7 +186,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_blocksifm_blocking( libxsmm
     if ((handle->desc.C >= 2048) && (handle->desc.K >= 512)) {
       result = 1;
     }
-    if ((libxsmm_target_archid < LIBXSMM_X86_AVX512) && (handle->desc.C >= 512) && (handle->desc.K >= 512) ) {
+    if ((handle->libxsmm_target_archid < LIBXSMM_X86_AVX512) && (handle->desc.C >= 512) && (handle->desc.K >= 512) ) {
       result = 2;
     }
   } else {
@@ -201,7 +201,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_blocksifm_blocking( libxsmm
   }
 
   /* In case of SPR bring always in all accumulation */
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
     result = handle->blocksifm;
   }
 
@@ -263,7 +263,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_use_ofm_parallelization( li
   if ((handle->ofw <= 7) && (handle->desc.C == 1024) && (handle->desc.K == 512)) {
     result = 1;
   }
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
     if (handle->ofw == 7) {
       result = 1;
     }
@@ -285,7 +285,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_avoid_rim_fmas_fwd( libxsmm
       result = 0;
     }
   }
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
     result = 0;
   }
   return result;
@@ -306,7 +306,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_shuffle_filter_accesses( li
   if (handle->ofw == 7 && handle->desc.R == 1 && handle->desc.C == 2048 && handle->desc.K == 512) {
     result = 1;
   }
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR)  {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR)  {
     result = 0;
   }
   return result;
@@ -350,7 +350,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_init_fwd_gemm_flags( libxsm
   LIBXSMM_UNUSED(handle);
 #endif
 
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
     result = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
   }
 
@@ -450,7 +450,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_bwd_ofh_rb( libxsmm_dnn_lay
 LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_bwd_pixels_gemm( libxsmm_dnn_layer* handle ) {
   int result = handle->bwd_ofw_rb * handle->bwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
     if (handle->desc.R != 1 || handle->desc.R != 1) {
       if (handle->ofw < 24) {
         result = (handle->bwd_ofw_rb+2*handle->desc.pad_w) * (handle->bwd_ofh_rb-2) + 2 * (handle->bwd_ofw_rb+handle->desc.pad_w);
@@ -518,7 +518,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_blocksofm_blocking( libxsmm
     }
   }
 
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
     result = handle->blocksofm;
   }
 
@@ -531,7 +531,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_blocksofm_blocking( libxsmm
 LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_init_bwd_gemm_flags( libxsmm_dnn_layer* handle ) {
   int result = 0;
   LIBXSMM_UNUSED( handle );
-  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
     result = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
   }
   return result;
@@ -900,7 +900,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_
   handle->upd_pack_input_upfront = 0;
   handle->use_hybrid_imgofm_parallelization = 0;
   handle->upd_linearized_tasklist = 0;
-  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->ofw == 7) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
+  if ((handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->ofw == 7) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
     handle->pack_to_cnhw= 1;
   }
 
@@ -1064,7 +1064,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_l
   }
   /* output/input buffer to transpose when we use bf16 */
   if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) {
-    if  (libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) {
+    if  (handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) {
       if (handle->upd_linearized_pixels == 1) {
         handle->upd_lp_output_full_scratch_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(handle->datatype_in));
         handle->upd_lp_input_full_scratch_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(handle->datatype_in));
@@ -1156,14 +1156,18 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   LIBXSMM_INIT
 
     /* Generic parameter setup  */
-    handle->ifmblock = libxsmm_dnn_convolution_setup_ifmblock(handle);
+  handle->libxsmm_target_archid = libxsmm_target_archid;
+  if ( (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && ((handle->desc.C % 16 != 0) || (handle->desc.K % 16 != 0)) ) {
+    handle->libxsmm_target_archid = LIBXSMM_X86_AVX512_CPX;
+  }
+  handle->ifmblock = libxsmm_dnn_convolution_setup_ifmblock(handle);
   handle->ofmblock = libxsmm_dnn_convolution_setup_ofmblock(handle);
   handle->fm_lp_block = libxsmm_dnn_convolution_setup_fm_lp_block(handle);
   handle->blocksifm = libxsmm_dnn_convolution_setup_blocksifm(handle);
   handle->blocksofm = libxsmm_dnn_convolution_setup_blocksofm(handle);
 
   /* If in SPR, generate tilerelease kernel */
-  if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) {
+  if (handle->libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) {
     int l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
     handle->tilerelease_kernel = libxsmm_bsmmdispatch(handle->ifmblock, handle->ifmblock, handle->ifmblock, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
   }
@@ -1185,7 +1189,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->fwd_flags = libxsmm_dnn_convolution_setup_init_fwd_gemm_flags(handle);
   handle->use_fallback_fwd_loops = libxsmm_dnn_convolution_setup_fallback_loops_fwd(handle);
 
-  if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) {
+  if ( (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) {
     handle->block_fwd_ofm = 1;
     handle->block_fwd_oj = handle->fwd_ofh_rb;
     ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
@@ -1352,7 +1356,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->use_fallback_bwd_loops = libxsmm_dnn_convolution_setup_fallback_loops_bwd(handle);
   handle->bwd_flags = libxsmm_dnn_convolution_setup_init_bwd_gemm_flags(handle);
 
-  if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) {
+  if ( (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) {
     handle->block_bwd_ifm = 1;
     handle->block_bwd_oj = handle->bwd_ofh_rb ;
     ldx = ((libxsmm_blasint)handle->ofmblock);
@@ -1428,7 +1432,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->upd_loop_order = libxsmm_dnn_convolution_setup_loop_order_upd(handle);
 
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-    if  (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+    if  (handle->libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
       libxsmm_dnn_convolution_setup_bf16_upd_amx(handle);
     } else {
       libxsmm_dnn_convolution_setup_bf16_upd(handle);
