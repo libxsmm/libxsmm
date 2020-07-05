@@ -31,12 +31,17 @@ FMTBIN=$(command -v clang-format)
 FLAKE8=$(command -v flake8)
 ICONV=$(command -v iconv)
 DIFF=$(command -v diff)
+SED=$(command -v gsed)
 GIT=$(command -v git)
-SED=$(command -v sed)
 CUT=$(command -v cut)
 TR=$(command -v tr)
 CP=$(command -v cp)
 RM=$(command -v rm)
+
+# GNU sed is desired (macOS)
+if [ "" = "${SED}" ]; then
+  SED=$(command -v sed)
+fi
 
 if [ "${ICONV}" ]; then
   CAT="${ICONV} -t ASCII"

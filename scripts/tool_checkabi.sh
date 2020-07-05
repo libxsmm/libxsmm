@@ -33,13 +33,18 @@ fi
 BASENAME=$(command -v basename)
 SORT=$(command -v sort)
 DIFF=$(command -v diff)
-SED=$(command -v sed)
+SED=$(command -v gsed)
 CUT=$(command -v cut)
 LS=$(command -v ls)
 WC=$(command -v wc)
 CP=$(command -v cp)
 MV=$(command -v mv)
 NM=$(command -v nm)
+
+# GNU sed is desired (macOS)
+if [ "" = "${SED}" ]; then
+  SED=$(command -v sed)
+fi
 
 if [ "" != "${NM}"   ] && [ "" != "${SED}"  ] && [ "" != "${CUT}" ] && \
    [ "" != "${LS}"   ] && [ "" != "${CP}"   ] && [ "" != "${MV}"  ] && \
