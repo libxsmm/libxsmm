@@ -483,6 +483,8 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
         libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
       }
 
+      libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, gp_reg_gemm_scratch );
+
       i_m_offset = 0;
       for (im = 0; im < m_tiles; im++) {
         i_n_offset = 0;
