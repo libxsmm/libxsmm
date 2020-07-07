@@ -1743,25 +1743,30 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 
           if ( request->descriptor.gemm->meltw_operation != 0 ) {
             /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-            LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_br%i_uh%u_si%i_tc-%s_meop%u-%s_mefl%u_meld%u-%u-%u.mxm", target_arch, tname,
+            LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_br%i_uh%u_si%i_tc-%s_avnni%i_bvnni%i_cvnni%i_meop%u-%s_mefl%u_meld%u-%u-%u.mxm", target_arch, tname,
               0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.gemm->flags) ? 'n' : 't',
               0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.gemm->flags) ? 'n' : 't', m, n, k,
               request->descriptor.gemm->lda, request->descriptor.gemm->ldb, request->descriptor.gemm->ldc,
               /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & request->descriptor.gemm->flags) ? 0 : */1,
               0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.gemm->flags) ? 0 : 1, uid,
               br, (unsigned int)request->descriptor.gemm->c3, typesigns, tc_option,
+              0 != (LIBXSMM_GEMM_FLAG_VNNI_A  & request->descriptor.gemm->flags) ? 1 : 0,
+              0 != (LIBXSMM_GEMM_FLAG_VNNI_B  & request->descriptor.gemm->flags) ? 1 : 0,
+              0 != (LIBXSMM_GEMM_FLAG_VNNI_C  & request->descriptor.gemm->flags) ? 1 : 0,
               (unsigned int)request->descriptor.gemm->meltw_operation, meltw_tname, (unsigned int)request->descriptor.gemm->meltw_flags,
               request->descriptor.gemm->meltw_ldx, request->descriptor.gemm->meltw_ldy, request->descriptor.gemm->meltw_ldz );
           } else {
             /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-            LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_cvnni%i_br%i_uh%u_si%i_tc-%s.mxm", target_arch, tname,
+            LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_br%i_uh%u_si%i_tc-%s_avnni%i_bvnni%i_cvnni%i.mxm", target_arch, tname,
               0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.gemm->flags) ? 'n' : 't',
               0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.gemm->flags) ? 'n' : 't', m, n, k,
               request->descriptor.gemm->lda, request->descriptor.gemm->ldb, request->descriptor.gemm->ldc,
               /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & request->descriptor.gemm->flags) ? 0 : */1,
               0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.gemm->flags) ? 0 : 1, uid,
-              0 == (LIBXSMM_GEMM_FLAG_VNNI_C  & request->descriptor.gemm->flags) ? 0 : 1 ,
-              br, (unsigned int)request->descriptor.gemm->c3, typesigns, tc_option );
+              br, (unsigned int)request->descriptor.gemm->c3, typesigns, tc_option,
+              0 != (LIBXSMM_GEMM_FLAG_VNNI_A  & request->descriptor.gemm->flags) ? 1 : 0,
+              0 != (LIBXSMM_GEMM_FLAG_VNNI_B  & request->descriptor.gemm->flags) ? 1 : 0,
+              0 != (LIBXSMM_GEMM_FLAG_VNNI_C  & request->descriptor.gemm->flags) ? 1 : 0 );
           }
         }
       }
