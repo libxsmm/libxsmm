@@ -491,7 +491,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
         for (in = 0; in < n_tiles; in++) {
           /* Now for all the columns in the tile, upconvert them to F32 from BF16  */
           for (col = 0; col < n_blocking_info->sizes[in]; col++) {
-            zmm_reg = (col % 16) + i_micro_kernel_config->reserved_zmms;
+            zmm_reg = (col % 4) + i_micro_kernel_config->reserved_zmms;  /* we do mod 4 as are otherwise running out ymms */
             /* load 16 bit values into ymm portion of the register */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
