@@ -1499,7 +1499,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
         &tile_config );
   }
 
-
   /* Properly destroy stack frame...  */
   libxsmm_generator_gemm_amx_destroy_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
   /* close asm */
