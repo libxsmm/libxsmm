@@ -45,6 +45,7 @@ For example:
 
 ## Preping on RHEL 8.0 / CentOS 8.0
 
+```bash
 dnf install protobuf
 wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/protobuf-compiler-3.5.0-7.el8.x86_64.rpm
 dnf install protobuf-compiler-3.5.0-7.el8.x86_64.rpm
@@ -64,5 +65,7 @@ wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/glog-devel-
 wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/glog-0.3.5-3.el8.x86_64.rpm
 dnf install glog-0.3.5-3.el8.x86_64.rpm
 dnf install glog-devel-0.3.5-3.el8.x86_64.rpm
+```
 
 Make sure that the makefile follows the OpenCV Ver 3 path!
+
