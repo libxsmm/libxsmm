@@ -11,14 +11,15 @@
 #include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
 #include <stdio.h>
-#include <time.h>
 
 
 int main(int argc, char* argv[])
 {
   double rng_stddev = 0;
   float* rngs;
+#if defined(__AVX512F__)
   float  vrng[16];
+#endif
   unsigned int* state = NULL;
   libxsmm_timer_tickint start;
   libxsmm_matdiff_info info;
@@ -58,7 +59,7 @@ int main(int argc, char* argv[])
 
   start = libxsmm_timer_tick();
   for (i = 0; i < num_rngs; ++i) {
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
     _mm512_storeu_ps( vrng, _mm512_add_ps( _mm512_load_ps(vrng), LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS( state ) ) );
 #endif
   }
