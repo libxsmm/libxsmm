@@ -94,7 +94,9 @@ typedef struct {
 
 LIBXSMM_INLINE void zero_buf(float* buf, long size) {
   int i;
+#if defined(_OPENMP)
   #pragma omp parallel for private(i)
+#endif
   for (i = 0; i < size; ++i) {
     buf[i] = 0.0f;
   }
@@ -102,7 +104,9 @@ LIBXSMM_INLINE void zero_buf(float* buf, long size) {
 
 LIBXSMM_INLINE void copy_buf(float* src, float* dst, long size) {
   int i;
+#if defined(_OPENMP)
   #pragma omp parallel for private(i)
+#endif
   for (i = 0; i < size; ++i) {
     dst[i] = src[i];
   }
