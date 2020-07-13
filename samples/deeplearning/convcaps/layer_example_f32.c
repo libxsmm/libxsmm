@@ -24,7 +24,8 @@
 #define CHANNEL_BLOCKING 64
 
 /* function-pointer to LIBXSMM kernel */
-libxsmm_smmfunction fwd_gemm;
+libxsmm_smmfunction_reducebatch_offs fwd_brgemmz;
+libxsmm_smmfunction_reducebatch_offs fwd_brgemma;
 
 typedef struct {
   int nImg;
@@ -80,6 +81,7 @@ typedef struct {
   int RK;
   int Mh;
   int Mw;
+  unsigned long long brcount;
 } gemm_conv_t;
 
 typedef struct {
@@ -322,7 +324,7 @@ LIBXSMM_INLINE void naive_convcaps_fp(naive_conv_t* param, const float* input, f
   }
 }
 
-LIBXSMM_INLINE void gemm_convcaps_fp(gemm_conv_t* param, const float* input, float* output, const float* filter)
+LIBXSMM_INLINE void gemm_convcaps_fp(gemm_conv_t* param, const float* input, float* output, const float* filter, unsigned long long* aoff, unsigned long long* boff)
 {
   int nImg     = param->nImg;
   int nBIfm     = param->nBIfm;
@@ -350,51 +352,35 @@ LIBXSMM_INLINE void gemm_convcaps_fp(gemm_conv_t* param, const float* input, flo
   int RK        = param->RK;
   int Mh        = param->Mh;
   int Mw        = param->Mw;
+  unsigned long long  brcount   = param->brcount;
   /* loop counters */
   int img, ofm1, ifm1, ofm2, ifm2, oj, oi, ij, ii, kj, ki, rk, mj, mi;
 
   LIBXSMM_VLA_DECL(7,       float,  votes_t, output + (pad_w_out * ofwp + pad_h_out), nBOfm, Mh, Mw, ofhp, ofwp, nbOfm);
   LIBXSMM_VLA_DECL(7, const float,  poses_t,  input + (pad_w_in * ifwp + pad_h_in), nBIfm, Mh, RK, ifhp, ifwp, nbIfm);
-  LIBXSMM_VLA_DECL(8, const float, filter_t, filter, nBOfm, Mw, RK, kh, kw, nbIfm, nbOfm);
+  LIBXSMM_VLA_DECL(8, const float, filter_t, filter, nBIfm, Mw, RK, kh, kw, nbIfm, nbOfm);
 
 #if defined(_OPENMP)
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(img, ofm1, ifm1, ofm2, ifm2, oj, oi, ij, ii, kj, ki, mj, mi, rk)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm1, ifm1, ofm2, ifm2, oj, oi, ij, ii, kj, ki, mj, mi, rk)
 #endif
   for (img = 0; img < nImg; ++img) {
     for (ofm1 = 0; ofm1 < nBOfm; ++ofm1) {
       for (mj = 0; mj < Mh; ++mj ) {
         for (mi = 0; mi < Mw; ++mi ) {
-          for (oj = 0; oj < ofh; ++oj) {
-            ij = oj * stride_h - pad_h;
-            /* set poses to zero */
-            for ( oi = 0; oi < ofw; ++oi ) {
-              for (ofm2 = 0; ofm2 < nbOfm; ++ofm2 ) {
-                LIBXSMM_VLA_ACCESS(7, votes_t, img, ofm1, mj, mi, oj, oi, ofm2, nBOfm, Mh, Mw, ofhp, ofwp, nbOfm) = 0.0f;
-              }
-            }
-            for (ifm1 = 0; ifm1 < nBIfm; ++ifm1) {
-              for (rk = 0; rk < RK; ++rk ) {
-                for (kj = 0; kj < kh; ++kj) {
-                  /*if(ij+kj < 0 || ij+kj >= ifh) continue;*/
-                  for (ki = 0; ki < kw; ++ki) {
-                    /*if(ii+ki < 0 || ii+ki >= ifw) continue;*/
-#if 0
-                    for (oi = 0; oi < ofw; ++oi) {
-                      ii = oi * stride_w - pad_w;
-                      for (ifm2 = 0; ifm2 < nbIfm; ++ifm2) {
-                        for (ofm2 = 0; ofm2 < nbOfm; ++ofm2) {
-                          LIBXSMM_VLA_ACCESS(7,  votes_t,  img, ofm1, mj, mi, oj, oi, ofm2, nBOfm, Mh, Mw, ofhp, ofwp, nbOfm) +=
-                            LIBXSMM_VLA_ACCESS(8, filter_t, ifm1, ofm1, mi, rk, kj, ki, ifm2, ofm2, nBOfm, Mw, RK, kh, kw, nbIfm, nbOfm) *
-                            LIBXSMM_VLA_ACCESS(7,  poses_t,  img, ifm1, mj, rk, ij+kj, ii+ki, ifm2, nBIfm, Mh, RK, ifhp, ifwp, nbIfm);
-                        }
-                      }
-                    }
-#else
-                     fwd_gemm( &LIBXSMM_VLA_ACCESS(8, filter_t, ifm1, ofm1, mi, rk, kj, ki, 0, 0, nBOfm, Mw, RK, kh, kw, nbIfm, nbOfm)    /* A */,
-                              &LIBXSMM_VLA_ACCESS(7,  poses_t,  img, ifm1, mj, rk, ij+kj, ki, 0, nBIfm, Mh, RK, ifhp, ifwp, nbIfm)       /* B */,
-                              &LIBXSMM_VLA_ACCESS(7,  votes_t,  img, ofm1, mj, mi, oj,     0, 0, nBOfm, Mh, Mw, ofhp, ofwp, nbOfm)       /* C */  );
-#endif
-                  }
+          for (ifm1 = 0; ifm1 < nBIfm; ++ifm1) {
+            for (rk = 0; rk < RK; ++rk ) {
+              for (oj = 0; oj < ofh; ++oj) {
+                ij = oj * stride_h - pad_h;
+                if ( rk == 0 && ifm1 == 0 ) {
+                  fwd_brgemmz( &LIBXSMM_VLA_ACCESS(8, filter_t, ofm1, ifm1, mi, rk, 0,  0, 0, 0, nBIfm, Mw, RK, kh, kw, nbIfm, nbOfm)    /* A */,
+                               &LIBXSMM_VLA_ACCESS(7,  poses_t,  img, ifm1, mj, rk, ij, 0, 0, nBIfm, Mh, RK, ifhp, ifwp, nbIfm)          /* B */,
+                               &LIBXSMM_VLA_ACCESS(7,  votes_t,  img, ofm1, mj, mi, oj, 0, 0, nBOfm, Mh, Mw, ofhp, ofwp, nbOfm)          /* C */,
+                               &brcount, aoff, boff );
+                } else {
+                  fwd_brgemma( &LIBXSMM_VLA_ACCESS(8, filter_t, ofm1, ifm1, mi, rk, 0,  0, 0, 0, nBIfm, Mw, RK, kh, kw, nbIfm, nbOfm)    /* A */,
+                               &LIBXSMM_VLA_ACCESS(7,  poses_t,  img, ifm1, mj, rk, ij, 0, 0, nBIfm, Mh, RK, ifhp, ifwp, nbIfm)          /* B */,
+                               &LIBXSMM_VLA_ACCESS(7,  votes_t,  img, ofm1, mj, mi, oj, 0, 0, nBOfm, Mh, Mw, ofhp, ofwp, nbOfm)          /* C */,
+                               &brcount, aoff, boff );
                 }
               }
             }
@@ -405,15 +391,57 @@ LIBXSMM_INLINE void gemm_convcaps_fp(gemm_conv_t* param, const float* input, flo
   }
 }
 
+LIBXSMM_INLINE void compute_broff(gemm_conv_t* param, unsigned long long* aoff, unsigned long long* boff) {
+  int nImg     = param->nImg;
+  int nBIfm     = param->nBIfm;
+  int nbIfm     = param->nbIfm;
+  int nBOfm     = param->nBOfm;
+  int nbOfm     = param->nbOfm;
+  int ifhp      = param->ifhp;
+  int ifwp      = param->ifwp;
+  int ofhp      = param->ofhp;
+  int ofwp      = param->ofwp;
+  int ifh       = param->ifh;
+  int ifw       = param->ifw;
+  int ofh       = param->ofh;
+  int ofw       = param->ofw;
+  int pad_h     = param->pad_h;
+  int pad_w     = param->pad_w;
+  int pad_h_in  = param->pad_h_in;
+  int pad_w_in  = param->pad_w_in;
+  int pad_h_out = param->pad_h_out;
+  int pad_w_out = param->pad_w_out;
+  int kh        = param->kh;
+  int kw        = param->kw;
+  int stride_h  = param->stride_h;
+  int stride_w  = param->stride_w;
+  int RK        = param->RK;
+  int Mh        = param->Mh;
+  int Mw        = param->Mw;
+  /* loop counters */
+  int ifm1, kj, ki, rk, i;
+
+  i = 0;
+  for (kj = 0; kj < kh; ++kj) {
+    for (ki = 0; ki < kw; ++ki) {
+      aoff[i] = (kj*(kw*nbIfm*nbOfm) + ki*(nbIfm*nbOfm))*sizeof(float);
+      boff[i] = (kj*(ifwp*nbIfm) + ki*(nbIfm))*sizeof(float);
+      i++;
+    }
+  }
+}
+
 int main(int argc, char* argv[])
 {
   float *naive_input, *naive_output, *naive_filter;
   float *gemm_input, *gemm_output, *gemm_filter;
   float *check_output;
+  unsigned long long *aoff, *boff;
 
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   int ldx;
+  int brcount;
 
   naive_conv_t naive_param;
   gemm_conv_t gemm_param;
@@ -423,19 +451,19 @@ int main(int argc, char* argv[])
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
   int iters = 100;         /* repetitions of benchmark */
-  int ifw = 14;           /* input width, "W" */
-  int ifh = 14;           /* input height, "H" */
+  int ifw = 16;           /* input width, "W" */
+  int ifh = 16;           /* input height, "H" */
   int nImg = 128;          /* mini-batch size, "N" */
-  int nIfm = 64;         /* number of input feature maps, "C" */
-  int nOfm = 128;         /* number of output feature maps, "K" */
+  int nIfm = 128;         /* number of input feature maps, "C" */
+  int nOfm = 256;         /* number of output feature maps, "K" */
   int kh = 3;             /* filter height, "R" */
   int kw = 3;             /* filter width, "S" */
   int pad_h = 0;            /* padding in output */
   int pad_w = 0;            /* padding in output */
-  int stride = 1;         /* stride when accessing inputs */
+  int stride = 2;         /* stride when accessing inputs */
   int Mh = 4;
   int Mw = 4;
-  int RK = 8;
+  int RK = 4;
   char type = 'F';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();      /* number of threads */
@@ -447,6 +475,7 @@ int main(int argc, char* argv[])
   double l_total = 0.0;
   double flops = 0.0;
   int i;
+  float beta=0.0f;
 
   memset(&norms_fwd, 0, sizeof(norms_fwd));
 
@@ -554,6 +583,10 @@ int main(int argc, char* argv[])
   gemm_param.Mh = Mh;
   gemm_param.Mw = Mw;
 
+  /* compute brcount */
+  brcount = kh*kw;
+  gemm_param.brcount = brcount;
+
   /* some empty lines at the beginning */
   printf("\n\n\n");
 
@@ -582,12 +615,18 @@ int main(int argc, char* argv[])
     return -1;
   }
 
+  if (pad_w !=0 || pad_h !=0 || pad_h_in != 0 || pad_w_in != 0 || pad_h_out !=0 || pad_w_out != 0) {
+    printf("\nThis code doesn't support padding right now\n!");
+    return -1;
+  }
+
   /* apply stride in both dimensions */
   /* JIT GEMM kernel */
   ldx = stride_w*CHANNEL_BLOCKING;
-  fwd_gemm = libxsmm_smmdispatch(CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING, NULL, &ldx, NULL, NULL, NULL, NULL, NULL);
+  fwd_brgemmz = libxsmm_smmdispatch_reducebatch_offs_unroll(CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING, brcount, NULL, &ldx, NULL, NULL, &beta, NULL, NULL);
+  fwd_brgemma = libxsmm_smmdispatch_reducebatch_offs_unroll(CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING, brcount, NULL, &ldx, NULL, NULL, NULL, NULL, NULL);
 
-  printf("GEMM FWD col-major: m=%d, n=%d, k=%d, lda=%d, ldb=%d, ldc=%d, transa='n', transb='n', alpha=1.0, beta=1.0\n", CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING, CHANNEL_BLOCKING, stride_w*CHANNEL_BLOCKING, CHANNEL_BLOCKING);
+  printf("BRGEMM FWD col-major: m=%d, n=%d, k=%d, lda=%d, ldb=%d, ldc=%d, transa='n', transb='n', alpha=1.0, beta=1.0, brcount=%d\n", CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING, CHANNEL_BLOCKING, stride_w*CHANNEL_BLOCKING, CHANNEL_BLOCKING, brcount);
 
   /* allocate data */
   naive_input           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*Mh*RK*sizeof(float), 2097152);
@@ -597,6 +636,8 @@ int main(int argc, char* argv[])
   gemm_output           = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*Mh*Mw*sizeof(float), 2097152);
   gemm_filter           = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*Mw*RK*    sizeof(float), 2097152);
   check_output          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*Mh*Mw*sizeof(float), 2097152);
+  aoff                  = (unsigned long long*)libxsmm_aligned_malloc( brcount*sizeof(unsigned long long), 2097152);
+  boff                  = (unsigned long long*)libxsmm_aligned_malloc( brcount*sizeof(unsigned long long), 2097152);
 
   /* initialize data */
   init_buf(naive_input,                     nImg*nIfm*ifhp*ifwp*Mh*RK, 0, 0);
@@ -609,6 +650,9 @@ int main(int argc, char* argv[])
   copy_naiveF_to_GEMM(naive_filter, gemm_filter, kh, kw, nIfm, nOfm, RK, Mw);
   zero_buf(gemm_output,                              nImg*nOfm*ofhp*ofwp*Mw*Mh);
 
+  /* compute BRGEMM offsets */
+  compute_broff( &gemm_param, aoff, boff );
+
   /* check correctness forward */
   if (type == 'A' || type == 'F') {
     printf("##########################################\n");
@@ -616,7 +660,7 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     /* run naive convolution */
     naive_convcaps_fp(&naive_param, naive_input, naive_output, naive_filter);
-    gemm_convcaps_fp(&gemm_param, gemm_input, gemm_output, gemm_filter);
+    gemm_convcaps_fp(&gemm_param, gemm_input, gemm_output, gemm_filter, aoff, boff);
     copy_GEMM_to_naiveV(gemm_output, check_output,  nImg, ofhp, ofwp, nOfm, Mh, Mw);
     /* compare */
     compare_buf(naive_output, check_output, nImg*nOfm*ofhp*ofwp*Mh*Mw, &norms_fwd);
@@ -635,7 +679,7 @@ int main(int argc, char* argv[])
     /* run LIBXSMM convolution for performance */
     l_start = libxsmm_timer_tick();
     for (i = 0; i < iters; ++i) {
-      gemm_convcaps_fp(&gemm_param, gemm_input, gemm_output, gemm_filter);
+      gemm_convcaps_fp(&gemm_param, gemm_input, gemm_output, gemm_filter, aoff, boff);
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
@@ -658,6 +702,8 @@ int main(int argc, char* argv[])
   libxsmm_free(gemm_output);
   libxsmm_free(gemm_filter);
   libxsmm_free(check_output);
+  libxsmm_free(aoff);
+  libxsmm_free(boff);
 
   /* some empty lines at the end */
   printf("\n\n\n");
