@@ -285,8 +285,6 @@ LIBXSMM_INLINE void naive_convcaps_fp(naive_conv_t* param, const float* input, f
   int ifwp      = param->ifwp;
   int ofhp      = param->ofhp;
   int ofwp      = param->ofwp;
-  int ifh       = param->ifh;
-  int ifw       = param->ifw;
   int ofh       = param->ofh;
   int ofw       = param->ofw;
   int pad_h     = param->pad_h;
@@ -354,12 +352,8 @@ LIBXSMM_INLINE void gemm_convcaps_fp(gemm_conv_t* param, const libxsmm_bfloat16*
   int ifwp      = param->ifwp;
   int ofhp      = param->ofhp;
   int ofwp      = param->ofwp;
-  int ifh       = param->ifh;
-  int ifw       = param->ifw;
   int ofh       = param->ofh;
-  int ofw       = param->ofw;
   int pad_h     = param->pad_h;
-  int pad_w     = param->pad_w;
   int pad_h_in  = param->pad_h_in;
   int pad_w_in  = param->pad_w_in;
   int pad_h_out = param->pad_h_out;
@@ -367,20 +361,19 @@ LIBXSMM_INLINE void gemm_convcaps_fp(gemm_conv_t* param, const libxsmm_bfloat16*
   int kh        = param->kh;
   int kw        = param->kw;
   int stride_h  = param->stride_h;
-  int stride_w  = param->stride_w;
   int RK        = param->RK;
   int Mh        = param->Mh;
   int Mw        = param->Mw;
   unsigned long long  brcount   = param->brcount;
   /* loop counters */
-  int img, ofm1, ifm1, ofm2, ifm2, oj, oi, ij, ii, kj, ki, rk, mj, mi;
+  int img, ofm1, ifm1, oj, ij, rk, mj, mi;
 
   LIBXSMM_VLA_DECL(7,       libxsmm_bfloat16,  votes_t, output + (pad_w_out * ofwp + pad_h_out), nBOfm, Mh, Mw, ofhp, ofwp, nbOfm);
   LIBXSMM_VLA_DECL(7, const libxsmm_bfloat16,  poses_t,  input + (pad_w_in * ifwp + pad_h_in), nBIfm, Mh, RK, ifhp, ifwp, nbIfm);
   LIBXSMM_VLA_DECL(9, const libxsmm_bfloat16, filter_t, filter, nBIfm, Mw, RK, kh, kw, nbIfm/nlpb, nbOfm, nlpb);
 
 #if defined(_OPENMP)
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm1, ifm1, ofm2, ifm2, oj, oi, ij, ii, kj, ki, mj, mi, rk)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm1, ifm1, oj, ij, mj, mi, rk)
 #endif
   for (img = 0; img < nImg; ++img) {
     for (ofm1 = 0; ofm1 < nBOfm; ++ofm1) {
@@ -411,34 +404,13 @@ LIBXSMM_INLINE void gemm_convcaps_fp(gemm_conv_t* param, const libxsmm_bfloat16*
 }
 
 LIBXSMM_INLINE void compute_broff(gemm_conv_t* param, unsigned long long* aoff, unsigned long long* boff) {
-  int nImg     = param->nImg;
-  int nBIfm     = param->nBIfm;
   int nbIfm     = param->nbIfm;
-  int nBOfm     = param->nBOfm;
   int nbOfm     = param->nbOfm;
-  int ifhp      = param->ifhp;
   int ifwp      = param->ifwp;
-  int ofhp      = param->ofhp;
-  int ofwp      = param->ofwp;
-  int ifh       = param->ifh;
-  int ifw       = param->ifw;
-  int ofh       = param->ofh;
-  int ofw       = param->ofw;
-  int pad_h     = param->pad_h;
-  int pad_w     = param->pad_w;
-  int pad_h_in  = param->pad_h_in;
-  int pad_w_in  = param->pad_w_in;
-  int pad_h_out = param->pad_h_out;
-  int pad_w_out = param->pad_w_out;
   int kh        = param->kh;
   int kw        = param->kw;
-  int stride_h  = param->stride_h;
-  int stride_w  = param->stride_w;
-  int RK        = param->RK;
-  int Mh        = param->Mh;
-  int Mw        = param->Mw;
   /* loop counters */
-  int ifm1, kj, ki, rk, i;
+  int kj, ki, i;
 
   i = 0;
   for (kj = 0; kj < kh; ++kj) {
