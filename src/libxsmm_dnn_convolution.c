@@ -750,10 +750,8 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_weight_copies_upd( libxsmm_
   if (handle->desc.N == 27 && handle->desc.threads == 27 && handle->desc.R == 1 && handle->ofw == 14 && handle->desc.u == 1) {
     result = 7;
   }
-  if (handle->ofh == 14 && handle->desc.R == 3 && handle->desc.S == 3) {
-    if (handle->desc.N == 26) {
-      result = 13;
-    }
+  if (((handle->ofh == 14) || (handle->ofw == 7 && handle->desc.u == 2)) && handle->desc.N == 26 && handle->desc.threads == 26) {
+    result = 13;
   }
   if ((handle->desc.N != handle->desc.threads) && !(handle->upd_linearized_tasklist == 0 && handle->upd_use_batchreduce == 0)) {
     result = handle->desc.N;
