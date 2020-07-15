@@ -90,11 +90,8 @@ if (handle->desc.R == 1 && handle->desc.S == 1) {
             for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
               /* Batch-reduce GEMM call  */
               br_gemm_kernel_strd( &LIBXSMM_VLA_ACCESS(7, weight, ofm1, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block),
-                                   &LIBXSMM_VLA_ACCESS(5,  input,  img, 0, oj, oi, 0, handle->blocksifm, IFH, IFW, handle->ifmblock), out_ptr, &n_blocks);
-              /* Downconvert accumulated tiles to BF16  */
-              for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
-                LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16( &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, ojj, 0, 0, scratch_ofwp, handle->ofmblock), &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), handle->fwd_ofw_rb * handle->ofmblock);
-              }
+                                   &LIBXSMM_VLA_ACCESS(5,  input,  img, 0, oj, oi, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                                   &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), &n_blocks);
             }
           }
         }

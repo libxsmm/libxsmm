@@ -96,7 +96,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16_emu_amx(li
 
   typedef libxsmm_bsmmfunction gemm_function;
   typedef libxsmm_bsmmfunction_reducebatch_offs gemm_br_function_offs;
-  typedef libxsmm_bsmmfunction_reducebatch_strd gemm_br_function_strd;
+  typedef libxsmm_bmmfunction_reducebatch_strd gemm_br_function_strd;
   gemm_br_function_offs br_gemm_kernel_offs = handle->fwd_compute_kernel_offs;
   gemm_br_function_strd br_gemm_kernel_strd = handle->fwd_compute_kernel_strd;
   gemm_function tile_config_kernel = handle->fwd_config_kernel;
@@ -170,7 +170,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16_amx(libxsm
 
   typedef libxsmm_bsmmfunction gemm_function;
   typedef libxsmm_bsmmfunction_reducebatch_offs gemm_br_function_offs;
-  typedef libxsmm_bsmmfunction_reducebatch_strd gemm_br_function_strd;
+  typedef libxsmm_bmmfunction_reducebatch_strd gemm_br_function_strd;
   gemm_br_function_offs br_gemm_kernel_offs = handle->fwd_compute_kernel_offs;
   gemm_br_function_strd br_gemm_kernel_strd = handle->fwd_compute_kernel_strd;
   gemm_function tile_config_kernel = handle->fwd_config_kernel;

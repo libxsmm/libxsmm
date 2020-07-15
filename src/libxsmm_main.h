@@ -453,7 +453,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_bsmmfunction fwd_config_kernel;
   libxsmm_bsmmfunction_reducebatch_addr fwd_compute_kernel_addr;
   libxsmm_bsmmfunction_reducebatch_offs fwd_compute_kernel_offs;
-  libxsmm_bsmmfunction_reducebatch_strd fwd_compute_kernel_strd;
+  libxsmm_bmmfunction_reducebatch_strd fwd_compute_kernel_strd;
 
   /* Hoisting the compute kernels for BWD  */
   libxsmm_bsmmfunction bwd_config_kernel;
