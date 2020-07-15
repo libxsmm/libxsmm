@@ -99,7 +99,8 @@ if (handle->desc.R == 1 && handle->desc.S == 1) {
     }
   }
 }
-else {
+/* @TODO this needs a reasonable fix */
+else if ( handle->fwd_ofw_rb*handle->fwd_ofh_rb == handle->fwd_gemm_pixels ) {
   for (img = my_img_start; img < my_img_end; img++) {
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
       for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
@@ -107,8 +108,26 @@ else {
           for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
             for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
               /* Batch-reduce GEMM call  */
-              br_gemm_kernel_offs( &LIBXSMM_VLA_ACCESS(7, weight, ofm1, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block),
-                                   &LIBXSMM_VLA_ACCESS(5,  input,  img, 0, oj, oi, 0, handle->blocksifm, IFH, IFW, handle->ifmblock), out_ptr, &n_blocks, handle->A_offsets, handle->B_offsets);
+              br_gemm_kernel_offs_a( &LIBXSMM_VLA_ACCESS(7, weight, ofm1, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block),
+                                     &LIBXSMM_VLA_ACCESS(5,  input,  img, 0, oj, oi, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                                     &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                                     &n_blocks, handle->A_offsets, handle->B_offsets);
+            }
+          }
+        }
+      }
+    }
+  }
+} else {
+  for (img = my_img_start; img < my_img_end; img++) {
+    for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+      for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+        for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+          for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+            for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
+              /* Batch-reduce GEMM call  */
+              br_gemm_kernel_offs_b( &LIBXSMM_VLA_ACCESS(7, weight, ofm1, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block),
+                                     &LIBXSMM_VLA_ACCESS(5,  input,  img, 0, oj, oi, 0, handle->blocksifm, IFH, IFW, handle->ifmblock), out_ptr, &n_blocks, handle->A_offsets, handle->B_offsets);
               /* Downconvert accumulated tiles to BF16  */
               for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
                 LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16( &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, ojj, 0, 0, scratch_ofwp, handle->ofmblock), &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj+ojj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), handle->fwd_ofw_rb * handle->ofmblock);
