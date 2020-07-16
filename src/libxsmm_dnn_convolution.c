@@ -366,20 +366,21 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_padding_copy( libxsmm_d
 }
 
 LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_fwd_scratch( libxsmm_dnn_layer* handle ) {
+  const int datasize_in = (int)libxsmm_dnn_typesize(handle->datatype_in);
   handle->fwd_packing_padding_scratch_size = 0;
   /* packing of input */
   if ( handle->pack_input != 0 ) {
     handle->fwd_packing_padding_scratch_size = (size_t)handle->desc.N * handle->desc.C *
       handle->desc.H/handle->desc.u *
       handle->desc.W/handle->desc.v *
-      libxsmm_dnn_typesize(handle->datatype_in);
+      datasize_in;
   }
   /* logical padding with copying in the fly */
   if ( handle->fwd_padding_copy != 0 ) {
     handle->fwd_packing_padding_scratch_size = (size_t)handle->desc.N * handle->desc.C *
       (handle->desc.H + 2*handle->desc.pad_h) *
       (handle->desc.W + 2*handle->desc.pad_w) *
-      libxsmm_dnn_typesize(handle->datatype_in);
+      datasize_in;
   }
   /* output buffer in high precision when we use BF16 */
   if ( ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) ||
@@ -563,24 +564,25 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_avoid_acc_load_bwd( libxsmm
 }
 
 LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bwd_scratch( libxsmm_dnn_layer* handle ) {
+  const int datasize_in = (int)libxsmm_dnn_typesize(handle->datatype_in);
   /* transpose of weights */
   handle->bwd_filter_trans_scratch_size = (size_t)handle->desc.C * handle->desc.K *
     handle->desc.R * handle->desc.S *
-    libxsmm_dnn_typesize(handle->datatype_in);
+    datasize_in;
 
   handle->bwd_packing_padding_scratch_size = 0;
   /* packing of input */
   if ( handle->pack_input_bwd != 0 ) {
     handle->bwd_packing_padding_scratch_size = (size_t)handle->desc.N * handle->desc.C *
       handle->ofhp * handle->ofwp *
-      libxsmm_dnn_typesize(handle->datatype_in);
+      datasize_in;
   }
   /* logical padding with copying in the fly */
   if ( handle->use_fallback_bwd_loops != 0 ) {
     handle->bwd_packing_padding_scratch_size = (size_t)handle->desc.threads * handle->ifmblock *
       (handle->desc.H + 2*handle->desc.pad_h) *
       (handle->desc.W + 2*handle->desc.pad_w) *
-      libxsmm_dnn_typesize(handle->datatype_in);
+      datasize_in;
   }
   /* input bufffer in high precision when we use BF16 */
   if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) {
@@ -877,6 +879,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_
   libxsmm_blasint LDB = handle->input_pixels;
   libxsmm_blasint LDC = handle->ofmblock;
   int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
+  const int datasize_in = (int)libxsmm_dnn_typesize(handle->desc.datatype_in);
   int l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
   int l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
   int stride_a, stride_b;
@@ -1002,8 +1005,8 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_
     LDC = handle->ofmblock;
     prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
     unroll_hint = handle->batchreduce_h_pixels;
-    stride_a = handle->ofwp_extended * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_in);
-    stride_b = handle->desc.u * handle->ifwp_extended * libxsmm_dnn_typesize(handle->datatype_in);
+    stride_a = handle->ofwp_extended * handle->ofmblock * datasize_in;
+    stride_b = handle->desc.u * handle->ifwp_extended * datasize_in;
     handle->upd_config_kernel = libxsmm_bsmmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw+handle->remainder_pixels, &LDA, &LDB, &LDC, NULL, &beta, &l_tc_flags, NULL);
     handle->upd_compute_kernel_brgemm_no_linearized_pixels = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->ofmblock, handle->ifmblock, handle->ofw+handle->remainder_pixels, stride_a, stride_b, unroll_hint, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
   } else {
@@ -1020,8 +1023,8 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_
         handle->upd_compute_kernel_gemm_linearized_pixels_hybrid_par_cnhw = libxsmm_bsmmdispatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
       } else {
         /* TODO: Hoist here hybrid parallelization logic and then we should be able to also provide unroll hint in the BRGEMM call */
-        stride_a = handle->blocksofm * handle->output_pixels * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_in);
-        stride_b = handle->blocksifm * handle->ifmblock * handle->input_pixels * libxsmm_dnn_typesize(handle->datatype_in);
+        stride_a = handle->blocksofm * handle->output_pixels * handle->ofmblock * datasize_in;
+        stride_b = handle->blocksifm * handle->ifmblock * handle->input_pixels * datasize_in;
         handle->upd_config_kernel = libxsmm_bsmmdispatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_tc_flags, NULL);
         handle->upd_compute_kernel_brgemm_linearized_pixels_hybrid_par_no_cnhw = libxsmm_bsmmdispatch_reducebatch_strd(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, stride_a, stride_b, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
       }
@@ -1045,20 +1048,21 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_upd_padding_copy( libxsmm_d
 }
 
 LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_layer* handle ) {
+  const int datasize_in = (int)libxsmm_dnn_typesize(handle->datatype_in);
   handle->upd_packing_padding_scratch_size = 0;
   /* packing of input */
   if ( handle->upd_pack_input != 0 ) {
     handle->upd_packing_padding_scratch_size = (size_t)handle->desc.N * handle->desc.C *
       handle->desc.H/handle->desc.u *
       handle->desc.W/handle->desc.v *
-      libxsmm_dnn_typesize(handle->datatype_in);
+      datasize_in;
   }
   /* logical padding with copying in the fly */
   if ( handle->upd_padding_copy != 0 ) {
     handle->upd_packing_padding_scratch_size = (size_t)handle->desc.N * handle->desc.C *
       (handle->desc.H + 2*handle->desc.pad_h) *
       (handle->desc.W + 2*handle->desc.pad_w) *
-      libxsmm_dnn_typesize(handle->datatype_in);
+      datasize_in;
   }
   /* output/input buffer to transpose when we use bf16 */
   if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) {
@@ -1138,6 +1142,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_l
 }
 
 LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_layer* handle ) {
+  const int datasize_in = (int)libxsmm_dnn_typesize(handle->datatype_in);
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_blasint _ldi = 64, _ldo = 64;
@@ -1203,8 +1208,8 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
     if (handle->desc.R == 1 && handle->desc.S == 1) {
       const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
       const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
-      int stride_a = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_in);
-      int stride_b = IFW * IFH * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
+      int stride_a = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * datasize_in;
+      int stride_b = IFW * IFH * handle->ifmblock * datasize_in;
       handle->fwd_compute_kernel_strd = libxsmm_bmmdispatch_reducebatch_strd_unroll(handle->ofmblock, handle->fwd_gemm_pixels, handle->ifmblock, stride_a, stride_b, handle->blocksifm_blocking, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
     } else {
       const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
@@ -1218,10 +1223,10 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
           for (ki = 0; ki < handle->desc.S; ki++) {
             handle->A_offsets[i] = (ifm * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock +
                 kj * handle->desc.S * handle->ifmblock * handle->ofmblock +
-                ki * handle->ifmblock * handle->ofmblock) * libxsmm_dnn_typesize(handle->datatype_in);
+                ki * handle->ifmblock * handle->ofmblock) * datasize_in;
             handle->B_offsets[i] = (ifm * IFH * IFW * handle->ifmblock +
                 kj * IFW * handle->ifmblock +
-                ki * handle->ifmblock) * libxsmm_dnn_typesize(handle->datatype_in);
+                ki * handle->ifmblock) * datasize_in;
             i++;
           }
         }
@@ -1369,8 +1374,8 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
     handle->bwd_compute_kernel_offs = NULL;
     handle->bwd_compute_kernel_strd = NULL;
     if (handle->desc.R == 1 && handle->desc.S == 1) {
-      int stride_a = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_in);
-      int stride_b = handle->ofwp * handle->ofhp * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_in);
+      int stride_a = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * datasize_in;
+      int stride_b = handle->ofwp * handle->ofhp * handle->ofmblock * datasize_in;
       handle->bwd_compute_kernel_strd = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->ifmblock, handle->bwd_gemm_pixels, handle->ofmblock, stride_a, stride_b, handle->blocksofm_blocking, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
     } else {
       int n_blocks = handle->desc.R * handle->desc.S * handle->blocksofm_blocking;
@@ -1382,10 +1387,10 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
           for (ki = 0; ki < handle->desc.S; ki++) {
             handle->A_offsets_bwd[i] = (ofm * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock +
                 kj * handle->desc.S * handle->ifmblock * handle->ofmblock +
-                ki * handle->ifmblock * handle->ofmblock) * libxsmm_dnn_typesize(handle->datatype_in);
+                ki * handle->ifmblock * handle->ofmblock) * datasize_in;
             handle->B_offsets_bwd[i] = (ofm * handle->ofhp * handle->ofwp * handle->ofmblock +
                 kj * handle->ofwp * handle->ofmblock +
-                ki * handle->ofmblock) * libxsmm_dnn_typesize(handle->datatype_in);
+                ki * handle->ofmblock) * datasize_in;
             i++;
           }
         }

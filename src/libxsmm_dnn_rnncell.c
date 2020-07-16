@@ -90,6 +90,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
 
     /* In case of BF16 for now hoist the BRGEMM and make them to use STRIDED variant by default */
     if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+      const int datasize_in = (int)libxsmm_dnn_typesize(handle->desc.datatype_in);
       libxsmm_blasint BF, CB_BLOCKS, KB_BLOCKS;
       const libxsmm_blasint K =  handle->desc.K;
       const libxsmm_blasint N =  handle->desc.N;
@@ -134,11 +135,11 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
         KB_BLOCKS = kBlocks/BF;
 
         /* define batch-reduce gemm kernels */
-        stride_a = bc * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bc * bn * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bc * bk * datasize_in;
+        stride_b = bc * bn * datasize_in;
         handle->fwd_kernela = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bc, stride_a, stride_b, CB_BLOCKS, &bk, &bc, &bk, NULL, NULL, &kernel_flags, NULL );
-        stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bk * bn * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bk * bk * datasize_in;
+        stride_b = bk * bn * datasize_in;
         handle->fwd_kernelb = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &bk, &bk, NULL, NULL, &kernel_flags, NULL );
         if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
           handle->fwd_tileconfig = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL );
@@ -147,17 +148,17 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
         BF = handle->bwdupd_block;
         KB_BLOCKS = kBlocks/BF;
 
-        stride_a = bc * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bk * bn * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bc * bk * datasize_in;
+        stride_b = bk * bn * datasize_in;
         handle->bwdupd_kernela = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bc, bn, bk, stride_a, stride_b, KB_BLOCKS, &bc, &bk, &bc, NULL, NULL, &kernel_flags, NULL);
-        stride_a = bn * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bn * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bn * bk * datasize_in;
+        stride_b = bn * bk * datasize_in;
         handle->bwdupd_kernelb = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bk, bn, stride_a, stride_b, nBlocks, &bk, &bn, &bk, NULL, NULL, &kernel_flags, NULL);
-        stride_a = bn * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bn * bc * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bn * bk * datasize_in;
+        stride_b = bn * bc * datasize_in;
         handle->bwdupd_kernelc = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bc, bn, stride_a, stride_b, nBlocks, &bk, &bn, &bk, NULL, NULL, &kernel_flags, NULL);
-        stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bn * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bk * bk * datasize_in;
+        stride_b = bn * bk * datasize_in;
         handle->bwdupd_kerneld = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &bk, &bk, NULL, NULL, &kernel_flags, NULL);
         if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
           handle->bwdupd_tileconfig = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL);
@@ -167,11 +168,11 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
         KB_BLOCKS = kBlocks/BF;
 
         /* define batch-reduce gemm kernels */
-        stride_a = bc * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bc * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bc * bk * datasize_in;
+        stride_b = bc * datasize_in;
         handle->fwd_kernela = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bc, stride_a, stride_b, CB_BLOCKS, &bk, &C, &K, NULL, NULL, &kernel_flags, NULL );
-        stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bk * bk * datasize_in;
+        stride_b = bk * datasize_in;
         handle->fwd_kernelb = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL );
         if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
           handle->fwd_tileconfig = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL );
@@ -180,17 +181,17 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
         BF = handle->bwdupd_block;
         KB_BLOCKS = kBlocks/BF;
 
-        stride_a = bc * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bc * bk * datasize_in;
+        stride_b = bk * datasize_in;
         handle->bwdupd_kernela = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bc, bn, bk, stride_a, stride_b, KB_BLOCKS, &bc, &K, &C, NULL, NULL, &kernel_flags, NULL);
-        stride_a = bn * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bn * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bn * bk * datasize_in;
+        stride_b = bn * datasize_in;
         handle->bwdupd_kernelb = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bk, bn, stride_a, stride_b, nBlocks, &bk, &N, &bk, NULL, NULL, &kernel_flags, NULL);
-        stride_a = bn * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bn * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bn * bk * datasize_in;
+        stride_b = bn * datasize_in;
         handle->bwdupd_kernelc = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bc, bn, stride_a, stride_b, nBlocks, &bk, &N, &bk, NULL, NULL, &kernel_flags, NULL);
-        stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
-        stride_b = bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+        stride_a = bk * bk * datasize_in;
+        stride_b = bk * datasize_in;
         handle->bwdupd_kerneld = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL);
         if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
           handle->bwdupd_tileconfig = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL);
