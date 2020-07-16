@@ -828,6 +828,48 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   return result;
 }
 
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_EXP_PS_2DTS( __m512 in ) {
+  const __m512 log2_e   = _mm512_set1_ps(1.442695f);
+  const __m512 half     = _mm512_set1_ps(0.5f);
+  const __m512 c2       = _mm512_set1_ps(0.240226507f);
+  const __m512 c1       = _mm512_set1_ps(0.452920674f);
+  const __m512 c0       = _mm512_set1_ps(0.713483036f);
+
+  const __m512 x        = _mm512_fmadd_ps(in, log2_e, half);
+#if 1
+  const __m512 y        = _mm512_sub_ps(x, _mm512_roundscale_round_ps(x, 1, _MM_FROUND_CUR_DIRECTION));
+#else
+  const __m512 y        = _mm512_reduce_ps(x, 1);
+#endif
+  const __m512 t1       = _mm512_fmadd_ps( y, c2, c1);
+  const __m512 two_to_y = _mm512_fmadd_ps( y, t1, c0);
+  const __m512 exp      = _mm512_scalef_ps( two_to_y, x );
+
+  return exp;
+}
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_EXP_PS_3DTS( __m512 in ) {
+  const __m512 log2_e   = _mm512_set1_ps(1.442695f);
+  const __m512 half     = _mm512_set1_ps(0.5f);
+  const __m512 c3       = _mm512_set1_ps(0.05550410866f);
+  const __m512 c2       = _mm512_set1_ps(0.15697034396f);
+  const __m512 c1       = _mm512_set1_ps(0.49454875509f);
+  const __m512 c0       = _mm512_set1_ps(0.70654502287f);
+
+  const __m512 x        = _mm512_fmadd_ps(in, log2_e, half);
+#if 1
+  const __m512 y        = _mm512_sub_ps(x, _mm512_roundscale_round_ps(x, 1, _MM_FROUND_CUR_DIRECTION));
+#else
+  const __m512 y        = _mm512_reduce_ps(x, 1);
+#endif
+  const __m512 t1       = _mm512_fmadd_ps( y, c3, c2);
+  const __m512 t2       = _mm512_fmadd_ps( y, t1, c1);
+  const __m512 two_to_y = _mm512_fmadd_ps( y, t2, c0);
+  const __m512 exp      = _mm512_scalef_ps( two_to_y, x );
+
+  return exp;
+}
+
 #if defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_INTRINSICS_MM512_TANH_PS(A) _mm512_tanh_ps(A)
 # define LIBXSMM_INTRINSICS_MM512_EXP_PS(A) _mm512_exp_ps(A)
