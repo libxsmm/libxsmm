@@ -5721,8 +5721,8 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
   char tile_config_imm[64];
 
   /* Can move these variables into the API if we choose: */
-  /*const*/ unsigned int i_gp_reg_idx = LIBXSMM_X86_GP_REG_UNDEF;
-  /*const*/ unsigned int i_scale = 1;
+  const unsigned int i_gp_reg_idx = LIBXSMM_X86_GP_REG_UNDEF;
+  const unsigned int i_scale = 1;
 
   /* @TODO: check instruction set */
   LIBXSMM_UNUSED( i_instruction_set );
