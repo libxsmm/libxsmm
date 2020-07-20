@@ -91,21 +91,21 @@ fi
 #${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  224 224    3   64 7 7 3 3 2 2 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  56  56    64  256 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  56  56    64   64 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
-#${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  56  56    64   64 3 3 1 1 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
+${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  56  56    64   64 3 3 1 1 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  56  56   256   64 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  56  56   256  512 1 1 0 0 2 2 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  56  56   256  128 1 1 0 0 2 2 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
-#${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  28  28   128  128 3 3 1 1 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
+${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  28  28   128  128 3 3 1 1 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  28  28   128  512 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  28  28   512  128 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  28  28   512 1024 1 1 0 0 2 2 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  28  28   512  256 1 1 0 0 2 2 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
-#${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  14  14   256  256 3 3 1 1 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
+${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  14  14   256  256 3 3 1 1 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  14  14   256 1024 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  14  14  1024  256 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  14  14  1024 2048 1 1 0 0 2 2 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  14  14  1024  512 1 1 0 0 2 2 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
-#${NUMACTL} ./parallel_sparse_weight_B_conv ${N}   7   7   512  512 3 3 1 1 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
+${NUMACTL} ./parallel_sparse_weight_B_conv ${N}   7   7   512  512 3 3 1 1 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}   7   7   512 2048 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}   7   7  2048  512 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 

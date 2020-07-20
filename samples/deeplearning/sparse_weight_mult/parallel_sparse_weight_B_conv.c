@@ -290,9 +290,9 @@ int main(int argc, char **argv) {
           for (l_k = 0; l_k < K / KB; ++l_k) {
             for (l_c = 0; l_c < C / CB; ++l_c) {
               for (l_r = 0; l_r < R; ++l_r) {
-                if ( l_h+l_r < 0 || l_h+l_r > H ) continue;
+                if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
                 for (l_s = 0; l_s < S; ++l_s) {
-                  if ( l_w+l_s < 0 || l_w+l_s > W ) continue;
+                  if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
                   for (l_nn = 0; l_nn < NB / nb; ++l_nn) {
                     for (l_kk = 0; l_kk < KB; ++l_kk) {
                       k = l_k * KB + l_kk;
@@ -346,9 +346,9 @@ int main(int argc, char **argv) {
             l_h = l_p*sh - padh;
             l_w = l_q*sw - padw;
             for (l_r = 0; l_r < R; ++l_r) {
-              if ( l_h+l_r < 0 || l_h+l_r > H ) continue;
+              if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
               for (l_s = 0; l_s < S; ++l_s) {
-                if ( l_w+l_s < 0 || l_w+l_s > W ) continue;
+                if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
                 for (c = 0; c < C / CB; ++c) {
                   mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h+l_r, l_w+l_s, c, 0, 0, 0, H, W, C / CB, NB / nb, CB, nb)),
                                                b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c],
@@ -382,9 +382,9 @@ int main(int argc, char **argv) {
               l_h = l_p*sh - padh;
               l_w = l_q*sw - padw;
               for (l_r = 0; l_r < R; ++l_r) {
-                if ( l_h+l_r < 0 || l_h+l_r > H ) continue;
+                if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
                 for (l_s = 0; l_s < S; ++l_s) {
-                  if ( l_w+l_s < 0 || l_w+l_s > W ) continue;
+                  if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
                   for (c = 0; c < C / CB; ++c) {
                     mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h+l_r, l_w+l_s, c, 0, 0, 0, H, W, C / CB, NB / nb, CB, nb)),
                                                b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c],
