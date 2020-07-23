@@ -556,33 +556,33 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
  */
 LIBXSMM_API void libxsmm_release_kernel(const void* kernel);
 
-/** Matrix copy function ("in" can be NULL to zero the destination). */
+/** Matrix copy function; "in" can be NULL to zero the destination (BLAS-like equivalent is "omatcopy"). */
 LIBXSMM_API void libxsmm_matcopy(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix copy function ("in" can be NULL to zero the destination, per-thread form). */
+/** Matrix copy function (per-thread form); "in" can be NULL when zeroing (BLAS-like equivalent is "omatcopy"). */
 LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
-/** Matrix copy function ("in" can be NULL to zero the destination); MT via libxsmmext. */
+/** Matrix copy function (MT via libxsmmext); "in" can be NULL when zeroing (BLAS-like equivalent is "omatcopy"). */
 LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix transposition (out-of-place form). */
+/** Matrix transposition; out-of-place form (BLAS-like equivalent is "omatcopy"). */
 LIBXSMM_API void libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix transposition (out-of-place form, per-thread form). */
+/** Matrix transposition (per-thread form); out-of-place (BLAS-like equivalent is "omatcopy"). */
 LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
-/** Matrix transposition; MT via libxsmmext (out-of-place form). */
+/** Matrix transposition (MT via libxsmmext); out-of-place (BLAS-like equivalent is "omatcopy"). */
 LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix transposition (in-place form). */
+/** Matrix transposition; in-place (BLAS-like equivalent is "imatcopy"). */
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
