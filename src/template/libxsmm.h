@@ -650,7 +650,7 @@ template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<float>       
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<int>                  { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I32; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum</*signed*/short>      { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<libxsmm_bfloat16>     { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_BF16; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<tensorflow::bfloat16> { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_BF16; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<Eigen::bfloat16>      { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_BF16; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<signed char>          { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<unsigned char>        { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<char>                 { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };

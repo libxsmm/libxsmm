@@ -104,7 +104,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_hp {
 } libxsmm_bfloat16_hp;
 
 #if defined(__cplusplus)
-namespace tensorflow { struct bfloat16; }
+namespace Eigen { struct bfloat16; }
 #endif /*__cplusplus*/
 
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
