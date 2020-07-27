@@ -32,7 +32,7 @@ int main()
   int dim = 32;
 
   libxsmm_mmfunction<libxsmm_bfloat16> kernel(LIBXSMM_GEMM_FLAG_NONE, dim, dim, dim, alpha, beta);
-  if (kernel) { /* AVX-512 is LIBXSMM´s prerequisite for Bfloat16 (no further emulation) */
+  if (kernel) { /* AVX-512 is LIBXSMM's prerequisite for Bfloat16 (no further emulation) */
     libxsmm_bfloat16 *const abf16 = new libxsmm_bfloat16[dim*dim];
     libxsmm_bfloat16 *const bbf16 = new libxsmm_bfloat16[dim*dim];
     float *const a = new float[dim*dim];

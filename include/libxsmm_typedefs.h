@@ -306,7 +306,7 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_VNNI_A = 32768,
   /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates B */
   LIBXSMM_GEMM_FLAG_VNNI_B = 65536,
-  /* for low precision we also requrie post packed formats "VNNI" for best performance, this flag indicated C */
+  /* for low precision we also require post packed formats "VNNI" for best performance, this flag indicated C */
   LIBXSMM_GEMM_FLAG_VNNI_C = 131072,
   /* combined types */
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0                      = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
