@@ -643,7 +643,7 @@ LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
 
 #if defined(__cplusplus)
 
-/** Map a built-in type to libxsmm_gemm_precision (libxsmm_gemm_precision_enum). */
+/** Map built-in type to libxsmm_gemm_precision (libxsmm_gemm_precision_enum). */
 template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum          { static const libxsmm_gemm_precision value = static_cast<libxsmm_gemm_precision>(LIBXSMM_DATATYPE_UNSUPPORTED); };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<double>            { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<float>             { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F32; };
@@ -655,10 +655,12 @@ template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<signed char> 
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<unsigned char>     { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<char>              { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
 
+/** Determine default output type based on the input-type. */
 template<typename INP_TYPE> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output   { typedef INP_TYPE type; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output</*signed*/short>   { typedef int type; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output<libxsmm_bfloat16>  { typedef float type; };
 
+/** Determine extension-flags based on input/output type combination; see also LIBXSMM_GEMM_XFLAGS. */
 template<typename INP_TYPE, typename OUT_TYPE> struct LIBXSMM_RETARGETABLE libxsmm_gemm_xflags  { static const int value = 0; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_xflags<libxsmm_bfloat16, float>             { static const int value = LIBXSMM_GEMM_FLAG_VNNI_A; };
 
