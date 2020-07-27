@@ -657,7 +657,7 @@ template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<char>        
 
 template<typename INP_TYPE> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output      { typedef INP_TYPE type; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output</*signed*/short>      { typedef int type; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output<unsigned short>       { typedef int type; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output<libxsmm_bfloat16>     { typedef float type; };
 
 /** Construct and execute a specialized function. */
 template<typename INP_TYPE, typename OUT_TYPE = typename libxsmm_gemm_default_output<INP_TYPE>::type>
