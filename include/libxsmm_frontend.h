@@ -83,7 +83,6 @@
 #define LIBXSMM_GEMM_XFLAGS_libxsmm_bfloat16 LIBXSMM_GEMM_FLAG_VNNI_A
 #define LIBXSMM_GEMM_XFLAGS_int 0
 #define LIBXSMM_GEMM_XFLAGS_short 0
-#define LIBXSMM_GEMM_XFLAGS_char 0
 
 /** Construct symbol name from a given real type name (float, double and short). */
 #define LIBXSMM_BLAS_FNTYPE(TYPE, KIND) LIBXSMM_CONCATENATE3(libxsmm_, LIBXSMM_TPREFIX(TYPE, KIND), _function)
