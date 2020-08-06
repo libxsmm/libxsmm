@@ -823,6 +823,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
 #endif
+
 #if defined(__THROW) && defined(__cplusplus)
 # define LIBXSMM_THROW __THROW
 #endif
@@ -835,6 +836,16 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_NOTHROW
 #endif
+#if defined(__cplusplus)
+# if (__cplusplus > 199711L)
+#   define LIBXSMM_NOEXCEPT noexcept
+# else
+#   define LIBXSMM_NOEXCEPT throw()
+# endif
+#else
+# define LIBXSMM_NOEXCEPT LIBXSMM_NOTHROW
+#endif
+
 #if defined(_WIN32)
 # define LIBXSMM_PUTENV(A) _putenv(A)
 #else
