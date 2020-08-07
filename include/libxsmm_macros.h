@@ -171,6 +171,14 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED
 # define LIBXSMM_ATTRIBUTE_USED
 #endif
+#if defined(__clang__)
+# define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(no_sanitize(LIBXSMM_STRINGIFY(KIND)))
+#elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 8) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) \
+  && !defined(__INTEL_COMPILER)
+# define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(LIBXSMM_CONCATENATE(no_sanitize_, KIND))
+#else
+# define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND)
+#endif
 
 #if defined(__cplusplus)
 # define LIBXSMM_VARIADIC ...
@@ -823,6 +831,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
 #endif
+
 #if defined(__THROW) && defined(__cplusplus)
 # define LIBXSMM_THROW __THROW
 #endif
@@ -835,6 +844,16 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_NOTHROW
 #endif
+#if defined(__cplusplus)
+# if (__cplusplus > 199711L)
+#   define LIBXSMM_NOEXCEPT noexcept
+# else
+#   define LIBXSMM_NOEXCEPT throw()
+# endif
+#else
+# define LIBXSMM_NOEXCEPT LIBXSMM_NOTHROW
+#endif
+
 #if defined(_WIN32)
 # define LIBXSMM_PUTENV(A) _putenv(A)
 #else

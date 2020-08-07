@@ -137,6 +137,9 @@ endif
 # Optimization flag derived from OPT flag
 OPTFLAG ?= -O$(patsubst O%,%,$(OPT))
 
+# Kind of Clang-analysis (thread, address, ...)
+SANITIZE ?= $(NULL)
+
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
 # compatible with the GCC tool chain
@@ -1303,15 +1306,15 @@ ifneq (0,$(INTEL))
   endif
 else # GCC assumed
   ifneq (0,$(SYM))
-    ifeq (1,$(SYM))
+    ifeq (1,$(if $(SANITIZE),2,$(SYM)))
       CXXFLAGS += -g
       CFLAGS += -g
       FCFLAGS += -g
-    else ifeq (2,$(SYM))
-      CXXFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
-      CFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
-      FCFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
-      LDFLAGS += -g -fsanitize=thread $(call ldclib,$(LD),$(SLDFLAGS),tsan) -fno-omit-frame-pointer
+    else ifeq (2,$(if $(SANITIZE),2,$(SYM)))
+      CXXFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
+      CFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
+      FCFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
+      LDFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) #$(call ldclib,$(LD),$(SLDFLAGS),tsan)
     else
       ifneq (,$(filter 2 3,$(GCC)))
         CXXFLAGS += -g3
