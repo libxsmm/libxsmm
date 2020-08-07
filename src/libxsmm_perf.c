@@ -53,6 +53,16 @@
 # define LIBXSMM_PERF_ERROR(msg)
 #endif
 
+#if !defined(PERF_JITDUMP_NOLIBXSMM)
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_MAGIC);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_MAGIC_SWAPPED);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_VERSION);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint64_t JITDUMP_FLAGS_ARCH_TIMESTAMP);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_CODE_LOAD);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_CODE_MOVE);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_CODE_DEBUG_INFO);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_CODE_CLOSE);
+#endif
 
 LIBXSMM_APIVAR_DEFINE(FILE* internal_perf_fp);
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
@@ -65,6 +75,18 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
 {
   const uint32_t pid = (uint32_t)libxsmm_get_pid();
   char file_name[LIBXSMM_MAX_PATH];
+#if !defined(PERF_JITDUMP_NOLIBXSMM)
+  JITDUMP_MAGIC = ('J' << 24 | 'i' << 16 | 'T' << 8 | 'D');
+  JITDUMP_MAGIC_SWAPPED = ('J' | 'i' << 8 | 'T' << 16 | 'D' << 24);
+  JITDUMP_VERSION = 1;
+  JITDUMP_FLAGS_ARCH_TIMESTAMP = 1ULL /*<< 0*/;
+# if !defined(NDEBUG)
+  JITDUMP_CODE_LOAD = 0;
+# endif
+  JITDUMP_CODE_MOVE = 1;
+  JITDUMP_CODE_DEBUG_INFO = 2;
+  JITDUMP_CODE_CLOSE = 3;
+#endif
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
   char file_path[LIBXSMM_MAX_PATH];
   int fd, page_size, res;
@@ -167,7 +189,6 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
     goto error;
   }
 #endif
-
   return;
 
 error:
