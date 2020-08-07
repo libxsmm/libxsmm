@@ -75,18 +75,6 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
 {
   const uint32_t pid = (uint32_t)libxsmm_get_pid();
   char file_name[LIBXSMM_MAX_PATH];
-#if !defined(PERF_JITDUMP_NOLIBXSMM)
-  JITDUMP_MAGIC = ('J' << 24 | 'i' << 16 | 'T' << 8 | 'D');
-  JITDUMP_MAGIC_SWAPPED = ('J' | 'i' << 8 | 'T' << 16 | 'D' << 24);
-  JITDUMP_VERSION = 1;
-  JITDUMP_FLAGS_ARCH_TIMESTAMP = 1ULL /*<< 0*/;
-# if !defined(NDEBUG)
-  JITDUMP_CODE_LOAD = 0;
-# endif
-  JITDUMP_CODE_MOVE = 1;
-  JITDUMP_CODE_DEBUG_INFO = 2;
-  JITDUMP_CODE_CLOSE = 3;
-#endif
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
   char file_path[LIBXSMM_MAX_PATH];
   int fd, page_size, res;
@@ -97,8 +85,8 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
   struct tm tm = *localtime(&t);
 
   /* initialize global variables */
-  JITDUMP_MAGIC = 'J' << 24 | 'i' << 16 | 'T' << 8 | 'D';
-  JITDUMP_MAGIC_SWAPPED = 'J' | 'i' << 8 | 'T' << 16 | 'D' << 24;
+  JITDUMP_MAGIC = ('J' << 24 | 'i' << 16 | 'T' << 8 | 'D');
+  JITDUMP_MAGIC_SWAPPED = ('J' | 'i' << 8 | 'T' << 16 | 'D' << 24);
   JITDUMP_VERSION = 1;
   JITDUMP_FLAGS_ARCH_TIMESTAMP = 1ULL /*<< 0*/;
   JITDUMP_CODE_LOAD = 0;
@@ -180,7 +168,6 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to write header.\n");
     goto error;
   }
-
 #else
   LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%u.map", pid);
   internal_perf_fp = fopen(file_name, "w+");
@@ -190,7 +177,6 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
   }
 #endif
   return;
-
 error:
   if (internal_perf_fp != NULL) {
     fclose(internal_perf_fp);
@@ -230,7 +216,6 @@ LIBXSMM_API_INTERN void libxsmm_perf_finalize(void)
   munmap(internal_perf_marker, page_size);
   fclose(internal_perf_fp);
   return;
-
 error:
   assert(0);
 #else
@@ -293,7 +278,6 @@ LIBXSMM_API_INTERN void libxsmm_perf_dump_code(const void* memory, size_t size, 
     fflush(internal_perf_fp);
 
     assert(res == 4); /* Expected 4 items written above */
-
 #else
     fprintf(internal_perf_fp, "%" PRIxPTR " %lx %s\n", (uintptr_t)memory, (unsigned long)size, name);
     fflush(internal_perf_fp);
