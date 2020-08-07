@@ -171,6 +171,11 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED
 # define LIBXSMM_ATTRIBUTE_USED
 #endif
+#if defined(__clang__)
+# define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(no_sanitize(LIBXSMM_STRINGIFY(KIND)))
+#else
+# define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND)
+#endif
 
 #if defined(__cplusplus)
 # define LIBXSMM_VARIADIC ...

@@ -425,7 +425,9 @@ LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], s
 }
 
 
-LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
+LIBXSMM_API_INLINE
+LIBXSMM_ATTRIBUTE_NO_SANITIZE(address)
+internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
 {
   const char *const buffer = (const char*)memory;
   internal_malloc_info_type* result = (internal_malloc_info_type*)(NULL != memory
