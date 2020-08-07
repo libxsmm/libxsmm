@@ -56,8 +56,8 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                                 unsigned int**          o_row_idx,
                                 unsigned int**          o_column_idx,
                                 double**                o_values,
-                                unsigned int*           o_row_count,
-                                unsigned int*           o_column_count,
+                                unsigned int*           io_row_count,
+                                unsigned int*           io_column_count,
                                 unsigned int*           o_element_count ) {
   FILE *l_csc_file_handle;
   const unsigned int l_line_length = 512;
@@ -86,18 +86,21 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
     } else {
       /* if we are the first line after comment header, we allocate our data structures */
       if ( l_header_read == 0 ) {
-        if (3 == sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) &&
-            0 != *o_row_count && 0 != *o_column_count && 0 != *o_element_count)
+        unsigned int row_count, column_count;
+        if (3 == sscanf(l_line, "%u %u %u", &row_count, &column_count, o_element_count) &&
+            0 != row_count && 0 != column_count && 0 != *o_element_count)
         {
+          *io_column_count = LIBXSMM_MAX(*io_column_count, column_count);
+          *io_row_count = LIBXSMM_MAX(*io_row_count, row_count);
           /* allocate CSC data structure matching mtx file */
           /* coverity[tainted_data] */
           *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
           /* coverity[tainted_data] */
-          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)(*o_column_count) + 1));
+          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)(*io_column_count) + 1));
           /* coverity[tainted_data] */
           *o_values = (double*) malloc(sizeof(double) * (*o_element_count));
           /* coverity[tainted_data] */
-          l_column_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*o_column_count));
+          l_column_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*io_column_count));
 
           /* check if mallocs were successful */
           if ( ( *o_row_idx == NULL )      ||
@@ -115,15 +118,15 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
           /* coverity[tainted_data] */
           memset(*o_row_idx, 0, sizeof(unsigned int) * (*o_element_count));
           /* coverity[tainted_data] */
-          memset(*o_column_idx, 0, sizeof(unsigned int) * ((size_t)(*o_column_count) + 1));
+          memset(*o_column_idx, 0, sizeof(unsigned int) * ((size_t)(*io_column_count) + 1));
           /* coverity[tainted_data] */
           memset(*o_values, 0, sizeof(double) * (*o_element_count));
           /* coverity[tainted_data] */
-          memset(l_column_idx_id, 0, sizeof(unsigned int) * (*o_column_count));
+          memset(l_column_idx_id, 0, sizeof(unsigned int) * (*io_column_count));
 
           /* init column idx */
           /* coverity[tainted_data] */
-          for (l_i = 0; l_i <= *o_column_count; ++l_i) {
+          for (l_i = 0; l_i <= *io_column_count; ++l_i) {
             (*o_column_idx)[l_i] = *o_element_count;
           }
           /* init */
@@ -175,7 +178,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
 
   if ( l_column_idx_id != NULL ) {
     /* let's handle empty columns */
-    for ( l_i = 0; l_i < (*o_column_count); l_i++) {
+    for ( l_i = 0; l_i < (*io_column_count); l_i++) {
       if ( l_column_idx_id[l_i] == 0 ) {
         (*o_column_idx)[l_i+1] = (*o_column_idx)[l_i];
       }

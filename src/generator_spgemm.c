@@ -261,6 +261,10 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
     libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
   }
 
+  /* account for cases where requested shape does not match sparse data */
+  l_column_count = i_xgemm_desc->n;
+  l_row_count = i_xgemm_desc->m;
+
   /* check if generate to CSC */
   /* @TODO, this i_is_csr is very hacky.... change it in future */
   if ( (i_is_csr == 0) || (i_is_csr > 9) ) {
