@@ -1517,7 +1517,7 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
         ( conv_desc.pad_w != conv_desc.pad_w_in )  ||
         ( conv_desc.pad_h != conv_desc.pad_h_out ) ||
         ( conv_desc.pad_w != conv_desc.pad_w_out )    ) &&
-      ( conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32 ) /*&& (conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_BF16)*/ ) {
+      ( conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32 ) && (conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_BF16) ) {
     *status = LIBXSMM_DNN_ERR_INVALID_PADDING;
     return 0;
   }
