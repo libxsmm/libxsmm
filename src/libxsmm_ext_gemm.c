@@ -724,7 +724,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       const double imbalance = 100.0 * LIBXSMM_DELTA((unsigned int)nthreads, ntasks) / nthreads;
       static double max_imbalance = 50.0;
       if (max_imbalance < imbalance) {
-        fprintf(stderr, "LIBXSMM WARNING (XGEMM): %.0f%% imbalance (%u of %i workers utilized)!\n",
+        fprintf(stderr, "LIBXSMM WARNING: XGEMM %.0f%% imbalance (%u of %i workers utilized)!\n",
           imbalance, ntasks, nthreads);
         max_imbalance = imbalance;
       }
@@ -740,7 +740,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
+        fprintf(stderr, "LIBXSMM WARNING: XGEMM fall-back code path triggered!\n");
       }
     }
     else if (0 != libxsmm_verbosity && /* library code is expected to be mute */

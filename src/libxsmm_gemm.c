@@ -793,7 +793,7 @@ LIBXSMM_API_INLINE int libxsmm_gemm_plan_internal(unsigned int ntasks,
           if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
-            fprintf(stderr, "LIBXSMM WARNING (XGEMM): K-parallelism triggered!\n");
+            fprintf(stderr, "LIBXSMM WARNING: XGEMM K-parallelism triggered!\n");
           }
 #endif
         }
@@ -1279,7 +1279,7 @@ LIBXSMM_API void libxsmm_xgemm(libxsmm_gemm_precision iprec, libxsmm_gemm_precis
       if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
+        fprintf(stderr, "LIBXSMM WARNING: XGEMM fall-back code path triggered!\n");
       }
     }
     else if (0 != libxsmm_verbosity && /* library code is expected to be mute */
