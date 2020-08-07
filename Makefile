@@ -1489,6 +1489,7 @@ endif
 	@rm -f $(INCDIR)/libxsmm.modmic
 	@rm -f $(INCDIR)/libxsmm.mod
 	@rm -f $(INCDIR)/libxsmm.f
+	@rm -f $(HEREDIR)/python3
 
 .PHONY: clean-all
 clean-all: clean
