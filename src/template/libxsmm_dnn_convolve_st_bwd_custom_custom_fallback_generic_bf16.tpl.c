@@ -16,8 +16,10 @@ const int ltid = tid - start_thread;
 int ofmblock_lp = handle->ofmblock/handle->fm_lp_block;
 int ifmblock_lp = handle->ifmblock/handle->fm_lp_block;
 int lpb = handle->fm_lp_block;
+unsigned long long n_blocks = handle->blocksofm;
 
 /* number of tasks that could be run in parallel */
+int task;
 const int work = handle->desc.N * handle->blocksifm;
 /* compute chunk size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
@@ -68,7 +70,7 @@ if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) == 0 ) 
     }
   }
   weight_base = (element_filter_type*)((char*)handle->scratch + handle->bwd_filter_trans_scratch_offset);
-  
+
   /* wait for transpose to finish */
   libxsmm_barrier_wait(handle->barrier, ltid);
 } else {
@@ -78,8 +80,8 @@ if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) == 0 ) 
 {/* open new scope for additional variable declarations (C89) */
 LIBXSMM_VLA_DECL(5, element_input_type, del_input, (element_output_type*)handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
 LIBXSMM_VLA_DECL(3, float, del_input_padded, del_input_scratch_padding, padded_w, handle->ifmblock);
-LIBXSMM_VLA_DECL(5, const element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-LIBXSMM_VLA_DECL(7, const element_filter_type, weight, weight_base, handle->blocksofm, handle->desc.R, handle->desc.S, ofmblock_lp, handle->ifmblock, lpb);
+LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+LIBXSMM_VLA_DECL(7, element_filter_type, weight, weight_base, handle->blocksofm, handle->desc.R, handle->desc.S, ofmblock_lp, handle->ifmblock, lpb);
 /* Auxiliary fp32 accumulators */
 float *del_inp_fp32 = (float*)((char*)handle->scratch + handle->bwd_lp_input_full_scratch_offset);
 LIBXSMM_VLA_DECL(5, float, del_input_fp32, del_inp_fp32, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -108,9 +110,9 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       oi = 0; ii = 0;
       for (kj = 0; kj < handle->desc.R; ++kj) {
         for (ki = 0; ki < handle->desc.S; ++ki) {
-          bf16fp32_brgemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ifm1, 0, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 0,        handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
+          bf16fp32_brgemm_kernel( &LIBXSMM_VLA_ACCESS(7, weight, ifm1, 0, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 0, 0,        handle->blocksofm, handle->desc.R, handle->desc.S, ofmblock_lp, handle->ifmblock, lpb),
                        &LIBXSMM_VLA_ACCESS(5, output,  img, 0, oj, oi, 0,           handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-                       &LIBXSMM_VLA_ACCESS(5, del_input_fp32,  img, ifm1, ij + kj, ii + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) );
+                       &LIBXSMM_VLA_ACCESS(5, del_input_fp32,  img, ifm1, ij + kj, ii + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), &n_blocks );
         }
       }
     }
@@ -149,9 +151,9 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       oi = 0; ii = 0;
       for (kj = 0; kj < handle->desc.R; ++kj) {
         for (ki = 0; ki < handle->desc.S; ++ki) {
-          bf16fp32_brgemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ifm1, 0, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 0,        handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
+          bf16fp32_brgemm_kernel( &LIBXSMM_VLA_ACCESS(7, weight, ifm1, 0, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 0, 0,       handle->blocksofm, handle->desc.R, handle->desc.S, ofmblock_lp, handle->ifmblock, lpb),
                        &LIBXSMM_VLA_ACCESS(5, output,  img, 0, oj, oi, 0,           handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-                       &LIBXSMM_VLA_ACCESS(3, del_input_padded, ij + kj, ii + ki, 0, padded_w, handle->ifmblock) );
+                       &LIBXSMM_VLA_ACCESS(3, del_input_padded, ij + kj, ii + ki, 0, padded_w, handle->ifmblock), &n_blocks );
         }
       }
     }
