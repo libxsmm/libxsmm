@@ -75,7 +75,8 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
   while (fgets(l_line, l_line_length, l_csc_file_handle) != NULL) {
     if ( strlen(l_line) == l_line_length ) {
       free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_column_idx_id);
-      *o_row_idx = 0; *o_column_idx = 0; *o_values = 0;
+      *io_row_count = *io_column_count = *o_element_count = 0;
+      *o_row_idx = *o_column_idx = NULL; *o_values = NULL;
       fclose( l_csc_file_handle ); /* close mtx file */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_READ_LEN );
       return;
@@ -108,7 +109,8 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                ( *o_values == NULL )       ||
                ( l_column_idx_id == NULL ) ) {
             free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_column_idx_id);
-            *o_row_idx = 0; *o_column_idx = 0; *o_values = 0;
+            *io_row_count = *io_column_count = *o_element_count = 0;
+            *o_row_idx = *o_column_idx = NULL; *o_values = NULL;
             fclose(l_csc_file_handle); /* close mtx file */
             LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_ALLOC_DATA );
             return;
@@ -143,9 +145,13 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
         unsigned int l_row = 0, l_column = 0;
         double l_value = 0;
         /* read a line of content */
-        if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3 ) {
+        if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3
+          || l_row > *io_row_count || l_column > *io_column_count
+          || l_i >= *o_element_count )
+        {
           free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_column_idx_id);
-          *o_row_idx = 0; *o_column_idx = 0; *o_values = 0;
+          *io_row_count = *io_column_count = *o_element_count = 0;
+          *o_row_idx = *o_column_idx = NULL; *o_values = NULL;
           fclose(l_csc_file_handle); /* close mtx file */
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_READ_ELEMS );
           return;
@@ -171,7 +177,8 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
   /* check if we read a file which was consistent */
   if ( l_i != (*o_element_count) ) {
     free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_column_idx_id);
-    *o_row_idx = 0; *o_column_idx = 0; *o_values = 0;
+    *io_row_count = *io_column_count = *o_element_count = 0;
+    *o_row_idx = *o_column_idx = NULL; *o_values = NULL;
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_LEN );
     return;
   }
