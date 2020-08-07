@@ -161,7 +161,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
     /* input padding copy back */
     for (ij = 0; ij < handle->desc.H; ij++) {
       LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(&LIBXSMM_VLA_ACCESS(3, del_input_padded, ij + handle->desc.pad_h, handle->desc.pad_w, 0, padded_w, handle->ifmblock),
-                                          &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                                          &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                                           handle->desc.W * handle->ifmblock);
     }
   }

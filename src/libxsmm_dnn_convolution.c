@@ -585,6 +585,13 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bwd_scratch( libxsmm_dnn_l
   /* input bufffer in high precision when we use BF16 */
   if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) {
     handle->bwd_lp_input_full_scratch_size = (size_t) LIBXSMM_MAX(handle->desc.threads * handle->bwd_gemm_pixels * handle->ifmblock * libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32), handle->desc.N * handle->desc.C * handle->ifwp * handle->ifhp * libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32));
+    /* logical padding with copying in the fly */
+    if ( handle->use_fallback_bwd_loops != 0 ) {
+      handle->bwd_packing_padding_scratch_size = (size_t)handle->desc.threads * handle->ifmblock *
+        (handle->desc.H + 2*handle->desc.pad_h) *
+        (handle->desc.W + 2*handle->desc.pad_w) *
+        libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32);
+    }
   } else {
     handle->bwd_lp_input_full_scratch_size = 0;
   }
@@ -1510,7 +1517,7 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
         ( conv_desc.pad_w != conv_desc.pad_w_in )  ||
         ( conv_desc.pad_h != conv_desc.pad_h_out ) ||
         ( conv_desc.pad_w != conv_desc.pad_w_out )    ) &&
-      ( conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32 ) ) {
+      ( conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32 ) /*&& (conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_BF16)*/ ) {
     *status = LIBXSMM_DNN_ERR_INVALID_PADDING;
     return 0;
   }
