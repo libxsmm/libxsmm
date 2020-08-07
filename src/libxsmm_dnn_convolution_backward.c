@@ -170,8 +170,18 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_bf16_bf16_emu(libxsm
 
 # include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
   } else {
-    status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-    return status;
+    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
+    typedef libxsmm_bfloat16 element_input_type;
+    typedef libxsmm_bfloat16 element_output_type;
+    typedef libxsmm_bfloat16 element_filter_type;
+    typedef libxsmm_bsmmfunction_reducebatch_strd brgemm_function;
+    int stride_a, stride_b;
+    int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
+    stride_a = handle->ifmblock * handle->desc.R * handle->desc.S * handle->ofmblock * sizeof(libxsmm_bfloat16);
+    stride_b = handle->ofmblock * handle->ofwp * handle->ofhp * sizeof(libxsmm_bfloat16);    
+    /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+    brgemm_function bf16fp32_brgemm_kernel = libxsmm_bsmmdispatch_reducebatch_strdl(handle->ifmblock, handle->ofw, handle->ofmblock, stride_a, stride_b, NULL, NULL, &ldC, NULL, NULL, &l_flags, NULL);
+#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -245,8 +255,18 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_bf16_bf16(libxsmm_dn
 # include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
 #undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
   } else {
-    status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-    return status;
+    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
+    typedef libxsmm_bfloat16 element_input_type;
+    typedef libxsmm_bfloat16 element_output_type;
+    typedef libxsmm_bfloat16 element_filter_type;
+    typedef libxsmm_bsmmfunction_reducebatch_strd brgemm_function;
+    int stride_a, stride_b;
+    int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
+    stride_a = handle->ifmblock * handle->desc.R * handle->desc.S * handle->ofmblock * sizeof(libxsmm_bfloat16);
+    stride_b = handle->ofmblock * handle->ofwp * handle->ofhp * sizeof(libxsmm_bfloat16);    
+    /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+    brgemm_function bf16fp32_brgemm_kernel = libxsmm_bsmmdispatch_reducebatch_strdl(handle->ifmblock, handle->ofw, handle->ofmblock, stride_a, stride_b, NULL, NULL, &ldC, NULL, NULL, &l_flags, NULL);
+#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
