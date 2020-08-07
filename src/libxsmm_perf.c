@@ -9,6 +9,8 @@
 /* Maciej Debski (Google Inc.)
 ******************************************************************************/
 #include "libxsmm_perf.h"
+#include <libxsmm_memory.h>
+#include <libxsmm_timer.h>
 #include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -257,7 +259,7 @@ LIBXSMM_API_INTERN void libxsmm_perf_dump_code(const void* memory, size_t size, 
     LIBXSMM_FLOCK(internal_perf_fp);
 
     /* This will be unique as we hold the file lock. */
-    rec.internal_perf_codeidx = internal_perf_codeidx++;
+    rec.code_index = internal_perf_codeidx++;
 
     /* Count number of written items to check for errors. */
     res = 0;

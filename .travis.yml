@@ -130,7 +130,7 @@ script:
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
-      make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 PYMOD=1
+      make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 PYMOD=1 JITDUMP=1
                        EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} &&
     if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "$((1<UPLOAD_ENABLED))" ]; then eval ${UPLOAD}; fi
@@ -144,7 +144,7 @@ script:
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) && make -e clean && (
-      make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 INTRINSICS=1 MIX=0
+      make -e ${MAKEJ} PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 INTRINSICS=1 MIX=0 JITDUMP=1
                        EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" ${INSTALL} tests
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV} &&
     if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "$((1<UPLOAD_ENABLED))" ]; then eval ${UPLOAD}; fi
