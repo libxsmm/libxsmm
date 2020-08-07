@@ -9,7 +9,7 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 
-int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2, ifm1ofm1;
+int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 /* auxiliary lp variables  */
