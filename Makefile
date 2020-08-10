@@ -1578,9 +1578,13 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo "LIBXSMM installing pkg-config and module files..."
 	@mkdir -p $(PREFIX)/$(PPKGDIR)
 	@$(CP) -v $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
-	@mkdir -p $(PREFIX)/$(PMODDIR)
 	@if [ ! -e $(PREFIX)/$(PMODDIR)/module ]; then \
-		@$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true; \
+		mkdir -p $(PREFIX)/$(PMODDIR); \
+		if [ "$(PMODDIR)" != "$(OUTDIR)" ]; then \
+			$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true; \
+		else \
+			$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
+		fi; \
 	fi
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
