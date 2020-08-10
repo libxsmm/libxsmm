@@ -75,7 +75,7 @@ The [Matrix Multiplication domain (MM)](libxsmm_mm.md) contains routines for:
 
 ### Deep Learning<a name="interface-for-convolutions"></a>
 
-This domain (DL) is detailed by a separate [document](libxsmm_dl.md). It may be inspiring to have a look at the light-weight GxM framework, which uses LIBXSMM for end-to-end Deep Learning.
+This domain (DL) is detailed by a separate [document](libxsmm_dl.md). It may be inspiring to have a look at the lightweight GxM framework, which uses LIBXSMM for end-to-end Deep Learning.
 
 ### Service Functions
 
@@ -132,7 +132,7 @@ A variety of build environments is out-of-the-box compatible, see [https://githu
 make COMPATIBLE=1
 ```
 
-<a name="outdated-binutils"></a>In case of outdated Binutils, compilation can fail to assemble code when building the library (this has nothing to do with JIT-generated code and it does not affect how JIT-code is targeting the system). In contrast to the default (`INTRINSICS=2`), `INTRINSICS=1` enables to statically depend on the desired target, e.g., `AVX=3 MIC=0`, or `AVX=2` (if the target is omitted, the default target is used). Try to work around failing compilation with:
+<a name="outdated-binutils"></a>In case of outdated Binutils, compilation can fail to assemble code when building the library (this has nothing to do with JIT-generated code and it does not affect how JIT-code is targeting the system). LIBXSMM implements some functionality using compiler-intrinsics and multiple code-paths which are scheduled according to CPUID. In contrast to `INTRINSICS=2` (default), `INTRINSICS=1` enables a fully static code path according to the desired target. If no target is given (e.g., `AVX=3`, or `AVX=2`), instruction set extensions cannot be leveraged for such code-paths. Try to fix failing compilation by building the latest GNU Binutils (and `export PATH=/path/to/binutils/bin:${PATH}`). Binutils are versioned independently of GNU&#160;GCC and other compilers. If one cannot update Binutils, work around with a CPUID-value as tabulated in [libxsmm_cpuid.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_cpuid.h): start at the upper end (less than 1999) and decrement until compilation passes (make INTRINSICS=_CPUID_, e.g., `make INTRINSICS=1021`). As a last resort, rely on a fully static code path:
 
 ```bash
 make INTRINSICS=1
@@ -303,11 +303,11 @@ Please note that comparing performance results depends on whether the operands o
 
 **\[6]&#160;[http://dial3343.org/about/](http://dial3343.org/about/)**: The Extreme-scale Discontinuous Galerkin Environment (EDGE) is a solver for hyperbolic partial differential equations with emphasis on seismic simulations. The EDGE [source code](https://github.com/3343/edge) optionally relies on LIBXSMM, but for high performance LIBXSMM's kernels are highly recommended.
 
-**\[7]&#160;[https://sxs-collaboration.github.io/spectre/](https://sxs-collaboration.github.io/spectre/)**: SpECTRE is an open-source code for multi-scale, multi-physics problems in astrophysics and gravitational physics which runs at petascale and is designed for exascale computers. In the future, SpECTRE may be applied to problems across discipline boundaries in fluid dynamics, geoscience, plasma physics, nuclear physics, and engineering.
+**\[7]&#160;[https://sxs-collaboration.github.io/spectre/](https://sxs-collaboration.github.io/spectre/)**: SpECTRE is an open-source code for multi-scale, multi-physics problems in astrophysics and gravitational physics which runs at Petascale and is designed for Exascale computers. In the future, SpECTRE may be applied to problems across discipline boundaries in fluid dynamics, geoscience, plasma physics, nuclear physics, and engineering.
 
 **\[8]&#160;[https://ceed.exascaleproject.org/ceed-code/](https://ceed.exascaleproject.org/ceed-code/)**: The Center for Efficient Exascale Discretizations (CEED) is building on the efforts of the Nek5000, MFEM, MAGMA, OCCA and PETSc projects to develop application program interfaces (APIs), both at high-level and at low-level to enable applications to take advantage of high-order methods. The CEED low-level API, [libCEED](https://ceed.exascaleproject.org/libceed/) uses LIBXSMM as a [backend](https://github.com/CEED/libCEED#backends) for high performance on CPUs.
 
-**\[9]&#160;[https://github.com/romeric/Fastor](https://github.com/romeric/Fastor)**: Fastor is a light-weight high performance tensor algebra framework for modern C++ and can optionally use LIBXSMM as [JIT-backend](https://github.com/romeric/Fastor/wiki/9.-Using-the-LIBXSMM-MKL-JIT-backend).
+**\[9]&#160;[https://github.com/romeric/Fastor](https://github.com/romeric/Fastor)**: Fastor is a lightweight high performance tensor algebra framework for modern C++ and can optionally use LIBXSMM as [JIT-backend](https://github.com/romeric/Fastor/wiki/9.-Using-the-LIBXSMM-MKL-JIT-backend).
 
 ### Machine Learning (ML)
 
@@ -341,9 +341,9 @@ Please note that comparing performance results depends on whether the operands o
 
 **\[1]&#160;[https://www.nextplatform.com/2019/10/09/cloudy-supercomputers-join-the-hpc-petascale-club/](https://www.nextplatform.com/2019/10/09/cloudy-supercomputers-join-the-hpc-petascale-club/)**: Cloudy Supercomputers Join the HPC Petascale Club. An article written by Rob Farber, 2019. The article covers LIBXSMM in a separate section.
 
-**\[2]&#160;[https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/](https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/)**: Counting The Cost Of Scaling HPC Applications. An article written by Timothy Prickett Morgan, 2019. This article is about CP2K Open Source Molecular Dynamics and not about LIBXSMM in particular. However, LIBXSMM was key for application performance.
+**\[2]&#160;[https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/](https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/)**: Counting The Cost Of Scaling HPC Applications. An article written by Timothy Prickett Morgan, 2019. This article is about CP2K Open Source Molecular Dynamics and not about LIBXSMM. However, LIBXSMM was key for application performance.
 
-**\[3]&#160;[https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/](https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/)**: Azure Benchmarks HC-series Across Twentythousand Cores for HPC. An article written by John Russell, 2019. This article is about CP2K Open Source Molecular Dynamics and not about LIBXSMM in particular. However, LIBXSMM was key for application performance.
+**\[3]&#160;[https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/](https://www.nextplatform.com/2019/06/26/counting-the-cost-of-scaling-hpc-applications/)**: Azure Benchmarks HC-series Across Twenty-thousand Cores for HPC. An article written by John Russell, 2019. This article is about CP2K Open Source Molecular Dynamics and not about LIBXSMM. However, LIBXSMM was key for application performance.
 
 **\[4]&#160;[https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf](https://software.intel.com/en-us/download/parallel-universe-magazine-issue-34-october-2018)**: LIBXSMM: An Open Source-Based Inspiration for Hardware and Software Development at Intel. An article written by Hans Pabst, Greg Henry, and Alexander Heinecke, 2018.
 

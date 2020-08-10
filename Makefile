@@ -449,7 +449,7 @@ else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 	$(info the BLAS library should go after LIBXSMM (link-line).)
 	$(info --------------------------------------------------------------------------------)
 endif
-ifneq (2,$(INTRINSICS))
+ifneq (,$(filter 0 1,$(INTRINSICS)))
 ifeq (0,$(COMPATIBLE))
 ifeq (0,$(AVX))
 	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
@@ -462,8 +462,8 @@ else # Intel Compiler
 	$(info Intel Compiler does not require adjusting INTRINSICS.)
 endif
 	$(info --------------------------------------------------------------------------------)
-endif
-endif
+endif # COMPATIBLE
+endif # INTRINSICS
 ifneq (0,$(MSGJITPROFILING))
 ifneq (,$(strip $(LIBJITPROFILING)))
 	$(info Intel VTune Amplifier support has been incorporated.)
@@ -733,7 +733,7 @@ $(1): $(2) $(3) $(dir $(1))/.make
 	-$(CC) $(4) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
 		echo "--------------------------------------------------------------"; \
-		echo "In case of assembler error, perhaps the Binutils are outdated."; \
+		echo "In case of assembler error, perhaps GNU Binutils are outdated."; \
 		echo "See https://github.com/hfp/libxsmm#outdated-binutils"; \
 		echo "--------------------------------------------------------------"; \
 		false; \
@@ -1578,9 +1578,13 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo "LIBXSMM installing pkg-config and module files..."
 	@mkdir -p $(PREFIX)/$(PPKGDIR)
 	@$(CP) -v $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
-	@mkdir -p $(PREFIX)/$(PMODDIR)
 	@if [ ! -e $(PREFIX)/$(PMODDIR)/module ]; then \
-		@$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true; \
+		mkdir -p $(PREFIX)/$(PMODDIR); \
+		if [ "$(PMODDIR)" != "$(OUTDIR)" ]; then \
+			$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true; \
+		else \
+			$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
+		fi; \
 	fi
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
