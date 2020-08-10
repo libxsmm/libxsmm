@@ -449,7 +449,7 @@ else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 	$(info the BLAS library should go after LIBXSMM (link-line).)
 	$(info --------------------------------------------------------------------------------)
 endif
-ifneq (2,$(INTRINSICS))
+ifneq (,$(filter 0 1,$(INTRINSICS)))
 ifeq (0,$(COMPATIBLE))
 ifeq (0,$(AVX))
 	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
@@ -462,8 +462,8 @@ else # Intel Compiler
 	$(info Intel Compiler does not require adjusting INTRINSICS.)
 endif
 	$(info --------------------------------------------------------------------------------)
-endif
-endif
+endif # COMPATIBLE
+endif # INTRINSICS
 ifneq (0,$(MSGJITPROFILING))
 ifneq (,$(strip $(LIBJITPROFILING)))
 	$(info Intel VTune Amplifier support has been incorporated.)
