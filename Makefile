@@ -733,7 +733,7 @@ $(1): $(2) $(3) $(dir $(1))/.make
 	-$(CC) $(4) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
 		echo "--------------------------------------------------------------"; \
-		echo "In case of assembler error, perhaps the Binutils are outdated."; \
+		echo "In case of assembler error, perhaps GNU Binutils are outdated."; \
 		echo "See https://github.com/hfp/libxsmm#outdated-binutils"; \
 		echo "--------------------------------------------------------------"; \
 		false; \
