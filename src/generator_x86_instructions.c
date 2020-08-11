@@ -5728,8 +5728,9 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
 
   /* Can move these variables into the API if we choose: */
   /*const*/ unsigned int i_gp_reg_idx = LIBXSMM_X86_GP_REG_UNDEF;
+#if 0 /* related to "execution cannot reach this branch" (see below) */
   /*const*/ unsigned int i_scale = 1;
-
+#endif
   /* @TODO: check instruction set */
   LIBXSMM_UNUSED( i_instruction_set );
 
@@ -5776,7 +5777,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
     int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
     int l_third = 0;
     int l_fifth = 0;
-    int l_place;
+    int l_place = 0;
     int l_forced_offset = 0;
 
     if ( l_maxsize - i < 80 )
