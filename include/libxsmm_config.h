@@ -1,7 +1,10 @@
 #ifndef LIBXSMM_CONFIG_H
 #define LIBXSMM_CONFIG_H
 
-#if !defined(LIBXSMM_DEFAULT_CONFIG) && (defined(_WIN32) || (defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED)))
+#if !defined(LIBXSMM_DEFAULT_CONFIG) && defined(LIBXSMM_SOURCE_H) && !defined(LIBXSMM_CONFIGURED)
+#  define LIBXSMM_DEFAULT_CONFIG
+#endif
+#if !defined(LIBXSMM_DEFAULT_CONFIG) && defined(_WIN32)
 #  define LIBXSMM_DEFAULT_CONFIG
 #endif
 
