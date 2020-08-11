@@ -10,6 +10,7 @@
 ******************************************************************************/
 #include <libxsmm_sync.h>
 #include <libxsmm_mhd.h>
+#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
