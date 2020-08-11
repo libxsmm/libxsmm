@@ -73,7 +73,7 @@ if ( handle->use_ofm_parallelization == 1 ) {
   }
 }
 
-n_blocks = handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
+n_blocks = (unsigned long long)handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
 out_ptr = (float*) &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, 0, 0, 0, scratch_ofwp, handle->ofmblock);
 
 libxsmm_barrier_init(handle->barrier, ltid);

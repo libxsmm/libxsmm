@@ -132,7 +132,7 @@ if ( handle->use_ifm_parallelization == 1 ) {
   }
 }
 
-n_blocks = handle->blocksofm_blocking * handle->desc.R * handle->desc.S;
+n_blocks = (unsigned long long)handle->blocksofm_blocking * handle->desc.R * handle->desc.S;
 out_ptr = (float*) &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, 0, 0, 0, scratch_ifwp, handle->ifmblock);
 
 #if 1
