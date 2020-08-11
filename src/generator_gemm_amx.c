@@ -1686,6 +1686,9 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
 
       /* In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) && (fully_unroll_k == 0)) {
+#if 1
+        LIBXSMM_ASSERT_MSG(0, "execution cannot reach this branch");
+#else
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_micro_kernel_config->alu_mov_instruction,
             i_gp_reg_mapping->gp_reg_b_ptrs,
@@ -1700,6 +1703,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
             0,
             i_gp_reg_mapping->gp_reg_a,
             1 );
+#endif
       }
 
       libxsmm_generator_gemm_footer_reduceloop_amx( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc);

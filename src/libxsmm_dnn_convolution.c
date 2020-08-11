@@ -145,7 +145,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_pixels_gemm( libxsmm_dn
   int result = handle->fwd_ofw_rb * handle->fwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
   if (handle->target_archid == LIBXSMM_X86_AVX512_SPR) {
-    if (handle->desc.R != 1 || handle->desc.R != 1) {
+    if (handle->desc.R != 1 /*TODO (check this expression): || handle->desc.R != 1*/) {
       if (handle->ofw < 24) {
         result = (handle->fwd_ofw_rb+2*handle->desc.pad_w) * (handle->fwd_ofh_rb-2) + 2 * (handle->fwd_ofw_rb+handle->desc.pad_w);
       }
@@ -452,7 +452,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_bwd_pixels_gemm( libxsmm_dn
   int result = handle->bwd_ofw_rb * handle->bwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
   if (handle->target_archid == LIBXSMM_X86_AVX512_SPR) {
-    if (handle->desc.R != 1 || handle->desc.R != 1) {
+    if (handle->desc.R != 1 /*TODO (check this expression): || handle->desc.R != 1*/) {
       if (handle->ofw < 24) {
         result = (handle->bwd_ofw_rb+2*handle->desc.pad_w) * (handle->bwd_ofh_rb-2) + 2 * (handle->bwd_ofw_rb+handle->desc.pad_w);
       }
