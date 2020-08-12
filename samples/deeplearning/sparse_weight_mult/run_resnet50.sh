@@ -86,6 +86,9 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
+export OMP_NUM_THREADS=24
+export KMP_AFFINITY=compact,granularity=fine,1,24
+
 # ./parallel_sparse_weight_B_conv nImg inpHeight inpWidth nIfm nOfm kh kw padh padw strideh stridew NB CB KB NNB sprase-fract Iters
 #
 #${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  224 224    3   64 7 7 3 3 2 2 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}

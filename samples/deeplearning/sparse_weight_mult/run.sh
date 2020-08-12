@@ -1,6 +1,6 @@
 #!/bin/bash
 
-N=${1:-160}
+N=${1:-128}
 C=${2:-1024}
 K=${3:-1024}
 spar=${4:-0.9}
@@ -13,7 +13,7 @@ echo "Repeats  = " $rep
 fwd_max_perf=0
 upd_max_perf=0
 #for NB in 16 32 80 160 320
-for NB in 160 320
+for NB in 16 32
 do
   #for nb in 16 32 80 160 320
   for nb in 16 32
@@ -31,7 +31,7 @@ do
       for CB in 64 128
       do
         echo "NB =" $NB ", nb =" $nb ", CB =" $CB ", KB =" $KB
-        KMP_AFFINITY=compact,granularity=fine,1,28 OMP_NUM_THREADS=28 srun ./parallel_sparse_weight_B_mult $N $C $K $NB $CB $KB $nb $spar $rep 2>&1 1>tmp
+        KMP_AFFINITY=compact,granularity=fine,1,24 OMP_NUM_THREADS=24 ./parallel_sparse_weight_B_mult $N $C $K $NB $CB $KB $nb $spar $rep 2>&1 1>tmp
         if [ $? -eq 0 ]
         then
           fwd_perf=$(grep "GFLOPS " tmp | awk -F " " '{print $1}')
@@ -42,7 +42,7 @@ do
           echo "  FWD Fail"
         fi
         rm -f tmp
-        KMP_AFFINITY=compact,granularity=fine,1,28 OMP_NUM_THREADS=28 srun ./parallel_sparse_weight_C_redmult $N $C $K $NB $CB $KB $nb $spar $rep 2>&1 1>tmp
+        KMP_AFFINITY=compact,granularity=fine,1,24 OMP_NUM_THREADS=24 ./parallel_sparse_weight_C_redmult $N $C $K $NB $CB $KB $nb $spar $rep 2>&1 1>tmp
         if [ $? -eq 0 ]
         then
           upd_perf=$(grep "GFLOPS " tmp | awk -F " " '{print $1}')
