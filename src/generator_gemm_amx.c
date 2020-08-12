@@ -120,13 +120,13 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
 
   if (i_micro_kernel_config->fused_bcolbias == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, 0/*unary minus operator applied to unsigned type, result still unsigned*/ - ( i_xgemm_desc->m  * i_m_loop_exists * (i_micro_kernel_config->datatype_size/2)) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, -( i_xgemm_desc->m  * i_m_loop_exists * (i_micro_kernel_config->datatype_size/2)) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
   if (i_micro_kernel_config->fused_scolbias == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, 0/*unary minus operator applied to unsigned type, result still unsigned*/ - ( i_xgemm_desc->m  * i_m_loop_exists * i_micro_kernel_config->datatype_size) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, -( i_xgemm_desc->m  * i_m_loop_exists * i_micro_kernel_config->datatype_size) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -1516,7 +1516,6 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
     libxsmm_blocking_info_t*           m_blocking_info ) {
 
   void (*l_generator_kloop)(libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,  libxsmm_blocking_info_t*,  libxsmm_blocking_info_t*, unsigned int, unsigned int);
-  unsigned long long A_offs = 0, B_offs = 0;
   unsigned int l_m_done = 0;
   unsigned int l_m_count = 0;
   unsigned int l_m_blocking = m_blocking_info[0].blocking;
@@ -1526,6 +1525,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_START = 0;
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_END = 1;
   unsigned int i;
+  unsigned int A_offs = 0, B_offs = 0;
 
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
@@ -1599,7 +1599,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
         }
 
         /* Here is the K loop along with the microkernel */
-        l_generator_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count], (unsigned int)A_offs, (unsigned int)B_offs);
+        l_generator_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count], A_offs, B_offs);
 
         /* In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) && (fully_unroll_k == 0)) {
