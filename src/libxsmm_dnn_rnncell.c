@@ -110,7 +110,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
         kernel_flags = kernel_flags | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
         tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
       }
-#if 0 /* dead code since BF is just overridden below */
+
       /* Blocking reduction domain if it is too large */
       BF = 1;
       if ((C > 1024 && C <= 2048) || (K > 1024 && K <= 2048)) {
@@ -128,7 +128,6 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
       if (C == 2048 && K == 1024) {
         BF = 2;
       }
-#endif
       BF = handle->fwd_block;
 
       if (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) {
