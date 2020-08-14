@@ -2163,7 +2163,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 #endif
       }
       else { /* executable buffer requested */
-        void *const code_ptr = NULL != info->reloc ? ((void*)(((char*)info->reloc) + alignment)) : *memory;
+        void *const code_ptr = (NULL != info->reloc ? ((void*)(((char*)info->reloc) + alignment)) : *memory);
         LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
         if (name && *name) { /* profiler support requested */
           if (0 > libxsmm_verbosity) { /* avoid dump when only the profiler is enabled */
@@ -2588,7 +2588,7 @@ LIBXSMM_API int libxsmm_get_malloc(size_t* lo, size_t* hi)
   if (NULL != lo) *lo = internal_malloc_limit[0];
   if (NULL != hi) *hi = internal_malloc_limit[1];
 #if (defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) || defined(LIBXSMM_INTERCEPT_DYNAMIC))
-  result = 0 != (internal_malloc_kind & 1) && 0 < internal_malloc_kind;
+  result = (0 != (internal_malloc_kind & 1) && 0 < internal_malloc_kind);
 #else
   result = 0;
 #endif
