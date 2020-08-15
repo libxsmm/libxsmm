@@ -289,6 +289,9 @@ void libxsmm_x86_instruction_vec_compute_2reg_mem( libxsmm_generated_code* io_ge
   unsigned char tbl_scale[9]      = {0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
   unsigned char *cptr = (unsigned char *) &i_vec_instr;
 
+  LIBXSMM_UNUSED( i_instruction_set );
+  LIBXSMM_UNUSED( i_vector_name );
+
 #if 0
 printf("DEBUG: Inside libxsmm_x86_instruction_vec_compute_2reg_mem\n");
 #endif
@@ -299,7 +302,7 @@ printf("DEBUG: Inside libxsmm_x86_instruction_vec_compute_2reg_mem\n");
   /* p0-op based on instruction value */
   code[p0   ] = (unsigned char)(i_vec_instr >> 24);
   code[p1   ] = (unsigned char)(i_vec_instr >> 16);
-//printf("Initial 3rd byte is 0x%02x and i_vec_instr>>16 is %d\n",code[p1],i_vec_instr>>16);
+  /*printf("Initial 3rd byte is 0x%02x and i_vec_instr>>16 is %d\n",code[p1],i_vec_instr>>16);*/
 #if 0
   code[p2   ] = (unsigned char)(i_vec_instr >> 8);
 #else
@@ -470,6 +473,9 @@ void libxsmm_x86_instruction_vec_compute_3reg( libxsmm_generated_code* io_genera
   int op    = code_head+4;
   int modrm = code_head+5;
 
+  LIBXSMM_UNUSED( i_instruction_set );
+  LIBXSMM_UNUSED( i_vector_name );
+
   /* const EVEX prefix */
   code[evexp] = (unsigned char)0x62;
 
@@ -514,7 +520,6 @@ void libxsmm_x86_instruction_vec_compute_3reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned int      i_vec_reg_number_2,
                                                     const unsigned char     i_imm8 )
 {
-  int code_head       = io_generated_code->code_size;
   unsigned char* code = (unsigned char *) io_generated_code->generated_code;
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                             i_instruction_set,
@@ -2969,8 +2974,10 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
      return ;
   }
 
+#if 0
+  printf("DEBUG: Using old encoding\n");
+#endif
   if ( io_generated_code->code_type > 1 ) {
-printf("DEBUG: Using old encoding\n");
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
     /*int i = *loc;*/
