@@ -13,7 +13,7 @@
 
 #include <generator_x86_instructions.h>
 
-int main( int argc, char* argv[] ) {
+int main( /*int argc, char* argv[]*/ ) {
   unsigned char codebuffer[131072];
   unsigned int i;
   unsigned int instr;
