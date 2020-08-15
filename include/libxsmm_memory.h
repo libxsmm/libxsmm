@@ -35,7 +35,7 @@
   const unsigned char *const libxsmm_memcpy127_loop_src_ = (const unsigned char*)(PTRSRC); \
   unsigned char *const libxsmm_memcpy127_loop_dst_ = (unsigned char*)(PTRDST); \
   signed char libxsmm_memcpy127_loop_i_; LIBXSMM_ASSERT((SIZE) <= 127); \
-  LIBXSMM_PRAGMA_UNROLL NTS(libxsmm_memcpy127_loop_dst_) \
+  NTS(libxsmm_memcpy127_loop_dst_) LIBXSMM_PRAGMA_UNROLL \
   for (libxsmm_memcpy127_loop_i_ = 0; libxsmm_memcpy127_loop_i_ < (signed char)(SIZE); \
     ++libxsmm_memcpy127_loop_i_) \
   { \

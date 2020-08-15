@@ -394,7 +394,7 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsig
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string)
 {
   unsigned long long result;
-  const size_t length = NULL != string ? strlen(string) : 0;
+  const size_t length = (NULL != string ? strlen(string) : 0);
   if (sizeof(result) < length) {
     const size_t length2 = length / 2;
     unsigned int seed32 = 0; /* seed=0: match else-optimization */
@@ -404,9 +404,13 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string)
     result = (result << 32) | seed32;
   }
   else { /* reinterpret directly as hash value */
+#if 1
+    result = (unsigned long long)string;
+#else
     char *const s = (char*)&result; signed char i;
     for (i = 0; i < (signed char)length; ++i) s[i] = string[i];
     for (; i < (signed char)sizeof(result); ++i) s[i] = 0;
+#endif
   }
   return result;
 }
