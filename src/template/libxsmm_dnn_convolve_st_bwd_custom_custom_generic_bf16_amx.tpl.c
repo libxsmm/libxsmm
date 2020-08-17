@@ -178,6 +178,45 @@ else {
     }
   }
 }
+
+if (handle->pack_input_bwd == 1) {
+  LIBXSMM_VLA_DECL(5, element_input_type, del_input_full, (element_input_type*)handle->grad_input->data + ((size_t)handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  for (img = my_img_start; img < my_img_end; img++) {
+    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
+      for (oj = 0; oj < handle->ifhp; oj++) {
+        for (oi = 0; oi < handle->ifwp; oi++) {
+          if (oi % handle->desc.v != 0 || oj % handle->desc.u != 0) {
+            LIBXSMM_PRAGMA_SIMD
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_input_type)0;
+              }
+          } else {
+            LIBXSMM_PRAGMA_SIMD
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) = LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, oj/handle->desc.u, oi/handle->desc.v, ifm2, handle->blocksifm, IFH, IFW, handle->ifmblock);
+              }
+          }
+        }
+      }
+    }
+  }
+} else if (handle->spread_input_bwd == 1) {
+  LIBXSMM_VLA_DECL(5, element_input_type, del_input_full, (element_input_type*)handle->grad_input->data + ((size_t)handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  for (img = my_img_start; img < my_img_end; img++) {
+    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
+      for (oj = 0; oj < handle->ifhp; oj++) {
+        for (oi = 0; oi < handle->ifwp; oi++) {
+          if (oi % handle->desc.v != 0 || oj % handle->desc.u != 0) {
+            LIBXSMM_PRAGMA_SIMD
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_input_type)0;
+              }
+          }
+        }
+      }
+    }
+  }
+}
 #else
 if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
   if ( handle->avoid_fmas_in_rim == 1) {

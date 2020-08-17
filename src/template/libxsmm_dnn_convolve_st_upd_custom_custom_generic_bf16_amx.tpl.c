@@ -259,14 +259,14 @@ if (handle->upd_linearized_pixels == 1) {
       if (img_in_tile == images_in_tile-1) {
         for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
           for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-            zero_ptr_in = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, tr_input_3, ifm1, ifm2, img_tile_id * handle->pixel_blocking + images_in_tile * handle->ifhp * handle->ifwp,  handle->ifmblock, handle->input_pixels);
+            zero_ptr_in = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, tr_input_3, ifm1, ifm2, img_tile_id * handle->pixel_blocking + images_in_tile * (handle->ifhp/handle->desc.u) * (handle->ifwp/handle->desc.v),  handle->ifmblock, handle->input_pixels);
             memset(zero_ptr_in, 0, handle->remainder_pixels * sizeof(element_input_type));
           }
         }
       }
     }
 
-    if (handle->ifmblock % 32 == 0) {
+    if ((handle->ifmblock % 32 == 0) && (handle->desc.u == 1) && (handle->desc.v == 1)) {
       for (img = my_img_start; img < my_img_end; img++) {
         img_tile_id = img/images_in_tile;
         img_in_tile = img%images_in_tile;
@@ -281,11 +281,11 @@ if (handle->upd_linearized_pixels == 1) {
         img_tile_id = img/images_in_tile;
         img_in_tile = img%images_in_tile;
         for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
-          for (ij = 0; ij < handle->ifhp; ij++) {
-            for (ii = 0; ii < handle->ifwp; ii++) {
+          for (ij = 0; ij < handle->ifhp/handle->desc.u; ij++) {
+            for (ii = 0; ii < handle->ifwp/handle->desc.v; ii++) {
               for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-                LIBXSMM_VLA_ACCESS(3, tr_input_3, ifm1, ifm2, img_tile_id * handle->pixel_blocking + img_in_tile * handle->ifhp * handle->ifwp + ij * handle->ifwp + ii, handle->ifmblock, handle->input_pixels) =
-                  LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                LIBXSMM_VLA_ACCESS(3, tr_input_3, ifm1, ifm2, img_tile_id * handle->pixel_blocking + img_in_tile * (handle->ifhp/handle->desc.u) * (handle->ifwp/handle->desc.v) + ij * (handle->ifwp/handle->desc.v) + ii, handle->ifmblock, handle->input_pixels) =
+                  LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij*handle->desc.u, ii*handle->desc.v, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               }
             }
           }
