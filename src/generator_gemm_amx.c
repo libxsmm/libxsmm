@@ -943,7 +943,9 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-    libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+    libxsmm_micro_kernel_config*        i_micro_kernel_config,
+    int                                 m_tiles,
+    int                                 n_tiles ) {
 
   int is_stride_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) ? 1 : 0;
   int is_offset_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
@@ -960,6 +962,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   unsigned int gemm_scratch_size      = 0;
   unsigned int scratch_pad_size       = 0;
   LIBXSMM_UNUSED(i_gp_reg_mapping);
+  LIBXSMM_UNUSED(m_tiles);
 
   if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) {
     if (libxsmm_get_meltw_cbiasact_flags((libxsmm_meltw_comp_cbiasact_flags)i_xgemm_desc->meltw_flags) != (unsigned int)LIBXSMM_MELTW_COMP_FLAG_CBIASACT_NONE) {
@@ -1195,7 +1198,8 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
 
   /* Now alllocate in stack required GEMM scratch if necessary*/
   if (LIBXSMM_GEMM_PRECISION_F32 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
-    gemm_scratch_size = i_xgemm_desc->n * i_xgemm_desc->ldc * i_micro_kernel_config->datatype_size;
+    int expand_scratch_factor = (n_tiles == 1) ? 2 : 1;
+    gemm_scratch_size = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * i_micro_kernel_config->datatype_size;
     scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
     gemm_scratch_size += scratch_pad_size;
   }
@@ -1463,7 +1467,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
   /* open asm */
   libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
   /* Setup stack frame...  */
-  libxsmm_generator_gemm_amx_setup_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
+  libxsmm_generator_gemm_amx_setup_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config, m_tiles, n_tiles );
   libxsmm_generator_gemm_amx_setup_fusion_infra( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
 
   if ((((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||

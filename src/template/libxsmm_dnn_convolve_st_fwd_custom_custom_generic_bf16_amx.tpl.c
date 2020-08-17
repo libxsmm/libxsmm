@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-int img, ofm1, /*ofm2, ifm1, ifm2,*/ oj, oi, /*kj, ki, oi_use, oj_use, ii_use, ij_use,*/ ofmb, /*ifmb,*/ ojb, myOfmId, nOfmBlocks, /*ind, ofm11, ki1, kj1,*/ ojj, /*oii,*/ spread_out = 1;
+int img, ofm1, ifm1, ifm2, /*ofm2, ifm1, ifm2,*/ oj, oi, /*kj, ki, oi_use, oj_use, */ii_use, ij_use, ofmb,/* ifmb,*/ ojb, myOfmId, nOfmBlocks, /*ind, ofm11, ki1, kj1,*/ ojj, /*oii,*/ spread_out = 1;
 /*int last_ki, last_kj, next_kj;*/
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -77,6 +77,32 @@ n_blocks = (unsigned long long)handle->blocksifm_blocking * handle->desc.R * han
 out_ptr = (float*) &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, 0, 0, 0, scratch_ofwp, handle->ofmblock);
 
 libxsmm_barrier_init(handle->barrier, ltid);
+
+if (handle->pack_input == 1) {
+  int ifmpt = LIBXSMM_UPDIV(handle->blocksifm, spread_out);
+  int ifm_id = ltid % spread_out;
+  int my_ifm_start = LIBXSMM_MIN(ifm_id * ifmpt, handle->blocksifm);
+  int my_ifm_end = LIBXSMM_MIN((ifm_id+1) * ifmpt, handle->blocksifm);
+  LIBXSMM_VLA_DECL(5, element_input_type, input_src, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  for (img = my_img_start; img < my_img_end; img++) {
+    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
+      for (oj = 0; oj < handle->ofh; oj++) {
+        for (oi = 0; oi < handle->ofw; oi++) {
+          ij_use = oj * handle->desc.u;
+          ii_use = oi * handle->desc.v;
+          LIBXSMM_PRAGMA_SIMD
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+              LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, ifm2, handle->blocksifm, IFH, IFW, handle->ifmblock) = LIBXSMM_VLA_ACCESS(5,  input_src,  img, ifm1, ij_use, ii_use, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            }
+        }
+      }
+    }
+  }
+  if ( handle->use_ofm_parallelization == 1 ) {
+    libxsmm_barrier_wait(handle->barrier, ltid);
+  }
+}
+
 /* Execute the tileconfig kernel */
 tile_config_kernel(NULL, NULL, NULL);
 
@@ -87,10 +113,12 @@ if (handle->desc.R == 1 && handle->desc.S == 1) {
       for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
         for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
           for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+            ij_use = (handle->pack_input == 1) ? oj : oj * handle->desc.u;
             for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
+              ii_use = (handle->pack_input == 1) ? oi : oi * handle->desc.v;
               /* Batch-reduce GEMM call  */
               br_gemm_kernel_strd( &LIBXSMM_VLA_ACCESS(7, weight, ofm1, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block),
-                                   &LIBXSMM_VLA_ACCESS(5,  input,  img, 0, oj, oi, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                                   &LIBXSMM_VLA_ACCESS(5,  input,  img, 0, ij_use, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
                                    &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), &n_blocks);
             }
           }
@@ -109,7 +137,7 @@ else if ( handle->fwd_ofw_rb*handle->fwd_ofh_rb == handle->fwd_gemm_pixels ) {
             for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
               /* Batch-reduce GEMM call  */
               br_gemm_kernel_offs_a( &LIBXSMM_VLA_ACCESS(7, weight, ofm1, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block),
-                                     &LIBXSMM_VLA_ACCESS(5,  input,  img, 0, oj, oi, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                                     &LIBXSMM_VLA_ACCESS(5,  input,  img, 0, oj*handle->desc.u, oi*handle->desc.v, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
                                      &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                                      &n_blocks, handle->A_offsets, handle->B_offsets);
             }

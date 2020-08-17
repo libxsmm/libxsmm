@@ -103,6 +103,14 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_pack_input_fwd( libxsmm_dnn
   if ((handle->ofw <= 14) && (handle->desc.K > 512) && (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.u == 2) && (handle->desc.v == 2)) {
     result = 1;
   }
+
+  /* For SPR we allow packing more aggressively to generate more efficient BRGEMMs */
+  if (handle->target_archid == LIBXSMM_X86_AVX512_SPR) {
+    if ((handle->ofw <= 14) && (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.u == 2) && (handle->desc.v == 2)) {
+      result = 1;
+    }
+  }
+
   /* Make sure we don't pack when minibatch is not divisible by number of threads since H is used potentially for parallelism */
   if (handle->desc.N != handle->desc.threads) {
     result = 0;
@@ -120,10 +128,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_ofh_rb( libxsmm_dnn_lay
   if ((handle->ofh <= 14) && (handle->desc.R == 1) && (handle->desc.S == 1)) {
     result = handle->ofh;
   }
-  /*  Make sure we don't use multiple rows when we don't pack input and convolutions are strided*/
-  if ((handle->pack_input == 0) && ((handle->desc.u !=1 ) || (handle->desc.v != 1))) {
-    result = 1;
-  }
+
   /* In this case we will be using fallback generic loops, thus ofh_rb should be 1 */
   if ((handle->desc.N % handle->desc.threads != 0) || (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)) {
     result = 1;
@@ -136,6 +141,11 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_ofh_rb( libxsmm_dnn_lay
     if (handle->ofw == 14 && handle->ofh == 14 /*&& handle->desc.R == 3 && handle->desc.S == 3*/) {
       result = 2;
     }
+  }
+
+  /*  Make sure we don't use multiple rows when we don't pack input and convolutions are strided*/
+  if ((handle->pack_input == 0) && ((handle->desc.u !=1 ) || (handle->desc.v != 1))) {
+    result = 1;
   }
 
   return result;
