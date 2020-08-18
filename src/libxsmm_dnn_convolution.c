@@ -1214,6 +1214,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->avoid_acc_load = libxsmm_dnn_convolution_setup_avoid_acc_load(handle);
   handle->fwd_flags = libxsmm_dnn_convolution_setup_init_fwd_gemm_flags(handle);
   handle->use_fallback_fwd_loops = libxsmm_dnn_convolution_setup_fallback_loops_fwd(handle);
+  handle->fwd_padding_copy = libxsmm_dnn_convolution_setup_fwd_padding_copy(handle);
 
   if ( (handle->target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) {
     handle->block_fwd_ofm = 1;
@@ -1235,8 +1236,8 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
       int stride_b = IFW * IFH * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
       handle->fwd_compute_kernel_strd = libxsmm_bmmdispatch_reducebatch_strd_unroll(handle->ofmblock, handle->fwd_gemm_pixels, handle->ifmblock, stride_a, stride_b, handle->blocksifm_blocking, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
     } else {
-      const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
-      const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
+      const int IFW = (handle->fwd_padding_copy == 1) ? handle->ifwp + 2*handle->desc.pad_w : ( (handle->pack_input == 1) ? handle->ofwp : handle->ifwp );
+      const int IFH = (handle->fwd_padding_copy == 1) ? handle->ifhp + 2*handle->desc.pad_h : ( (handle->pack_input == 1) ? handle->ofhp : handle->ifhp );
       int n_blocks = handle->desc.R * handle->desc.S * handle->blocksifm_blocking;
       int i = 0, ifm, ki, kj;
       handle->A_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
@@ -1259,8 +1260,6 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
     }
     handle->fwd_config_kernel = libxsmm_bsmmdispatch(handle->ofmblock, handle->fwd_gemm_pixels, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_tc_flags, NULL);
   }
-
-  handle->fwd_padding_copy = libxsmm_dnn_convolution_setup_fwd_padding_copy(handle);
 
   handle->code_fwd[0].ptr = 0;
   handle->code_fwd[1].ptr = 0;
