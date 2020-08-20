@@ -541,6 +541,8 @@ ifneq (,$(strip $(FC)))
       else
         override FC = $(NULL)
       endif
+    else ifneq (0,$(shell echo "$$((40600>$(FC_VERSION_NUM)))"))
+      FORTRAN ?= 1
     endif
   else ifneq (0,$(INTEL))
     ifneq (0,$(shell echo "$$((130000>$(FC_VERSION_NUM) && 0<$(FC_VERSION_NUM)))"))
@@ -548,12 +550,13 @@ ifneq (,$(strip $(FC)))
     endif
   endif
 endif
+FORTRAN ?= 2
 
 ifeq (,$(strip $(FC)))
   ifeq (0,$(FORTRAN))
     FC_VERSION = $(NULL)
   else # keep FC_VERSION for message about outdated compiler
-    FORTRAN = 0
+    FORTRAN ?= 0
   endif
 endif
 
@@ -598,7 +601,7 @@ ifneq (0,$(FORTRAN))
         endif
       endif
     else
-      FORTRAN = 0
+      FORTRAN ?= 0
     endif
   endif
 else
