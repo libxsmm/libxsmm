@@ -556,7 +556,7 @@ ifeq (,$(strip $(FC)))
   ifeq (0,$(FORTRAN))
     FC_VERSION = $(NULL)
   else # keep FC_VERSION for message about outdated compiler
-    FORTRAN ?= 0
+    FORTRAN = 0
   endif
 endif
 

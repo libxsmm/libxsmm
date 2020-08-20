@@ -610,7 +610,6 @@ else
 .PHONY: $(INCDIR)/libxsmm_version.h
 endif
 
-
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
 ifneq (,$(PYTHON))
@@ -620,7 +619,7 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(INCDIR)/libxsmm_config.h \
                      $(HEADERS)
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
-		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
+		$(shell echo $$(($(PRECISION)+($(FORTRAN)<<2)))) $(PREFETCH_TYPE) $(INDICES) > $@
 else
 .PHONY: $(INCDIR)/libxsmm.h
 endif
@@ -639,7 +638,7 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(INCDIR)/libxsmm_version.h \
                      $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
-		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
+		$(shell echo $$(($(PRECISION)+($(FORTRAN)<<2)))) $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py /dev/stdin \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \

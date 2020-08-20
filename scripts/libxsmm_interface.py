@@ -23,12 +23,15 @@ if __name__ == "__main__":
 
         # default configuration if no arguments are given
         precision = 0  # all
+        ifversion = 0  # interface
         prefetch = -1  # auto
         mnklist = list()
 
         # optional argument(s)
         if 2 < argc:
-            precision = int(sys.argv[2])
+            ivalue = int(sys.argv[2])
+            ifversion = (ivalue >> 2)
+            precision = (ivalue & 3)
         if 3 < argc:
             prefetch = int(sys.argv[3])
         if 4 < argc:
