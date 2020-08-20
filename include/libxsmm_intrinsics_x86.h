@@ -845,7 +845,6 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   const  __m512 c1     = _mm512_set1_ps( (float)0.79788);
   const  __m512 c2     = _mm512_set1_ps( (float)0.03568);
   const  __m512 c_half = _mm512_set1_ps( (float)0.5);
-  const  __m512 c_ones = _mm512_set1_ps( (float)1.0);
 
  __m512 x_half   = _mm512_mul_ps( x, c_half );
  __m512 x_sq   = _mm512_mul_ps( x, x );
@@ -874,8 +873,8 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
  __m512 out1 = _mm512_add_ps(c_ones, tanh_poly_x);
  __m512 out2 = _mm512_add_ps(c_half, poly_x2);
  __m512 out3 = _mm512_fmsub_ps(poly_x2, tanh_poly_x, out2);
-        out3 = _mm512_mul_ps(c_minus_1, out3);
- __m512 output = _mm512_mul_ps(out1, out3);
+ __m512 out4 = _mm512_mul_ps(c_minus_1, out3);
+ __m512 output = _mm512_mul_ps(out1, out4);
  return output;
 }
 
