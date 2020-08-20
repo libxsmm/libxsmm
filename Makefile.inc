@@ -1136,7 +1136,7 @@ ifneq (0,$(INTEL))
     endif
     CFLAGS += $(CSTD)
     ifeq (,$(strip $(GFC)))
-      FSTD = -std03
+      FSTD = -std$(if $(filter 1,$(FORTRAN)),03,08)
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
       FCFLAGS += $(FFORM_FLAG)
     endif
@@ -1158,7 +1158,7 @@ ifneq (0,$(INTEL))
       CFLAGS += $(CWARNEXTRA)
     endif
     ifeq (,$(strip $(GFC)))
-      FSTD = -std03
+      FSTD = -std$(if $(filter 1,$(FORTRAN)),03,08)
       FCFLAGS += $(FSTD) $(FPEDANTIC)
       FMFLAGS += -fixed
     endif
@@ -1352,7 +1352,7 @@ else # GCC assumed
   ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
     CXXFLAGS += -Wall
     CFLAGS += -Wall
-    FSTD = -std=f2003
+    FSTD = -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
     CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
