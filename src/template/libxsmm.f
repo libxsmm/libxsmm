@@ -2076,7 +2076,7 @@
         !> FORTRAN 77: see libxsmm_xhash
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_char
         FUNCTION libxsmm_hash_char(key, seed)
-          CHARACTER(C_CHAR), INTENT(IN) :: key(:)
+          CHARACTER(C_CHAR), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
           INTEGER(C_INT) :: libxsmm_hash_char
           libxsmm_hash_char = seed
@@ -2088,7 +2088,7 @@
         !> FORTRAN 77: see libxsmm_xhash
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i8
         FUNCTION libxsmm_hash_i8(key, seed)
-          INTEGER(C_INT8_T), INTENT(IN) :: key(:)
+          INTEGER(C_INT8_T), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
           INTEGER(C_INT) :: libxsmm_hash_i8
           libxsmm_hash_i8 = seed
@@ -2100,7 +2100,7 @@
         !> FORTRAN 77: see libxsmm_xhash
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i32
         FUNCTION libxsmm_hash_i32(key, seed)
-          INTEGER(C_INT), INTENT(IN) :: key(:)
+          INTEGER(C_INT), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
           INTEGER(C_INT) :: libxsmm_hash_i32
           libxsmm_hash_i32 = seed
@@ -2112,7 +2112,7 @@
         !> FORTRAN 77: see libxsmm_xhash
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i64
         FUNCTION libxsmm_hash_i64(key, seed)
-          INTEGER(C_LONG_LONG), INTENT(IN) :: key(:)
+          INTEGER(C_LONG_LONG), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
           INTEGER(C_INT) :: libxsmm_hash_i64
           libxsmm_hash_i64 = seed
@@ -2124,7 +2124,7 @@
         !> FORTRAN 77: see libxsmm_xdiff
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_char
         FUNCTION libxsmm_diff_char(a, b)
-          CHARACTER(C_CHAR), INTENT(IN) :: a(:), b(:)
+          CHARACTER(C_CHAR), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_char
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
@@ -2140,7 +2140,7 @@
         !> FORTRAN 77: see libxsmm_xdiff
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i8
         FUNCTION libxsmm_diff_i8(a, b)
-          INTEGER(C_INT8_T), INTENT(IN) :: a(:), b(:)
+          INTEGER(C_INT8_T), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_i8
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
@@ -2156,7 +2156,7 @@
         !> FORTRAN 77: see libxsmm_xdiff
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i32
         FUNCTION libxsmm_diff_i32(a, b)
-          INTEGER(C_INT), INTENT(IN) :: a(:), b(:)
+          INTEGER(C_INT), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_i32
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
@@ -2172,7 +2172,7 @@
         !> FORTRAN 77: see libxsmm_xdiff
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i64
         FUNCTION libxsmm_diff_i64(a, b)
-          INTEGER(C_LONG_LONG), INTENT(IN) :: a(:), b(:)
+          INTEGER(C_LONG_LONG), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_i64
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
