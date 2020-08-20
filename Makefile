@@ -1004,6 +1004,7 @@ DIRS_SAMPLES = $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
 	| grep -v /edge/repro/ \
+	| grep -v /encoder/ \
 	| grep -v /packed/ \
 	| grep -v /pyfr/ \
 	$(NULL)))
