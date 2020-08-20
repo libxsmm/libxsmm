@@ -404,16 +404,17 @@ FC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
 CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 
 # check if the Intel Development Tools are available
+# 1: classic, 2: next-gen (opt-in)
 INTEL ?= $(shell echo "$$((2==$(words $(filter icpc% icpx% icc% icx%, \
   $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
   $(shell $(CC)  $(CC_VERSION_FLAG)  2>/dev/null | head -n1 | cut -d' ' -f1)))))")
 
 ifneq (0,$(INTEL))
   ifeq (,$(shell echo "$${FC}"))
-    ifneq (,$(call qndir,$(call which,ifort)))
-      FC = ifort
-    else ifneq (,$(call qndir,$(call which,ifx)))
+    ifeq (ifx$(INTEL),$(call qndir,$(call which,ifx))$(filter-out 1,$(INTEL)))
       FC = ifx
+    else ifneq (,$(call qndir,$(call which,ifort)))
+      FC = ifort
     endif
   endif
 else
@@ -1224,7 +1225,7 @@ ifneq (0,$(INTEL))
   endif
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifeq (0,$(COMPATIBLE))
-    ifneq (,$(filter environment% override command%,$(origin COMPATIBLE)))
+    ifneq (,$(filter environment% override command%,$(origin COMPATIBLE))$(filter-out 1,$(INTEL)))
       ifeq (3,$(AVX))
         ifeq (,$(MIC))
           CTARGET = -xCOMMON-AVX512
