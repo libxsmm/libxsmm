@@ -1,0 +1,7 @@
+*.txt
+*.npz
+*.out
+*.log
+logs*
+*logs*
+test_model*
