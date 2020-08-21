@@ -989,7 +989,7 @@ LIBXSMM_API_INTERN void internal_init(void)
     internal_statistic_mnk = LIBXSMM_MAX_DIM;
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
-    LIBXSMM_ASSERT(LIBXSMM_CAPACITY_REGISTRY == LIBXSMM_UP2POT(LIBXSMM_CAPACITY_REGISTRY));
+    LIBXSMM_ASSERT(LIBXSMM_ISPOT(LIBXSMM_CAPACITY_REGISTRY));
     libxsmm_hash_init(libxsmm_target_archid); /* used by debug memory allocation (checksum) */
     libxsmm_memory_init(libxsmm_target_archid);
     if (
