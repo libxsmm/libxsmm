@@ -429,7 +429,7 @@ LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignme
     *alignment = (1 << LIBXSMM_INTRINSICS_BITSCANFWD64(address));
     result = (minalign <= *alignment);
   }
-  return result && (NULL == inc || LIBXSMM_MOD(*inc, minalign));
+  return result && (NULL == inc || 0 == LIBXSMM_MOD(*inc, minalign));
 }
 
 
@@ -503,7 +503,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* result, const void* ptr, 
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
-  if (NULL != result && NULL != ptr)
+  if (NULL != result)
 #endif
   {
     *result = libxsmm_aligned(ptr, (const size_t*)inc, alignment);
