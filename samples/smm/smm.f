@@ -299,9 +299,12 @@
           REAL(T), INTENT(OUT) :: c(:,:,:)
           TYPE(LIBXSMM_DMMFUNCTION) :: xmm
           INTEGER(8) :: i
-          CALL libxsmm_dispatch(xmm,                                    &
-     &      SIZE(c, 1), SIZE(c, 2), SIZE(b, 1),                         &
-     &      alpha=REAL(1,T), beta=REAL(0,T))
+          CALL libxsmm_dispatch(xmm, SIZE(c,1), SIZE(c,2), SIZE(b,1),   &
+     &      flags=MERGE(                                                &
+     &        LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0,                &
+     &        LIBXSMM_GEMM_FLAG_BETA_0,                                 &
+     &        libxsmm_aligned(libxsmm_ptr(c(1,1,1)),                    &
+     &          SIZE(c,1,8) * SIZE(c,2,8) * T)))
           !$OMP DO
           DO i = LBOUND(c, 3, 8), UBOUND(c, 3, 8)
             CALL libxsmm_mmcall(xmm, a(:,:,i), b(:,:,i), c(:,:,i))
