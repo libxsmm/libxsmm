@@ -59,7 +59,11 @@
      &    LIBXSMM_GEMM_FLAG_TRANS_B  = 2,                               &
      &    LIBXSMM_GEMM_FLAG_TRANS_AB = IOR(                             &
      &        LIBXSMM_GEMM_FLAG_TRANS_A, LIBXSMM_GEMM_FLAG_TRANS_B),    &
-     &    LIBXSMM_GEMM_FLAG_BETA_0   = 16
+     &    LIBXSMM_GEMM_FLAG_BETA_0   = 16,                              &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = 2176,                    &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0 = IOR(              &
+     &        LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,                       &
+     &        LIBXSMM_GEMM_FLAG_BETA_0)
 
         !> Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -2184,24 +2188,28 @@
           END IF
         END FUNCTION
 
-        !> Check if location is SIMD-aligned and
-        !> optionally calculate alignment in Bytes.
+        !> Check if location is SIMD-aligned and optionally consider the next
+        !> access as if reached by incrementing the location (in Bytes).
+        !> Optionally calculates the alignment of the given location in Bytes.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_aligned
-        FUNCTION libxsmm_aligned(location, alignment)
+        FUNCTION libxsmm_aligned(location, increment, alignment)
           TYPE(C_PTR), INTENT(IN), VALUE :: location
+          INTEGER(C_LONG_LONG), INTENT(IN), OPTIONAL :: increment
           INTEGER(C_INT), INTENT(OUT), OPTIONAL :: alignment
           LOGICAL(C_BOOL) :: libxsmm_aligned
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_aligned
           INTERFACE
             SUBROUTINE internal_aligned(is_aligned, location,           &
-     &      alignment) BIND(C, NAME="libxsmm_aligned_")
-              IMPORT :: C_PTR, C_INT, C_BOOL
-              TYPE(C_PTR), INTENT(IN), VALUE :: location
-              INTEGER(C_INT), INTENT(OUT), OPTIONAL :: alignment
+     &      increment, alignment) BIND(C, NAME="libxsmm_aligned_")
+              IMPORT :: C_PTR, C_LONG_LONG, C_INT, C_BOOL
+              TYPE(C_PTR), VALUE,   INTENT(IN) :: location
+              INTEGER(C_LONG_LONG), INTENT(IN) :: increment
+              INTEGER(C_INT),  INTENT(OUT) :: alignment
               LOGICAL(C_BOOL), INTENT(OUT) :: is_aligned
             END SUBROUTINE
           END INTERFACE
-          CALL internal_aligned(libxsmm_aligned, location, alignment)
+          CALL internal_aligned(libxsmm_aligned,                        &
+     &      location, increment, alignment)
         END FUNCTION
       END MODULE
 

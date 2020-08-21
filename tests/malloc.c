@@ -132,14 +132,14 @@ int main(void)
   /* allocate memory with specific alignment */
   p = libxsmm_aligned_malloc(size_malloc, alignment);
   /* check function that determines alignment */
-  libxsmm_aligned(p, &avalue);
+  libxsmm_aligned(p, NULL/*inc*/, &avalue);
 
   /* check the alignment of the allocation */
   if (0 != (((uintptr_t)p) % alignment) || avalue < alignment) {
     ++nerrors;
   }
 
-  if (libxsmm_aligned(p, NULL)) { /* pointer is SIMD-aligned */
+  if (libxsmm_aligned(p, NULL/*inc*/, NULL/*alignment*/)) { /* pointer is SIMD-aligned */
     if (alignment < ((size_t)4 * libxsmm_cpuid_vlen32(libxsmm_get_target_archid()))) ++nerrors;
   }
   else { /* pointer is not SIMD-aligned */
