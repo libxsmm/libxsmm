@@ -72,5 +72,8 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsig
 /** Calculate a 64-bit hash for the given character string; accepts NULL-string. */
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string);
 
+/** Check if pointer is SIMD-aligned and optionally calculate alignment in Bytes. */
+LIBXSMM_API int libxsmm_aligned(const void* pointer, int* alignment);
+
 #endif /*LIBXSMM_MEMORY_H*/
 

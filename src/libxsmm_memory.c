@@ -416,6 +416,23 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string)
 }
 
 
+LIBXSMM_API int libxsmm_aligned(const void* pointer, int* alignment)
+{
+  const int minalign = 4 * libxsmm_cpuid_vlen32(libxsmm_target_archid);
+  const uintptr_t address = (uintptr_t)pointer;
+  int result;
+  if (NULL == alignment) {
+    LIBXSMM_ASSERT(LIBXSMM_ISPOT(minalign));
+    result = (0 == LIBXSMM_MOD2(address, (uintptr_t)minalign));
+  }
+  else {
+    *alignment = (1 << LIBXSMM_INTRINSICS_BITSCANFWD64(address));
+    result = (minalign <= *alignment);
+  }
+  return result;
+}
+
+
 #if defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))
 
 /* implementation provided for Fortran 77 compatibility */
@@ -476,6 +493,26 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xclear)(void* dst, const int* size)
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xclear specified!\n");
+  }
+#endif
+}
+
+
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* /*result*/, const void* /*pointer*/, int* /*alignment*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* result, const void* pointer, int* alignment)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != result && NULL != pointer)
+#endif
+  {
+    *result = libxsmm_aligned(pointer, alignment);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_aligned specified!\n");
   }
 #endif
 }
