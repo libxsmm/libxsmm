@@ -423,13 +423,13 @@ LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignme
   int result;
   if (NULL == alignment) {
     LIBXSMM_ASSERT(LIBXSMM_ISPOT(minalign));
-    result = (0 == LIBXSMM_MOD2(address, (uintptr_t)minalign));
+    result = !LIBXSMM_MOD2(address, (uintptr_t)minalign);
   }
   else {
     *alignment = (1 << LIBXSMM_INTRINSICS_BITSCANFWD64(address));
     result = (minalign <= *alignment);
   }
-  return result && (NULL == inc || 0 == LIBXSMM_MOD(*inc, minalign));
+  return result && (NULL == inc || !LIBXSMM_MOD(*inc, minalign));
 }
 
 
