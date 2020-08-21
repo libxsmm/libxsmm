@@ -1,0 +1,31 @@
+#!/bin/bash
+
+NUM_TRAIN_STEPS=1000
+
+EXP_NAME=prune_test_$NUM_TRAIN_STEPS
+LOG_DIR=logs/$EXP_NAME
+
+source ~/.bashrc
+conda activate fairseq
+mkdir -p checkpoints/$EXP_NAME
+mkdir -p $LOG_DIR
+
+
+CUDA_VISIBLE_DEVICES=3 python ./fairseq_cli/train.py \
+  data-bin/iwslt14.tokenized.de-en \
+  --arch transformer \
+  --share-decoder-input-output-embed \
+  --optimizer adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0 \
+  --lr 5e-4 --lr-scheduler inverse_sqrt --warmup-updates 4000 \
+  --dropout 0.3 --weight-decay 0.0001 \
+  --criterion label_smoothed_cross_entropy --label-smoothing 0.1 \
+  --max-tokens 2048 --max-update $NUM_TRAIN_STEPS \
+  --eval-bleu \
+  --eval-bleu-args '{"beam": 5, "max_len_a": 1.2, "max_len_b": 10}' \
+  --eval-bleu-detok moses \
+  --eval-bleu-remove-bpe \
+  --eval-bleu-print-samples \
+  --best-checkpoint-metric bleu --maximize-best-checkpoint-metric \
+  --save-dir checkpoints/$EXP_NAME \
+  --target_sparsity 0.8 --pruning_interval 10 --prune_start_step 20 --num_pruning_steps 50 \
+  --prune_type magnitude --log-format json --tensorboard-logdir $LOG_DIR
