@@ -420,16 +420,16 @@ LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignme
 {
   const int minalign = 4 * libxsmm_cpuid_vlen32(libxsmm_target_archid);
   const uintptr_t address = (uintptr_t)ptr;
-  int result;
+  int ptr_is_aligned;
+  LIBXSMM_ASSERT(LIBXSMM_ISPOT(minalign));
   if (NULL == alignment) {
-    LIBXSMM_ASSERT(LIBXSMM_ISPOT(minalign));
-    result = !LIBXSMM_MOD2(address, (uintptr_t)minalign);
+    ptr_is_aligned = !LIBXSMM_MOD2(address, (uintptr_t)minalign);
   }
   else {
     *alignment = (1 << LIBXSMM_INTRINSICS_BITSCANFWD64(address));
-    result = (minalign <= *alignment);
+    ptr_is_aligned = (minalign <= *alignment);
   }
-  return result && (NULL == inc || !LIBXSMM_MOD(*inc, minalign));
+  return ptr_is_aligned && (NULL == inc || !LIBXSMM_MOD2(*inc, minalign));
 }
 
 
@@ -498,15 +498,16 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xclear)(void* dst, const int* size)
 }
 
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* /*result*/, const void* /*ptr*/, const long long* /*inc*/, int* /*alignment*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* result, const void* ptr, const long long* inc, int* alignment)
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* /*result*/, const void* /*ptr*/, const int* /*inc*/, int* /*alignment*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* result, const void* ptr, const int* inc, int* alignment)
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
   if (NULL != result)
 #endif
   {
-    *result = libxsmm_aligned(ptr, (const size_t*)inc, alignment);
+    const size_t next = (NULL != inc ? *inc : 0);
+    *result = libxsmm_aligned(ptr, &next, alignment);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
