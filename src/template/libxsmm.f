@@ -2196,7 +2196,8 @@
           TYPE(C_PTR), INTENT(IN), VALUE :: location
           INTEGER(C_INT),  INTENT(IN), OPTIONAL :: increment
           INTEGER(C_INT), INTENT(OUT), OPTIONAL :: alignment
-          LOGICAL(C_BOOL) :: libxsmm_aligned
+          LOGICAL :: libxsmm_aligned ! C_BOOL (GNU Fortran issue)
+          INTEGER(C_INT) :: aligned
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_aligned
           INTERFACE
             SUBROUTINE internal_aligned(is_aligned, location,           &
@@ -2205,11 +2206,11 @@
               TYPE(C_PTR), VALUE, INTENT(IN) :: location
               INTEGER(C_INT),     INTENT(IN) :: increment
               INTEGER(C_INT),    INTENT(OUT) :: alignment
-              LOGICAL(C_BOOL),   INTENT(OUT) :: is_aligned
+              INTEGER(C_INT),    INTENT(OUT) :: is_aligned ! C_BOOL
             END SUBROUTINE
           END INTERFACE
-          CALL internal_aligned(libxsmm_aligned,                        &
-     &      location, increment, alignment)
+          CALL internal_aligned(aligned, location, increment, alignment)
+          libxsmm_aligned = 0.NE.aligned
         END FUNCTION
       END MODULE
 
