@@ -80,7 +80,6 @@
         duration = 0
 
         CALL libxsmm_matdiff_clear(max_diff)
-        ALLOCATE(sumxsmm(m,n))
         ALLOCATE(a(m,k,s))
         ALLOCATE(b(k,n,s))
 
@@ -117,6 +116,7 @@
         !$OMP END PARALLEL
 
         WRITE(*, "(A)") "Streamed (A,B)... (BLAS)"
+        ALLOCATE(sumxsmm(m,n))
         sumxsmm(:,:) = 0
         !$OMP PARALLEL REDUCTION(+:sumxsmm) PRIVATE(i, r, start)        &
         !$OMP   DEFAULT(NONE)                                           &
