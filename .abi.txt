@@ -1,3 +1,5 @@
+libxsmm_aligned
+libxsmm_aligned_
 libxsmm_aligned_malloc
 libxsmm_backtrace
 libxsmm_barrier_create

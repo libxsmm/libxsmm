@@ -474,6 +474,7 @@
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 #define LIBXSMM_FEQ(A, B) ((A) == (B))
 #define LIBXSMM_NEQ(A, B) ((A) != (B))
+#define LIBXSMM_ISPOT(A) ((unsigned long long)(A) == LIBXSMM_LO2POT(A))
 #define LIBXSMM_ISWAP(A, B) (((A) ^= (B)), ((B) ^= (A)), ((A) ^= (B)))
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
