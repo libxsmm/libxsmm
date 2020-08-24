@@ -41,7 +41,7 @@ void libxsmm_generator_mateltwise_header_n_loop( libxsmm_generated_code*        
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
   libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_n_loop, 1);
-}XXXX
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_footer_n_loop( libxsmm_generated_code*                    io_generated_code,
@@ -2964,7 +2964,7 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
   unsigned int scale_rows = 0, scale_cols = 0, scale_rows_cols = 0, perform_scale = 0, perform_shift = 0, perform_addbias = 0;
   unsigned int reg_shift = 31, reg_bias = 30, reg_scale = 29;
   unsigned int reg_shift2 = 28, reg_bias2 = 27, reg_scale2 = 26;
-  unsigned int n_available_zmms = 29; 
+  unsigned int n_available_zmms = 29;
 
   /* Some rudimentary checking of M, N and LDs*/
   if ( i_mateltwise_desc->m > i_mateltwise_desc->ldi ) {
@@ -2981,7 +2981,7 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
   perform_addbias = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS) > 0) ? 1 : 0;
 
   if (((scale_rows > 0) && (scale_cols > 0)) ||
-      ((scale_cols > 0) && (scale_rows_cols > 0)) || 
+      ((scale_cols > 0) && (scale_rows_cols > 0)) ||
       ((scale_rows > 0) && (scale_rows_cols > 0)) ||
       ((scale_rows == 0) && (scale_cols == 0) && (scale_rows_cols == 0))) {
     /* This should not happen  */
