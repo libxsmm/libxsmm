@@ -991,8 +991,7 @@ LIBXSMM_API_INTERN void* internal_memalign_twiddle(size_t alignment, size_t size
 #endif /*defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
 
 
-#if defined(LIBXSMM_MALLOC_HOOK)
-
+#if (defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_ALIGN_ALL)
 LIBXSMM_API_INTERN void* internal_memalign_hook(size_t /*alignment*/, size_t /*size*/, const void* /*caller*/);
 LIBXSMM_API_INTERN void* internal_memalign_hook(size_t alignment, size_t size, const void* caller)
 {
@@ -1089,10 +1088,9 @@ LIBXSMM_API void __wrap_free(void* ptr)
 {
   INTERNAL_FREE_HOOK(ptr, NULL/*caller*/);
 }
+#endif /*(defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_ALIGN_ALL)*/
 
-#endif /*defined(LIBXSMM_MALLOC_HOOK)*/
-
-#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+#if (defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_ALIGN_ALL)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t /*alignment*/, size_t /*size*/) LIBXSMM_THROW;
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t alignment, size_t size) LIBXSMM_THROW
 {
@@ -1153,7 +1151,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* ptr) LIBXSMM_THROW
 {
   INTERNAL_FREE_HOOK(ptr, NULL/*caller*/);
 }
-#endif /*defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
+#endif /*(defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_ALIGN_ALL)*/
 
 
 LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
