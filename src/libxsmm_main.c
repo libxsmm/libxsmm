@@ -307,11 +307,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
   }
   else
 #endif
-#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
-  result = __libc_memalign(alignment, size);
-#else
   result = libxsmm_memalign_internal(alignment, size);
-#endif
   return result;
 }
 
