@@ -867,17 +867,17 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 }
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_GELU_BWD_PS_MINIMAX3(__m512 x) {
-  const  __m512 thres   = _mm512_castsi512_ps(_mm512_set1_epi32(0x408f5fff));
-  const  __m512 absmask = _mm512_set1_epi32(0x7fffffff);
-  const  __m512 scale   = _mm512_castsi512_ps(_mm512_set1_epi32(0x405d67c9));
-  const  __m512 shifter = _mm512_castsi512_ps(_mm512_set1_epi32(0x4b400000));
-  const  __m512 half    = _mm512_castsi512_ps(_mm512_set1_epi32(0x3f000000));
-  const  __m512 _c2     = _mm512_castsi512_ps(_mm512_setr_epi32(0xbe87047bu, 0xbe6eb875u, 0xbe2210c1u, 0xbd81727fu, 0x3cb9625cu, 0x3da2cbe8u, 0x3dd1d4d1u, 0x3dca0bd0u,
-                                                                0x3da47dd0u, 0x3d6f1bd3u, 0x3d216381u, 0x3cd2618cu, 0x3c89f6e6u, 0x3c3ca672u, 0x3c08ed08u, 0x3bd26a14u));
-  const  __m512 _c1     = _mm512_castsi512_ps(_mm512_setr_epi32(0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u,
-                                                                0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u));
-  const  __m512 _c0     = _mm512_castsi512_ps(_mm512_setr_epi32(0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu,
-                                                                0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu));
+  const  __m512  thres   = _mm512_castsi512_ps(_mm512_set1_epi32(0x408f5fff));
+  const  __m512i absmask = _mm512_set1_epi32(0x7fffffff);
+  const  __m512  scale   = _mm512_castsi512_ps(_mm512_set1_epi32(0x405d67c9));
+  const  __m512  shifter = _mm512_castsi512_ps(_mm512_set1_epi32(0x4b400000));
+  const  __m512  half    = _mm512_castsi512_ps(_mm512_set1_epi32(0x3f000000));
+  const  __m512  _c2     = _mm512_castsi512_ps(_mm512_setr_epi32(0xbe87047bu, 0xbe6eb875u, 0xbe2210c1u, 0xbd81727fu, 0x3cb9625cu, 0x3da2cbe8u, 0x3dd1d4d1u, 0x3dca0bd0u,
+                                                                 0x3da47dd0u, 0x3d6f1bd3u, 0x3d216381u, 0x3cd2618cu, 0x3c89f6e6u, 0x3c3ca672u, 0x3c08ed08u, 0x3bd26a14u));
+  const  __m512 _c1      = _mm512_castsi512_ps(_mm512_setr_epi32(0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u,
+                                                                 0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u));
+  const  __m512 _c0      = _mm512_castsi512_ps(_mm512_setr_epi32(0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu,
+                                                                 0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu));
   __m512 result;
   __m512 xr    = _mm512_range_round_ps(x, thres, 2, _MM_FROUND_NO_EXC);
   __m512 xa    = _mm512_castsi512_ps(_mm512_and_epi32(_mm512_castps_si512(xr), absmask));
