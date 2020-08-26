@@ -1344,7 +1344,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
         FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
           TYPE(C_PTR), INTENT(IN), VALUE :: key
-          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: valinit
+          TYPE(C_PTR), INTENT(IN), OPTIONAL :: valinit
           INTEGER(C_INT), INTENT(IN) :: keysize, valsize
           TYPE(C_PTR) :: libxsmm_xregister
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xregister
