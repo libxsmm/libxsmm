@@ -179,6 +179,10 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 /* 0: on-map, 1: mlock, 2: mlock2/on-fault */
 # define LIBXSMM_MALLOC_LOCK_PAGES 1
 #endif
+#if !defined(LIBXSMM_MALLOC_LOCK_ALL) && \
+     defined(LIBXSMM_MALLOC_ALIGN_ALL) && 1
+# define LIBXSMM_MALLOC_LOCK_ALL
+#endif
 /* protected against double-delete (if possible) */
 #if !defined(LIBXSMM_MALLOC_DELETE_SAFE) && 0
 # define LIBXSMM_MALLOC_DELETE_SAFE
@@ -206,6 +210,16 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 } while(0)
 #define INTERNAL_REALLOC_REAL(RESULT, PTR, SIZE) (RESULT) = __real_realloc(PTR, SIZE)
 #define INTERNAL_FREE_REAL(PTR) __real_free(PTR)
+
+#if defined(LIBXSMM_MALLOC_LOCK_ALL) && defined(LIBXSMM_MALLOC_LOCK_PAGES) && 0 != (LIBXSMM_MALLOC_LOCK_PAGES)
+# if 1 == (LIBXSMM_MALLOC_LOCK_PAGES) || !defined(MLOCK_ONFAULT) || !defined(SYS_mlock2)
+#   define INTERNAL_MALLOC_LOCK_PAGES(BUFFER, SIZE) mlock(BUFFER, SIZE)
+# else
+#   define INTERNAL_MALLOC_LOCK_PAGES(BUFFER, SIZE) syscall(SYS_mlock2, BUFFER, SIZE, MLOCK_ONFAULT)
+# endif
+#else
+# define INTERNAL_MALLOC_LOCK_PAGES(BUFFER, SIZE)
+#endif
 
 #if defined(LIBXSMM_MALLOC_ALIGN_ALL)
 # define INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT) libxsmm_alignment(SIZE, ALIGNMENT)
@@ -271,10 +285,12 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) do { \
     LIBXSMM_UNUSED(FLAGS); LIBXSMM_UNUSED(CALLER); \
     INTERNAL_MEMALIGN_REAL(RESULT, ALIGNMENT, SIZE); \
+    /*if (NULL != (RESULT))*/ INTERNAL_MALLOC_LOCK_PAGES(RESULT, SIZE); \
   } while(0)
 # define INTERNAL_REALLOC_HOOK(RESULT, FLAGS, PTR, SIZE, CALLER) do { \
     LIBXSMM_UNUSED(FLAGS); LIBXSMM_UNUSED(CALLER); \
     INTERNAL_REALLOC_REAL(RESULT, PTR, SIZE); \
+    /*if (NULL != (RESULT))*/ INTERNAL_MALLOC_LOCK_PAGES(RESULT, SIZE); \
   } while(0)
 # define INTERNAL_FREE_HOOK(PTR, CALLER) do { \
     LIBXSMM_UNUSED(CALLER); \
