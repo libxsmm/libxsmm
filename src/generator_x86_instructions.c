@@ -5227,6 +5227,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     int l_ix8 = ((i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ? 1 : 0);
     int l_sse_preamble = 64;
     int l_place1 = i + 2;
+    int l_opcode = 0;
 
     if ( l_maxsize - i < 20 )
     {
@@ -5253,6 +5254,10 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
        case LIBXSMM_X86_INSTR_PREFETCHNTA:
           l_instype -= 16;
           break;
+       case LIBXSMM_X86_INSTR_CLDEMOTE:
+          l_opcode = 0x4;
+          l_instype -= 16;
+          break;
        case LIBXSMM_X86_INSTR_VPREFETCH0:
           fprintf(stderr, "libxsmm_instruction_prefetch: don't yet do vprefetch0\n");
           exit(-1);
@@ -5277,7 +5282,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ){
         LIBXSMM_ASSERT(i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF);
         buf[i++] = 0x0f;
-        buf[i++] = 0x18;
+        buf[i++] = (unsigned char)(0x18 + l_opcode);
         buf[i++] = (unsigned char)(0x10 + l_instype + l_regbas0);
         if ( l_regbas0 == 4 ) buf[i++]=0x24;
     } else {
@@ -5287,7 +5292,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         else if (i_scale == 4) l_sca = 0x80;
         else if (i_scale == 8) l_sca = 0xc0;
         buf[i++] = 0x0f;
-        buf[i++] = 0x18;
+        buf[i++] = (unsigned char)(0x18 + l_opcode);
         buf[i++] = (unsigned char)(0x14 + l_instype);
         buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
     }

@@ -65,6 +65,9 @@ int main( /*int argc, char* argv[]*/ ) {
     libxsmm_x86_instruction_vec_compute_mem( &mycode, arch, instr, bcst, basereg, idxreg, scale, displ, 'z', 0, i );
   }
 
+  libxsmm_x86_instruction_prefetch( &mycode, LIBXSMM_X86_INSTR_CLDEMOTE, basereg, idxreg, scale, displ );
+  libxsmm_x86_instruction_prefetch( &mycode, LIBXSMM_X86_INSTR_CLDEMOTE, LIBXSMM_X86_GP_REG_R10, idxreg, scale, displ );
+
   /* dump stream into binday file */
   fp = fopen("bytecode.bin", "wb");
   if (fp == NULL) {

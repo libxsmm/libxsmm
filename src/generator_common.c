@@ -471,6 +471,9 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_PREFETCHNTA:
       libxsmm_strncpy(o_instr_name, "prefetchnta", i_instr_name_max_length, 11 );
       break;
+    case LIBXSMM_X86_INSTR_CLDEMOTE:
+      libxsmm_strncpy(o_instr_name, "cldemote", i_instr_name_max_length, 8 );
+      break;
     case LIBXSMM_X86_INSTR_KMOV:
       libxsmm_strncpy(o_instr_name, "kmov", i_instr_name_max_length, 4 );
       break;
