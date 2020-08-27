@@ -171,7 +171,7 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED
 # define LIBXSMM_ATTRIBUTE_USED
 #endif
-#if defined(__clang__)
+#if defined(__clang__) && !defined(__INTEL_COMPILER)
 # define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(no_sanitize(LIBXSMM_STRINGIFY(KIND)))
 #elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 8) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) \
   && !defined(__INTEL_COMPILER)

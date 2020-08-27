@@ -538,6 +538,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_scale_vals;
   unsigned int gp_reg_shift_vals;
   unsigned int gp_reg_bias_vals;
+  unsigned int gp_reg_scale_vals2;
+  unsigned int gp_reg_shift_vals2;
+  unsigned int gp_reg_bias_vals2;
   unsigned int gp_reg_m_loop;
   unsigned int gp_reg_n_loop;
 } libxsmm_mateltwise_gp_reg_mapping;
@@ -658,7 +661,9 @@ typedef enum libxsmm_meltw_comp_redu_flags {
   LIBXSMM_MELTW_COMP_FLAG_REDUCE_ELTS         = 6,
   LIBXSMM_MELTW_COMP_FLAG_REDUCE_ELTS_SQUARED = 7,
   LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_ROWS  = 8,
-  LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_COLS  = 9
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_COLS  = 9,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_ROWS_ELTS_ELTS_SQUARED  = 10,
+  LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_COLS_ELTS_ELTS_SQUARED  = 11
 } libxsmm_meltw_comp_redu_flags;
 
 /* compressed meltw scale structure */
@@ -682,7 +687,14 @@ typedef enum libxsmm_meltw_comp_scal_flags {
   LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_COLS          = 16,
   LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_SHIFT_COLS      = 17,
   LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ADD_BIAS_COLS       = 18,
-  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_COLS = 19
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_COLS = 19,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ROWS_COLS                = 20,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_SHIFT_ROWS_COLS               = 21,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_ROWS_COLS            = 22,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ROWS_COLS          = 23,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_ADD_BIAS_SHIFT_ROWS_COLS      = 24,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_ADD_BIAS_ROWS_COLS       = 25,
+  LIBXSMM_MELTW_COMP_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS_COLS = 26
 } libxsmm_meltw_comp_scal_flags;
 
 /* compressed metlw cvta strcuture */

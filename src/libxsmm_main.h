@@ -69,27 +69,26 @@
 #endif
 
 #if !defined(LIBXSMM_INTERCEPT_DYNAMIC) && defined(LIBXSMM_BUILD) && \
-  (defined(__GNUC__) || defined(_CRAYC)) && !defined(_WIN32) && !defined(__CYGWIN__) && \
-  !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION2(6, 1) >= \
-    LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
+    (defined(__GNUC__) || defined(_CRAYC)) && !defined(_WIN32) && !defined(__CYGWIN__) && \
+   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION2(6, 1) >= \
+      LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
 # define LIBXSMM_INTERCEPT_DYNAMIC
 #endif
 
-#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && \
-  defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC) && \
-  (!defined(_CRAYC) && !defined(__TRACE)) /* TODO */ && \
-  (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
-# define LIBXSMM_MALLOC_HOOK_DYNAMIC
-#endif
 #if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && \
-  defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC) && \
-  (!defined(_WIN32)) /* TODO */ && \
-  (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+    (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */ && \
+   (!defined(_WIN32)) /* TODO */
 # define LIBXSMM_MALLOC_HOOK_STATIC
 #endif
-#if !defined(LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS) && \
-     defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && \
-     defined(LIBXSMM_MALLOC_ALIGN_ALL)
+#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && \
+     defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(_CRAYC) && !defined(__TRACE)
+# define LIBXSMM_MALLOC_HOOK_DYNAMIC
+#endif
+#if (defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))
+# define LIBXSMM_MALLOC_HOOK
+#endif
+#if !defined(LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS) && defined(LIBXSMM_MALLOC_HOOK) && \
+    (defined(LIBXSMM_MALLOC_ALIGN_ALL) || (defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)))
 # define LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS
 #endif
 
