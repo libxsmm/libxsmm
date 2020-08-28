@@ -2210,8 +2210,8 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
             if (NULL == code_file) { /* file does not exist */
               code_file = fopen(name, "wb");
               if (NULL != code_file) { /* dump byte-code into a file */
-                fwrite(code_ptr, 1, size, code_file);
-                fclose(code_file);
+                LIBXSMM_EXPECT(size, fwrite(code_ptr, 1, size, code_file));
+                LIBXSMM_EXPECT(EXIT_SUCCESS, fclose(code_file));
               }
             }
             else { /* check existing file */
@@ -2224,15 +2224,15 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
                 check_a += n;
                 rest -= n;
               } while (0 < rest && 0 == diff);
-              fclose(code_file);
+              LIBXSMM_EXPECT(EXIT_SUCCESS, fclose(code_file));
             }
             fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", code_ptr, name);
             if (0 != diff) { /* override existing dump and warn about erroneous condition */
               fprintf(stderr, "LIBXSMM ERROR: %s is shared by different code!\n", name);
               code_file = fopen(name, "wb");
               if (NULL != code_file) { /* dump byte-code into a file */
-                fwrite(code_ptr, 1, size, code_file);
-                fclose(code_file);
+                LIBXSMM_EXPECT(size, fwrite(code_ptr, 1, size, code_file));
+                LIBXSMM_EXPECT(EXIT_SUCCESS, fclose(code_file));
               }
             }
           }
