@@ -644,9 +644,9 @@ MKL_FCRTL ?= intel
 CCAR = $(call which,$(CC)-ar)
 ifneq (,$(CCAR))
   ifeq (default,$(origin AR))
-    AR = $(CC)-ar
+    AR = $(firstword $(CC))-ar
   else
-    AR ?= $(CC)-ar
+    AR ?= $(firstword $(CC))-ar
   endif
 endif
 
