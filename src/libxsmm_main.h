@@ -1005,9 +1005,6 @@ LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, 
 /** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
 
-/** Determines the given value in double-precision based on the given type. */
-LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
-
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
