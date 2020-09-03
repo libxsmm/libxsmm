@@ -106,7 +106,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_desc
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
+  if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
@@ -129,7 +129,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bgemm_descriptor_init(libxsmm_descr
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
+  if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
@@ -204,51 +204,22 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_desc
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
   int flags, int prefetch)
 {
-  /* avoid warning about potentially uninitialized variable (initialize outside of control flow) */
-  libxsmm_gemm_descriptor* result = NULL;
-  switch (iprec) {
-    case LIBXSMM_GEMM_PRECISION_F64: {
-      LIBXSMM_ASSERT(iprec == oprec);
-      result = libxsmm_dgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-        alpha, beta, flags, prefetch);
-    } break;
-    case LIBXSMM_GEMM_PRECISION_F32: {
-      LIBXSMM_ASSERT(iprec == oprec);
-      result = libxsmm_sgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-        (float)alpha, (float)beta, flags, prefetch);
-    } break;
-    case LIBXSMM_GEMM_PRECISION_I16: {
-      result = libxsmm_wigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-        (int)alpha, (int)beta, flags, prefetch);
-    } break;
-    case LIBXSMM_GEMM_PRECISION_I8: {
-      if (LIBXSMM_GEMM_PRECISION_I32 == oprec) {
-        result = libxsmm_bigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-          (int)alpha, (int)beta, flags, prefetch);
-      } else if (LIBXSMM_GEMM_PRECISION_I8 == oprec) {
-        result = libxsmm_bbgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-          (int)alpha, (int)beta, flags, prefetch);
-      }
-    } break;
-    case LIBXSMM_GEMM_PRECISION_BF16: {
-      if (LIBXSMM_GEMM_PRECISION_F32 == oprec) {
-        result = libxsmm_bsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-          (float)alpha, (float)beta, flags, prefetch);
-      } else if (LIBXSMM_GEMM_PRECISION_BF16 == oprec) {
-        result = libxsmm_bgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-          (float)alpha, (float)beta, flags, prefetch);
-      }
-    } break;
-    default: {
-      static int error_once = 0;
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM ERROR: GEMM precision is not supported!\n");
-      }
-    }
+  union {
+    libxsmm_gemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
+  {
+    result.blob = blob;
+    /* Note: iprec/oprec combination is not checked to omit type-switch (invalid combination may result in BE-error) */
+    LIBXSMM_GEMM_DESCRIPTOR2(*result.ptr, iprec, oprec, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
   }
-  return result;
+  else { /* quiet error (unsupported) */
+    result.ptr = NULL;
+  }
+  return result.ptr;
 }
 
 
@@ -304,6 +275,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
        */
       const short aa = (short)(NULL != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
       const short bb = (short)(NULL != beta  ? *((const short*)beta)  : (LIBXSMM_BETA));
+      LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_I32 == oprec);
       result = libxsmm_wigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
       if (NULL != dalpha) *dalpha = (double)aa;
       if (NULL != dbeta) *dbeta = (double)bb;
@@ -321,7 +293,8 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
         result = libxsmm_bigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
         if (NULL != dalpha) *dalpha = (double)aa;
         if (NULL != dbeta) *dbeta = (double)bb;
-      } else if (LIBXSMM_GEMM_PRECISION_I8 == oprec) {
+      }
+      else if (LIBXSMM_GEMM_PRECISION_I8 == oprec) {
         const short aa = (short)(NULL != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
         const short bb = (short)(NULL != beta  ? *((const short*)beta)  : (LIBXSMM_BETA));
         result = libxsmm_bbgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
@@ -336,7 +309,8 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
         result = libxsmm_bsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
         if (NULL != dalpha) *dalpha = (double)aa;
         if (NULL != dbeta) *dbeta = (double)bb;
-      } else if (LIBXSMM_GEMM_PRECISION_BF16 == oprec) {
+      }
+      else if (LIBXSMM_GEMM_PRECISION_BF16 == oprec) {
         const float aa = (NULL != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
         const float bb = (NULL != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
         result = libxsmm_bgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
@@ -344,13 +318,14 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
         if (NULL != dbeta) *dbeta = (double)bb;
       }
     } break;
-    default: {
-      static int error_once = 0;
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM ERROR: GEMM precision is not supported!\n");
-      }
+    default: /* result remains NULL */;
+  }
+  if (NULL == result) {
+    static int error_once = 0;
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: GEMM precision is not supported!\n");
     }
   }
   return result;
@@ -558,7 +533,8 @@ LIBXSMM_API libxsmm_pgemm_descriptor* libxsmm_pgemm_descriptor_init(libxsmm_desc
       printf("Warning: real*4 alpha value should be 1.0 or -1.0\n");
       exit(-1);
     }
-  } else {
+  }
+  else {
     double *alpha_val = (double*)alpha;
     if ( *alpha_val == 1.0 ) result.ptr->alpha_val = 0;
     else if ( *alpha_val == -1.0 ) result.ptr->alpha_val = 1;

@@ -1573,7 +1573,7 @@ LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
 }
 
 
-LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue)
+LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue)
 {
   int result = EXIT_SUCCESS;
   if (NULL != value && NULL != dvalue) {
