@@ -1536,7 +1536,9 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
 
      if ( (i_vec_instr >> 27) > 0 ) {
         /* two byte operand */
+#if 0
 printf("two operand\n");
+#endif
 #if 1
         if ( i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF ) {
            if ( i_vec_reg_number_2 != 0 ) {
