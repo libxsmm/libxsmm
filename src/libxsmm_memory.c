@@ -416,6 +416,31 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string)
 }
 
 
+LIBXSMM_API const char* libxsmm_stristr(const char* a, const char* b)
+{
+  const char* result = NULL;
+  if (NULL != a && NULL != b && '\0' != *a && '\0' != *b) {
+    do {
+      if (tolower(*a) != tolower(*b)) {
+        ++a;
+      }
+      else {
+        const char* c = b;
+        result = a;
+        while ('\0' != *++a && '\0' != *++c) {
+          if (tolower(*a) != tolower(*c)) {
+            result = NULL;
+            break;
+          }
+        }
+        if ('\0' == *c) break;
+      }
+    } while ('\0' != *a);
+  }
+  return result;
+}
+
+
 LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment)
 {
   const int minalign = 4 * libxsmm_cpuid_vlen32(libxsmm_target_archid);
