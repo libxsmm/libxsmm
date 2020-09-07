@@ -6216,21 +6216,29 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
 
     /* lets set tile_config_imm */
     tile_config_imm[0]                  = i_tile_config->palette_id;
-    tile_config_imm[16]                 = i_tile_config->tile0rows;
+    tile_config_imm[16]                 = (unsigned char)(0x00ff & i_tile_config->tile0rowsb);
+    tile_config_imm[17]                 = (unsigned char)(0x00ff & (i_tile_config->tile0rowsb >> 8));
     tile_config_imm[48]                 = i_tile_config->tile0cols;
-    tile_config_imm[18]                 = i_tile_config->tile1rows;
+    tile_config_imm[18]                 = (unsigned char)(0x00ff & i_tile_config->tile1rowsb);
+    tile_config_imm[19]                 = (unsigned char)(0x00ff & (i_tile_config->tile1rowsb >> 8));
     tile_config_imm[49]                 = i_tile_config->tile1cols;
-    tile_config_imm[20]                 = i_tile_config->tile2rows;
+    tile_config_imm[20]                 = (unsigned char)(0x00ff & i_tile_config->tile2rowsb);
+    tile_config_imm[21]                 = (unsigned char)(0x00ff & (i_tile_config->tile2rowsb >> 8));
     tile_config_imm[50]                 = i_tile_config->tile2cols;
-    tile_config_imm[22]                 = i_tile_config->tile3rows;
+    tile_config_imm[22]                 = (unsigned char)(0x00ff & i_tile_config->tile3rowsb);
+    tile_config_imm[23]                 = (unsigned char)(0x00ff & (i_tile_config->tile3rowsb >> 8));
     tile_config_imm[51]                 = i_tile_config->tile3cols;
-    tile_config_imm[24]                 = i_tile_config->tile4rows;
+    tile_config_imm[24]                 = (unsigned char)(0x00ff & i_tile_config->tile4rowsb);
+    tile_config_imm[25]                 = (unsigned char)(0x00ff & (i_tile_config->tile4rowsb >> 8));
     tile_config_imm[52]                 = i_tile_config->tile4cols;
-    tile_config_imm[26]                 = i_tile_config->tile5rows;
+    tile_config_imm[26]                 = (unsigned char)(0x00ff & i_tile_config->tile5rowsb);
+    tile_config_imm[27]                 = (unsigned char)(0x00ff & (i_tile_config->tile5rowsb >> 8));
     tile_config_imm[53]                 = i_tile_config->tile5cols;
-    tile_config_imm[28]                 = i_tile_config->tile6rows;
+    tile_config_imm[28]                 = (unsigned char)(0x00ff & i_tile_config->tile6rowsb);
+    tile_config_imm[29]                 = (unsigned char)(0x00ff & (i_tile_config->tile6rowsb >> 8));
     tile_config_imm[54]                 = i_tile_config->tile6cols;
-    tile_config_imm[30]                 = i_tile_config->tile7rows;
+    tile_config_imm[30]                 = (unsigned char)(0x00ff & i_tile_config->tile7rowsb);
+    tile_config_imm[31]                 = (unsigned char)(0x00ff & (i_tile_config->tile7rowsb >> 8));
     tile_config_imm[55]                 = i_tile_config->tile7cols;
   }
 

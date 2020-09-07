@@ -615,21 +615,21 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
 /* tile config structure */
 typedef struct libxsmm_tile_config {
   unsigned char  palette_id;
-  unsigned char  tile0rows;
+  unsigned short tile0rowsb;
   unsigned char  tile0cols;
-  unsigned char  tile1rows;
+  unsigned short tile1rowsb;
   unsigned char  tile1cols;
-  unsigned char  tile2rows;
+  unsigned short tile2rowsb;
   unsigned char  tile2cols;
-  unsigned char  tile3rows;
+  unsigned short tile3rowsb;
   unsigned char  tile3cols;
-  unsigned char  tile4rows;
+  unsigned short tile4rowsb;
   unsigned char  tile4cols;
-  unsigned char  tile5rows;
+  unsigned short tile5rowsb;
   unsigned char  tile5cols;
-  unsigned char  tile6rows;
+  unsigned short tile6rowsb;
   unsigned char  tile6cols;
-  unsigned char  tile7rows;
+  unsigned short tile7rowsb;
   unsigned char  tile7cols;
 } libxsmm_tile_config;
 
