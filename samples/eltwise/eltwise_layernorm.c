@@ -67,7 +67,34 @@ void naive_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, float *
   }
 }
 
-LIBXSMM_INLINE
+
+  LIBXSMM_INLINE
+void naive_layernorm_bwd(int m, int n, int ld_in, float *dY, float *X, float *mean, float *rstd, float *gamma, float *dX, float *dgamma, float *dbeta)
+{
+  float a, b, c, ds, db, scale = 1.0/ (1.0 * m);
+  int i, j;
+
+  for (j = 0; j < n; j++) {
+    a = rstd[j];
+    b = -1.0 * a * mean[j];
+    ds = 0.0;
+    db = 0.0;
+    for (i = 0; i < m; i++) {
+      dgamma[i]     += dY[j*ld_in+i] * (a * X[j*ld_in+i] + b);
+      dbeta[i]      += dY[j*ld_in+i];
+      ds            += dY[j*ld_in+i] * X[j*ld_in+i] * gamma[i];
+      db            += dY[j*ld_in+i] * gamma[i];
+    }
+
+    b = (db * mean[j] - ds) * a * a * a * scale;
+    c = -1.0 * b * mean[j] - db * a * scale;
+    for (i = 0; i < m; i++) {
+      dX[j*ld_in+i] = a * dY[j*ld_in+i] * gamma[i] + b * X[j*ld_in+i] + c;
+    }
+  }
+}
+
+  LIBXSMM_INLINE
 void optimized_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, float *beta, float *sout, float *mean_data, float *rstd_data, libxsmm_meltwfunction_reduce reduce_kernel, libxsmm_meltwfunction_scale scalemean_kernel, libxsmm_meltwfunction_scale scaleout_kernel, float * bias_aux)
 {
   int i;
