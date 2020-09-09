@@ -14,7 +14,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <immintrin.h>
-
+/* include c-based dnn library */
+#include "../deeplearning/common/dnn_common.h"
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #define EPS 1e-9
 
 LIBXSMM_INLINE
@@ -156,12 +160,171 @@ void optimized_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, flo
   scaleout_kernel(&scaleout_params);
 }
 
+
+  LIBXSMM_INLINE
+void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, float *gamma_data, float *beta_data, float *mean_data, float *rstd_data)
+{
+  int ld = bm, ld_vector = bn;
+  libxsmm_meltw_redu_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
+  libxsmm_meltwfunction_reduce reduce_rows_kernel, reduce_cols_kernel;
+  libxsmm_meltw_scal_flags jit_scale_flags = 0;
+  libxsmm_meltwfunction_scale scale_kernel;
+  libxsmm_meltw_scal_flags jit_scaleout_flags = 0;
+  libxsmm_meltwfunction_scale scaleout_kernel;
+
+  int nBlocks   = n/bn;
+  int mBlocks   = m/bm;
+  float scratch[2*n*mBlocks+n];
+  float *sums_ptr     = (float*) scratch;
+  float *sums_sq_ptr  = (float*) scratch + n * mBlocks;
+  float *aux_bias_ptr = (float*) scratch + 2 * n * mBlocks;
+
+  LIBXSMM_VLA_DECL(3, float, sums,        sums_ptr, mBlocks, bn);
+  LIBXSMM_VLA_DECL(3, float, sums_sq,     sums_sq_ptr, mBlocks, bn);
+  LIBXSMM_VLA_DECL(2, float, mean,        mean_data, bn);
+  LIBXSMM_VLA_DECL(2, float, rstd,        rstd_data, bn);
+  LIBXSMM_VLA_DECL(2, float, gamma,       gamma_data, bm);
+  LIBXSMM_VLA_DECL(2, float, beta,        beta_data, bm);
+  LIBXSMM_VLA_DECL(2, float, aux_bias,    aux_bias_ptr, bn);
+  LIBXSMM_VLA_DECL(4, float, X,           data_in, mBlocks, bn, bm);
+
+  /*libxsmm_barrier *barrier;*/
+
+  libxsmm_init();
+
+  /* Generate JITED kernels for optimized code */
+  jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
+  reduce_rows_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
+  jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_COLS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
+  reduce_cols_kernel = libxsmm_dispatch_meltw_reduce(bn, mBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
+  jit_scale_flags = LIBXSMM_MELTW_FLAG_SCALE_ROWS | LIBXSMM_MELTW_FLAG_SCALE_MULT;
+  scale_kernel = libxsmm_dispatch_meltw_scale(bn, 1, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scale_flags);
+  jit_scaleout_flags = LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS | LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS;
+  scaleout_kernel = libxsmm_dispatch_meltw_scale(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scaleout_flags);
+
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+  {
+    int i, imin, im, in;
+    float reverse_m = 1.0/(1.0*m);
+#if defined(__AVX512F__)
+    __m512 minus_ones = _mm512_set1_ps(-1.0);
+#endif
+#if defined(_OPENMP)
+    const int ltid = omp_get_thread_num();
+#else
+    const int ltid = 0;
+#endif
+#if defined(_OPENMP)
+    int threads = omp_get_max_threads(); /* number of threads */
+#else
+    int threads = 1; /* number of threads */
+#endif
+
+    const int work_mn = nBlocks * mBlocks;
+    const int chunksize_mn = (work_mn % threads == 0) ? (work_mn /threads) : ((work_mn / threads) + 1);
+    const int thr_begin_mn = (ltid * chunksize_mn < work_mn) ? (ltid * chunksize_mn) : work_mn;
+    const int thr_end_mn = ((ltid + 1) * chunksize_mn < work_mn) ? ((ltid + 1) * chunksize_mn) : work_mn;
+
+    const int work_n = nBlocks;
+    const int chunksize_n = (work_n % threads == 0) ? (work_n /threads) : ((work_n / threads) + 1);
+    const int thr_begin_n = (ltid * chunksize_n < work_n) ? (ltid * chunksize_n) : work_n;
+    const int thr_end_n = ((ltid + 1) * chunksize_n < work_n) ? ((ltid + 1) * chunksize_n) : work_n;
+
+    libxsmm_meltw_reduce_param reduce_rows_params, reduce_cols_params;;
+    libxsmm_meltw_scale_param scale_params;
+    libxsmm_meltw_scale_param scaleout_params;
+
+    /*libxsmm_barrier_init(barrier, ltid);*/
+
+    for (imin = thr_begin_mn; imin < thr_end_mn; imin++) {
+      in = imin / mBlocks;
+      im = imin % mBlocks;
+      reduce_rows_params.in_ptr    = &LIBXSMM_VLA_ACCESS(4, X, in, im, 0, 0, mBlocks, bn, bm);
+      reduce_rows_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(3, sums,    in, im, 0, mBlocks, bn);
+      reduce_rows_params.out_ptr_1 = &LIBXSMM_VLA_ACCESS(3, sums_sq, in, im, 0, mBlocks, bn);
+      reduce_rows_kernel(&reduce_rows_params);
+    }
+
+#pragma omp barrier
+    /*libxsmm_barrier_wait(barrier, ltid);*/
+
+    scale_params.scale_vals_ptr = &reverse_m;
+    for (in = thr_begin_n; in < thr_end_n; in++) {
+      reduce_cols_params.in_ptr    = &LIBXSMM_VLA_ACCESS(3, sums,    in, 0, 0, mBlocks, bn);
+      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(2, mean,    in, 0, bn);
+      reduce_cols_kernel(&reduce_cols_params);
+      scale_params.in_ptr         = &LIBXSMM_VLA_ACCESS(2, mean,    in, 0, bn);
+      scale_params.out_ptr        = &LIBXSMM_VLA_ACCESS(2, mean,    in, 0, bn);
+      scale_kernel(&scale_params);
+      reduce_cols_params.in_ptr    = &LIBXSMM_VLA_ACCESS(3, sums_sq, in, 0, 0, mBlocks, bn);
+      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(2, rstd,    in, 0, bn);
+      reduce_cols_kernel(&reduce_cols_params);
+      scale_params.in_ptr         = &LIBXSMM_VLA_ACCESS(2, rstd,    in, 0, bn);
+      scale_params.out_ptr        = &LIBXSMM_VLA_ACCESS(2, rstd,    in, 0, bn);
+      scale_kernel(&scale_params);
+    }
+
+#pragma omp barrier
+    /*libxsmm_barrier_wait(barrier, ltid);*/
+
+    /* Calculate rstd and auxiliary bias vectors*/
+    for (in = thr_begin_n; in < thr_end_n; in++) {
+      float *rstd_ptr = &LIBXSMM_VLA_ACCESS(2, rstd,    in, 0, bn);
+      float *mean_ptr = &LIBXSMM_VLA_ACCESS(2, mean,    in, 0, bn);
+      float *bias_ptr = &LIBXSMM_VLA_ACCESS(2, aux_bias, in, 0, bn);
+#if defined(__AVX512F__)
+      for (i = 0; i < bn-15; i+= 16) {
+        __m512 vrstd = _mm512_loadu_ps(rstd_ptr+i);
+        __m512 vmean = _mm512_loadu_ps(mean_ptr+i);
+        vrstd = _mm512_rsqrt14_ps(_mm512_sub_ps(vrstd, _mm512_mul_ps(vmean, vmean)));
+        _mm512_storeu_ps(rstd_ptr+i, vrstd);
+        _mm512_storeu_ps(bias_ptr+i, _mm512_mul_ps(minus_ones, _mm512_mul_ps(vmean, vrstd)));
+      }
+
+      if (i < bn) {
+        int rem = bn - i;
+        __mmask16 mask = (1 << rem) - 1;
+        __m512 vrstd = _mm512_maskz_loadu_ps(mask, rstd_ptr+i);
+        __m512 vmean = _mm512_maskz_loadu_ps(mask, mean_ptr+i);
+        vrstd = _mm512_maskz_rsqrt14_ps(mask, _mm512_sub_ps(vrstd, _mm512_mul_ps(vmean, vmean)));
+        _mm512_mask_storeu_ps(rstd_ptr+i, mask, vrstd );
+        _mm512_mask_storeu_ps(bias_ptr+i, mask, _mm512_mul_ps(minus_ones, _mm512_mul_ps(vmean, vrstd)));
+      }
+#else
+      for (i = 0; i < bn; i++) {
+        rstd_ptr[i]  = 1.0/((float)sqrt(rstd_ptr[i] - mean_ptr[i] * mean_ptr[i]));
+        bias_ptr[i]   =-1.0 * mean_ptr[i] * mean_ptr[i];
+      }
+#endif
+    }
+
+#pragma omp barrier
+    /*libxsmm_barrier_wait(barrier, ltid);*/
+
+    for (imin = thr_begin_mn; imin < thr_end_mn; imin++) {
+      in = imin / mBlocks;
+      im = imin % mBlocks;
+      scaleout_params.in_ptr          = &LIBXSMM_VLA_ACCESS(4, X, in, im, 0, 0, mBlocks, bn, bm);
+      scaleout_params.out_ptr         = &LIBXSMM_VLA_ACCESS(4, X, in, im, 0, 0, mBlocks, bn, bm);
+      scaleout_params.scale_vals_ptr  = &LIBXSMM_VLA_ACCESS(2, rstd,    in, 0, bn);
+      scaleout_params.bias_vals_ptr   = &LIBXSMM_VLA_ACCESS(2, aux_bias, in, 0, bn);
+      scaleout_params.scale_vals_ptr2 = &LIBXSMM_VLA_ACCESS(2, gamma,    im, 0, bm);
+      scaleout_params.bias_vals_ptr2  = &LIBXSMM_VLA_ACCESS(2, beta,    im, 0, bm);
+      scaleout_kernel(&scaleout_params);
+    }
+#pragma omp barrier
+    /*libxsmm_barrier_wait(barrier, ltid);*/
+  }
+}
+
 int main(int argc, char* argv[])
 {
   unsigned int m = 64, n = 64, iters = 10000, k = 0;
   libxsmm_blasint ld_in = 64, ld_vector = 64;
 
-  float  *sinp, *gamma, *beta, *sout, *mean_data, *rstd_data, *sout_ref, *mean_data_ref, *rstd_data_ref, *bias_aux;
+  float  *sinp, *gamma, *beta, *sout, *sout_nc, *mean_data, *rstd_data, *sout_ref, *mean_data_ref, *rstd_data_ref, *bias_aux;
   libxsmm_matdiff_info norms_out, norms_mean, norms_rstd;
   unsigned long long l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
@@ -193,6 +356,7 @@ int main(int argc, char* argv[])
   gamma     = (float*) malloc(m*sizeof(float) );
   beta      = (float*) malloc(m*sizeof(float) );
   sout      = (float*) malloc(ld_in*n*sizeof(float) );
+  sout_nc   = (float*) malloc(ld_in*n*sizeof(float) );
   mean_data = (float*) malloc(n*sizeof(float) );
   rstd_data = (float*) malloc(n*sizeof(float) );
 
@@ -225,14 +389,26 @@ int main(int argc, char* argv[])
   printf("JITing scaling kernel for output... \n");
   scaleout_kernel = libxsmm_dispatch_meltw_scale(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scaleout_flags);
 
-  /* Calculate reference results... */
+  /* Calculate blockde results... */
+#if 0
   optimized_layernorm(m, n, ld_in, sinp, gamma, beta, sout, mean_data, rstd_data, reduce_kernel, scalemean_kernel, scaleout_kernel, bias_aux);
+#else
+  matrix_copy_NC_to_NCNC( sinp,  sout, 1, n, m, 64, 64 );
+
+  optimized_blocked_layernorm(m, n, 64, 64, sout, gamma, beta, mean_data, rstd_data);
+
+  matrix_copy_NCNC_to_NC( sout, sout_nc, 1, n, m, 64, 64 );
+#endif
 
   /* compare */
   printf("##########################################\n");
   printf("#   Correctness - Output                 #\n");
   printf("##########################################\n");
+#if 0
   libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ld_in*n, 1, sout_ref, sout, 0, 0);
+#else
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ld_in*n, 1, sout_ref, sout_nc, 0, 0);
+#endif
   printf("L1 reference  : %.25g\n", norms_out.l1_ref);
   printf("L1 test       : %.25g\n", norms_out.l1_tst);
   printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
@@ -279,7 +455,11 @@ int main(int argc, char* argv[])
 
   l_start = libxsmm_timer_tick();
   for (k = 0; k < iters; k++) {
+#if 1
+    optimized_blocked_layernorm(m, n, 64, 64, sout, gamma, beta, mean_data, rstd_data);
+#else
     optimized_layernorm(m, n, ld_in, sinp, gamma, beta, sout, mean_data, rstd_data, reduce_kernel, scalemean_kernel, scaleout_kernel, bias_aux);
+#endif
   }
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
