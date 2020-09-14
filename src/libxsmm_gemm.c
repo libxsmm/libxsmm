@@ -540,6 +540,7 @@ LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type pref
     case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: return 5;
     case LIBXSMM_GEMM_PREFETCH_AL2:                return 6;
     case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C:       return 7;
+    case LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB:         return 8;
     default: {
       LIBXSMM_ASSERT(LIBXSMM_GEMM_PREFETCH_NONE == prefetch);
       return 0;
@@ -558,6 +559,7 @@ LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
     case 5: return LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD; /* curAL2_BL2viaC */
     case 6: return LIBXSMM_GEMM_PREFETCH_AL2;                /* AL2 */
     case 7: return LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;       /* AL2_BL2viaC */
+    case 8: return LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB;
     default: {
       if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
         static int error_once = 0;

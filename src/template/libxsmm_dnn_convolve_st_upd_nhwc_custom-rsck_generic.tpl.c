@@ -47,6 +47,16 @@ const element_output_type *A_ptrs[1024];
 const element_input_type  *B_ptrs[1024];
 unsigned long long n_blocks;
 
+int brgemm_pf_oob = 0;
+const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
+if ( 0 == env_brgemm_pf_oob ) {
+} else {
+  brgemm_pf_oob = atoi(env_brgemm_pf_oob);
+}
+if (brgemm_pf_oob > 0) {
+  prefetch_mode = prefetch_mode | libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
+}
+
 libxsmm_barrier_init(handle->barrier, ltid);
 
 /* physical pad input */
