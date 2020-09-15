@@ -431,6 +431,32 @@ int main(int argc, char **argv) {
     /* check performace */
     unsigned long long l_start = libxsmm_timer_tick();
     for (i = 0; i < (int)REPS; ++i) {
+#if WIDTH_FIRST
+#ifdef _OPENMP
+#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_h,l_w,l_r,l_s,l_p,l_q)
+#endif
+      for (k = 0; k < K / KB; ++k) {
+        for (n = 0; n < N / NB; ++n) {
+          for (l_r = 0; l_r < R; ++l_r) {
+            for (l_s = 0; l_s < S; ++l_s) {
+              for (c = 0; c < C / CB; ++c) {
+                for (l_p = 0; l_p < P; ++l_p) {
+                  for (l_q = 0; l_q < Q; ++l_q) {
+                    l_h = l_p*sh - padh;
+                    l_w = l_q*sw - padw;
+                    if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
+                    if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
+                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, c, l_h+l_r, l_w+l_s, 0, 0, 0, C / CB, H, W, NB / nb, CB, nb)),
+                                                 b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c],
+                                               &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, k, l_p, l_q, 0, 0, 0, K / KB, P, Q, NB / nb, KB, nb)) );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+#else
 #ifdef _OPENMP
 #       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_p,l_q,l_h,l_w,l_r,l_s)
 #endif
@@ -455,6 +481,7 @@ int main(int argc, char **argv) {
           }
         }
       }
+#endif
     }
     unsigned long long l_end = libxsmm_timer_tick();
     double l_total = libxsmm_timer_duration(l_start, l_end);
