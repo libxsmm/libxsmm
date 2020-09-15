@@ -77,6 +77,13 @@
 #define LIBXSMM_TPREFIX_float LIBXSMM_TPREFIX_floatfloat
 #define LIBXSMM_TPREFIX_short LIBXSMM_TPREFIX_shortint
 
+#define LIBXSMM_GEMM_XFLAGS(ITYPE, OTYPE) LIBXSMM_CONCATENATE(LIBXSMM_GEMM_XFLAGS_, ITYPE) /* ignore OTYPE for now */
+#define LIBXSMM_GEMM_XFLAGS_double 0
+#define LIBXSMM_GEMM_XFLAGS_float 0
+#define LIBXSMM_GEMM_XFLAGS_libxsmm_bfloat16 LIBXSMM_GEMM_FLAG_VNNI_A
+#define LIBXSMM_GEMM_XFLAGS_int 0
+#define LIBXSMM_GEMM_XFLAGS_short 0
+
 /** Construct symbol name from a given real type name (float, double and short). */
 #define LIBXSMM_BLAS_FNTYPE(TYPE, KIND) LIBXSMM_CONCATENATE3(libxsmm_, LIBXSMM_TPREFIX(TYPE, KIND), _function)
 #define LIBXSMM_MMFUNCTION_TYPE(TYPE)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmfunction))
@@ -157,6 +164,20 @@
 # define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_EXTERN LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 #endif
 
+#if defined(NOTHROW)
+# define LIBXSMM_BLAS_NOTHROW NOTHROW
+#else
+# define LIBXSMM_BLAS_NOTHROW LIBXSMM_NOEXCEPT
+#endif
+#define LIBXSMM_BLAS_NOEXCEPT(KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_NOEXCEPT_, KIND)
+#if defined(INTEL_MKL_VERSION) && (20200002 <= INTEL_MKL_VERSION)
+# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch LIBXSMM_BLAS_NOTHROW
+#else
+# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch
+#endif
+#define LIBXSMM_BLAS_NOEXCEPT_gemm LIBXSMM_BLAS_NOTHROW
+#define LIBXSMM_BLAS_NOEXCEPT_gemv LIBXSMM_BLAS_NOTHROW
+
 #define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm_batch(CONST_STAR, STAR, TYPE) char CONST_STAR, char CONST_STAR, \
   libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, \
   TYPE CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, \
@@ -169,9 +190,9 @@
   TYPE CONST_STAR, TYPE STAR, libxsmm_blasint CONST_STAR
 #define LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_SYMBOL_SIGNATURE_, KIND)(CONST_STAR, STAR, TYPE)
 #define LIBXSMM_BLAS_SYMBOL_FDECL(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_BLAS_SYMBOL_VISIBILITY \
-  void LIBXSMM_BLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND))
+  void LIBXSMM_BLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND)) LIBXSMM_BLAS_NOEXCEPT(KIND)
 #define LIBXSMM_BLAS_SYMBOL_CDECL(CONST_STAR, STAR, TYPE, KIND) LIBXSMM_BLAS_SYMBOL_VISIBILITY \
-  void LIBXSMM_CBLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND))
+  void LIBXSMM_CBLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST_STAR, STAR, TYPE, KIND)) LIBXSMM_BLAS_NOEXCEPT(KIND)
 
 #if (0 != LIBXSMM_BLAS) /* BLAS available */
 # define LIBXSMM_BLAS_SYMBOL_DECL(TYPE, KIND) LIBXSMM_BLAS_DECL(TYPE, KIND, LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, TYPE, KIND))
@@ -360,7 +381,7 @@
  * LIBXSMM_XGEMM_FALLBACK1: above LIBXSMM_MAX_MNK
  */
 #define LIBXSMM_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  const int libxsmm_xgemm_flags_ = LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, LIBXSMM_FLAGS); \
+  const int libxsmm_xgemm_flags_ = LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, LIBXSMM_FLAGS) | LIBXSMM_GEMM_XFLAGS(ITYPE, OTYPE); \
   const libxsmm_blasint *const libxsmm_xgemm_k_ = (NULL != (K) ? (K) : (M)); \
   const libxsmm_blasint *const libxsmm_xgemm_n_ = (NULL != (N) ? (N) : libxsmm_xgemm_k_); \
   const libxsmm_blasint libxsmm_xgemm_lda_ = LIBXSMM_MAX(NULL != ((void*)(LDA)) ? *(LDA) : \
@@ -542,6 +563,9 @@ LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_gemm_precision iprec, libxsmm_gemm_p
 /** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
+
+/** Determines the given value in double-precision based on the given type. */
+LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
 
 #endif /*LIBXSMM_FRONTEND_H*/
 

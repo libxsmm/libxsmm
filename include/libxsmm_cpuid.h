@@ -16,6 +16,9 @@
 /**
  * Enumerates the available target architectures and instruction
  * set extensions as returned by libxsmm_get_target_archid().
+ * LIBXSMM_X86_ALLFEAT: pseudo-value enabling all features
+ * used anywhere in LIBXSMM (never set as an architecture,
+ * used as an upper bound in comparisons to distinct x86).
  */
 #define LIBXSMM_TARGET_ARCH_UNKNOWN 0
 #define LIBXSMM_TARGET_ARCH_GENERIC 1
@@ -31,7 +34,7 @@
 #define LIBXSMM_X86_AVX512_CLX   1021
 #define LIBXSMM_X86_AVX512_CPX   1022
 #define LIBXSMM_X86_AVX512_SPR   1023
-#define LIBXSMM_X86_ALLFEAT      1999 /* all features supported which are used anywhere in LIBXSMM, this value should never be used to set arch, only for compares */
+#define LIBXSMM_X86_ALLFEAT      1999
 
 /** A zero-initialized structure assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_cpuid_x86_info {

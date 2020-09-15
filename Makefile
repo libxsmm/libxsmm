@@ -449,7 +449,7 @@ else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 	$(info the BLAS library should go after LIBXSMM (link-line).)
 	$(info --------------------------------------------------------------------------------)
 endif
-ifneq (2,$(INTRINSICS))
+ifneq (,$(filter 0 1,$(INTRINSICS)))
 ifeq (0,$(COMPATIBLE))
 ifeq (0,$(AVX))
 	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
@@ -462,8 +462,8 @@ else # Intel Compiler
 	$(info Intel Compiler does not require adjusting INTRINSICS.)
 endif
 	$(info --------------------------------------------------------------------------------)
-endif
-endif
+endif # COMPATIBLE
+endif # INTRINSICS
 ifneq (0,$(MSGJITPROFILING))
 ifneq (,$(strip $(LIBJITPROFILING)))
 	$(info Intel VTune Amplifier support has been incorporated.)
@@ -610,7 +610,6 @@ else
 .PHONY: $(INCDIR)/libxsmm_version.h
 endif
 
-
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
 ifneq (,$(PYTHON))
@@ -620,7 +619,7 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(INCDIR)/libxsmm_config.h \
                      $(HEADERS)
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
-		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
+		$(shell echo $$(($(PRECISION)+($(FORTRAN)<<2)))) $(PREFETCH_TYPE) $(INDICES) > $@
 else
 .PHONY: $(INCDIR)/libxsmm.h
 endif
@@ -639,7 +638,7 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(INCDIR)/libxsmm_version.h \
                      $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
-		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
+		$(shell echo $$(($(PRECISION)+($(FORTRAN)<<2)))) $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py /dev/stdin \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
@@ -733,7 +732,7 @@ $(1): $(2) $(3) $(dir $(1))/.make
 	-$(CC) $(4) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
 		echo "--------------------------------------------------------------"; \
-		echo "In case of assembler error, perhaps the Binutils are outdated."; \
+		echo "In case of assembler error, perhaps GNU Binutils are outdated."; \
 		echo "See https://github.com/hfp/libxsmm#outdated-binutils"; \
 		echo "--------------------------------------------------------------"; \
 		false; \
@@ -1005,6 +1004,7 @@ DIRS_SAMPLES = $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
 	| grep -v /edge/repro/ \
+	| grep -v /encoder/ \
 	| grep -v /packed/ \
 	| grep -v /pyfr/ \
 	$(NULL)))
@@ -1489,6 +1489,7 @@ endif
 	@rm -f $(INCDIR)/libxsmm.modmic
 	@rm -f $(INCDIR)/libxsmm.mod
 	@rm -f $(INCDIR)/libxsmm.f
+	@rm -f $(HEREDIR)/python3
 
 .PHONY: clean-all
 clean-all: clean
@@ -1577,9 +1578,13 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo "LIBXSMM installing pkg-config and module files..."
 	@mkdir -p $(PREFIX)/$(PPKGDIR)
 	@$(CP) -v $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
-	@mkdir -p $(PREFIX)/$(PMODDIR)
 	@if [ ! -e $(PREFIX)/$(PMODDIR)/module ]; then \
-		@$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true; \
+		mkdir -p $(PREFIX)/$(PMODDIR); \
+		if [ "$(PMODDIR)" != "$(OUTDIR)" ]; then \
+			$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true; \
+		else \
+			$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
+		fi; \
 	fi
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."

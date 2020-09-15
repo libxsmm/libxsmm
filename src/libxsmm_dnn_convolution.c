@@ -103,6 +103,14 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_pack_input_fwd( libxsmm_dnn
   if ((handle->ofw <= 14) && (handle->desc.K > 512) && (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.u == 2) && (handle->desc.v == 2)) {
     result = 1;
   }
+
+  /* For SPR we allow packing more aggressively to generate more efficient BRGEMMs */
+  if (handle->target_archid == LIBXSMM_X86_AVX512_SPR) {
+    if ((handle->ofw <= 14) && (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.u == 2) && (handle->desc.v == 2)) {
+      result = 1;
+    }
+  }
+
   /* Make sure we don't pack when minibatch is not divisible by number of threads since H is used potentially for parallelism */
   if (handle->desc.N != handle->desc.threads) {
     result = 0;
@@ -120,10 +128,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_ofh_rb( libxsmm_dnn_lay
   if ((handle->ofh <= 14) && (handle->desc.R == 1) && (handle->desc.S == 1)) {
     result = handle->ofh;
   }
-  /*  Make sure we don't use multiple rows when we don't pack input and convolutions are strided*/
-  if ((handle->pack_input == 0) && ((handle->desc.u !=1 ) || (handle->desc.v != 1))) {
-    result = 1;
-  }
+
   /* In this case we will be using fallback generic loops, thus ofh_rb should be 1 */
   if ((handle->desc.N % handle->desc.threads != 0) || (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)) {
     result = 1;
@@ -136,6 +141,11 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_ofh_rb( libxsmm_dnn_lay
     if (handle->ofw == 14 && handle->ofh == 14 /*&& handle->desc.R == 3 && handle->desc.S == 3*/) {
       result = 2;
     }
+  }
+
+  /*  Make sure we don't use multiple rows when we don't pack input and convolutions are strided*/
+  if ((handle->pack_input == 0) && ((handle->desc.u !=1 ) || (handle->desc.v != 1))) {
+    result = 1;
   }
 
   return result;
@@ -585,6 +595,13 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bwd_scratch( libxsmm_dnn_l
   /* input bufffer in high precision when we use BF16 */
   if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) {
     handle->bwd_lp_input_full_scratch_size = (size_t) LIBXSMM_MAX(handle->desc.threads * handle->bwd_gemm_pixels * handle->ifmblock * libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32), handle->desc.N * handle->desc.C * handle->ifwp * handle->ifhp * libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32));
+    /* logical padding with copying in the fly */
+    if ( handle->use_fallback_bwd_loops != 0 ) {
+      handle->bwd_packing_padding_scratch_size = (size_t)handle->desc.threads * handle->ifmblock *
+        (handle->desc.H + 2*handle->desc.pad_h) *
+        (handle->desc.W + 2*handle->desc.pad_w) *
+        libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32);
+    }
   } else {
     handle->bwd_lp_input_full_scratch_size = 0;
   }
@@ -795,6 +812,11 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_init_upd_gemm_flags( libxsm
 LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_layer* handle ) {
   int remainder_pixels, max_init_offset, max_compute_offset_input, input_compute_pad, accum_length_pixels, compute_pixels;
   const int multiple_target = 2;
+  int IFHP = (handle->upd_padding_copy == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
+  int IFWP = (handle->upd_padding_copy == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
+  int OFHP = (handle->upd_padding_copy == 1) ? handle->ofhp + 2 * handle->desc.pad_h : handle->ofhp;
+  int OFWP = (handle->upd_padding_copy == 1) ? handle->ofwp + 2 * handle->desc.pad_w : handle->ofwp;
+
   handle->upd_linearized_pixels = 1;
   if (handle->desc.S != 1 && handle->desc.v != 1) {
     handle->upd_linearized_pixels = 0;
@@ -823,10 +845,10 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     }
 
     /* Logistics for input transpose and additional pixel padding */
-    max_init_offset = 2 * handle->desc.pad_h * handle->ifwp + 2 * handle->desc.pad_w;
+    max_init_offset = 2 * handle->desc.pad_h * IFWP + 2 * handle->desc.pad_w;
     max_compute_offset_input = max_init_offset + accum_length_pixels;
-    input_compute_pad = (max_compute_offset_input > handle->ifwp*handle->ifhp) ? max_compute_offset_input - handle->ifwp*handle->ifhp : 0;
-    handle->input_pixels = handle->ifwp * handle->ifhp + input_compute_pad;
+    input_compute_pad = (max_compute_offset_input > IFWP*IFHP) ? max_compute_offset_input - IFWP*IFHP : 0;
+    handle->input_pixels = IFWP * IFHP + input_compute_pad;
     if (handle->upd_pack_input_upfront) {
       handle->input_pixels = accum_length_pixels;
     }
@@ -855,9 +877,9 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
       handle->on_the_fly_input_packing = 1;
     }
     remainder_pixels = (handle->ofw % multiple_target == 0) ? 0 : (handle->ofw/multiple_target+1)*multiple_target - handle->ofw;
-    handle->ofwp_extended = handle->ofwp + remainder_pixels;
-    handle->ifwp_extended = handle->ifwp + remainder_pixels;
-    handle->output_pixels = handle->ofwp * handle->ofwp_extended;
+    handle->ofwp_extended = OFWP + remainder_pixels;
+    handle->ifwp_extended = IFWP + remainder_pixels;
+    handle->output_pixels = OFHP * handle->ofwp_extended;
     /* coverity[identical_branches] */
     handle->batchreduce_h_pixels = (handle->upd_trans_w_only) ? 1 : 1; /* TODO: identical_branches */
     handle->use_intermediate_f32_wt_tensor = (handle->batchreduce_h_pixels == handle->ofh) ? 0 : 1;
@@ -887,6 +909,9 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_
   const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_descriptor_blob blob;
   const int multiple_target = 32;
+  int IFHP = (handle->upd_padding_copy == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
+  int IFWP = (handle->upd_padding_copy == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
+  int OFWP = (handle->upd_padding_copy == 1) ? handle->ofwp + 2 * handle->desc.pad_w : handle->ofwp;
 
   handle->upd_linearized_pixels = 1;
   if (handle->desc.S != 1 && handle->desc.v != 1) {
@@ -916,10 +941,10 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_
       }
 
       /* Logistics for input transpose and additional pixel padding */
-      max_init_offset = 2 * handle->desc.pad_h * handle->ifwp + 2 * handle->desc.pad_w;
+      max_init_offset = 2 * handle->desc.pad_h * IFWP + 2 * handle->desc.pad_w;
       max_compute_offset_input = max_init_offset + accum_length_pixels;
-      input_compute_pad = (max_compute_offset_input > handle->ifwp*handle->ifhp) ? max_compute_offset_input - handle->ifwp*handle->ifhp : 0;
-      handle->input_pixels = handle->ifwp * handle->ifhp + input_compute_pad;
+      input_compute_pad = (max_compute_offset_input > IFWP*IFHP) ? max_compute_offset_input - IFWP*IFHP : 0;
+      handle->input_pixels = IFWP*IFHP+ input_compute_pad;
       if (handle->upd_pack_input_upfront) {
         handle->input_pixels = accum_length_pixels;
       }
@@ -981,8 +1006,8 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_
     }
     remainder_pixels = (handle->ofw % multiple_target == 0) ? 0 : (handle->ofw/multiple_target+1)*multiple_target - handle->ofw;
     handle->remainder_pixels = remainder_pixels;
-    handle->ofwp_extended = handle->ofwp + remainder_pixels;
-    handle->ifwp_extended = handle->ifwp + remainder_pixels;
+    handle->ofwp_extended = OFWP + remainder_pixels;
+    handle->ifwp_extended = IFWP + remainder_pixels;
     handle->batchreduce_h_pixels = handle->ofh;
     handle->use_intermediate_f32_wt_tensor = (handle->batchreduce_h_pixels == handle->ofh) ? 0 : 1;
 #if 0
@@ -998,7 +1023,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_bf16_upd_amx( libxsmm_dnn_
   beta = (handle->use_intermediate_f32_wt_tensor) ? (float)1.0 : (float)0.0;
   if (handle->upd_linearized_pixels == 0) {
     LDA = handle->ofmblock;
-    LDB = handle->ifhp*handle->ifwp_extended;
+    LDB = IFHP*handle->ifwp_extended;
     LDC = handle->ofmblock;
     prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
     unroll_hint = handle->batchreduce_h_pixels;
@@ -1063,26 +1088,35 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_l
   /* output/input buffer to transpose when we use bf16 */
   if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) {
     if  (handle->target_archid >= LIBXSMM_X86_AVX512_SPR) {
+      int OFHP = (handle->upd_padding_copy == 1) ? handle->ofhp + 2 * handle->desc.pad_h : handle->ofhp;
+      int IFHP = (handle->upd_padding_copy == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
+
       if (handle->upd_linearized_pixels == 1) {
         handle->upd_lp_output_full_scratch_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(handle->datatype_in));
         handle->upd_lp_input_full_scratch_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(handle->datatype_in));
       }
 
       if (handle->upd_linearized_pixels == 0) {
-        handle->upd_lp_output_full_scratch_size = (size_t) (handle->desc.N * handle->ofhp*handle->ofwp_extended * handle->desc.K * sizeof(handle->datatype_in));
-        handle->upd_lp_input_full_scratch_size = (size_t) (handle->desc.N * handle->ifhp * handle->ifwp_extended * handle->desc.C * sizeof(handle->datatype_in));
+        handle->upd_lp_output_full_scratch_size = (size_t) (handle->desc.N * OFHP * handle->ofwp_extended * handle->desc.K * sizeof(handle->datatype_in));
+        handle->upd_lp_input_full_scratch_size = (size_t) (handle->desc.N * IFHP * handle->ifwp_extended * handle->desc.C * sizeof(handle->datatype_in));
       }
     } else {
       const int multiple_target = 2;
+      int IFHP = (handle->upd_padding_copy == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
+      int IFWP = (handle->upd_padding_copy == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
+      int OFHP = (handle->upd_padding_copy == 1) ? handle->ofhp + 2 * handle->desc.pad_h : handle->ofhp;
+      int OFWP = (handle->upd_padding_copy == 1) ? handle->ofwp + 2 * handle->desc.pad_w : handle->ofwp;
+
       if (handle->upd_linearized_pixels == 1) {
         int compute_pixels = handle->ofw * handle->ofh + 2 * handle->desc.pad_w * (handle->ofh-1);
         int remainder_pixels = (compute_pixels % multiple_target == 0) ? 0 : (compute_pixels/multiple_target+1)*multiple_target - compute_pixels;
         int accum_length_pixels = compute_pixels + remainder_pixels;
 
-        int max_init_offset = 2 * handle->desc.pad_h * (handle->desc.W + 2*handle->desc.pad_w)  + 2 * handle->desc.pad_w;
+        int max_init_offset = 2 * handle->desc.pad_h * IFWP + 2 * handle->desc.pad_w;
         int max_compute_offset_input = max_init_offset + accum_length_pixels;
-        int input_compute_pad = (max_compute_offset_input > (handle->desc.W+2*handle->desc.pad_w) * (handle->desc.H+2*handle->desc.pad_h)) ? max_compute_offset_input - (handle->desc.W+2*handle->desc.pad_w) * (handle->desc.H+2*handle->desc.pad_h) : 0;
-        int input_pixels = (handle->desc.W+2*handle->desc.pad_w) * (handle->desc.H+2*handle->desc.pad_h) + input_compute_pad;
+        int input_compute_pad = (max_compute_offset_input > IFWP*IFHP) ? max_compute_offset_input - IFWP*IFHP : 0;
+        int input_pixels = IFWP * IFHP + input_compute_pad;
+
         if (handle->upd_pack_input_upfront == 1) {
           input_pixels = accum_length_pixels;
         }
@@ -1093,11 +1127,11 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_l
 
       if (handle->upd_linearized_pixels == 0) {
         int remainder_pixels = (handle->ofw % multiple_target == 0) ? 0 : (handle->ofw/multiple_target+1)*multiple_target - handle->ofw;
-        int ofwp_extended = (handle->desc.W+2*handle->desc.pad_w) + remainder_pixels;
-        int ifwp_extended = (handle->desc.W+2*handle->desc.pad_w) + remainder_pixels;
+        int ofwp_extended = OFWP + remainder_pixels;
+        int ifwp_extended = IFWP + remainder_pixels;
 
-        handle->upd_lp_output_full_scratch_size = (size_t) (handle->desc.N * (handle->desc.H+2*handle->desc.pad_h) * ofwp_extended * handle->desc.K * sizeof(handle->datatype_in));
-        handle->upd_lp_input_full_scratch_size = (size_t) (handle->desc.N * (handle->desc.H+2*handle->desc.pad_h) * ifwp_extended * handle->desc.C * sizeof(handle->datatype_in));
+        handle->upd_lp_output_full_scratch_size = (size_t) (handle->desc.N * OFHP * ofwp_extended * handle->desc.K * sizeof(handle->datatype_in));
+        handle->upd_lp_input_full_scratch_size = (size_t) (handle->desc.N * IFHP * ifwp_extended * handle->desc.C * sizeof(handle->datatype_in));
       }
     }
     handle->upd_lp_filter_full_scratch_size = (size_t)handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads *
@@ -1186,6 +1220,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->avoid_acc_load = libxsmm_dnn_convolution_setup_avoid_acc_load(handle);
   handle->fwd_flags = libxsmm_dnn_convolution_setup_init_fwd_gemm_flags(handle);
   handle->use_fallback_fwd_loops = libxsmm_dnn_convolution_setup_fallback_loops_fwd(handle);
+  handle->fwd_padding_copy = libxsmm_dnn_convolution_setup_fwd_padding_copy(handle);
 
   if ( (handle->target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) {
     handle->block_fwd_ofm = 1;
@@ -1207,8 +1242,8 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
       int stride_b = IFW * IFH * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
       handle->fwd_compute_kernel_strd = libxsmm_bmmdispatch_reducebatch_strd_unroll(handle->ofmblock, handle->fwd_gemm_pixels, handle->ifmblock, stride_a, stride_b, handle->blocksifm_blocking, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
     } else {
-      const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
-      const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
+      const int IFW = (handle->fwd_padding_copy == 1) ? handle->ifwp + 2*handle->desc.pad_w : ( (handle->pack_input == 1) ? handle->ofwp : handle->ifwp );
+      const int IFH = (handle->fwd_padding_copy == 1) ? handle->ifhp + 2*handle->desc.pad_h : ( (handle->pack_input == 1) ? handle->ofhp : handle->ifhp );
       int n_blocks = handle->desc.R * handle->desc.S * handle->blocksifm_blocking;
       int i = 0, ifm, ki, kj;
       handle->A_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
@@ -1231,8 +1266,6 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
     }
     handle->fwd_config_kernel = libxsmm_bsmmdispatch(handle->ofmblock, handle->fwd_gemm_pixels, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_tc_flags, NULL);
   }
-
-  handle->fwd_padding_copy = libxsmm_dnn_convolution_setup_fwd_padding_copy(handle);
 
   handle->code_fwd[0].ptr = 0;
   handle->code_fwd[1].ptr = 0;
@@ -1430,6 +1463,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->block_upd_ofm = libxsmm_dnn_convolution_setup_block_upd_OFM(handle);
   handle->block_upd_ifm = libxsmm_dnn_convolution_setup_block_upd_IFM(handle);
   handle->upd_loop_order = libxsmm_dnn_convolution_setup_loop_order_upd(handle);
+  handle->upd_padding_copy = libxsmm_dnn_convolution_setup_upd_padding_copy(handle);
 
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
     if  (handle->target_archid == LIBXSMM_X86_AVX512_SPR) {
@@ -1438,8 +1472,6 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
       libxsmm_dnn_convolution_setup_bf16_upd(handle);
     }
   }
-
-  handle->upd_padding_copy = libxsmm_dnn_convolution_setup_upd_padding_copy(handle);
 
 #if 0
   /* Spit out UPD parameters that are selected...  */
@@ -1451,6 +1483,8 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
     printf("UPD upd_trans_w_only = %d\n", handle->upd_trans_w_only);
     printf("UPD on_the_fly_input_packing = %d\n", handle->on_the_fly_input_packing);
     printf("UPD use_intermediate_f32_wt_tensor = %d\n", handle->use_intermediate_f32_wt_tensor);
+    printf("UPD pack to CNHW format = %d\n", handle->pack_to_cnhw);
+    printf("UPD batchreduce H pixels = %d\n", handle->batchreduce_h_pixels);
   }
   printf("UPD linearized tasks = %d\n", handle->upd_linearized_tasklist);
   printf("UPD avoid rim fmas = %d\n", handle->upd_avoid_rim_fmas);
@@ -1510,7 +1544,7 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
         ( conv_desc.pad_w != conv_desc.pad_w_in )  ||
         ( conv_desc.pad_h != conv_desc.pad_h_out ) ||
         ( conv_desc.pad_w != conv_desc.pad_w_out )    ) &&
-      ( conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32 ) ) {
+      ( conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32 ) && (conv_desc.datatype_in != LIBXSMM_DNN_DATATYPE_BF16) ) {
     *status = LIBXSMM_DNN_ERR_INVALID_PADDING;
     return 0;
   }

@@ -10,6 +10,7 @@
 ******************************************************************************/
 #include <libxsmm_sync.h>
 #include <libxsmm_mhd.h>
+#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -63,7 +64,7 @@ int main(int argc, char* argv[])
   const int kw = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 32, 1);
   const int kh = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : kw, 1);
   const char *const filename_out = (5 < argc ? argv[5] : "mhd_out.mhd");
-  int result = 0 != strcmp(filename_in, filename_out) ? EXIT_SUCCESS : EXIT_FAILURE;
+  int result = (0 != strcmp(filename_in, filename_out) ? EXIT_SUCCESS : EXIT_FAILURE);
   size_t ndims = 2, size_in[] = { 0, 0 }, size_out[] = { 0, 0 }, pitch[2], offset[2], ncomponents = 1, header_size = 0, extension_size;
   void *conv_input_buffer = 0, *conv_filter_buffer = 0, *conv_output_buffer = 0;
   libxsmm_dnn_tensor *conv_input = 0, *conv_output = 0, *conv_filter = 0;

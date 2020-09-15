@@ -643,7 +643,7 @@ LIBXSMM_API_INTERN unsigned int internal_get_tid(void)
     fprintf(stderr, "LIBXSMM ERROR: maximum number of threads is exhausted!\n");
   }
 #endif
-  LIBXSMM_ASSERT(LIBXSMM_NTHREADS_MAX == LIBXSMM_UP2POT(LIBXSMM_NTHREADS_MAX));
+  LIBXSMM_ASSERT(LIBXSMM_ISPOT(LIBXSMM_NTHREADS_MAX));
   return LIBXSMM_MOD2(nthreads - 1, LIBXSMM_NTHREADS_MAX);
 }
 

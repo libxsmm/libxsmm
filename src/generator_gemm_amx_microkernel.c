@@ -712,6 +712,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
 
   if ((m_tiles == 2) && (n_tiles == 2)) {
     fill_array_4_entries(_C_tile_mate_id, 2, 3, 0, 1);
+  } else if ((m_tiles == 2) && (n_tiles == 1)) {
+    fill_array_4_entries(_C_tile_mate_id, 2, -1, 0, -1);
   } else {
     /* In this case we can't do paired tilestores */
     fill_array_4_entries(_C_tile_mate_id, -1, -1, -1, -1);
@@ -871,7 +873,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
             n_CL_to_pf,
             i_xgemm_desc->lda * 2,
             i_gp_reg_mapping->gp_reg_a,
-            _A_offsets[i] + pf_dist * i_xgemm_desc->c1);
+            (unsigned int)(_A_offsets[i] + pf_dist * i_xgemm_desc->c1));
       }
     }
 
@@ -892,7 +894,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
             n_CL_to_pf,
             i_xgemm_desc->ldb * 2,
             i_gp_reg_mapping->gp_reg_b,
-            _B_offsets[i] + pf_dist * i_xgemm_desc->c2);
+            (unsigned int)(_B_offsets[i] + pf_dist * i_xgemm_desc->c2));
       }
     }
 
@@ -957,7 +959,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
   LIBXSMM_UNUSED( io_loop_label_tracker );
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
-    i_brgemm_loop = A_offs/i_xgemm_desc->c1;
+    i_brgemm_loop = A_offs/((unsigned int)i_xgemm_desc->c1);
   }
 
   while (i_xgemm_desc->k % l_k_blocking != 0) {

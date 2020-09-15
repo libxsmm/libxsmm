@@ -95,7 +95,7 @@ void libxsmm_generator_spgemm_csr_asparse( libxsmm_generated_code*         io_ge
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 
-  /* generate the actuel kernel */
+  /* generate the actual kernel */
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_n = 0; l_n < %u; l_n++) {\n", (unsigned int)i_xgemm_desc->n);
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 

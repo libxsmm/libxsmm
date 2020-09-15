@@ -2961,8 +2961,10 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
   unsigned int in, im, m, n, m_full_trips, m_trips, use_m_masking, mask_count, reg_n, reg_m;
-  unsigned int scale_rows = 0, scale_cols = 0, perform_scale = 0, perform_shift = 0, perform_addbias = 0;
+  unsigned int scale_rows = 0, scale_cols = 0, scale_rows_cols = 0, perform_scale = 0, perform_shift = 0, perform_addbias = 0;
   unsigned int reg_shift = 31, reg_bias = 30, reg_scale = 29;
+  unsigned int reg_shift2 = 28, reg_bias2 = 27, reg_scale2 = 26;
+  unsigned int n_available_zmms = 29;
 
   /* Some rudimentary checking of M, N and LDs*/
   if ( i_mateltwise_desc->m > i_mateltwise_desc->ldi ) {
@@ -2970,19 +2972,28 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
     return;
   }
 
-  if ( (((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ROWS) > 0) && ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_COLS) > 0)) ||
-       (((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ROWS) == 0) && ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_COLS) == 0)) ) {
-    /* This should not happen  */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-  }
-
   /* Determine what operations to perform */
+  scale_rows_cols = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS) > 0) ? 1 : 0;
   scale_rows    = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ROWS) > 0) ? 1 : 0;
   scale_cols    = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_COLS) > 0) ? 1 : 0;
   perform_scale = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_MULT) > 0) ? 1 : 0;
   perform_shift = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_SHIFT) > 0) ? 1 : 0;
   perform_addbias = ((libxsmm_get_meltw_scal_flags((libxsmm_meltw_comp_scal_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS) > 0) ? 1 : 0;
+
+  if (((scale_rows > 0) && (scale_cols > 0)) ||
+      ((scale_cols > 0) && (scale_rows_cols > 0)) ||
+      ((scale_rows > 0) && (scale_rows_cols > 0)) ||
+      ((scale_rows == 0) && (scale_cols == 0) && (scale_rows_cols == 0))) {
+    /* This should not happen  */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  /* When we request to JIT for rows-cols order, then honor (for code gen purposes) the scale_rows flag */
+  if (scale_rows_cols > 0) {
+    scale_rows = 1;
+    n_available_zmms = 26;
+  }
 
   /* Configure the register mapping for this eltwise kernel */
   i_gp_reg_mapping->gp_reg_in                     = LIBXSMM_X86_GP_REG_R8;
@@ -2990,6 +3001,9 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
   i_gp_reg_mapping->gp_reg_shift_vals             = LIBXSMM_X86_GP_REG_R10;
   i_gp_reg_mapping->gp_reg_scale_vals             = LIBXSMM_X86_GP_REG_R11;
   i_gp_reg_mapping->gp_reg_bias_vals              = LIBXSMM_X86_GP_REG_R12;
+  i_gp_reg_mapping->gp_reg_shift_vals2            = LIBXSMM_X86_GP_REG_RAX;
+  i_gp_reg_mapping->gp_reg_scale_vals2            = LIBXSMM_X86_GP_REG_RBX;
+  i_gp_reg_mapping->gp_reg_bias_vals2             = LIBXSMM_X86_GP_REG_RCX;
   i_gp_reg_mapping->gp_reg_m_loop                 = LIBXSMM_X86_GP_REG_R13;
   i_gp_reg_mapping->gp_reg_n_loop                 = LIBXSMM_X86_GP_REG_R14;
 
@@ -3052,6 +3066,38 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
       i_gp_reg_mapping->gp_reg_out,
       0 );
 
+  if (scale_rows_cols > 0) {
+    if ( perform_shift > 0 ) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+         i_micro_kernel_config->alu_mov_instruction,
+         i_gp_reg_mapping->gp_reg_param_struct,
+         LIBXSMM_X86_GP_REG_UNDEF, 0,
+         40,
+         i_gp_reg_mapping->gp_reg_shift_vals2,
+         0 );
+    }
+
+    if ( perform_scale > 0 ) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+         i_micro_kernel_config->alu_mov_instruction,
+         i_gp_reg_mapping->gp_reg_param_struct,
+         LIBXSMM_X86_GP_REG_UNDEF, 0,
+         48,
+         i_gp_reg_mapping->gp_reg_scale_vals2,
+         0 );
+    }
+
+    if ( perform_addbias > 0 ) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+         i_micro_kernel_config->alu_mov_instruction,
+         i_gp_reg_mapping->gp_reg_param_struct,
+         LIBXSMM_X86_GP_REG_UNDEF, 0,
+         56,
+         i_gp_reg_mapping->gp_reg_bias_vals2,
+         0 );
+    }
+  }
+
   /* If scaling cols: follow an MN loop order with fully unrolled N loop */
   if (scale_cols == 1) {
     m_full_trips = m / 16;
@@ -3098,7 +3144,7 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
       }
 
       for (in = 0; in < n; in++) {
-        reg_n = in % 29;
+        reg_n = in % n_available_zmms;
 
         /* Load part of the column  */
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -3223,7 +3269,7 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
       }
 
       for (in = 0; in < n; in++) {
-        reg_n = in % 29;
+        reg_n = in % n_available_zmms;
 
         /* Load part of the column  */
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -3316,7 +3362,7 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
     }
 
     for (im = 0; im < m_trips; im++) {
-      reg_m = im % 29;
+      reg_m = im % n_available_zmms;
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
@@ -3327,29 +3373,108 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
           i_micro_kernel_config->vector_name,
           reg_m, (im == (m_trips-1)) ? use_m_masking : 0, 1, 0 );
 
-      /* Perform transformations */
-      if ( perform_shift > 0 ) {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             i_micro_kernel_config->instruction_set,
-                                             LIBXSMM_X86_INSTR_VADDPS,
-                                             i_micro_kernel_config->vector_name,
-                                             reg_m, reg_shift, reg_m );
+      if (scale_rows_cols > 0) {
+        /* Load the correspodning columns to be used for scaling */
+        if ( perform_shift > 0 ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmove_instruction_in,
+              i_gp_reg_mapping->gp_reg_shift_vals2,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              im * 16 * i_micro_kernel_config->datatype_size_in,
+              i_micro_kernel_config->vector_name,
+              reg_shift2, (im == (m_trips-1)) ? use_m_masking : 0, 1, 0 );
+        }
+
+        if ( perform_scale > 0 ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmove_instruction_in,
+              i_gp_reg_mapping->gp_reg_scale_vals2,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              im * 16 * i_micro_kernel_config->datatype_size_in,
+              i_micro_kernel_config->vector_name,
+              reg_scale2, (im == (m_trips-1)) ? use_m_masking : 0, 1, 0 );
+        }
+
+        if ( perform_addbias > 0 ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmove_instruction_in,
+              i_gp_reg_mapping->gp_reg_bias_vals2,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              im * 16 * i_micro_kernel_config->datatype_size_in,
+              i_micro_kernel_config->vector_name,
+              reg_bias2, (im == (m_trips-1)) ? use_m_masking : 0, 1, 0 );
+        }
       }
 
-      if ( perform_scale > 0 ) {
+      /* Perform transformations on the rows*/
+      if ((perform_scale > 0) && (perform_addbias > 0) && (perform_shift == 0)) {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             i_micro_kernel_config->instruction_set,
-                                             LIBXSMM_X86_INSTR_VMULPS,
-                                             i_micro_kernel_config->vector_name,
-                                             reg_m, reg_scale, reg_m );
+                                           i_micro_kernel_config->instruction_set,
+                                           LIBXSMM_X86_INSTR_VFMADD213PS,
+                                           i_micro_kernel_config->vector_name,
+                                           reg_bias, reg_scale, reg_m );
+      } else {
+        if ( perform_shift > 0 ) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                               i_micro_kernel_config->instruction_set,
+                                               LIBXSMM_X86_INSTR_VADDPS,
+                                               i_micro_kernel_config->vector_name,
+                                               reg_m, reg_shift, reg_m );
+        }
+
+        if ( perform_scale > 0 ) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                               i_micro_kernel_config->instruction_set,
+                                               LIBXSMM_X86_INSTR_VMULPS,
+                                               i_micro_kernel_config->vector_name,
+                                               reg_m, reg_scale, reg_m );
+        }
+
+        if ( perform_addbias > 0 ) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                               i_micro_kernel_config->instruction_set,
+                                               LIBXSMM_X86_INSTR_VADDPS,
+                                               i_micro_kernel_config->vector_name,
+                                               reg_m, reg_bias, reg_m );
+        }
       }
 
-      if ( perform_addbias > 0 ) {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+      if (scale_rows_cols > 0) {
+        /* Perform transformations on the columns */
+        if ((perform_scale > 0) && (perform_addbias > 0) && (perform_shift == 0)) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                              i_micro_kernel_config->instruction_set,
-                                             LIBXSMM_X86_INSTR_VADDPS,
+                                             LIBXSMM_X86_INSTR_VFMADD213PS,
                                              i_micro_kernel_config->vector_name,
-                                             reg_m, reg_bias, reg_m );
+                                             reg_bias2, reg_scale2, reg_m );
+        } else {
+          if ( perform_shift > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_micro_kernel_config->instruction_set,
+                                                 LIBXSMM_X86_INSTR_VADDPS,
+                                                 i_micro_kernel_config->vector_name,
+                                                 reg_m, reg_shift2, reg_m );
+          }
+
+          if ( perform_scale > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_micro_kernel_config->instruction_set,
+                                                 LIBXSMM_X86_INSTR_VMULPS,
+                                                 i_micro_kernel_config->vector_name,
+                                                 reg_m, reg_scale2, reg_m );
+          }
+
+          if ( perform_addbias > 0 ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_micro_kernel_config->instruction_set,
+                                                 LIBXSMM_X86_INSTR_VADDPS,
+                                                 i_micro_kernel_config->vector_name,
+                                                 reg_m, reg_bias2, reg_m );
+          }
+        }
       }
 
       /* Store the result  */

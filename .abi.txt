@@ -1,3 +1,5 @@
+libxsmm_aligned
+libxsmm_aligned_
 libxsmm_aligned_malloc
 libxsmm_backtrace
 libxsmm_barrier_create
@@ -234,6 +236,7 @@ libxsmm_dnn_trans_reg_filter
 libxsmm_dnn_typesize
 libxsmm_dnn_zero_tensor
 libxsmm_dsqrt
+libxsmm_dvalue
 libxsmm_finalize
 libxsmm_finalize_
 libxsmm_free

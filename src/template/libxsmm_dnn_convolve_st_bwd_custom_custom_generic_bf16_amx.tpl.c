@@ -132,7 +132,7 @@ if ( handle->use_ifm_parallelization == 1 ) {
   }
 }
 
-n_blocks = handle->blocksofm_blocking * handle->desc.R * handle->desc.S;
+n_blocks = (unsigned long long)handle->blocksofm_blocking * handle->desc.R * handle->desc.S;
 out_ptr = (float*) &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, 0, 0, 0, scratch_ifwp, handle->ifmblock);
 
 #if 1
@@ -172,6 +172,45 @@ else {
                 LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16( &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, ojj, 0, 0, scratch_ifwp, handle->ifmblock), &LIBXSMM_VLA_ACCESS( 5, del_input, img, ifm1, oj+ojj, oi, 0, handle->blocksifm, IFH, IFW, handle->ifmblock), handle->bwd_ofw_rb * handle->ifmblock);
               }
             }
+          }
+        }
+      }
+    }
+  }
+}
+
+if (handle->pack_input_bwd == 1) {
+  LIBXSMM_VLA_DECL(5, element_input_type, del_input_full, (element_input_type*)handle->grad_input->data + ((size_t)handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  for (img = my_img_start; img < my_img_end; img++) {
+    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
+      for (oj = 0; oj < handle->ifhp; oj++) {
+        for (oi = 0; oi < handle->ifwp; oi++) {
+          if (oi % handle->desc.v != 0 || oj % handle->desc.u != 0) {
+            LIBXSMM_PRAGMA_SIMD
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_input_type)0;
+              }
+          } else {
+            LIBXSMM_PRAGMA_SIMD
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) = LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, oj/handle->desc.u, oi/handle->desc.v, ifm2, handle->blocksifm, IFH, IFW, handle->ifmblock);
+              }
+          }
+        }
+      }
+    }
+  }
+} else if (handle->spread_input_bwd == 1) {
+  LIBXSMM_VLA_DECL(5, element_input_type, del_input_full, (element_input_type*)handle->grad_input->data + ((size_t)handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  for (img = my_img_start; img < my_img_end; img++) {
+    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
+      for (oj = 0; oj < handle->ifhp; oj++) {
+        for (oi = 0; oi < handle->ifwp; oi++) {
+          if (oi % handle->desc.v != 0 || oj % handle->desc.u != 0) {
+            LIBXSMM_PRAGMA_SIMD
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_input_type)0;
+              }
           }
         }
       }

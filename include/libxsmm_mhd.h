@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_MHD_H
 #define LIBXSMM_MHD_H
 
-#include "libxsmm.h"
+#include "libxsmm_typedefs.h"
 
 
 /** Denotes the element/pixel type of an image/channel. */

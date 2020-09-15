@@ -207,48 +207,56 @@
 # endif
 # if defined(LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_INTRINSICS_STATIC)
 #   if defined(__INTEL_COMPILER)
-      /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
-#     if 1904 <= (LIBXSMM_INTEL_COMPILER) && !defined(_WIN32)
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
-#     elif 1801 <= (LIBXSMM_INTEL_COMPILER)
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CLX
-#     elif 1500 <= (LIBXSMM_INTEL_COMPILER)
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
-#     elif 1400 <= (LIBXSMM_INTEL_COMPILER)
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
-#     else
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#     if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
+        /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
+#       if 1904 <= (LIBXSMM_INTEL_COMPILER) && !defined(_WIN32)
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
+#       elif 1801 <= (LIBXSMM_INTEL_COMPILER)
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CLX
+#       elif 1500 <= (LIBXSMM_INTEL_COMPILER)
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#       elif 1400 <= (LIBXSMM_INTEL_COMPILER)
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
+#       else
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#       endif
 #     endif
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #   elif defined(_CRAYC) && defined(__GNUC__)
       /* TODO: version check, e.g., LIBXSMM_VERSION2(11, 5) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR) */
-#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
+#     if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
+#     endif
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #   elif defined(_MSC_VER) && !defined(__clang__)
       /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
-#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#     if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#     endif
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #   elif (!defined(__GNUC__)  || LIBXSMM_VERSION2(4, 9) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
       && (!defined(__clang__) || LIBXSMM_VERSION2(4, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)) \
       && (!defined(__APPLE__) || !defined(__MACH__)) && !defined(__PGI) && !defined(_MSC_VER)
-#     if defined(__CYGWIN__) && !defined(LIBXSMM_INTRINSICS_DEBUG) /* Cygwin: invalid register for .seh_savexmm */
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
-#     elif (defined(__clang__) && LIBXSMM_VERSION2(10, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
-#     elif (defined(__GNUC__)  && LIBXSMM_VERSION2(10, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
-        || (defined(__clang__) && LIBXSMM_VERSION2( 9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__) && !defined(__cray__))
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
-#     elif (defined(__GNUC__)  && LIBXSMM_VERSION2(8, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
-        || (defined(__clang__) && LIBXSMM_VERSION2(6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CLX
-#     elif (defined(__GNUC__)  && LIBXSMM_VERSION2(5, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
-        || (defined(__clang__) && LIBXSMM_VERSION2(6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
-#     else
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#     if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#       if defined(__CYGWIN__) && !defined(LIBXSMM_INTRINSICS_DEBUG) /* Cygwin: invalid register for .seh_savexmm */
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#       elif (defined(__clang__) && LIBXSMM_VERSION2(10, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
+#       elif (defined(__GNUC__)  && LIBXSMM_VERSION2(10, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
+          || (defined(__clang__) && LIBXSMM_VERSION2( 9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__) && !defined(__cray__))
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
+#       elif (defined(__GNUC__)  && LIBXSMM_VERSION2(8, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
+          || (defined(__clang__) && LIBXSMM_VERSION2(6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CLX
+#       elif (defined(__GNUC__)  && LIBXSMM_VERSION2(5, 0) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)) \
+          || (defined(__clang__) && LIBXSMM_VERSION2(6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__))
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#       else
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#       endif
 #     endif
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #   else /* GCC/legacy incl. Clang */
@@ -262,19 +270,23 @@
 #       elif !defined(LIBXSMM_INTRINSICS_STATIC)
 #         define LIBXSMM_INTRINSICS_STATIC
 #       endif
-#       if defined(__CYGWIN__) && !defined(LIBXSMM_INTRINSICS_DEBUG) /* Cygwin: invalid register for .seh_savexmm */
-#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
-#       elif LIBXSMM_VERSION2(10, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)
-#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
-#       elif LIBXSMM_VERSION2( 9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__) && !defined(__cray__)
-#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
-#       elif LIBXSMM_VERSION2( 6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)
-#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CLX
-#       else
-#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#       if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#         if defined(__CYGWIN__) && !defined(LIBXSMM_INTRINSICS_DEBUG) /* Cygwin: invalid register for .seh_savexmm */
+#           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#         elif LIBXSMM_VERSION2(10, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)
+#           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
+#         elif LIBXSMM_VERSION2( 9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__) && !defined(__cray__)
+#           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
+#         elif LIBXSMM_VERSION2( 6, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)
+#           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CLX
+#         else
+#           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#         endif
 #       endif
 #     else /* fall-back */
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
+#       if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
+#       endif
 #       if !defined(LIBXSMM_INTRINSICS_STATIC) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_X86_AVX2/*workaround*/)
 #         define LIBXSMM_INTRINSICS_STATIC
 #       endif
@@ -658,7 +670,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 }
 
 /** SVML-intrinsics */
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78( __m512 x ) {
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(__m512 x) {
   const  __m512 c0        = _mm512_set1_ps(2027025.0f);
   const  __m512 c1        = _mm512_set1_ps(270270.0f);
   const  __m512 c2        = _mm512_set1_ps(6930.0f);
@@ -690,7 +702,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   return result;
 }
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_32( __m512 x ) {
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_32(__m512 x) {
   const  __m512 c1        = _mm512_set1_ps((float)(1.0/27.0));
   const  __m512 c2        = _mm512_set1_ps((float)(1.0/3));
   const  __m512 hi_bound  = _mm512_set1_ps(3.2f);
@@ -712,7 +724,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   return result;
 }
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_EXP2( __m512 _x ) {
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_EXP2(__m512 _x) {
   const __m512 twice_log2_e = _mm512_set1_ps((float)(1.442695*2));
   const __m512 half       = _mm512_set1_ps(0.5f);
   const __m512 c2         = _mm512_set1_ps(0.240226507f);
@@ -736,7 +748,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
  return result;
 }
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_EXP3( __m512 _x ) {
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_EXP3(__m512 _x) {
   const __m512 twice_log2_e = _mm512_set1_ps((float)(1.442695*2));
   const __m512 half       = _mm512_set1_ps(0.5f);
   const __m512 c3         = _mm512_set1_ps(0.05550410866f);
@@ -762,7 +774,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   return result;
 }
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2( __m512 x ) {
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(__m512 x) {
   __m512 result, func_p0, func_p1, func_p2;
   const __m512i sign_mask = _mm512_set1_epi32( 0x80000000 );
   const __m512i sign_filter = _mm512_set1_epi32( 0x7FFFFFFF );
@@ -793,7 +805,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   return result;
 }
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX3( __m512 x ) {
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX3(__m512 x) {
   __m512 result, func_p0, func_p1, func_p2, func_p3;
   const __m512i sign_mask = _mm512_set1_epi32( 0x80000000 );
   const __m512i sign_filter = _mm512_set1_epi32( 0x7FFFFFFF );
@@ -828,7 +840,101 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   return result;
 }
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_EXP_PS_2DTS( __m512 in ) {
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512DQ__ needed*/
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE) __m512 LIBXSMM_INTRINSICS_MM512_GELU_FWD_PS_MINIMAX3(__m512 x) {
+  const  __m512 thres   = _mm512_castsi512_ps(_mm512_set1_epi32(0x40879fff));
+  const  __m512 absmask = _mm512_castsi512_ps(_mm512_set1_epi32(0x7fffffff));
+  const  __m512 scale   = _mm512_castsi512_ps(_mm512_set1_epi32(0x406a0ea1));
+  const  __m512 shifter = _mm512_castsi512_ps(_mm512_set1_epi32(0x4b400000));
+  const  __m512 half    = _mm512_castsi512_ps(_mm512_set1_epi32(0x3f000000));
+  const  __m512 _c2     = _mm512_castsi512_ps(_mm512_setr_epi32(0xbd877b85u, 0xbd7d9780u, 0xbd4cb70eu, 0xbd08a1e9u, 0xbc808857u, 0xb9476fd2u, 0x3c36f765u, 0x3c924160u,
+                                                                0x3ca7b1fcu, 0x3ca5732cu, 0x3c95af63u, 0x3c8079f7u, 0x3c55fa4fu, 0x3c2fa86bu, 0x3c0fbb00u, 0x3bec178cu));
+  const  __m512 _c1     = _mm512_castsi512_ps(_mm512_setr_epi32(0xb7c7fb58u, 0xbacb9740u, 0xbc3e4b3au, 0xbd0d292au, 0xbd8bc5d0u, 0xbdd9978fu, 0xbe0f92d3u, 0xbe27b66du,
+                                                                0xbe328ce7u, 0xbe3125bfu, 0xbe26dc9du, 0xbe17a056u, 0xbe06bdebu, 0xbdecc593u, 0xbdcf57aau, 0xbdb5ea3au));
+  const  __m512 _c0     = _mm512_castsi512_ps(_mm512_setr_epi32(0x3ecc4231u, 0x3ecc541cu, 0x3ecd6c48u, 0x3ed174c3u, 0x3ed9bd5du, 0x3ee5acd5u, 0x3ef2aeddu, 0x3efd5384u,
+                                                                0x3f016724u, 0x3f00f778u, 0x3efb389eu, 0x3ef0464du, 0x3ee3014fu, 0x3ed50a78u, 0x3ec779dbu, 0x3ebae363u));
+  __m512 result;
+  __m512 xr    = _mm512_range_round_ps(x, thres, 2, _MM_FROUND_NO_EXC);
+  __m512 xa    = _mm512_and_ps(xr, absmask);
+  __m512 index = _mm512_fmadd_ps(xa, scale, shifter);
+  __m512 c2    = _mm512_permutexvar_ps(_mm512_castps_si512(index), _c2);
+  __m512 c1    = _mm512_permutexvar_ps(_mm512_castps_si512(index), _c1);
+  __m512 c0    = _mm512_permutexvar_ps(_mm512_castps_si512(index), _c0);
+  __m512 poly  = _mm512_fmadd_ps(c2, xa, c1);
+  poly         = _mm512_fmadd_ps(poly, xa, c0);
+  result       = _mm512_mul_ps(x, _mm512_fmadd_ps(poly, xr, half));
+
+  return result;
+}
+#endif /*defined(LIBXSMM_INTRINSICS_AVX512_CORE)*/
+
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512DQ__ needed*/
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE) __m512 LIBXSMM_INTRINSICS_MM512_GELU_BWD_PS_MINIMAX3(__m512 x) {
+  const  __m512 thres   = _mm512_castsi512_ps(_mm512_set1_epi32(0x408f5fff));
+  const  __m512 absmask = _mm512_castsi512_ps(_mm512_set1_epi32(0x7fffffff));
+  const  __m512 scale   = _mm512_castsi512_ps(_mm512_set1_epi32(0x405d67c9));
+  const  __m512 shifter = _mm512_castsi512_ps(_mm512_set1_epi32(0x4b400000));
+  const  __m512 half    = _mm512_castsi512_ps(_mm512_set1_epi32(0x3f000000));
+  const  __m512 _c2     = _mm512_castsi512_ps(_mm512_setr_epi32(0xbe87047bu, 0xbe6eb875u, 0xbe2210c1u, 0xbd81727fu, 0x3cb9625cu, 0x3da2cbe8u, 0x3dd1d4d1u, 0x3dca0bd0u,
+                                                                0x3da47dd0u, 0x3d6f1bd3u, 0x3d216381u, 0x3cd2618cu, 0x3c89f6e6u, 0x3c3ca672u, 0x3c08ed08u, 0x3bd26a14u));
+  const  __m512 _c1     = _mm512_castsi512_ps(_mm512_setr_epi32(0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u,
+                                                                0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u));
+  const  __m512 _c0     = _mm512_castsi512_ps(_mm512_setr_epi32(0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu,
+                                                                0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu));
+  __m512 result;
+  __m512 xr    = _mm512_range_round_ps(x, thres, 2, _MM_FROUND_NO_EXC);
+  __m512 xa    = _mm512_and_ps(xr, absmask);
+  __m512 index = _mm512_fmadd_ps(xa, scale, shifter);
+  __m512 c2    = _mm512_permutexvar_ps(_mm512_castps_si512(index), _c2);
+  __m512 c1    = _mm512_permutexvar_ps(_mm512_castps_si512(index), _c1);
+  __m512 c0    = _mm512_permutexvar_ps(_mm512_castps_si512(index), _c0);
+  __m512 poly  = _mm512_fmadd_ps(c2, xa, c1);
+  poly         = _mm512_fmadd_ps(poly, xa, c0);
+  result       = _mm512_fmadd_ps(poly, xr, half);
+
+  return result;
+}
+#endif /*defined(LIBXSMM_INTRINSICS_AVX512_CORE)*/
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_GELU_FWD(__m512 x) {
+  const  __m512 c1     = _mm512_set1_ps( (float)0.79788);
+  const  __m512 c2     = _mm512_set1_ps( (float)0.03568);
+  const  __m512 c_half = _mm512_set1_ps( (float)0.5);
+
+  __m512 x_half   = _mm512_mul_ps( x, c_half );
+  __m512 x_sq   = _mm512_mul_ps( x, x );
+  __m512 poly_x1 = _mm512_mul_ps(x, _mm512_fmadd_ps( x_sq, c2, c1));
+  __m512 tanh_poly_x = LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(poly_x1);
+  __m512 output = _mm512_fmadd_ps(tanh_poly_x, x_half, x_half);
+
+  return output;
+}
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_GELU_BWD(__m512 x) {
+  const  __m512 c1     = _mm512_set1_ps( (float)0.79788);
+  const  __m512 c2     = _mm512_set1_ps( (float)0.03568);
+  const  __m512 c3     = _mm512_set1_ps( (float)0.05352);
+  const  __m512 c4     = _mm512_set1_ps( (float)0.39894);
+  const  __m512 c_half = _mm512_set1_ps( (float)0.5);
+  const  __m512 c_ones = _mm512_set1_ps( (float)1.0);
+  const  __m512 c_minus_1 = _mm512_set1_ps( (float)-1.0);
+
+  __m512 x_sq   = _mm512_mul_ps( x, x );
+  __m512 poly_x1 = _mm512_mul_ps(x, _mm512_fmadd_ps( x_sq, c2, c1));
+  __m512 poly_x2 = _mm512_mul_ps(x, _mm512_fmadd_ps( x_sq, c3, c4));
+
+  __m512 tanh_poly_x = LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(poly_x1);
+  __m512 out1 = _mm512_add_ps(c_ones, tanh_poly_x);
+  __m512 out2 = _mm512_add_ps(c_half, poly_x2);
+  __m512 out3 = _mm512_fmsub_ps(poly_x2, tanh_poly_x, out2);
+  __m512 out4 = _mm512_mul_ps(c_minus_1, out3);
+  __m512 output = _mm512_mul_ps(out1, out4);
+
+  return output;
+}
+
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_EXP_PS_2DTS(__m512 in) {
   const __m512 log2_e   = _mm512_set1_ps(1.442695f);
   const __m512 half     = _mm512_set1_ps(0.5f);
   const __m512 c2       = _mm512_set1_ps(0.240226507f);
@@ -848,7 +954,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   return exp;
 }
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_EXP_PS_3DTS( __m512 in ) {
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_EXP_PS_3DTS(__m512 in) {
   const __m512 log2_e   = _mm512_set1_ps(1.442695f);
   const __m512 half     = _mm512_set1_ps(0.5f);
   const __m512 c3       = _mm512_set1_ps(0.05550410866f);
@@ -925,7 +1031,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 
 /** Generate random number in the interval [0, 1); thread save, state needs to be managed by user.
  *  this is based on xoshiro128+ 1.0, e.g. http://prng.di.unimi.it/xoshiro128plus.c */
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32( unsigned int* stateptr ) {
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32(unsigned int* stateptr) {
   __m512i state_0 = _mm512_loadu_si512( stateptr    );
   __m512i state_1 = _mm512_loadu_si512( stateptr+16 );
   __m512i state_2 = _mm512_loadu_si512( stateptr+32 );
@@ -947,8 +1053,8 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRIN
   return result;
 }
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS( unsigned int* stateptr) {
-  const __m512i rng_mantissa = _mm512_srli_epi32( LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32( stateptr ), 9 );
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(unsigned int* stateptr) {
+  const __m512i rng_mantissa = _mm512_srli_epi32( LIBXSMM_INTRINSICS_MM512_RNG_XOSHIRO128P_EXTSTATE_EPI32(stateptr), 9 );
   const __m512 one = _mm512_set1_ps(1.0f);
   return _mm512_sub_ps(_mm512_castsi512_ps(_mm512_or_epi32(_mm512_set1_epi32(0x3f800000), rng_mantissa)), one);
 }

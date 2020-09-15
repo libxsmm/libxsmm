@@ -171,6 +171,14 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED
 # define LIBXSMM_ATTRIBUTE_USED
 #endif
+#if defined(__clang__) && !defined(__INTEL_COMPILER)
+# define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(no_sanitize(LIBXSMM_STRINGIFY(KIND)))
+#elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 8) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) \
+  && !defined(__INTEL_COMPILER)
+# define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(LIBXSMM_CONCATENATE(no_sanitize_, KIND))
+#else
+# define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND)
+#endif
 
 #if defined(__cplusplus)
 # define LIBXSMM_VARIADIC ...
@@ -466,6 +474,7 @@
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 #define LIBXSMM_FEQ(A, B) ((A) == (B))
 #define LIBXSMM_NEQ(A, B) ((A) != (B))
+#define LIBXSMM_ISPOT(A) (0 != (A) && !((A) & ((A) - 1)))
 #define LIBXSMM_ISWAP(A, B) (((A) ^= (B)), ((B) ^= (A)), ((A) ^= (B)))
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
@@ -766,7 +775,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT_MSG)
-# define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) && (0 != *(MSG)))
+# define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) || !MSG)
 #endif
 #if !defined(LIBXSMM_EXPECT_ELIDE)
 # define LIBXSMM_EXPECT_ELIDE(RESULT, EXPR) do { \
@@ -823,6 +832,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
 #endif
+
 #if defined(__THROW) && defined(__cplusplus)
 # define LIBXSMM_THROW __THROW
 #endif
@@ -835,6 +845,16 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_NOTHROW
 #endif
+#if defined(__cplusplus)
+# if (__cplusplus > 199711L)
+#   define LIBXSMM_NOEXCEPT noexcept
+# else
+#   define LIBXSMM_NOEXCEPT throw()
+# endif
+#else
+# define LIBXSMM_NOEXCEPT LIBXSMM_NOTHROW
+#endif
+
 #if defined(_WIN32)
 # define LIBXSMM_PUTENV(A) _putenv(A)
 #else

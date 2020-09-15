@@ -9,11 +9,9 @@ CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 
+BLAS = 0
 OMP = 1
 SYM = 1
-
-# explore AVX/ARCH=native
-SSE = 0
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
@@ -21,6 +19,7 @@ include $(DEPDIR)/Makefile.inc
 # necessary include directories
 IFLAGS += -I$(call quote,$(INCDIR))
 IFLAGS += -I$(call quote,$(DEPDIR)/include)
+IFLAGS += -I$(call quote,$(DEPDIR)/src)
 
 OUTNAME := $(shell basename "$(ROOTDIR)")
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
@@ -34,24 +33,30 @@ CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
 CXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
 CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
+ifneq (,$(strip $(FC)))
+FXXSRCS := $(wildcard $(SRCDIR)/*.f)
+F77SRCS := $(wildcard $(SRCDIR)/*.F)
+F90SRCS := $(wildcard $(SRCDIR)/*.f90) $(wildcard $(SRCDIR)/*.F90)
+FXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(FXXSRCS:.f=-f.o)))
+F77OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F77SRCS:.F=-f77.o)))
+F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
+F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
+endif
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
+FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_scale $(OUTDIR)/eltwise_layernorm
+FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
+XFILES := $(OUTDIR)/encoder_x86
+
 .PHONY: all
 all: $(XFILES)
 
 .PHONY: compile
-compile: $(OBJECTS)
+compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/eltwise_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_reduce-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/eltwise_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/eltwise_scale: $(OUTDIR)/.make $(BLDDIR)/eltwise_scale-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/eltwise_scale-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/eltwise_layernorm: $(OUTDIR)/.make $(BLDDIR)/eltwise_layernorm-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/eltwise_layernorm-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/encoder_x86: $(OUTDIR)/.make $(BLDDIR)/encoder_x86-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/encoder_x86-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

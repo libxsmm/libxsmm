@@ -137,6 +137,9 @@ endif
 # Optimization flag derived from OPT flag
 OPTFLAG ?= -O$(patsubst O%,%,$(OPT))
 
+# Kind of Clang-analysis (thread, address, ...)
+SANITIZE ?= $(NULL)
+
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
 # compatible with the GCC tool chain
@@ -165,8 +168,8 @@ ifneq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || ech
   DFLAGS += -DLIBXSMM_PLATFORM_FORCE
 endif
 
-# Intrinsics support level
-# 0: None, 1: Static, 2: Dynamic
+# Intrinsics support level (0: None, 1: Static, 2: Dynamic)
+# 1003<=INTRINSICS<1999: CPUID (see libxsmm_cpuid.h)
 INTRINSICS ?= 2
 
 OFFLOAD ?= 0
@@ -401,16 +404,17 @@ FC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
 CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 
 # check if the Intel Development Tools are available
+# 1: classic, 2: next-gen (opt-in)
 INTEL ?= $(shell echo "$$((2==$(words $(filter icpc% icpx% icc% icx%, \
   $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
   $(shell $(CC)  $(CC_VERSION_FLAG)  2>/dev/null | head -n1 | cut -d' ' -f1)))))")
 
 ifneq (0,$(INTEL))
   ifeq (,$(shell echo "$${FC}"))
-    ifneq (,$(call qndir,$(call which,ifort)))
-      FC = ifort
-    else ifneq (,$(call qndir,$(call which,ifx)))
+    ifeq (ifx$(INTEL),$(call qndir,$(call which,ifx))$(filter-out 1,$(INTEL)))
       FC = ifx
+    else ifneq (,$(call qndir,$(call which,ifort)))
+      FC = ifort
     endif
   endif
 else
@@ -537,6 +541,8 @@ ifneq (,$(strip $(FC)))
       else
         override FC = $(NULL)
       endif
+    else ifneq (0,$(shell echo "$$((40600>$(FC_VERSION_NUM)))"))
+      FORTRAN ?= 1
     endif
   else ifneq (0,$(INTEL))
     ifneq (0,$(shell echo "$$((130000>$(FC_VERSION_NUM) && 0<$(FC_VERSION_NUM)))"))
@@ -544,6 +550,7 @@ ifneq (,$(strip $(FC)))
     endif
   endif
 endif
+FORTRAN ?= 2
 
 ifeq (,$(strip $(FC)))
   ifeq (0,$(FORTRAN))
@@ -594,7 +601,7 @@ ifneq (0,$(FORTRAN))
         endif
       endif
     else
-      FORTRAN = 0
+      FORTRAN ?= 0
     endif
   endif
 else
@@ -637,9 +644,9 @@ MKL_FCRTL ?= intel
 CCAR = $(call which,$(CC)-ar)
 ifneq (,$(CCAR))
   ifeq (default,$(origin AR))
-    AR = $(CC)-ar
+    AR = $(firstword $(CC))-ar
   else
-    AR ?= $(CC)-ar
+    AR ?= $(firstword $(CC))-ar
   endif
 endif
 
@@ -1129,7 +1136,7 @@ ifneq (0,$(INTEL))
     endif
     CFLAGS += $(CSTD)
     ifeq (,$(strip $(GFC)))
-      FSTD = -std03
+      FSTD = -std$(if $(filter 1,$(FORTRAN)),03,08)
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
       FCFLAGS += $(FFORM_FLAG)
     endif
@@ -1151,7 +1158,7 @@ ifneq (0,$(INTEL))
       CFLAGS += $(CWARNEXTRA)
     endif
     ifeq (,$(strip $(GFC)))
-      FSTD = -std03
+      FSTD = -std$(if $(filter 1,$(FORTRAN)),03,08)
       FCFLAGS += $(FSTD) $(FPEDANTIC)
       FMFLAGS += -fixed
     endif
@@ -1221,7 +1228,7 @@ ifneq (0,$(INTEL))
   endif
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifeq (0,$(COMPATIBLE))
-    ifneq (,$(filter environment% override command%,$(origin COMPATIBLE)))
+    ifneq (,$(filter environment% override command%,$(origin COMPATIBLE))$(filter-out 1,$(INTEL)))
       ifeq (3,$(AVX))
         ifeq (,$(MIC))
           CTARGET = -xCOMMON-AVX512
@@ -1303,15 +1310,15 @@ ifneq (0,$(INTEL))
   endif
 else # GCC assumed
   ifneq (0,$(SYM))
-    ifeq (1,$(SYM))
+    ifeq (1,$(if $(SANITIZE),2,$(SYM)))
       CXXFLAGS += -g
       CFLAGS += -g
       FCFLAGS += -g
-    else ifeq (2,$(SYM))
-      CXXFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
-      CFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
-      FCFLAGS += -g -fsanitize=thread -fno-omit-frame-pointer
-      LDFLAGS += -g -fsanitize=thread $(call ldclib,$(LD),$(SLDFLAGS),tsan) -fno-omit-frame-pointer
+    else ifeq (2,$(if $(SANITIZE),2,$(SYM)))
+      CXXFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
+      CFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
+      FCFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
+      LDFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) #$(call ldclib,$(LD),$(SLDFLAGS),tsan)
     else
       ifneq (,$(filter 2 3,$(GCC)))
         CXXFLAGS += -g3
@@ -1345,7 +1352,7 @@ else # GCC assumed
   ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
     CXXFLAGS += -Wall
     CFLAGS += -Wall
-    FSTD = -std=f2003
+    FSTD = -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
     CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
@@ -1690,6 +1697,8 @@ ifneq (0,$(INTRINSICS))
     else ifneq (,$(CTARGET))
       DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
     endif
+  else ifneq (2,$(INTRINSICS))
+    DFLAGS += -DLIBXSMM_MAX_STATIC_TARGET_ARCH=$(INTRINSICS)
   endif
 else # disabled
   DFLAGS += -DLIBXSMM_INTRINSICS_NONE

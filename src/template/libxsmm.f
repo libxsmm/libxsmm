@@ -59,7 +59,11 @@
      &    LIBXSMM_GEMM_FLAG_TRANS_B  = 2,                               &
      &    LIBXSMM_GEMM_FLAG_TRANS_AB = IOR(                             &
      &        LIBXSMM_GEMM_FLAG_TRANS_A, LIBXSMM_GEMM_FLAG_TRANS_B),    &
-     &    LIBXSMM_GEMM_FLAG_BETA_0   = 16
+     &    LIBXSMM_GEMM_FLAG_BETA_0   = 16,                              &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = 2176,                    &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0 = IOR(              &
+     &        LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,                       &
+     &        LIBXSMM_GEMM_FLAG_BETA_0)
 
         !> Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -342,7 +346,7 @@
           !> INTEGER(8) :: kernel
           PURE SUBROUTINE libxsmm_xmmcall_abc(kernel, a, b, c)          &
      &    BIND(C, NAME="libxsmm_xmmcall_abc_")
-            IMPORT C_FUNPTR, C_PTR
+            IMPORT :: C_FUNPTR, C_PTR
             TYPE(C_FUNPTR), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
           END SUBROUTINE
@@ -354,7 +358,7 @@
           PURE SUBROUTINE libxsmm_xmmcall_prf(kernel,                   &
      &    a, b, c, pa, pb, pc)                                          &
      &    BIND(C, NAME="libxsmm_xmmcall_prf_")
-            IMPORT C_FUNPTR, C_PTR
+            IMPORT :: C_FUNPTR, C_PTR
             TYPE(C_FUNPTR), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
           END SUBROUTINE
@@ -362,7 +366,7 @@
           !> Fill destination with zeros; treats dst in raw/binary fashion.
           SUBROUTINE libxsmm_xclear(dst, nbytes)                        &
      &    BIND(C, NAME="libxsmm_xclear_")
-            IMPORT C_PTR, C_INT
+            IMPORT :: C_PTR, C_INT
             TYPE(C_PTR), INTENT(IN), VALUE :: dst
             INTEGER(C_INT), INTENT(IN) :: nbytes
           END SUBROUTINE
@@ -370,7 +374,7 @@
           !> Remove key-value pair from code registry and release memory.
           SUBROUTINE libxsmm_xrelease(key, keysize)                     &
      &    BIND(C, NAME="libxsmm_xrelease_")
-            IMPORT C_PTR, C_INT
+            IMPORT :: C_PTR, C_INT
             TYPE(C_PTR), INTENT(IN), VALUE :: key
             INTEGER(C_INT), INTENT(IN) :: keysize
           END SUBROUTINE
@@ -382,7 +386,7 @@
           !> INTEGER(4)   :: typesize
           PURE SUBROUTINE libxsmm_xmatcopy(output, input, typesize,     &
      &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_matcopy_")
-            IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
+            IMPORT :: LIBXSMM_BLASINT_KIND, C_PTR, C_INT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN) :: typesize
@@ -395,7 +399,7 @@
           !> INTEGER(4)   :: typesize
           PURE SUBROUTINE libxsmm_xitrans(matrix, typesize, m, n, ld)   &
      &    BIND(C, NAME="libxsmm_itrans_")
-            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ld
             TYPE(C_PTR), INTENT(IN), VALUE :: matrix
             INTEGER(C_INT), INTENT(IN) :: typesize
@@ -409,7 +413,7 @@
           PURE SUBROUTINE libxsmm_xotrans(output, input,                &
      &    typesize, m, n, ldi, ldo)                                     &
      &    BIND(C, NAME="libxsmm_otrans_")
-            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN) :: typesize
@@ -423,7 +427,7 @@
           PURE SUBROUTINE libxsmm_matcopy_omp(output, input,            &
      &    typesize, m, n, ldi, ldo)                                     &
      &    BIND(C, NAME="libxsmm_matcopy_omp_")
-            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN) :: typesize
@@ -437,7 +441,7 @@
           PURE SUBROUTINE libxsmm_otrans_omp(output, input,             &
      &    typesize, m, n, ldi, ldo)                                     &
      &    BIND(C, NAME="libxsmm_otrans_omp_")
-            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN) :: typesize
@@ -448,7 +452,7 @@
           PURE SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,    &
      &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
      &    BIND(C, NAME="libxsmm_dgemm_omp_")
-            IMPORT C_DOUBLE, C_CHAR, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_DOUBLE, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
@@ -462,7 +466,7 @@
           PURE SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,    &
      &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
      &    BIND(C, NAME="libxsmm_sgemm_omp_")
-            IMPORT C_FLOAT, C_CHAR, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_FLOAT, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
@@ -490,7 +494,7 @@
      &    index_stride, stride_a, stride_b, stride_c, batchsize,        &
      &    tid, nthreads)                                                &
      &    BIND(C, NAME="libxsmm_mmbatch_")
-            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             !> Determines index-base (usually 0, 1 for one-based indexes).
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             !> Stride (measured in Bytes) used to walk stride_*.
@@ -527,7 +531,7 @@
      &    index_base, index_stride, stride_a, stride_b, stride_c,       &
      &    batchsize)                                                    &
      &    BIND(C, NAME="libxsmm_gemm_batch_")
-            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
@@ -555,7 +559,7 @@
      &    index_base, index_stride, stride_a, stride_b, stride_c,       &
      &    batchsize)                                                    &
      &    BIND(C, NAME="libxsmm_gemm_batch_omp_")
-            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
@@ -581,7 +585,7 @@
           !> REAL(4|8)    :: alpha, beta
           SUBROUTINE libxsmm_mmbatch_begin(gemm_precision, flags,       &
      &    m, n, k,  lda, ldb, ldc, alpha, beta) BIND(C)
-            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INT), INTENT(IN), VALUE :: gemm_precision
             INTEGER(C_INT), INTENT(IN) :: flags
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -600,7 +604,7 @@
           !> should be zeroed (libxsmm_matdiff_clear).
           !> Implicit FORTRAN 77 interface: available.
           PURE SUBROUTINE libxsmm_matdiff_reduce(output, input) BIND(C)
-            IMPORT LIBXSMM_MATDIFF_INFO
+            IMPORT :: LIBXSMM_MATDIFF_INFO
             TYPE(LIBXSMM_MATDIFF_INFO), INTENT(INOUT) :: output
             TYPE(LIBXSMM_MATDIFF_INFO), INTENT(IN)    :: input
           END SUBROUTINE
@@ -609,7 +613,7 @@
           !> reduction-value (libxsmm_matdiff_reduce).
           !> Implicit FORTRAN 77 interface: available.
           PURE SUBROUTINE libxsmm_matdiff_clear(info) BIND(C)
-            IMPORT LIBXSMM_MATDIFF_INFO
+            IMPORT :: LIBXSMM_MATDIFF_INFO
             TYPE(LIBXSMM_MATDIFF_INFO), INTENT(OUT) :: info
           END SUBROUTINE
 
@@ -617,7 +621,7 @@
           !> Routine suitable for FORTRAN 77; keysize in Bytes.
           PURE SUBROUTINE libxsmm_xhash(hash_seed, key, keysize)        &
      &    BIND(C, NAME="libxsmm_xhash_")
-            IMPORT C_INT, C_PTR
+            IMPORT :: C_INT, C_PTR
             INTEGER(C_INT), INTENT(INOUT)  :: hash_seed
             INTEGER(C_INT), INTENT(IN)     :: keysize
             TYPE(C_PTR), INTENT(IN), VALUE :: key
@@ -627,7 +631,7 @@
           !> Routine suitable for FORTRAN 77; size in Bytes.
           PURE SUBROUTINE libxsmm_xdiff(diff, a, b, nbytes)             &
      &    BIND(C, NAME="libxsmm_xdiff_")
-            IMPORT C_PTR, C_LONG_LONG, C_BOOL
+            IMPORT :: C_PTR, C_LONG_LONG, C_BOOL
             TYPE(C_PTR), INTENT(IN), VALUE   :: a, b
             INTEGER(C_LONG_LONG), INTENT(IN) :: nbytes
             LOGICAL(C_BOOL), INTENT(OUT)     :: diff
@@ -1340,7 +1344,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
         FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
           TYPE(C_PTR), INTENT(IN), VALUE :: key
-          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: valinit
+          TYPE(C_PTR), INTENT(IN), OPTIONAL :: valinit
           INTEGER(C_INT), INTENT(IN) :: keysize, valsize
           TYPE(C_PTR) :: libxsmm_xregister
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xregister
@@ -1348,7 +1352,7 @@
             SUBROUTINE internal_xregister(regval,                       &
      &      key, keysize, valsize, valinit)                             &
      &      BIND(C, NAME="libxsmm_xregister_")
-              IMPORT C_PTR, C_INT
+              IMPORT :: C_PTR, C_INT
               TYPE(C_PTR), INTENT(OUT) :: regval
               TYPE(C_PTR), INTENT(IN), VALUE :: key, valinit
               INTEGER(C_INT), INTENT(IN) :: keysize, valsize
@@ -1368,7 +1372,7 @@
           INTERFACE
             SUBROUTINE internal_xdispatch(regval, key, keysize)         &
      &      BIND(C, NAME="libxsmm_xdispatch_")
-              IMPORT C_PTR, C_INT
+              IMPORT :: C_PTR, C_INT
               TYPE(C_PTR), INTENT(OUT) :: regval
               TYPE(C_PTR), INTENT(IN), VALUE :: key
               INTEGER(C_INT), INTENT(IN) :: keysize
@@ -1395,7 +1399,7 @@
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_dgemm_")
-              IMPORT C_CHAR, C_DOUBLE, LIBXSMM_BLASINT_KIND
+              IMPORT :: C_CHAR, C_DOUBLE, LIBXSMM_BLASINT_KIND
               CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
@@ -1486,7 +1490,7 @@
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_sgemm_")
-              IMPORT C_CHAR, C_FLOAT, LIBXSMM_BLASINT_KIND
+              IMPORT :: C_CHAR, C_FLOAT, LIBXSMM_BLASINT_KIND
               CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
@@ -1577,7 +1581,7 @@
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_wigemm_")
-              IMPORT C_CHAR, C_SHORT, C_INT, LIBXSMM_BLASINT_KIND
+              IMPORT :: C_CHAR, C_SHORT, C_INT, LIBXSMM_BLASINT_KIND
               CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
@@ -1668,7 +1672,7 @@
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_dgemm_")
-              IMPORT C_CHAR, C_DOUBLE, LIBXSMM_BLASINT_KIND
+              IMPORT :: C_CHAR, C_DOUBLE, LIBXSMM_BLASINT_KIND
               CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
@@ -1759,7 +1763,7 @@
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_sgemm_")
-              IMPORT C_CHAR, C_FLOAT, LIBXSMM_BLASINT_KIND
+              IMPORT :: C_CHAR, C_FLOAT, LIBXSMM_BLASINT_KIND
               CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
@@ -2006,7 +2010,7 @@
           INTERFACE
             PURE SUBROUTINE internal_timer_ncycles(ncycles,             &
      &      tick0, tick1) BIND(C, NAME="libxsmm_timer_ncycles_")
-              IMPORT LIBXSMM_TICKINT_KIND
+              IMPORT :: LIBXSMM_TICKINT_KIND
               INTEGER(LIBXSMM_TICKINT_KIND), INTENT(IN)  :: tick0, tick1
               INTEGER(LIBXSMM_TICKINT_KIND), INTENT(OUT) :: ncycles
             END SUBROUTINE
@@ -2038,8 +2042,8 @@
           INTERFACE
             PURE SUBROUTINE internal_matdiff(info, datatype, m, n,      &
      &      ref, tst, ldref, ldtst) BIND(C, NAME="libxsmm_matdiff_")
-              IMPORT LIBXSMM_MATDIFF_INFO, LIBXSMM_BLASINT_KIND
-              IMPORT C_PTR, C_INT
+              IMPORT :: LIBXSMM_MATDIFF_INFO, LIBXSMM_BLASINT_KIND
+              IMPORT :: C_PTR, C_INT
               INTEGER(C_INT), INTENT(IN)                :: datatype
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldref, ldtst
@@ -2063,7 +2067,7 @@
           INTERFACE
             PURE SUBROUTINE internal_shuffle(coprime, n)                &
      &      BIND(C, NAME="libxsmm_shuffle_")
-              IMPORT C_LONG_LONG, C_INT
+              IMPORT :: C_LONG_LONG, C_INT
               INTEGER(C_LONG_LONG), INTENT(OUT) :: coprime
               INTEGER(C_INT), INTENT(IN) :: n
             END SUBROUTINE
@@ -2076,7 +2080,7 @@
         !> FORTRAN 77: see libxsmm_xhash
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_char
         FUNCTION libxsmm_hash_char(key, seed)
-          CHARACTER(C_CHAR), INTENT(IN) :: key(:)
+          CHARACTER(C_CHAR), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
           INTEGER(C_INT) :: libxsmm_hash_char
           libxsmm_hash_char = seed
@@ -2088,7 +2092,7 @@
         !> FORTRAN 77: see libxsmm_xhash
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i8
         FUNCTION libxsmm_hash_i8(key, seed)
-          INTEGER(C_INT8_T), INTENT(IN) :: key(:)
+          INTEGER(C_INT8_T), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
           INTEGER(C_INT) :: libxsmm_hash_i8
           libxsmm_hash_i8 = seed
@@ -2100,7 +2104,7 @@
         !> FORTRAN 77: see libxsmm_xhash
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i32
         FUNCTION libxsmm_hash_i32(key, seed)
-          INTEGER(C_INT), INTENT(IN) :: key(:)
+          INTEGER(C_INT), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
           INTEGER(C_INT) :: libxsmm_hash_i32
           libxsmm_hash_i32 = seed
@@ -2112,7 +2116,7 @@
         !> FORTRAN 77: see libxsmm_xhash
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i64
         FUNCTION libxsmm_hash_i64(key, seed)
-          INTEGER(C_LONG_LONG), INTENT(IN) :: key(:)
+          INTEGER(C_LONG_LONG), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
           INTEGER(C_INT) :: libxsmm_hash_i64
           libxsmm_hash_i64 = seed
@@ -2124,7 +2128,7 @@
         !> FORTRAN 77: see libxsmm_xdiff
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_char
         FUNCTION libxsmm_diff_char(a, b)
-          CHARACTER(C_CHAR), INTENT(IN) :: a(:), b(:)
+          CHARACTER(C_CHAR), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_char
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
@@ -2140,7 +2144,7 @@
         !> FORTRAN 77: see libxsmm_xdiff
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i8
         FUNCTION libxsmm_diff_i8(a, b)
-          INTEGER(C_INT8_T), INTENT(IN) :: a(:), b(:)
+          INTEGER(C_INT8_T), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_i8
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
@@ -2156,7 +2160,7 @@
         !> FORTRAN 77: see libxsmm_xdiff
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i32
         FUNCTION libxsmm_diff_i32(a, b)
-          INTEGER(C_INT), INTENT(IN) :: a(:), b(:)
+          INTEGER(C_INT), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_i32
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
@@ -2172,7 +2176,7 @@
         !> FORTRAN 77: see libxsmm_xdiff
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i64
         FUNCTION libxsmm_diff_i64(a, b)
-          INTEGER(C_LONG_LONG), INTENT(IN) :: a(:), b(:)
+          INTEGER(C_LONG_LONG), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_i64
           IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
      &    THEN
@@ -2182,6 +2186,31 @@
           ELSE
             libxsmm_diff_i64 = LOGICAL(.TRUE., KIND=C_BOOL)
           END IF
+        END FUNCTION
+
+        !> Check if location is SIMD-aligned and optionally consider the next
+        !> access as if reached by incrementing the location (in Bytes).
+        !> Optionally calculates the alignment of the given location in Bytes.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_aligned
+        FUNCTION libxsmm_aligned(location, increment, alignment)
+          TYPE(C_PTR), INTENT(IN), VALUE :: location
+          INTEGER(C_INT),  INTENT(IN), OPTIONAL :: increment
+          INTEGER(C_INT), INTENT(OUT), OPTIONAL :: alignment
+          LOGICAL :: libxsmm_aligned ! C_BOOL (GNU Fortran issue)
+          INTEGER(C_INT) :: aligned
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_aligned
+          INTERFACE
+            SUBROUTINE internal_aligned(is_aligned, location,           &
+     &      increment, alignment) BIND(C, NAME="libxsmm_aligned_")
+              IMPORT :: C_PTR, C_INT, C_BOOL
+              TYPE(C_PTR), VALUE, INTENT(IN) :: location
+              INTEGER(C_INT),     INTENT(IN) :: increment
+              INTEGER(C_INT),    INTENT(OUT) :: alignment
+              INTEGER(C_INT),    INTENT(OUT) :: is_aligned ! C_BOOL
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_aligned(aligned, location, increment, alignment)
+          libxsmm_aligned = 0.NE.aligned
         END FUNCTION
       END MODULE
 

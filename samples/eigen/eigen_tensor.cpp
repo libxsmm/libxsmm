@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 # endif
     const double gflops = 2.0 * m * n * k * 1E-9;
     const int max_nthreads = Eigen::nbThreads();
-    const int env_nthreads = 0 == getenv("NTHREADS") ? max_nthreads : atoi(getenv("NTHREADS"));
+    const int env_nthreads = (0 == getenv("NTHREADS") ? max_nthreads : atoi(getenv("NTHREADS")));
     const int nthreads = LIBXSMM_CLMP(env_nthreads, 1, max_nthreads);
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET)

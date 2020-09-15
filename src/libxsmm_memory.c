@@ -13,6 +13,14 @@
 #include "libxsmm_diff.h"
 #include "libxsmm_main.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <ctype.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
 #if !defined(LIBXSMM_MEMORY_STDLIB) && 0
 # define LIBXSMM_MEMORY_STDLIB
 #endif
@@ -394,7 +402,7 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsig
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string)
 {
   unsigned long long result;
-  const size_t length = NULL != string ? strlen(string) : 0;
+  const size_t length = (NULL != string ? strlen(string) : 0);
   if (sizeof(result) < length) {
     const size_t length2 = length / 2;
     unsigned int seed32 = 0; /* seed=0: match else-optimization */
@@ -404,11 +412,57 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string)
     result = (result << 32) | seed32;
   }
   else { /* reinterpret directly as hash value */
+#if 1
+    result = (unsigned long long)string;
+#else
     char *const s = (char*)&result; signed char i;
     for (i = 0; i < (signed char)length; ++i) s[i] = string[i];
     for (; i < (signed char)sizeof(result); ++i) s[i] = 0;
+#endif
   }
   return result;
+}
+
+
+LIBXSMM_API const char* libxsmm_stristr(const char* a, const char* b)
+{
+  const char* result = NULL;
+  if (NULL != a && NULL != b && '\0' != *a && '\0' != *b) {
+    do {
+      if (tolower(*a) != tolower(*b)) {
+        ++a;
+      }
+      else {
+        const char* c = b;
+        result = a;
+        while ('\0' != *++a && '\0' != *++c) {
+          if (tolower(*a) != tolower(*c)) {
+            result = NULL;
+            break;
+          }
+        }
+        if ('\0' == *c) break;
+      }
+    } while ('\0' != *a);
+  }
+  return result;
+}
+
+
+LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment)
+{
+  const int minalign = 4 * libxsmm_cpuid_vlen32(libxsmm_target_archid);
+  const uintptr_t address = (uintptr_t)ptr;
+  int ptr_is_aligned;
+  LIBXSMM_ASSERT(LIBXSMM_ISPOT(minalign));
+  if (NULL == alignment) {
+    ptr_is_aligned = !LIBXSMM_MOD2(address, (uintptr_t)minalign);
+  }
+  else {
+    *alignment = (1 << LIBXSMM_INTRINSICS_BITSCANFWD64(address));
+    ptr_is_aligned = (minalign <= *alignment);
+  }
+  return ptr_is_aligned && (NULL == inc || !LIBXSMM_MOD2(*inc, minalign));
 }
 
 
@@ -472,6 +526,27 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xclear)(void* dst, const int* size)
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xclear specified!\n");
+  }
+#endif
+}
+
+
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* /*result*/, const void* /*ptr*/, const int* /*inc*/, int* /*alignment*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* result, const void* ptr, const int* inc, int* alignment)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != result)
+#endif
+  {
+    const size_t next = (NULL != inc ? *inc : 0);
+    *result = libxsmm_aligned(ptr, &next, alignment);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_aligned specified!\n");
   }
 #endif
 }

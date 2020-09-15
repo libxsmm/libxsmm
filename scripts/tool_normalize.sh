@@ -25,6 +25,7 @@ MKTEMP=${REPO}/.mktmp.sh
 # separate multiple patterns with space
 FMTDIRS=${2:-"samples src tests"}
 FMTXPAT="/gxm/"
+# limiter
 DIR=$1
 
 FMTBIN=$(command -v clang-format)
@@ -74,7 +75,8 @@ then
   # Search the content of the diffs matching the given file types
   for PATTERN in ${PATTERNS} *Makefile*; do
   for FILE in $(${GIT} ls-files ${PATTERN}); do
-    if [[ "${DIR}" && (${FILE} != "${DIR}/"*) ]]; then continue; fi
+    # FILE must be located in DIR (if given) and FILE must exist
+    if [[ "${DIR}" && (${FILE} != "${DIR}/"*) ]] || [ ! -e ${FILE} ]; then continue; fi
     echo -n "${FILE}"
     #
     # Reformat code (fallback: check for banned characters, etc.).
