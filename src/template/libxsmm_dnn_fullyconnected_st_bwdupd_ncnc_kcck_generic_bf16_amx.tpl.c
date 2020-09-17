@@ -65,7 +65,7 @@ LIBXSMM_VLA_DECL(4, const element_output_type,   doutput_orig, (element_output_t
 element_output_type *grad_output_ptr = (element_output_type*)handle->grad_output->data;
 element_output_type *tr_doutput_ptr = (element_output_type*)handle->scratch;
 #endif
-#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) 
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU)
 libxsmm_meltw_relu_param   relu_params;
 libxsmm_meltwfunction_relu relu_kernel = handle->bwd_relu_kernel;
 #endif

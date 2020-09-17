@@ -3535,7 +3535,7 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
-  unsigned int in, im, m, n, use_m_masking, m_trips, max_nm_unrolling, eager_result_store, n_unroll_factor, n_trips, mask_out_count = 0, unroll_iter = 0;
+  unsigned int in, im, m, n, use_m_masking, m_trips, n_unroll_factor, n_trips, mask_out_count = 0, unroll_iter = 0;
   unsigned int reserved_zmms = 1, reserved_mask_regs = 1, current_mask_reg = 1, n_available_zmms = 31, n_available_mask_regs = 7, max_nm_unrolling = 16;
   unsigned int zero_vreg = 31, cur_vreg = 0, cur_mask_reg = 0;
   int relu_type = -1;
@@ -3546,13 +3546,13 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
   if ((libxsmm_get_meltw_relu_flags((libxsmm_meltw_comp_relu_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_RELU_FWD) > 0) {
     /* relu_type = 0; */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;  
+    return;
   } else if ((libxsmm_get_meltw_relu_flags((libxsmm_meltw_comp_relu_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_RELU_BWD) > 0) {
     relu_type = 1;
   } else {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;  
+    return;
   }
 
   /* Some rudimentary checking of M, N and LDs*/
@@ -3619,11 +3619,9 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
       0 );
 
   if (m_trips > max_nm_unrolling) {
-    eager_result_store = 1;
     n_unroll_factor = 1;
   } else {
     /* Explore n unrolling opportunities... We unroll only by factors that divide N  */
-    eager_result_store = 0;
     n_unroll_factor = n;
     while (m_trips * n_unroll_factor > max_nm_unrolling) {
       n_unroll_factor--;
@@ -3657,7 +3655,7 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
           gpr_mask_regs[unroll_iter/2],
           0 );
     }
-    
+
     /* Now read the input, apply the relu and store the mask */
     for (in = 0; in < n_unroll_factor; in++) {
       for (im = 0; im < m_trips; im++) {
@@ -3759,7 +3757,7 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
             i_micro_kernel_config->vector_name,
             cur_vreg, (im == (m_trips-1)) ? use_m_masking : 0, 0, 1 );
       }
-    }  
+    }
   }
 
   if (n_trips > 1) {
