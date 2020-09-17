@@ -314,6 +314,9 @@
 #define LIBXSMM_X86_INSTR_LEAQ           30027
 #define LIBXSMM_X86_INSTR_ANDQ           30028
 #define LIBXSMM_X86_INSTR_CLDEMOTE       30029
+#define LIBXSMM_X86_INSTR_SHLQ           30030
+#define LIBXSMM_X86_INSTR_SARQ           30031
+#define LIBXSMM_X86_INSTR_SHRQ           30032
 
 /* Mask move instructions */
 #define LIBXSMM_X86_INSTR_KMOV           40000

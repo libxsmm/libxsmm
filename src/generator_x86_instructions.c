@@ -5477,6 +5477,39 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
           l_unsignedadj = 0x3e;
           l_third += 0x20;
           break;
+       case LIBXSMM_X86_INSTR_SHLQ:
+          if ( (i_immediate < 0) || (i_immediate > 127) )
+          {
+             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
+                              "because other immediates are signed but shlq is unsigned. So this code\n"
+                              "should be changed if you want an immediate in this range.\n");
+             exit(-1);
+          }
+          l_unsignedadj = 0x3e;
+          l_third += 0x20;
+          break;
+       case LIBXSMM_X86_INSTR_SARQ:
+          if ( (i_immediate < 0) || (i_immediate > 127) )
+          {
+             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
+                              "because other immediates are signed but sarq is unsigned. So this code\n"
+                              "should be changed if you want an immediate in this range.\n");
+             exit(-1);
+          }
+          l_unsignedadj = 0x3e;
+          l_third += 0x38;
+          break;
+       case LIBXSMM_X86_INSTR_SHRQ:
+          if ( (i_immediate < 0) || (i_immediate > 127) )
+          {
+             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
+                              "because other immediates are signed but shrq is unsigned. So this code\n"
+                              "should be changed if you want an immediate in this range.\n");
+             exit(-1);
+          }
+          l_unsignedadj = 0x3e;
+          l_third += 0x28;
+          break;
        case LIBXSMM_X86_INSTR_IMUL:
 /* Note: we assume that if you call imul in alu_imm you mean: something like imul $3,%rax,%rax. That is, we assume that i_gp_reg_number is used twice */
           l_unsignedadj = -0x18;
