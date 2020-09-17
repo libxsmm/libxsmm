@@ -108,6 +108,13 @@ void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*        
     const libxsmm_meltw_descriptor*                i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
+    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
+    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
+    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
+    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*             io_generated_code,
                                                   const libxsmm_meltw_descriptor*     i_mateltw_desc );
 
