@@ -3536,7 +3536,7 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
   unsigned int in, im, m, n, use_m_masking, m_trips, n_unroll_factor, n_trips, mask_out_count = 0, unroll_iter = 0;
-  unsigned int reserved_zmms = 1, reserved_mask_regs = 1, n_available_zmms = 31, n_available_mask_regs = 7, max_nm_unrolling = 16;
+  unsigned int reserved_mask_regs = 1, n_available_zmms = 31, n_available_mask_regs = 7, max_nm_unrolling = 16;
   unsigned int zero_vreg = 31, cur_vreg = 0, cur_mask_reg = 0;
   int relu_type = -1;
   unsigned int gpr_mask_regs[8] = {LIBXSMM_X86_GP_REG_R8, LIBXSMM_X86_GP_REG_R9, LIBXSMM_X86_GP_REG_R10, LIBXSMM_X86_GP_REG_R11, LIBXSMM_X86_GP_REG_R12, LIBXSMM_X86_GP_REG_R13, LIBXSMM_X86_GP_REG_R14, LIBXSMM_X86_GP_REG_R15};

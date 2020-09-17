@@ -53,7 +53,6 @@ const int dbias_thr_end = ((ltid + 1) * dbias_chunksize < dbias_work) ? ((ltid +
 LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dbias, (libxsmm_bfloat16*) handle->grad_bias->data, handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
-LIBXSMM_VLA_DECL(4, unsigned char,              relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4,     __mmask32, relubitmask,     (__mmask32*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/32);
 #endif
 
@@ -81,6 +80,8 @@ bwd_tile_config_kernel(NULL, NULL, NULL);
 
 /* Apply to doutput potential fusions */
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU)
+LIBXSMM_UNUSED(iteri);
+LIBXSMM_UNUSED(iterj);
 for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
   mb1  = mb1ofm1/nBlocksOFm;
   ofm1 = mb1ofm1%nBlocksOFm;
