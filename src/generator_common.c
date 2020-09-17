@@ -1191,6 +1191,19 @@ LIBXSMM_API_INTERN libxsmm_meltw_comp_redu_flags libxsmm_get_meltw_comp_redu_fla
   }
 }
 
+LIBXSMM_API_INTERN libxsmm_meltw_comp_relu_flags libxsmm_get_meltw_comp_relu_flags( libxsmm_meltw_relu_flags flags )
+{
+  switch ( flags ) {
+    case LIBXSMM_MELTW_FLAG_RELU_NONE:
+      return LIBXSMM_MELTW_COMP_FLAG_RELU_NONE;
+    case LIBXSMM_MELTW_FLAG_RELU_FWD:
+      return LIBXSMM_MELTW_COMP_FLAG_RELU_FWD;
+    case LIBXSMM_MELTW_FLAG_RELU_BWD:
+      return LIBXSMM_MELTW_COMP_FLAG_RELU_BWD;
+    default:
+      return LIBXSMM_MELTW_COMP_FLAG_RELU_NONE;
+  }
+}
 
 LIBXSMM_API_INTERN libxsmm_meltw_redu_flags libxsmm_get_meltw_redu_flags( libxsmm_meltw_comp_redu_flags flags )
 {
@@ -1228,6 +1241,19 @@ LIBXSMM_API_INTERN libxsmm_meltw_redu_flags libxsmm_get_meltw_redu_flags( libxsm
   }
 }
 
+LIBXSMM_API_INTERN libxsmm_meltw_relu_flags libxsmm_get_meltw_relu_flags( libxsmm_meltw_comp_relu_flags flags )
+{
+  switch ( flags ) {
+    case LIBXSMM_MELTW_COMP_FLAG_RELU_NONE:
+      return LIBXSMM_MELTW_FLAG_RELU_NONE;
+    case LIBXSMM_MELTW_COMP_FLAG_RELU_FWD:
+      return LIBXSMM_MELTW_FLAG_RELU_FWD;
+    case LIBXSMM_MELTW_COMP_FLAG_RELU_BWD:
+      return LIBXSMM_MELTW_FLAG_RELU_BWD;
+    default:
+      return LIBXSMM_MELTW_FLAG_REDUCE_NONE;
+  }
+}
 
 LIBXSMM_API_INTERN libxsmm_meltw_comp_scal_flags libxsmm_get_meltw_comp_scal_flags( libxsmm_meltw_scal_flags flags )
 {

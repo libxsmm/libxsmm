@@ -671,6 +671,13 @@ typedef enum libxsmm_meltw_comp_redu_flags {
   LIBXSMM_MELTW_COMP_FLAG_REDUCE_OP_ADD_COLS_ELTS               = 13
 } libxsmm_meltw_comp_redu_flags;
 
+/* compressed meltw relu structure */
+typedef enum libxsmm_meltw_comp_relu_flags {
+  LIBXSMM_MELTW_COMP_FLAG_RELU_NONE         = 0,
+  LIBXSMM_MELTW_COMP_FLAG_RELU_FWD          = 1,
+  LIBXSMM_MELTW_COMP_FLAG_RELU_BWD          = 2
+} libxsmm_meltw_comp_relu_flags;
+
 /* compressed meltw scale structure */
 typedef enum libxsmm_meltw_comp_scal_flags {
   LIBXSMM_MELTW_COMP_FLAG_SCALE_NONE                     = 0,
@@ -800,6 +807,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
 /** helper functions for compressing and decompressing meltw flags */
 LIBXSMM_API_INTERN libxsmm_meltw_comp_redu_flags libxsmm_get_meltw_comp_redu_flags( libxsmm_meltw_redu_flags flags );
 LIBXSMM_API_INTERN libxsmm_meltw_redu_flags libxsmm_get_meltw_redu_flags( libxsmm_meltw_comp_redu_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_comp_relu_flags libxsmm_get_meltw_comp_relu_flags( libxsmm_meltw_relu_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_relu_flags libxsmm_get_meltw_relu_flags( libxsmm_meltw_comp_relu_flags flags );
 LIBXSMM_API_INTERN libxsmm_meltw_comp_scal_flags libxsmm_get_meltw_comp_scal_flags( libxsmm_meltw_scal_flags flags );
 LIBXSMM_API_INTERN libxsmm_meltw_scal_flags libxsmm_get_meltw_scal_flags( libxsmm_meltw_comp_scal_flags flags );
 LIBXSMM_API_INTERN libxsmm_meltw_comp_cvta_flags libxsmm_get_meltw_comp_cvta_flags( libxsmm_meltw_cvta_flags flags );
