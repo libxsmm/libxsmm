@@ -3538,7 +3538,7 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
   unsigned int in, im, m, n, use_m_masking, m_trips, n_unroll_factor, n_trips, mask_out_count = 0, unroll_iter = 0;
   unsigned int reserved_mask_regs = 1, n_available_zmms = 31, n_available_mask_regs = 7, max_nm_unrolling = 16;
   unsigned int zero_vreg = 31, cur_vreg = 0, cur_mask_reg = 0;
-  int relu_type = -1;
+  /*int relu_type = -1;*/
   unsigned int gpr_mask_regs[8] = {LIBXSMM_X86_GP_REG_R8, LIBXSMM_X86_GP_REG_R9, LIBXSMM_X86_GP_REG_R10, LIBXSMM_X86_GP_REG_R11, LIBXSMM_X86_GP_REG_R12, LIBXSMM_X86_GP_REG_R13, LIBXSMM_X86_GP_REG_R14, LIBXSMM_X86_GP_REG_R15};
   unsigned int aggregate_mask_loads = 1;
 
@@ -3548,7 +3548,7 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   } else if ((libxsmm_get_meltw_relu_flags((libxsmm_meltw_comp_relu_flags)i_mateltwise_desc->flags) & LIBXSMM_MELTW_FLAG_RELU_BWD) > 0) {
-    relu_type = 1;
+    /*relu_type = 1;*/
   } else {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );

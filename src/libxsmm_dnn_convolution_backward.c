@@ -110,14 +110,14 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_f32_f32(libxsmm_dnn_
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if (handle->use_fallback_bwd_loops == 0) {
-    const libxsmm_blasint ldB = (libxsmm_blasint)handle->ofmblock;
-    const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
-    const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->ifmblock * handle->desc.v) : (libxsmm_blasint)handle->ifmblock;
-    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     typedef float element_input_type;
     typedef float element_output_type;
     typedef float element_filter_type;
     typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
+    const libxsmm_blasint ldB = (libxsmm_blasint)handle->ofmblock;
+    const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
+    const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->ifmblock * handle->desc.v) : (libxsmm_blasint)handle->ifmblock;
+    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
     int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
     int brgemm_pf_oob = 0;
@@ -129,20 +129,21 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_f32_f32(libxsmm_dnn_
     if (brgemm_pf_oob > 0) {
       prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
     }
-
-    /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-    gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-    gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-# include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c"
+    { /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+      gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+#     include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c"
+    }
   } else {
-    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
     typedef float element_input_type;
     typedef float element_output_type;
     typedef float element_filter_type;
     typedef libxsmm_smmfunction gemm_function;
-    /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-    gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, NULL, NULL, &ldC, NULL, NULL, NULL, NULL);
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic.tpl.c"
+    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
+    { /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, NULL, NULL, &ldC, NULL, NULL, NULL, NULL);
+#     include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic.tpl.c"
+    }
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -162,24 +163,23 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_bf16_bf16_emu(libxsm
     typedef libxsmm_bfloat16 element_output_type;
 
     /* some portable macrros fof BF16 <-> FP32 */
-# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
-
-    typedef libxsmm_bfloat16 element_filter_type;
-    const libxsmm_blasint ldB = (libxsmm_blasint)handle->ofmblock;
-    const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
-    const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->ifmblock * handle->desc.v) : (libxsmm_blasint)handle->ifmblock;
-    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
-    typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
-    typedef libxsmm_bmmfunction_reducebatch_addr gemm_br_function_bf16bf16;
-    int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
-    /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-    gemm_br_function br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
-    gemm_br_function br_gemm_kernel2 = libxsmm_bsmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
-    gemm_br_function_bf16bf16 br_gemm_kernel_bf16bf16 = libxsmm_bmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
-    gemm_br_function_bf16bf16 br_gemm_kernel2_bf16bf16 = libxsmm_bmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
-# include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic_bf16.tpl.c"
-
-# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+#   include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+    { typedef libxsmm_bfloat16 element_filter_type;
+      typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
+      typedef libxsmm_bmmfunction_reducebatch_addr gemm_br_function_bf16bf16;
+      const libxsmm_blasint ldB = (libxsmm_blasint)handle->ofmblock;
+      const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
+      const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->ifmblock * handle->desc.v) : (libxsmm_blasint)handle->ifmblock;
+      const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
+      int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
+      /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_br_function br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
+      gemm_br_function br_gemm_kernel2 = libxsmm_bsmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
+      gemm_br_function_bf16bf16 br_gemm_kernel_bf16bf16 = libxsmm_bmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
+      gemm_br_function_bf16bf16 br_gemm_kernel2_bf16bf16 = libxsmm_bmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
+#     include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic_bf16.tpl.c"
+#     include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+    }
   } else {
     const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
     typedef libxsmm_bfloat16 element_input_type;
@@ -193,11 +193,9 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_bf16_bf16_emu(libxsm
     brgemm_function bf16fp32_brgemm_kernel = libxsmm_bsmmdispatch_reducebatch_strd(handle->ifmblock, handle->ofw, handle->ofmblock, stride_a, stride_b, NULL, NULL, &ldC, NULL, NULL, &l_flags, NULL);
 
     /* some portable macrros fof BF16 <-> FP32 */
-# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
-
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
-
-# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+#   include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+#   include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
+#   include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -216,36 +214,33 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_bf16_bf16_emu_amx(li
     typedef libxsmm_bfloat16 element_output_type;
 
     /* some portable macrros fof BF16 <-> FP32 */
-# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
-
-    typedef libxsmm_bfloat16 element_filter_type;
-    typedef libxsmm_bsmmfunction gemm_function;
-    typedef libxsmm_bsmmfunction_reducebatch_offs gemm_br_function_offs;
-    typedef libxsmm_bsmmfunction_reducebatch_strd gemm_br_function_strd;
-    gemm_br_function_offs br_gemm_kernel_offs = handle->bwd_compute_kernel_offs;
-    gemm_br_function_strd br_gemm_kernel_strd = handle->bwd_compute_kernel_strd;
-    gemm_function tile_config_kernel = handle->bwd_config_kernel;
-# include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic_bf16_amx.tpl.c"
-
-# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+#   include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+    {
+      typedef libxsmm_bfloat16 element_filter_type;
+      typedef libxsmm_bsmmfunction gemm_function;
+      typedef libxsmm_bsmmfunction_reducebatch_offs gemm_br_function_offs;
+      typedef libxsmm_bsmmfunction_reducebatch_strd gemm_br_function_strd;
+      gemm_br_function_offs br_gemm_kernel_offs = handle->bwd_compute_kernel_offs;
+      gemm_br_function_strd br_gemm_kernel_strd = handle->bwd_compute_kernel_strd;
+      gemm_function tile_config_kernel = handle->bwd_config_kernel;
+#     include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic_bf16_amx.tpl.c"
+#     include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+    }
   } else {
-    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
     typedef libxsmm_bfloat16 element_input_type;
     typedef libxsmm_bfloat16 element_output_type;
     typedef libxsmm_bfloat16 element_filter_type;
     typedef libxsmm_bsmmfunction_reducebatch_strd brgemm_function;
+    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
     int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
     int stride_a = handle->ifmblock * handle->desc.R * handle->desc.S * handle->ofmblock * sizeof(libxsmm_bfloat16);
     int stride_b = handle->ofmblock * handle->ofwp * handle->ofhp * sizeof(libxsmm_bfloat16);
     /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
     brgemm_function bf16fp32_brgemm_kernel = libxsmm_bsmmdispatch_reducebatch_strd(handle->ifmblock, handle->ofw, handle->ofmblock, stride_a, stride_b, NULL, NULL, &ldC, NULL, NULL, &l_flags, NULL);
-
     /* some portable macrros fof BF16 <-> FP32 */
-# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
-
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
-
-# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+#   include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+#   include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
+#   include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -265,47 +260,43 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_bf16_bf16(libxsmm_dn
     typedef libxsmm_bfloat16 element_output_type;
     typedef libxsmm_bfloat16 element_filter_type;
 
-#define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
-  /* some portable macrros fof BF16 <-> FP32 */
-# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
-
-    typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
-    typedef libxsmm_bmmfunction_reducebatch_addr gemm_br_function_bf16bf16;
-    const libxsmm_blasint ldB = (libxsmm_blasint)handle->ofmblock;
-    const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
-    const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->ifmblock * handle->desc.v) : (libxsmm_blasint)handle->ifmblock;
-    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
-    int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
-    /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-    gemm_br_function br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
-    gemm_br_function br_gemm_kernel2 = libxsmm_bsmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
-    gemm_br_function_bf16bf16 br_gemm_kernel_bf16bf16 = libxsmm_bmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
-    gemm_br_function_bf16bf16 br_gemm_kernel2_bf16bf16 = libxsmm_bmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
-# include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic_bf16.tpl.c"
-
-# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
-#undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+#   define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+    /* some portable macrros fof BF16 <-> FP32 */
+#   include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+    {
+      typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
+      typedef libxsmm_bmmfunction_reducebatch_addr gemm_br_function_bf16bf16;
+      const libxsmm_blasint ldB = (libxsmm_blasint)handle->ofmblock;
+      const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
+      const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->ifmblock * handle->desc.v) : (libxsmm_blasint)handle->ifmblock;
+      const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
+      int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
+      /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_br_function br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
+      gemm_br_function br_gemm_kernel2 = libxsmm_bsmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
+      gemm_br_function_bf16bf16 br_gemm_kernel_bf16bf16 = libxsmm_bmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
+      gemm_br_function_bf16bf16 br_gemm_kernel2_bf16bf16 = libxsmm_bmmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, NULL);
+#     include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic_bf16.tpl.c"
+#     include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+    }
+#   undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
   } else {
-    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
     typedef libxsmm_bfloat16 element_input_type;
     typedef libxsmm_bfloat16 element_output_type;
     typedef libxsmm_bfloat16 element_filter_type;
     typedef libxsmm_bsmmfunction_reducebatch_strd brgemm_function;
+    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
     int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
     int stride_a = handle->ifmblock * handle->desc.R * handle->desc.S * handle->ofmblock * sizeof(libxsmm_bfloat16);
     int stride_b = handle->ofmblock * handle->ofwp * handle->ofhp * sizeof(libxsmm_bfloat16);
     /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
     brgemm_function bf16fp32_brgemm_kernel = libxsmm_bsmmdispatch_reducebatch_strd(handle->ifmblock, handle->ofw, handle->ofmblock, stride_a, stride_b, NULL, NULL, &ldC, NULL, NULL, &l_flags, NULL);
-
-
-#define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
-  /* some portable macrros fof BF16 <-> FP32 */
-# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
-
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
-
-# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
-#undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+#   define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+    /* some portable macrros fof BF16 <-> FP32 */
+#   include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+#   include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
+#   include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+#   undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -332,40 +323,38 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_bf16_bf16_amx(libxsm
     typedef libxsmm_bfloat16 element_output_type;
     typedef libxsmm_bfloat16 element_filter_type;
 
-#define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
-  /* some portable macrros fof BF16 <-> FP32 */
-# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
-
-    typedef libxsmm_bsmmfunction gemm_function;
-    typedef libxsmm_bsmmfunction_reducebatch_offs gemm_br_function_offs;
-    typedef libxsmm_bsmmfunction_reducebatch_strd gemm_br_function_strd;
-    gemm_br_function_offs br_gemm_kernel_offs = handle->bwd_compute_kernel_offs;
-    gemm_br_function_strd br_gemm_kernel_strd = handle->bwd_compute_kernel_strd;
-    gemm_function tile_config_kernel = handle->bwd_config_kernel;
-# include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic_bf16_amx.tpl.c"
-
-# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
-#undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+#   define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+    /* some portable macrros fof BF16 <-> FP32 */
+#   include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+    {
+      typedef libxsmm_bsmmfunction gemm_function;
+      typedef libxsmm_bsmmfunction_reducebatch_offs gemm_br_function_offs;
+      typedef libxsmm_bsmmfunction_reducebatch_strd gemm_br_function_strd;
+      gemm_br_function_offs br_gemm_kernel_offs = handle->bwd_compute_kernel_offs;
+      gemm_br_function_strd br_gemm_kernel_strd = handle->bwd_compute_kernel_strd;
+      gemm_function tile_config_kernel = handle->bwd_config_kernel;
+#     include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic_bf16_amx.tpl.c"
+#     include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+    }
+#   undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
   } else {
-    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
     typedef libxsmm_bfloat16 element_input_type;
     typedef libxsmm_bfloat16 element_output_type;
     typedef libxsmm_bfloat16 element_filter_type;
     typedef libxsmm_bsmmfunction_reducebatch_strd brgemm_function;
+    const libxsmm_blasint ldC = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
     int l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
     int stride_a = handle->ifmblock * handle->desc.R * handle->desc.S * handle->ofmblock * sizeof(libxsmm_bfloat16);
     int stride_b = handle->ofmblock * handle->ofwp * handle->ofhp * sizeof(libxsmm_bfloat16);
     /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
     brgemm_function bf16fp32_brgemm_kernel = libxsmm_bsmmdispatch_reducebatch_strd(handle->ifmblock, handle->ofw, handle->ofmblock, stride_a, stride_b, NULL, NULL, &ldC, NULL, NULL, &l_flags, NULL);
 
-#define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
-  /* some portable macrros fof BF16 <-> FP32 */
-# include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
-
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
-
-# include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
-#undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+#   define LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
+    /* some portable macrros fof BF16 <-> FP32 */
+#   include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
+#   include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c"
+#   include "template/libxsmm_dnn_bf16_macros_undefine.tpl.c"
+#   undef LIBXSMM_DNN_BF16_USE_CPX_AVX512_NI
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -387,14 +376,14 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom_f32_f32(libxsmm_dnn_la
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if (handle->use_fallback_bwd_loops == 0) {
-    const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
-    const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
-    const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
-    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     typedef float element_input_type;
     typedef float element_output_type;
     typedef float element_filter_type;
     typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
+    const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
+    const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
+    const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
+    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
     int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
     int brgemm_pf_oob = 0;
@@ -406,28 +395,28 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom_f32_f32(libxsmm_dnn_la
     if (brgemm_pf_oob > 0) {
       prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
     }
-
-    /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-    gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-    gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-#define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
-#undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+    { /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+      gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+#     define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+#     include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
+#     undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+    }
   } else {
+    typedef float element_input_type;
+    typedef float element_output_type;
+    typedef float element_filter_type;
+    typedef libxsmm_smmfunction gemm_function;
     const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
     const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
     const libxsmm_blasint ldC = ( (handle->desc.pad_h != handle->desc.pad_h_in) || (handle->desc.pad_w != handle->desc.pad_w_in) ) ?
                                   (libxsmm_blasint)(handle->ifmblock * handle->desc.v) :
                                   (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v);
-    typedef float element_input_type;
-    typedef float element_output_type;
-    typedef float element_filter_type;
-    typedef libxsmm_smmfunction gemm_function;
     /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
     gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, &ldA, &ldB, &ldC, NULL, NULL, NULL, NULL);
-#define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
-#include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_fallback_generic.tpl.c"
-#undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+#   define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+#   include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_fallback_generic.tpl.c"
+#   undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -443,14 +432,14 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck_f32_f32(libxsmm_dnn_laye
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if (handle->use_fallback_bwd_loops == 0) {
-    const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
-    const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
-    const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
-    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     typedef float element_input_type;
     typedef float element_output_type;
     typedef float element_filter_type;
     typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
+    const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
+    const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
+    const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
+    const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
     int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
     int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
     int brgemm_pf_oob = 0;
@@ -462,28 +451,28 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck_f32_f32(libxsmm_dnn_laye
     if (brgemm_pf_oob > 0) {
       prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
     }
-
-    /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-    gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-    gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags,  &prefetch_mode);
-#define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
-#undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+    { /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+      gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags,  &prefetch_mode);
+#     define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+#     include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
+#     undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+    }
   } else {
+    typedef float element_input_type;
+    typedef float element_output_type;
+    typedef float element_filter_type;
+    typedef libxsmm_smmfunction gemm_function;
     const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
     const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
     const libxsmm_blasint ldC = ( (handle->desc.pad_h != handle->desc.pad_h_in) || (handle->desc.pad_w != handle->desc.pad_w_in) ) ?
                                   (libxsmm_blasint)(handle->ifmblock * handle->desc.v) :
                                   (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v);
-    typedef float element_input_type;
-    typedef float element_output_type;
-    typedef float element_filter_type;
-    typedef libxsmm_smmfunction gemm_function;
     /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
     gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, &ldA, &ldB, &ldC, NULL, NULL, NULL, NULL);
-#define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
-#include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_fallback_generic.tpl.c"
-#undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+#   define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+#   include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_fallback_generic.tpl.c"
+#   undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -533,14 +522,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(l
   {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->use_fallback_bwd_loops == 0) {
-        const libxsmm_blasint ldx = ((libxsmm_blasint)handle->ofmblock);
-        const libxsmm_blasint ldA = handle->ifmblock;
-        const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? handle->ifmblock * handle->desc.v : handle->ifmblock;
-        const float beta = (handle->avoid_acc_load_bwd) ? 0.f : 1.f;
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
+        const libxsmm_blasint ldx = ((libxsmm_blasint)handle->ofmblock);
+        const libxsmm_blasint ldA = handle->ifmblock;
+        const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? handle->ifmblock * handle->desc.v : handle->ifmblock;
+        const float beta = (handle->avoid_acc_load_bwd) ? 0.f : 1.f;
         int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
         int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
         int brgemm_pf_oob = 0;
@@ -552,20 +541,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(l
         if (brgemm_pf_oob > 0) {
           prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
         }
-
-        /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-        gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-        gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-# include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c"
+        { /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+          gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+          gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+#         include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c"
+        }
       } else {
-        const libxsmm_blasint ldx = ((libxsmm_blasint)handle->desc.v*handle->ifmblock);
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_smmfunction gemm_function;
+        const libxsmm_blasint ldx = ((libxsmm_blasint)handle->desc.v*handle->ifmblock);
         /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
         gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, NULL, NULL, &ldx, NULL, NULL, NULL, NULL);
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic.tpl.c"
+#       include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic.tpl.c"
       }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -601,14 +590,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(libxs
   {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->use_fallback_bwd_loops == 0) {
-        const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
-        const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
-        const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
-        const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
+        const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
+        const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
+        const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
+        const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
         int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
         int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
         int brgemm_pf_oob = 0;
@@ -620,28 +609,28 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(libxs
         if (brgemm_pf_oob > 0) {
           prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
         }
-
-        /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-        gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-        gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-#define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
-#undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+        { /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+          gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+          gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+#         define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+#         include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
+#         undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+        }
       } else {
+        typedef float element_input_type;
+        typedef float element_output_type;
+        typedef float element_filter_type;
+        typedef libxsmm_smmfunction gemm_function;
         const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
         const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
         const libxsmm_blasint ldC = ( (handle->desc.pad_h != handle->desc.pad_h_in) || (handle->desc.pad_w != handle->desc.pad_w_in) ) ?
                                       (libxsmm_blasint)(handle->ifmblock * handle->desc.v) :
                                       (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v);
-        typedef float element_input_type;
-        typedef float element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_smmfunction gemm_function;
         /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
         gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, &ldA, &ldB, &ldC, NULL, NULL, NULL, NULL);
-#define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
-#include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_fallback_generic.tpl.c"
-#undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+#       define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
+#       include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_fallback_generic.tpl.c"
+#       undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_RSCK
       }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -677,14 +666,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom(lib
   {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->use_fallback_bwd_loops == 0) {
-        const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
-        const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
-        const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
-        const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
+        const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
+        const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
+        const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v) : (libxsmm_blasint)(handle->blocksifm * handle->ifmblock);
+        const float  beta = (handle->avoid_acc_load_bwd ? 0.f : 1.f);
         int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
         int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
         int brgemm_pf_oob = 0;
@@ -696,28 +685,28 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom(lib
         if (brgemm_pf_oob > 0) {
           prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
         }
-
-        /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-        gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-        gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-#define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
-#undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+        { /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+          gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+          gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+#         define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+#         include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
+#         undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+        }
       } else {
+        typedef float element_input_type;
+        typedef float element_output_type;
+        typedef float element_filter_type;
+        typedef libxsmm_smmfunction gemm_function;
         const libxsmm_blasint ldB = (libxsmm_blasint)(handle->blocksofm * handle->ofmblock);
         const libxsmm_blasint ldA = (libxsmm_blasint)handle->ifmblock;
         const libxsmm_blasint ldC = ( (handle->desc.pad_h != handle->desc.pad_h_in) || (handle->desc.pad_w != handle->desc.pad_w_in) ) ?
                                       (libxsmm_blasint)(handle->ifmblock * handle->desc.v) :
                                       (libxsmm_blasint)(handle->blocksifm * handle->ifmblock * handle->desc.v);
-        typedef float element_input_type;
-        typedef float element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_smmfunction gemm_function;
         /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
         gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, &ldA, &ldB, &ldC, NULL, NULL, NULL, NULL);
-#define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
-#include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_fallback_generic.tpl.c"
-#undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+#       define LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
+#       include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_fallback_generic.tpl.c"
+#       undef LIBXSMM_DNN_TPL_BWD_DIRECT_GENERIC_NHWC_CUSTOM
       }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
