@@ -1210,9 +1210,9 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst)
 LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
 {
 #if defined(_OPENMP)
-  LIBXSMM_USEOMP(libxsmm_otrans)(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
-#else
   libxsmm_otrans(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
+#else
+  LIBXSMM_USEOMP(libxsmm_otrans)(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
 #endif
 }
 
