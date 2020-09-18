@@ -170,26 +170,21 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 /* Accumulation of bias happens in f32 */
 {
   float *scratch_dbias = (float*) ((element_output_type*)handle->scratch + handle->desc.N * (handle->desc.K + handle->desc.C) + ltid * bk * 2);
-  if (handle->bk % 16 == 0) {
-    __m512 zero_reg = _mm512_setzero_ps();
-    __m512 doutput_reg = _mm512_setzero_ps();
-    __m512 dbias_reg = _mm512_setzero_ps();
+  if (handle->bk % 32 == 0) {
     for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
-      for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-        _mm512_storeu_ps(scratch_dbias+iterj, zero_reg);
-      }
-      for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
-        for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-          for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-            doutput_reg = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
-            dbias_reg = LIBXSMM_INTRINSICS_MM512_LOAD_PS(scratch_dbias+iterj);
-            dbias_reg = _mm512_add_ps(dbias_reg, doutput_reg);
-            _mm512_storeu_ps(scratch_dbias+iterj, dbias_reg);
+      for ( iterj = 0; iterj < handle->bk; iterj += 32 ) {
+        __m512 doutput_reg_0, doutput_reg_1, dbias_reg_0, dbias_reg_1;
+        dbias_reg_0 = _mm512_setzero_ps();
+        dbias_reg_1 = _mm512_setzero_ps();
+        for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
+          for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+            doutput_reg_0 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
+            doutput_reg_1 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj+16, nBlocksOFm, handle->bn, handle->bk));
+            dbias_reg_0 = _mm512_add_ps(dbias_reg_0, doutput_reg_0);
+            dbias_reg_1 = _mm512_add_ps(dbias_reg_1, doutput_reg_1);
           }
         }
-      }
-      for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), LIBXSMM_INTRINSICS_MM512_LOAD_PS(scratch_dbias+iterj));
+        _mm512_store_si512(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk), LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(dbias_reg_1, dbias_reg_0));
       }
     }
   } else {
