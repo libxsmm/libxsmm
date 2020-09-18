@@ -370,7 +370,10 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
   reduce_cols_kernel2 = libxsmm_dispatch_meltw_reduce(bm, nBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
   reduce_cols_kernel3 = libxsmm_dispatch_meltw_reduce(bn, mBlocks, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
 
-#if defined(_OPENMP)
+#if !defined(_OPENMP)
+  float *const aux = (float*)libxsmm_aligned_scratch((3 * bm * bn) * sizeof(float), 0/*auto-alignment*/);
+#else
+  float *const aux = (float*)libxsmm_aligned_scratch((3 * bm * bn) * sizeof(float) * omp_get_max_threads(), 0/*auto-alignment*/);
 # pragma omp parallel
 #endif
   {
@@ -402,11 +405,10 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
 
     libxsmm_meltw_reduce_param reduce_rows_params, reduce_cols_params;;
 
-    float *const aux = (float*)libxsmm_aligned_scratch((3 * bm * bn) * sizeof(float), 0/*auto-alignment*/);
     for (imin = thr_begin_mn; imin < thr_end_mn; imin++) {
-      float *const tmp  = aux;            /* aux block for db */
-      float *const tmp2 = aux + bm*bn;    /* aux block for ds */
-      float *const tmp3 = aux + bm*bn*2;  /* aux block for dgamma */
+      float *const tmp  = aux + bm*bn * (ltid*3 + 0); /* aux block for db */
+      float *const tmp2 = aux + bm*bn * (ltid*3 + 1); /* aux block for ds */
+      float *const tmp3 = aux + bm*bn * (ltid*3 + 2); /* aux block for dgamma */
       in = imin / mBlocks;
       im = imin % mBlocks;
 
@@ -548,10 +550,10 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
     }
 
 #pragma omp barrier
-    libxsmm_free(aux);
   }
 
   libxsmm_free(scratch);
+  libxsmm_free(aux);
 }
 
 
