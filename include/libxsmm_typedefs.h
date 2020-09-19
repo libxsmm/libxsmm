@@ -170,7 +170,8 @@ typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_SCALE           =  8,
   LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT =  9,
   LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16 = 10,
-  LIBXSMM_MELTW_OPERATION_COLBIAS_ACT     = 11
+  LIBXSMM_MELTW_OPERATION_COLBIAS_ACT     = 11,
+  LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX = 12
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
@@ -628,6 +629,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_param 
   void* out_ptr_1;        /* output pointer */
 } libxsmm_meltw_reduce_param;
 
+/** argument struct for matrix-eltwise: reduce */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_cols_idx_param {
+  unsigned long long n;
+  const void* ind_ptr;    /* index array pointer */
+  const void* inp_ptr;    /* input pointer */
+  void* out_ptr;          /* output pointer */
+} libxsmm_meltw_reduce_cols_idx_param;
+
 /** argument struct for matrix-eltwise: scale */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_scale_param {
   const void* in_ptr;           /* input pointer */
@@ -664,6 +673,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_mul)(
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_relu)(const libxsmm_meltw_relu_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16)(const libxsmm_meltw_cvtfp32bf16_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_reduce)(const libxsmm_meltw_reduce_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_reduce_cols_idx)(const libxsmm_meltw_reduce_cols_idx_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_scale)(const libxsmm_meltw_scale_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16_act)(const libxsmm_meltw_cvtfp32bf16_act_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_act_cvtfp32bf16)(const libxsmm_meltw_act_cvtfp32bf16_param* in_struct);
@@ -674,6 +684,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   libxsmm_meltwfunction_add meltw_add; libxsmm_meltwfunction_mul meltw_mul;
   libxsmm_meltwfunction_relu meltw_relu; libxsmm_meltwfunction_cvtfp32bf16 meltw_cvtfp32bf16;
   libxsmm_meltwfunction_reduce meltw_reduce; libxsmm_meltwfunction_scale meltw_scale;
+  libxsmm_meltwfunction_reduce_cols_idx meltw_reduce_cols_idx;
   libxsmm_meltwfunction_cvtfp32bf16_act meltw_cvtfp32bf16_act;
   libxsmm_meltwfunction_act_cvtfp32bf16 meltw_act_cvtfp32bf16;
 } libxsmm_xmeltwfunction;
