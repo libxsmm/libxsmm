@@ -57,19 +57,19 @@
 * 25 Gather instruction???
 * 24 unused
 * 3rd byte
-* 23 W bit (single inputs=0 or double inputs=1, which maps to 0 or 8 to cover the first 4-bits in 04/05/06/07/84/85/86/87)
+* 23 W bit (single inputs=0 or double inputs=1)
 * 22 Op code extension shifts in Reg filed in ModRM (Shifts like /2, /4, /7, etc.. Maps to values 0-7, corresponding to /0 to /7.)
 * 21 Op code extension shifts in Reg filed in ModRM (Shifts like /2, /4, /7, etc.. Maps to values 0-7, corresponding to /0 to /7.)
 * 20 Op code extension shifts in Reg filed in ModRM (Shifts like /2, /4, /7, etc.. Maps to values 0-7, corresponding to /0 to /7.)
 * 19 Immediate required by the instruction. 0=no, 1=yes.
 * 18 Reserved, must be 1 for now
-* 17 P (compressed prefix 2-bits and 4 values: None, 66, F3, F2)
-* 16 P (compressed prefix 2-bits and 4 values: None, 66, F3, F2)
+* 17 P (compressed prefix 2-bits and 4 values: None=0x4, 66=0x5, F3=0x6, F2=0x7 , values include the reserved bit)
+* 16 P (compressed prefix 2-bits and 4 values: None=0x4, 66=0x5, F3=0x6, F2=0x7 , values include the reserved bit)
 * 2nd byte
-* 15 M (Map bit, 0F, 0F38, 0F3A)
-* 14 M (Map bit, 0F, 0F38, 0F3A)
-* 13 M (Map bit, 0F, 0F38, 0F3A)
-* 12 M (Map bit, 0F, 0F38, 0F3A)
+* 15 Reserved, must be 0 for now
+* 14 Reserved, must be 0 for now
+* 13 M (Map bit, 0F=0x1, 0F38=0x2, 0F3A=0x3)
+* 12 M (Map bit, 0F-0x1, 0F38=0x2, 0F3A=0x3)
 * 11 Disp8: N value constant for VL=128/256/512, 1=yes, 0=no (fullmem)
 * 10 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
 * 9 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
