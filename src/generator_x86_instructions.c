@@ -352,7 +352,7 @@ void libxsmm_x86_instruction_vec_compute_2reg_mem( libxsmm_generated_code* io_ge
   /* 1 C) determine if SIB addressing mode is needed */
   if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
     l_have_sib = 1;
-    l_gp_reg_idx = i_gp_reg_base;
+    l_gp_reg_idx = LIBXSMM_X86_GP_REG_RSP;
     l_scale = 0;
   } else if ( i_gp_reg_idx < 16 ) {
     l_have_sib = 1;
