@@ -1455,15 +1455,17 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
 
      if ( ((i_vec_instr >> 28) & 3) == 2 ) {
         /* two byte operand */
+        int l_reversal = (i_vec_instr >> 27) & 1;
+        int l_imm8 = (i_vec_instr >> 19) & 1;
+ #if 0
 printf("two operand but passing (%d,%d,%d)\n",i_vec_reg_src_0,i_vec_reg_src_1,i_vec_reg_dst);
+#endif
         if ( i_vec_reg_src_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
            if ( i_vec_reg_src_1 != 0 ) {
               /* It might otherwise be intentional */
               printf("WARNING: You are using 2 operand instruction in vec_compute_convert but i_vec_reg_src_1 is %d not UNDEF\n",i_vec_reg_src_1);
            }
         }
-        int l_reversal = (i_vec_instr >> 27) & 1;
-        int l_imm8 = (i_vec_instr >> 19) & 1;
         if ( l_reversal && !l_imm8 ) {
            libxsmm_x86_instruction_vec_compute_2reg ( io_generated_code,
                i_instruction_set, i_vec_instr, i_vector_name,
@@ -4920,13 +4922,13 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
 #endif
      if ( ((i_vec_instr >> 28) & 3) == 2 ) {
         /* Two operand instruction */
+        int l_reversal = (i_vec_instr >> 27) & 1;
         if ( i_vec_reg_number_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
            if ( i_vec_reg_number_1 != 0 ) {
               /* It might otherwise be intentional */
               printf("WARNING: You are using 2 operand instruction in vec_shuffle_reg but i_vec_reg_number_1 is %d not UNDEF\n",i_vec_reg_number_1);
            }
         }
-        int l_reversal = (i_vec_instr >> 27) & 1;
         if ( l_reversal ) {
            libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
                            i_instruction_set, i_vec_instr, i_vector_name,
