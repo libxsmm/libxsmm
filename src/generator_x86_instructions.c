@@ -365,7 +365,7 @@ printf("l_sizereg non-brd set to %d\n",l_sizereg);
     }
   }
 
-#if 1
+#if 0
   printf("instr=0x%4x l_sizereg=%d l_sizereg_idx=%d l_vector_offset=%d l_singledouble=%d (%d) i_use_broadcast=%d\n",i_vec_instr,l_sizereg,l_sizereg_idx,l_vector_offset,l_singledouble,(unsigned char)((i_vec_instr>>23)&1),i_use_broadcast);
 #endif
 
