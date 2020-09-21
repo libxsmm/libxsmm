@@ -1958,9 +1958,15 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           char tsizename[4];
           internal_get_typesize_string(tsizename, sizeof(tsizename), request->descriptor.meltw->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_opcode%u_flags%u.meltw", target_arch, tsizename,
-            request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo,
-            (unsigned int)request->descriptor.meltw->operation, (unsigned int)request->descriptor.meltw->flags);
+          if ( request->descriptor.meltw->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX ) {
+            LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_idxtsize%u_%u_%ux%u_opcode%u_flags%u.meltw", target_arch, tsizename,
+              request->descriptor.meltw->n, request->descriptor.meltw->m, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo,
+              (unsigned int)request->descriptor.meltw->operation, (unsigned int)request->descriptor.meltw->flags);
+          } else {
+            LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_opcode%u_flags%u.meltw", target_arch, tsizename,
+              request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo,
+              (unsigned int)request->descriptor.meltw->operation, (unsigned int)request->descriptor.meltw->flags);
+          }
         }
       }
     } break;
@@ -4327,10 +4333,11 @@ LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_reduce(libxsmm_b
   return result.meltw_reduce;
 }
 
-LIBXSMM_API libxsmm_meltwfunction_reduce_cols_idx libxsmm_dispatch_meltw_reduce_cols_idx(libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type) {
+LIBXSMM_API libxsmm_meltwfunction_reduce_cols_idx libxsmm_dispatch_meltw_reduce_cols_idx(libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype idx_type) {
   libxsmm_descriptor_blob blob;
+  libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
-    in_type, out_type, m, 0, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
+    in_type, out_type, m, idx_dtype_size, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
     0, LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
