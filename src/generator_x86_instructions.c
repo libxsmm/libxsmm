@@ -354,7 +354,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   /* broadcast */
   code[p2   ] |= (unsigned char)((i_use_broadcast == 0) ? 0x00 : 0x10);
   /* masking */
-  code[p2   ] |= (unsigned char)(((i_use_zero_masking != 0) ? 0x80 : 0x00) | (i_mask_reg_number & 0x07));
+  code[p2   ] |= (unsigned char)((((i_use_zero_masking != 0) && (i_mask_reg_number != 0)) ? 0x80 : 0x00) | (i_mask_reg_number & 0x07));
 
   /* 2 C) construction of the Modrm and SIB bytes */
   /* we want to do SIB */
@@ -482,7 +482,7 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_gener
   /* VL: 128bit,256bit,512bit */
   code[p2   ] |= (unsigned char)tbl_vl[l_vl_idx];
   /* masking */
-  code[p2   ] |= (unsigned char)(((i_use_zero_masking != 0) ? 0x80 : 0x00) | (i_mask_reg_number & 0x07));
+  code[p2   ] |= (unsigned char)((((i_use_zero_masking != 0) && (i_mask_reg_number != 0)) ? 0x80 : 0x00) | (i_mask_reg_number & 0x07));
 
   /* 2 C) setting modrm, we are in reg-only addressing mode */
   code[modrm]  = (unsigned char)0xc0;
