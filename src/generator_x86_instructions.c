@@ -685,8 +685,10 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_is_store )
 {
 
-  int code_head       = io_generated_code->code_size;
+  unsigned int code_head       = io_generated_code->code_size;
   unsigned char* code = (unsigned char *) io_generated_code->generated_code;
+  unsigned int l_vmove_instr;
+
   if ( (i_is_store == 0) && ( (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPD) ||
                               (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPS) ||
                               (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTDQ)   )) {
@@ -697,28 +699,63 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
   if ( (i_instruction_set >= LIBXSMM_X86_AVX512_CORE) &&
        (i_vmove_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
+    /* LD/ST insturction have only 2 operanads */
+    if ( ((i_vmove_instr >> 28) & 0x3) == 2 ) {
+      /* as LD/ST semantics have different op codes we need some fix-ups here */
+      switch (i_vmove_instr) {
+        case LIBXSMM_X86_INSTR_VMOVAPD:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVAPD_LD : LIBXSMM_X86_INSTR_VMOVAPD_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVUPD:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVUPD_LD : LIBXSMM_X86_INSTR_VMOVUPD_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVAPS:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVAPS_LD : LIBXSMM_X86_INSTR_VMOVAPS_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVUPS:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVUPS_LD : LIBXSMM_X86_INSTR_VMOVUPS_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVSD:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVSD_LD : LIBXSMM_X86_INSTR_VMOVSD_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVSS:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVSS_LD : LIBXSMM_X86_INSTR_VMOVSS_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQA32:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQA32_LD : LIBXSMM_X86_INSTR_VMOVDQA32_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQA64:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQA64_LD : LIBXSMM_X86_INSTR_VMOVDQA64_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQU8:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU8_LD : LIBXSMM_X86_INSTR_VMOVDQU8_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQU16:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU16_LD : LIBXSMM_X86_INSTR_VMOVDQU16_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQU32:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU32_LD : LIBXSMM_X86_INSTR_VMOVDQU32_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQU64:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU64_LD : LIBXSMM_X86_INSTR_VMOVDQU64_ST;
+          break;
+        default:
+          l_vmove_instr = i_vmove_instr;
+          break;
+      }
 
-     if ( ((i_vmove_instr >> 28) & 3) == 2 ) {
-        /* two byte operand */
-        /* todo: maybe create a 1reg_mem or a version where we pass in mask_reg_number and i_use_zero masking */
-        libxsmm_x86_instruction_vec_compute_2reg_mem ( io_generated_code,
-              i_instruction_set, i_vmove_instr + i_is_store, 0, i_gp_reg_base,
+      libxsmm_x86_instruction_vec_compute_2reg_mem ( io_generated_code,
+              i_instruction_set, l_vmove_instr, 0, i_gp_reg_base,
               i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
-#if 0
-              i_vec_reg_number_0, 0
-              i_vec_reg_number_0, i_vec_reg_number_0
-#else
-              0, i_vec_reg_number_0
-#endif
-              );
-        if ( i_mask_reg_number > 0 ) {
-           /* Adjust byte 4 for i_mask_reg_number and i_use_zero_masking */
-           code[code_head + 3] += (unsigned char)(i_mask_reg_number + i_use_zero_masking*0x80);
-        }
-     } else {
-        printf("WARNING: You are calling vec_move with a 3-operand instruction. Are you sure you know what you're doing?\n");
-     }
-     return ;
+              0, i_vec_reg_number_0 );
+      if ( i_mask_reg_number > 0 ) {
+        /* Adjust byte 4 for i_mask_reg_number and i_use_zero_masking */
+        code[code_head + 3] += (unsigned char)(i_mask_reg_number + i_use_zero_masking*0x80);
+      }
+    } else {
+      printf("WARNING: You are calling vec_move with a 3-operand instruction. Are you sure you know what you're doing?\n");
+    }
+    return;
   }
 
   /* @TODO add checks in debug mode */
