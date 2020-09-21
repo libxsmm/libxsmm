@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
     params.out_ptr_1 = result_reduce_elts_squared;
     kernel( &params );
   } else {
-    kernel2 = libxsmm_dispatch_meltw_reduce_cols_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    kernel2 = libxsmm_dispatch_meltw_reduce_cols_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64);
     /* Call JITed kernel and compare result  */
     printf("Calling JITed reduce cols idx kernel... \n");
     params2.n = n_cols_idx;
