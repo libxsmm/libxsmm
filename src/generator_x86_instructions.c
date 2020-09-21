@@ -338,7 +338,7 @@ void libxsmm_x86_instruction_vec_compute_2reg_mem( libxsmm_generated_code* io_ge
           l_disp8div_idx = (unsigned char)(l_disp8div_idx - 3);
         } else {
           /* Changing the index will adjust the powers of 2 automatically */
-          if ( l_disp8div_idx + (l_vl_idx - 2) < 0 ) {
+          if ( l_disp8div_idx < (2 - l_vl_idx) ) {
             l_disp8div_idx = 0;
           } else {
             l_disp8div_idx = (unsigned char)(l_disp8div_idx + l_vl_idx - 2);
