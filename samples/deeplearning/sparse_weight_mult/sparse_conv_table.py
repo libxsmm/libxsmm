@@ -1,6 +1,6 @@
 import os
 
-sparse_fac = 0.5
+sparse_fac = 0.9
 
 
 print('W/H bigger then 16')

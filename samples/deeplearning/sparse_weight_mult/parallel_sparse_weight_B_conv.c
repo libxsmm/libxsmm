@@ -77,8 +77,8 @@ void BlockSpMatStep2(int K, int C, int KB, int CB, int num_blocks,
 
 int main(int argc, char **argv) {
     int N   = (argc > 1) ? atoi(argv[1]) : 32;
-    int H   = (argc > 2) ? atoi(argv[2]) : 14;
-    int W   = (argc > 3) ? atoi(argv[3]) : 14;
+    int H   = (argc > 2) ? atoi(argv[2]) : 32;
+    int W   = (argc > 3) ? atoi(argv[3]) : 32;
     int C   = (argc > 4) ? atoi(argv[4]) : 256;
     int K   = (argc > 5) ? atoi(argv[5]) : 256;
     int R   = (argc > 6) ? atoi(argv[6]) : 1;
@@ -99,7 +99,11 @@ int main(int argc, char **argv) {
     if ( KB > K ) {
       KB = K;
     }
-    if (N < NB ||
+#if WIDTH_FIRST
+    if ( W < NB ||
+#else
+    if ( N < NB  ||
+#endif
         H < 1  ||
         W < 1  ||
         K < KB ||
@@ -112,7 +116,11 @@ int main(int argc, char **argv) {
         padw < 0 ||
         NB < nb ||
         C % CB != 0 ||
-        N % NB != 0 ||
+#if WIDTH_FIRST
+        W % NB != 0 ||
+#else
+        N % NB != 0  ||
+#endif
         nb % 16 != 0 ||
         NB % nb != 0 ||
         sparse_frac <= 0.0 ||
@@ -120,10 +128,11 @@ int main(int argc, char **argv) {
         REPS <= 0) {
       return -1;
     }
-    int l_n, l_h, l_w, l_p, l_q, l_c, l_r, l_s, l_nn, l_cc, l_nnn, l_k, l_kk, blk_idx;
+    int l_n, l_h, l_w, l_ww, l_p, l_q, l_c, l_r, l_s, l_nn, l_cc, l_nnn, l_k, l_kk, blk_idx;
     int i, k, n, c;
     int P = (H + 2*padh - R)/sh + 1;
     int Q = (W + 2*padw - S)/sw + 1;
+    int QB = NB; /* In WIDTH_FIRST case we are going to interpreste NB as QB and NB is deprecated.*/
 
     libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
     int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -133,10 +142,10 @@ int main(int argc, char **argv) {
     float *l_C_gold =
         (float *)libxsmm_aligned_malloc(sizeof(float) * N * P * Q * K, 64);
 #if WIDTH_FIRST
-      LIBXSMM_VLA_DECL(7, float, l_p_A, l_A, C / CB, H, W, NB / nb, CB, nb);
+      LIBXSMM_VLA_DECL(7, float, l_p_A, l_A, C / CB, H, W/QB, QB / nb, CB, nb);
       LIBXSMM_VLA_DECL(4, float, l_p_B, l_B, S, K, C);
-      LIBXSMM_VLA_DECL(7, float, l_p_C, l_C, K / KB, P, Q, NB / nb, KB, nb);
-      LIBXSMM_VLA_DECL(7, float, l_p_C_gold, l_C_gold, K / KB, P, Q, NB / nb, KB, nb);
+      LIBXSMM_VLA_DECL(7, float, l_p_C, l_C, K / KB, P, Q/QB, QB / nb, KB, nb);
+      LIBXSMM_VLA_DECL(7, float, l_p_C_gold, l_C_gold, K / KB, P, Q/QB, QB / nb, KB, nb);
 #else
       LIBXSMM_VLA_DECL(7, float, l_p_A, l_A, H, W, C / CB, NB / nb, CB, nb);
       LIBXSMM_VLA_DECL(4, float, l_p_B, l_B, S, K, C);
@@ -149,6 +158,18 @@ int main(int argc, char **argv) {
     printf("N: %i, H:%i, W: %i, C: %i, K: %i, P: %i, Q: %i, R: %i, S: %i, sh: %i, sw: %i, padh: %i, padw: %i\n", N, H, W, C, K, P, Q, R, S, sh, sw, padh, padw);
 
     /* touch A */
+#if WIDTH_FIRST
+    for (l_n = 0; l_n < N; ++l_n) {
+      for (l_h = 0; l_h < H; ++l_h) {
+        for (l_w = 0; l_w < W/QB; ++l_w) {
+          for (l_c = 0; l_c < C / CB; ++l_c) {
+            for (l_nn = 0; l_nn < QB / nb; ++l_nn) {
+              for (l_cc = 0; l_cc < CB; ++l_cc) {
+                for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
+                    LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_c, l_h, l_w, l_nn, l_cc,
+                                             l_nnn, C / CB, H, W/QB, QB / nb, CB, nb) =
+                              (float)libxsmm_rng_f64();
+#else
     for (l_n = 0; l_n < N / NB; ++l_n) {
       for (l_h = 0; l_h < H; ++l_h) {
         for (l_w = 0; l_w < W; ++l_w) {
@@ -156,11 +177,6 @@ int main(int argc, char **argv) {
             for (l_nn = 0; l_nn < NB / nb; ++l_nn) {
               for (l_cc = 0; l_cc < CB; ++l_cc) {
                 for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
-#if WIDTH_FIRST
-                    LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_c, l_h, l_w, l_nn, l_cc,
-                                             l_nnn, C / CB, H, W, NB / nb, CB, nb) =
-                              (float)libxsmm_rng_f64();
-#else
                     LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_h, l_w, l_c, l_nn, l_cc,
                                              l_nnn, H, W, C / CB, NB / nb, CB, nb) =
                               (float)libxsmm_rng_f64();
@@ -275,6 +291,21 @@ int main(int argc, char **argv) {
     }
 
     /* touch C */
+#if WIDTH_FIRST
+    for (l_n = 0; l_n < N; ++l_n) {
+      for (l_p = 0; l_p < P; ++l_p) {
+        for (l_q = 0; l_q < Q / QB; ++l_q) {
+          for (l_k = 0; l_k < K / KB; ++l_k) {
+            for (l_nn = 0; l_nn < QB / nb; ++l_nn) {
+              for (l_kk = 0; l_kk < KB; ++l_kk) {
+                for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
+                    LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_k, l_p, l_q, l_nn, l_kk,
+                                         l_nnn, K / KB, P, Q/QB, QB / nb, KB, nb) =
+                            0.0f;
+                    LIBXSMM_VLA_ACCESS(7, l_p_C, l_n, l_k, l_p, l_q, l_nn, l_kk,
+                                           l_nnn, K / KB, P, Q/QB, QB / nb, KB, nb) =
+                            0.0f;
+#else
     for (l_n = 0; l_n < N / NB; ++l_n) {
       for (l_p = 0; l_p < P; ++l_p) {
         for (l_q = 0; l_q < Q; ++l_q) {
@@ -282,14 +313,6 @@ int main(int argc, char **argv) {
             for (l_nn = 0; l_nn < NB / nb; ++l_nn) {
               for (l_kk = 0; l_kk < KB; ++l_kk) {
                 for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
-#if WIDTH_FIRST
-                    LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_k, l_p, l_q, l_nn, l_kk,
-                                         l_nnn, K / KB, P, Q, NB / nb, KB, nb) =
-                            0.0f;
-                    LIBXSMM_VLA_ACCESS(7, l_p_C, l_n, l_k, l_p, l_q, l_nn, l_kk,
-                                           l_nnn, K / KB, P, Q, NB / nb, KB, nb) =
-                            0.0f;
-#else
                     LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_p, l_q, l_k, l_nn, l_kk,
                                          l_nnn, P, Q, K / KB, NB / nb, KB, nb) =
                             0.0f;
@@ -306,6 +329,31 @@ int main(int argc, char **argv) {
     }
 
     /* dense routine */
+#if WIDTH_FIRST
+    for (l_n = 0; l_n < N; ++l_n) {
+      for (l_p = 0; l_p < P; ++l_p) {
+        l_h = l_p*sh - padh;
+        for (l_q = 0; l_q < Q/QB; ++l_q) {
+          for (l_k = 0; l_k < K / KB; ++l_k) {
+            for (l_c = 0; l_c < C / CB; ++l_c) {
+              for (l_r = 0; l_r < R; ++l_r) {
+                if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
+                for (l_s = 0; l_s < S; ++l_s) {
+                  for (l_nn = 0; l_nn < QB / nb; ++l_nn) {
+                    for (l_kk = 0; l_kk < KB; ++l_kk) {
+                      k = l_k * KB + l_kk;
+                      for (l_cc = 0; l_cc < CB; ++l_cc) {
+                        c = l_c * CB + l_cc;
+                        for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
+                            l_w = ((l_q*QB + (l_nn)*nb+l_nnn)*sw - padw);
+                            if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
+                            l_ww = (l_w + l_s)/QB;
+                            LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_k, l_p, l_q,
+                              l_nn, l_kk, l_nnn, K / KB, P, Q/QB, QB / nb, KB, nb) +=
+                              LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_c, l_h+l_r, l_ww,
+                                l_nn, l_cc, l_nnn, C / CB, H, W/QB, QB / nb, CB, nb) *
+                              LIBXSMM_VLA_ACCESS(4, l_p_B, l_r, l_s, k, c, S, K, C);
+#else
     for (l_n = 0; l_n < N / NB; ++l_n) {
       for (l_p = 0; l_p < P; ++l_p) {
         l_h = l_p*sh - padh;
@@ -323,13 +371,6 @@ int main(int argc, char **argv) {
                       for (l_cc = 0; l_cc < CB; ++l_cc) {
                         c = l_c * CB + l_cc;
                         for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
-#if WIDTH_FIRST
-                            LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_k, l_p, l_q,
-                              l_nn, l_kk, l_nnn, K / KB, P, Q, NB / nb, KB, nb) +=
-                              LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_c, l_h+l_r, l_w+l_s,
-                                l_nn, l_cc, l_nnn, C / CB, H, W, NB / nb, CB, nb) *
-                              LIBXSMM_VLA_ACCESS(4, l_p_B, l_r, l_s, k, c, S, K, C);
-#else
                            LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_p, l_q, l_k,
                               l_nn, l_kk, l_nnn, P, Q, K / KB, NB / nb, KB, nb) +=
                               LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_h+l_r, l_w+l_s, l_c,
@@ -359,9 +400,15 @@ int main(int argc, char **argv) {
         (libxsmm_smmfunction *)libxsmm_aligned_malloc(
             RSnum_blocks * sizeof(libxsmm_smmfunction), 64);
     for (blk_idx = 0; blk_idx < RSnum_blocks; ++blk_idx) {
+#if WIDTH_FIRST
+        l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
+            &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), QB / nb, KB, CB, CB,
+            0, KB, alpha, beta, flags, prefetch);
+#else
         l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
             &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), NB / nb, KB, CB, CB,
             0, KB, alpha, beta, flags, prefetch);
+#endif
         mykernel[blk_idx] =
             libxsmm_create_xcsc_soa(l_xgemm_desc[blk_idx], b_colptr[blk_idx],
                                     b_rowidx[blk_idx],
@@ -373,19 +420,19 @@ int main(int argc, char **argv) {
 #   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_h,l_w,l_r,l_s,l_p,l_q)
 #endif
       for (k = 0; k < K / KB; ++k) {
-        for (n = 0; n < N / NB; ++n) {
+        for (n = 0; n < N ; ++n) {
           for (l_r = 0; l_r < R; ++l_r) {
             for (l_s = 0; l_s < S; ++l_s) {
               for (c = 0; c < C / CB; ++c) {
                 for (l_p = 0; l_p < P; ++l_p) {
-                  for (l_q = 0; l_q < Q; ++l_q) {
+                  for (l_q = 0; l_q < Q/QB; ++l_q) {
                     l_h = l_p*sh - padh;
-                    l_w = l_q*sw - padw;
+                    l_w = ((l_q*QB)*sw - padw);
                     if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
                     if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
-                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, c, l_h+l_r, l_w+l_s, 0, 0, 0, C / CB, H, W, NB / nb, CB, nb)),
+                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, c, l_h+l_r, (l_w+l_s)/QB, 0, 0, 0, C / CB, H, W/QB, QB / nb, CB, nb)),
                                                  b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c],
-                                               &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, k, l_p, l_q, 0, 0, 0, K / KB, P, Q, NB / nb, KB, nb)) );
+                                               &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, k, l_p, l_q, 0, 0, 0, K / KB, P, Q/QB, QB / nb, KB, nb)) );
                   }
                 }
               }
@@ -436,19 +483,19 @@ int main(int argc, char **argv) {
 #   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_h,l_w,l_r,l_s,l_p,l_q)
 #endif
       for (k = 0; k < K / KB; ++k) {
-        for (n = 0; n < N / NB; ++n) {
+        for (n = 0; n < N ; ++n) {
           for (l_r = 0; l_r < R; ++l_r) {
             for (l_s = 0; l_s < S; ++l_s) {
               for (c = 0; c < C / CB; ++c) {
                 for (l_p = 0; l_p < P; ++l_p) {
-                  for (l_q = 0; l_q < Q; ++l_q) {
+                  for (l_q = 0; l_q < Q/QB; ++l_q) {
                     l_h = l_p*sh - padh;
-                    l_w = l_q*sw - padw;
+                    l_w = ((l_q*QB)*sw - padw);
                     if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
                     if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
-                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, c, l_h+l_r, l_w+l_s, 0, 0, 0, C / CB, H, W, NB / nb, CB, nb)),
+                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, c, l_h+l_r, (l_w+l_s)/QB, 0, 0, 0, C / CB, H, W/QB, QB / nb, CB, nb)),
                                                  b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c],
-                                               &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, k, l_p, l_q, 0, 0, 0, K / KB, P, Q, NB / nb, KB, nb)) );
+                                               &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, k, l_p, l_q, 0, 0, 0, K / KB, P, Q/QB, QB / nb, KB, nb)) );
                   }
                 }
               }
