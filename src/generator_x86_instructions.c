@@ -856,9 +856,6 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_use_zero_masking,
                                        const unsigned int      i_is_store )
 {
-
-  unsigned int code_head       = io_generated_code->code_size;
-  unsigned char* code = (unsigned char *) io_generated_code->generated_code;
   unsigned int l_vmove_instr;
 
   if ( (i_is_store == 0) && ( (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPD) ||
