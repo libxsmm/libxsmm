@@ -865,7 +865,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     exit(-1);
   }
 
-  if ( ((i_instruction_set == LIBXSMM_X86_AVX) || (i_instruction_set == LIBXSMM_X86_AVX2) || (i_instruction_set >= LIBXSMM_X86_AVX512_CORE)) &&
+  if ( (/*(i_instruction_set == LIBXSMM_X86_AVX) || (i_instruction_set == LIBXSMM_X86_AVX2) ||*/ (i_instruction_set >= LIBXSMM_X86_AVX512_CORE)) &&
        (i_vmove_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
     /* LD/ST insturction have only 2 operanads */
