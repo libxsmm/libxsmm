@@ -3817,9 +3817,9 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   i_gp_reg_mapping->gp_reg_ind_base = LIBXSMM_X86_GP_REG_R9;
   i_gp_reg_mapping->gp_reg_in_base  = LIBXSMM_X86_GP_REG_R10;
   i_gp_reg_mapping->gp_reg_out      = LIBXSMM_X86_GP_REG_R11;
-  i_gp_reg_mapping->gp_reg_m_loop   = LIBXSMM_X86_GP_REG_R12;
-  i_gp_reg_mapping->gp_reg_n_loop   = LIBXSMM_X86_GP_REG_R13;
-  i_gp_reg_mapping->gp_reg_in       = LIBXSMM_X86_GP_REG_R14;
+  i_gp_reg_mapping->gp_reg_m_loop   = LIBXSMM_X86_GP_REG_RAX;
+  i_gp_reg_mapping->gp_reg_n_loop   = LIBXSMM_X86_GP_REG_RDX;
+  i_gp_reg_mapping->gp_reg_in       = LIBXSMM_X86_GP_REG_RSI;
 
   libxsmm_x86_instruction_alu_mem( io_generated_code,
       i_micro_kernel_config->alu_mov_instruction,
@@ -3863,7 +3863,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   if (use_m_masking == 1) {
     /* Calculate mask reg 1 for reading/output-writing */
     mask_out_count = 16 - (m % 16);
-    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R15, 1, mask_out_count, LIBXSMM_GEMM_PRECISION_F32);
+    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, 1, mask_out_count, LIBXSMM_GEMM_PRECISION_F32);
   }
 
   /* In this case we have to generate a loop for m */
@@ -4022,7 +4022,7 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, io_generated_code->arch, i_mateltwise_desc);
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_mateltwise( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, NULL );
+  libxsmm_x86_instruction_open_stream_mateltwise( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, NULL, (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX) ? 1 : 0 );
 
   /* Depending on the elementwise function, dispatch the proper code JITer */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16)) {
@@ -4074,6 +4074,6 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_mateltwise( io_generated_code, NULL );
+  libxsmm_x86_instruction_close_stream_mateltwise( io_generated_code, NULL, (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX) ? 1 : 0 );
 }
 

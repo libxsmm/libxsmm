@@ -13,6 +13,7 @@
 #define GENERATOR_X86_INSTRUCTIONS_H
 
 #include "generator_common.h"
+#include "../include/libxsmm_typedefs.h"
 
 /**
  * Opens the inline assembly section / jit stream
@@ -566,11 +567,13 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_mateltwise( libxsmm_generated_code*                   io_generated_code,
                                                   const unsigned int                        i_gp_struct_params,
-                                                  const char*                               i_arch );
+                                                  const char*                               i_arch,
+                                                  int                                       skip_push);
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*       io_generated_code,
-                                                   const char*                   i_arch );
+                                                   const char*                      i_arch,
+                                                   int                              skip_pop);
 /**
  * @TODO: clean-up
  * Opens the inline assembly section / jit stream for transposes, this is hacked and should be cleaned up
