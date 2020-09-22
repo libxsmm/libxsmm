@@ -1209,7 +1209,11 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst)
 
 LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
 {
-  libxsmm_otrans_omp(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
+#if defined(_OPENMP)
+  libxsmm_otrans(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
+#else
+  LIBXSMM_USEOMP(libxsmm_otrans)(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
+#endif
 }
 
 LIBXSMM_INLINE void matrix_copy(int size, float *src, float *dst)

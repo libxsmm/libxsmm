@@ -52,7 +52,7 @@ void naive_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, float *
 #pragma omp parallel for private(j)
 #endif
   for (j = 0; j < n; j++) {
-    float mean_val_ref = 0.0, rstd_val_ref = 0.0, scale_ref = 0.0, bias_ref = 0.0, gamma_val_ref = 0.0, beta_val_ref = 0.0;
+    float mean_val_ref = 0, rstd_val_ref = 0, scale_ref = 0, bias_ref = 0, gamma_val_ref = 0, beta_val_ref = 0;
     mean_data_ref[j] = 0;
     rstd_data_ref[j] = 0;
     for (i = 0; i < m; i++) {
@@ -65,7 +65,7 @@ void naive_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, float *
     mean_data_ref[j] = mean_val_ref;
     rstd_data_ref[j] = rstd_val_ref;
     scale_ref = rstd_val_ref;
-    bias_ref = -1.0 * rstd_val_ref * mean_val_ref;
+    bias_ref = -1.f * rstd_val_ref * mean_val_ref;
     for (i = 0; i < m; i++) {
       gamma_val_ref = gamma[i];
       beta_val_ref = beta[i];
@@ -75,10 +75,10 @@ void naive_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, float *
 }
 
 
-  LIBXSMM_INLINE
+LIBXSMM_INLINE
 void naive_layernorm_bwd(int m, int n, int ld_in, float *dY, float *X, float *mean, float *rstd, float *gamma, float *dX, float *dgamma, float *dbeta)
 {
-  float a, b, c, ds, db, scale = 1.0/ (1.0 * m);
+  float a, b, c, ds, db, scale = (float)(1.0 / m);
   int i, j;
 
   for (i = 0; i < m; i++) {
@@ -88,9 +88,9 @@ void naive_layernorm_bwd(int m, int n, int ld_in, float *dY, float *X, float *me
 
   for (j = 0; j < n; j++) {
     a = rstd[j];
-    b = -1.0 * a * mean[j];
-    ds = 0.0;
-    db = 0.0;
+    b = -1.f * a * mean[j];
+    ds = 0;
+    db = 0;
     for (i = 0; i < m; i++) {
       dgamma[i]     += dY[j*ld_in+i] * (a * X[j*ld_in+i] + b);
       dbeta[i]      += dY[j*ld_in+i];
@@ -99,20 +99,20 @@ void naive_layernorm_bwd(int m, int n, int ld_in, float *dY, float *X, float *me
     }
 
     b = (db * mean[j] - ds) * a * a * a * scale;
-    c = -1.0 * b * mean[j] - db * a * scale;
+    c = -1.f * b * mean[j] - db * a * scale;
     for (i = 0; i < m; i++) {
       dX[j*ld_in+i] = a * dY[j*ld_in+i] * gamma[i] + b * X[j*ld_in+i] + c;
     }
   }
 }
 
-  LIBXSMM_INLINE
+LIBXSMM_INLINE
 void optimized_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, float *beta, float *sout, float *mean_data, float *rstd_data, libxsmm_meltwfunction_reduce reduce_kernel, libxsmm_meltwfunction_scale scalemean_kernel, libxsmm_meltwfunction_scale scaleout_kernel, float * bias_aux)
 {
   int i;
-  float reverse_m = 1.0/(1.0*m);
+  float reverse_m = (float)(1.0 / m);
 #if defined(__AVX512F__)
-  __m512 minus_ones = _mm512_set1_ps(-1.0);
+  __m512 minus_ones = _mm512_set1_ps(-1.f);
 #endif
 
   libxsmm_meltw_reduce_param reduce_params;
@@ -154,8 +154,8 @@ void optimized_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, flo
   }
 #else
   for (i = 0; i < n; i++) {
-    rstd_data[i]  = 1.0/((float)sqrt(rstd_data[i] - mean_data[i] * mean_data[i]));
-    bias_aux[i]   =-1.0 * mean_data[i] * rstd_data[i];
+    rstd_data[i] = (float)(1.0 / sqrt(rstd_data[i] - mean_data[i] * mean_data[i]));
+    bias_aux[i]  = -1.f * mean_data[i] * rstd_data[i];
   }
 #endif
 
@@ -168,7 +168,7 @@ void optimized_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, flo
   scaleout_kernel(&scaleout_params);
 }
 
-  LIBXSMM_INLINE
+LIBXSMM_INLINE
 void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, float *gamma_data, float *beta_data, float *mean_data, float *rstd_data)
 {
   int ld = bm, ld_vector = bn;
@@ -186,10 +186,10 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
 
   int nBlocks   = n/bn;
   int mBlocks   = m/bm;
-  float scratch[2*n*mBlocks+n];
-  float *sums_ptr     = (float*) scratch;
-  float *sums_sq_ptr  = (float*) scratch + n * mBlocks;
-  float *aux_bias_ptr = (float*) scratch + 2 * n * mBlocks;
+  float *const scratch = (float*)libxsmm_aligned_scratch((2 * n * mBlocks + n) * sizeof(float), 0/*auto-alignment*/);
+  float *sums_ptr     = scratch;
+  float *sums_sq_ptr  = scratch + n * mBlocks;
+  float *aux_bias_ptr = scratch + 2 * n * mBlocks;
 
   LIBXSMM_VLA_DECL(3, float, sums,        sums_ptr, mBlocks, bn);
   LIBXSMM_VLA_DECL(3, float, sums_sq,     sums_sq_ptr, mBlocks, bn);
@@ -217,9 +217,9 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
 #endif
   {
     int i, imin, im, in;
-    float reverse_m = 1.0/(1.0*m);
+    float reverse_m = (float)(1.0 / m);
 #if defined(__AVX512F__)
-    __m512 minus_ones = _mm512_set1_ps(-1.0);
+    __m512 minus_ones = _mm512_set1_ps(-1.f);
 #endif
 #if defined(_OPENMP)
     const int ltid = omp_get_thread_num();
@@ -299,8 +299,8 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
       }
 #else
       for (i = 0; i < bn; i++) {
-        rstd_ptr[i]  = 1.0/((float)sqrt(rstd_ptr[i] - mean_ptr[i] * mean_ptr[i]));
-        bias_ptr[i]   =-1.0 * mean_ptr[i] * mean_ptr[i];
+        rstd_ptr[i] = (float)(1.0 / sqrt(rstd_ptr[i] - mean_ptr[i] * mean_ptr[i]));
+        bias_ptr[i] = -1.f * mean_ptr[i] * mean_ptr[i];
       }
 #endif
     }
@@ -322,9 +322,11 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
 #pragma omp barrier
     /*libxsmm_barrier_wait(barrier, ltid);*/
   }
+
+  libxsmm_free(scratch);
 }
 
-  LIBXSMM_INLINE
+LIBXSMM_INLINE
 void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, float *_X, float *_mean, float *_rstd, float *_gamma, float *_dX, float *_dgamma, float *_dbeta)
 {
   int ld = bm, ld_vector = bn;
@@ -332,13 +334,13 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
   libxsmm_meltwfunction_reduce reduce_rows_kernel, reduce_cols_kernel, reduce_cols_kernel2, reduce_cols_kernel3;
   int nBlocks   = n/bn;
   int mBlocks   = m/bm;
-  float scratch[2*n*mBlocks+2*m*nBlocks+2*n];
-  float *dgamma_aux_ptr     = (float*) scratch;
-  float *dbeta_aux_ptr      = (float*) scratch + m * nBlocks;
-  float *ds_aux_ptr         = (float*) scratch + 2 * m * nBlocks;
-  float *db_aux_ptr         = (float*) scratch + 2 * m * nBlocks + n * mBlocks;
-  float *db_ptr             = (float*) scratch + 2 * m * nBlocks + 2 * n * mBlocks;
-  float *ds_ptr             = (float*) scratch + 2 * m * nBlocks + 2 * n * mBlocks + n;
+  float *const scratch = (float*)libxsmm_aligned_scratch((2 * n * mBlocks + 2 * m * nBlocks + 2 * n) * sizeof(float), 0/*auto-alignment*/);
+  float *dgamma_aux_ptr     = scratch;
+  float *dbeta_aux_ptr      = scratch + m * nBlocks;
+  float *ds_aux_ptr         = scratch + 2 * m * nBlocks;
+  float *db_aux_ptr         = scratch + 2 * m * nBlocks + n * mBlocks;
+  float *db_ptr             = scratch + 2 * m * nBlocks + 2 * n * mBlocks;
+  float *ds_ptr             = scratch + 2 * m * nBlocks + 2 * n * mBlocks + n;
   LIBXSMM_VLA_DECL(3, float, ds_aux,      ds_aux_ptr, mBlocks, bn);
   LIBXSMM_VLA_DECL(3, float, db_aux,      db_aux_ptr, mBlocks, bn);
   LIBXSMM_VLA_DECL(3, float, dgamma_aux,  dgamma_aux_ptr, nBlocks, bm);
@@ -368,14 +370,17 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
   reduce_cols_kernel2 = libxsmm_dispatch_meltw_reduce(bm, nBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
   reduce_cols_kernel3 = libxsmm_dispatch_meltw_reduce(bn, mBlocks, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
 
-#if defined(_OPENMP)
-#     pragma omp parallel
+#if !defined(_OPENMP)
+  float *const aux = (float*)libxsmm_aligned_scratch((3 * bm * bn) * sizeof(float), 0/*auto-alignment*/);
+#else
+  float *const aux = (float*)libxsmm_aligned_scratch((3 * bm * bn) * sizeof(float) * omp_get_max_threads(), 0/*auto-alignment*/);
+# pragma omp parallel
 #endif
   {
     int imin, im, in, ii, jj;
-    float reverse_m = 1.0/(1.0*m);
+    float reverse_m = (float)(1.0 / m);
 #if defined(__AVX512F__)
-    __m512 minus_ones = _mm512_set1_ps(-1.0);
+    __m512 minus_ones = _mm512_set1_ps(-1.f);
     __m512 scale      = _mm512_set1_ps(reverse_m);
 #endif
 #if defined(_OPENMP)
@@ -401,9 +406,9 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
     libxsmm_meltw_reduce_param reduce_rows_params, reduce_cols_params;;
 
     for (imin = thr_begin_mn; imin < thr_end_mn; imin++) {
-      float tmp[bm*bn];     /* aux block for db      */
-      float tmp2[bm*bn];    /* aux block for ds      */
-      float tmp3[bm*bn];    /* aux block for dgamma  */
+      float *const tmp  = aux + bm*bn * (ltid*3 + 0); /* aux block for db */
+      float *const tmp2 = aux + bm*bn * (ltid*3 + 1); /* aux block for ds */
+      float *const tmp3 = aux + bm*bn * (ltid*3 + 2); /* aux block for dgamma */
       in = imin / mBlocks;
       im = imin % mBlocks;
 
@@ -546,6 +551,9 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
 
 #pragma omp barrier
   }
+
+  libxsmm_free(scratch);
+  libxsmm_free(aux);
 }
 
 
@@ -561,7 +569,7 @@ int main(int argc, char* argv[])
 
   libxsmm_matdiff_info norms_out, norms_mean, norms_rstd, norms_dx, norms_dbeta, norms_dgamma;
   unsigned long long l_start, l_end;
-  double l_total = 0.0, l_total2 = 0.0;
+  double l_total = 0, l_total2 = 0;
 
   libxsmm_meltw_redu_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
   libxsmm_meltwfunction_reduce reduce_kernel;

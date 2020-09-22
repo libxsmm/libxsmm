@@ -239,6 +239,30 @@ LIBXSMM_API_INTERN void libxsmm_memory_finalize(void)
 }
 
 
+LIBXSMM_API unsigned char libxsmm_diff_4(const void* a, const void* b, ...)
+{
+#if defined(LIBXSMM_MEMORY_SW)
+  return internal_diff_sw(a, b, 4);
+#else
+  LIBXSMM_DIFF_4_DECL(a4);
+  LIBXSMM_DIFF_4_LOAD(a4, a);
+  return LIBXSMM_DIFF_4(a4, b, 0/*dummy*/);
+#endif
+}
+
+
+LIBXSMM_API unsigned char libxsmm_diff_8(const void* a, const void* b, ...)
+{
+#if defined(LIBXSMM_MEMORY_SW)
+  return internal_diff_sw(a, b, 8);
+#else
+  LIBXSMM_DIFF_8_DECL(a8);
+  LIBXSMM_DIFF_8_LOAD(a8, a);
+  return LIBXSMM_DIFF_8(a8, b, 0/*dummy*/);
+#endif
+}
+
+
 LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b, ...)
 {
 #if defined(LIBXSMM_MEMORY_SW)
@@ -347,6 +371,16 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
       LIBXSMM_DIFF_16_DECL(a16);
       LIBXSMM_DIFF_16_LOAD(a16, a);
       LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_16, a16, bn, size, stride, hint, n);
+    } break;
+    case 8: {
+      LIBXSMM_DIFF_8_DECL(a8);
+      LIBXSMM_DIFF_8_LOAD(a8, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_8, a8, bn, size, stride, hint, n);
+    } break;
+    case 4: {
+      LIBXSMM_DIFF_4_DECL(a4);
+      LIBXSMM_DIFF_4_LOAD(a4, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_4, a4, bn, size, stride, hint, n);
     } break;
     default:
 # endif

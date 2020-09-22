@@ -1,4 +1,3 @@
-
 USE_RTM=1
 STREAMING_WRITES=1
 USE_MPI=1
@@ -11,6 +10,10 @@ LIB_DIR:=$(CCL_ROOT)/lib
 CCL_FLAGS:=-I$(INCLUDE_DIR) -lccl -L$(LIB_DIR)
 else
 CCL_FLAGS=
+endif
+
+ifeq ($(USE_LIBXSMM_JIT),1)
+CCL_FLAGS += -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread  -I../../../include ../../../lib/libxsmmnoblas.a  ../../../lib/libxsmm.a
 endif
 #deflist +=
 

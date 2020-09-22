@@ -53,7 +53,6 @@ const int dbias_thr_end = ((ltid + 1) * dbias_chunksize < dbias_work) ? ((ltid +
 LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dbias, (libxsmm_bfloat16*) handle->grad_bias->data, handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
-LIBXSMM_VLA_DECL(4, unsigned char,              relumask, (unsigned char*)      handle->relumask->data,   nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4,     __mmask32, relubitmask,     (__mmask32*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/32);
 #endif
 
@@ -64,6 +63,10 @@ LIBXSMM_VLA_DECL(4, const element_output_type,   doutput_orig, (element_output_t
 #else
 element_output_type *grad_output_ptr = (element_output_type*)handle->grad_output->data;
 element_output_type *tr_doutput_ptr = (element_output_type*)handle->scratch;
+#endif
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU)
+libxsmm_meltw_relu_param   relu_params;
+libxsmm_meltwfunction_relu relu_kernel = handle->bwd_relu_kernel;
 #endif
 LIBXSMM_VLA_DECL(4, element_output_type,   doutput, grad_output_ptr, nBlocksOFm, bn, bk);
 LIBXSMM_VLA_DECL(5, element_output_type, doutput_tr, tr_doutput_ptr, nBlocksMB, bn_lp, bk, lpb);
@@ -76,7 +79,31 @@ libxsmm_barrier_init(handle->barrier, ltid);
 bwd_tile_config_kernel(NULL, NULL, NULL);
 
 /* Apply to doutput potential fusions */
-#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU) || defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU)
+LIBXSMM_UNUSED(iteri);
+LIBXSMM_UNUSED(iterj);
+for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
+  mb1  = mb1ofm1/nBlocksOFm;
+  ofm1 = mb1ofm1%nBlocksOFm;
+
+  relu_params.in_ptr   = &LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+  relu_params.out_ptr  = &LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+  relu_params.mask_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
+  relu_kernel(&relu_params);
+
+  /* If in UPD pass, also perform transpose of doutput  */
+  if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
+    bf16_vnni_reformat((element_output_type*)&LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb), bk, bn, bk, bn);
+  }
+}
+
+if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND_BWDUPD) ) {
+  performed_doutput_transpose = 1;
+}
+libxsmm_barrier_wait(handle->barrier, ltid);
+#endif
+
+#if defined(LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID)
 if (bk % 32 == 0) {
   for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
     mb1  = mb1ofm1%nBlocksMB;
@@ -85,22 +112,13 @@ if (bk % 32 == 0) {
     for ( iteri = 0; iteri < handle->bn; ++iteri ) {
       for ( iterj = 0; iterj < handle->bk; iterj += 32 ) {
         __m512i cur_out_reg = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
-#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
         __m512 cur_out_reg_0, cur_out_reg_1;
         const  __m512 ones = _mm512_set1_ps(1.0f);
-#endif
-#ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
-        __m512i zero_reg = _mm512_setzero_si512();
-        __mmask32 relumask_reg = LIBXSMM_INTRINSICS_MM512_LOAD_MASK32 (&LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, iteri, iterj/32, nBlocksOFm, handle->bn, handle->bk/32));
-        cur_out_reg = _mm512_mask_blend_epi16 (relumask_reg, zero_reg, cur_out_reg);
-#endif
-#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
         cur_out_reg_0 = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm512_extracti64x4_epi64(cur_out_reg, 0)),16));
         cur_out_reg_1 = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm512_extracti64x4_epi64(cur_out_reg, 1)),16));
         cur_out_reg_0 =  _mm512_mul_ps(cur_out_reg_0, _mm512_sub_ps(ones, cur_out_reg_0));
         cur_out_reg_1 =  _mm512_mul_ps(cur_out_reg_1, _mm512_sub_ps(ones, cur_out_reg_1));
         cur_out_reg = LIBXSMM_INTRINSICS_MM512_CVT2_FP32_BF16(cur_out_reg_1, cur_out_reg_0);
-#endif
         _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk), cur_out_reg);
 #ifdef USE_CLDEMOTE
         _mm_cldemote(&LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
@@ -121,20 +139,13 @@ if (bk % 32 == 0) {
     for ( iteri = 0; iteri < handle->bn; ++iteri ) {
       for ( iterj = 0; iterj < handle->bk; ++iterj ) {
         element_output_type l_cur_out = LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk);
-#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
         float l_cur_out_f32 = 0;
         libxsmm_bfloat16_hp tmp;
-#endif
-#ifdef LIBXSMM_DNN_FC_BWD_FUSE_RELU
-        l_cur_out = (element_output_type)((LIBXSMM_VLA_ACCESS(4, relumask, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) != 0) ? l_cur_out : (element_output_type)0);
-#endif
-#ifdef LIBXSMM_DNN_FC_BWD_FUSE_SIGMOID
         tmp.i[0] = 0;
         tmp.i[1] = l_cur_out;
         l_cur_out_f32 = tmp.f;
         l_cur_out_f32 = l_cur_out_f32*(1.0f - l_cur_out_f32);
         libxsmm_rne_convert_fp32_bf16(&l_cur_out_f32, &l_cur_out, 1);
-#endif
         LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk) = l_cur_out;
       }
     }
@@ -159,26 +170,21 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 /* Accumulation of bias happens in f32 */
 {
   float *scratch_dbias = (float*) ((element_output_type*)handle->scratch + handle->desc.N * (handle->desc.K + handle->desc.C) + ltid * bk * 2);
-  if (handle->bk % 16 == 0) {
-    __m512 zero_reg = _mm512_setzero_ps();
-    __m512 doutput_reg = _mm512_setzero_ps();
-    __m512 dbias_reg = _mm512_setzero_ps();
+  if (handle->bk % 32 == 0) {
     for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
-      for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-        _mm512_storeu_ps(scratch_dbias+iterj, zero_reg);
-      }
-      for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
-        for ( iteri = 0; iteri < handle->bn; ++iteri ) {
-          for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-            doutput_reg = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
-            dbias_reg = LIBXSMM_INTRINSICS_MM512_LOAD_PS(scratch_dbias+iterj);
-            dbias_reg = _mm512_add_ps(dbias_reg, doutput_reg);
-            _mm512_storeu_ps(scratch_dbias+iterj, dbias_reg);
+      for ( iterj = 0; iterj < handle->bk; iterj += 32 ) {
+        __m512 doutput_reg_0, doutput_reg_1, dbias_reg_0, dbias_reg_1;
+        dbias_reg_0 = _mm512_setzero_ps();
+        dbias_reg_1 = _mm512_setzero_ps();
+        for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
+          for ( iteri = 0; iteri < handle->bn; ++iteri ) {
+            doutput_reg_0 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, handle->bn, handle->bk));
+            doutput_reg_1 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj+16, nBlocksOFm, handle->bn, handle->bk));
+            dbias_reg_0 = _mm512_add_ps(dbias_reg_0, doutput_reg_0);
+            dbias_reg_1 = _mm512_add_ps(dbias_reg_1, doutput_reg_1);
           }
         }
-      }
-      for ( iterj = 0; iterj < handle->bk; iterj += 16 ) {
-        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk ), LIBXSMM_INTRINSICS_MM512_LOAD_PS(scratch_dbias+iterj));
+        _mm512_store_si512(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, handle->bk), LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(dbias_reg_1, dbias_reg_0));
       }
     }
   } else {

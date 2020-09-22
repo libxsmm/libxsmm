@@ -6,9 +6,12 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Dhiraj Kalamkar (Intel Corp.)
+/* Dhiraj Kalamkar, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
+//#define JIT_REDUCE_COLS_IDX
+#ifdef JIT_REDUCE_COLS_IDX
+#include <libxsmm.h>
+#endif
 #include "utils.h"
 #include "rtm.h"
 
@@ -32,6 +35,28 @@ public:
     init_random(M * E, weight_, low, high);
   }
 
+#ifdef JIT_REDUCE_COLS_IDX
+  void forward(int N, int NS, const long *offsets, const long *indices, T *output_)
+  {
+    T(*__restrict weight)[E] = (T(*)[*])weight_;
+    T(*__restrict output)[E] = (T(*)[*])output_;
+    libxsmm_meltwfunction_reduce_cols_idx kernel;
+    int _ld = E;
+    kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32) ;
+#pragma omp parallel for
+    for (int n = 0; n < N; n++)
+    {
+      libxsmm_meltw_reduce_cols_idx_param params;
+      auto start = offsets[n];
+      auto end = (n < N - 1 ? offsets[n + 1] : NS);
+      params.n = end - start;
+      params.ind_ptr = &indices[start];
+      params.inp_ptr = weight;
+      params.out_ptr = &output[n][0];
+      kernel( &params );
+    }
+  }
+#else
   void forward(int N, int NS, const long *offsets, const long *indices, T *output_)
   {
     T(*__restrict weight)[E] = (T(*)[*])weight_;
@@ -56,6 +81,7 @@ public:
       }
     }
   }
+#endif
 
   void backward(int N, int NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
   {
