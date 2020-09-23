@@ -199,7 +199,6 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_generated_code,
-                                                   const unsigned int      i_instruction_set,
                                                    const unsigned int      i_vec_instr,
                                                    const unsigned int      i_gp_reg_base,
                                                    const unsigned int      i_gp_reg_idx,
@@ -235,8 +234,6 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_ge
   unsigned int l_gp_reg_idx;
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
-
-  LIBXSMM_UNUSED( i_instruction_set );
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
@@ -337,7 +334,6 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_ge
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_instruction_set,
                                                const unsigned int      i_vec_instr,
                                                const char              i_vector_name,
                                                const unsigned int      i_vec_reg_number_0,
@@ -360,8 +356,6 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_genera
   unsigned char tbl_vl[2]          = {0x00, 0x04};
   /* index for VL look-ups */
   unsigned int l_vl_idx;
-
-  LIBXSMM_UNUSED( i_instruction_set );
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
@@ -405,7 +399,6 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_genera
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_instruction_set,
                                                     const unsigned int      i_vec_instr,
                                                     const unsigned int      i_use_broadcast,
                                                     const unsigned int      i_gp_reg_base,
@@ -469,8 +462,6 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   unsigned int l_gp_reg_idx;
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
-
-  LIBXSMM_UNUSED( i_instruction_set );
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
@@ -609,14 +600,13 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_instruction_set,
-                                               const unsigned int      i_vec_instr,
-                                               const char              i_vector_name,
-                                               const unsigned int      i_vec_reg_number_0,
-                                               const unsigned int      i_vec_reg_number_1,
-                                               const unsigned int      i_vec_reg_number_2,
-                                               const unsigned int      i_mask_reg_number,
-                                               const unsigned int      i_use_zero_masking )
+                                                const unsigned int      i_vec_instr,
+                                                const char              i_vector_name,
+                                                const unsigned int      i_vec_reg_number_0,
+                                                const unsigned int      i_vec_reg_number_1,
+                                                const unsigned int      i_vec_reg_number_2,
+                                                const unsigned int      i_mask_reg_number,
+                                                const unsigned int      i_use_zero_masking )
 {
   unsigned int code_head = io_generated_code->code_size;
   unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
@@ -649,8 +639,6 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_gener
   unsigned char tbl_vl[3]         = {0x00, 0x20, 0x40};
   /* index for VL look-ups */
   unsigned int l_vl_idx;
-
-  LIBXSMM_UNUSED( i_instruction_set );
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
@@ -699,7 +687,6 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_gener
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_3reg_imm8( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_instruction_set,
                                                     const unsigned int      i_vec_instr,
                                                     const char              i_vector_name,
                                                     const unsigned int      i_vec_reg_number_0,
@@ -708,8 +695,8 @@ void libxsmm_x86_instruction_vec_compute_3reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned char     i_imm8 )
 {
   unsigned char* code = (unsigned char *) io_generated_code->generated_code;
+
   libxsmm_x86_instruction_evex_compute_3reg( io_generated_code,
-                                             i_instruction_set,
                                              i_vec_instr,
                                              i_vector_name,
                                              i_vec_reg_number_0,
@@ -722,14 +709,12 @@ void libxsmm_x86_instruction_vec_compute_3reg_imm8( libxsmm_generated_code* io_g
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_2reg( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_instruction_set,
                                                const unsigned int      i_vec_instr,
                                                const char              i_vector_name,
                                                const unsigned int      i_vec_reg_number_0,
                                                const unsigned int      i_vec_reg_number_1 )
 {
   libxsmm_x86_instruction_evex_compute_3reg( io_generated_code,
-                                             i_instruction_set,
                                              i_vec_instr,
                                              i_vector_name,
                                              i_vec_reg_number_0,
@@ -740,7 +725,6 @@ void libxsmm_x86_instruction_vec_compute_2reg( libxsmm_generated_code* io_genera
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_instruction_set,
                                                     const unsigned int      i_vec_instr,
                                                     const char              i_vector_name,
                                                     const unsigned int      i_vec_reg_number_0,
@@ -748,7 +732,6 @@ void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned char     i_imm8 )
 {
   libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
-                                                  i_instruction_set,
                                                   i_vec_instr,
                                                   i_vector_name,
                                                   i_vec_reg_number_0,
@@ -865,7 +848,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     exit(-1);
   }
 
-  if ( (/*(i_instruction_set == LIBXSMM_X86_AVX) || (i_instruction_set == LIBXSMM_X86_AVX2) ||*/ (i_instruction_set >= LIBXSMM_X86_AVX512_CORE)) &&
+  if ( ((io_generated_code->arch == LIBXSMM_X86_AVX) || (io_generated_code->arch == LIBXSMM_X86_AVX2) || (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE)) &&
        (i_vmove_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
     /* LD/ST insturction have only 2 operanads */
@@ -913,9 +896,9 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           break;
       }
 
-      if (i_instruction_set >= LIBXSMM_X86_AVX512_CORE) {
+      if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) {
         libxsmm_x86_instruction_evex_compute_2reg_mem ( io_generated_code,
-              i_instruction_set, l_vmove_instr, 0, i_gp_reg_base,
+              l_vmove_instr, 0, i_gp_reg_base,
               i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
               0, i_vec_reg_number_0, i_mask_reg_number, i_use_zero_masking );
       } else {
@@ -929,7 +912,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
         }
 
         libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
-              i_instruction_set, l_vmove_instr, i_gp_reg_base,
+              l_vmove_instr, i_gp_reg_base,
               i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
               0, i_vec_reg_number_0 );
       }
@@ -1609,7 +1592,9 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
                                                    const unsigned int      i_vec_reg_dst,
                                                    const unsigned int      i_shuffle_operand )
 {
-  if ( (i_instruction_set >= LIBXSMM_X86_AVX512_CORE) &&
+  LIBXSMM_UNUSED( i_instruction_set );
+
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
        (i_vec_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
 
@@ -1626,26 +1611,26 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
         }
         if ( l_reversal && !l_imm8 ) {
            libxsmm_x86_instruction_vec_compute_2reg ( io_generated_code,
-               i_instruction_set, i_vec_instr, i_vector_name,
+               i_vec_instr, i_vector_name,
                i_vec_reg_dst, i_vec_reg_src_0 );
         } else if ( l_reversal && l_imm8 ) {
            libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
-               i_instruction_set, i_vec_instr, i_vector_name,
+               i_vec_instr, i_vector_name,
                i_vec_reg_dst, i_vec_reg_src_0,
                (unsigned char) i_shuffle_operand );
         } else if ( !l_reversal && !l_imm8 ) {
            libxsmm_x86_instruction_vec_compute_2reg ( io_generated_code,
-               i_instruction_set, i_vec_instr, i_vector_name,
+               i_vec_instr, i_vector_name,
                i_vec_reg_src_0, i_vec_reg_dst );
         } else if ( !l_reversal && l_imm8 ) {
            libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
-               i_instruction_set, i_vec_instr, i_vector_name,
+               i_vec_instr, i_vector_name,
                i_vec_reg_src_0, i_vec_reg_dst,
                (unsigned char) i_shuffle_operand );
         }
      } else {
         libxsmm_x86_instruction_vec_compute_3reg_imm8 ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
+          i_vec_instr, i_vector_name,
           i_vec_reg_src_0, i_vec_reg_src_1, i_vec_reg_dst,
           (unsigned char) i_shuffle_operand );
      }
@@ -1837,7 +1822,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_2 )
 {
 
-  if ( (i_instruction_set >= LIBXSMM_X86_AVX512_CORE) &&
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
        (i_vec_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
 
@@ -1851,16 +1836,16 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
            }
         }
         libxsmm_x86_instruction_evex_compute_3reg ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
+          i_vec_instr, i_vector_name,
           i_vec_reg_number_0, 0, i_vec_reg_number_1, 0, 0 );
 #else
         libxsmm_x86_instruction_evex_compute_3reg ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
+          i_vec_instr, i_vector_name,
           i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2, 0, 0 );
 #endif
      } else {
         libxsmm_x86_instruction_evex_compute_3reg ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
+          i_vec_instr, i_vector_name,
           i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2, 0, 0 );
      }
      return ;
@@ -3289,7 +3274,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
   printf("DEBUG: Inside libxsmm_x86_instruction_vec_compute_mem(#,set=%d,instr=%d,brd=%d,base=%d,idx=%d,scale=%d,disp=%d,name=%c,reg0=%d,reg1=%d\n",i_instruction_set,i_vec_instr,i_use_broadcast,i_gp_reg_base,i_gp_reg_idx,i_scale,i_displacement,i_vector_name,i_vec_reg_number_0,i_vec_reg_number_1);
 #endif
 
-  if ( (i_instruction_set >= LIBXSMM_X86_AVX512_CORE) &&
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
        (i_vec_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
 
@@ -3300,12 +3285,12 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
            }
         }
         libxsmm_x86_instruction_evex_compute_2reg_mem( io_generated_code,
-          i_instruction_set, i_vec_instr, i_use_broadcast, i_gp_reg_base,
+          i_vec_instr, i_use_broadcast, i_gp_reg_base,
           i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
           0, i_vec_reg_number_0, 0, 0 );
      } else {
         libxsmm_x86_instruction_evex_compute_2reg_mem( io_generated_code,
-          i_instruction_set, i_vec_instr, i_use_broadcast, i_gp_reg_base,
+          i_vec_instr, i_use_broadcast, i_gp_reg_base,
           i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
           i_vec_reg_number_0, i_vec_reg_number_1, 0, 0 );
      }
@@ -4583,8 +4568,10 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
                                                     const unsigned int      i_mask_reg_number,
                                                     const unsigned int      i_use_zero_masking )
 {
+  LIBXSMM_UNUSED( i_instruction_set );
+
   /* @TODO add checks in debug mode */
-  if ( (i_instruction_set < LIBXSMM_X86_AVX512)  &&
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512)  &&
        (i_use_broadcast != 0) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_AVX512_BCAST );
     return;
@@ -4894,8 +4881,10 @@ void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_genera
                                                const char              i_vector_name,
                                                const unsigned int      i_vec_reg_number_src,
                                                const unsigned int      i_vec_reg_number_dest ) {
+  LIBXSMM_UNUSED( i_instruction_set );
+
   /* @TODO add checks in debug mode */
-  if ( i_instruction_set != LIBXSMM_X86_AVX512_KNM ) {
+  if ( io_generated_code->arch != LIBXSMM_X86_AVX512_KNM ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_AVX512_QFMA );
     return;
   }
@@ -5071,7 +5060,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
                                               const unsigned int      i_shuffle_operand )
 {
 
-  if ( (i_instruction_set >= LIBXSMM_X86_AVX512_CORE) &&
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
        (i_vec_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
 
@@ -5089,18 +5078,18 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
         }
         if ( l_reversal ) {
            libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
-                           i_instruction_set, i_vec_instr, i_vector_name,
+                           i_vec_instr, i_vector_name,
                            i_vec_reg_number_2, i_vec_reg_number_0,
                            (unsigned char) i_shuffle_operand );
         } else {
            libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
-                           i_instruction_set, i_vec_instr, i_vector_name,
+                            i_vec_instr, i_vector_name,
                            i_vec_reg_number_0, i_vec_reg_number_2,
                            (unsigned char) i_shuffle_operand );
         }
      } else {
         libxsmm_x86_instruction_vec_compute_3reg_imm8 ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
+          i_vec_instr, i_vector_name,
           i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2,
           (unsigned char) i_shuffle_operand );
      }
