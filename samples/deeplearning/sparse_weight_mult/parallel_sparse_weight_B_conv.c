@@ -133,6 +133,7 @@ int main(int argc, char **argv) {
     int P = (H + 2*padh - R)/sh + 1;
     int Q = (W + 2*padw - S)/sw + 1;
     int QB = NB; /* In WIDTH_FIRST case we are going to interpreste NB as QB and NB is deprecated.*/
+    int qb = nb; /* In WIDTH_FIRST case we are going to interpreste nb as qb and NB is deprecated.*/
 
     libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
     int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -142,10 +143,10 @@ int main(int argc, char **argv) {
     float *l_C_gold =
         (float *)libxsmm_aligned_malloc(sizeof(float) * N * P * Q * K, 64);
 #if WIDTH_FIRST
-      LIBXSMM_VLA_DECL(7, float, l_p_A, l_A, C / CB, H, W/QB, QB / nb, CB, nb);
+      LIBXSMM_VLA_DECL(7, float, l_p_A, l_A, C / CB, H, W/QB, QB / qb, CB, qb);
       LIBXSMM_VLA_DECL(4, float, l_p_B, l_B, S, K, C);
-      LIBXSMM_VLA_DECL(7, float, l_p_C, l_C, K / KB, P, Q/QB, QB / nb, KB, nb);
-      LIBXSMM_VLA_DECL(7, float, l_p_C_gold, l_C_gold, K / KB, P, Q/QB, QB / nb, KB, nb);
+      LIBXSMM_VLA_DECL(7, float, l_p_C, l_C, K / KB, P, Q/QB, QB / qb, KB, qb);
+      LIBXSMM_VLA_DECL(7, float, l_p_C_gold, l_C_gold, K / KB, P, Q/QB, QB / qb, KB, qb);
 #else
       LIBXSMM_VLA_DECL(7, float, l_p_A, l_A, H, W, C / CB, NB / nb, CB, nb);
       LIBXSMM_VLA_DECL(4, float, l_p_B, l_B, S, K, C);
@@ -163,11 +164,11 @@ int main(int argc, char **argv) {
       for (l_h = 0; l_h < H; ++l_h) {
         for (l_w = 0; l_w < W/QB; ++l_w) {
           for (l_c = 0; l_c < C / CB; ++l_c) {
-            for (l_nn = 0; l_nn < QB / nb; ++l_nn) {
+            for (l_nn = 0; l_nn < QB / qb; ++l_nn) {
               for (l_cc = 0; l_cc < CB; ++l_cc) {
-                for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
+                for (l_nnn = 0; l_nnn < qb; ++l_nnn) {
                     LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_c, l_h, l_w, l_nn, l_cc,
-                                             l_nnn, C / CB, H, W/QB, QB / nb, CB, nb) =
+                                             l_nnn, C / CB, H, W/QB, QB / qb, CB, qb) =
                               (float)libxsmm_rng_f64();
 #else
     for (l_n = 0; l_n < N / NB; ++l_n) {
@@ -296,14 +297,14 @@ int main(int argc, char **argv) {
       for (l_p = 0; l_p < P; ++l_p) {
         for (l_q = 0; l_q < Q / QB; ++l_q) {
           for (l_k = 0; l_k < K / KB; ++l_k) {
-            for (l_nn = 0; l_nn < QB / nb; ++l_nn) {
+            for (l_nn = 0; l_nn < QB / qb; ++l_nn) {
               for (l_kk = 0; l_kk < KB; ++l_kk) {
-                for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
+                for (l_nnn = 0; l_nnn < qb; ++l_nnn) {
                     LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_k, l_p, l_q, l_nn, l_kk,
-                                         l_nnn, K / KB, P, Q/QB, QB / nb, KB, nb) =
+                                         l_nnn, K / KB, P, Q/QB, QB / qb, KB, qb) =
                             0.0f;
                     LIBXSMM_VLA_ACCESS(7, l_p_C, l_n, l_k, l_p, l_q, l_nn, l_kk,
-                                           l_nnn, K / KB, P, Q/QB, QB / nb, KB, nb) =
+                                           l_nnn, K / KB, P, Q/QB, QB / qb, KB, qb) =
                             0.0f;
 #else
     for (l_n = 0; l_n < N / NB; ++l_n) {
@@ -339,19 +340,19 @@ int main(int argc, char **argv) {
               for (l_r = 0; l_r < R; ++l_r) {
                 if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
                 for (l_s = 0; l_s < S; ++l_s) {
-                  for (l_nn = 0; l_nn < QB / nb; ++l_nn) {
+                  for (l_nn = 0; l_nn < QB / qb; ++l_nn) {
                     for (l_kk = 0; l_kk < KB; ++l_kk) {
                       k = l_k * KB + l_kk;
                       for (l_cc = 0; l_cc < CB; ++l_cc) {
                         c = l_c * CB + l_cc;
-                        for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
-                            l_w = ((l_q*QB + (l_nn)*nb+l_nnn)*sw - padw);
+                        for (l_nnn = 0; l_nnn < qb; ++l_nnn) {
+                            l_w = ((l_q*QB + (l_nn)*qb+l_nnn)*sw - padw);
                             if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
                             l_ww = (l_w + l_s)/QB;
                             LIBXSMM_VLA_ACCESS(7, l_p_C_gold, l_n, l_k, l_p, l_q,
-                              l_nn, l_kk, l_nnn, K / KB, P, Q/QB, QB / nb, KB, nb) +=
+                              l_nn, l_kk, l_nnn, K / KB, P, Q/QB, QB / qb, KB, qb) +=
                               LIBXSMM_VLA_ACCESS(7, l_p_A, l_n, l_c, l_h+l_r, l_ww,
-                                l_nn, l_cc, l_nnn, C / CB, H, W/QB, QB / nb, CB, nb) *
+                                l_nn, l_cc, l_nnn, C / CB, H, W/QB, QB / qb, CB, qb) *
                               LIBXSMM_VLA_ACCESS(4, l_p_B, l_r, l_s, k, c, S, K, C);
 #else
     for (l_n = 0; l_n < N / NB; ++l_n) {
@@ -402,17 +403,21 @@ int main(int argc, char **argv) {
     for (blk_idx = 0; blk_idx < RSnum_blocks; ++blk_idx) {
 #if WIDTH_FIRST
         l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
-            &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), QB / nb, KB, CB, CB,
+            &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), QB / qb, KB, CB, CB,
             0, KB, alpha, beta, flags, prefetch);
+        mykernel[blk_idx] =
+            libxsmm_create_xcsc_soa(l_xgemm_desc[blk_idx], b_colptr[blk_idx],
+                                    b_rowidx[blk_idx],
+                                    (const void *)b_values[blk_idx], qb).smm;
 #else
         l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
             &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), NB / nb, KB, CB, CB,
             0, KB, alpha, beta, flags, prefetch);
-#endif
         mykernel[blk_idx] =
             libxsmm_create_xcsc_soa(l_xgemm_desc[blk_idx], b_colptr[blk_idx],
                                     b_rowidx[blk_idx],
                                     (const void *)b_values[blk_idx], nb).smm;
+#endif
     }
 
 #if WIDTH_FIRST
@@ -430,9 +435,9 @@ int main(int argc, char **argv) {
                     l_w = ((l_q*QB)*sw - padw);
                     if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
                     if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
-                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, c, l_h+l_r, (l_w+l_s)/QB, 0, 0, 0, C / CB, H, W/QB, QB / nb, CB, nb)),
+                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, c, l_h+l_r, (l_w+l_s)/QB, 0, 0, 0, C / CB, H, W/QB, QB / qb, CB, qb)),
                                                  b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c],
-                                               &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, k, l_p, l_q, 0, 0, 0, K / KB, P, Q/QB, QB / nb, KB, nb)) );
+                                               &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, k, l_p, l_q, 0, 0, 0, K / KB, P, Q/QB, QB / qb, KB, qb)) );
                   }
                 }
               }
@@ -493,9 +498,9 @@ int main(int argc, char **argv) {
                     l_w = ((l_q*QB)*sw - padw);
                     if ( l_h+l_r < 0 || l_h+l_r >= H ) continue;
                     if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
-                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, c, l_h+l_r, (l_w+l_s)/QB, 0, 0, 0, C / CB, H, W/QB, QB / nb, CB, nb)),
+                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, c, l_h+l_r, (l_w+l_s)/QB, 0, 0, 0, C / CB, H, W/QB, QB / qb, CB, qb)),
                                                  b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c],
-                                               &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, k, l_p, l_q, 0, 0, 0, K / KB, P, Q/QB, QB / nb, KB, nb)) );
+                                               &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, k, l_p, l_q, 0, 0, 0, K / KB, P, Q/QB, QB / qb, KB, qb)) );
                   }
                 }
               }
