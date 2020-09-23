@@ -44,7 +44,8 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_header_n_dyn_loop( libxsmm_generated_code*                io_generated_code,
                                               libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                               const libxsmm_mateltwise_kernel_config*   i_kernel_config,
-                                              const unsigned int                        i_gp_reg_n_loop );
+                                              const unsigned int                        i_gp_reg_n_loop,
+                                              int                                       skip_init );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_footer_n_dyn_loop( libxsmm_generated_code*                    io_generated_code,
