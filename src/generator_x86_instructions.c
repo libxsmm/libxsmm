@@ -1598,43 +1598,52 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
        (i_vec_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
 
-     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
-        /* two byte operand */
-        int l_reversal = (i_vec_instr >> 27) & 1;
-        int l_imm8 = (i_vec_instr >> 19) & 1;
+    if ( ((i_vec_instr >> 28) & 3) == 2 ) {
+      int l_reversal = (i_vec_instr >> 27) & 1;
+      int l_imm8 = (i_vec_instr >> 19) & 1;
 
-        if ( i_vec_reg_src_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
-           if ( i_vec_reg_src_1 != 0 ) {
-              /* It might otherwise be intentional */
-              printf("WARNING: You are using 2 operand instruction in vec_compute_convert but i_vec_reg_src_1 is %d not UNDEF\n",i_vec_reg_src_1);
-           }
+      if ( i_vec_reg_src_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
+        if ( i_vec_reg_src_1 != 0 ) {
+          /* It might otherwise be intentional */
+            printf("WARNING: You are using 2 operand instruction in vec_compute_convert but i_vec_reg_src_1 is %d not UNDEF\n",i_vec_reg_src_1);
         }
-        if ( l_reversal && !l_imm8 ) {
-           libxsmm_x86_instruction_vec_compute_2reg ( io_generated_code,
-               i_vec_instr, i_vector_name,
-               i_vec_reg_dst, i_vec_reg_src_0 );
-        } else if ( l_reversal && l_imm8 ) {
-           libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
-               i_vec_instr, i_vector_name,
-               i_vec_reg_dst, i_vec_reg_src_0,
-               (unsigned char) i_shuffle_operand );
-        } else if ( !l_reversal && !l_imm8 ) {
-           libxsmm_x86_instruction_vec_compute_2reg ( io_generated_code,
-               i_vec_instr, i_vector_name,
-               i_vec_reg_src_0, i_vec_reg_dst );
-        } else if ( !l_reversal && l_imm8 ) {
-           libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
-               i_vec_instr, i_vector_name,
-               i_vec_reg_src_0, i_vec_reg_dst,
-               (unsigned char) i_shuffle_operand );
-        }
-     } else {
+      }
+      if ( l_reversal && !l_imm8 ) {
+        libxsmm_x86_instruction_vec_compute_2reg ( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_dst, i_vec_reg_src_0 );
+      } else if ( l_reversal && l_imm8 ) {
+        libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_dst, i_vec_reg_src_0,
+             (unsigned char) i_shuffle_operand );
+      } else if ( !l_reversal && !l_imm8 ) {
+        libxsmm_x86_instruction_vec_compute_2reg ( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_src_0, i_vec_reg_dst );
+      } else if ( !l_reversal && l_imm8 ) {
+        libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_src_0, i_vec_reg_dst,
+             (unsigned char) i_shuffle_operand );
+      }
+    } else if ( ((i_vec_instr >> 28) & 3) == 3 ) {
+      int l_imm8 = (i_vec_instr >> 19) & 1;
+      if ( l_imm8 ) {
         libxsmm_x86_instruction_vec_compute_3reg_imm8 ( io_generated_code,
-          i_vec_instr, i_vector_name,
-          i_vec_reg_src_0, i_vec_reg_src_1, i_vec_reg_dst,
-          (unsigned char) i_shuffle_operand );
-     }
-     return ;
+             i_vec_instr, i_vector_name,
+             i_vec_reg_src_0, i_vec_reg_src_1, i_vec_reg_dst,
+             (unsigned char) i_shuffle_operand );
+      } else {
+        libxsmm_x86_instruction_evex_compute_3reg( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_src_0, i_vec_reg_src_1, i_vec_reg_dst, 0, 0 );
+      }
+    } else {
+      fprintf( stderr, "Error: single opperand convert encodings don't exists\n");
+      exit(-1);
+    }
+    return ;
   }
 
   if ( io_generated_code->code_type > 1 ) {
