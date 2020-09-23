@@ -3815,7 +3815,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
 
   unsigned int m, im, use_m_masking, m_trips, max_m_unrolling = 16, m_unroll_factor = 1, m_trips_loop = 0, peeled_m_trips = 0, mask_out_count = 0;
   unsigned int idx_tsize =  i_mateltwise_desc->n;
-  int pf_dist = 4;
+  int pf_dist = 0;
   unsigned int NO_PF_LABEL_START = 0;
   unsigned int NO_PF_LABEL_START_2 = 1;
   const char *const env_pf_dist = getenv("PF_DIST_REDUCE_COLS_IDX");
