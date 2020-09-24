@@ -27,17 +27,24 @@ class XsmmHandle:
             self.relu_mask_tensor = None
 
 class XsmmFC(Function):
+    use_sparse_kernels = False
+
     @staticmethod
-    def forward(ctx, input, weight, bias, handle, sparse_kernel_mode):
+    def forward(ctx, input, weight, bias, handle, use_sparse_kernels=False):
         #print("Inside XsmmFCForward")
         #t1 = time.time()
         input = input.contiguous()
         weight = weight.contiguous()
         bias = bias.contiguous()
-        print(input.shape)
-        if sparse_kernel_mode:
+
+        if use_sparse_kernels:
+            print("Using SPARSE kernels for forward pass")
             output = pcl_mlp_ext.sparse_forward(handle.handle, input, weight, bias)
+
+            # For later backward pass
+            XsmmFC.use_sparse_kernels = True
         else:
+            print("Using DENSE kernels for forward pass")
             output = pcl_mlp_ext.forward(handle.handle, input, weight, bias)
         #t2 = time.time()
         #print("XsmmFCFWD: q=%.3f" % ((t2-t1)*1000.0))
@@ -54,26 +61,24 @@ class XsmmFC(Function):
         #t1 = time.time()
         grad_output = grad_output.contiguous()
 
-        """
-        grad_input, grad_weight, grad_bias = pcl_mlp_ext.backward(handle.handle, grad_output, input, weight)
-        """
+        if XsmmFC.use_sparse_kernels:
+            print("Using SPARSE kernels for backward pass")
+            grad_input = pcl_mlp_ext.sparse_backward(
+                grad_output,
+                input,
+                weight
+            )
 
-        grad_input = pcl_mlp_ext.sparse_backward(
-            grad_output,
-            input,
-            weight
-        )
+            grad_weight = pcl_mlp_ext.sparse_update(
+                grad_output,
+                input,
+                weight
+            )
 
-        grad_weight = pcl_mlp_ext.sparse_update(
-            grad_output,
-            input,
-            weight
-        )
-
-        print(grad_weight.shape)
-
-        grad_bias = grad_output.sum(axis=0)
-
+            grad_bias = grad_output.sum(axis=0)
+        else:
+            print("Using DENSE kernels for backward pass")
+            grad_input, grad_weight, grad_bias = pcl_mlp_ext.backward(handle.handle, grad_output, input, weight)
 
         return (grad_input, grad_weight, grad_bias, None, None)
 
@@ -82,7 +87,7 @@ class XsmmLinear(nn.Module):
 
     __constants__ = ['bias', 'C', 'K']
 
-    def __init__(self, C, K, bias=True, act_type=None, output_stays_blocked=True, default_blocking=None, sparse_kernel_mode=False):
+    def __init__(self, C, K, bias=True, act_type=None, output_stays_blocked=True, default_blocking=None):
         super(XsmmLinear, self).__init__()
         self.C = C
         self.K = K
@@ -100,7 +105,9 @@ class XsmmLinear(nn.Module):
         self.set_activation_type(act_type)
         self.output_stays_blocked = output_stays_blocked
         self.weight = Parameter(torch.Tensor(K, C))
-        self.sparse_kernel_mode = sparse_kernel_mode
+
+        # Determine whether we are using sparse_kernel_mode based on weight sparsity
+        self.sparse_kernel_mode = False
 
         if bias:
             self.bias = Parameter(torch.Tensor(K))
@@ -250,7 +257,18 @@ class XsmmLinear(nn.Module):
 
         wtensor = self.get_blocked_weight(to_dtype=input.dtype)
         btensor = self.bias.to(input.dtype)
-        output =  XsmmFC.apply(input, wtensor, btensor, self.xsmm_handle, self.sparse_kernel_mode)
+
+        # Check weight sparsity
+        n_el = 1
+        for d in wtensor.shape:
+            n_el *= d
+
+        sparsity = torch.sum(wtensor == 0.) / float(n_el)
+
+        # Change threshold to a smarter value
+        use_sparse_kernels = True if sparsity > 0.6 else False
+
+        output =  XsmmFC.apply(input, wtensor, btensor, self.xsmm_handle, use_sparse_kernels)
         if not self.output_stays_blocked:
             #output = output.permute(0, 2, 1, 3).view(self.N, self.K).contiguous()
             output = output.permute(0, 2, 1, 3).reshape(self.N, self.K).contiguous()

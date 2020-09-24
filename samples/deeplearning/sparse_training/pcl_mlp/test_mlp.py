@@ -18,11 +18,12 @@ C= 64 #64
 """
 
 
-fc = pcl_mlp.XsmmLinear(C, K, sparse_kernel_mode=True)
+fc = pcl_mlp.XsmmLinear(C, K)
 #fc = pcl_mlp.XsmmLinear(C, K)
 tl = torch.nn.Linear(C, K)
 
 sparsity_rate = 0.8
+#sparsity_rate = 0.2
 weight = torch.zeros(K, C, requires_grad=True)
 
 # Populate weight matrix
@@ -94,61 +95,11 @@ print("xsmm: {}".format(x1.grad.mean()))
 print("ref: {}".format(x2.grad.mean()))
 
 # Testing weight grad
-if not tl.weight.grad.allclose(fc.weight.grad):
+weight_mask = (weight != 0.0).float()
+masked_weight_ref = tl.weight.grad * weight_mask
+if not masked_weight_ref.allclose(fc.weight.grad, rtol=1e-6, atol=1e-6):
     print("WeightGrad:")
     print(fc.weight.grad.size())
     print("xsmm: ", fc.weight.grad)
     print(tl.weight.grad.size())
-    print("ref: ", tl.weight.grad)
-
-    print("Org weight: ", weight)
-
-
-"""
-print("ref first line")
-print(tl.weight.grad[0, :])
-
-print("xsmm first line")
-print(fc.weight.grad[0, :])
-print("xsmm: {}".format(fc.weight.grad.mean()))
-print("ref: {}".format(tl.weight.grad.mean()))
-"""
-
-"""
-print(fc.weight.grad.size())
-print(fc.weight.grad.mean())
-print(tl.weight.grad.size())
-print(tl.weight.grad.mean())
-"""
-
-"""
-if not x1.grad.allclose(x2.grad, rtol=1e-4, atol=1e-4):
-  print("InputGrad:")
-  print(x1.grad.size())
-  print("F: ", x1.grad)
-  print(x2.grad.size())
-  print("T: ", x2.grad)
-  print((x2.grad-x1.grad).sort(descending=True))
-
-if not tl.weight.grad.allclose(fc.weight.grad):
-  print("WeightGrad:")
-  print(fc.weight.grad.size())
-  print("F: ", fc.weight.grad)
-  print(tl.weight.grad.size())
-  print("T: ", tl.weight.grad)
-"""
-
-"""
-if not tl.bias.grad.allclose(fc.bias.grad):
-  print("BiasGrad:")
-  print(fc.bias.grad.size())
-  print("F: ", fc.bias.grad)
-  print(tl.bias.grad.size())
-  print("T: ", tl.bias.grad)
-# print(x1.grad)
-# print(x2.grad)
-
-print("X Allclose: ", x1.grad.allclose(x2.grad, rtol=1e-4, atol=1e-4))
-print("Y Allclose: ", tl.bias.grad.allclose(fc.bias.grad))
-print("(x1.grad - x2.grad).abs().sum() = ", (x1.grad - x2.grad).abs().sum())
-"""
+    print("ref: ", masked_weight_ref)
