@@ -46,39 +46,6 @@ void test_evex_load_store( libxsmm_generated_code* mycode, unsigned int arch, un
   }
 }
 
-void test_vex_load_store( libxsmm_generated_code* mycode, unsigned int arch, unsigned int instr ) {
-  unsigned int y;
-  unsigned int b;
-  unsigned int i;
-  unsigned int scale = 2;
-  unsigned int bcst;
-  int displ[3] = {0, 128, 2097152};
-  unsigned int d;
-
-  for (b = 0; b < 16; ++b ) {
-    for ( d = 0; d < 3; ++d ) {
-      for (y = 0; y < 16; ++y ) {
-        libxsmm_x86_instruction_vec_move( mycode, arch, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, 0, 0, 0 );
-      }
-      for (y = 0; y < 16; ++y ) {
-        libxsmm_x86_instruction_vec_move( mycode, arch, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, 0, 0, 1 );
-      }
-    }
-  }
-  for (b = 0; b < 16; ++b ) {
-    for (i = 0; i < 16; ++i ) {
-      for ( d = 0; d < 3; ++d ) {
-        for (y = 0; y < 16; ++y ) {
-          libxsmm_x86_instruction_vec_move( mycode, arch, instr, b, i, scale, displ[d], 'y', y, 0, 0, 0 );
-        }
-        for (y = 0; y < 16; ++y ) {
-          libxsmm_x86_instruction_vec_move( mycode, arch, instr, b, i, scale, displ[d], 'y', y, 0, 0, 1 );
-        }
-      }
-    }
-  }
-}
-
 void test_evex_convert( libxsmm_generated_code* mycode, unsigned int arch, unsigned int instr, unsigned int twoops ) {
   unsigned int i;
   unsigned int imm8 = 0;
@@ -145,6 +112,77 @@ void test_evex_compute_mem( libxsmm_generated_code* mycode, unsigned int arch, u
   }
 }
 
+void test_vex_load_store( libxsmm_generated_code* mycode, unsigned int arch, unsigned int instr ) {
+  unsigned int y;
+  unsigned int b;
+  unsigned int i;
+  unsigned int scale = 2;
+  unsigned int bcst;
+  int displ[3] = {0, 128, 2097152};
+  unsigned int d;
+
+  for (b = 0; b < 16; ++b ) {
+    for ( d = 0; d < 3; ++d ) {
+      for (y = 0; y < 16; ++y ) {
+        libxsmm_x86_instruction_vec_move( mycode, arch, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, 0, 0, 0 );
+      }
+      for (y = 0; y < 16; ++y ) {
+        libxsmm_x86_instruction_vec_move( mycode, arch, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, 0, 0, 1 );
+      }
+    }
+  }
+  for (b = 0; b < 16; ++b ) {
+    for (i = 0; i < 16; ++i ) {
+      for ( d = 0; d < 3; ++d ) {
+        for (y = 0; y < 16; ++y ) {
+          libxsmm_x86_instruction_vec_move( mycode, arch, instr, b, i, scale, displ[d], 'y', y, 0, 0, 0 );
+        }
+        for (y = 0; y < 16; ++y ) {
+          libxsmm_x86_instruction_vec_move( mycode, arch, instr, b, i, scale, displ[d], 'y', y, 0, 0, 1 );
+        }
+      }
+    }
+  }
+}
+
+void test_vex_mask_load_store( libxsmm_generated_code* mycode, unsigned int arch, unsigned int instr ) {
+  unsigned int y;
+  unsigned int b;
+  unsigned int i;
+  unsigned int scale = 2;
+  unsigned int bcst;
+  int displ[3] = {0, 128, 2097152};
+  unsigned int d;
+  unsigned int m;
+
+  for (b = 0; b < 16; ++b ) {
+    for ( d = 0; d < 3; ++d ) {
+      for (m = 0; m < 16; ++m ) {
+        for (y = 0; y < 16; ++y ) {
+          libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, m, 0 );
+        }
+        for (y = 0; y < 16; ++y ) {
+          libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, m, 1 );
+        }
+      }
+    }
+  }
+  for (b = 0; b < 16; ++b ) {
+    for (i = 0; i < 16; ++i ) {
+      for ( d = 0; d < 3; ++d ) {
+        for (m = 0; m < 16; ++m ) {
+          for (y = 0; y < 16; ++y ) {
+            libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, i, scale, displ[d], 'y', y, m, 0 );
+          }
+          for (y = 0; y < 16; ++y ) {
+            libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, i, scale, displ[d], 'y', y, m, 1 );
+          }
+        }
+      }
+    }
+  }
+}
+
 void test_prefetch( libxsmm_generated_code* mycode, unsigned int arch, unsigned int instr ) {
   unsigned int b;
   unsigned int i;
@@ -172,6 +210,9 @@ int main( /*int argc, char* argv[]*/ ) {
   libxsmm_generated_code mycode;
   FILE *fp;
 
+  /* setting arch for this test */
+  arch = LIBXSMM_X86_AVX512_CPX;
+
   /* init generated code object */
   mycode.generated_code = codebuffer;
   mycode.buffer_size = 2097152;
@@ -181,9 +222,6 @@ int main( /*int argc, char* argv[]*/ ) {
   mycode.arch = arch;
   mycode.sf_size = 0;
 
-  /* setting arch for this test */
-  arch = LIBXSMM_X86_AVX512_CPX;
-
   /* testing ld/st instructions */
 #if 0
   test_evex_load_store( &mycode, arch, LIBXSMM_X86_INSTR_VMOVUPS );
@@ -191,7 +229,7 @@ int main( /*int argc, char* argv[]*/ ) {
 #endif
 
   /* testing convert instructions */
-#if 1
+#if 0
   test_evex_convert( &mycode, arch, LIBXSMM_X86_INSTR_VCVTNE2PS2BF16, 0 );
   test_evex_convert( &mycode, arch, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 1 );
 #endif
@@ -199,6 +237,12 @@ int main( /*int argc, char* argv[]*/ ) {
   /* testing compute mem instructions */
 #if 0
   test_evex_compute_mem( &mycode, arch, LIBXSMM_X86_INSTR_VCVTNE2PS2BF16 );
+#endif
+
+  /* testing vex mask load */
+#if 1
+  test_vex_mask_load_store( &mycode, arch, LIBXSMM_X86_INSTR_VMASKMOVPD );
+  test_vex_mask_load_store( &mycode, arch, LIBXSMM_X86_INSTR_VMASKMOVPS );
 #endif
 
   /* testing prefetches */
