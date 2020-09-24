@@ -770,16 +770,16 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
       exit(-1);
   }
 
-  /* check if we have enough code buffer space left */
-  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-    return;
-  }
-
   /* select the code generator REX/VEX/EVEX */
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
        (i_vmove_instr >= 16777216) &&
        (io_generated_code->code_type > 1) ) {
+    /* check if we have enough code buffer space left */
+    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* as LD/ST semantics have different op codes we need some fix-ups here */
     switch (i_vmove_instr) {
       case LIBXSMM_X86_INSTR_VMASKMOVPD:
@@ -792,6 +792,8 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
         l_vmove_instr = i_vmove_instr;
         break;
     }
+
+    /* invoke VEX encoder */
     libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
           l_vmove_instr, i_gp_reg_base,
           i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
@@ -915,17 +917,17 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     exit(-1);
   }
 
-  /* check if we have enough code buffer space left */
-  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-    return;
-  }
-
   /* select the code generator REX/VEX/EVEX */
   if ( ((io_generated_code->arch == LIBXSMM_X86_AVX) || (io_generated_code->arch == LIBXSMM_X86_AVX2) || (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE)) &&
        (i_vmove_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
-    /* LD/ST insturction have only 2 operanads */
+    /* check if we have enough code buffer space left */
+    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+     /* LD/ST insturction have only 2 operanads */
     if ( ((i_vmove_instr >> 28) & 0x3) == 2 ) {
       /* as LD/ST semantics have different op codes we need some fix-ups here */
       switch (i_vmove_instr) {
