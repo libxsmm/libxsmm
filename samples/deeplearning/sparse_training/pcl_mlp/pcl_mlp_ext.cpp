@@ -33,6 +33,8 @@ void BlockSpMatStep1(int K, int C, int KB, int CB, unsigned int *colptr,
     int num_blocks = K / KB * C / CB;
     int blk_idx, i, k;
 
+    int n_em = 0;
+
     for (blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
         nnzb[blk_idx] = 0;
         for (i = 0; i <= KB; ++i) {
@@ -50,6 +52,7 @@ void BlockSpMatStep1(int K, int C, int KB, int CB, unsigned int *colptr,
             blk_idx = k_blk_idx * C / CB + c_blk_idx;
             nnzb[blk_idx]++;
             b_colptr[blk_idx][k_blk_offset + 1]++;
+            n_em++;
         }
     }
     for (blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
@@ -65,6 +68,8 @@ void BlockSpMatStep2(int K, int C, int KB, int CB, unsigned int *colptr,
         float *b_values[]) {
     int num_blocks = K / KB * C / CB;
     int blk_idx, k, i;
+
+    int n_em = 0;
     for (k = 0; k < K; ++k) {
         int k_blk_idx = k / KB;
         int k_blk_offset = k % KB;
@@ -74,6 +79,7 @@ void BlockSpMatStep2(int K, int C, int KB, int CB, unsigned int *colptr,
             int c = rowidx[i];
             int c_blk_idx = c / CB;
             int c_blk_offset = c % CB;
+            n_em++;
             blk_idx = k_blk_idx * C / CB + c_blk_idx;
             b_rowidx[blk_idx][b_colptr[blk_idx][k_blk_offset]] = c_blk_offset;
             b_values[blk_idx][b_colptr[blk_idx][k_blk_offset]] = values[i];
@@ -545,23 +551,22 @@ RECORD_FUNCTION("xsmm_mm_fwd", std::vector<c10::IValue>({input, weight}), -1 /*t
 }
 }
 //  output += bias.reshape({nbk, 1, bk});
-  auto output_ = output.permute({0, 2, 1, 3}).reshape({128, 128});
+  auto output_ = output.permute({0, 2, 1, 3}).reshape({nbn*bn, nbk*bk});
   return output_;
 
 }
-/*
- * Sparse backward kernel
- * params:
- *  dO
- *  I
- *  W
- * outputs:
- *  dI
- *  dW
- *  db
- **/
 
-std::vector<at::Tensor> mlp_sparse_backward(void *libxsmm_handle_, torch::Tensor grad_output, torch::Tensor input, torch::Tensor weight)
+/**
+ * Sparse backward function consists of two major parts:
+ *   - The backward pass, where we compute grad_input
+ *     - dO x W.T = dI (NxK) x (KxC) = (NxC)
+ *   - The update pass, where we compute grad_weight
+ *     - I.T x dO = dW (CxN) x (NxK) = (CxK)
+ */
+at::Tensor mlp_sparse_backward(
+    torch::Tensor grad_output,
+    torch::Tensor input,
+    torch::Tensor weight)
 {
   libxsmm_dnn_err_t global_status;
   auto nbn = input.size(0);
@@ -569,6 +574,7 @@ std::vector<at::Tensor> mlp_sparse_backward(void *libxsmm_handle_, torch::Tensor
   auto bn = input.size(2);
   auto bc = input.size(3);
 
+  /* weight is packages in (nbk, nbc, bc, bk) */
   auto nbk = weight.size(0);
   auto bk = weight.size(3);
 
@@ -576,25 +582,26 @@ std::vector<at::Tensor> mlp_sparse_backward(void *libxsmm_handle_, torch::Tensor
   auto C = nbc * bc;
   auto K = nbk * bk;;
 
+  int NB = bn;
+  int CB = bc;
+  int KB = bk;
+
+  int nb = 16; // or 32
+
   printf("\n\nmlp_sparse_backward\n\n");
   printf("input shape: (%d, %d)\n", N, C);
   printf("weight shape: (%d, %d)\n", C, K);
   printf("grad_output shape: (%d, %d)\n", N, K);
 
+  /* Declare return variables */
   auto grad_input = at::empty(input.sizes(), input.options());
-  auto grad_weight = at::empty(weight.sizes(), weight.options());
-  auto grad_bias = at::empty({ K }, weight.options());
 
-  int NB = bn;
-  int CB = bc;
-  int KB = bk;
-
-  int nb = 16;
-
+  /* Used throughout this function */
   libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
 
   // In terms of A * B(sparse) = C
+  // l_A: grad_output, l_B: weight.T, l_C: grad_input
   float *l_A = (float *)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float *l_B = (float *)libxsmm_aligned_malloc(sizeof(float) * K * C, 64);
   float *l_C = (float *)libxsmm_aligned_malloc(sizeof(float) * N * C, 64);
@@ -606,9 +613,6 @@ std::vector<at::Tensor> mlp_sparse_backward(void *libxsmm_handle_, torch::Tensor
 {
 RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}), -1 /*torch::autograd::Node::peek_at_next_sequence_nr()*/);
 }
-  // backward pass: grad_output * weight.transpose = grad_input
-
-  // printf("grad output size (%d, %d, %d, %d)\n", grad_output.size(0), grad_output.size(1), grad_output.size(2), grad_output.size(3));
   // Converting A to 5 dim
   int aa = 0;
   for (l_n = 0; l_n < N / NB; ++l_n) {
@@ -670,17 +674,6 @@ RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}
   for (l_c = 0; l_c < C; l_c++) {
       colptr[l_c + 1] += colptr[l_c];
   }
-
-  /* Print weight transpose */
-  /*
-  for (int k = 0; k < 8; k++) {
-      for (int c = 0; c < 8; c++) {
-          tmp = (float)weight_transpose[c][k].item().to<float>();
-        printf("%f\t", tmp);
-      }
-      printf("\n");
-  }
-  */
 
   unsigned int *rowidx =
       (unsigned int *)libxsmm_aligned_malloc(nnz * sizeof(unsigned int), 64);
@@ -785,47 +778,94 @@ RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}
       }
   }
 
-  printf("\n\nmlp_sparse_update\n\n");
+  return grad_input_temp.reshape({nbn, bn, nbc, bc}).permute({0, 2, 1, 3});
+
+}
+
+at::Tensor mlp_sparse_update(
+    torch::Tensor grad_output,
+    torch::Tensor input,
+    torch::Tensor weight)
+{
+  libxsmm_dnn_err_t global_status;
+
+  auto nbn = input.size(0);
+  auto nbc = input.size(1);
+  auto bn = input.size(2);
+  auto bc = input.size(3);
+
+  /* weight is packages in (nbk, nbc, bc, bk) */
+  auto nbk = weight.size(0);
+  auto bk = weight.size(3);
+
+  auto N = nbn * bn;
+  auto C = nbc * bc;
+  auto K = nbk * bk;;
+
+  int NB = bn;
+  int CB = bc;
+  int KB = bk;
+
+  int nb = 16; // or 32
+
+  printf("\n\n mlp sparse update \n\n");
+  printf("input shape: (%d, %d)\n", N, C);
+  printf("weight shape: (%d, %d)\n", C, K);
+  printf("grad_output shape: (%d, %d)\n", N, K);
+
+  /* Declare return variables */
+  auto grad_weight = at::empty(weight.sizes(), weight.options());
+
+  /* Used throughout this function */
+  libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+  int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+
   // update pass: input.transpose * grad_output = grad_weight
   float *l_input = (float *)libxsmm_aligned_malloc(sizeof(float) * N * C, 64);
   float *l_grad_output = (float *)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   // float *l_B_upd = (float *)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   // Reuse l_A from backward operation
+  float *l_C = (float *)libxsmm_aligned_malloc(sizeof(float) * C * K, 64);
   float *l_C_upd = (float *)libxsmm_aligned_malloc(sizeof(float) * C * K, 64);
 
   LIBXSMM_VLA_DECL(5, float, l_p_input, l_input, C / CB, NB / nb, CB, nb);
   LIBXSMM_VLA_DECL(5, float, l_p_grad_output, l_grad_output, K / KB, NB / nb, KB, nb);
 
   /* touch l_input - identical to forward pass - except it is transposed */
-  for (l_n = 0; l_n < N / NB; ++l_n) {
-      for (l_c = 0; l_c < C / CB; ++l_c) {
-          for (l_nn = 0; l_nn < NB / nb; ++l_nn) {
-              for (l_cc = 0; l_cc < CB; ++l_cc) {
-                  for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
+  for (int l_n = 0; l_n < N / NB; ++l_n) {
+      for (int l_c = 0; l_c < C / CB; ++l_c) {
+          for (int l_nn = 0; l_nn < NB / nb; ++l_nn) {
+              for (int l_cc = 0; l_cc < CB; ++l_cc) {
+                  for (int l_nnn = 0; l_nnn < nb; ++l_nnn) {
                       int i = l_nn * nb + l_nnn;
                       int j = l_cc;
 
+/*
                       LIBXSMM_VLA_ACCESS(5, l_p_input, l_n, l_c, l_nn, l_cc,
                               l_nnn, C / CB, NB / nb, CB, nb) =
                               (float)input[l_c][l_n][j][i].item().to<float>();
+                              */
+                      LIBXSMM_VLA_ACCESS(5, l_p_input, l_n, l_c, l_nn, l_cc,
+                              l_nnn, C / CB, NB / nb, CB, nb) =
+                              (float)input[l_n][l_c][i][j].item().to<float>();
                   }
               }
           }
       }
   }
 
-  /* touch l_grad_output. Maybe we'll be able to use l_A from previous */
-  for (l_n = 0; l_n < N / NB; ++l_n) {
-      for (l_k = 0; l_k < K / KB; ++l_k) {
-          for (l_nn = 0; l_nn < NB / nb; ++l_nn) {
-              for (l_kk = 0; l_kk < KB; ++l_kk) {
-                  for (l_nnn = 0; l_nnn < nb; ++l_nnn) {
+  /* touch l_grad_output */
+  for (int l_n = 0; l_n < N / NB; ++l_n) {
+      for (int l_k = 0; l_k < K / KB; ++l_k) {
+          for (int l_nn = 0; l_nn < NB / nb; ++l_nn) {
+              for (int l_kk = 0; l_kk < KB; ++l_kk) {
+                  for (int l_nnn = 0; l_nnn < nb; ++l_nnn) {
                       int i = l_n * NB + l_nn * nb + l_nnn;
                       int j = l_k * KB + l_kk;
 
-                      // printf("accessing index i, j: (%d, %d, %d, %d)\n", l_n, l_c, i, j);
                       LIBXSMM_VLA_ACCESS(5, l_p_grad_output, l_n, l_k, l_nn, l_kk,
-                              l_nnn, K / KB, NB / nb, KB, nb) = (float)grad_output[i][j].item().to<float>();
+                              l_nnn, K / KB, NB / nb, KB, nb) =
+                              (float)grad_output[i][j].item().to<float>();
                   }
               }
           }
@@ -833,27 +873,29 @@ RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}
   }
 
   /* touch C */
-  for (k = 0; k < K; ++k) {
-      for (c = 0; c < C; ++c) {
+  for (int k = 0; k < K; ++k) {
+      for (int c = 0; c < C; ++c) {
           l_C_upd[k * C + c] = 0.0f;
+          l_C[k * C + c] = 0.0f;
       }
   }
 
   /* init sparse C */
-  nnz = 0;
+  int nnz = 0;
 
-  unsigned int *_colptr = (unsigned int *)libxsmm_aligned_malloc(
+  unsigned int *colptr = (unsigned int *)libxsmm_aligned_malloc(
           (K + 1) * sizeof(unsigned int), 64);
-  _colptr[0] = 0;
 
-  for (l_k = 0; l_k < K; l_k++) {
-      _colptr[l_k + 1] = 0;
-      for (l_c = 0; l_c < C; l_c++) {
+  colptr[0] = 0;
+
+  for (int l_k = 0; l_k < K; l_k++) {
+      colptr[l_k + 1] = 0;
+      for (int l_c = 0; l_c < C; l_c++) {
           int nbk_idx = l_k / bk;
           int nbc_idx = l_c / bc;
           int bk_idx = l_k % bk;
           int bc_idx = l_c % bc;
-          tmp = (float)weight[nbk_idx][nbc_idx][bc_idx][bk_idx].item().to<float>();
+          float tmp = (float)weight[nbk_idx][nbc_idx][bc_idx][bk_idx].item().to<float>();
           if (tmp == 0.0) {
             // pass
           }
@@ -861,67 +903,82 @@ RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}
               nnz++;
               colptr[l_k + 1]++;
           }
-          l_C_upd[l_k * C + l_c] = (float)tmp;
+          l_C[l_k * C + l_c] = (float)tmp;
       }
   }
-  for (l_k = 0; l_k < K; l_k++) {
-      _colptr[l_k + 1] += _colptr[l_k];
+
+  for (int l_k = 0; l_k < K; l_k++) {
+      colptr[l_k + 1] += colptr[l_k];
   }
-  unsigned int *_rowidx = (unsigned int *)libxsmm_aligned_malloc(nnz * sizeof(unsigned int), 64);
-  float *_values = (float *)libxsmm_aligned_malloc(nnz * sizeof(float), 64);
-  for (l_k = 0; l_k < K; l_k++) {
-      int offset = _colptr[l_k];
-      for (l_c = 0; l_c < C; l_c++) {
-          if (l_C_upd[l_k * C + l_c] != 0) {
-              _rowidx[offset] = l_c;
-              _values[offset] = l_C_upd[l_k * C + l_c];
+
+  unsigned int *rowidx = (unsigned int *)libxsmm_aligned_malloc(nnz * sizeof(unsigned int), 64);
+  float *values = (float *)libxsmm_aligned_malloc(nnz * sizeof(float), 64);
+
+  for (int l_k = 0; l_k < K; l_k++) {
+      int offset = colptr[l_k];
+      for (int l_c = 0; l_c < C; l_c++) {
+          if (l_C[l_k * C + l_c] != 0) {
+              rowidx[offset] = l_c;
+              values[offset] = 0.0;
               offset++;
           }
       }
   }
-  // unsigned num_k_blocks = K / KB;
-  // unsigned num_c_blocks = C / CB;
-  num_blocks = num_k_blocks * num_c_blocks;
+  unsigned num_k_blocks = K / KB;
+  unsigned num_c_blocks = C / CB;
+  int num_blocks = num_k_blocks * num_c_blocks;
+
   unsigned int **c_colptr = (unsigned int **)libxsmm_aligned_malloc(
           num_blocks * sizeof(unsigned int *), 64);
   unsigned int **c_rowidx = (unsigned int **)libxsmm_aligned_malloc(
           num_blocks * sizeof(unsigned int *), 64);
-  float **c_values =
-  (float **)libxsmm_aligned_malloc(num_blocks * sizeof(float *), 64);
-  int *_nnzb = (int *)libxsmm_aligned_malloc(num_blocks * sizeof(int), 64);
-  for (blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
+  float **c_values = (float **)libxsmm_aligned_malloc(num_blocks * sizeof(float *), 64);
+
+  int *nnzb = (int *)libxsmm_aligned_malloc(num_blocks * sizeof(int), 64);
+
+  // Init c_colptr
+  for (int blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
       c_colptr[blk_idx] = (unsigned int *)libxsmm_aligned_malloc(
               (KB + 1) * sizeof(unsigned int), 64);
   }
-  BlockSpMatStep1(K, C, KB, CB, _colptr, _rowidx, c_colptr, _nnzb);
-  for (blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
-      c_rowidx[blk_idx] = (unsigned int *)libxsmm_aligned_malloc(
-              _nnzb[blk_idx] * sizeof(unsigned int), 64);
-      c_values[blk_idx] =
-          (float *)libxsmm_aligned_malloc(_nnzb[blk_idx] * sizeof(float), 64);
-  }
-  BlockSpMatStep2(K, C, KB, CB, _colptr, _rowidx, _values, c_colptr, c_rowidx, c_values);
 
-    /* UPD */
-  // alpha = 1.0;
-  // beta = 1.0;
-  libxsmm_descriptor_blob l_xgemm_blob_upd;
-  libxsmm_gemm_descriptor **l_xgemm_desc_upd =
-  (libxsmm_gemm_descriptor **)libxsmm_aligned_malloc(
+  BlockSpMatStep1(K, C, KB, CB, colptr, rowidx, c_colptr, nnzb);
+
+  // Init c_rowidx, c_values
+  for (int blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
+      c_rowidx[blk_idx] = (unsigned int *)libxsmm_aligned_malloc(
+              nnzb[blk_idx] * sizeof(unsigned int), 64);
+      c_values[blk_idx] =
+          (float *)libxsmm_aligned_malloc(nnzb[blk_idx] * sizeof(float), 64);
+  }
+
+  BlockSpMatStep2(K, C, KB, CB, colptr, rowidx, values, c_colptr, c_rowidx, c_values);
+
+  // Update kernels
+  float alpha = 1.0;
+  float beta = 1.0;
+  libxsmm_descriptor_blob l_xgemm_blob;
+
+  libxsmm_gemm_descriptor **l_xgemm_desc = (libxsmm_gemm_descriptor **)libxsmm_aligned_malloc(
           num_blocks * sizeof(libxsmm_gemm_descriptor *), 64);
-  libxsmm_smmfunction *upd_kernel =
-  (libxsmm_smmfunction *)libxsmm_aligned_malloc(
+
+  libxsmm_smmfunction *upd_kernel = (libxsmm_smmfunction *)libxsmm_aligned_malloc(
           num_blocks * sizeof(libxsmm_smmfunction), 64);
-  for (blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
-      l_xgemm_desc_upd[blk_idx] = libxsmm_gemm_descriptor_dinit(
-              &l_xgemm_blob_upd, LIBXSMM_GEMM_PRECISION(float), CB, KB, NB / nb, CB,
+
+  for (int blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
+      l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
+              &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), CB, KB, NB / nb, CB,
               KB, 0, alpha, beta, flags, prefetch);
       // Creating update micro kernels
       upd_kernel[blk_idx] =
-          libxsmm_create_xcsc_soa(l_xgemm_desc_upd[blk_idx], c_colptr[blk_idx],
+          libxsmm_create_xcsc_soa(
+                  l_xgemm_desc[blk_idx],
+                  c_colptr[blk_idx],
                   c_rowidx[blk_idx],
                   (const void *)c_values[blk_idx], nb).smm;
   }
+
+int k, n, c;
 #ifdef _OPENMP
 #   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c)
 #endif
@@ -931,7 +988,6 @@ RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}
               if (c_values[k * C/CB + c] != NULL) {
                   upd_kernel[k * C / CB + c](
                           &(l_input[(n * C / CB + c) * CB * NB]),
-                          // &(l_A[(n * K / KB + k) * KB * NB]),
                           &(l_grad_output[(n * K / KB + k) * KB * NB]),
                           c_values[k * C / CB + c]);
               }
@@ -940,11 +996,13 @@ RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}
   }
 
   auto grad_weight_temp = grad_weight.permute({1, 2, 0, 3}).reshape({C,K});
+
   /* Convert back to grad_weight */
-  for (l_k = 0; l_k < K/KB; ++l_k) {
-      for (l_c = 0; l_c < C/CB; ++l_c) {
+  int l_cc;
+  for (int l_k = 0; l_k < K/KB; ++l_k) {
+      for (int l_c = 0; l_c < C/CB; ++l_c) {
           int blk_idx = l_k * C/CB + l_c;
-          for (l_kk = 0; l_kk < KB; ++l_kk) {
+          for (int l_kk = 0; l_kk < KB; ++l_kk) {
               int colstart = c_colptr[blk_idx][l_kk];
               int colend = c_colptr[blk_idx][l_kk + 1];
               k = l_k * KB + l_kk;
@@ -952,42 +1010,12 @@ RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}
                   l_cc = c_rowidx[blk_idx][i];
                   c = l_c * CB + l_cc;
                   grad_weight_temp.index_put_({c, k}, c_values[blk_idx][i]);
-                  /*
-                  if ( fabs(v - l_C_gold[k * C + c]) > l_max_error ) {
-                      l_max_error = (float)fabs(v - l_C_gold[k * C + c]);
-                  }
-                  */
               }
           }
       }
   }
-  /*
-  for (l_k = 0; l_k < K / KB; ++l_k) {
-      for (l_c = 0; l_c < C / CB; ++l_c) {
-          int offset = (l_k * C / CB + l_c) * KB * CB;
 
-          // Block Grid
-          int i_blk_offset = l_c * CB;
-          int j_blk_offset = l_k * KB;
-          for (l_nn = 0; l_nn < KB * CB; ++l_nn) {
-              // Subblock grid
-              // blocks are sized 4x64x16
-
-              int i = (l_nn % (KB * nb)) / nb;
-              int j_small_offset = l_nn % nb;
-              int j_big_offset = l_nn / (nb * KB);;
-              int j = j_small_offset + (j_big_offset * nb);
-
-              grad_weight_temp.index_put_({j_blk_offset + j, i_blk_offset + i}, l_upd[offset + l_nn]);
-          }
-      }
-  }
-  */
-
-
-  return {
-    grad_input_temp.reshape({nbn, bn, nbc, bc}).permute({0, 2, 1, 3}),
-    grad_weight_temp.reshape({nbc, bc, nbk, bk}).permute({2, 0, 1, 3}), grad_bias};
+  return grad_weight_temp.reshape({nbc, bc, nbk, bk}).permute({2, 0, 1, 3});
 }
 
 
@@ -1091,4 +1119,5 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("destroy_handle", &destroy_handle, "Pcl libxsmm destroy MLP handle");
   m.def("sparse_forward", &mlp_sparse_forward, "Pcl libxsmm MLP sparse forward");
   m.def("sparse_backward", &mlp_sparse_backward, "Pcl libxsmm MLP sparse backward");
+  m.def("sparse_update", &mlp_sparse_update, "Pcl libxsmm MLP sparse update");
 }

@@ -54,17 +54,27 @@ class XsmmFC(Function):
         #t1 = time.time()
         grad_output = grad_output.contiguous()
 
-        grad_input, grad_weight, grad_bias = pcl_mlp_ext.sparse_backward(
-            handle.handle,
+        """
+        grad_input, grad_weight, grad_bias = pcl_mlp_ext.backward(handle.handle, grad_output, input, weight)
+        """
+
+        grad_input = pcl_mlp_ext.sparse_backward(
             grad_output,
             input,
             weight
         )
-        """
-        grad_input, grad_weight, grad_bias = pcl_mlp_ext.backward(handle.handle, grad_output, input, weight)
-        """
-        #t2 = time.time()
-        #print("XsmmFCBWD: q=%.3f w=%.3f" % ((t2-t1)*1000.0, (t3-t2)*1000.0))
+
+        grad_weight = pcl_mlp_ext.sparse_update(
+            grad_output,
+            input,
+            weight
+        )
+
+        print(grad_weight.shape)
+
+        grad_bias = grad_output.sum(axis=0)
+
+
         return (grad_input, grad_weight, grad_bias, None, None)
 
 class XsmmLinear(nn.Module):

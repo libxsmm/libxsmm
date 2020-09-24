@@ -1,10 +1,15 @@
 import torch
+import random
 import pcl_mlp
 
-MB = 128
+
+torch.manual_seed(77)
+random.seed(77)
+
+MB = 128 * 8
 N = MB
-K= 128 #128
-C=128 #64
+K=256 #128
+C=256 #64
 """
 
 MB = 64
@@ -17,10 +22,9 @@ fc = pcl_mlp.XsmmLinear(C, K, sparse_kernel_mode=True)
 #fc = pcl_mlp.XsmmLinear(C, K)
 tl = torch.nn.Linear(C, K)
 
-sparsity_rate = 0.9
+sparsity_rate = 0.8
 weight = torch.zeros(K, C, requires_grad=True)
 
-from random import random
 # Populate weight matrix
 for k in range(K):
     for c in range(C):
@@ -31,8 +35,8 @@ for k in range(K):
             weight[k, c] = 1.
         """
         # This doesn't cause segmentation error
-        if random() > sparsity_rate:
-            weight[k, c] = random()
+        if random.random() > sparsity_rate:
+            weight[k, c] = random.random()
 # bias = torch.randn(K, requires_grad=True)
 bias = torch.zeros(K, requires_grad=True)
 #print("Weight: ", weight)
@@ -91,18 +95,26 @@ print("ref: {}".format(x2.grad.mean()))
 
 # Testing weight grad
 if not tl.weight.grad.allclose(fc.weight.grad):
-  print("WeightGrad:")
-  print(fc.weight.grad.size())
-  print("xsmm: ", fc.weight.grad)
-  print(tl.weight.grad.size())
-  print("ref: ", tl.weight.grad)
-  print("Org weight: ", weight)
+    print("WeightGrad:")
+    print(fc.weight.grad.size())
+    print("xsmm: ", fc.weight.grad)
+    print(tl.weight.grad.size())
+    print("ref: ", tl.weight.grad)
 
-print("xsmm: {}".format(fc.weight.grad.mean()))
-print("ref: {}".format(tl.weight.grad.mean()))
+    print("Org weight: ", weight)
+
 
 """
+print("ref first line")
+print(tl.weight.grad[0, :])
 
+print("xsmm first line")
+print(fc.weight.grad[0, :])
+print("xsmm: {}".format(fc.weight.grad.mean()))
+print("ref: {}".format(tl.weight.grad.mean()))
+"""
+
+"""
 print(fc.weight.grad.size())
 print(fc.weight.grad.mean())
 print(tl.weight.grad.size())
