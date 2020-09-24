@@ -6882,105 +6882,41 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
   /* @TODO: check instruction set */
   LIBXSMM_UNUSED( i_instruction_set );
 
-  /* @TODO add checks in debug mode */
-  if ( io_generated_code->code_type > 1 ) {
-    /* @Greg please add encodings here */
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_regbas0 = i_gp_reg_base % 8;
-    int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-    int l_vecval0 = i_tile_reg_number;
-    int l_third = 0;
-    int l_fourth = 0;
-    int l_place = 0;
-    int l_forced_offset = 0;
+  /* check if passed in a correct instruction */
+  switch ( i_tmove_instr ) {
+    case LIBXSMM_X86_INSTR_TILELOADD:
+    case LIBXSMM_X86_INSTR_TILELOADDT1:
+    case LIBXSMM_X86_INSTR_TILESTORED:
+    case LIBXSMM_X86_INSTR_TILEZERO:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_tile_move: unexpected instruction number: %u\n", i_tmove_instr);
+      exit(-1);
+  }
 
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
+  if ( (io_generated_code->code_type > 1) &&
+       (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) ) {
+    /* check if we have enough code buffer space left */
+    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
     }
 
-    switch ( i_tmove_instr ) {
-      case LIBXSMM_X86_INSTR_TILELOADD:
-        l_third = 0x3;
-        l_fourth = 0x2;
-        break;
-      case LIBXSMM_X86_INSTR_TILELOADDT1:
-        l_third = 0x1;
-        l_fourth = 0x2;
-        break;
-      case LIBXSMM_X86_INSTR_TILESTORED:
-        l_third = 0x2;
-        l_fourth = 0x2;
-        break;
-      case LIBXSMM_X86_INSTR_TILEZERO:
-        l_third = 0x3;
-        if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF )
-        {
-           fprintf(stderr,"Bogus i_gp_reg_idx value in libxsmm_x86_instruction_tile_move() for a tilezero instruction\n");
-           exit(-1);
-        }
-        break;
-      default:
-        fprintf(stderr,"Unknown instruction in libxsmm_x86_instruction_tile_move\n");
-        break;
-    }
-    if ( (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15) && (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) )
-    {
-       fprintf(stderr,"libxsmm_x86_instruction_tile_move is using a bogus i_gp_reg_idx\n");
-       exit(-1);
-    }
-    if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
-    {
-       buf[i++] = (unsigned char)(0xc4);
-       buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20);
-       buf[i++] = (unsigned char)(0x78 + l_third);
-       buf[i++] = (unsigned char)(0x49 + l_fourth);
-       if ( i_tmove_instr != LIBXSMM_X86_INSTR_TILEZERO )
-       {
-          buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
-          l_place = i - 1;
-          buf[i++] = (unsigned char)(0x20 + l_regbas0);
-       } else {
-          buf[i++] = (unsigned char)(0xc0 + l_vecval0*8);
-       }
+    /* invoke VEX encoder */
+    if ( i_tmove_instr == LIBXSMM_X86_INSTR_TILEZERO ) {
+      libxsmm_x86_instruction_vex_compute_3reg ( io_generated_code,
+            i_tmove_instr, 'x', 0, 0, i_tile_reg_number );
     } else {
-       int l_regidx  = i_gp_reg_idx  % 8;
-       int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
-       int l_sca=0;
-
-       if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_RSP )
-       {
-          fprintf(stderr,"Please try to avoid using rsp as the idx register\n");
-          /* exit(-1); */
-       }
-
-       if (i_scale==2) l_sca=0x40;
-       else if (i_scale==4) l_sca=0x80;
-       else if (i_scale==8) l_sca=0xc0;
-
-       buf[i++] = (unsigned char)(0xc4);
-       buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20 - l_ix8 * 0x40);
-       buf[i++] = (unsigned char)(0x78 + l_third);
-       buf[i++] = (unsigned char)(0x49 + l_fourth);
-       buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
-       l_place  = i - 1;
-       buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+      if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
+        libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
+              i_tmove_instr, i_gp_reg_base, i_gp_reg_idx, i_scale,
+              i_displacement, 'x', 0, i_tile_reg_number );
+      } else {
+        fprintf(stderr, "libxsmm_x86_instruction_tile_move: instruction %u requires SIB addressing\n", i_tmove_instr);
+        exit(-1);
+      }
     }
-    if ( (l_regbas0 == 5) && (i_displacement==0) )
-    {
-        l_forced_offset = 1;
-    }
-    if ( i_tmove_instr != LIBXSMM_X86_INSTR_TILEZERO )
-    {
-        i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, 1, buf );
-    }
-
-    io_generated_code->code_size = i;
-
-  } else {
+  } else if ( io_generated_code->code_type < 2 )  {
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
@@ -7040,6 +6976,10 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
       default:
         break;
     }
+  } else {
+    /* general encoder error */
+    fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
+    exit(-1);
   }
 }
 
@@ -7054,109 +6994,54 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
   /* @TODO: check instruction set */
   LIBXSMM_UNUSED( i_instruction_set );
 
-  /* @TODO add checks in debug mode */
-  if ( io_generated_code->code_type > 1 ) {
-    /* @Greg please add encodings here */
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    /* int i = *loc; */
-    /* unsigned int l_maxsize = 1024; */
-    int l_vecval0;
-    int l_vecval1;
-    int l_vecval2;
-    int l_instroff = 0, l_instroff2 = 0, l_instroff3 = 0;
+  /* check if passed in a correct instruction */
+  switch ( i_tcompute_instr ) {
+    case LIBXSMM_X86_INSTR_TDPBSSD:
+    case LIBXSMM_X86_INSTR_TDPBSUD:
+    case LIBXSMM_X86_INSTR_TDPBUSD:
+    case LIBXSMM_X86_INSTR_TDPBUUD:
+    case LIBXSMM_X86_INSTR_TDPBF16PS:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_tile_compute: unexpected instruction number: %u\n", i_tcompute_instr);
+      exit(-1);
+  }
 
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
+  if ( (io_generated_code->code_type > 1) &&
+       (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) ) {
+    /* check if we have enough code buffer space left */
+    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
     }
 
-    /* This routine is strange in that it takes 3 input tile parameters, but *
-       some of the instructions it takes will only use 1 or 2 of them and    *
-       the others might be set to bogus values like UNDEF. So let's first *
-       only use tile values that are in a reasonable range.                  */
-    if ( i_tile_src_reg_number_0 > 7 )
-    {
-       l_vecval0 = 0;
+    /* invoke VEX encoder */
+    if ( ((i_tcompute_instr >> 28) & 0x3) == 3 ) {
+      libxsmm_x86_instruction_vex_compute_3reg ( io_generated_code, i_tcompute_instr, 'x',
+            i_tile_src_reg_number_1, i_tile_src_reg_number_0, i_tile_dst_reg_number );
     } else {
-       l_vecval0 = i_tile_src_reg_number_0;
+      fprintf(stderr, "libxsmm_x86_instruction_tile_compute: every insturction needs to have 3 operands\n");
+      exit(-1);
     }
-    if ( i_tile_src_reg_number_1 > 7 )
-    {
-       l_vecval1 = 0;
-    } else {
-       l_vecval1 = i_tile_src_reg_number_1;
-    }
-    if ( i_tile_dst_reg_number > 7 )
-    {
-       l_vecval2 = 0;
-    } else {
-       l_vecval2 = i_tile_dst_reg_number;
-    }
-
-    switch ( i_tcompute_instr ) {
-      case LIBXSMM_X86_INSTR_TDPBSSD:
-        l_instroff  = 0x03;
-        l_instroff2 = 0x16;
-        break;
-      case LIBXSMM_X86_INSTR_TDPBSUD:
-        l_instroff = 0x02;
-        l_instroff2 = 0x16;
-        break;
-      case LIBXSMM_X86_INSTR_TDPBUSD:
-        l_instroff = 0x01;
-        l_instroff2 = 0x16;
-        break;
-      case LIBXSMM_X86_INSTR_TDPBUUD:
-        l_instroff2 = 0x16;
-        break;
-      case LIBXSMM_X86_INSTR_TDPBF16PS:
-        l_instroff = 0x02;
-        l_instroff2 = 0x14;
-        break;
-      default:
-        fprintf(stderr,"Unknown instruction. This is bad\n");
-        break;
-    }
-
-    buf[i++] = (unsigned char)(0xc4);
-    buf[i++] = (unsigned char)(0xe2 + l_instroff3);
-    buf[i++] = (unsigned char)(0x78 + l_instroff - l_vecval0*8);
-    buf[i++] = (unsigned char)(0x48 + l_instroff2);
-    buf[i++] = (unsigned char)(0xc0 + l_vecval1 + l_vecval2*8);
-
-    io_generated_code->code_size = i;
-    /*    *loc = i; */
-
-  } else {
+  } else if ( io_generated_code->code_type < 2 ) {
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_instr_name[24];
     libxsmm_get_x86_instr_name( i_tcompute_instr, l_instr_name, 23 );
 
-    switch ( i_tcompute_instr ) {
-      case LIBXSMM_X86_INSTR_TDPBSSD:
-      case LIBXSMM_X86_INSTR_TDPBSUD:
-      case LIBXSMM_X86_INSTR_TDPBUSD:
-      case LIBXSMM_X86_INSTR_TDPBUUD:
-      case LIBXSMM_X86_INSTR_TDPBF16PS:
-      {
-        if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u, %%%%tmm%u, %%%%tmm%u\\n\\t\"\n",
-                                                       l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
-        } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%tmm%u, %%tmm%u, %%tmm%u\n",
-                                                       l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
-        }
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-        break;
-      }
-      default:
-        break;
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u, %%%%tmm%u, %%%%tmm%u\\n\\t\"\n",
+                                                   l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%tmm%u, %%tmm%u, %%tmm%u\n",
+                                                   l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
     }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  } else {
+    /* general encoder error */
+    fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
+    exit(-1);
   }
 }
 

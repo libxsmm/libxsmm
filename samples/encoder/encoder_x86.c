@@ -204,6 +204,40 @@ void test_prefetch( libxsmm_generated_code* mycode, unsigned int arch, unsigned 
   }
 }
 
+void test_tile_move( libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned int t;
+  unsigned int b;
+  unsigned int i;
+  unsigned int scale = 2;
+  unsigned int bcst;
+  int displ[3] = {0, 128, 2097152};
+  unsigned int d;
+
+  for (b = 0; b < 16; ++b ) {
+    for (i = 0; i < 16; ++i ) {
+      for ( d = 0; d < 3; ++d ) {
+        for (t = 0; t < 8; ++t ) {
+          libxsmm_x86_instruction_tile_move( mycode, mycode->arch, instr, b, i, scale, displ[d], t );
+        }
+      }
+    }
+  }
+}
+
+void test_tile_compute( libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned int t;
+
+  for (t = 0; t < 8; ++t ) {
+    libxsmm_x86_instruction_tile_compute ( mycode, mycode->arch, instr, t, 0, 0 );
+  }
+  for (t = 0; t < 8; ++t ) {
+    libxsmm_x86_instruction_tile_compute ( mycode, mycode->arch, instr, 0, t, 0 );
+  }
+  for (t = 0; t < 8; ++t ) {
+    libxsmm_x86_instruction_tile_compute ( mycode, mycode->arch, instr, 0, 0, t );
+  }
+}
+
 int main( /*int argc, char* argv[]*/ ) {
   unsigned char codebuffer[2097152];
   unsigned int arch;
@@ -211,7 +245,7 @@ int main( /*int argc, char* argv[]*/ ) {
   FILE *fp;
 
   /* setting arch for this test */
-  arch = LIBXSMM_X86_AVX512_CPX;
+  arch = LIBXSMM_X86_AVX512_SPR;
 
   /* init generated code object */
   mycode.generated_code = codebuffer;
@@ -240,7 +274,7 @@ int main( /*int argc, char* argv[]*/ ) {
 #endif
 
   /* testing vex mask load */
-#if 1
+#if 0
   test_vex_mask_load_store( &mycode, arch, LIBXSMM_X86_INSTR_VMASKMOVPD );
   test_vex_mask_load_store( &mycode, arch, LIBXSMM_X86_INSTR_VMASKMOVPS );
 #endif
@@ -248,6 +282,23 @@ int main( /*int argc, char* argv[]*/ ) {
   /* testing prefetches */
 #if 0
   test_prefetch( &mycode, arch, LIBXSMM_X86_INSTR_CLDEMOTE );
+#endif
+
+  /* testing tile move */
+#if 0
+  test_tile_move( &mycode, LIBXSMM_X86_INSTR_TILELOADD );
+  test_tile_move( &mycode, LIBXSMM_X86_INSTR_TILELOADDT1 );
+  test_tile_move( &mycode, LIBXSMM_X86_INSTR_TILESTORED );
+  test_tile_move( &mycode, LIBXSMM_X86_INSTR_TILEZERO );
+#endif
+
+  /* testing tile compute */
+#if 1
+  test_tile_compute( &mycode, LIBXSMM_X86_INSTR_TDPBSSD );
+  test_tile_compute( &mycode, LIBXSMM_X86_INSTR_TDPBSUD );
+  test_tile_compute( &mycode, LIBXSMM_X86_INSTR_TDPBUSD );
+  test_tile_compute( &mycode, LIBXSMM_X86_INSTR_TDPBUUD );
+  test_tile_compute( &mycode, LIBXSMM_X86_INSTR_TDPBF16PS );
 #endif
 
   /* dump stream into binday file */
