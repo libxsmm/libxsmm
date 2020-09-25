@@ -135,7 +135,7 @@ int main(void)
   libxsmm_aligned(p, NULL/*inc*/, &avalue);
 
   /* check the alignment of the allocation */
-  if (0 != (((uintptr_t)p) % alignment) || avalue < alignment) {
+  if (0 != (((uintptr_t)p) % alignment) || ((size_t)avalue) < alignment) {
     ++nerrors;
   }
 

@@ -478,11 +478,12 @@ LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(libxsmm_blasi
 LIBXSMM_API libxsmm_meltwfunction_zero libxsmm_dispatch_meltw_zero(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type);
 LIBXSMM_API libxsmm_meltwfunction_add libxsmm_dispatch_meltw_add(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type);
 LIBXSMM_API libxsmm_meltwfunction_mul libxsmm_dispatch_meltw_mul(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type);
-LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type);
+LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_relu_flags flags);
 LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_meltw_cvtfp32bf16(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type);
 LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16_act libxsmm_dispatch_meltw_cvtfp32bf16_act(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_cvta_flags flags);
 LIBXSMM_API libxsmm_meltwfunction_act_cvtfp32bf16 libxsmm_dispatch_meltw_act_cvtfp32bf16(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_acvt_flags flags);
 LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_reduce(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_redu_flags flags);
+LIBXSMM_API libxsmm_meltwfunction_reduce_cols_idx libxsmm_dispatch_meltw_reduce_cols_idx(libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype idx_type);
 LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_scal_flags flags);
 
 /** Code generation routine for transposes using a descriptor */

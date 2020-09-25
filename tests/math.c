@@ -67,7 +67,7 @@ int main(/*int argc, char* argv[]*/)
 {
   const unsigned long long scale64 = ((unsigned long long)-1) / (RAND_MAX) - 1;
   const unsigned int scale32 = ((unsigned int)-1) / (RAND_MAX) - 1;
-  int warn_dsqrt = 0, warn_ssqrt = 0, i;
+  int warn_dsqrt = 0, warn_ssqrt = 0, i, j;
 
   for (i = 0; i < 256; ++i) {
     const float a = libxsmm_sexp2_u8((unsigned char)i);
@@ -207,6 +207,12 @@ int main(/*int argc, char* argv[]*/)
     for (i = 0; i < n; ++i) {
       if (LIBXSMM_UP2POT(a[i]) != b[i]) exit(EXIT_FAILURE);
       if (LIBXSMM_LO2POT(a[i]) != c[i]) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(a[i]) != (0 != a[i] && a[i] == LIBXSMM_UP2POT(a[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(a[i]) != (0 != a[i] && a[i] == LIBXSMM_LO2POT(a[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(b[i]) != (0 != b[i] && b[i] == LIBXSMM_UP2POT(b[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(b[i]) != (0 != b[i] && b[i] == LIBXSMM_LO2POT(b[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(c[i]) != (0 != c[i] && c[i] == LIBXSMM_UP2POT(c[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(c[i]) != (0 != c[i] && c[i] == LIBXSMM_LO2POT(c[i]))) exit(EXIT_FAILURE);
     }
   }
 
@@ -241,7 +247,7 @@ int main(/*int argc, char* argv[]*/)
     unsigned int fact[32];
     for (i = 0; i < n; ++i) {
       const int np = libxsmm_primes_u32(test[i], fact);
-      int j; for (j = 1; j < np; ++j) fact[0] *= fact[j];
+      for (j = 1; j < np; ++j) fact[0] *= fact[j];
       if (0 < np && fact[0] != test[i]) {
         exit(EXIT_FAILURE);
       }

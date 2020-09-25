@@ -197,55 +197,9 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
   }
 }
 
-/* New encoding: */
-/* highest byte "MM":
- *   0x01 : "0F"
- *   0x02 : "0F38"
- *   0x03 : "0F3A"
- * second highes byte, W (highest 4 bit), P[10]=1 (third bit), pp (lower 2 bits):
- *   0x05 : W0, 66
- *   0x06 : W0, F3
- *   0x07 : W0, F2
- *   0x85 : W1, 66
- *   0x86 : W1, F3
- *   0x87 : W1, F2
- * third highest byte corresponds to the data unit size by powers of two
- *   data_size = 2^(3rd byte). Use 6 for 64 in most cases
- * last, lowest byte is OP from manual
- *   0xYY
- * Stores are handled by adding one to the last lowest byte
- */
-
-#if 0
-unsigned char tbl_evex_RRp[32]  = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
-                                   0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
-                                   0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-unsigned char tbl_evex_BX[32]   = {0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60,
-                                   0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
-                                   0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-unsigned char tbl_evex_vvvv[32] = {0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
-                                   0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00,
-                                   0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
-                                   0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00 };
-
-unsigned char tbl_evex_vp[32]   = {0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
-                                   0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
-                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-unsigned char tbl_scale[9]      = {0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
-#endif
-
-
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_2reg_mem( libxsmm_generated_code* io_generated_code,
-                                                   const unsigned int      i_instruction_set,
+void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_generated_code,
                                                    const unsigned int      i_vec_instr,
-                                                   const unsigned int      i_use_broadcast,
                                                    const unsigned int      i_gp_reg_base,
                                                    const unsigned int      i_gp_reg_idx,
                                                    const unsigned int      i_scale,
@@ -254,200 +208,418 @@ void libxsmm_x86_instruction_vec_compute_2reg_mem( libxsmm_generated_code* io_ge
                                                    const unsigned int      i_vec_reg_number_src,
                                                    const unsigned int      i_vec_reg_number_dst )
 {
-  int code_head       = io_generated_code->code_size;
-  unsigned char* code = (unsigned char *) io_generated_code->generated_code;
-  unsigned char tbl_sizeregs[8]   = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-
+  unsigned int code_head = io_generated_code->code_size;
+  unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
   /* easy to address bytes by names */
-  int evexp = code_head;
-  int p0    = code_head+1;
-  int p1    = code_head+2;
-  int p2    = code_head+3;
-  int op    = code_head+4;
-  int modrm = code_head+5;
-  int sib   = code_head+6;
-  int l_ch; /* local code_head for when this value changes */
-  int l_sizereg; /* data unit size */
-  int l_forced_offset = 0;  /* Sometimes we force an offset to store 0 */
-  int small_displacement;
-  unsigned char tbl_evex_RRp[32]  = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
-                                     0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
-                                     0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-                                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-  unsigned char tbl_evex_BX[32]   = {0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60,
-                                     0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
-                                     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-                                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-  unsigned char tbl_evex_vvvv[32] = {0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
-                                     0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00,
-                                     0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
-                                     0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00 };
-  unsigned char tbl_evex_vp[32]   = {0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
-                                     0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
-                                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-  unsigned char tbl_scale[9]      = {0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
-  unsigned char *cptr = (unsigned char *) &i_vec_instr;
+  unsigned int vexp  = code_head;
+  unsigned int p0    = code_head+1;
+  unsigned int p1    = code_head+2;
+  unsigned int op    = code_head+3;
+  unsigned int modrm = code_head+4;
+  unsigned int sib   = code_head+5;
+  /* the following 3 arrays are look-up table for register names and
+     datatype width, we use look up tables to avoid if-statements in
+     the encoding path */
+  unsigned char tbl_vex_vvvv[16]   = {0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
+                                      0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00 };
+  unsigned char tbl_scale[9]       = {0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
+  unsigned char tbl_vl[2]          = {0x00, 0x04};
+  /* control variable if we need to encode in SIB mode */
+  unsigned char l_have_sib = 0;
+  /* index for VL look-ups */
+  unsigned int l_vl_idx;
+  /* when having RBP/R13 as base register, we need a SIB byte, even without idx GPR */
+  unsigned char l_forced_zdisp8 = 0;
+  /* we need a local non-const i_gp_reg_idx copy */
+  unsigned int l_gp_reg_idx;
+  /* we need a local non-const i_scale copy */
+  unsigned int l_scale;
 
-  LIBXSMM_UNUSED( i_instruction_set );
-  LIBXSMM_UNUSED( i_vector_name );
-
+  /* 1st phase: let's compute some static information before starting the
+     encoding process */
+  /* 1 A) determinig VL only valid values for i_vector_name are 'x'-128bit, 'y'-256bit, 'z'-512bit */
+  l_vl_idx = i_vector_name - 'x';
 #if 0
-printf("DEBUG: Inside libxsmm_x86_instruction_vec_compute_2reg_mem\n");
+  if ( l_vl_dix < 0 || l_vl_dix > 1 ) {
+    fprintf(stderr, "It seems an out-of-bound vector length was specified: %d\n", i_vector_name);
+    exit(-1);
+  }
 #endif
 
-  /* const EVEX prefix */
-  code[evexp] = 0x62;
-
-  /* p0-op based on instruction value */
-  code[p0   ] = (unsigned char)((i_vec_instr >> 24) & 3);
-  code[p1   ] = (unsigned char)(i_vec_instr >> 16);
-  /*printf("Initial 3rd byte is 0x%02x and i_vec_instr>>16 is %d\n",code[p1],i_vec_instr>>16);*/
-#if 0
-  code[p2   ] = (unsigned char)(i_vec_instr >> 8);
-#else
-  code[p2 ] = 0x00;
-#endif
-  code[op   ] = (unsigned char) i_vec_instr;
-
-  if ( i_use_broadcast ) {
-     l_sizereg = tbl_sizeregs[cptr[1]>>4];
+  /* 1 B) determine if SIB addressing mode is needed */
+  if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
+    l_have_sib = 1;
+    l_gp_reg_idx = LIBXSMM_X86_GP_REG_RSP;
+    l_scale = 0;
+  } else if ( i_gp_reg_idx < 16 ) {
+    l_have_sib = 1;
+    l_gp_reg_idx = i_gp_reg_idx;
+    l_scale = i_scale;
   } else {
-     l_sizereg = tbl_sizeregs[cptr[1] & 0xF ];
+    l_have_sib = 0;
+    l_gp_reg_idx = 0;
+    l_scale = 0;
   }
 
-  /* R and R' */
-  code[p0   ] |= (unsigned char) tbl_evex_RRp[i_vec_reg_number_dst];
-#if 0
-printf("Next 2nd byte is 0x%02x and i_vec_reg_number_dst=%d and |= with 0x%02x\n",code[p0],i_vec_reg_number_dst,tbl_evex_RRp[i_vec_reg_number_dst]);
-printf("i_vec_reg_number_dst=%d tbl_evex_RRp[%d]=%d\n",i_vec_reg_number_dst,i_vec_reg_number_dst,tbl_evex_RRp[i_vec_reg_number_dst]);
-#endif
+  /* 1 D) determing if a force zero displacement is needed */
+  if ( ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RBP) || (i_gp_reg_base == LIBXSMM_X86_GP_REG_R13) ) && (i_displacement == 0) ) {
+    l_forced_zdisp8 = 1;
+  } else {
+    l_forced_zdisp8 = 0;
+  }
 
+  /* 2nd phase: encoding */
+  /* 2 A): writing an insturction template into the byte stream */
+  /* @TODO, we right now only encode 3byte VEX */
+  /* const VEX prefix */
+  code[vexp ] = 0xc4;
+  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
+  code[p0   ] = (unsigned char)((i_vec_instr >> 12) & 0x0f);
+  /* W-bit and PP prefix */
+  code[p1   ] = (unsigned char)((i_vec_instr >> 16) & 0x83);
+  /* we are just copying over the OP-code */
+  code[op   ] = (unsigned char) i_vec_instr;
+
+  /* 2 B) filling the missing prefix bits based on table look ups */
+  /* R */
+  code[p0   ] |= (unsigned char)(( i_vec_reg_number_dst < 8 ) ? 0x80 : 0x00);
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_src];
-#if 0
-printf("Next 3rd byte is 0x%02x and i_vec_reg_number_src=%d and |= with 0x%02x\n",code[p1],i_vec_reg_number_src,tbl_evex_vvvv[i_vec_reg_number_src]);
-#endif
-  code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_src];
+  code[p1   ] |= (unsigned char)tbl_vex_vvvv[i_vec_reg_number_src];
+  /* VL: 128bit,256bit */
+  code[p1   ] |= (unsigned char)tbl_vl[l_vl_idx];
 
-  /* 512bit */
-  code[p2   ] |= (unsigned char)0x40;
-
-  /* broadcast */
-  code[p2   ] |= (unsigned char)(i_use_broadcast == 0) ? 0x00 : 0x10;
-
+  /* 2 C) construction of the Modrm and SIB bytes */
   /* we want to do SIB */
-  if ( i_gp_reg_idx < 16 ) {
+  if ( l_have_sib != 0 ) {
     /* set B */
-    code[p0   ] |= (unsigned char)( i_gp_reg_base < 8 ) ? 0x20 : 0x00;
-#if 0
-printf("SIB 2nd byte is 0x%02x and i_gp_reg_base=%d\n",code[p0],i_gp_reg_base);
-#endif
+    code[p0   ] |= (unsigned char)(( i_gp_reg_base < 8 ) ? 0x20 : 0x00);
     /* set X */
-    code[p0   ] |= (unsigned char)( i_gp_reg_idx  < 8 ) ? 0x40 : 0x00;
-#if 0
-printf("SIB2 2nd byte is 0x%02x and i_gp_reg_idx=%d\n",code[p0],i_gp_reg_idx);
-#endif
-
+    code[p0   ] |= (unsigned char)(( l_gp_reg_idx  < 8 ) ? 0x40 : 0x00);
     /* set registers in modrm and SIB */
     code[modrm] = (unsigned char)(((unsigned char)(i_vec_reg_number_dst << 3)) & 0x38);
     code[modrm] |= (unsigned char)0x04; /* set SIB mode*/
     /* set SIB */
-    code[sib  ]  = tbl_scale[i_scale];
-    code[sib  ] |= (unsigned char)(((unsigned char)(i_gp_reg_idx << 3)) & 0x38);
+    code[sib  ]  = tbl_scale[l_scale];
+    code[sib  ] |= (unsigned char)(((unsigned char)(l_gp_reg_idx << 3)) & 0x38);
     code[sib  ] |= (unsigned char)(((unsigned char) i_gp_reg_base  )    & 0x07);
-
-    code_head +=7;
-  } else if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
-    /* B and X */
-    code[p0   ] |=  (unsigned char)tbl_evex_BX[i_gp_reg_base];
-#if 0
-printf("Undef 2nd byte is 0x%02x and i_gp_reg_base=%d and |= with 0x%02x\n",code[p0],i_gp_reg_base,tbl_evex_BX[i_gp_reg_base]);
-#endif
-
+    /*adjust code head*/
+    code_head += 6;
+  } else {
+    /* B is used and X is unused */
+    code[p0   ] |=  (unsigned char)(( i_gp_reg_base < 8 ) ? 0x20 : 0x00);
     /* set registers in modrm */
     code[modrm] = (unsigned char)(((unsigned char)(i_vec_reg_number_dst << 3)) & 0x38);
     code[modrm] |= (unsigned char)(((unsigned char) i_gp_reg_base           )  & 0x07);
-
-    code_head += 6;
-  } else {
-    code[ sib ] = (unsigned char)0x00;
-    io_generated_code->code_size = code_head + 6;
-#if 0
-printf("We are returning from the routine early: code_head+6=%d\n",code_head+6);
-#endif
-    return;
+    /* adjust coede head*/
+    code_head += 5;
   }
 
-#if 0
-  printf("i_use_broadcast=%d l_sizereg/8=%d\n",i_use_broadcast,l_sizereg/8);
-  if ( i_use_broadcast ) l_sizereg /= 8;
-#endif
-
-  /* add displacement if needed */
-  if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_RBP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R13 ) {
-    l_forced_offset = 1;
-  }
-  if ( ((i_displacement != 0) && (l_forced_offset==0)) || (l_forced_offset==1))
-  {
-    small_displacement = i_displacement / l_sizereg;
-    if ( (i_displacement % l_sizereg == 0) && (small_displacement <= 127) &&
-         (small_displacement>=-128) ) {
-      code[modrm]  |= (unsigned char)0x40;
-      l_ch = code_head;
-      if ( i_gp_reg_idx > 15 ) {
-         if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP ) {
-            code[l_ch++] = (unsigned char)0x24;
-         }
-         if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_R12 ) {
-            code[l_ch++] = (unsigned char)0x24;
-         }
-      }
-      code[l_ch] = (unsigned char)small_displacement;
-      io_generated_code->code_size = l_ch+1;
+  /* 2 D) add displacemnt, if needed */
+  if ( (i_displacement != 0) || (l_forced_zdisp8 != 0) ) {
+    if ( (i_displacement <= 127) && (i_displacement >=-128) ) {
+      code[modrm]       |= (unsigned char)0x40;
+      code[code_head++]  = (unsigned char)(i_displacement);
     } else {
-      code[modrm]   |= (unsigned char)0x80;
-      l_ch = code_head;
-      if ( i_gp_reg_idx > 15 ) {
-         if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP ) {
-            code[l_ch++] = (unsigned char)0x24;
-         }
-         if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_R12 ) {
-            code[l_ch++] = (unsigned char)0x24;
-         }
-      }
-      code[ l_ch ] = (unsigned char)(i_displacement);
-      code[l_ch+1] = (unsigned char)(i_displacement >> 8);
-      code[l_ch+2] = (unsigned char)(i_displacement >> 16);
-      code[l_ch+3] = (unsigned char)(i_displacement >> 24);
-      io_generated_code->code_size = l_ch+4;
+      code[modrm]       |= (unsigned char)0x80;
+      code[code_head++]  = (unsigned char)(i_displacement);
+      code[code_head++]  = (unsigned char)(i_displacement >> 8);
+      code[code_head++]  = (unsigned char)(i_displacement >> 16);
+      code[code_head++]  = (unsigned char)(i_displacement >> 24);
     }
-  } else {
-    code[modrm]   &= (unsigned char)0x3f;
-    l_ch = code_head;
-    if ( i_gp_reg_idx > 15 ) {
-       if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP ) {
-          code[l_ch++] = (unsigned char)0x24;
-       }
-       if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_R12 ) {
-          code[l_ch++] = (unsigned char)0x24;
-       }
-    }
-    io_generated_code->code_size = l_ch;
-  }
+  } else {}
+
+  /* before return advance to code head ptr in the global structure */
+  io_generated_code->code_size = code_head;
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_3reg( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_instruction_set,
+void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_vec_instr,
                                                const char              i_vector_name,
                                                const unsigned int      i_vec_reg_number_0,
                                                const unsigned int      i_vec_reg_number_1,
                                                const unsigned int      i_vec_reg_number_2 )
 {
-  int code_head       = io_generated_code->code_size;
-  unsigned char* code = (unsigned char *) io_generated_code->generated_code;
+  unsigned int code_head = io_generated_code->code_size;
+  unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
+  /* easy to address bytes by names */
+  unsigned int vexp  = code_head;
+  unsigned int p0    = code_head+1;
+  unsigned int p1    = code_head+2;
+  unsigned int op    = code_head+3;
+  unsigned int modrm = code_head+4;
+  /* the following 8 arrays are look-up table for register names and
+     datatype width, we use look up tables to avoid if-statements in
+     the encoding path */
+  unsigned char tbl_vex_vvvv[16]   = {0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
+                                      0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00 };
+  unsigned char tbl_vl[2]          = {0x00, 0x04};
+  /* index for VL look-ups */
+  unsigned int l_vl_idx;
+
+  /* 1st phase: let's compute some static information before starting the
+     encoding process */
+  /* 1 A) determinig VL only valid values for i_vector_name are 'x'-128bit, 'y'-256bit */
+  l_vl_idx = i_vector_name - 'x';
+#if 0
+  if ( l_vl_dix < 0 || l_vl_dix > 1 ) {
+    fprintf(stderr, "It seems an out-of-bound vector length was specified: %d\n", i_vector_name);
+    exit(-1);
+  }
+#endif
+
+  /* 2nd phase: encoding */
+  /* 2 A): writing an insturction template into the byte stream */
+  /* const VEX prefix */
+  code[vexp ] = 0xc4;
+  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
+  code[p0   ] = (unsigned char)((i_vec_instr >> 12) & 0x0f);
+  /* W-bit and PP prefix */
+  code[p1   ] = (unsigned char)((i_vec_instr >> 16) & 0x83);
+  /* we are just copying over the OP-code */
+  code[op   ] = (unsigned char) i_vec_instr;
+
+  /* 2 B) filling the missing prefix bits based on table look ups */
+  /* R */
+  code[p0   ] |= (unsigned char)(( i_vec_reg_number_2 < 8 ) ? 0x80 : 0x00);
+  /* B is used and X is unused */
+  code[p0   ] |= (unsigned char)(( i_vec_reg_number_0 < 8 ) ? 0x20 : 0x00);
+  /* vvvv and V' */
+  code[p1   ] |= (unsigned char)tbl_vex_vvvv[i_vec_reg_number_1];
+  /* VL: 128bit,256bit */
+  code[p1   ] |= (unsigned char)tbl_vl[l_vl_idx];
+
+  /* 2 C) setting modrm, we are in reg-only addressing mode */
+  code[modrm]  = (unsigned char)0xc0;
+  code[modrm] |= (unsigned char)(((unsigned char)(i_vec_reg_number_2 << 3)) & 0x38);
+  code[modrm] |= (unsigned char)(((unsigned char) i_vec_reg_number_0)       & 0x07);
+
+  io_generated_code->code_size = code_head+5;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const unsigned int      i_use_broadcast,
+                                                    const unsigned int      i_gp_reg_base,
+                                                    const unsigned int      i_gp_reg_idx,
+                                                    const unsigned int      i_scale,
+                                                    const int               i_displacement,
+                                                    const char              i_vector_name,
+                                                    const unsigned int      i_vec_reg_number_src,
+                                                    const unsigned int      i_vec_reg_number_dst,
+                                                    const unsigned int      i_mask_reg_number,
+                                                    const unsigned int      i_use_zero_masking )
+{
+  unsigned int code_head = io_generated_code->code_size;
+  unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
+  /* easy to address bytes by names */
+  unsigned int evexp = code_head;
+  unsigned int p0    = code_head+1;
+  unsigned int p1    = code_head+2;
+  unsigned int p2    = code_head+3;
+  unsigned int op    = code_head+4;
+  unsigned int modrm = code_head+5;
+  unsigned int sib   = code_head+6;
+  /* the following 8 arrays are look-up table for register names and
+     datatype width, we use look up tables to avoid if-statements in
+     the encoding path */
+  unsigned char tbl_evex_RRp[32]    = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+                                      0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
+                                      0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  unsigned char tbl_evex_BX[32]     = {0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60,
+                                      0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
+                                      0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  unsigned char tbl_evex_vvvv[32]   = {0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
+                                      0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00,
+                                      0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
+                                      0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00 };
+  unsigned char tbl_evex_vp[32]     = {0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+                                      0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  unsigned char tbl_scale[9]        = {0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
+  unsigned char tbl_vl[3]           = {0x00, 0x20, 0x40};
+  unsigned char tbl_disp8div[8]     = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+  unsigned char tbl_disp8divbcst[2] = {0x04, 0x08};
+  /* control variable if we need to encode in SIB mode */
+  unsigned char l_have_sib = 0;
+  /* index for VL look-ups */
+  unsigned int l_vl_idx;
+  /* W-bit */
+  unsigned char l_wbit;
+  /* displacement 8 divider */
+  unsigned char l_disp8div;
+  /* when having RBP/R13 as base register, we need a SIB byte, even without idx GPR */
+  unsigned char l_forced_zdisp8 = 0;
+  /* index into the disp8div table */
+  unsigned char l_disp8div_idx;
+  /* compressed displacement */
+  int l_comp_disp;
+  /* we need a local non-const i_gp_reg_idx copy */
+  unsigned int l_gp_reg_idx;
+  /* we need a local non-const i_scale copy */
+  unsigned int l_scale;
+
+  /* 1st phase: let's compute some static information before starting the
+     encoding process */
+  /* 1 A) determinig VL only valid values for i_vector_name are 'x'-128bit, 'y'-256bit, 'z'-512bit */
+  l_vl_idx = i_vector_name - 'x';
+#if 0
+  if ( l_vl_dix < 0 || l_vl_dix > 2 ) {
+    fprintf(stderr, "It seems an out-of-bound vector length was specified: %d\n", i_vector_name);
+    exit(-1);
+  }
+#endif
+
+  /* 1 B) handling EVEX compressed displacement */
+  if ( i_use_broadcast ) {
+    l_wbit     = (unsigned char)((i_vec_instr >> 23) & 1);
+    l_disp8div = tbl_disp8divbcst[ l_wbit ];
+  } else {
+    /* read initial VL=512 calibrated disp8div look up */
+    l_disp8div_idx = (unsigned char)((i_vec_instr >> 8) & 0x07);
+    /* check we need to adjsut because of VL */
+    if ( (unsigned char)((i_vec_instr >> 8) & 0x08) == 8 ) {
+      /* Bit 11 is set:  Don't adjust depending on VL */
+      l_disp8div = tbl_disp8div[l_disp8div_idx];
+    } else {
+      /* Bit 11 not set: now we need Spaghetti code */
+      if ( i_vector_name != 'z' ) {
+        if ( (i_vector_name == 'x') && (i_vec_instr == 0x20871612) ) {
+          /* VMOVDDUP is a special case: eventually FORCE VEX encoding */
+          l_disp8div_idx = (unsigned char)(l_disp8div_idx - 3);
+        } else {
+          /* Changing the index will adjust the powers of 2 automatically */
+          if ( l_disp8div_idx < (2 - l_vl_idx) ) {
+            l_disp8div_idx = 0;
+          } else {
+            l_disp8div_idx = (unsigned char)(l_disp8div_idx + l_vl_idx - 2);
+          }
+        }
+      }
+      l_disp8div = tbl_disp8div[l_disp8div_idx];
+    }
+  }
+
+  /* 1 C) determine if SIB addressing mode is needed */
+  if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
+    l_have_sib = 1;
+    l_gp_reg_idx = LIBXSMM_X86_GP_REG_RSP;
+    l_scale = 0;
+  } else if ( i_gp_reg_idx < 16 ) {
+    l_have_sib = 1;
+    l_gp_reg_idx = i_gp_reg_idx;
+    l_scale = i_scale;
+  } else {
+    l_have_sib = 0;
+    l_gp_reg_idx = 0;
+    l_scale = 0;
+  }
+
+  /* 1 D) determing if a force zero displacement is needed */
+  if ( ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RBP) || (i_gp_reg_base == LIBXSMM_X86_GP_REG_R13) ) && (i_displacement == 0) ) {
+    l_forced_zdisp8 = 1;
+  } else {
+    l_forced_zdisp8 = 0;
+  }
+
+  /* 2nd phase: encoding */
+  /* 2 A): writing an insturction template into the byte stream */
+  /* const EVEX prefix */
+  code[evexp] = 0x62;
+  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
+  code[p0   ] = (unsigned char)((i_vec_instr >> 12) & 0x0f);
+  /* W-bit and PP prefix */
+  code[p1   ] = (unsigned char)((i_vec_instr >> 16) & 0x87);
+  /* the fourth prefix byte needs to be compute, let's set it to 0 for now */
+  code[p2   ] = 0x00;
+  /* we are just copying over the OP-code */
+  code[op   ] = (unsigned char) i_vec_instr;
+
+  /* 2 B) filling the missing prefix bits based on table look ups */
+  /* R and R' */
+  code[p0   ] |= (unsigned char) tbl_evex_RRp[i_vec_reg_number_dst];
+  /* vvvv and V' */
+  code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_src];
+  code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_src];
+  /* VL: 128bit,256bit,512bit */
+  code[p2   ] |= (unsigned char)tbl_vl[l_vl_idx];
+  /* broadcast */
+  code[p2   ] |= (unsigned char)((i_use_broadcast == 0) ? 0x00 : 0x10);
+  /* masking */
+  code[p2   ] |= (unsigned char)((((i_use_zero_masking != 0) && (i_mask_reg_number != 0)) ? 0x80 : 0x00) | (i_mask_reg_number & 0x07));
+
+  /* 2 C) construction of the Modrm and SIB bytes */
+  /* we want to do SIB */
+  if ( l_have_sib != 0 ) {
+    /* set B */
+    code[p0   ] |= (unsigned char)(( i_gp_reg_base < 8 ) ? 0x20 : 0x00);
+    /* set X */
+    code[p0   ] |= (unsigned char)(( l_gp_reg_idx  < 8 ) ? 0x40 : 0x00);
+    /* set registers in modrm and SIB */
+    code[modrm] = (unsigned char)(((unsigned char)(i_vec_reg_number_dst << 3)) & 0x38);
+    code[modrm] |= (unsigned char)0x04; /* set SIB mode*/
+    /* set SIB */
+    code[sib  ]  = tbl_scale[l_scale];
+    code[sib  ] |= (unsigned char)(((unsigned char)(l_gp_reg_idx << 3)) & 0x38);
+    code[sib  ] |= (unsigned char)(((unsigned char) i_gp_reg_base  )    & 0x07);
+    /*adjust code head*/
+    code_head += 7;
+  } else {
+    /* B and X */
+    code[p0   ] |=  (unsigned char)tbl_evex_BX[i_gp_reg_base];
+    /* set registers in modrm */
+    code[modrm] = (unsigned char)(((unsigned char)(i_vec_reg_number_dst << 3)) & 0x38);
+    code[modrm] |= (unsigned char)(((unsigned char) i_gp_reg_base           )  & 0x07);
+    /* adjust coede head*/
+    code_head += 6;
+  }
+
+  /* 2 D) add displacemnt, if needed */
+  if ( (i_displacement != 0) || (l_forced_zdisp8 != 0) ) {
+    l_comp_disp = i_displacement / l_disp8div;
+    if ( (i_displacement % l_disp8div == 0) && (l_comp_disp <= 127) &&
+         (l_comp_disp>=-128) ) {
+      code[modrm]       |= (unsigned char)0x40;
+      code[code_head++]  = (unsigned char)l_comp_disp;
+    } else {
+      code[modrm]       |= (unsigned char)0x80;
+      code[code_head++]  = (unsigned char)(i_displacement);
+      code[code_head++]  = (unsigned char)(i_displacement >> 8);
+      code[code_head++]  = (unsigned char)(i_displacement >> 16);
+      code[code_head++]  = (unsigned char)(i_displacement >> 24);
+    }
+  } else {}
+
+  /* before return advance to code head ptr in the global structure */
+  io_generated_code->code_size = code_head;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_vec_instr,
+                                                const char              i_vector_name,
+                                                const unsigned int      i_vec_reg_number_0,
+                                                const unsigned int      i_vec_reg_number_1,
+                                                const unsigned int      i_vec_reg_number_2,
+                                                const unsigned int      i_mask_reg_number,
+                                                const unsigned int      i_use_zero_masking )
+{
+  unsigned int code_head = io_generated_code->code_size;
+  unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
+  /* easy to address bytes by names */
+  unsigned int evexp = code_head;
+  unsigned int p0    = code_head+1;
+  unsigned int p1    = code_head+2;
+  unsigned int p2    = code_head+3;
+  unsigned int op    = code_head+4;
+  unsigned int modrm = code_head+5;
+  /* the following 8 arrays are look-up table for register names and
+     datatype width, we use look up tables to avoid if-statements in
+     the encoding path */
   unsigned char tbl_evex_RRp[32]  = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
                                      0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
                                      0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
@@ -464,45 +636,48 @@ void libxsmm_x86_instruction_vec_compute_3reg( libxsmm_generated_code* io_genera
                                      0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  unsigned char tbl_vl[3]         = {0x00, 0x20, 0x40};
+  /* index for VL look-ups */
+  unsigned int l_vl_idx;
 
-  /* easy to address bytes by names */
-  int evexp = code_head;
-  int p0    = code_head+1;
-  int p1    = code_head+2;
-  int p2    = code_head+3;
-  int op    = code_head+4;
-  int modrm = code_head+5;
-
-  LIBXSMM_UNUSED( i_instruction_set );
-  LIBXSMM_UNUSED( i_vector_name );
-
-  /* const EVEX prefix */
-  code[evexp] = (unsigned char)0x62;
-
-  /* p0-op based on instruction value */
-  code[p0   ] = (unsigned char)((i_vec_instr >> 24) & 3); /* only get lower */
-  code[p1   ] = (unsigned char)(i_vec_instr >> 16);
+  /* 1st phase: let's compute some static information before starting the
+     encoding process */
+  /* 1 A) determinig VL only valid values for i_vector_name are 'x'-128bit, 'y'-256bit, 'z'-512bit */
+  l_vl_idx = i_vector_name - 'x';
 #if 0
-  code[p2   ] = (unsigned char)(i_vec_instr >> 8);
-#else
-  code[p2   ] = (unsigned char)0x00;
+  if ( l_vl_dix < 0 || l_vl_dix > 2 ) {
+    fprintf(stderr, "It seems an out-of-bound vector length was specified: %d\n", i_vector_name);
+    exit(-1);
+  }
 #endif
+
+  /* 2nd phase: encoding */
+  /* 2 A): writing an insturction template into the byte stream */
+  /* const EVEX prefix */
+  code[evexp] = 0x62;
+  /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
+  code[p0   ] = (unsigned char)((i_vec_instr >> 12) & 0x0f);
+  /* W-bit and PP prefix */
+  code[p1   ] = (unsigned char)((i_vec_instr >> 16) & 0x87);
+  /* the fourth prefix byte needs to be compute, let's set it to 0 for now */
+  code[p2   ] = 0x00;
+  /* we are just copying over the OP-code */
   code[op   ] = (unsigned char) i_vec_instr;
 
+  /* 2 B) filling the missing prefix bits based on table look ups */
   /* R and R' */
   code[p0   ] |= (unsigned char)tbl_evex_RRp[i_vec_reg_number_2];
-
   /* B and X */
   code[p0   ] |= (unsigned char) tbl_evex_BX[i_vec_reg_number_0];
-
   /* vvvv and V' */
   code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_1];
   code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_1];
+  /* VL: 128bit,256bit,512bit */
+  code[p2   ] |= (unsigned char)tbl_vl[l_vl_idx];
+  /* masking */
+  code[p2   ] |= (unsigned char)((((i_use_zero_masking != 0) && (i_mask_reg_number != 0)) ? 0x80 : 0x00) | (i_mask_reg_number & 0x07));
 
-  /* 512bit */
-  code[p2   ] |= (unsigned char)0x40;
-
-  /* set modrm, we are in reg-only addressing mode */
+  /* 2 C) setting modrm, we are in reg-only addressing mode */
   code[modrm]  = (unsigned char)0xc0;
   code[modrm] |= (unsigned char)(((unsigned char)(i_vec_reg_number_2 << 3)) & 0x38);
   code[modrm] |= (unsigned char)(((unsigned char) i_vec_reg_number_0)       & 0x07);
@@ -512,7 +687,6 @@ void libxsmm_x86_instruction_vec_compute_3reg( libxsmm_generated_code* io_genera
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_3reg_imm8( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_instruction_set,
                                                     const unsigned int      i_vec_instr,
                                                     const char              i_vector_name,
                                                     const unsigned int      i_vec_reg_number_0,
@@ -521,37 +695,36 @@ void libxsmm_x86_instruction_vec_compute_3reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned char     i_imm8 )
 {
   unsigned char* code = (unsigned char *) io_generated_code->generated_code;
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                            i_instruction_set,
-                                            i_vec_instr,
-                                            i_vector_name,
-                                            i_vec_reg_number_0,
-                                            i_vec_reg_number_1,
-                                            i_vec_reg_number_2 );
+
+  libxsmm_x86_instruction_evex_compute_3reg( io_generated_code,
+                                             i_vec_instr,
+                                             i_vector_name,
+                                             i_vec_reg_number_0,
+                                             i_vec_reg_number_1,
+                                             i_vec_reg_number_2,
+                                             0, 0 );
   /* add imm byte */
   code[io_generated_code->code_size++] = i_imm8;
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_2reg( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_instruction_set,
                                                const unsigned int      i_vec_instr,
                                                const char              i_vector_name,
                                                const unsigned int      i_vec_reg_number_0,
                                                const unsigned int      i_vec_reg_number_1 )
 {
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                            i_instruction_set,
-                                            i_vec_instr,
-                                            i_vector_name,
-                                            i_vec_reg_number_0,
-                                            0,
-                                            i_vec_reg_number_1 );
+  libxsmm_x86_instruction_evex_compute_3reg( io_generated_code,
+                                             i_vec_instr,
+                                             i_vector_name,
+                                             i_vec_reg_number_0,
+                                             0,
+                                             i_vec_reg_number_1,
+                                             0, 0 );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_instruction_set,
                                                     const unsigned int      i_vec_instr,
                                                     const char              i_vector_name,
                                                     const unsigned int      i_vec_reg_number_0,
@@ -559,96 +732,80 @@ void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned char     i_imm8 )
 {
   libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
-                                                 i_instruction_set,
-                                                 i_vec_instr,
-                                                 i_vector_name,
-                                                 i_vec_reg_number_0,
-                                                 0,
-                                                 i_vec_reg_number_1,
-                                                 i_imm8 );
+                                                  i_vec_instr,
+                                                  i_vector_name,
+                                                  i_vec_reg_number_0,
+                                                  0,
+                                                  i_vec_reg_number_1,
+                                                  i_imm8 );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated_code,
-                                     const unsigned int      i_vmove_instr,
-                                     const unsigned int      i_gp_reg_base,
-                                     const unsigned int      i_gp_reg_idx,
-                                     const unsigned int      i_scale,
-                                     const int               i_displacement,
-                                     const char              i_vector_name,
-                                     const unsigned int      i_vec_reg_number_0,
-                                     const unsigned int      i_vec_reg_mask_0,
-                                     const unsigned int      i_is_store )
+                                            const unsigned int      i_vmove_instr,
+                                            const unsigned int      i_gp_reg_base,
+                                            const unsigned int      i_gp_reg_idx,
+                                            const unsigned int      i_scale,
+                                            const int               i_displacement,
+                                            const char              i_vector_name,
+                                            const unsigned int      i_vec_reg_number_0,
+                                            const unsigned int      i_vec_reg_mask_0,
+                                            const unsigned int      i_is_store )
 {
-  /* @TODO add checks in debug mode */
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    /* int i = *loc; */
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    /* unsigned int l_maxsize = 1024; */
-    int l_regbas0 = i_gp_reg_base % 8;
-    int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-    int l_regidx  = 0;
-    int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
-    int l_vecval0 = i_vec_reg_number_0 % 8;
-    int l_vecgrp0 = i_vec_reg_number_0 / 8;
-    int l_oddgrp0 = ((l_vecgrp0 % 2)==1);
-    int l_vecval1 = i_vec_reg_mask_0 % 8;
-    int l_vecgrp1 = i_vec_reg_mask_0 / 8;
-    int l_oddgrp1 = ((l_vecgrp1 % 2)==1);
-    int l_sca=0;
-    int l_inst = 0;
-    int l_place1;
+  unsigned int l_vmove_instr;
 
-    if ( /*(i_gp_reg_idx>=0) &&*/ i_gp_reg_idx<=15 ) l_regidx = i_gp_reg_idx % 8;
+  /* check if passed in a correct instruction */
+  switch ( i_vmove_instr ) {
+    case LIBXSMM_X86_INSTR_VMASKMOVPD:
+    case LIBXSMM_X86_INSTR_VMASKMOVPS:
+#if 0
+    case LIBXSMM_X86_INSTR_VMASKMOVPD_LD:
+    case LIBXSMM_X86_INSTR_VMASKMOVPS_LD:
+#endif
+    case LIBXSMM_X86_INSTR_VMASKMOVPD_ST:
+    case LIBXSMM_X86_INSTR_VMASKMOVPS_ST:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: unexpected instruction number: %u\n", i_vmove_instr);
+      exit(-1);
+  }
 
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
+  /* select the code generator REX/VEX/EVEX */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
+       (i_vmove_instr >= 16777216) &&
+       (io_generated_code->code_type > 1) ) {
+    /* check if we have enough code buffer space left */
+    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
     }
 
-    if (i_scale==2) l_sca=0x40;
-    else if (i_scale==4) l_sca=0x80;
-    else if (i_scale==8) l_sca=0xc0;
-
-    if ( (i_vector_name != 'y') && (i_vector_name != 'Y') )
-    {
-       fprintf(stderr, "libxsmm_instruction_vec_mask_move only works with i_vector_name as y for ymm* registers\n");
-       exit(-1);
+    /* as LD/ST semantics have different op codes we need some fix-ups here */
+    switch (i_vmove_instr) {
+      case LIBXSMM_X86_INSTR_VMASKMOVPD:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMASKMOVPD_LD : LIBXSMM_X86_INSTR_VMASKMOVPD_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMASKMOVPS:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMASKMOVPS_LD : LIBXSMM_X86_INSTR_VMASKMOVPS_ST;
+        break;
+      default:
+        l_vmove_instr = i_vmove_instr;
+        break;
     }
 
-    switch ( i_vmove_instr ) {
-       case LIBXSMM_X86_INSTR_VMASKMOVPD:
-          if ( i_is_store == 0 ) l_inst= 0x01; else l_inst= 0x03;
-          break;
-       case LIBXSMM_X86_INSTR_VMASKMOVPS:
-          if ( i_is_store == 0 ) l_inst= 0x00; else l_inst= 0x02;
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_vec_mask_move: Exactly what sort of instructions are you using?\n");
-          exit(-1);
-    }
-
-    buf[i++] = (unsigned char)(0xc4);
-    buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20 - l_ix8 * 0x40 - l_oddgrp0 * 0x80);
-    buf[i++] = (unsigned char)(0x7d - l_oddgrp1 * 0x40 - l_vecval1*8);
-    buf[i++] = (unsigned char)(0x2c + l_inst);
-    l_place1 = i;
-    if ( /*(i_gp_reg_idx>=0) &&*/ i_gp_reg_idx<=15 )
-    {
-       buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
-       buf[i++] = (unsigned char)(l_sca + l_regbas0 + l_regidx*8);
-    } else {
-       buf[i++] = (unsigned char)(l_regbas0 + l_vecval0*8);
-    }
-
-    i += internal_x86_instructions_add_offset( l_place1, i, i_displacement, 0, 1, buf );
-
-    io_generated_code->code_size = i;
-    /* *loc = i; */
+    /* invoke VEX encoder */
+    libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
+          l_vmove_instr, i_gp_reg_base,
+          i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+          i_vec_reg_mask_0, i_vec_reg_number_0 );
+  } else if ( io_generated_code->code_type < 2 ) {
+    /* add inline/assembly printing */
+    fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: ASM/inline ASM is not supported\n");
+    exit(-1);
   } else {
+    /* general encoder error */
+    fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
+    exit(-1);
   }
 }
 
@@ -667,6 +824,80 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_use_zero_masking,
                                        const unsigned int      i_is_store )
 {
+  unsigned int l_vmove_instr;
+
+  /* check if passed in a correct instruction */
+  switch ( i_vmove_instr ) {
+    case LIBXSMM_X86_INSTR_VMOVAPD:
+    case LIBXSMM_X86_INSTR_VMOVAPS:
+    case LIBXSMM_X86_INSTR_VMOVUPD:
+    case LIBXSMM_X86_INSTR_VMOVUPS:
+    case LIBXSMM_X86_INSTR_VMOVSS:
+    case LIBXSMM_X86_INSTR_VMOVSD:
+    case LIBXSMM_X86_INSTR_VMOVDQA32:
+    case LIBXSMM_X86_INSTR_VMOVDQA64:
+    case LIBXSMM_X86_INSTR_VMOVDQU8:
+    case LIBXSMM_X86_INSTR_VMOVDQU16:
+    case LIBXSMM_X86_INSTR_VMOVDQU32:
+    case LIBXSMM_X86_INSTR_VMOVDQU64:
+#if 0
+    case LIBXSMM_X86_INSTR_VMOVAPD_LD:
+    case LIBXSMM_X86_INSTR_VMOVAPS_LD:
+    case LIBXSMM_X86_INSTR_VMOVUPD_LD:
+    case LIBXSMM_X86_INSTR_VMOVUPS_LD:
+    case LIBXSMM_X86_INSTR_VMOVSS_LD:
+    case LIBXSMM_X86_INSTR_VMOVSD_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQA32_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQA64_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU8_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU16_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU32_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
+#endif
+    case LIBXSMM_X86_INSTR_VMOVAPD_ST:
+    case LIBXSMM_X86_INSTR_VMOVAPS_ST:
+    case LIBXSMM_X86_INSTR_VMOVUPD_ST:
+    case LIBXSMM_X86_INSTR_VMOVUPS_ST:
+    case LIBXSMM_X86_INSTR_VMOVSS_ST:
+    case LIBXSMM_X86_INSTR_VMOVSD_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQA32_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQA64_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQU8_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQU16_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQU32_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
+    case LIBXSMM_X86_INSTR_VPBROADCASTD:
+    case LIBXSMM_X86_INSTR_VPBROADCASTQ:
+    case LIBXSMM_X86_INSTR_VPBROADCASTB:
+    case LIBXSMM_X86_INSTR_VPBROADCASTW:
+    case LIBXSMM_X86_INSTR_VBROADCASTSD:
+    case LIBXSMM_X86_INSTR_VBROADCASTSS:
+    case LIBXSMM_X86_INSTR_VBROADCASTSD_VEX:
+    case LIBXSMM_X86_INSTR_VMOVNTPD:
+    case LIBXSMM_X86_INSTR_VMOVNTPS:
+    case LIBXSMM_X86_INSTR_VMOVNTDQ:
+    case LIBXSMM_X86_INSTR_VPMOVDW:
+    case LIBXSMM_X86_INSTR_VPMOVDB:
+    case LIBXSMM_X86_INSTR_VPMOVSDB:
+    case LIBXSMM_X86_INSTR_VPMOVUSDB:
+    case LIBXSMM_X86_INSTR_VPMOVSXWD:
+    case LIBXSMM_X86_INSTR_VPMOVZXWD:
+    case LIBXSMM_X86_INSTR_VPMOVSXBD:
+    case LIBXSMM_X86_INSTR_VPMOVZXBD:
+    case LIBXSMM_X86_INSTR_VMOVDDUP:
+    case LIBXSMM_X86_INSTR_MOVUPD:
+    case LIBXSMM_X86_INSTR_MOVAPS:
+    case LIBXSMM_X86_INSTR_MOVUPS:
+    case LIBXSMM_X86_INSTR_MOVSD:
+    case LIBXSMM_X86_INSTR_MOVSS:
+    case LIBXSMM_X86_INSTR_MOVDDUP:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_instruction_vec_move: unexpected instruction number: %u\n", i_vmove_instr);
+      exit(-1);
+  }
+
+  /* check for correct streaming stores */
   if ( (i_is_store == 0) && ( (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPD) ||
                               (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPS) ||
                               (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTDQ)   )) {
@@ -674,13 +905,103 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     exit(-1);
   }
 
+  /* check that we are not masking 'y' */
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mask_reg_number != 0) ) {
+    fprintf(stderr, "libxsmm_instruction_vec_move: Masking is only available for AVX512!\n");
+    exit(-1);
+  }
+
+  /* check zero masking */
+  if ( (i_use_zero_masking != 0) && (i_mask_reg_number != 0) && (i_is_store != 0) ) {
+    fprintf(stderr, "libxsmm_instruction_vec_move: zero-masked store cannot operate on memory destination!\n");
+    exit(-1);
+  }
+
+  /* select the code generator REX/VEX/EVEX */
+  if ( ((io_generated_code->arch == LIBXSMM_X86_AVX) || (io_generated_code->arch == LIBXSMM_X86_AVX2) || (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE)) &&
+       (i_vmove_instr >= 16777216) &&
+       (io_generated_code->code_type > 1 ) ) {
+    /* check if we have enough code buffer space left */
+    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+     /* LD/ST insturction have only 2 operanads */
+    if ( ((i_vmove_instr >> 28) & 0x3) == 2 ) {
+      /* as LD/ST semantics have different op codes we need some fix-ups here */
+      switch (i_vmove_instr) {
+        case LIBXSMM_X86_INSTR_VMOVAPD:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVAPD_LD : LIBXSMM_X86_INSTR_VMOVAPD_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVUPD:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVUPD_LD : LIBXSMM_X86_INSTR_VMOVUPD_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVAPS:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVAPS_LD : LIBXSMM_X86_INSTR_VMOVAPS_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVUPS:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVUPS_LD : LIBXSMM_X86_INSTR_VMOVUPS_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVSD:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVSD_LD : LIBXSMM_X86_INSTR_VMOVSD_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVSS:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVSS_LD : LIBXSMM_X86_INSTR_VMOVSS_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQA32:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQA32_LD : LIBXSMM_X86_INSTR_VMOVDQA32_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQA64:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQA64_LD : LIBXSMM_X86_INSTR_VMOVDQA64_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQU8:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU8_LD : LIBXSMM_X86_INSTR_VMOVDQU8_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQU16:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU16_LD : LIBXSMM_X86_INSTR_VMOVDQU16_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQU32:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU32_LD : LIBXSMM_X86_INSTR_VMOVDQU32_ST;
+          break;
+        case LIBXSMM_X86_INSTR_VMOVDQU64:
+          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU64_LD : LIBXSMM_X86_INSTR_VMOVDQU64_ST;
+          break;
+        default:
+          l_vmove_instr = i_vmove_instr;
+          break;
+      }
+
+      if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) {
+        libxsmm_x86_instruction_evex_compute_2reg_mem ( io_generated_code,
+              l_vmove_instr, 0, i_gp_reg_base,
+              i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+              0, i_vec_reg_number_0, i_mask_reg_number, i_use_zero_masking );
+      } else {
+        /* we need to patch some instructions for VEX from the EVEX header */
+        switch (l_vmove_instr) {
+          case LIBXSMM_X86_INSTR_VBROADCASTSD:
+            l_vmove_instr = LIBXSMM_X86_INSTR_VBROADCASTSD_VEX;
+            break;
+          default:
+            break;
+        }
+
+        libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
+              l_vmove_instr, i_gp_reg_base,
+              i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+              0, i_vec_reg_number_0 );
+      }
+    } else {
+      printf("WARNING: You are calling vec_move with a 3-operand instruction. Are you sure you know what you're doing?\n");
+    }
+    return;
+  }
+
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    /* int i = *loc; */
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    /* unsigned int l_maxsize = 1024; */
     int l_iregnum = i_gp_reg_base   % 8;
     int l_vregnum = i_vec_reg_number_0 % 8;
     int l_ivectype=0, l_ivectype2=0, l_iregoff=0, l_ivectype3=0;
@@ -694,22 +1015,6 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     int l_sse3 = 0;
     int l_insert_extra_byte = 0;
     int l_fpadj = 0;
-
-    if ( (i_vector_name != 'z') && (i_mask_reg_number != 0) )
-    {
-       fprintf(stderr, "libxsmm_instruction_vec_move: Masking is only enabled with zmm registers!\n");
-       exit(-1);
-    }
-    if ( (i_use_zero_masking != 0) && (i_mask_reg_number != 0) && (i_is_store != 0) )
-    {
-      fprintf(stderr, "libxsmm_instruction_vec_move: zero-masked store cannot operate on memory destination!\n");
-      exit(-1);
-    }
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
-    }
 
     l_num = i_vec_reg_number_0 / 8;
     switch ( i_vmove_instr ) {
@@ -1344,7 +1649,60 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
                                                    const unsigned int      i_vec_reg_dst,
                                                    const unsigned int      i_shuffle_operand )
 {
-  LIBXSMM_UNUSED(i_instruction_set);
+  LIBXSMM_UNUSED( i_instruction_set );
+
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
+       (i_vec_instr >= 16777216) &&
+       (io_generated_code->code_type > 1 ) ) {
+
+    if ( ((i_vec_instr >> 28) & 3) == 2 ) {
+      int l_reversal = (i_vec_instr >> 27) & 1;
+      int l_imm8 = (i_vec_instr >> 19) & 1;
+
+      if ( i_vec_reg_src_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
+        if ( i_vec_reg_src_1 != 0 ) {
+          /* It might otherwise be intentional */
+            printf("WARNING: You are using 2 operand instruction in vec_compute_convert but i_vec_reg_src_1 is %d not UNDEF\n",i_vec_reg_src_1);
+        }
+      }
+      if ( l_reversal && !l_imm8 ) {
+        libxsmm_x86_instruction_vec_compute_2reg ( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_dst, i_vec_reg_src_0 );
+      } else if ( l_reversal && l_imm8 ) {
+        libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_dst, i_vec_reg_src_0,
+             (unsigned char) i_shuffle_operand );
+      } else if ( !l_reversal && !l_imm8 ) {
+        libxsmm_x86_instruction_vec_compute_2reg ( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_src_0, i_vec_reg_dst );
+      } else if ( !l_reversal && l_imm8 ) {
+        libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_src_0, i_vec_reg_dst,
+             (unsigned char) i_shuffle_operand );
+      }
+    } else if ( ((i_vec_instr >> 28) & 3) == 3 ) {
+      int l_imm8 = (i_vec_instr >> 19) & 1;
+      if ( l_imm8 ) {
+        libxsmm_x86_instruction_vec_compute_3reg_imm8 ( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_src_0, i_vec_reg_src_1, i_vec_reg_dst,
+             (unsigned char) i_shuffle_operand );
+      } else {
+        libxsmm_x86_instruction_evex_compute_3reg( io_generated_code,
+             i_vec_instr, i_vector_name,
+             i_vec_reg_src_0, i_vec_reg_src_1, i_vec_reg_dst, 0, 0 );
+      }
+    } else {
+      fprintf( stderr, "Error: single opperand convert encodings don't exists\n");
+      exit(-1);
+    }
+    return ;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size; /* i = *loc; */
@@ -1530,13 +1888,12 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_2 )
 {
 
-  if ( (i_instruction_set >= LIBXSMM_X86_AVX512_CORE) &&
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
        (i_vec_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
 
-     if ( (i_vec_instr >> 27) > 0 ) {
-        /* two byte operand */
-printf("two operand\n");
+     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
+       /* two byte operand */
 #if 1
         if ( i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF ) {
            if ( i_vec_reg_number_2 != 0 ) {
@@ -1544,18 +1901,18 @@ printf("two operand\n");
               printf("WARNING: You are using 2 operand instruction in vec_compute_reg but i_vec_reg_number_2 is %d not UNDEF\n",i_vec_reg_number_2);
            }
         }
-        libxsmm_x86_instruction_vec_compute_3reg ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
-          i_vec_reg_number_0, 0, i_vec_reg_number_1 );
+        libxsmm_x86_instruction_evex_compute_3reg ( io_generated_code,
+          i_vec_instr, i_vector_name,
+          i_vec_reg_number_0, 0, i_vec_reg_number_1, 0, 0 );
 #else
-        libxsmm_x86_instruction_vec_compute_3reg ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
-          i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2 );
+        libxsmm_x86_instruction_evex_compute_3reg ( io_generated_code,
+          i_vec_instr, i_vector_name,
+          i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2, 0, 0 );
 #endif
      } else {
-        libxsmm_x86_instruction_vec_compute_3reg ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
-          i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2 );
+        libxsmm_x86_instruction_evex_compute_3reg ( io_generated_code,
+          i_vec_instr, i_vector_name,
+          i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2, 0, 0 );
      }
      return ;
   }
@@ -2983,30 +3340,25 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
   printf("DEBUG: Inside libxsmm_x86_instruction_vec_compute_mem(#,set=%d,instr=%d,brd=%d,base=%d,idx=%d,scale=%d,disp=%d,name=%c,reg0=%d,reg1=%d\n",i_instruction_set,i_vec_instr,i_use_broadcast,i_gp_reg_base,i_gp_reg_idx,i_scale,i_displacement,i_vector_name,i_vec_reg_number_0,i_vec_reg_number_1);
 #endif
 
-  if ( (i_instruction_set >= LIBXSMM_X86_AVX512_CORE) &&
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
        (i_vec_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
 
-     if ( (i_vec_instr >> 27) > 0 ) {
-        /* two byte operand */
-#if 0
-printf("two operand:\n");
-#endif
+     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
         if ( i_vec_reg_number_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
            if ( i_vec_reg_number_1 != 0 ) { /* It might be intentional, no warning needed */
-
               printf("WARNING: You are using i_vec_reg_number_1 in a 2-operand memory instruction, expected UNDEF not %d\n",i_vec_reg_number_1);
            }
         }
-        libxsmm_x86_instruction_vec_compute_2reg_mem( io_generated_code,
-          i_instruction_set, i_vec_instr, i_use_broadcast, i_gp_reg_base,
+        libxsmm_x86_instruction_evex_compute_2reg_mem( io_generated_code,
+          i_vec_instr, i_use_broadcast, i_gp_reg_base,
           i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
-          0, i_vec_reg_number_0 );
+          0, i_vec_reg_number_0, 0, 0 );
      } else {
-        libxsmm_x86_instruction_vec_compute_2reg_mem( io_generated_code,
-          i_instruction_set, i_vec_instr, i_use_broadcast, i_gp_reg_base,
+        libxsmm_x86_instruction_evex_compute_2reg_mem( io_generated_code,
+          i_vec_instr, i_use_broadcast, i_gp_reg_base,
           i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
-          i_vec_reg_number_0, i_vec_reg_number_1 );
+          i_vec_reg_number_0, i_vec_reg_number_1, 0, 0 );
      }
      return ;
   }
@@ -4241,6 +4593,32 @@ printf("two operand:\n");
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_imm8( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_instruction_set,
+                                              const unsigned int      i_vec_instr,
+                                              const unsigned int      i_use_broadcast,
+                                              const unsigned int      i_gp_reg_base,
+                                              const unsigned int      i_gp_reg_idx,
+                                              const unsigned int      i_scale,
+                                              const int               i_displacement,
+                                              const char              i_vector_name,
+                                              const unsigned int      i_vec_reg_number_0,
+                                              const unsigned int      i_vec_reg_number_1,
+                                              const unsigned char     i_imm8 )
+{
+  unsigned char* code = (unsigned char *) io_generated_code->generated_code;
+  libxsmm_x86_instruction_vec_compute_mem ( io_generated_code,
+                                            i_instruction_set, i_vec_instr,
+                                            i_use_broadcast, i_gp_reg_base,
+                                            i_gp_reg_idx, i_scale,
+                                            i_displacement, i_vector_name,
+                                            i_vec_reg_number_0,
+                                            i_vec_reg_number_1 );
+  /* add imm byte */
+  code[io_generated_code->code_size++] = i_imm8;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_generated_code,
                                                     const unsigned int      i_instruction_set,
                                                     const unsigned int      i_vec_instr,
@@ -4256,8 +4634,10 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
                                                     const unsigned int      i_mask_reg_number,
                                                     const unsigned int      i_use_zero_masking )
 {
+  LIBXSMM_UNUSED( i_instruction_set );
+
   /* @TODO add checks in debug mode */
-  if ( (i_instruction_set < LIBXSMM_X86_AVX512)  &&
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512)  &&
        (i_use_broadcast != 0) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_AVX512_BCAST );
     return;
@@ -4567,8 +4947,10 @@ void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_genera
                                                const char              i_vector_name,
                                                const unsigned int      i_vec_reg_number_src,
                                                const unsigned int      i_vec_reg_number_dest ) {
+  LIBXSMM_UNUSED( i_instruction_set );
+
   /* @TODO add checks in debug mode */
-  if ( i_instruction_set != LIBXSMM_X86_AVX512_KNM ) {
+  if ( io_generated_code->arch != LIBXSMM_X86_AVX512_KNM ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_AVX512_QFMA );
     return;
   }
@@ -4744,24 +5126,38 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
                                               const unsigned int      i_shuffle_operand )
 {
 
-  if ( (i_instruction_set >= LIBXSMM_X86_AVX512_CORE) &&
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
        (i_vec_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
 
 #if 0
      printf("DEBUG: Calling new encoder (3reg_imm8) within vec_shuffle_reg\n");
 #endif
-     if ( (i_vec_instr >> 27) > 0 ) {
+     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
         /* Two operand instruction */
-        libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
-          i_vec_reg_number_0, i_vec_reg_number_1,
-          i_shuffle_operand );
+        int l_reversal = (i_vec_instr >> 27) & 1;
+        if ( i_vec_reg_number_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
+           if ( i_vec_reg_number_1 != 0 ) {
+              /* It might otherwise be intentional */
+              printf("WARNING: You are using 2 operand instruction in vec_shuffle_reg but i_vec_reg_number_1 is %d not UNDEF\n",i_vec_reg_number_1);
+           }
+        }
+        if ( l_reversal ) {
+           libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
+                           i_vec_instr, i_vector_name,
+                           i_vec_reg_number_2, i_vec_reg_number_0,
+                           (unsigned char) i_shuffle_operand );
+        } else {
+           libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
+                            i_vec_instr, i_vector_name,
+                           i_vec_reg_number_0, i_vec_reg_number_2,
+                           (unsigned char) i_shuffle_operand );
+        }
      } else {
         libxsmm_x86_instruction_vec_compute_3reg_imm8 ( io_generated_code,
-          i_instruction_set, i_vec_instr, i_vector_name,
+          i_vec_instr, i_vector_name,
           i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2,
-          i_shuffle_operand );
+          (unsigned char) i_shuffle_operand );
      }
      return ;
   }
@@ -5227,6 +5623,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     int l_ix8 = ((i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ? 1 : 0);
     int l_sse_preamble = 64;
     int l_place1 = i + 2;
+    int l_opcode = 0;
 
     if ( l_maxsize - i < 20 )
     {
@@ -5253,6 +5650,10 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
        case LIBXSMM_X86_INSTR_PREFETCHNTA:
           l_instype -= 16;
           break;
+       case LIBXSMM_X86_INSTR_CLDEMOTE:
+          l_opcode = 0x4;
+          l_instype -= 16;
+          break;
        case LIBXSMM_X86_INSTR_VPREFETCH0:
           fprintf(stderr, "libxsmm_instruction_prefetch: don't yet do vprefetch0\n");
           exit(-1);
@@ -5277,7 +5678,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ){
         LIBXSMM_ASSERT(i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF);
         buf[i++] = 0x0f;
-        buf[i++] = 0x18;
+        buf[i++] = (unsigned char)(0x18 + l_opcode);
         buf[i++] = (unsigned char)(0x10 + l_instype + l_regbas0);
         if ( l_regbas0 == 4 ) buf[i++]=0x24;
     } else {
@@ -5287,7 +5688,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         else if (i_scale == 4) l_sca = 0x80;
         else if (i_scale == 8) l_sca = 0xc0;
         buf[i++] = 0x0f;
-        buf[i++] = 0x18;
+        buf[i++] = (unsigned char)(0x18 + l_opcode);
         buf[i++] = (unsigned char)(0x14 + l_instype);
         buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
     }
@@ -5469,6 +5870,39 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
           }
           l_unsignedadj = 0x3e;
           l_third += 0x20;
+          break;
+       case LIBXSMM_X86_INSTR_SHLQ:
+          if ( (i_immediate < 0) || (i_immediate > 127) )
+          {
+             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
+                              "because other immediates are signed but shlq is unsigned. So this code\n"
+                              "should be changed if you want an immediate in this range.\n");
+             exit(-1);
+          }
+          l_unsignedadj = 0x3e;
+          l_third += 0x20;
+          break;
+       case LIBXSMM_X86_INSTR_SARQ:
+          if ( (i_immediate < 0) || (i_immediate > 127) )
+          {
+             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
+                              "because other immediates are signed but sarq is unsigned. So this code\n"
+                              "should be changed if you want an immediate in this range.\n");
+             exit(-1);
+          }
+          l_unsignedadj = 0x3e;
+          l_third += 0x38;
+          break;
+       case LIBXSMM_X86_INSTR_SHRQ:
+          if ( (i_immediate < 0) || (i_immediate > 127) )
+          {
+             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
+                              "because other immediates are signed but shrq is unsigned. So this code\n"
+                              "should be changed if you want an immediate in this range.\n");
+             exit(-1);
+          }
+          l_unsignedadj = 0x3e;
+          l_third += 0x28;
           break;
        case LIBXSMM_X86_INSTR_IMUL:
 /* Note: we assume that if you call imul in alu_imm you mean: something like imul $3,%rax,%rax. That is, we assume that i_gp_reg_number is used twice */
@@ -6209,21 +6643,29 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
 
     /* lets set tile_config_imm */
     tile_config_imm[0]                  = i_tile_config->palette_id;
-    tile_config_imm[16]                 = i_tile_config->tile0rows;
+    tile_config_imm[16]                 = (unsigned char)(0x00ff & i_tile_config->tile0rowsb);
+    tile_config_imm[17]                 = (unsigned char)(0x00ff & (i_tile_config->tile0rowsb >> 8));
     tile_config_imm[48]                 = i_tile_config->tile0cols;
-    tile_config_imm[18]                 = i_tile_config->tile1rows;
+    tile_config_imm[18]                 = (unsigned char)(0x00ff & i_tile_config->tile1rowsb);
+    tile_config_imm[19]                 = (unsigned char)(0x00ff & (i_tile_config->tile1rowsb >> 8));
     tile_config_imm[49]                 = i_tile_config->tile1cols;
-    tile_config_imm[20]                 = i_tile_config->tile2rows;
+    tile_config_imm[20]                 = (unsigned char)(0x00ff & i_tile_config->tile2rowsb);
+    tile_config_imm[21]                 = (unsigned char)(0x00ff & (i_tile_config->tile2rowsb >> 8));
     tile_config_imm[50]                 = i_tile_config->tile2cols;
-    tile_config_imm[22]                 = i_tile_config->tile3rows;
+    tile_config_imm[22]                 = (unsigned char)(0x00ff & i_tile_config->tile3rowsb);
+    tile_config_imm[23]                 = (unsigned char)(0x00ff & (i_tile_config->tile3rowsb >> 8));
     tile_config_imm[51]                 = i_tile_config->tile3cols;
-    tile_config_imm[24]                 = i_tile_config->tile4rows;
+    tile_config_imm[24]                 = (unsigned char)(0x00ff & i_tile_config->tile4rowsb);
+    tile_config_imm[25]                 = (unsigned char)(0x00ff & (i_tile_config->tile4rowsb >> 8));
     tile_config_imm[52]                 = i_tile_config->tile4cols;
-    tile_config_imm[26]                 = i_tile_config->tile5rows;
+    tile_config_imm[26]                 = (unsigned char)(0x00ff & i_tile_config->tile5rowsb);
+    tile_config_imm[27]                 = (unsigned char)(0x00ff & (i_tile_config->tile5rowsb >> 8));
     tile_config_imm[53]                 = i_tile_config->tile5cols;
-    tile_config_imm[28]                 = i_tile_config->tile6rows;
+    tile_config_imm[28]                 = (unsigned char)(0x00ff & i_tile_config->tile6rowsb);
+    tile_config_imm[29]                 = (unsigned char)(0x00ff & (i_tile_config->tile6rowsb >> 8));
     tile_config_imm[54]                 = i_tile_config->tile6cols;
-    tile_config_imm[30]                 = i_tile_config->tile7rows;
+    tile_config_imm[30]                 = (unsigned char)(0x00ff & i_tile_config->tile7rowsb);
+    tile_config_imm[31]                 = (unsigned char)(0x00ff & (i_tile_config->tile7rowsb >> 8));
     tile_config_imm[55]                 = i_tile_config->tile7cols;
   }
 
@@ -6440,105 +6882,41 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
   /* @TODO: check instruction set */
   LIBXSMM_UNUSED( i_instruction_set );
 
-  /* @TODO add checks in debug mode */
-  if ( io_generated_code->code_type > 1 ) {
-    /* @Greg please add encodings here */
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_regbas0 = i_gp_reg_base % 8;
-    int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-    int l_vecval0 = i_tile_reg_number;
-    int l_third = 0;
-    int l_fourth = 0;
-    int l_place = 0;
-    int l_forced_offset = 0;
+  /* check if passed in a correct instruction */
+  switch ( i_tmove_instr ) {
+    case LIBXSMM_X86_INSTR_TILELOADD:
+    case LIBXSMM_X86_INSTR_TILELOADDT1:
+    case LIBXSMM_X86_INSTR_TILESTORED:
+    case LIBXSMM_X86_INSTR_TILEZERO:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_tile_move: unexpected instruction number: %u\n", i_tmove_instr);
+      exit(-1);
+  }
 
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
+  if ( (io_generated_code->code_type > 1) &&
+       (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) ) {
+    /* check if we have enough code buffer space left */
+    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
     }
 
-    switch ( i_tmove_instr ) {
-      case LIBXSMM_X86_INSTR_TILELOADD:
-        l_third = 0x3;
-        l_fourth = 0x2;
-        break;
-      case LIBXSMM_X86_INSTR_TILELOADDT1:
-        l_third = 0x1;
-        l_fourth = 0x2;
-        break;
-      case LIBXSMM_X86_INSTR_TILESTORED:
-        l_third = 0x2;
-        l_fourth = 0x2;
-        break;
-      case LIBXSMM_X86_INSTR_TILEZERO:
-        l_third = 0x3;
-        if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF )
-        {
-           fprintf(stderr,"Bogus i_gp_reg_idx value in libxsmm_x86_instruction_tile_move() for a tilezero instruction\n");
-           exit(-1);
-        }
-        break;
-      default:
-        fprintf(stderr,"Unknown instruction in libxsmm_x86_instruction_tile_move\n");
-        break;
-    }
-    if ( (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15) && (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) )
-    {
-       fprintf(stderr,"libxsmm_x86_instruction_tile_move is using a bogus i_gp_reg_idx\n");
-       exit(-1);
-    }
-    if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
-    {
-       buf[i++] = (unsigned char)(0xc4);
-       buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20);
-       buf[i++] = (unsigned char)(0x78 + l_third);
-       buf[i++] = (unsigned char)(0x49 + l_fourth);
-       if ( i_tmove_instr != LIBXSMM_X86_INSTR_TILEZERO )
-       {
-          buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
-          l_place = i - 1;
-          buf[i++] = (unsigned char)(0x20 + l_regbas0);
-       } else {
-          buf[i++] = (unsigned char)(0xc0 + l_vecval0*8);
-       }
+    /* invoke VEX encoder */
+    if ( i_tmove_instr == LIBXSMM_X86_INSTR_TILEZERO ) {
+      libxsmm_x86_instruction_vex_compute_3reg ( io_generated_code,
+            i_tmove_instr, 'x', 0, 0, i_tile_reg_number );
     } else {
-       int l_regidx  = i_gp_reg_idx  % 8;
-       int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
-       int l_sca=0;
-
-       if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_RSP )
-       {
-          fprintf(stderr,"Please try to avoid using rsp as the idx register\n");
-          /* exit(-1); */
-       }
-
-       if (i_scale==2) l_sca=0x40;
-       else if (i_scale==4) l_sca=0x80;
-       else if (i_scale==8) l_sca=0xc0;
-
-       buf[i++] = (unsigned char)(0xc4);
-       buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20 - l_ix8 * 0x40);
-       buf[i++] = (unsigned char)(0x78 + l_third);
-       buf[i++] = (unsigned char)(0x49 + l_fourth);
-       buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
-       l_place  = i - 1;
-       buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+      if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
+        libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
+              i_tmove_instr, i_gp_reg_base, i_gp_reg_idx, i_scale,
+              i_displacement, 'x', 0, i_tile_reg_number );
+      } else {
+        fprintf(stderr, "libxsmm_x86_instruction_tile_move: instruction %u requires SIB addressing\n", i_tmove_instr);
+        exit(-1);
+      }
     }
-    if ( (l_regbas0 == 5) && (i_displacement==0) )
-    {
-        l_forced_offset = 1;
-    }
-    if ( i_tmove_instr != LIBXSMM_X86_INSTR_TILEZERO )
-    {
-        i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, 1, buf );
-    }
-
-    io_generated_code->code_size = i;
-
-  } else {
+  } else if ( io_generated_code->code_type < 2 )  {
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
@@ -6598,6 +6976,10 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
       default:
         break;
     }
+  } else {
+    /* general encoder error */
+    fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
+    exit(-1);
   }
 }
 
@@ -6612,109 +6994,54 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
   /* @TODO: check instruction set */
   LIBXSMM_UNUSED( i_instruction_set );
 
-  /* @TODO add checks in debug mode */
-  if ( io_generated_code->code_type > 1 ) {
-    /* @Greg please add encodings here */
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    /* int i = *loc; */
-    /* unsigned int l_maxsize = 1024; */
-    int l_vecval0;
-    int l_vecval1;
-    int l_vecval2;
-    int l_instroff = 0, l_instroff2 = 0, l_instroff3 = 0;
+  /* check if passed in a correct instruction */
+  switch ( i_tcompute_instr ) {
+    case LIBXSMM_X86_INSTR_TDPBSSD:
+    case LIBXSMM_X86_INSTR_TDPBSUD:
+    case LIBXSMM_X86_INSTR_TDPBUSD:
+    case LIBXSMM_X86_INSTR_TDPBUUD:
+    case LIBXSMM_X86_INSTR_TDPBF16PS:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_tile_compute: unexpected instruction number: %u\n", i_tcompute_instr);
+      exit(-1);
+  }
 
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
+  if ( (io_generated_code->code_type > 1) &&
+       (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) ) {
+    /* check if we have enough code buffer space left */
+    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
     }
 
-    /* This routine is strange in that it takes 3 input tile parameters, but *
-       some of the instructions it takes will only use 1 or 2 of them and    *
-       the others might be set to bogus values like UNDEF. So let's first *
-       only use tile values that are in a reasonable range.                  */
-    if ( i_tile_src_reg_number_0 > 7 )
-    {
-       l_vecval0 = 0;
+    /* invoke VEX encoder */
+    if ( ((i_tcompute_instr >> 28) & 0x3) == 3 ) {
+      libxsmm_x86_instruction_vex_compute_3reg ( io_generated_code, i_tcompute_instr, 'x',
+            i_tile_src_reg_number_1, i_tile_src_reg_number_0, i_tile_dst_reg_number );
     } else {
-       l_vecval0 = i_tile_src_reg_number_0;
+      fprintf(stderr, "libxsmm_x86_instruction_tile_compute: every insturction needs to have 3 operands\n");
+      exit(-1);
     }
-    if ( i_tile_src_reg_number_1 > 7 )
-    {
-       l_vecval1 = 0;
-    } else {
-       l_vecval1 = i_tile_src_reg_number_1;
-    }
-    if ( i_tile_dst_reg_number > 7 )
-    {
-       l_vecval2 = 0;
-    } else {
-       l_vecval2 = i_tile_dst_reg_number;
-    }
-
-    switch ( i_tcompute_instr ) {
-      case LIBXSMM_X86_INSTR_TDPBSSD:
-        l_instroff  = 0x03;
-        l_instroff2 = 0x16;
-        break;
-      case LIBXSMM_X86_INSTR_TDPBSUD:
-        l_instroff = 0x02;
-        l_instroff2 = 0x16;
-        break;
-      case LIBXSMM_X86_INSTR_TDPBUSD:
-        l_instroff = 0x01;
-        l_instroff2 = 0x16;
-        break;
-      case LIBXSMM_X86_INSTR_TDPBUUD:
-        l_instroff2 = 0x16;
-        break;
-      case LIBXSMM_X86_INSTR_TDPBF16PS:
-        l_instroff = 0x02;
-        l_instroff2 = 0x14;
-        break;
-      default:
-        fprintf(stderr,"Unknown instruction. This is bad\n");
-        break;
-    }
-
-    buf[i++] = (unsigned char)(0xc4);
-    buf[i++] = (unsigned char)(0xe2 + l_instroff3);
-    buf[i++] = (unsigned char)(0x78 + l_instroff - l_vecval0*8);
-    buf[i++] = (unsigned char)(0x48 + l_instroff2);
-    buf[i++] = (unsigned char)(0xc0 + l_vecval1 + l_vecval2*8);
-
-    io_generated_code->code_size = i;
-    /*    *loc = i; */
-
-  } else {
+  } else if ( io_generated_code->code_type < 2 ) {
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_instr_name[24];
     libxsmm_get_x86_instr_name( i_tcompute_instr, l_instr_name, 23 );
 
-    switch ( i_tcompute_instr ) {
-      case LIBXSMM_X86_INSTR_TDPBSSD:
-      case LIBXSMM_X86_INSTR_TDPBSUD:
-      case LIBXSMM_X86_INSTR_TDPBUSD:
-      case LIBXSMM_X86_INSTR_TDPBUUD:
-      case LIBXSMM_X86_INSTR_TDPBF16PS:
-      {
-        if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u, %%%%tmm%u, %%%%tmm%u\\n\\t\"\n",
-                                                       l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
-        } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%tmm%u, %%tmm%u, %%tmm%u\n",
-                                                       l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
-        }
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-        break;
-      }
-      default:
-        break;
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u, %%%%tmm%u, %%%%tmm%u\\n\\t\"\n",
+                                                   l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%tmm%u, %%tmm%u, %%tmm%u\n",
+                                                   l_instr_name, i_tile_src_reg_number_0, i_tile_src_reg_number_1, i_tile_dst_reg_number );
     }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  } else {
+    /* general encoder error */
+    fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
+    exit(-1);
   }
 }
 
@@ -7868,7 +8195,8 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_mateltwise( libxsmm_generated_code*                   io_generated_code,
                                                      const unsigned int                        i_gp_struct_params,
-                                                     const char*                               i_arch ) {
+                                                     const char*                               i_arch,
+                                                     int                                       skip_push ) {
   LIBXSMM_UNUSED(i_arch);
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
@@ -7882,45 +8210,50 @@ void libxsmm_x86_instruction_open_stream_mateltwise( libxsmm_generated_code*    
       return;
     }
 
-    /* push rbx */
-    l_code_buffer[l_code_size++] = 0x53;
-    /* push r12 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x54;
-    /* push r13 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x55;
-    /* push r14 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x56;
-    /* push r15 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x57;
+    if (skip_push == 0) {
+      /* push rbx */
+      l_code_buffer[l_code_size++] = 0x53;
+      /* push r12 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x54;
+      /* push r13 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x55;
+      /* push r14 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x56;
+      /* push r15 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x57;
+      /* adjust stack frame size */
+      io_generated_code->sf_size += 40;
+    }
 
     /* update code length */
     io_generated_code->code_size = l_code_size;
-
-    /* adjust stack frame size */
-    io_generated_code->sf_size += 40;
   } else if ( io_generated_code->code_type == 1 ) {
     /* @TODO this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
 
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rbx\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r12\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r13\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r14\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    if (skip_push == 0) {
 
-    /* adjust stack frame size */
-    io_generated_code->sf_size += 40;
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rbx\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r12\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r13\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r14\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+
+      /* adjust stack frame size */
+      io_generated_code->sf_size += 40;
+
+    }
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -7937,7 +8270,8 @@ void libxsmm_x86_instruction_open_stream_mateltwise( libxsmm_generated_code*    
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*       io_generated_code,
-                                                   const char*                   i_arch) {
+                                                   const char*                      i_arch,
+                                                   int                              skip_pop) {
   /* @TODO add checks in debug mode */
   LIBXSMM_ASSERT(NULL != i_arch);
   if ( io_generated_code->code_type > 1 ) {
@@ -7951,23 +8285,25 @@ void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*   
       return;
     }
 
-    /* pop r15 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5f;
-    /* pop r14 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5e;
-    /* pop r13 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5d;
-    /* pop r12 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5c;
-    /* pop rbx */
-    l_code_buffer[l_code_size++] = 0x5b;
+    if (skip_pop == 0) {
+      /* pop r15 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5f;
+      /* pop r14 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5e;
+      /* pop r13 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5d;
+      /* pop r12 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5c;
+      /* pop rbx */
+      l_code_buffer[l_code_size++] = 0x5b;
 
-    /* adjust stack frame size */
-    io_generated_code->sf_size -= 40;
+      /* adjust stack frame size */
+      io_generated_code->sf_size -= 40;
+    }
 
     /* retq */
     /* @TODO: I don't know if this is the correct placement in the generation process */
@@ -7981,19 +8317,21 @@ void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*   
     int l_max_code_length = 511;
     int l_code_length = 0;
 
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r15\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r14\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r13\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r12\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    if (skip_pop == 0) {
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r15\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r14\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r13\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r12\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* adjust stack frame size */
-    io_generated_code->sf_size -= 40;
+      /* adjust stack frame size */
+      io_generated_code->sf_size -= 40;
+    }
 
     /* @TODO: I don't know if this is the correct placement in the generation process */
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );

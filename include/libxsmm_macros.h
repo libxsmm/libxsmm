@@ -171,7 +171,7 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED
 # define LIBXSMM_ATTRIBUTE_USED
 #endif
-#if defined(__clang__)
+#if defined(__clang__) && !defined(__INTEL_COMPILER)
 # define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(no_sanitize(LIBXSMM_STRINGIFY(KIND)))
 #elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 8) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) \
   && !defined(__INTEL_COMPILER)
@@ -474,7 +474,7 @@
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 #define LIBXSMM_FEQ(A, B) ((A) == (B))
 #define LIBXSMM_NEQ(A, B) ((A) != (B))
-#define LIBXSMM_ISPOT(A) ((unsigned long long)(A) == LIBXSMM_LO2POT(A))
+#define LIBXSMM_ISPOT(A) (0 != (A) && !((A) & ((A) - 1)))
 #define LIBXSMM_ISWAP(A, B) (((A) ^= (B)), ((B) ^= (A)), ((A) ^= (B)))
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
@@ -775,7 +775,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT_MSG)
-# define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) && (0 != *(MSG)))
+# define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) || !MSG)
 #endif
 #if !defined(LIBXSMM_EXPECT_ELIDE)
 # define LIBXSMM_EXPECT_ELIDE(RESULT, EXPR) do { \

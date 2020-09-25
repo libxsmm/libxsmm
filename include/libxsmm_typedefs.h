@@ -170,12 +170,19 @@ typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_SCALE           =  8,
   LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT =  9,
   LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16 = 10,
-  LIBXSMM_MELTW_OPERATION_COLBIAS_ACT     = 11
+  LIBXSMM_MELTW_OPERATION_COLBIAS_ACT     = 11,
+  LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX = 12
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
   LIBXSMM_MELTW_FLAG_NONE                = 0
 } libxsmm_meltw_null_flags;
+
+typedef enum libxsmm_meltw_relu_flags {
+  LIBXSMM_MELTW_FLAG_RELU_NONE      = 0,
+  LIBXSMM_MELTW_FLAG_RELU_FWD       = 1,
+  LIBXSMM_MELTW_FLAG_RELU_BWD       = 2
+} libxsmm_meltw_relu_flags;
 
 typedef enum libxsmm_meltw_redu_flags {
   LIBXSMM_MELTW_FLAG_REDUCE_NONE         = 0,
@@ -187,7 +194,11 @@ typedef enum libxsmm_meltw_redu_flags {
   LIBXSMM_MELTW_FLAG_REDUCE_ELTS         = 32,
   LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED = 64,
   LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_ROWS  = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ROWS,
-  LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_COLS  = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_COLS
+  LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_COLS  = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_COLS,
+  LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_ROWS_ELTS_ELTS_SQUARED  = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED ,
+  LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_COLS_ELTS_ELTS_SQUARED  = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_COLS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED ,
+  LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_ROWS_ELTS               = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS,
+  LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_COLS_ELTS               = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_COLS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS
 } libxsmm_meltw_redu_flags;
 
 typedef enum libxsmm_meltw_scal_flags {
@@ -197,6 +208,7 @@ typedef enum libxsmm_meltw_scal_flags {
   LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS      = 4,
   LIBXSMM_MELTW_FLAG_SCALE_ROWS          = 8,
   LIBXSMM_MELTW_FLAG_SCALE_COLS          = 16,
+  LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS     = 32,
   LIBXSMM_MELTW_FLAG_SCALE_MULT_ROWS                = LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_ROWS,
   LIBXSMM_MELTW_FLAG_SCALE_SHIFT_ROWS               = LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_ROWS,
   LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_ROWS            = LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_ROWS,
@@ -210,7 +222,14 @@ typedef enum libxsmm_meltw_scal_flags {
   LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_COLS          = LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_COLS,
   LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_SHIFT_COLS      = LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_COLS,
   LIBXSMM_MELTW_FLAG_SCALE_MULT_ADD_BIAS_COLS       = LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_COLS,
-  LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_COLS = LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_COLS
+  LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_COLS = LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_COLS,
+  LIBXSMM_MELTW_FLAG_SCALE_MULT_ROWS_COLS                = LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS,
+  LIBXSMM_MELTW_FLAG_SCALE_SHIFT_ROWS_COLS               = LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS,
+  LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_ROWS_COLS            = LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS,
+  LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ROWS_COLS          = LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS,
+  LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS_SHIFT_ROWS_COLS      = LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS,
+  LIBXSMM_MELTW_FLAG_SCALE_MULT_ADD_BIAS_ROWS_COLS       = LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS,
+  LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS_COLS = LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS
 } libxsmm_meltw_scal_flags;
 
 typedef enum libxsmm_meltw_cvta_flags {
@@ -252,6 +271,7 @@ typedef enum libxsmm_meltw_cbiasact_flags {
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
   libxsmm_meltw_null_flags     elt_null;
   libxsmm_meltw_redu_flags     elt_redu;
+  libxsmm_meltw_relu_flags     elt_relu;
   libxsmm_meltw_scal_flags     elt_scal;
   libxsmm_meltw_cvta_flags     elt_cvta;
   libxsmm_meltw_acvt_flags     elt_acvt;
@@ -378,7 +398,8 @@ typedef enum libxsmm_gemm_prefetch_type {
   /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C (Eigen library). */
   LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C         = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C,
   /** Current B into L1. */
-  LIBXSMM_GEMM_PREFETCH_BL1                = 16
+  LIBXSMM_GEMM_PREFETCH_BL1                = 16,
+  LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 32
 } libxsmm_gemm_prefetch_type;
 
 /** Flag enumeration which can be binary ORed. */
@@ -608,6 +629,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_param 
   void* out_ptr_1;        /* output pointer */
 } libxsmm_meltw_reduce_param;
 
+/** argument struct for matrix-eltwise: reduce */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_cols_idx_param {
+  unsigned long long n;
+  const void* ind_ptr;    /* index array pointer */
+  const void* inp_ptr;    /* input pointer */
+  void* out_ptr;          /* output pointer */
+} libxsmm_meltw_reduce_cols_idx_param;
+
 /** argument struct for matrix-eltwise: scale */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_scale_param {
   const void* in_ptr;           /* input pointer */
@@ -615,6 +644,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_scale_param {
   const void* scale_vals_ptr;   /* pointer to scale values array */
   const void* bias_vals_ptr;    /* pointer to bias values array*/
   void* out_ptr;                /* output pointer */
+  const void* shift_vals_ptr2;   /* pointer to shift values array 2 */
+  const void* scale_vals_ptr2;   /* pointer to scale values array 2 */
+  const void* bias_vals_ptr2;    /* pointer to bias values array 2 */
 } libxsmm_meltw_scale_param;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cbiasact_param {
@@ -641,6 +673,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_mul)(
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_relu)(const libxsmm_meltw_relu_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16)(const libxsmm_meltw_cvtfp32bf16_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_reduce)(const libxsmm_meltw_reduce_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_reduce_cols_idx)(const libxsmm_meltw_reduce_cols_idx_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_scale)(const libxsmm_meltw_scale_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16_act)(const libxsmm_meltw_cvtfp32bf16_act_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_act_cvtfp32bf16)(const libxsmm_meltw_act_cvtfp32bf16_param* in_struct);
@@ -651,6 +684,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   libxsmm_meltwfunction_add meltw_add; libxsmm_meltwfunction_mul meltw_mul;
   libxsmm_meltwfunction_relu meltw_relu; libxsmm_meltwfunction_cvtfp32bf16 meltw_cvtfp32bf16;
   libxsmm_meltwfunction_reduce meltw_reduce; libxsmm_meltwfunction_scale meltw_scale;
+  libxsmm_meltwfunction_reduce_cols_idx meltw_reduce_cols_idx;
   libxsmm_meltwfunction_cvtfp32bf16_act meltw_cvtfp32bf16_act;
   libxsmm_meltwfunction_act_cvtfp32bf16 meltw_act_cvtfp32bf16;
 } libxsmm_xmeltwfunction;

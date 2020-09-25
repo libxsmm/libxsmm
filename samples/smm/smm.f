@@ -80,7 +80,6 @@
         duration = 0
 
         CALL libxsmm_matdiff_clear(max_diff)
-        ALLOCATE(sumxsmm(m,n))
         ALLOCATE(a(m,k,s))
         ALLOCATE(b(k,n,s))
 
@@ -117,6 +116,7 @@
         !$OMP END PARALLEL
 
         WRITE(*, "(A)") "Streamed (A,B)... (BLAS)"
+        ALLOCATE(sumxsmm(m,n))
         sumxsmm(:,:) = 0
         !$OMP PARALLEL REDUCTION(+:sumxsmm) PRIVATE(i, r, start)        &
         !$OMP   DEFAULT(NONE)                                           &
@@ -210,12 +210,23 @@
           CALL libxsmm_matdiff_reduce(max_diff, diff)
         END IF
 
-        WRITE(*, "(A)") "Streamed (A,B,C)... (specialized)"
+        WRITE(*, "(A)") "Streamed (A,B,C/Beta=0)... (specialized)"
         ALLOCATE(c(m,n,s))
         start = libxsmm_timer_tick()
         DO r = 1, repetitions
           !$OMP PARALLEL DEFAULT(NONE) SHARED(a, b, c)
-          CALL smm_stream_abc(a, b, c)
+          CALL smm_stream_abc_beta0(a, b, c)
+          !$OMP END PARALLEL
+        END DO
+        duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
+        CALL performance(duration, m, n, k, size2,                      &
+     &    m * k + k * n + m * n * 2) ! 2: assume RFO
+
+        WRITE(*, "(A)") "Streamed (A,B,C/Beta=1)... (specialized)"
+        start = libxsmm_timer_tick()
+        DO r = 1, repetitions
+          !$OMP PARALLEL DEFAULT(NONE) SHARED(a, b, c)
+          CALL smm_stream_abc_beta1(a, b, c)
           !$OMP END PARALLEL
         END DO
         duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -294,14 +305,29 @@
      &        1D3 * duration, " ms"
         END SUBROUTINE
 
-        SUBROUTINE smm_stream_abc(a, b, c)
+        SUBROUTINE smm_stream_abc_beta0(a, b, c)
           REAL(T), INTENT(IN)  :: a(:,:,:), b(:,:,:)
           REAL(T), INTENT(OUT) :: c(:,:,:)
           TYPE(LIBXSMM_DMMFUNCTION) :: xmm
           INTEGER(8) :: i
-          CALL libxsmm_dispatch(xmm,                                    &
-     &      SIZE(c, 1), SIZE(c, 2), SIZE(b, 1),                         &
-     &      alpha=REAL(1,T), beta=REAL(0,T))
+          CALL libxsmm_dispatch(xmm, SIZE(c,1), SIZE(c,2), SIZE(b,1),   &
+     &      flags=MERGE(                                                &
+     &        LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0,                &
+     &        LIBXSMM_GEMM_FLAG_BETA_0,                                 &
+     &        libxsmm_aligned(libxsmm_ptr(c(1,1,1)),                    &
+     &        SIZE(c,1) * SIZE(c,2) * T)))
+          !$OMP DO
+          DO i = LBOUND(c, 3, 8), UBOUND(c, 3, 8)
+            CALL libxsmm_mmcall(xmm, a(:,:,i), b(:,:,i), c(:,:,i))
+          END DO
+        END SUBROUTINE
+
+        SUBROUTINE smm_stream_abc_beta1(a, b, c)
+          REAL(T), INTENT(IN)    :: a(:,:,:), b(:,:,:)
+          REAL(T), INTENT(INOUT) :: c(:,:,:)
+          TYPE(LIBXSMM_DMMFUNCTION) :: xmm
+          INTEGER(8) :: i
+          CALL libxsmm_dispatch(xmm, SIZE(c,1), SIZE(c,2), SIZE(b,1))
           !$OMP DO
           DO i = LBOUND(c, 3, 8), UBOUND(c, 3, 8)
             CALL libxsmm_mmcall(xmm, a(:,:,i), b(:,:,i), c(:,:,i))

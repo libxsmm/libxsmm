@@ -17,6 +17,16 @@
 # define LIBXSMM_DIFF_AVX512_ENABLED
 #endif
 
+#define LIBXSMM_DIFF_4_DECL(A) const uint32_t */*const*/ A
+#define LIBXSMM_DIFF_4_ASSIGN(A, B) (A) = (B)
+#define LIBXSMM_DIFF_4_LOAD(A, SRC) A = (const uint32_t*)(SRC)
+#define LIBXSMM_DIFF_4(A, B, ...) ((unsigned char)(0 != (*(A) ^ (*(const uint32_t*)(B)))))
+
+#define LIBXSMM_DIFF_8_DECL(A) const uint64_t */*const*/ A
+#define LIBXSMM_DIFF_8_ASSIGN(A, B) (A) = (B)
+#define LIBXSMM_DIFF_8_LOAD(A, SRC) A = (const uint64_t*)(SRC)
+#define LIBXSMM_DIFF_8(A, B, ...) ((unsigned char)(0 != (*(A) ^ (*(const uint64_t*)(B)))))
+
 #define LIBXSMM_DIFF_SSE3_DECL(A) __m128i A
 #define LIBXSMM_DIFF_SSE3_ASSIGN(A, B) (A) = (B)
 #define LIBXSMM_DIFF_SSE3_LOAD(A, SRC) A = LIBXSMM_INTRINSICS_LDDQU_SI128((const __m128i*)(SRC))
@@ -117,6 +127,10 @@
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_diff_function)(
   const void* /*a*/, const void* /*b*/, ... /*size*/);
 
+/** Compare two data blocks of 4 Byte each. */
+LIBXSMM_API unsigned char libxsmm_diff_4(const void* a, const void* b, ...);
+/** Compare two data blocks of 8 Byte each. */
+LIBXSMM_API unsigned char libxsmm_diff_8(const void* a, const void* b, ...);
 /** Compare two data blocks of 16 Byte each. */
 LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b, ...);
 /** Compare two data blocks of 32 Byte each. */

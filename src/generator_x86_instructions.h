@@ -13,6 +13,7 @@
 #define GENERATOR_X86_INSTRUCTIONS_H
 
 #include "generator_common.h"
+#include "../include/libxsmm_typedefs.h"
 
 /**
  * Opens the inline assembly section / jit stream
@@ -200,6 +201,22 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
  * @param i_immediate immediate just as the compare value for a compare instruction
  * @param i_mask_reg_number the mask register to read/write
  * @param i_use_zero_masking 0: merge masking; !=0: zero masking
+ */
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_imm8 ( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_instruction_set,
+                                              const unsigned int      i_vec_instr,
+                                              const unsigned int      i_use_broadcast,
+                                              const unsigned int      i_gp_reg_base,
+                                              const unsigned int      i_gp_reg_idx,
+                                              const unsigned int      i_scale,
+                                              const int               i_displacement,
+                                              const char              i_vector_name,
+                                              const unsigned int      i_vec_reg_number_0,
+                                              const unsigned int      i_vec_reg_number_1,
+                                              const unsigned char     i_imm8 );
+/**
+ *  Just like libxsmm_x86_instruction_vec_compute_mem except also has an immediate/shuffle parameter
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_mask( libxsmm_generated_code* io_generated_code,
@@ -550,11 +567,13 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_mateltwise( libxsmm_generated_code*                   io_generated_code,
                                                   const unsigned int                        i_gp_struct_params,
-                                                  const char*                               i_arch );
+                                                  const char*                               i_arch,
+                                                  int                                       skip_push);
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*       io_generated_code,
-                                                   const char*                   i_arch );
+                                                   const char*                      i_arch,
+                                                   int                              skip_pop);
 /**
  * @TODO: clean-up
  * Opens the inline assembly section / jit stream for transposes, this is hacked and should be cleaned up
