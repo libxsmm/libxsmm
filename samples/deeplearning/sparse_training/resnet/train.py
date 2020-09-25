@@ -1,3 +1,4 @@
+import sys
 import torch
 from torch import nn
 import torch.nn.utils.prune as prune
@@ -31,11 +32,11 @@ def report_sparsity(model, writer, it, verbose=False):
             nz = float(torch.sum(module.weight == 0))
             nelement = float(module.weight.nelement())
             pruned_modules.append((name, nz, nelement))
-            
+
     t_nz = 0
     t_nelement = 0
 
-    # Report 
+    # Report
     for name, nz, nelement in pruned_modules:
         t_nz += nz
         t_nelement += nelement
@@ -43,7 +44,7 @@ def report_sparsity(model, writer, it, verbose=False):
             print("Sparsity in {}: {:2f}%".format(name, 100. * nz / nelement))
 
     print("Global sparsity: {:2f}%".format(100. * t_nz / t_nelement))
-    writer.add_scalar("Global sparsity", t_nz / t_nelement, it) 
+    writer.add_scalar("Global sparsity", t_nz / t_nelement, it)
     return 0.
 
 def prune_model(model, amount=0.159):
@@ -58,7 +59,7 @@ def prune_model(model, amount=0.159):
 def train():
     writer = SummaryWriter()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    # model 
+    # model
     model = models.resnet50()
 
     # Modify the fc layer to accomodate n_labels
@@ -81,6 +82,8 @@ def train():
     dls = get_dls(128, 0, 64, sh=0., workers=8)
 
     spartsity_scheduler = prune_scheduler(0.2, NUM_EPOCHS, start_epoch=1)
+
+    print(spartsity_scheduler)
 
     for epoch in range(NUM_EPOCHS):
         model.train()
@@ -137,10 +140,11 @@ def train():
             prune_model(model, spartsity_scheduler[epoch])
             report_sparsity(model, writer, epoch)
             model.to(device)
-            
-if __name__ == "__main__":
-    #train()
-    learner = ResNetLearner()
 
-    learner.train()
-    learning.eval()
+if __name__ == "__main__":
+    target_sparsity = float(sys.argv[1])
+    learner = ResNetLearner(target_sparsity=target_sparsity)
+
+    for i in range(NUM_EPOCHS):
+        learner.train(i)
+        learning.eval()

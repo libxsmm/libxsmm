@@ -55,8 +55,7 @@ class ResNetLearner():
         # Array of sparsity rates
         self.sparsity_scheduler = prune_scheduler(1-target_sparsity, num_epochs, start_epoch=1)
 
-    def _report_sparsity(self, epoch, verbose=False):
-        
+
     def prune_weights(self, epoch):
         # Send model weights to cpu
         self.model.to("cpu")
@@ -64,7 +63,7 @@ class ResNetLearner():
 
         self.modules_to_prune = []
         for module in self.model.modules():
-            if type(module) == torch.nn,modules.conv.Conv2d:
+            if type(module) == torch.nn.modules.conv.Conv2d:
                 self.modules_to_prune.append((module, 'weight'))
         prune.global_unstructured(
             self.modules_to_prune, pruning_method=prune.L1Unstructured, amount=sparsity_rate)
@@ -88,7 +87,7 @@ class ResNetLearner():
                 loss.backward()
                 self.optim.step()
                 tr_loss += loss
-            
+
             print("Epoch: {} / {}, Training loss: {}.".format(
                 epoch, self.num_epochs, loss / len(self.dls.train)))
 
