@@ -538,14 +538,14 @@ class DLRM_Net(nn.Module):
             z = p
 
         ### gather the distributed results on each rank ###
-        # For some reason it requires explicit sync before all_gather call if 
+        # For some reason it requires explicit sync before all_gather call if
         # tensor is on GPU memory
         if z.is_cuda: torch.cuda.synchronize()
         (_, batch_split_lengths) = ext_dist.get_split_lengths(batch_size)
         z = ext_dist.all_gather(z, batch_split_lengths)
         #print("Z: %s" % z)
         return z
- 
+
     def parallel_forward(self, dense_x, lS_o, lS_i):
         ### prepare model (overwrite) ###
         # WARNING: # of devices must be >= batch size in parallel_forward call
@@ -1007,7 +1007,7 @@ if __name__ == "__main__":
         dlrm = dlrm.to(device)  # .cuda()
         if dlrm.ndevices > 1:
             dlrm.emb_l = dlrm.create_emb(m_spa, ln_emb)
-    
+
     if ext_dist.my_size > 1:
         if use_gpu:
             device_ids = [ext_dist.my_local_rank]
@@ -1094,6 +1094,8 @@ if __name__ == "__main__":
                 total_el += float(module.weight.nelement())
                 total_nz += float(torch.sum(module.weight == 0))
 
+        if total_el == 0.:
+            return 0.
         return total_nz / total_el
 
     # training or inference
@@ -1298,7 +1300,7 @@ if __name__ == "__main__":
                     acc_prune_amount = get_pruning_amount(j)
                     pruning_amount = (acc_prune_amount-get_model_sparsity()) / (1. - get_model_sparsity())
                     if (
-                        j >= start_prune_step and 
+                        j >= start_prune_step and
                         j <= end_prune_step and
                         get_model_sparsity() < target_sparsity and
                         pruning_amount >= 0
@@ -1323,6 +1325,19 @@ if __name__ == "__main__":
                                 acc_prune_amount
                                 )
                         )
+
+                        # If sparsity is higher than 50%
+                        if get_model_sparsity() > 0.5:
+                            torch.save(dlrm, "sw_{}.pt".format(get_model_sparsity()))
+                            # Dump sparsified weights
+                            """
+                            import pickle as pkl
+                            for name, module in dlrm.named_modules():
+                                if type(module) == torch.nn.Linear:
+                                    with open("sw_{}_{}.pkl".format(name, get_model_sparsity()), "wb") as fout:
+                                        pkl.dump(module.weight, fout)
+                            print("Sparse weight dump completed @ {}: {}".format(get_model_sparsity(), name))
+                            """
 
                 writer.add_scalar('sparsity', get_model_sparsity(), j)
 
