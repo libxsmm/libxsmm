@@ -12,15 +12,18 @@
 3. Additionally, by specifying a tensorboard log directory, one can examine training logs and metrics using tensorboard.
 
 ## Data preparation
-Each model requires an extensive amount of data to be properly stress-tested against incremental sparsity
-### Resnet
-For Resnet training, a smaller subset of ImageNet was used, called ImageNette due to its massiveness in size. Download from [here](https://github.com/fastai/imagenette)
-### For Transformer
-As a neural machine translation task, the transformer model requires the WMT2014 EN_DE dataset. Preprocessing steps are described [here](https://fairseq.readthedocs.io/en/latest/getting_started.html#data-pre-processing)
-### For DLRM
-Training the DLRM requires the terabyte dataset [link](https://labs.criteo.com/2013/12/download-terabyte-click-logs/)
+Each model requires an extensive amount of data to be properly stress-tested against incremental sparsity. According to [The State of Sparsity](https://arxiv.org/abs/1902.09574) and by extensive experimentation, using a relatively small dataset or an overparameterized model may lead to false performance implications. For instance, when a ResNet-50 model is trained with the CIFAR-10 dataset or if the base Transformer is trained with a limited sentence pair dataset (i.e., EN-VI) it may seem as if the model isn't impacted even with extremely high sparsity since the model was overdetermined to begin with.
+
+- For Resnet
+- For Resnet training, a smaller subset of ImageNet was used, called ImageNette due to its massiveness in size. Download from [here](https://github.com/fastai/imagenette). 
+- For Transformer
+- As a neural machine translation task, the transformer model requires the WMT2014 EN_DE dataset. Preprocessing steps are described [here](https://fairseq.readthedocs.io/en/latest/getting_started.html#data-pre-processing)
+- For DLRM
+- Training the DLRM requires the terabyte dataset [link](https://labs.criteo.com/2013/12/download-terabyte-click-logs/)
+
 ## Running scripts
-Each project consists of two scripts: a script that launches `sbatch` scripts for experimenting various target sparsities (usually named as `launch_pruning_runs.sh`)and a script that runs a single experiment.
+Each project consists of two scripts: a script that launches `sbatch` scripts for experimenting various target sparsities (usually named as `launch_pruning_runs.sh`)and a script that runs a single experiment. Use accordingly.
+
 1. ResNet model
 `./launch_pruning_jobs.sh ${TARGET_SPARSITY}` or
 `python train.py ${TARGET_SPARSITY}`
@@ -30,6 +33,3 @@ where PRUNE_TYPE is either `magnitude` or `random` and EMB indicates whether the
 3. DLRM model
 `./launch_pruning_runs.sh` or `./run_terabyte.sh ${TARGET_SPARSITY} ${PRUNE_TYPE}`
 where PRUNE_TYPE is either `magnitude` or `random` 
-
-## To-do List
-- [ ] To be added
