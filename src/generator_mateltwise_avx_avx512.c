@@ -3815,10 +3815,13 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
 
   unsigned int m, im, use_m_masking, m_trips, max_m_unrolling = 16, m_unroll_factor = 1, m_trips_loop = 0, peeled_m_trips = 0, mask_out_count = 0;
   unsigned int idx_tsize =  i_mateltwise_desc->n;
-  int pf_dist = 0;
+  int pf_dist = 0, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 2;
+  unsigned int vstore_instr = 0;
   unsigned int NO_PF_LABEL_START = 0;
   unsigned int NO_PF_LABEL_START_2 = 1;
   const char *const env_pf_dist = getenv("PF_DIST_REDUCE_COLS_IDX");
+  const char *const env_pf_type = getenv("PF_TYPE_REDUCE_COLS_IDX");
+  const char *const env_nts     = getenv("NTS_REDUCE_COLS_IDX");
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
@@ -3826,6 +3829,17 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   } else {
     pf_dist = atoi(env_pf_dist);
   }
+  if ( 0 == env_pf_type ) {
+  } else {
+    pf_type = atoi(env_pf_type);
+  }
+  if ( 0 == env_nts ) {
+  } else {
+    use_nts = atoi(env_nts);
+  }
+
+  pf_instr      = (pf_type == 2) ? LIBXSMM_X86_INSTR_PREFETCHT1 : LIBXSMM_X86_INSTR_PREFETCHT0 ;
+  vstore_instr  = (use_nts == 0) ? i_micro_kernel_config->vmove_instruction_out : LIBXSMM_X86_INSTR_VMOVNTPS;
 
   i_gp_reg_mapping->gp_reg_n        = LIBXSMM_X86_GP_REG_R8;
   i_gp_reg_mapping->gp_reg_ind_base = LIBXSMM_X86_GP_REG_R9;
@@ -3937,7 +3951,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
             im );
 
         libxsmm_x86_instruction_prefetch(io_generated_code,
-            LIBXSMM_X86_INSTR_PREFETCHT1,
+            pf_instr,
             i_gp_reg_mapping->gp_reg_in_pf,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             im * 16 * i_micro_kernel_config->datatype_size_in);
@@ -3974,7 +3988,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
     for (im = 0; im < m_unroll_factor; im++) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
-          i_micro_kernel_config->vmove_instruction_out,
+          vstore_instr,
           i_gp_reg_mapping->gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           im * 16  * i_micro_kernel_config->datatype_size_out,
@@ -4048,7 +4062,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
         }
 
         libxsmm_x86_instruction_prefetch(io_generated_code,
-            LIBXSMM_X86_INSTR_PREFETCHT1,
+            pf_instr,
             i_gp_reg_mapping->gp_reg_in_pf,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             im * 16 * i_micro_kernel_config->datatype_size_in);
@@ -4101,7 +4115,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
     for (im = 0; im < peeled_m_trips; im++) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
-          i_micro_kernel_config->vmove_instruction_out,
+          ((im == peeled_m_trips-1) && (use_m_masking ==1)) ? i_micro_kernel_config->vmove_instruction_out : vstore_instr,
           i_gp_reg_mapping->gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           im * 16  * i_micro_kernel_config->datatype_size_out,
