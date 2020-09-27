@@ -80,8 +80,10 @@ libxsmm_dgemm_omp_
 libxsmm_diff
 libxsmm_diff_16
 libxsmm_diff_32
+libxsmm_diff_4
 libxsmm_diff_48
 libxsmm_diff_64
+libxsmm_diff_8
 libxsmm_diff_char
 libxsmm_diff_i32
 libxsmm_diff_i64
@@ -97,6 +99,7 @@ libxsmm_dispatch_meltw_cvtfp32bf16
 libxsmm_dispatch_meltw_cvtfp32bf16_act
 libxsmm_dispatch_meltw_mul
 libxsmm_dispatch_meltw_reduce
+libxsmm_dispatch_meltw_reduce_cols_idx
 libxsmm_dispatch_meltw_relu
 libxsmm_dispatch_meltw_scale
 libxsmm_dispatch_meltw_zero
@@ -501,6 +504,7 @@ libxsmm_ssbimmdispatch_reducebatch_strd
 libxsmm_ssbimmdispatch_reducebatch_strd_unroll
 libxsmm_ssqrt
 libxsmm_strerror
+libxsmm_stristr
 libxsmm_subimmdispatch
 libxsmm_subimmdispatch_reducebatch_addr
 libxsmm_subimmdispatch_reducebatch_addr_unroll
