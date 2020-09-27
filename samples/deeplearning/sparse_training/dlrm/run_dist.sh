@@ -2,7 +2,7 @@
 
 function print_vars {
   for VAR in ${!CCL*} ${!I_MPI*} ${!i_mpi*} ${!KMP_*} ${!OMP_*} LD_PRELOAD ${!DLRM_*} ${!PYTORCH_*} ${!PCL_*} VIRTUAL_ENV ${!ARGS_*} $@ ; do
-    if ! test -z ${!VAR} ; then 
+    if ! test -z ${!VAR} ; then
        echo "Using $VAR=${!VAR}"
     fi
   done
@@ -48,7 +48,7 @@ fi
 if ! test -z $SLURM_NNODES ; then NNODES=$SLURM_NNODES ; fi
 if ! test -z $SLURM_NTASKS ; then NP=$SLURM_NTASKS ; fi
 if ! test -z $ARGS_NTASKS ; then NP=$ARGS_NTASKS ; fi
-if ! test -z $ARGS_HOSTFILE ; then 
+if ! test -z $ARGS_HOSTFILE ; then
   if ! test -f $ARGS_HOSTFILE ; then
     echo "Hostfile $ARGS_HOSTFILE does not exist!" ; exit 1
   else
@@ -59,7 +59,7 @@ if ! test -z $ARGS_HOSTFILE ; then
 fi
 
 if ! test -z $ARGS_PPN ; then
-  OPT_PPN="-ppn $ARGS_PPN" 
+  OPT_PPN="-ppn $ARGS_PPN"
   REAL_NNODES=$(( (NP + ARGS_PPN - 1) / ARGS_PPN ))
   if [[ $REAL_NNODES -lt $NNODES ]] ; then NNODES=$REAL_NNODES ; fi
 fi
@@ -76,7 +76,7 @@ if ! test -z $ARGS_HOSTFILE && test -z $ARGS_PPN; then
   OPT_PPN="-ppn $NUM_SOCKETS"
 fi
 
-if [ $NP == 1 ] || [ "x$DLRM_USE_MPI" != "x" ] ; then 
+if [ $NP == 1 ] || [ "x$DLRM_USE_MPI" != "x" ] ; then
 export CCL_WORKER_COUNT=0
 else
 if [ "x${CCL_WORKER_COUNT}" == "x" ] ; then
@@ -125,7 +125,7 @@ MPIEXE_ARGS="-np $NP $OPT_PPN $OPT_HOSTFILE -l -genv I_MPI_PIN_DOMAIN=$I_MPI_PIN
 
 #echo "Running mpiexec.hydra ${MPIEXE_ARGS} $CMD $@"
 eval set -- "${MPIEXE_ARGS} hostname"
-mpiexec.hydra $@ | sort 
+mpiexec.hydra $@ | sort
 eval set -- "${MPIEXE_ARGS} $CMD $ARGS"
 echo "Running mpiexec.hydra $@"
 echo "Start Time:  `date`"

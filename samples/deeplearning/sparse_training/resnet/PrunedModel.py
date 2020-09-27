@@ -55,7 +55,7 @@ class UnstructuredPrunedModel():
             #TODO Print every so often
         print("Epoch #{} Complete".format(epoch))
         print("Elapsed time: %2.3f, Train_loss: %2.5f" % (time.time() - start_time, train_loss / num_eval))
-            
+
         return train_loss
 
     def eval(self, val_data, logger):

@@ -202,11 +202,11 @@ class TransformerLearner():
                 nz = float(torch.sum(module.weight == 0))
                 nelement = float(module.weight.nelement())
                 pruned_modules.append((name, nz, nelement))
-            
+
         t_nz = 0
         t_nelement = 0
 
-        # Report 
+        # Report
         for name, nz, nelement in pruned_modules:
             t_nz += nz
             t_nelement += nelement
@@ -214,4 +214,4 @@ class TransformerLearner():
                 print("Sparsity in {}: {:2f}%".format(name, 100. * nz / nelement))
 
         print("Global sparsity: {:2f}, t_nz: {}, t_el: {}".format(100. * t_nz / t_nelement, int(t_nz), int(t_nelement)))
-        self.writer.add_scalar("Global sparsity", t_nz / t_nelement, epoch) 
+        self.writer.add_scalar("Global sparsity", t_nz / t_nelement, epoch)

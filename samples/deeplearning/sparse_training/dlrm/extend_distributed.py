@@ -400,7 +400,7 @@ def alltoall(inputs, per_rank_split_lengths):
         output = All2All_ScatterList_Req.apply(a2ai, *inputs)
         myreq.WaitFunction = All2All_ScatterList_Wait
     else:
-        print("Unknown value set for DLRM_ALLTOALL_IMPL (%s), please use one of [alltoall, scatter, scatter_list]" % a2a_impl) 
+        print("Unknown value set for DLRM_ALLTOALL_IMPL (%s), please use one of [alltoall, scatter, scatter_list]" % a2a_impl)
     return myreq
 
 def all_gather(input, lengths, dim=0):

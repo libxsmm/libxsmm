@@ -99,14 +99,14 @@ void bleu_addngram(
 extern "C" {
 
 #ifdef _WIN64
-__declspec(dllexport) 
+__declspec(dllexport)
 #endif
 void bleu_zero_init(bleu_stat* stat) {
   std::memset(stat, 0, sizeof(bleu_stat));
 }
 
 #ifdef _WIN64
-__declspec(dllexport) 
+__declspec(dllexport)
 #endif
 void bleu_one_init(bleu_stat* stat) {
   bleu_zero_init(stat);
@@ -121,7 +121,7 @@ void bleu_one_init(bleu_stat* stat) {
 }
 
 #ifdef _WIN64
-__declspec(dllexport) 
+__declspec(dllexport)
 #endif
 void bleu_add(
     bleu_stat* stat,

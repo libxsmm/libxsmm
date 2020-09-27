@@ -94,7 +94,7 @@ class Trainer(object):
         self.prune_start_step = args.prune_start_step
         self.prune_type = args.prune_type
         self.prune_embedding = args.prune_embedding
-        
+
 
         # TODO(myleott): support tpu
         if self.cuda and self.data_parallel_world_size > 1:

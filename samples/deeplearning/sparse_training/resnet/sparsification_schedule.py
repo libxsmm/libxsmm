@@ -8,10 +8,10 @@ After applying a sparsification, we yield a sparsificd model
 Sparsify model based on global criteria
 """
 def sparsifiy_model(model):
-	pass
+    pass
 
 """
 Report sparsification level for every module within topology
 """
 def report_sparsity(model):
-	pass
+    pass

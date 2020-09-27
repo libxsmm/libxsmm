@@ -85,7 +85,7 @@ class IterNATransformerModel(NATransformerModel):
         word_ins_outs, word_ins_tgts, word_ins_masks = [], [], []
         for t in range(self.train_step):
             word_ins_out = self.decoder(
-                normalize=False, 
+                normalize=False,
                 prev_output_tokens=prev_output_tokens,
                 encoder_out=encoder_out,
                 step=t,

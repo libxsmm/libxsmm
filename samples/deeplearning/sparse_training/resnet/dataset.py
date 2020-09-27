@@ -14,7 +14,7 @@ def load_data():
             transforms.CenterCrop(224),
             transforms.ToTensor(),
             transforms.Normalize(mean, std)
-            ]) 
+            ])
     # tr_data = datasets.CIFAR100('./datasets', train=True, download=True, transform=transform)
     # te_data = datasets.CIFAR100('./datasets', train=False, download=True, transform=transform)
     tr_data = datasets.CIFAR10('./datasets', train=True, download=True, transform=transform)

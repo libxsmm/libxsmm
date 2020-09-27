@@ -64,7 +64,7 @@ def el_nested_key_averages(self, only_top_level):
         #     parent = getattr(evt, "parent", None)
         #     if parent:
         #         pp = getattr(parent, "parent", None)
-        #         while pp: 
+        #         while pp:
         #             parent = pp
         #             pp = getattr(parent, "parent", None)
         #         stats[parent.nested_key].cuda_time_total += evt.cuda_time

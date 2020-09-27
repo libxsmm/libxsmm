@@ -1,11 +1,11 @@
 """
-Returns a list of prune_ratios that specifies the 
+Returns a list of prune_ratios that specifies the
 prune rate for each epoch so that the end sparsity matches
 the target prune_rate
 """
 def prune_scheduler(
-    prune_rate, epochs, 
-    start_epoch=0, end_epoch=0, 
+    prune_rate, epochs,
+    start_epoch=0, end_epoch=0,
     increment_profile="natural"):
     end_epoch = epochs
     num_increments = end_epoch - start_epoch
