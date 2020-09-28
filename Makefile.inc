@@ -264,6 +264,7 @@ else
 endif
 qsuffix = $(suffix   $(strip      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qbname =  $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+qdname =  $(shell if [ -d "$1" ]; then echo "$1"; else echo "$(call qdir,$1)"; fi)
 qname =   $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
 
 # absolute directory paths
@@ -938,7 +939,7 @@ ifneq (Darwin,$(UNAME))
   linkopt = $(if $1,$(XLNKOPT)$(if $2,$1=$(call quote,$2),$1))
   abslibrpath = $(strip $(if \
     $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$(NULL),$1), \
-    $(call linkopt,--rpath,$(call qdir,$(call qapath,$1)))))
+    $(call linkopt,--rpath,$(call qdname,$(call qapath,$1)),$1)))
   XGROUP_BEGIN := $(call linkopt,--start-group)
   XGROUP_END := $(call linkopt,--end-group)
   ifneq (0,$(ASNEEDED))
@@ -953,11 +954,11 @@ else # OSX
   linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) $(call quote,$2),$1))
   abslibrpath = $(strip $(if \
     $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$(NULL),$1), \
-    $(call linkopt,-rpath,$(call qdir,$(call qapath,$1)))))
+    $(call linkopt,-rpath,$(call qdname,$(call qapath,$1)),$1)))
 endif
 
 absliblpath = $(strip $(if $1, \
-  $(if $(findstring .$(ILIBEXT),$1),-L$(call qdir,$(call qapath,$1)))))
+  $(if $(findstring .$(ILIBEXT),$1),-L$(call qdname,$(call qapath,$1)))))
 
 ifneq (0,$(ABSLIBS))
   abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
