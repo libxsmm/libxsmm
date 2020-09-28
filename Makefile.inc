@@ -47,7 +47,7 @@ ifeq (d,$(filter d,$(MAKEFLAGS)))
   SHELL += -xv
 endif
 
-which = $(shell which $(firstword $1) 2>/dev/null)
+which  = $(shell which $(firstword $1) 2>/dev/null)
 which ?= $(shell command -v $1)
 
 ifeq (Windows_NT,$(OS))
@@ -78,9 +78,9 @@ ifneq (,$(PYTHON3))
   PYTHON ?= $(PYTHON3)
 else ifneq (,$(call which,python))
   ifneq (Windows_NT,$(UNAME))
-    SHELL := $(ENVBIN) PATH=$(MAKEINC):$(PATH) $(SHELL)
+    #SHELL := $(ENVBIN) PATH=$(MAKEINC):$(PATH) $(SHELL)
     PYTHON3 := $(shell ln -s $(call which,python) $(MAKEINC)/python3 2>/dev/null)
-    PYTHON ?= $(call which,python3)
+    PYTHON ?= $(MAKEINC)/python3
   else
     PYTHON ?= python
   endif
