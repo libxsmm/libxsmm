@@ -97,11 +97,11 @@
 
         ! compute reference solution and warmup BLAS library
         ALLOCATE(sumblas(m,n))
-        sumblas(:,:) = 0
+        sumblas(:,:) = REAL(0, T)
         !$OMP PARALLEL REDUCTION(+:sumblas) PRIVATE(i, r)               &
         !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, repetitions)
         ALLOCATE(sumtmp(m,n))
-        sumtmp(:,:) = 0
+        sumtmp(:,:) = REAL(0, T)
         DO r = 1, repetitions
           !$OMP DO
           DO i = LBOUND(a, 3), UBOUND(a, 3)
@@ -117,12 +117,12 @@
 
         WRITE(*, "(A)") "Streamed (A,B)... (BLAS)"
         ALLOCATE(sumxsmm(m,n))
-        sumxsmm(:,:) = 0
+        sumxsmm(:,:) = REAL(0, T)
         !$OMP PARALLEL REDUCTION(+:sumxsmm) PRIVATE(i, r, start)        &
         !$OMP   DEFAULT(NONE)                                           &
         !$OMP   SHARED(m, n, k, a, b, duration, repetitions)
         ALLOCATE(sumtmp(m,n))
-        sumtmp(:,:) = 0
+        sumtmp(:,:) = REAL(0, T)
         !$OMP MASTER
         start = libxsmm_timer_tick()
         !$OMP END MASTER
@@ -146,12 +146,12 @@
         CALL performance(duration, m, n, k, size2, m * k + k * n)
 
         WRITE(*, "(A)") "Streamed (A,B)... (auto-dispatched)"
-        sumxsmm(:,:) = 0
+        sumxsmm(:,:) = REAL(0, T)
         !$OMP PARALLEL REDUCTION(+:sumxsmm) PRIVATE(i, r, start)        &
         !$OMP   DEFAULT(NONE)                                           &
         !$OMP   SHARED(m, n, k, a, b, duration, repetitions)
         ALLOCATE(sumtmp(m,n))
-        sumtmp(:,:) = 0
+        sumtmp(:,:) = REAL(0, T)
         !$OMP MASTER
         start = libxsmm_timer_tick()
         !$OMP END MASTER
@@ -179,12 +179,12 @@
         CALL libxsmm_matdiff_reduce(max_diff, diff)
 
         IF (libxsmm_available(xmm)) THEN
-          sumxsmm(:,:) = 0
+          sumxsmm(:,:) = REAL(0, T)
           WRITE(*, "(A)") "Streamed (A,B)... (specialized)"
           !$OMP PARALLEL REDUCTION(+:sumxsmm) PRIVATE(i, r, start)
             !DEFAULT(NONE) SHARED(m, n, a, b, duration, repetitions, xmm)
           ALLOCATE(sumtmp(m,n))
-          sumtmp(:,:) = 0
+          sumtmp(:,:) = REAL(0, T)
           !$OMP MASTER
           start = libxsmm_timer_tick()
           !$OMP END MASTER

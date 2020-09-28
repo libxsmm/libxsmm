@@ -33,7 +33,7 @@
             END DO
           END DO
         END DO
-        c(:,:) = 0
+        c(:,:) = REAL(0, T)
         ! generates and dispatches a matrix multiplication kernel
         CALL libxsmm_mmdispatch(xmm, m, n, k,                           &
      &    alpha=REAL(1, T), beta=REAL(1, T))

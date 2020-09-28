@@ -125,7 +125,7 @@
             DO ix = 1, m
               DO iy = 1, n
                 DO iz = 1, k
-                  d(ix,iy,iz,i) = 0.
+                  d(ix,iy,iz,i) = REAL(0, T)
                 END DO
               END DO
             END DO
@@ -164,7 +164,7 @@
           !$OMP END PARALLEL
         END IF
 
-        c(:,:,:,:) = 0.0
+        c(:,:,:,:) = REAL(0, T)
         WRITE(*, "(A)") "Streamed... (BLAS)"
         !$OMP PARALLEL PRIVATE(i, j, r, start) DEFAULT(NONE) &
         !$OMP   SHARED(a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, h1, h2, duration, repetitions)
@@ -210,7 +210,7 @@
         CALL performance(duration, m, n, k, size)
         IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
 
-        c(:,:,:,:) = 0.0
+        c(:,:,:,:) = REAL(0, T)
         WRITE(*, "(A)") "Streamed... (mxm)"
         !$OMP PARALLEL PRIVATE(i, j, r, start) DEFAULT(NONE) &
         !$OMP   SHARED(a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, h1, h2, duration, repetitions)
@@ -247,7 +247,7 @@
         CALL performance(duration, m, n, k, size)
         IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
 
-        c(:,:,:,:) = 0.0
+        c(:,:,:,:) = REAL(0, T)
         WRITE(*, "(A)") "Streamed... (auto-dispatched)"
         !$OMP PARALLEL PRIVATE(i, j, r, start) DEFAULT(NONE) &
         !$OMP   SHARED(a, b, dx, dy, dz, g1, g2, g3, c, m, n, k, h1, h2, duration, repetitions)
@@ -293,7 +293,7 @@
         CALL performance(duration, m, n, k, size)
         IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
 
-        c(:,:,:,:) = 0.0
+        c(:,:,:,:) = REAL(0, T)
         WRITE(*, "(A)") "Streamed... (specialized)"
         CALL libxsmm_dispatch(xmm1, m, n*k, m, alpha=alpha, beta=beta)
         CALL libxsmm_dispatch(xmm2, m, n, n, alpha=alpha, beta=beta)

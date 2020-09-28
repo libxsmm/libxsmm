@@ -121,7 +121,7 @@
           DO ix = 1, mm
             DO iy = 1, nn
               DO iz = 1, kk
-                c(ix,iy,iz,i) = 0.0
+                c(ix,iy,iz,i) = REAL(0, T)
               END DO
             END DO
           END DO
@@ -146,7 +146,7 @@
             DO ix = 1, mm
               DO iy = 1, nn
                 DO iz = 1, kk
-                  d(ix,iy,iz,i) = 0.0
+                  d(ix,iy,iz,i) = REAL(0, T)
                 END DO
               END DO
             END DO
