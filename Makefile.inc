@@ -675,6 +675,7 @@ ifneq (0,$(DEPSTATIC))
   LIBEXT ?= $(SLIBEXT)
 else
   LIBEXT ?= $(DLIBEXT)
+  ABSLIBS := 1
 endif
 
 # Import-library
@@ -925,10 +926,6 @@ ifeq (,$(strip $(MKLROOT)))
     MKLROOT := $(call qapath,$(call qdir,$(BLAS_INCFILE))/../..)
   endif
 endif
-ifneq (,$(BLAS_INCFILE))
-  #BLAS_STATIC := 0
-  ABSLIBS := 1
-endif
 
 # Compiler is used for link stage
 ifneq (Darwin,$(UNAME))
@@ -1071,6 +1068,7 @@ endif
 
 LIBGFORTRAN := $(call libpath,$(FLD),$(SLDFLAGS),gfortran)
 LIBPTHREAD := $(call ldclib,$(LD),$(SLDFLAGS),pthread)
+QUADMATH := $(call ldclib,$(LD),$(SLDFLAGS),quadmath)
 LIBCPP := $(call ldclib,$(LD),$(SLDFLAGS),stdc++)
 LIBRT := $(call ldclib,$(LD),$(SLDFLAGS),rt)
 LIBDL := $(call ldclib,$(LD),$(SLDFLAGS),dl)
@@ -2174,26 +2172,11 @@ else ifneq (0,$(BLAS)) # generic
     endif
     BLASREF ?= 0
     ifneq (0,$(BLASREF)) # BLAS (reference)
-      ifneq (,$(GFC)$(filter-out 0,$(GCC)))
-        ifneq (0,$(DEPSTATIC))
-          ifneq (,$(LIBGFORTRAN))
-            BLASTEST += $(XLIB_BEGIN) $(LIBGFORTRAN) $(LIBM) $(XLIB_END)
-          else ifeq (3,$(GCC))
-            BLASTEST += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),gfortran) $(LIBM) $(XLIB_END)
-          endif
-        endif
-        QUADMATH := $(call ldclib,$(LD),$(SLDFLAGS),quadmath)
-        ifneq (,$(QUADMATH))
-          BLASTEST += $(XLIB_BEGIN) $(QUADMATH) $(call ldclib,$(LD),$(SLDFLAGS),m) $(XLIB_END)
-        endif
-        ifneq (3,$(GCC))
-          BLAS_LDFLAGS += $(BLASTEST)
-        else
-          BLAS_CLDFLAGS += $(BLASTEST)
-        endif
-      else ifneq (0,$(PGI))
-        BLAS_FLAGS += -D__CBLAS
-      endif
+    ifeq (,$(GFC)$(filter-out 0,$(GCC)))
+    ifneq (0,$(PGI))
+      BLAS_FLAGS += -D__CBLAS
+    endif
+    endif
     endif
     ifneq (,$(filter-out 0,$(OPENBLAS) $(BLASREF))) # OpenBLAS or RefBLAS
     ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
@@ -2205,6 +2188,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
     endif
   else # BLAS library is specified via BLASLIB
+    #BLASTEST := $(NULL)
     BLAS_FLAGS += -D__BLAS=$(BLAS)
     ifneq (,$(findstring openblas,$(call qndir,$(BLASLIB))))
       BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
@@ -2217,6 +2201,29 @@ else ifneq (0,$(BLAS)) # generic
       endif
     else # fallback
       BLAS_LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),$(BLASLIB))
+    endif
+  endif
+endif
+ifneq (,$(GFC)$(filter-out 0,$(GCC)))
+  ifneq (,$(LIBGFORTRAN))
+    ifneq (0,$(DEPSTATIC))
+      BLAS_CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) $(XLIB_END)
+    else
+      BLAS_LDFLAGS += $(call abslibrpath,$(LIBGFORTRAN))
+    endif
+  endif
+  ifneq (,$(QUADMATH))
+    ifneq (0,$(DEPSTATIC))
+      BLAS_CLDFLAGS += $(XLIB_BEGIN) $(QUADMATH) $(XLIB_END)
+    else
+      BLAS_LDFLAGS += $(call abslibrpath,$(QUADMATH))
+    endif
+  endif
+  ifneq (,$(LIBM))
+    ifneq (0,$(DEPSTATIC))
+      BLAS_CLDFLAGS += $(XLIB_BEGIN) $(LIBM) $(XLIB_END)
+    else
+      BLAS_LDFLAGS += $(call abslibrpath,$(LIBM))
     endif
   endif
 endif
