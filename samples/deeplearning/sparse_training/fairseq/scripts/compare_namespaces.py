@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Helper script to compare two argparse.Namespace objects."""
 
 from argparse import Namespace  # noqa
