@@ -1,14 +1,14 @@
 # ROOTDIR avoid abspath to match Makefile targets
-ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
-INCDIR = include
-SCRDIR = scripts
-TSTDIR = tests
-BLDDIR = obj
-SRCDIR = src
-OUTDIR = lib
-BINDIR = bin
-SPLDIR = samples
-DOCDIR = documentation
+ROOTDIR := $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
+INCDIR := include
+SCRDIR := scripts
+TSTDIR := tests
+BLDDIR := obj
+SRCDIR := src
+OUTDIR := lib
+BINDIR := bin
+SPLDIR := samples
+DOCDIR := documentation
 
 # subdirectories (relative) to PREFIX (install targets)
 PINCDIR ?= $(INCDIR)
@@ -23,9 +23,9 @@ LICFDIR ?= $(PDOCDIR)
 LICFILE ?= LICENSE.md
 
 # initial default flags: RPM_OPT_FLAGS are usually NULL
-CFLAGS = $(RPM_OPT_FLAGS)
-CXXFLAGS = $(RPM_OPT_FLAGS)
-FCFLAGS = $(RPM_OPT_FLAGS)
+CFLAGS := $(RPM_OPT_FLAGS)
+CXXFLAGS := $(RPM_OPT_FLAGS)
+FCFLAGS := $(RPM_OPT_FLAGS)
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS
 # A value of zero (0) populates a default threshold
@@ -76,7 +76,7 @@ endif
 
 # Beta argument of GEMM
 # Supported: 0.0, 1.0
-# 0: C  = A * B
+# 0: C := A * B
 # 1: C += A * B
 BETA ?= 1
 ifneq (1,$(BETA))
@@ -169,7 +169,7 @@ OMP ?= 0
 
 ifneq (,$(MKL))
 ifneq (0,$(MKL))
-  BLAS = $(MKL)
+  BLAS := $(MKL)
 endif
 endif
 
@@ -183,19 +183,19 @@ ifeq (0,$(INIT))
 endif
 
 # Kind of documentation (internal key)
-DOCEXT = pdf
+DOCEXT := pdf
 
 # Timeout when downloading documentation parts
-TIMEOUT = 30
+TIMEOUT := 30
 
 # state to be excluded from tracking the (re-)build state
-EXCLUDE_STATE = \
+EXCLUDE_STATE := \
   DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR TIMEOUT \
   PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR \
   SRCDIR TEST VERSION_STRING DEPSTATIC ALIAS_% BLAS %_TARGET %ROOT MPSS KNC
 
 # fixed .state file directory (included by source)
-DIRSTATE = $(OUTDIR)/..
+DIRSTATE := $(OUTDIR)/..
 
 ifeq (,$(M)$(N)$(K))
 ifeq (,$(filter-out 0,$(MNK)))
@@ -204,7 +204,7 @@ endif
 endif
 
 # avoid to link with C++ standard library
-FORCE_CXX = 0
+FORCE_CXX := 0
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
@@ -249,38 +249,38 @@ endif
 # target library for a broad range of systems
 ifneq (0,$(JIT))
 ifeq (file,$(origin AVX))
-  AVX_STATIC = 0
+  AVX_STATIC := 0
 endif
 endif
 AVX_STATIC ?= $(AVX)
 
 ifeq (1,$(AVX_STATIC))
-  GENTARGET = snb
+  GENTARGET := snb
 else ifeq (2,$(AVX_STATIC))
-  GENTARGET = hsw
+  GENTARGET := hsw
 else ifeq (3,$(AVX_STATIC))
   ifneq (0,$(MIC))
     ifeq (2,$(MIC))
-      GENTARGET = knm
+      GENTARGET := knm
     else
-      GENTARGET = knl
+      GENTARGET := knl
     endif
   else
-    GENTARGET = skx
+    GENTARGET := skx
   endif
 else ifneq (0,$(SSE))
-  GENTARGET = wsm
+  GENTARGET := wsm
 else
-  GENTARGET = noarch
+  GENTARGET := noarch
 endif
 
 ifneq (Darwin,$(UNAME))
-  GENGEMM = @$(ENVBIN) \
+  GENGEMM := @$(ENVBIN) \
     LD_LIBRARY_PATH="$(OUTDIR):$${LD_LIBRARY_PATH}" \
     PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
 else # osx
-  GENGEMM = @$(ENVBIN) \
+  GENGEMM := @$(ENVBIN) \
     DYLD_LIBRARY_PATH="$(OUTDIR):$${DYLD_LIBRARY_PATH}" \
     PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
@@ -289,13 +289,13 @@ endif
 ifneq (,$(PYTHON))
   INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 endif
-NINDICES = $(words $(INDICES))
+NINDICES := $(words $(INDICES))
 
-SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
-KRNOBJS_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
-KRNOBJS_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
+SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
+KRNOBJS_HST := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
+KRNOBJS_MIC := $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
-HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
+HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
           $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
           $(ROOTDIR)/include/libxsmm_blocked_gemm.h \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
@@ -323,7 +323,7 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
-SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
+SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c \
           libxsmm_sync.c libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_xcopy.c libxsmm_blocked_gemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c\
@@ -335,33 +335,33 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c libxsmm_dnn_fullyconnected_backward_weight_update.c \
           libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c libxsmm_dnn_softmaxloss.c \
           libxsmm_dnn_softmaxloss_forward.c libxsmm_dnn_softmaxloss_backward.c libxsmm_dnn_optimizer.c libxsmm_dnn_optimizer_sgd.c )
-SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
+SRCFILES_GEN_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
           libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c)
 
-SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
-OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
-OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
-OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
-OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB)))) $(BLDDIR)/mic/generator_common.o
-EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
+SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
+OBJFILES_GEN_GEMM_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
+OBJFILES_GEN_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
+OBJFILES_HST := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
+OBJFILES_MIC := $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB)))) $(BLDDIR)/mic/generator_common.o
+EXTOBJS_HST  := $(BLDDIR)/intel64/libxsmm_ext.o \
                $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
                $(BLDDIR)/intel64/libxsmm_ext_blocked_gemm.o \
                $(BLDDIR)/intel64/libxsmm_ext_gemm.o
-EXTOBJS_MIC  = $(BLDDIR)/mic/libxsmm_ext.o \
+EXTOBJS_MIC  := $(BLDDIR)/mic/libxsmm_ext.o \
                $(BLDDIR)/mic/libxsmm_ext_xcopy.o \
                $(BLDDIR)/mic/libxsmm_ext_blocked_gemm.o \
                $(BLDDIR)/mic/libxsmm_ext_gemm.o
-NOBLAS_HST   = $(BLDDIR)/intel64/libxsmm_noblas.o
-NOBLAS_MIC   = $(BLDDIR)/mic/libxsmm_noblas.o
+NOBLAS_HST   := $(BLDDIR)/intel64/libxsmm_noblas.o
+NOBLAS_MIC   := $(BLDDIR)/mic/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
-OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_CONV_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
+OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_CONV_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
           $(KRNOBJS_HST) $(KRNOBJS_MIC) $(EXTOBJS_HST) $(EXTOBJS_MIC) $(NOBLAS_HST) $(NOBLAS_MIC)
 ifneq (,$(strip $(FC)))
-  FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
+  FTNOBJS := $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 endif
 
-MSGJITPROFILING = 0
+MSGJITPROFILING := 0
 ifneq (0,$(JIT))
 ifneq (0,$(VTUNE))
 ifeq (,$(filter Darwin,$(UNAME)))
@@ -371,17 +371,17 @@ ifeq (,$(filter Darwin,$(UNAME)))
       DFLAGS += -DLIBXSMM_PERF_JITDUMP
     endif
   endif
-  VTUNEROOT = $(shell env | grep VTUNE_PROFILER | grep -m1 _DIR | cut -d= -f2-)
+  VTUNEROOT := $(shell env | grep VTUNE_PROFILER | grep -m1 _DIR | cut -d= -f2-)
   ifeq (,$(VTUNEROOT))
-    VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+    VTUNEROOT := $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
   endif
   ifeq (,$(VTUNEROOT))
-    VTUNEROOT = $(EBROOTVTUNE)/vtune_amplifier
+    VTUNEROOT := $(EBROOTVTUNE)/vtune_amplifier
   endif
   ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
     ifneq (0,$(SYM))
-      LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-      OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
+      LIBJITPROFILING := $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+      OBJJITPROFILING := $(BLDDIR)/jitprofiling/*.o
       DFLAGS += -DLIBXSMM_VTUNE
       IFLAGS += -I$(call quote,$(VTUNEROOT)/include)
       ifneq (0,$(INTEL))
@@ -389,7 +389,7 @@ ifeq (,$(filter Darwin,$(UNAME)))
         CFLAGS += -diag-disable 271
       endif
     endif
-    MSGJITPROFILING = 1
+    MSGJITPROFILING := 1
   endif
 endif
 endif
@@ -511,66 +511,66 @@ lib_mic: clib_mic flib_mic ext_mic noblas_mic
 .PHONY: lib_hst
 lib_hst: clib_hst flib_hst ext_hst noblas_hst
 
-PREFETCH_UID = 0
-PREFETCH_TYPE = 0
-PREFETCH_SCHEME = nopf
+PREFETCH_UID := 0
+PREFETCH_TYPE := 0
+PREFETCH_SCHEME := nopf
 ifneq (Windows_NT,$(UNAME)) # TODO: full support for Windows calling convention
   ifneq (0,$(shell echo $$((0 <= $(PREFETCH) && $(PREFETCH) <= 6))))
-    PREFETCH_UID = $(PREFETCH)
+    PREFETCH_UID := $(PREFETCH)
   else ifneq (0,$(shell echo $$((0 > $(PREFETCH))))) # auto
-    PREFETCH_UID = 1
+    PREFETCH_UID := 1
   else ifeq (pfsigonly,$(PREFETCH))
-    PREFETCH_UID = 2
+    PREFETCH_UID := 2
   else ifeq (BL2viaC,$(PREFETCH))
-    PREFETCH_UID = 3
+    PREFETCH_UID := 3
   else ifeq (curAL2,$(PREFETCH))
-    PREFETCH_UID = 4
+    PREFETCH_UID := 4
   else ifeq (curAL2_BL2viaC,$(PREFETCH))
-    PREFETCH_UID = 5
+    PREFETCH_UID := 5
   else ifeq (AL2,$(PREFETCH))
-    PREFETCH_UID = 6
+    PREFETCH_UID := 6
   else ifeq (AL2_BL2viaC,$(PREFETCH))
-    PREFETCH_UID = 7
+    PREFETCH_UID := 7
   endif
   # Mapping build options to libxsmm_gemm_prefetch_type (see include/libxsmm_typedefs.h)
   ifeq (1,$(PREFETCH_UID))
     # Prefetch "auto" is a pseudo-strategy introduced by the frontend;
     # select "nopf" for statically generated code.
-    PREFETCH_SCHEME = nopf
-    PREFETCH_TYPE = -1
+    PREFETCH_SCHEME := nopf
+    PREFETCH_TYPE := -1
   else ifeq (2,$(PREFETCH_UID))
-    PREFETCH_SCHEME = pfsigonly
-    PREFETCH_TYPE = 1
+    PREFETCH_SCHEME := pfsigonly
+    PREFETCH_TYPE := 1
   else ifeq (3,$(PREFETCH_UID))
-    PREFETCH_SCHEME = BL2viaC
-    PREFETCH_TYPE = 4
+    PREFETCH_SCHEME := BL2viaC
+    PREFETCH_TYPE := 4
   else ifeq (4,$(PREFETCH_UID))
-    PREFETCH_SCHEME = curAL2
-    PREFETCH_TYPE = 8
+    PREFETCH_SCHEME := curAL2
+    PREFETCH_TYPE := 8
   else ifeq (5,$(PREFETCH_UID))
-    PREFETCH_SCHEME = curAL2_BL2viaC
-    PREFETCH_TYPE = $(shell echo $$((4 | 8)))
+    PREFETCH_SCHEME := curAL2_BL2viaC
+    PREFETCH_TYPE := $(shell echo $$((4 | 8)))
   else ifeq (6,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL2
-    PREFETCH_TYPE = 2
+    PREFETCH_SCHEME := AL2
+    PREFETCH_TYPE := 2
   else ifeq (7,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL2_BL2viaC
-    PREFETCH_TYPE = $(shell echo $$((4 | 2)))
+    PREFETCH_SCHEME := AL2_BL2viaC
+    PREFETCH_TYPE := $(shell echo $$((4 | 2)))
   endif
 endif
 ifeq (,$(PREFETCH_SCHEME_MIC)) # adopt host scheme
-  PREFETCH_SCHEME_MIC = $(PREFETCH_SCHEME)
+  PREFETCH_SCHEME_MIC := $(PREFETCH_SCHEME)
 endif
 
 # Mapping build options to libxsmm_gemm_flags (see include/libxsmm_typedefs.h)
-#FLAGS = $(shell echo $$((((0==$(ALPHA))*4) | ((0>$(ALPHA))*8) | ((0==$(BETA))*16) | ((0>$(BETA))*32))))
-FLAGS = 0
+#FLAGS := $(shell echo $$((((0==$(ALPHA))*4) | ((0>$(ALPHA))*8) | ((0==$(BETA))*16) | ((0>$(BETA))*32))))
+FLAGS := 0
 
-SUPPRESS_UNUSED_VARIABLE_WARNINGS = LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
+SUPPRESS_UNUSED_VARIABLE_WARNINGS := LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
 ifneq (nopf,$(PREFETCH_SCHEME))
   #SUPPRESS_UNUSED_VARIABLE_WARNINGS += LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch);
-  #SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(C_prefetch);~
-  SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch); LIBXSMM_UNUSED(C_prefetch);~
+  #SUPPRESS_UNUSED_PREFETCH_WARNINGS := $(NULL)  LIBXSMM_UNUSED(C_prefetch);~
+  SUPPRESS_UNUSED_PREFETCH_WARNINGS := $(NULL)  LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch); LIBXSMM_UNUSED(C_prefetch);~
 endif
 
 # auto-clean the co-build
@@ -745,7 +745,7 @@ else
   DFLAGS += -DLIBXSMM_BUILD=1
 endif
 
-EXTCFLAGS = -DLIBXSMM_BUILD_EXT
+EXTCFLAGS := -DLIBXSMM_BUILD_EXT
 ifeq (0,$(OMP))
   ifeq (,$(filter environment% override command%,$(origin OMP)))
     EXTCFLAGS += $(OMPFLAG)
@@ -998,7 +998,7 @@ else # static
 endif
 
 # use dir not qdir to avoid quotes; also $(ROOTDIR)/$(SPLDIR) is relative
-DIRS_SAMPLES = $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
+DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/embbag_distri/ \
 	| grep -v /deeplearning/sparse_training/fairseq/docs/ \
 	| grep -v /deeplearning/tvm_cnnlayer/ \
@@ -1523,8 +1523,8 @@ ifeq (,$(strip $(ALIAS_PREFIX)))
   override ALIAS_PREFIX := $(PREFIX)
 endif
 ifneq ($(ALIAS_PREFIX),$(PREFIX))
-  PPKGDIR = libdata/pkgconfig
-  PMODDIR = share/modules
+  PPKGDIR := libdata/pkgconfig
+  PMODDIR := share/modules
 endif
 
 .PHONY: install-minimal
@@ -1652,20 +1652,20 @@ ifneq ($(PREFIX),$(ABSDIR))
 endif
 
 ifeq (Windows_NT,$(UNAME))
-  ALIAS_PRIVLIBS = $(call ldlib,$(LD),$(SLDFLAGS),dbghelp)
+  ALIAS_PRIVLIBS := $(call ldlib,$(LD),$(SLDFLAGS),dbghelp)
 else ifneq (Darwin,$(UNAME))
   ifneq (FreeBSD,$(UNAME))
-    ALIAS_PRIVLIBS = $(LIBPTHREAD) $(LIBRT) $(LIBDL) $(LIBM) $(LIBC)
+    ALIAS_PRIVLIBS := $(LIBPTHREAD) $(LIBRT) $(LIBDL) $(LIBM) $(LIBC)
   else
-    ALIAS_PRIVLIBS = $(LIBDL) $(LIBM) $(LIBC)
+    ALIAS_PRIVLIBS := $(LIBDL) $(LIBM) $(LIBC)
   endif
 endif
 ifneq (Darwin,$(UNAME))
-  ALIAS_PRIVLIBS_EXT = -fopenmp
+  ALIAS_PRIVLIBS_EXT := -fopenmp
 endif
 
-ALIAS_INCLUDEDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
-ALIAS_LIBDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
+ALIAS_INCLUDEDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
+ALIAS_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
