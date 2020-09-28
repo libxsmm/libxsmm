@@ -236,7 +236,7 @@ ABSLIBS ?= 0
 SONAMELNK ?= 2
 
 # utilities to handle paths with spaces
-SPACES ?= 1
+SPACES ?= 0
 
 REVERSION0 := [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*
 REVERSION1 := s/..* \($(REVERSION0)\)[ \S]*.*/\1/
