@@ -46,37 +46,49 @@
 /* special instruction */
 #define LIBXSMM_X86_INSTR_UNDEF           9999
 
-/* 4-byte Integer Instruction Header definition map:
-* 4th byte
-* 31 Rex only = 1
-* 30 Vex only = 1
-* 29 #operands (2 bits=0-3)
-* 28 #operands (2 bits=0-3)
-* 27 Reversal load/store ordering. 0=regular, 1=reverse (open question: is one bit enough, or do I need a couple bits to show other orderings)
-* 26 We need a shift opcode extension in the REX field (using bits 20-22)
-* 25 Gather instruction???
-* 24 unused
-* 3rd byte
-* 23 W bit (single inputs=0 or double inputs=1)
-* 22 Op code extension shifts in Reg filed in ModRM (Shifts like /2, /4, /7, etc.. Maps to values 0-7, corresponding to /0 to /7.)
-* 21 Op code extension shifts in Reg filed in ModRM (Shifts like /2, /4, /7, etc.. Maps to values 0-7, corresponding to /0 to /7.)
-* 20 Op code extension shifts in Reg filed in ModRM (Shifts like /2, /4, /7, etc.. Maps to values 0-7, corresponding to /0 to /7.)
-* 19 Immediate required by the instruction. 0=no, 1=yes.
-* 18 Reserved, must be 1 for now
-* 17 P (compressed prefix 2-bits and 4 values: None=0x4, 66=0x5, F3=0x6, F2=0x7 , values include the reserved bit)
-* 16 P (compressed prefix 2-bits and 4 values: None=0x4, 66=0x5, F3=0x6, F2=0x7 , values include the reserved bit)
-* 2nd byte
-* 15 Reserved, must be 0 for now
-* 14 Reserved, must be 0 for now
-* 13 M (Map bit, 0F=0x1, 0F38=0x2, 0F3A=0x3)
-* 12 M (Map bit, 0F-0x1, 0F38=0x2, 0F3A=0x3)
-* 11 Disp8: N value constant for VL=128/256/512, 1=yes, 0=no (fullmem)
-* 10 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
-* 9 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
-* 8 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
-* 1st byte:
-* 7-0 Op code byte
-*/
+/*
+ * 4-byte Integer Instruction Header definition map:
+ * 4th byte:
+ * ---------
+ * 31 encoding mode (11=EVEX only, 10=REX, 01=VEX, 00=VEX/EVEX Hybrid)
+ * 30 encoding mode (11=EVEX only, 10=REX, 01=VEX, 00=VEX/EVEX Hybrid)
+ * 29 #operands (2 bits=0-3)
+ * 28 #operands (2 bits=0-3)
+ * 27 Reversal load/store ordering. 0=regular, 1=reverse (open question: is one bit enough, or do I need a couple bits to show other orderings)
+ * 26 Op code extension in ModRM Regfiles (extennsion is bits 20-22)
+ * 25 unused - Gather instruction???
+ * 24 unused - free
+ * 3rd byte:
+ * ---------
+ * 23 W bit (single inputs=0 or double inputs=1)
+ * 22 Op code extension shifts in Reg field in ModRM (Shifts like /2, /4, /7, etc.. Maps to values 0-7, corresponding to /0 to /7.)
+ * 21 Op code extension shifts in Reg field in ModRM (Shifts like /2, /4, /7, etc.. Maps to values 0-7, corresponding to /0 to /7.)
+ * 20 Op code extension shifts in Reg field in ModRM (Shifts like /2, /4, /7, etc.. Maps to values 0-7, corresponding to /0 to /7.)
+ * 19 Immediate required by the instruction. 0=no, 1=yes.
+ * 18 Reserved, must be 1 for now
+ * 17 P (compressed prefix 2-bits and 4 values: None=0x4, 66=0x5, F3=0x6, F2=0x7 , values include the reserved bit)
+ * 16 P (compressed prefix 2-bits and 4 values: None=0x4, 66=0x5, F3=0x6, F2=0x7 , values include the reserved bit)
+ * 2nd byte:
+ * ---------
+ * 15 Reserved, must be 0 for now
+ * 14 Reserved, must be 0 for now
+ * 13 M (Map bit, 0F=0x1, 0F38=0x2, 0F3A=0x3)
+ * 12 M (Map bit, 0F-0x1, 0F38=0x2, 0F3A=0x3)
+ * 11 Disp8: N value constant for VL=128/256/512, 1=yes, 0=no (fullmem)
+ * 10 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
+ * 9  Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
+ * 8  Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
+ * 1st byte:
+ * ---------
+ * 7 - Op code byte
+ * 6 - Op code byte
+ * 5 - Op code byte
+ * 4 - Op code byte
+ * 3 - Op code byte
+ * 2 - Op code byte
+ * 1 - Op code byte
+ * 0 - Op code byte
+ */
 
 /* Load/Store/Move instructions -  AVX1,AVX2,AVX512 - deprecated values */
 #define LIBXSMM_X86_INSTR_VMOVAPD          0x20851628
@@ -312,6 +324,10 @@
 #define LIBXSMM_X86_INSTR_VPBLENDMW      0x30852666
 #define LIBXSMM_X86_INSTR_VPMAXSD        0x3005263d
 #define LIBXSMM_X86_INSTR_VPMINSD        0x30052639
+#define LIBXSMM_X86_INSTR_VPMOVUSWB      0xe0062510
+#define LIBXSMM_X86_INSTR_VPMOVSWB       0xe0062520
+#define LIBXSMM_X86_INSTR_VPMOVWB        0xe0062530
+#define LIBXSMM_X86_INSTR_VPERMT2B       0xf005267d
 
 /* AVX512, QUAD MADD, QUAD VNNI and VNNI */
 #define LIBXSMM_X86_INSTR_V4FMADDPS      22001
