@@ -2130,7 +2130,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
-      BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
+      BLAS_FLAGS += -D__BLAS=$(BLAS) -D__OPENBLAS
       ifneq (,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
         BLAS_FLAGS += -D__OPENBLAS77 -I$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT)))))
       else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
@@ -2138,6 +2138,7 @@ else ifneq (0,$(BLAS)) # generic
       else ifneq (,$(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))
         BLAS_FLAGS += -D__OPENBLAS77 -I$(call qdir,$(firstword $(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT)))))
       endif
+TODO:
     else ifneq (0,$(filter 0,$(BLASREF))) # BLAS (reference)
       BLAS_FLAGS += -D__BLAS
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
@@ -2189,7 +2190,7 @@ else ifneq (0,$(BLAS)) # generic
     #BLASTEST := $(NULL)
     BLAS_FLAGS += -D__BLAS=$(BLAS)
     ifneq (,$(findstring openblas,$(call qndir,$(BLASLIB))))
-      BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
+      BLAS_FLAGS += -D__OPENBLAS
     endif
     ifneq (./,$(firstword $(BLASDIR))$(call qdir,$(BLASLIB)))
       ifeq (./,$(call qdir,$(BLASLIB)))
