@@ -257,14 +257,14 @@ ifneq (0,$(SPACES))
     if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi))
   qdir = $(call quote,$(shell dirname "$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x" 2>/dev/null)/)
 else
-  quote =  $(strip                $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
-  qapath = $(abspath $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qndir =  $(notdir  $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qdir =   $(dir     $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  quote = $(strip $(subst "",$(NULL),$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qapath = $(abspath $(call quote,   $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qndir =  $(notdir  $(call quote,   $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qdir =   $(dir     $(call quote,   $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 endif
 qsuffix = $(suffix   $(strip      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qbname =  $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-qdname =  $(shell if [ -d "$1" ]; then echo "$1"; else echo "$(call qdir,$1)"; fi)
+qxdir =   $(shell if [ -d "$1" ]; then echo "$1"; else echo "$(call qdir,$1)"; fi)
 qname =   $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
 
 # absolute directory paths
@@ -821,7 +821,7 @@ endif
 endif
 
 # prepend compiler-local library directory
-LIBFIND := $(call qapath,$(call qdir,$(call which,$(LD)))/../lib) $(LIBFIND)
+LIBFIND := $(call qapath,$(call qdir,$(call which,$(LD)))/../lib) $(wildcard $(LIBFIND))
 
 ifneq (Windows_NT,$(UNAME))
 ifneq (,$(strip $(PIC)))
@@ -934,9 +934,8 @@ ifneq (Darwin,$(UNAME))
   endif
   XLNKVERBOSE := --verbose
   linkopt = $(if $1,$(XLNKOPT)$(if $2,$1=$(call quote,$2),$1))
-  abslibrpath = $(strip $(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$(NULL),$1), \
-    $(call linkopt,--rpath,$(call qdname,$(call qapath,$1)),$1)))
+  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+    $(call linkopt,--rpath,$(call qxdir,$(call qapath,$1)))))
   XGROUP_BEGIN := $(call linkopt,--start-group)
   XGROUP_END := $(call linkopt,--end-group)
   ifneq (0,$(ASNEEDED))
@@ -949,13 +948,12 @@ else # OSX
   endif
   XLNKVERBOSE := -t
   linkopt = $(if $1,$(XLNKOPT) $(if $2,$1 $(XLNKOPT) $(call quote,$2),$1))
-  abslibrpath = $(strip $(if \
-    $(filter $(ILIBEXT),$(SLIBEXT))$(if $(filter %.$(SLIBEXT),$1),$(NULL),$1), \
-    $(call linkopt,-rpath,$(call qdname,$(call qapath,$1)),$1)))
+  abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+    $(call linkopt,-rpath,$(call qxdir,$(call qapath,$1)))))
 endif
 
-absliblpath = $(strip $(if $1, \
-  $(if $(findstring .$(ILIBEXT),$1),-L$(call qdname,$(call qapath,$1)))))
+absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
+  -L$(call qxdir,$(call qapath,$1)))))
 
 ifneq (0,$(ABSLIBS))
   abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
@@ -1004,11 +1002,11 @@ ifneq (Darwin,$(UNAME))
     solink = -o "$1.$2.$3.$4" $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
     ifneq (0,$(SONAMELNK))
       solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
-        ln -fs $(call qndir,$1.$2.$3.$4) $(call qndir,$1.$5))
+        ln -fs $(call qndir,$1.$2.$3.$4) $(call qndir,$1.$5) 2>/dev/null)
     endif
     ifneq (0,$(shell echo "$$((1<$(SONAMELNK) || 0>$(SONAMELNK)))"))
       solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
-        ln -fs $(call qndir,$1.$5) $(call qndir,$1))
+        ln -fs $(call qndir,$1.$5) $(call qndir,$1) 2>/dev/null)
     endif
   else # MinGW
     solink = -o $(call quote,$1) $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
@@ -1019,7 +1017,7 @@ else # macOS
            -current_version $2.$3.$4 -compatibility_version $5
   ifneq (0,$(SONAMELNK))
     solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
-      ln -fs $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) $(call qndir,$1))
+      ln -fs $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) $(call qndir,$1) 2>/dev/null)
   endif
 endif
 
@@ -1495,14 +1493,14 @@ else # GCC assumed
   ifeq (,$(strip $(OMPRT))) # fallback
     OMPRT := gomp
   endif
-  OMPLIBFILE := $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
+  OMPLIBFILE := $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
   ifeq (0,$(CRAY))
   ifeq (,$(OMPLIBFILE))
   ifneq (,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
       printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" > $${INFILE} && \
-      $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)) -l$(OMPRT) $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
+      $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))) -l$(OMPRT) $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
       rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-    CLDFLAGS += $(addprefix -L,$(LIBFIND))
+    CLDFLAGS += $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))
     OMPLIBFILE := -l$(OMPRT)
   endif
   endif
@@ -1513,8 +1511,8 @@ else # GCC assumed
       # clang: OMP=libomp
       ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9][0-9]*$$"; echo "$$?")) # NaN
         ifneq (0,$(CLANG))
-          CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
-          CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+          CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
+          CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
         endif
         CXXLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
         CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
@@ -1523,8 +1521,8 @@ else # GCC assumed
       else
         ifneq (Darwin,$(UNAME))
           ifneq (0,$(CLANG))
-            CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
-            CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+            CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
+            CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
           endif
           CXXLDFLAGS += $(OMPFLAG_FORCE)
           CLDFLAGS += $(OMPFLAG_FORCE)
@@ -1546,14 +1544,14 @@ else # GCC assumed
     else # mixed toolchain
       TESTRESC := $(strip $(if $(GFC), \
         $(call libpath,$(FLD),$(SLDFLAGS) -fopenmp,gomp), \
-        $(call libpath,$(FLD),$(SLDFLAGS) $(addprefix -L,$(LIBFIND)),$(OMPRT))))
+        $(call libpath,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))))
       ifeq (,$(TESTRESC))
         TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) \
-          $(if $(GFC),-fopenmp,$(addprefix -L,$(LIBFIND))), \
+          $(if $(GFC),-fopenmp,$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))), \
           $(if $(GFC),gomp,$(OMPRT))))
       endif
       ifneq (,$(TESTRESC))
-        FLDFLAGS += $(if $(GFC),$(NULL),$(addprefix -L,$(LIBFIND))) $(TESTRESC)
+        FLDFLAGS += $(if $(GFC),$(NULL),$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))) $(TESTRESC)
       else
         TESTRESC := $(call ftest,$(FLD),-fopenmp)
         ifneq (,$(TESTRESC))
@@ -1916,7 +1914,7 @@ ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
 endif
 GLIBC ?= 0
 
-OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT))
+OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
 ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB ?= $(call abslib,$(OMPLIBFILE))
 else ifneq (0,$(INTEL))
@@ -2180,7 +2178,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
     ifneq (,$(filter-out 0,$(OPENBLAS) $(BLASREF))) # OpenBLAS or RefBLAS
     ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
-      ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(addprefix -L,$(LIBFIND)),$(OMPRT)))
+      ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT)))
         BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
       else # common link BLAS/OMP-link flags (all compilers)
         BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
