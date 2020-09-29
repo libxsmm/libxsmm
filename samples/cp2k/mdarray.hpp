@@ -26,9 +26,7 @@
 
 #if defined(HAVE_MKL) || defined(__MKL)
 # include <mkl.h>
-#elif defined(OPENBLAS) || defined(__OPENBLAS)
-# include <openblas/cblas.h>
-#elif defined(__CBLAS)
+#elif defined(OPENBLAS) || defined(__OPENBLAS) || defined(__CBLAS)
 # include <cblas.h>
 #else
 # define CblasRowMajor 101
