@@ -69,7 +69,7 @@ $(OUTDIR)/$(OUTNAME)c: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(DEPDIR)/includ
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-cpp.o $(DEPDIR)/include/libxsmm_source.h
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(XLD) -o $@ $(BLDDIR)/$(OUTNAME)-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
