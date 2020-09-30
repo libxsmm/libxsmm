@@ -1892,17 +1892,20 @@ ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
     CXXFLAGS += -pthread
     CFLAGS += -pthread
   endif
-  FLDFLAGS += $(XLIB_BEGIN) $(call ldflib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
   ifneq (Windows_NT,$(UNAME))
     ifneq (0,$(INTEL))
       ifeq (0,$(OFFLOAD))
+        FLDFLAGS += $(XLIB_BEGIN) $(call ldflib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
         CLDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
       else
+        FLDFLAGS += -pthread
         CLDFLAGS += -pthread
       endif
     else ifneq (Darwin,$(UNAME))
+      FLDFLAGS += -pthread
       CLDFLAGS += -pthread
     else ifeq (0,$(CLANG))
+      FLDFLAGS += -pthread
       CLDFLAGS += -pthread
     endif
   endif
