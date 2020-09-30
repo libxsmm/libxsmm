@@ -281,13 +281,15 @@ uniqadd = $(if $($2),$(filter-out $($2),$($1)) $(if $3,$3,$($2)),$(filter-out $2
 uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
 
 ctest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
-  echo "int main(void) { return 0; }" > $${INFILE} && \
-  $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
+  echo "int main(void) { return 0; }" > $${INFILE} && if [ "$3" ]; \
+  then $1 -c $${INFILE} -o $${INFILE}.o && $1 $2 $${INFILE}.o -o $${INFILE}.x; \
+  else $1 $2 $${INFILE} -o $${INFILE}.x; fi 2>/dev/null >/dev/null && echo "OK"; \
   rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.c.* 2>/dev/null),$2))
 # INFILE cannot use leading dot when used with certain F-compiler
 ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
-  printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && \
-  $1 $2 $${INFILE} -o $${INFILE}.x 2>&1 >/dev/null || echo "FAILED"; \
+  printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && if [ "$3" ]; \
+  then $1 -c $${INFILE} -o $${INFILE}.o && $1 $2 $${INFILE}.o -o $${INFILE}.x; \
+  else $1 $2 $${INFILE} -o $${INFILE}.x; fi 2>&1 >/dev/null || echo "FAILED"; \
   rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$(NULL),$2))
 
 ldclib = $(if $1,$(call ctest,$1 $2,-l$(strip $3)))
@@ -814,7 +816,7 @@ XLD := $(CXX)
 
 ifeq (,$(strip $(GFC)))
 ifneq (,$(filter-out 0,$(INTEL) $(ICX)))
-ifneq (,$(call ftest,$(LD),-nofor-main))
+ifneq (,$(call ftest,$(LD),-nofor-main,link))
   override LD := $(LD) -nofor-main
 endif
 endif
@@ -901,12 +903,12 @@ DYNAMIC ?= 0
 
 # CCE: resolve linker issue
 ifneq (0,$(DYNAMIC))
-  ifneq (,$(call ctest,$(LD),-dynamic))
+  ifneq (,$(call ctest,$(LD),-dynamic,link))
     EXCLUDE_VALUE += -dynamic
     XLD := $(XLD) -dynamic
     LD := $(LD) -dynamic
   endif
-  ifneq (,$(call ftest,$(FLD),-dynamic))
+  ifneq (,$(call ftest,$(FLD),-dynamic,link))
     EXCLUDE_VALUE += -dynamic
     FLD := $(FLD) -dynamic
   endif
@@ -1555,7 +1557,7 @@ else # GCC assumed
       ifneq (,$(TESTRESC))
         FLDFLAGS += $(if $(GFC),$(NULL),$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))) $(TESTRESC)
       else
-        TESTRESC := $(call ftest,$(FLD),-fopenmp)
+        TESTRESC := $(call ftest,$(FLD),-fopenmp,link)
         ifneq (,$(TESTRESC))
           FLDFLAGS += $(TESTRESC)
         else # last try
@@ -1705,8 +1707,8 @@ endif
 
 ifeq (0,$(SYM))
 ifneq (Darwin,$(UNAME))
-  CLDFLAGS += $(call ctest,$(CC),-s)
-  FLDFLAGS += $(call ctest,$(FC),-s)
+  CLDFLAGS += $(call ctest,$(CC),-s,link)
+  FLDFLAGS += $(call ftest,$(FC),-s,link)
 endif
 endif
 
