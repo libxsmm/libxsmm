@@ -12,8 +12,8 @@
 
 CURL=$(command -v curl)
 DOMAIN=org
-JOBID=$1
-TOKEN=$2
+TOKEN=$1
+JOBID=$2
 
 if [ ! "${CURL}" ]; then
   echo "Error: missing prerequisites!"
@@ -21,9 +21,9 @@ if [ ! "${CURL}" ]; then
 fi
 
 if [ ! "${JOBID}" ] || [ ! "${TOKEN}" ]; then
-  echo "Usage: $0 <jobid> <token>"
+  echo "Usage: $0 <token> <jobid>"
+  echo "       token: API authentication; see https://travis-ci.org/account/preferences"
   echo "       jobid: not the build-id; expand \"Build system information\" (job's log)"
-  echo "       token: API authentication (https://travis-ci.org/account/preferences)"
   echo "See also https://docs.travis-ci.com/user/running-build-in-debug-mode/"
   exit 1
 fi
