@@ -26,13 +26,12 @@
 
 #if defined(HAVE_MKL) || defined(__MKL)
 # include <mkl.h>
-#elif defined(OPENBLAS) || defined(__OPENBLAS)
-# include <openblas/cblas.h>
 #elif defined(__CBLAS)
 # include <cblas.h>
 #else
 # define CblasRowMajor 101
 # define CblasColMajor 102
+extern "C" void cblas_dger(int, int, int, double, const double*, int, const double*, int, double*, int);
 #endif
 
 #if !defined(CBLAS_LAYOUT)

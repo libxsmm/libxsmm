@@ -129,7 +129,7 @@ LIBXSMM_INLINE void init_buf(float* buf, long size, int initPos, int initOne)
   int i;
   zero_buf(buf, size);
   for (i = 0; i < size; ++i) {
-    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? drand48() : (0.05 - drand48()/10.0)));
+    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rng_f64() : (0.05 - libxsmm_rng_f64()/10.0)));
   }
 }
 
@@ -476,7 +476,7 @@ int main(int argc, char* argv[])
     printf("\n\n\nUsage: %s iters H W N C K R S pad stride type(F,B,U,A)\n\n\n", argv[0]);
     return -1;
   }
-  srand48(1);
+  libxsmm_rng_set_seed(1);
 
   /* reading new values from cli */
   i = 1;
