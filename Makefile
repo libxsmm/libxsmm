@@ -1,5 +1,5 @@
 # ROOTDIR avoid abspath to match Makefile targets
-ROOTDIR := $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
+ROOTDIR := $(subst //,,$(dir $(firstword $(MAKEFILE_LIST)))/)
 INCDIR := include
 SCRDIR := scripts
 TSTDIR := tests
@@ -115,26 +115,6 @@ MALLOC ?= 0
 # 0: disabled
 WRAP ?= 1
 
-# JIT backend is enabled by default
-ifeq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
-  JIT ?= 1
-else # disabled if platform is forced
-# enable: make PLATFORM=1 JIT=1
-  JIT ?= 0
-endif
-
-# TRACE facility
-INSTRUMENT ?= $(TRACE)
-
-# target library for a broad range of systems
-ifneq (0,$(JIT))
-  SSE ?= 1
-endif
-
-ifneq (,$(MAXTARGET))
-  DFLAGS += -DLIBXSMM_MAXTARGET=$(MAXTARGET)
-endif
-
 # Profiling JIT code using Linux Perf
 # PERF=0: disabled (default)
 # PERF=1: enabled (without JITDUMP)
@@ -166,12 +146,6 @@ endif
 # OpenMP is disabled by default and LIBXSMM is
 # always agnostic wrt the threading runtime
 OMP ?= 0
-
-ifneq (,$(MKL))
-ifneq (0,$(MKL))
-  BLAS := $(MKL)
-endif
-endif
 
 ifneq (1,$(CACHE))
   DFLAGS += -DLIBXSMM_CAPACITY_CACHE=$(CACHE)
@@ -208,6 +182,32 @@ FORCE_CXX := 0
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
+
+# TRACE facility
+INSTRUMENT ?= $(TRACE)
+
+# JIT backend is enabled by default
+ifeq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
+  JIT ?= 1
+else # disabled if platform is forced
+# enable: make PLATFORM=1 JIT=1
+  JIT ?= 0
+endif
+
+# target library for a broad range of systems
+ifneq (0,$(JIT))
+  SSE ?= 1
+endif
+
+ifneq (,$(MKL))
+ifneq (0,$(MKL))
+  BLAS := $(MKL)
+endif
+endif
+
+ifneq (,$(MAXTARGET))
+  DFLAGS += -DLIBXSMM_MAXTARGET=$(MAXTARGET)
+endif
 
 # necessary include directories
 IFLAGS += -I$(call quote,$(INCDIR))
@@ -355,7 +355,7 @@ NOBLAS_HST   := $(BLDDIR)/intel64/libxsmm_noblas.o
 NOBLAS_MIC   := $(BLDDIR)/mic/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
-OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_CONV_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
+OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
           $(KRNOBJS_HST) $(KRNOBJS_MIC) $(EXTOBJS_HST) $(EXTOBJS_MIC) $(NOBLAS_HST) $(NOBLAS_MIC)
 ifneq (,$(strip $(FC)))
   FTNOBJS := $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o

@@ -276,6 +276,7 @@ HEREDIR := $(call qapath,.)
 ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9][0-9]*$$"; echo "$$?")) # NaN
   OMPRT := $(patsubst lib%,%,$(OMP))
 endif
+OMPRT ?= $(NULL)
 
 uniqadd = $(if $($2),$(filter-out $($2),$($1)) $(if $3,$3,$($2)),$(filter-out $2,$($1)) $(if $3,$3,$2))
 uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
@@ -294,69 +295,6 @@ ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
 
 ldclib = $(if $1,$(call ctest,$1 $2,-l$(strip $3)))
 ldflib = $(if $1,$(call ftest,$1 $2,-l$(strip $3)))
-
-ifneq (0,$(PYMOD))
-  ifneq (,$(PYTHON))
-    PYVERSION_STRING := $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n "$(REVERSION1)p")
-    PYVERSION := $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
-    TESTRESA := $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
-    TESTRESA := $(wildcard $(TESTRESA)/include/python$(PYVERSION)/Python.h)
-    TESTLIB := $(call ldclib,$(LD),$(SLDFLAGS),python$(PYVERSION))
-    ifneq (,$(TESTRESA))
-    ifneq (,$(TESTLIB))
-      LDFLAGS += $(TESTLIB)
-      IFLAGS += -I$(call qdir,$(TESTRESA))
-      DFLAGS += -D__PYTHON
-      # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
-      ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
-        NOBLAS := 1
-      endif
-    endif
-    endif
-  endif
-  # Enable shared library (req. for Python module)
-  override STATIC := 0
-endif
-
-# Explicitly disable BLAS by user's intervention
-# Makefile defines what happens (perhaps nothing)
-NOBLAS ?= 0
-DNOBLAS := -D__BLAS=0
-ifneq (,$(filter environment% override command%,$(origin BLAS)))
-ifeq (0,$(BLAS))
-  NOBLAS := 1
-endif
-endif
-ifneq (0,$(NOBLAS))
-  BLAS_FLAGS += $(DNOBLAS)
-endif
-
-# Secondary static
-ifneq (file,$(origin STATIC)) # prefer user override/preference (in any case)
-  DEPSTATIC ?= $(STATIC)
-else ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT)*)) # prefer static (library exists)
-  DEPSTATIC ?= 1
-else ifneq (0,$(STATIC))
-  DEPSTATIC ?= $(STATIC)
-else
-  DEPSTATIC ?= 0
-endif
-
-LNKSOFT ?= 1
-ifeq (0,$(STATIC))
-  ifeq (Windows_NT,$(UNAME))
-    LNKSOFT := 0
-  else ifeq (Darwin,$(UNAME))
-    LNKSOFT := 0
-  endif
-endif
-
-# BLAS is not used by default
-ifneq (0,$(LNKSOFT))
-  BLAS ?= 0
-else
-  BLAS ?= 2
-endif
 
 # Automatically pickup the environment (make -e is not required),
 # or pickup the Intel Compiler (if available).
@@ -438,6 +376,50 @@ else
   ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
     COMPILER_VERSION_FLAG ?= -V 2>&1
   endif
+endif
+
+# linker setup
+LD := $(CC)
+XLD := $(CXX)
+
+# Secondary static
+ifneq (file,$(origin STATIC)) # prefer user override/preference (in any case)
+  DEPSTATIC ?= $(STATIC)
+else ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT)*)) # prefer static (library exists)
+  DEPSTATIC ?= 1
+else ifneq (0,$(STATIC))
+  DEPSTATIC ?= $(STATIC)
+else
+  DEPSTATIC ?= 0
+endif
+
+LNKSOFT ?= 1
+ifeq (0,$(STATIC))
+  ifeq (Windows_NT,$(UNAME))
+    LNKSOFT := 0
+  else ifeq (Darwin,$(UNAME))
+    LNKSOFT := 0
+  endif
+endif
+
+# BLAS is not used by default
+ifneq (0,$(LNKSOFT))
+  BLAS ?= 0
+else
+  BLAS ?= 2
+endif
+
+# Explicitly disable BLAS by user's intervention
+# Makefile defines what happens (perhaps nothing)
+NOBLAS ?= 0
+DNOBLAS := -D__BLAS=0
+ifneq (,$(filter environment% override command%,$(origin BLAS)))
+ifeq (0,$(BLAS))
+  NOBLAS := 1
+endif
+endif
+ifneq (0,$(NOBLAS))
+  BLAS_FLAGS += $(DNOBLAS)
 endif
 
 CXX_VERSION := $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
@@ -810,10 +792,6 @@ MKL_OMPRTL ?= gnu
 CRAY ?= 0
 PGI ?= 0
 
-# linker setup
-LD := $(CC)
-XLD := $(CXX)
-
 ifeq (,$(strip $(GFC)))
 ifneq (,$(filter-out 0,$(INTEL) $(ICX)))
 ifneq (,$(call ftest,$(LD),-nofor-main,link))
@@ -831,27 +809,6 @@ ifneq (,$(strip $(PIC)))
 endif
 endif
 
-ifeq (0,$(DEPSTATIC))
-  LIB_LD := $(LD) -shared $(PICFLAG)
-  LIB_XLD := $(XLD) -shared $(PICFLAG)
-else
-  LIB_LD := $(LD)
-  LIB_XLD := $(XLD)
-endif
-
-ifeq (,$(strip $(FLD)))
-ifneq (,$(strip $(FC)))
-  FLD := $(FC)
-  ifeq (0,$(DEPSTATIC))
-    LIB_FLD := $(FLD) -shared $(PICFLAG)
-  else
-    LIB_FLD := $(FLD)
-  endif
-endif
-endif
-LIB_FLD ?= $(LIB_LD)
-FLD ?= $(LD)
-
 # prepend compiler-local library directory
 LIBFIND := $(call qapath,$(call qdir,$(call which,$(LD)))/../lib) $(wildcard $(LIBFIND))
 
@@ -860,23 +817,6 @@ ifneq (0,$(COMMON))
   CFLAGS += $(call ctest,$(CC),-fcommon)
 else
   CFLAGS += $(call ctest,$(CC),-fno-common)
-endif
-endif
-
-FREEFORM ?= 1
-ifneq (0,$(INTEL))
-ifeq (,$(strip $(GFC)))
-  ifneq (,$(strip $(LIB_FLD)))
-    LIB_FLD := $(call uniqadd,LIB_FLD,-nofor-main)
-  endif
-  ifneq (0,$(FREEFORM))
-    FFORM_FLAG := -free
-  endif
-endif
-endif
-ifneq (0,$(FREEFORM))
-ifeq (0,$(PGI))
-  FFORM_FLAG ?= $(call ftest,$(FC),-ffree-form)
 endif
 endif
 
@@ -900,19 +840,6 @@ else
   DYNAMIC := 1
 endif
 DYNAMIC ?= 0
-
-# CCE: resolve linker issue
-ifneq (0,$(DYNAMIC))
-  ifneq (,$(call ctest,$(LD),-dynamic,link))
-    EXCLUDE_VALUE += -dynamic
-    XLD := $(XLD) -dynamic
-    LD := $(LD) -dynamic
-  endif
-  ifneq (,$(call ftest,$(FLD),-dynamic,link))
-    EXCLUDE_VALUE += -dynamic
-    FLD := $(FLD) -dynamic
-  endif
-endif
 
 # enable MKL (if available)
 ifeq (,$(strip $(MKLROOT)))
@@ -952,6 +879,8 @@ else # OSX
   abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
     $(call linkopt,-rpath,$(call qxdir,$(call qapath,$1)))))
 endif
+XLIB_BEGIN ?= $(NULL)
+XLIB_END ?= $(NULL)
 
 absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
   -L$(call qxdir,$(call qapath,$1)))))
@@ -978,6 +907,57 @@ else
     $(if $(filter $(call qndir,$1),$(call qapath,$1)),$(call qapath,$1),$1)))
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
+
+ifeq (0,$(DEPSTATIC))
+  LIB_LD := $(LD) -shared $(PICFLAG)
+  LIB_XLD := $(XLD) -shared $(PICFLAG)
+else
+  LIB_LD := $(LD)
+  LIB_XLD := $(XLD)
+endif
+
+ifeq (,$(strip $(FLD)))
+ifneq (,$(strip $(FC)))
+  FLD := $(FC) $(XLIB_END)
+  ifeq (0,$(DEPSTATIC))
+    LIB_FLD := $(FLD) -shared $(PICFLAG)
+  else
+    LIB_FLD := $(FLD)
+  endif
+endif
+endif
+LIB_FLD ?= $(LIB_LD)
+FLD ?= $(LD)
+
+FREEFORM ?= 1
+ifneq (0,$(INTEL))
+ifeq (,$(strip $(GFC)))
+  ifneq (,$(strip $(LIB_FLD)))
+    LIB_FLD := $(call uniqadd,LIB_FLD,-nofor-main)
+  endif
+  ifneq (0,$(FREEFORM))
+    FFORM_FLAG := -free
+  endif
+endif
+endif
+ifneq (0,$(FREEFORM))
+ifeq (0,$(PGI))
+  FFORM_FLAG ?= $(call ftest,$(FC),-ffree-form)
+endif
+endif
+
+# CCE: resolve linker issue
+ifneq (0,$(DYNAMIC))
+  ifneq (,$(call ctest,$(LD),-dynamic,link))
+    EXCLUDE_VALUE += -dynamic
+    XLD := $(XLD) -dynamic
+    LD := $(LD) -dynamic
+  endif
+  ifneq (,$(call ftest,$(FLD),-dynamic,link))
+    EXCLUDE_VALUE += -dynamic
+    FLD := $(FLD) -dynamic
+  endif
+endif
 
 LIBDEP := $(LIBNAME).$(LIBEXT)
 MAINLIB := $(call abslib,$(LIBDEP))
@@ -1054,6 +1034,30 @@ else
     endif
   endif
 endif
+SLDFLAGS ?= $(NULL)
+
+ifneq (0,$(PYMOD))
+  ifneq (,$(PYTHON))
+    PYVERSION_STRING := $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n "$(REVERSION1)p")
+    PYVERSION := $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
+    TESTRESA := $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
+    TESTRESA := $(wildcard $(TESTRESA)/include/python$(PYVERSION)/Python.h)
+    TESTLIB := $(call ldclib,$(LD),$(SLDFLAGS),python$(PYVERSION))
+    ifneq (,$(TESTRESA))
+    ifneq (,$(TESTLIB))
+      LDFLAGS += $(TESTLIB)
+      IFLAGS += -I$(call qdir,$(TESTRESA))
+      DFLAGS += -D__PYTHON
+      # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
+      ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
+        NOBLAS := 1
+      endif
+    endif
+    endif
+  endif
+  # Enable shared library (req. for Python module)
+  override STATIC := 0
+endif
 
 LIBATOMIC ?= 0
 ifneq (0,$(THREADS))
@@ -1075,6 +1079,7 @@ ifneq (0,$(INTEL))
   LIBM := $(call ldclib,$(LD),$(SLDFLAGS),imf)
 endif
 LIBM ?= $(call ldclib,$(LD),$(SLDFLAGS),m)
+LIBC := $(call ldclib,$(LD),$(SLDFLAGS),c)
 
 # (default) runtime library dependencies
 ifneq (0,$(FORCE_CXX)) # incl. undefined
@@ -1082,7 +1087,7 @@ ifneq (0,$(FORCE_CXX)) # incl. undefined
   CLDFLAGS += $(XLIB_BEGIN) $(LIBCPP) $(XLIB_END)
 endif
 FCLDFLAGS += $(XLIB_BEGIN) $(call ldflib,$(FLD),$(SLDFLAGS),c) $(XLIB_END)
-CXXLDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),c) $(XLIB_END)
+CXXLDFLAGS += $(XLIB_BEGIN) $(LIBC) $(XLIB_END)
 
 ifneq (0,$(INTEL))
   AR ?= xiar
@@ -1579,6 +1584,7 @@ else # GCC assumed
   endif
   endif
 endif
+FCMTFLAGS ?= $(NULL)
 
 ifeq (undefined,$(origin TARGET))
   ifneq (,$(CTARGET))
@@ -1939,6 +1945,7 @@ endif
 ifeq (0,$(OMP))
   EXTLIB += $(OMPLIB)
 endif
+OMPFLAG ?= $(NULL)
 
 ifneq (0,$(TBB))
 ifneq (,$(TBBROOT))
