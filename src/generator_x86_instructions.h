@@ -94,6 +94,65 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_is_store );
 
 /**
+ * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 3 vector registers and masking
+ * it provides a commin interface for REX/VEX/EVEX vector compute instructions
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_vec_instr actual operation variant
+ * @param i_vector_name the vector register name prefix (z)
+ * @param i_reg_number_src0 the first vector register number (zmm: 0-31)
+ * @param i_reg_number_src1 the second vector register number (zmm: 0-31), maybe LIBXSMM_VEC_REG_UNDEF if 2 operand instruction
+ * @param i_reg_number_dst the second vector register number (zmm: 0-31), or mask (1-7)
+ * @param i_mask_reg_number the mask register to read/write
+ * @param i_mask_rnd_exp_cntl 0: merge masking, !=0 zero masking
+ * @param i_imm8 immediate just as the compare value for a compare instruction
+ */
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code* io_generated_code,
+                                                         const unsigned int      i_vec_instr,
+                                                         const char              i_vector_name,
+                                                         const unsigned int      i_reg_number_src0,
+                                                         const unsigned int      i_reg_number_src1,
+                                                         const unsigned int      i_reg_number_dst,
+                                                         const unsigned int      i_mask_reg_number,
+                                                         const unsigned int      i_mask_rnd_exp_cntl,
+                                                         const unsigned short    i_imm8 );
+
+
+/**
+ * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 3 vector registers and masking
+ * it provides a commin interface for REX/VEX/EVEX vector compute instructions
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_vec_instr actual operation variant
+ * @param i_vector_name the vector register name prefix (z)
+ * @param i_gp_reg_base base address register for memory broadcast
+ * @param i_gp_reg_idx index register for memory broadcast, can be LIBXSMM_X86_GP_REG_UNDEF -> then regular displacement version is generated
+ * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF
+ * @param i_displacement displacement to SIB address
+ * @param i_use_broadcast if != 0 memory operand is interpreted as a scalar and broadcasted in fused fashion, only supported on AVX512
+ * @param i_reg_number_src1 the second vector register number (zmm: 0-31), maybe LIBXSMM_VEC_REG_UNDEF if 2 operand instruction
+ * @param i_reg_number_dst the second vector register number (zmm: 0-31), or mask (1-7)
+ * @param i_mask_reg_number the mask register to read/write
+ * @param i_mask_rnd_exp_cntl 0: merge masking, !=0 zero masking
+ * @param i_imm8 immediate just as the compare value for a compare instruction
+ */
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_code* io_generated_code,
+                                                             const unsigned int      i_vec_instr,
+                                                             const char              i_vector_name,
+                                                             const unsigned int      i_gp_reg_base,
+                                                             const unsigned int      i_gp_reg_idx,
+                                                             const unsigned int      i_scale,
+                                                             const int               i_displacement,
+                                                             const unsigned int      i_use_broadcast,
+                                                             const unsigned int      i_reg_number_src1,
+                                                             const unsigned int      i_reg_number_dst,
+                                                             const unsigned int      i_mask_reg_number,
+                                                             const unsigned int      i_mask_rnd_exp_cntl,
+                                                             const unsigned short    i_imm8 );
+
+/**
  * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 2 or 3 vector registers, memory operands are not supported as first operand
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
