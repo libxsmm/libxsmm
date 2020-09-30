@@ -1528,6 +1528,9 @@ else # GCC assumed
           endif
           CXXLDFLAGS += $(OMPFLAG_FORCE)
           CLDFLAGS += $(OMPFLAG_FORCE)
+        else
+          CXXLDFLAGS += $(call abslib,$(OMPLIBFILE))
+          CLDFLAGS += $(call abslib,$(OMPLIBFILE))
         endif
         CXXFLAGS += $(OMPFLAG_FORCE)
         CFLAGS += $(OMPFLAG_FORCE)
