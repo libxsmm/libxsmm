@@ -1279,7 +1279,7 @@ ifneq (0,$(INTEL))
     ifneq (,$(strip $(GFC)))
       LDFLAGS += $(XLIB_BEGIN) $(call ldclib,$(LD),$(SLDFLAGS),$(OMPRT)) $(XLIB_END)
     else
-      LDFLAGS += $(OMPFLAG_FORCE)
+      LDFLAGS := $(OMPFLAG_FORCE) $(LDFLAGS)
     endif
   endif
   ifneq (0,$(SIMD))
@@ -1513,9 +1513,9 @@ else # GCC assumed
           CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
           CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
         endif
-        CXXLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+        CXXLDFLAGS := $(OMPFLAG_FORCE)=$(OMP) $(CXXLDFLAGS)
+        CLDFLAGS := $(OMPFLAG_FORCE)=$(OMP) $(CLDFLAGS)
         CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-        CLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
         CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
       else
         ifneq (Darwin,$(UNAME))
@@ -1523,8 +1523,8 @@ else # GCC assumed
             CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
             CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
           endif
-          CXXLDFLAGS += $(OMPFLAG_FORCE)
-          CLDFLAGS += $(OMPFLAG_FORCE)
+          CXXLDFLAGS := $(OMPFLAG_FORCE) $(CXXLDFLAGS)
+          CLDFLAGS := $(OMPFLAG_FORCE) $(CLDFLAGS)
         else
           CXXLDFLAGS += $(call abslib,$(OMPLIBFILE))
           CLDFLAGS += $(call abslib,$(OMPLIBFILE))
@@ -1534,9 +1534,9 @@ else # GCC assumed
       endif
     else ifneq (0,$(CLANG))
       ifneq (Darwin,$(UNAME))
-        CXXLDFLAGS += $(OMPFLAG_FORCE)
+        CXXLDFLAGS := $(OMPFLAG_FORCE) $(CXXLDFLAGS)
+        CLDFLAGS := $(OMPFLAG_FORCE) $(CLDFLAGS)
         CXXFLAGS += $(OMPFLAG_FORCE)
-        CLDFLAGS += $(OMPFLAG_FORCE)
         CFLAGS += $(OMPFLAG_FORCE)
       endif
     endif
@@ -1559,14 +1559,14 @@ else # GCC assumed
         ifneq (,$(TESTRESC))
           FLDFLAGS += $(TESTRESC)
         else # last try
-          FLDFLAGS += $(OMPFLAG_FORCE)
+          FLDFLAGS := $(OMPFLAG_FORCE) $(FLDFLAGS)
         endif
       endif
       TESTRESD := $(call ftest,$(FC),-fopenmp)
       ifneq (,$(TESTRESD))
         FCFLAGS += $(TESTRESD)
       else
-        FCFLAGS += $(call ftest,$(FC),$(OMPFLAG_FORCE))
+        FCFLAGS := $(call ftest,$(FC),$(OMPFLAG_FORCE)) $(FCFLAGS)
       endif
     endif
   endif
