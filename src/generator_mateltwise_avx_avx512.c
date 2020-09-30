@@ -3813,10 +3813,10 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
-  unsigned int m, im, use_m_masking, m_trips, max_m_unrolling = 16, m_unroll_factor = 1, m_trips_loop = 0, peeled_m_trips = 0, mask_out_count = 0;
+  unsigned int m, im, use_m_masking, m_trips, max_m_unrolling = 8, m_unroll_factor = 1, m_trips_loop = 0, peeled_m_trips = 0, mask_out_count = 0;
   unsigned int idx_tsize =  i_mateltwise_desc->n;
   unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVL;
-  int pf_dist = 0, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 2;
+  int pf_dist = 4, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 1;
   unsigned int vstore_instr = 0;
   unsigned int NO_PF_LABEL_START = 0;
   unsigned int NO_PF_LABEL_START_2 = 1;
