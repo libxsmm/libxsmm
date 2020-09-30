@@ -820,9 +820,6 @@ endif
 endif
 endif
 
-# prepend compiler-local library directory
-LIBFIND := $(call qapath,$(call qdir,$(call which,$(LD)))/../lib) $(wildcard $(LIBFIND))
-
 ifneq (Windows_NT,$(UNAME))
 ifneq (,$(strip $(PIC)))
   ifneq (,$(call ctest,$(CC),-f$(PIC)))
@@ -833,8 +830,10 @@ endif
 endif
 
 ifeq (0,$(DEPSTATIC))
-  LIB_LD := $(LD) -shared $(PICFLAG)
-  LIB_XLD := $(XLD) -shared $(PICFLAG)
+  LD := $(LD) -shared
+  XLD := $(XLD) -shared
+  LIB_LD := $(LD) $(PICFLAG)
+  LIB_XLD := $(XLD) $(PICFLAG)
 else
   LIB_LD := $(LD)
   LIB_XLD := $(XLD)
@@ -842,17 +841,20 @@ endif
 
 ifeq (,$(strip $(FLD)))
 ifneq (,$(strip $(FC)))
-  FLD := $(FC)
   ifeq (0,$(DEPSTATIC))
-    LIB_FLD := $(FLD) -shared $(PICFLAG)
+    FLD := $(FC) -shared
+    LIB_FLD := $(FLD) $(PICFLAG)
   else
+    FLD := $(FC)
     LIB_FLD := $(FLD)
   endif
-else # fallback
-  LIB_FLD := $(LIB_LD)
-  FLD := $(LD)
 endif
 endif
+LIB_FLD ?= $(LIB_LD)
+FLD ?= $(LD)
+
+# prepend compiler-local library directory
+LIBFIND := $(call qapath,$(call qdir,$(call which,$(LD)))/../lib) $(wildcard $(LIBFIND))
 
 ifneq (,$(COMMON))
 ifneq (0,$(COMMON))
