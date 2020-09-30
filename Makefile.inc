@@ -830,10 +830,8 @@ endif
 endif
 
 ifeq (0,$(DEPSTATIC))
-  LD := $(LD) -shared
-  XLD := $(XLD) -shared
-  LIB_LD := $(LD) $(PICFLAG)
-  LIB_XLD := $(XLD) $(PICFLAG)
+  LIB_LD := $(LD) -shared $(PICFLAG)
+  LIB_XLD := $(XLD) -shared $(PICFLAG)
 else
   LIB_LD := $(LD)
   LIB_XLD := $(XLD)
@@ -841,11 +839,10 @@ endif
 
 ifeq (,$(strip $(FLD)))
 ifneq (,$(strip $(FC)))
+  FLD := $(FC)
   ifeq (0,$(DEPSTATIC))
-    FLD := $(FC) -shared
-    LIB_FLD := $(FLD) $(PICFLAG)
+    LIB_FLD := $(FLD) -shared $(PICFLAG)
   else
-    FLD := $(FC)
     LIB_FLD := $(FLD)
   endif
 endif
