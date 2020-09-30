@@ -1543,7 +1543,7 @@ else # GCC assumed
       endif
     endif
     ifeq (3,$(GCC)) # pure GNU toolchain
-      FLDFLAGS += -fopenmp
+      FLDFLAGS := -fopenmp $(FLDFLAGS)
       FCFLAGS += -fopenmp
     else # mixed toolchain
       TESTRESC := $(strip $(if $(GFC), \
