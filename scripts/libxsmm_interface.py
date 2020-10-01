@@ -77,7 +77,7 @@ if __name__ == "__main__":
                 substitute["MNK_INTERFACE_LIST"] += "\n"
             print(template.substitute(substitute))
         else:  # Fortran interface
-            if 1 > ifversion:
+            if 1 > ifversion and 0 != ifversion:
                 raise ValueError("Fortran interface level is inconsistent!")
             # Fortran's OPTIONAL allows to always generate an interface
             # with prefetch signature (more flexible usage)
