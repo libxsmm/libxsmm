@@ -1005,9 +1005,6 @@ LIBXSMM_API_INTERN void internal_init(void)
 #endif
       libxsmm_xcopy_init(libxsmm_target_archid);
       libxsmm_dnn_init(libxsmm_target_archid);
-#if defined(LIBXSMM_PERF)
-      libxsmm_perf_init();
-#endif
       { const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
 #if (defined(_WIN32) || defined(__CYGWIN__))
         libxsmm_gemm_auto_prefetch_default = INTERNAL_PREFETCH;
@@ -1218,6 +1215,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       while (2 > LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) LIBXSMM_SYNC_YIELD;
       internal_init();
     }
+#if defined(LIBXSMM_PERF)
+    libxsmm_perf_init();
+#endif
   }
   LIBXSMM_ASSERT(1 < libxsmm_ninit);
 }
