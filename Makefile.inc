@@ -158,7 +158,12 @@ TESTSIZE ?= 1
 PYMOD ?= 0
 
 # Static or shared binary
-STATIC ?= 0
+ifneq (0,$(PYMOD))
+  # req. for Python module
+  override STATIC := 0
+else
+  STATIC ?= 0
+endif
 
 # PIC: PIC or pic
 PIC ?= pic
@@ -1037,7 +1042,7 @@ endif
 SLDFLAGS ?= $(NULL)
 
 ifneq (0,$(PYMOD))
-  ifneq (,$(PYTHON))
+ifneq (,$(PYTHON))
     PYVERSION_STRING := $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n "$(REVERSION1)p")
     PYVERSION := $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
     TESTRESA := $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
@@ -1054,9 +1059,7 @@ ifneq (0,$(PYMOD))
       endif
     endif
     endif
-  endif
-  # Enable shared library (req. for Python module)
-  override STATIC := 0
+endif
 endif
 
 LIBATOMIC ?= 0
