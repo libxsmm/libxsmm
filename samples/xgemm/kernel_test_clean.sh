@@ -55,7 +55,7 @@ then
     echo "Successfully completed (there was nothing to clean)."
   fi
 else
-  echo "Error: missing prerequisites!"
+  >&2 echo "Error: missing prerequisites!"
   exit 1
 fi
 

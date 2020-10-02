@@ -81,7 +81,7 @@ then
                  [ "" = "$(echo ${SYMBOL} | ${SED} -n "/^_fini/p")" ] && \
                  [ "" = "$(echo ${SYMBOL} | ${SED} -n "/^iJIT_/p")" ];
             then
-              echo "Error: non-conforming function name"
+              >&2 echo "Error: non-conforming function name"
               echo "${LIB} -> ${SYMBOL}"
               exit 1
             fi
@@ -106,16 +106,16 @@ then
       ${CP} ${ABINEW} ${ABICUR}
       echo "Successfully completed."
     else
-      echo "Error: removed or renamed function(s)"
+      >&2 echo "Error: removed or renamed function(s)"
       echo "${REMOVED}"
     fi
   elif [ -e "${LIBS}"/${INCLUDE}.${LIBTYPE} ]; then
-    echo "Error: ABI checker requires shared libraries (${LIBTYPE})."
+    >&2 echo "Error: ABI checker requires shared libraries (${LIBTYPE})."
   else
-    echo "Error: ABI checker requires Fortran interface (${INCLUDE})."
+    >&2 echo "Error: ABI checker requires Fortran interface (${INCLUDE})."
   fi
 else
-  echo "Error: missing prerequisites!"
+  >&2 echo "Error: missing prerequisites!"
   exit 1
 fi
 

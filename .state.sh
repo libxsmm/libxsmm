@@ -55,7 +55,7 @@ then
     if [ "" != "${TOUCH}" ]; then ${TOUCH} "$0"; fi
   fi
 else
-  echo "Error: missing prerequisites!"
+  >&2 echo "Error: missing prerequisites!"
   exit 1
 fi
 

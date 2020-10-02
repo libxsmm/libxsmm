@@ -173,6 +173,6 @@ then
   exit 0
 fi
 
-echo "Error: missing prerequisites!"
+>&2 echo "Error: missing prerequisites!"
 exit 1
 

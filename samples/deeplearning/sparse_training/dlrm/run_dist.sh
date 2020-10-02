@@ -27,7 +27,7 @@ while (( "$#" )); do
       break
       ;;
     -*|--*=) # unsupported flags
-      echo "Error: Unsupported flag $1" >&2
+      >&2 echo "Error: Unsupported flag $1" >&2
       exit 1
       ;;
     *) # preserve positional arguments

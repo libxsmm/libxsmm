@@ -4,7 +4,7 @@ SRCDIR=../src
 GREP=$(command -v grep)
 
 if [ "" = "${GREP}" ]; then
-  echo "Error: missing prerequisites!"
+  >&2 echo "Error: missing prerequisites!"
   exit 1
 fi
 cat << EOM

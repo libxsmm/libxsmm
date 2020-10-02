@@ -16,7 +16,7 @@ TOKEN=$1
 JOBID=$2
 
 if [ ! "${CURL}" ]; then
-  echo "Error: missing prerequisites!"
+  >&2 echo "Error: missing prerequisites!"
   exit 1
 fi
 
