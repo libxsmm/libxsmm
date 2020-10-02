@@ -25,7 +25,7 @@
 #   endif
 #   if defined(__clang__)
 #     pragma clang diagnostic ignored "-Wpedantic"
-#   elif defined(__GNUC__) /* no version-check */
+#   elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
 #     pragma GCC diagnostic ignored "-Wpedantic"
 #   endif
 # endif
