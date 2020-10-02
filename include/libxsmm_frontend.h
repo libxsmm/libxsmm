@@ -58,8 +58,14 @@
 # endif
 #endif
 /** INTEL_MKL_VERSION is needed later to fix some NOTHROW issue. */
-#if defined(__MKL) && !defined(INTEL_MKL_VERSION)
-# include <mkl_version.h>
+#if defined(__MKL) && !defined(INTEL_MKL_VERSION) && defined(NOTHROW)
+# if defined(LIBXSMM_OFFLOAD_BUILD)
+#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#   include <mkl_version.h>
+#   pragma offload_attribute(pop)
+# else
+#   include <mkl_version.h>
+# endif
 #endif
 
 /** Automatically select a prefetch-strategy (libxsmm_get_gemm_xprefetch, etc.). */
