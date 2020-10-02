@@ -241,7 +241,7 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_ge
   l_vl_idx = i_vector_name - 'x';
 #if 0
   if ( l_vl_dix < 0 || l_vl_dix > 1 ) {
-    fprintf(stderr, "It seems an out-of-bound vector length was specified: %d\n", i_vector_name);
+    fprintf(stderr, "It seems an out-of-bound vector length was specified: %c\n", i_vector_name);
     exit(-1);
   }
 #endif
@@ -363,7 +363,7 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_genera
   l_vl_idx = i_vector_name - 'x';
 #if 0
   if ( l_vl_dix < 0 || l_vl_dix > 1 ) {
-    fprintf(stderr, "It seems an out-of-bound vector length was specified: %d\n", i_vector_name);
+    fprintf(stderr, "It seems an out-of-bound vector length was specified: %c\n", i_vector_name);
     exit(-1);
   }
 #endif
@@ -469,7 +469,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   l_vl_idx = i_vector_name - 'x';
 #if 0
   if ( l_vl_dix < 0 || l_vl_dix > 2 ) {
-    fprintf(stderr, "It seems an out-of-bound vector length was specified: %d\n", i_vector_name);
+    fprintf(stderr, "It seems an out-of-bound vector length was specified: %c\n", i_vector_name);
     exit(-1);
   }
 #endif
@@ -646,7 +646,7 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_gener
   l_vl_idx = i_vector_name - 'x';
 #if 0
   if ( l_vl_dix < 0 || l_vl_dix > 2 ) {
-    fprintf(stderr, "It seems an out-of-bound vector length was specified: %d\n", i_vector_name);
+    fprintf(stderr, "It seems an out-of-bound vector length was specified: %c\n", i_vector_name);
     exit(-1);
   }
 #endif
@@ -2130,7 +2130,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
       if ( i_vec_reg_src_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
         if ( i_vec_reg_src_1 != 0 ) {
           /* It might otherwise be intentional */
-            printf("WARNING: You are using 2 operand instruction in vec_compute_convert but i_vec_reg_src_1 is %d not UNDEF\n",i_vec_reg_src_1);
+            printf("WARNING: You are using 2 operand instruction in vec_compute_convert but i_vec_reg_src_1 is %u not UNDEF\n", i_vec_reg_src_1);
         }
       }
       if ( l_reversal && !l_imm8 ) {
@@ -2366,7 +2366,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
         if ( i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF ) {
            if ( i_vec_reg_number_2 != 0 ) {
               /* It might otherwise be intentional */
-              printf("WARNING: You are using 2 operand instruction in vec_compute_reg but i_vec_reg_number_2 is %d not UNDEF\n",i_vec_reg_number_2);
+              printf("WARNING: You are using 2 operand instruction in vec_compute_reg but i_vec_reg_number_2 is %u not UNDEF\n", i_vec_reg_number_2);
            }
         }
         libxsmm_x86_instruction_evex_compute_3reg ( io_generated_code,
@@ -3800,12 +3800,13 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
   }
 
   /* Condition for New Encoding:
- *     1.) LIBXSMM_X86_AVX512 is enabled
- *     2.) i_vec_instr is at least 16777216 (or 4-bytes in length)
- *     3.) io_generated_code->code_type > 1 */
-
+   * 1.) LIBXSMM_X86_AVX512 is enabled
+   * 2.) i_vec_instr is at least 16777216 (or 4-bytes in length)
+   * 3.) io_generated_code->code_type > 1
+   */
 #if 0
-  printf("DEBUG: Inside libxsmm_x86_instruction_vec_compute_mem(#,set=%d,instr=%d,brd=%d,base=%d,idx=%d,scale=%d,disp=%d,name=%c,reg0=%d,reg1=%d\n",i_instruction_set,i_vec_instr,i_use_broadcast,i_gp_reg_base,i_gp_reg_idx,i_scale,i_displacement,i_vector_name,i_vec_reg_number_0,i_vec_reg_number_1);
+  printf("DEBUG: Inside libxsmm_x86_instruction_vec_compute_mem(#,set=%d,instr=%d,brd=%d,base=%d,idx=%d,scale=%d,disp=%d,name=%c,reg0=%d,reg1=%d\n",
+    i_instruction_set,i_vec_instr,i_use_broadcast,i_gp_reg_base,i_gp_reg_idx,i_scale,i_displacement,i_vector_name,i_vec_reg_number_0,i_vec_reg_number_1);
 #endif
 
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
@@ -3815,7 +3816,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
      if ( ((i_vec_instr >> 28) & 3) == 2 ) {
         if ( i_vec_reg_number_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
            if ( i_vec_reg_number_1 != 0 ) { /* It might be intentional, no warning needed */
-              printf("WARNING: You are using i_vec_reg_number_1 in a 2-operand memory instruction, expected UNDEF not %d\n",i_vec_reg_number_1);
+              printf("WARNING: You are using i_vec_reg_number_1 in a 2-operand memory instruction, expected UNDEF not %u\n", i_vec_reg_number_1);
            }
         }
         libxsmm_x86_instruction_evex_compute_2reg_mem( io_generated_code,
@@ -5607,7 +5608,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
         if ( i_vec_reg_number_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
            if ( i_vec_reg_number_1 != 0 ) {
               /* It might otherwise be intentional */
-              printf("WARNING: You are using 2 operand instruction in vec_shuffle_reg but i_vec_reg_number_1 is %d not UNDEF\n",i_vec_reg_number_1);
+              printf("WARNING: You are using 2 operand instruction in vec_shuffle_reg but i_vec_reg_number_1 is %u not UNDEF\n", i_vec_reg_number_1);
            }
         }
         if ( l_reversal ) {
@@ -5795,7 +5796,8 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VPSRAD:
           if ( i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF )
           {
-             fprintf(stderr,"libxsmm_x86_instruction_vec_shuffle_reg: shouldn't use vec reg 2=%d for VPSRAD, use UNDEF=%d instead\n",i_vec_reg_number_2,LIBXSMM_X86_VEC_REG_UNDEF);
+             fprintf(stderr,"libxsmm_x86_instruction_vec_shuffle_reg: shouldn't use vec reg 2=%u for VPSRAD, use UNDEF=%i instead\n",
+                i_vec_reg_number_2, LIBXSMM_X86_VEC_REG_UNDEF);
              exit(-1);
           }
           l_2or3grp0 = (l_vecgrp0>=2);
