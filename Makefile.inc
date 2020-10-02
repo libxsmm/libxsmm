@@ -2300,7 +2300,7 @@ extname = $(subst .,,$(call qsuffix,$(1)))
 # derives the name of an object files for a given source file
 objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$(ARG)),%-$(call extname,$(ARG)).o,$(call qndir,$(ARG)))))
 
-STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
+STATE := $(strip $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% %STATE MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX \
     COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO SSE ENVBIN EXTDEP FORTDEP FSTD GINFO \
@@ -2314,7 +2314,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ctest ftest ldclib ldflib extname objname unquote quote qapath qndir qdir qsuffix qbname qname \
     BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
-    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(subst $(HOMEDIR),$$HOME,$(filter-out $(EXCLUDE_VALUE),$($V)))))?))))
+    $(if $($V),$V=$(subst $(USER),$(if $(USER),$$USER),$(subst $(HOME),$(if $(HOME),$$HOME),$(subst $(HOMEDIR),$(if $(HOMEDIR),$$HOME),$(filter-out $(EXCLUDE_VALUE),$($V)))))?)))))
 
 DIRSTATE ?= .
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
