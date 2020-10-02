@@ -57,6 +57,10 @@
 #   include <mkl.h>
 # endif
 #endif
+/** INTEL_MKL_VERSION is needed later to fix some NOTHROW issue. */
+#if defined(__MKL) && !defined(INTEL_MKL_VERSION)
+# include <mkl_version.h>
+#endif
 
 /** Automatically select a prefetch-strategy (libxsmm_get_gemm_xprefetch, etc.). */
 #define LIBXSMM_PREFETCH_AUTO -1
