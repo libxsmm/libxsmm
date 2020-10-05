@@ -1612,7 +1612,10 @@ endif
 endif
 
 .PHONY: install-all
-install-all: install samples
+install-all: install
+
+.PHONY: install-realall
+install-realall: install samples
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
@@ -1628,7 +1631,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 endif
 
 .PHONY: install-dev
-install-dev: install-all build-tests
+install-dev: install-realall build-tests
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing tests..."
