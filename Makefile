@@ -515,9 +515,9 @@ PREFETCH_UID := 0
 PREFETCH_TYPE := 0
 PREFETCH_SCHEME := nopf
 ifneq (Windows_NT,$(UNAME)) # TODO: full support for Windows calling convention
-  ifneq (0,$(shell echo $$((0 <= $(PREFETCH) && $(PREFETCH) <= 6))))
+  ifneq (0,$(shell echo "$$((0 <= $(PREFETCH) && $(PREFETCH) <= 6))"))
     PREFETCH_UID := $(PREFETCH)
-  else ifneq (0,$(shell echo $$((0 > $(PREFETCH))))) # auto
+  else ifneq (0,$(shell echo "$$((0 > $(PREFETCH)))")) # auto
     PREFETCH_UID := 1
   else ifeq (pfsigonly,$(PREFETCH))
     PREFETCH_UID := 2
@@ -549,13 +549,13 @@ ifneq (Windows_NT,$(UNAME)) # TODO: full support for Windows calling convention
     PREFETCH_TYPE := 8
   else ifeq (5,$(PREFETCH_UID))
     PREFETCH_SCHEME := curAL2_BL2viaC
-    PREFETCH_TYPE := $(shell echo $$((4 | 8)))
+    PREFETCH_TYPE := $(shell echo "$$((4 | 8))")
   else ifeq (6,$(PREFETCH_UID))
     PREFETCH_SCHEME := AL2
     PREFETCH_TYPE := 2
   else ifeq (7,$(PREFETCH_UID))
     PREFETCH_SCHEME := AL2_BL2viaC
-    PREFETCH_TYPE := $(shell echo $$((4 | 2)))
+    PREFETCH_TYPE := $(shell echo "$$((4 | 2))")
   endif
 endif
 ifeq (,$(PREFETCH_SCHEME_MIC)) # adopt host scheme
@@ -563,7 +563,7 @@ ifeq (,$(PREFETCH_SCHEME_MIC)) # adopt host scheme
 endif
 
 # Mapping build options to libxsmm_gemm_flags (see include/libxsmm_typedefs.h)
-#FLAGS := $(shell echo $$((((0==$(ALPHA))*4) | ((0>$(ALPHA))*8) | ((0==$(BETA))*16) | ((0>$(BETA))*32))))
+#FLAGS := $(shell echo "$$((((0==$(ALPHA))*4) | ((0>$(ALPHA))*8) | ((0==$(BETA))*16) | ((0>$(BETA))*32)))")
 FLAGS := 0
 
 SUPPRESS_UNUSED_VARIABLE_WARNINGS := LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
@@ -598,8 +598,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(ROOTDIR)/$(SRCDIR)/template/libxsm
 ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
-		$(shell echo $$(($(THREADS)+$(OMP)))) \
+		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(SYNC_OMP) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) > $@
 endif
 $(INCDIR)/libxsmm_version.h: $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h $(INCDIR)/.make \
@@ -619,7 +618,7 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(INCDIR)/libxsmm_config.h \
                      $(HEADERS)
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
-		$(shell echo $$(($(PRECISION)+($(FORTRAN)<<2)))) $(PREFETCH_TYPE) $(INDICES) > $@
+		$(shell echo "$$(($(PRECISION)+($(FORTRAN)<<2)))") $(PREFETCH_TYPE) $(INDICES) > $@
 else
 .PHONY: $(INCDIR)/libxsmm.h
 endif
@@ -638,11 +637,10 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(INCDIR)/libxsmm_version.h \
                      $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
-		$(shell echo $$(($(PRECISION)+($(FORTRAN)<<2)))) $(PREFETCH_TYPE) $(INDICES) | \
+		$(shell echo "$$(($(PRECISION)+($(FORTRAN)<<2)))") $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py /dev/stdin \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
-		$(shell echo $$(($(THREADS)+$(OMP)))) \
+		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(SYNC_OMP) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
 else
@@ -746,14 +744,16 @@ else
 endif
 
 EXTCFLAGS := -DLIBXSMM_BUILD_EXT
-ifeq (0,$(OMP))
+ifneq (0,$(shell echo "$(OMP)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
+  DFLAGS += -DLIBXSMM_SYNC_OMP
+  SYNC_OMP := $(shell echo "$$(($(THREADS)+$(OMP)))")
+else # default (no OpenMP based synchronization)
   ifeq (,$(filter environment% override command%,$(origin OMP)))
     EXTCFLAGS += $(OMPFLAG)
     EXTLDFLAGS += $(OMPLIB)
   endif
-else # OpenMP
-  DFLAGS += -DLIBXSMM_SYNC_OMP
 endif
+SYNC_OMP ?= 0
 
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))

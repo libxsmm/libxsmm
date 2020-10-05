@@ -278,7 +278,7 @@ HOMEDIR := $(call qapath,$(HOME))
 HEREDIR := $(call qapath,.)
 
 # Pickup OpenMP library name if passed as OMP=libname|name
-ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9][0-9]*$$"; echo "$$?")) # NaN
+ifneq (0,$(shell echo "$(OMP)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
   OMPRT := $(patsubst lib%,%,$(OMP))
 endif
 OMPRT ?= $(NULL)
@@ -1282,7 +1282,7 @@ ifneq (0,$(INTEL))
   ifeq (,$(strip $(OMPRT)))
     OMPRT := iomp5
   endif
-  ifneq (0,$(OMP))
+  ifneq (0,$(shell echo "$(OMP)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
     CXXFLAGS += $(OMPFLAG_FORCE)
     FCFLAGS += $(OMPFLAG_FORCE)
     CFLAGS += $(OMPFLAG_FORCE)
@@ -1514,11 +1514,11 @@ else # GCC assumed
   endif
   endif
   endif
-  ifneq (0,$(OMP))
+  ifneq (0,$(shell echo "$(OMP)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
   ifneq (,$(OMPFLAG_FORCE))
     ifneq (,$(OMPLIBFILE))
       # clang: OMP=libomp
-      ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9][0-9]*$$"; echo "$$?")) # NaN
+      ifneq (0,$(shell echo "$(OMP)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
         ifneq (0,$(CLANG))
           CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
           CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
