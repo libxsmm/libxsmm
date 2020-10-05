@@ -744,7 +744,7 @@ else
 endif
 
 EXTCFLAGS := -DLIBXSMM_BUILD_EXT
-ifneq (0,$(shell echo "$(OMP)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
+ifneq (0,$(call qnum,$(OMP))) # NaN
   DFLAGS += -DLIBXSMM_SYNC_OMP
   SYNC_OMP := $(shell echo "$$(($(THREADS)+$(OMP)))")
 else # default (no OpenMP based synchronization)
