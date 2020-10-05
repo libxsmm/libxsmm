@@ -862,7 +862,7 @@ module: module_hst module_mic
 
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
-$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB) $(OUTDIR)/module
+$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
 ifeq (0,$(STATIC))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(OBJFILES_GEN_LIB) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
@@ -1577,13 +1577,9 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo "LIBXSMM installing pkg-config and module files..."
 	@mkdir -p $(PREFIX)/$(PPKGDIR)
 	@$(CP) -v $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
-	@if [ ! -e $(PREFIX)/$(PMODDIR)/module ]; then \
+	@if [ ! -e $(PREFIX)/$(PMODDIR)/libxsmm.env ]; then \
 		mkdir -p $(PREFIX)/$(PMODDIR); \
-		if [ "$(PMODDIR)" != "$(OUTDIR)" ]; then \
-			$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true; \
-		else \
-			$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
-		fi; \
+		$(CP) -v $(OUTDIR)/libxsmm.env $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
 	fi
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
@@ -1738,7 +1734,7 @@ $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "Cflags: -I\$${includedir}" >> $@
 	@echo "Libs: -L\$${libdir} -lxsmmnoblas" >> $@
 
-$(OUTDIR)/module: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
+$(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo "#%Module1.0" > $@
 	@echo >> $@
 	@echo "module-whatis \"LIBXSMM $(VERSION_STRING)\"" >> $@
