@@ -1524,7 +1524,7 @@ ifeq (,$(strip $(ALIAS_PREFIX)))
 endif
 ifneq ($(ALIAS_PREFIX),$(PREFIX))
   PPKGDIR := libdata/pkgconfig
-  PMODDIR := share/modules
+  PMODDIR := $(PDOCDIR)
 endif
 
 .PHONY: install-minimal
