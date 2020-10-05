@@ -573,6 +573,18 @@ ifneq (nopf,$(PREFETCH_SCHEME))
   SUPPRESS_UNUSED_PREFETCH_WARNINGS := $(NULL)  LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch); LIBXSMM_UNUSED(C_prefetch);~
 endif
 
+EXTCFLAGS := -DLIBXSMM_BUILD_EXT
+ifneq (0,$(call qnum,$(OMP))) # NaN
+  DFLAGS += -DLIBXSMM_SYNC_OMP
+  SYNC_OMP := $(shell echo "$$(($(THREADS)+$(OMP)))")
+else # default (no OpenMP based synchronization)
+  ifeq (,$(filter environment% override command%,$(origin OMP)))
+    EXTCFLAGS += $(OMPFLAG)
+    EXTLDFLAGS += $(OMPLIB)
+  endif
+endif
+SYNC_OMP ?= 0
+
 # auto-clean the co-build
 $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py \
                                                 $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(wildcard $(ROOTDIR)/.github/*) \
@@ -742,18 +754,6 @@ ifneq (0,$(GLIBC))
 else
   DFLAGS += -DLIBXSMM_BUILD=1
 endif
-
-EXTCFLAGS := -DLIBXSMM_BUILD_EXT
-ifneq (0,$(call qnum,$(OMP))) # NaN
-  DFLAGS += -DLIBXSMM_SYNC_OMP
-  SYNC_OMP := $(shell echo "$$(($(THREADS)+$(OMP)))")
-else # default (no OpenMP based synchronization)
-  ifeq (,$(filter environment% override command%,$(origin OMP)))
-    EXTCFLAGS += $(OMPFLAG)
-    EXTLDFLAGS += $(OMPLIB)
-  endif
-endif
-SYNC_OMP ?= 0
 
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
