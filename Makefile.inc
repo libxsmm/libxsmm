@@ -1515,20 +1515,9 @@ else # GCC assumed
   endif
   endif
   endif
-  ifneq (0,$(call qnum,$(OMP))) # NaN
   ifneq (,$(OMPFLAG_FORCE))
-    ifneq (,$(OMPLIBFILE))
-      # clang: OMP=libomp
-      ifneq (0,$(OMP))
-        ifneq (0,$(CLANG))
-          CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
-          CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
-        endif
-        CXXLDFLAGS := $(OMPFLAG_FORCE)=$(OMP) $(CXXLDFLAGS)
-        CLDFLAGS := $(OMPFLAG_FORCE)=$(OMP) $(CLDFLAGS)
-        CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-        CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-      else
+    ifneq (0,$(call qnum,$(OMP))) # NaN
+      ifneq (,$(OMPLIBFILE))
         ifneq (Darwin,$(UNAME))
           ifneq (0,$(CLANG))
             CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
@@ -1542,45 +1531,55 @@ else # GCC assumed
         endif
         CXXFLAGS += $(OMPFLAG_FORCE)
         CFLAGS += $(OMPFLAG_FORCE)
-      endif
-    else ifneq (0,$(CLANG))
-      ifneq (Darwin,$(UNAME))
-        CXXLDFLAGS := $(OMPFLAG_FORCE) $(CXXLDFLAGS)
-        CLDFLAGS := $(OMPFLAG_FORCE) $(CLDFLAGS)
-        CXXFLAGS += $(OMPFLAG_FORCE)
-        CFLAGS += $(OMPFLAG_FORCE)
-      endif
-    endif
-    ifeq (3,$(XSMM_GCC)) # pure GNU toolchain
-      FLDFLAGS := -fopenmp $(FLDFLAGS)
-      FCFLAGS += -fopenmp
-    else # mixed toolchain
-      TESTRESC := $(strip $(if $(GFC), \
-        $(call libpath,$(FLD),$(SLDFLAGS) -fopenmp,gomp), \
-        $(call libpath,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))))
-      ifeq (,$(TESTRESC))
-        TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) \
-          $(if $(GFC),-fopenmp,$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))), \
-          $(if $(GFC),gomp,$(OMPRT))))
-      endif
-      ifneq (,$(TESTRESC))
-        FLDFLAGS += $(if $(GFC),$(NULL),$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))) $(TESTRESC)
-      else
-        TESTRESC := $(call ftest,$(FLD),-fopenmp,link)
-        ifneq (,$(TESTRESC))
-          FLDFLAGS += $(TESTRESC)
-        else # last try
-          FLDFLAGS := $(OMPFLAG_FORCE) $(FLDFLAGS)
+      else ifneq (0,$(CLANG))
+        ifneq (Darwin,$(UNAME))
+          CXXLDFLAGS := $(OMPFLAG_FORCE) $(CXXLDFLAGS)
+          CLDFLAGS := $(OMPFLAG_FORCE) $(CLDFLAGS)
+          CXXFLAGS += $(OMPFLAG_FORCE)
+          CFLAGS += $(OMPFLAG_FORCE)
         endif
       endif
-      TESTRESD := $(call ftest,$(FC),-fopenmp)
-      ifneq (,$(TESTRESD))
-        FCFLAGS += $(TESTRESD)
-      else
-        FCFLAGS := $(call ftest,$(FC),$(OMPFLAG_FORCE)) $(FCFLAGS)
+      ifeq (3,$(XSMM_GCC)) # pure GNU toolchain
+        FLDFLAGS := -fopenmp $(FLDFLAGS)
+        FCFLAGS += -fopenmp
+      else # mixed toolchain
+        TESTRESC := $(strip $(if $(GFC), \
+          $(call libpath,$(FLD),$(SLDFLAGS) -fopenmp,gomp), \
+          $(call libpath,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))))
+        ifeq (,$(TESTRESC))
+          TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) \
+            $(if $(GFC),-fopenmp,$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))), \
+            $(if $(GFC),gomp,$(OMPRT))))
+        endif
+        ifneq (,$(TESTRESC))
+          FLDFLAGS += $(if $(GFC),$(NULL),$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))) $(TESTRESC)
+        else
+          TESTRESC := $(call ftest,$(FLD),-fopenmp,link)
+          ifneq (,$(TESTRESC))
+            FLDFLAGS += $(TESTRESC)
+          else # last try
+            FLDFLAGS := $(OMPFLAG_FORCE) $(FLDFLAGS)
+          endif
+        endif
+        TESTRESD := $(call ftest,$(FC),-fopenmp)
+        ifneq (,$(TESTRESD))
+          FCFLAGS += $(TESTRESD)
+        else
+          FCFLAGS := $(call ftest,$(FC),$(OMPFLAG_FORCE)) $(FCFLAGS)
+        endif
+      endif
+    else ifneq (0,$(OMP)) # clang: OMP=libomp (NaN)
+      ifneq (,$(OMPLIBFILE))
+        ifneq (0,$(CLANG))
+          CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
+          CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
+        endif
+        CXXLDFLAGS := $(OMPFLAG_FORCE)=$(OMP) $(CXXLDFLAGS)
+        CLDFLAGS := $(OMPFLAG_FORCE)=$(OMP) $(CLDFLAGS)
+        CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+        CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
       endif
     endif
-  endif
   endif
   ifneq (,$(strip $(R8)))
   ifneq (0,$(R8))
