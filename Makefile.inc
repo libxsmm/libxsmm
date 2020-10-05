@@ -228,9 +228,9 @@ FAT ?= 0
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
 
-# TBB enabled (1) or disabled (0)
+# TBB Malloc enabled (1) or disabled (0)
 # availability depends on TBBROOT
-TBB ?= 0
+TBB_MALLOC ?= 0
 # TBB runtime compatible with oldest supported GCC
 TBB_OLDRTL ?= 0
 
@@ -602,28 +602,28 @@ ifeq (,$(strip $(FC)))
 endif
 
 # native GCC?
-GCC ?= 0
+XSMM_GCC ?= 0
 ifeq (0,$(shell $(CC) $(CC_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
-  GCC := 1
+  XSMM_GCC := 1
 else ifeq (GCC,$(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
-  GCC := 1
+  XSMM_GCC := 1
 else ifneq (pgcc,$(CC_NAME))
   ifneq (,$(findstring pgcc,$(CC_NAME)))
-    GCC := 1
+    XSMM_GCC := 1
   endif
 endif
-ifeq (1,$(GCC))
+ifeq (1,$(XSMM_GCC))
   ifeq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
-    GCC := 2
+    XSMM_GCC := 2
   else ifeq (GCC,$(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
-    GCC := 2
+    XSMM_GCC := 2
   else ifneq (,$(findstring g++,$(CXX_NAME)))
-    GCC := 2
+    XSMM_GCC := 2
   endif
-  ifeq (2,$(GCC))
+  ifeq (2,$(XSMM_GCC))
   ifneq (,$(strip $(GFC)))
     MKL_FCRTL := gf
-    GCC := 3
+    XSMM_GCC := 3
   endif
   endif
 endif
@@ -679,7 +679,7 @@ BLAS_STATIC ?= $(DEPSTATIC)
 
 # PGI: ignore env. variable (same name)
 override PGI := 0
-ifeq (0,$(GCC)) # not GCC
+ifeq (0,$(XSMM_GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
 ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__clang__"; echo "$$?"))
   CLANG := 1
@@ -691,7 +691,7 @@ endif
 CLANG ?= 0
 
 # Make GCC version number available even when not using GCC
-ifneq (0,$(GCC))
+ifneq (0,$(XSMM_GCC))
   GCC_VERSION := $(CXX_VERSION)
   GCC_VERSION_MAJOR := $(CXX_VERSION_MAJOR)
   GCC_VERSION_MINOR := $(CXX_VERSION_MINOR)
@@ -719,7 +719,7 @@ MAINTAINER ?= 0
 # detect maintainer build and limit to SSE3
 ifeq (,$(filter Windows_NT Darwin,$(UNAME)))
 ifeq (,$(SPACK_ENV_PATH)) # not under Spack
-ifeq (3,$(GCC)) # pure GNU toolchain
+ifeq (3,$(XSMM_GCC)) # pure GNU toolchain
 ifneq (0,$(shell echo "$$((60000<=$(GCC_VERSION_NUM)))"))
   MAINTAINER := 1
 endif
@@ -770,7 +770,7 @@ MIC ?= 0
 ifneq (0,$(INTEL))
   SUITE := Intel Compiler
   MKL_OMPRTL := intel
-else ifneq (0,$(GCC))
+else ifneq (0,$(XSMM_GCC))
   SUITE := GNU Compiler Collection
   MKL_OMPRTL := gnu
 else ifneq (0,$(PGI))
@@ -1326,14 +1326,14 @@ else # GCC assumed
       FCFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
       LDFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) #$(call ldclib,$(LD),$(SLDFLAGS),tsan)
     else
-      ifneq (,$(filter 2 3,$(GCC)))
+      ifneq (,$(filter 2 3,$(XSMM_GCC)))
         CXXFLAGS += -g3
         CFLAGS += -g3
       else
         CXXFLAGS += -g
         CFLAGS += -g
       endif
-      ifeq (3,$(GCC))
+      ifeq (3,$(XSMM_GCC))
         FCFLAGS += -g3
       else
         FCFLAGS += -g
@@ -1351,7 +1351,7 @@ else # GCC assumed
       else
         CXXFLAGS += -std=c++11
       endif
-    else ifneq (,$(filter-out 2 3,$(GCC)))
+    else ifneq (,$(filter-out 2 3,$(XSMM_GCC)))
       CXXFLAGS += -std=c++11
     endif
   endif
@@ -1411,7 +1411,7 @@ else # GCC assumed
         endif
         CPEDANTIC += -Wno-long-long
         CXXFLAGS += $(CPEDANTIC)
-      else ifneq (0,$(GCC))
+      else ifneq (0,$(XSMM_GCC))
         ifeq (,$(filter-out 0,$(FORCE_CXX)))
           CSTD := -std=c89
         endif
@@ -1468,7 +1468,7 @@ else # GCC assumed
       OMPRT := omp
     else ifeq (0,$(INTEL))
       ifneq (Darwin,$(UNAME))
-        ifneq (0,$(GCC))
+        ifneq (0,$(XSMM_GCC))
           OMPFLAG_FORCE := -fopenmp
         else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION_NUM)))"))
           OMPFLAG_FORCE := -fopenmp
@@ -1550,7 +1550,7 @@ else # GCC assumed
         CFLAGS += $(OMPFLAG_FORCE)
       endif
     endif
-    ifeq (3,$(GCC)) # pure GNU toolchain
+    ifeq (3,$(XSMM_GCC)) # pure GNU toolchain
       FLDFLAGS := -fopenmp $(FLDFLAGS)
       FCFLAGS += -fopenmp
     else # mixed toolchain
@@ -1598,7 +1598,7 @@ ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifeq (3,$(AVX))
-    ifneq (0,$(shell echo "$$(((0!=$(GCC) && 60000<=$(GCC_VERSION_NUM)) || \
+    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC) && 60000<=$(GCC_VERSION_NUM)) || \
           (0!=$(CLANG) && (40000<=$(CC_VERSION_NUM) || 0==$(CC_VERSION_NUM))) || \
           (0!=$(PGI) && 190000<=$(CC_VERSION_NUM))))"))
     ifneq (,$(call ctest,$(CC),-mfma -mavx512f -mavx512cd))
@@ -1611,7 +1611,7 @@ ifeq (undefined,$(origin TARGET))
         ifneq (Darwin,$(UNAME))
           CTARGET += -mavx512dq -mavx512bw -mavx512vl
           #CTARGET += -mavx512ifma -mavx512vbmi
-        else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
+        else ifneq (,$(filter 1 2 3,$(INTEL) $(XSMM_GCC)))
           CTARGET += -mavx512dq -mavx512bw -mavx512vl
           #CTARGET += -mavx512ifma -mavx512vbmi
         else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION_NUM)))"))
@@ -1640,7 +1640,7 @@ ifeq (undefined,$(origin TARGET))
     ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
       ifeq (,$(CTARGET)) # SSE-4.2 or default-SSE
         ifneq (,$(filter 01 02 03 10 11 12 13 40 41 42 43,$(SSE)$(AVX)))
-          ifneq (0,$(GCC))
+          ifneq (0,$(XSMM_GCC))
             ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION_NUM)))"))
               ifeq (0,$(MAINTAINER))
                 CTARGET := -msse4.2
@@ -1731,9 +1731,9 @@ ifneq (Darwin1,$(UNAME)$(INSTRUMENT))
     ifeq (0,$(INTEL)) # e.g. Intel, Clang, and others do not need/understand below flag
     ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION_NUM)))"))
       CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-      ifneq (,$(filter 2 3,$(GCC)))
+      ifneq (,$(filter 2 3,$(XSMM_GCC)))
         CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-        ifeq (3,$(GCC))
+        ifeq (3,$(XSMM_GCC))
           FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
         endif
       endif
@@ -1747,16 +1747,16 @@ ifeq (0,$(COMPATIBLE))
   ifneq (0,$(OPT))
   ifeq (0,$(INTEL))
     ifneq (0,$(SIMD))
-      ifneq (0,$(GCC))
+      ifneq (0,$(XSMM_GCC))
         ifneq (,$(CTARGET))
         ifneq (0,$(shell echo "$$((40900<=$(CC_VERSION_NUM)))"))
           DFLAGS += -DLIBXSMM_OPENMP_SIMD
           CFLAGS += -fopenmp-simd
-          ifneq (1,$(GCC))
+          ifneq (1,$(XSMM_GCC))
           ifneq (0,$(shell echo "$$((40900<=$(CXX_VERSION_NUM)))"))
             CXXFLAGS += -fopenmp-simd
             ifneq (,$(FTARGET))
-            ifneq (2,$(GCC))
+            ifneq (2,$(XSMM_GCC))
             ifneq (0,$(shell echo "$$((40900<=$(FC_VERSION_NUM)))"))
               FCFLAGS += -fopenmp-simd
               SIMD ?= 1
@@ -1797,7 +1797,7 @@ ifeq (0,$(COMPATIBLE))
       CXXFLAGS += -funroll-loops
       CFLAGS += -funroll-loops
     endif
-    ifneq (,$(GFC)$(filter-out 0 1 2,$(GCC)))
+    ifneq (,$(GFC)$(filter-out 0 1 2,$(XSMM_GCC)))
       FCFLAGS += -funroll-loops
     endif
     ifeq (,$(filter-out 0,$(PGI) $(INTEL) $(ICX)))
@@ -1885,10 +1885,10 @@ CINFO := C / C++ target: $(if $(CTARGET),$(CTARGET),<compiler default>)
 
 ifeq (Darwin,$(UNAME))
   # avoid Homebrew based GCC AS; apply the flag only to the non-GCC components
-  ifneq (0,$(GCC))
+  ifneq (0,$(XSMM_GCC))
     LDFLAGS += -Wa,-q
     CFLAGS += -Wa,-q
-    ifneq (,$(filter 2 3,$(GCC)))
+    ifneq (,$(filter 2 3,$(XSMM_GCC)))
       CXXFLAGS += -Wa,-q
     endif
   endif
@@ -1950,7 +1950,7 @@ ifeq (0,$(OMP))
 endif
 OMPFLAG ?= $(NULL)
 
-ifneq (0,$(TBB))
+ifneq (0,$(TBB_MALLOC))
 ifneq (,$(TBBROOT))
   ifneq (Windows_NT,$(UNAME))
     TBBLIB_DIR := $(TBBROOT)/lib/intel64
@@ -2005,7 +2005,7 @@ ifneq (,$(strip $(MKLROOT)))
   ifeq (0,$(PGI))
     MKL ?= $(BLAS)
     ifneq (,$(strip $(FC)))
-      ifneq (0,$(shell echo "$$((0==$(GCC) || 40600<=$(GCC_VERSION_NUM)))"))
+      ifneq (0,$(shell echo "$$((0==$(XSMM_GCC) || 40600<=$(GCC_VERSION_NUM)))"))
         MKL_DIRECT ?= 0
       else
         MKL_DIRECT := 0
@@ -2026,7 +2026,7 @@ ifneq (0,$(MKL))
     else
       BLAS_FLAGS += -DMKL_DIRECT_CALL
     endif
-    ifneq (0,$(GCC))
+    ifneq (0,$(XSMM_GCC))
       CXXFLAGS += -Wno-unused-value
       CFLAGS += -Wno-unused-value
     endif
@@ -2036,7 +2036,7 @@ ifneq (0,$(MKL))
     else
       BLAS_FLAGS += -DMKL_DIRECT_CALL_JIT
     endif
-    ifneq (0,$(GCC))
+    ifneq (0,$(XSMM_GCC))
       CXXFLAGS += -Wno-unused-value
       CFLAGS += -Wno-unused-value
     endif
@@ -2187,7 +2187,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
     BLASREF ?= 0
     ifneq (0,$(BLASREF)) # BLAS (reference)
-    ifeq (,$(GFC)$(filter-out 0,$(GCC)))
+    ifeq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
     ifneq (0,$(PGI))
       BLAS_FLAGS += -D__CBLAS
     endif
@@ -2219,7 +2219,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
   endif
 endif
-ifneq (,$(GFC)$(filter-out 0,$(GCC)))
+ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
   ifneq (,$(LIBGFORTRAN))
     ifneq (0,$(DEPSTATIC))
       BLAS_CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) $(XLIB_END)
@@ -2302,17 +2302,17 @@ objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$
 
 STATE := $(strip $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% MAKE_% HAVE_% LIB_% %STATE MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX \
+  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_% .% _% XSMM_% MAKE_% HAVE_% LIB_% %STATE MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX \
     COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO SSE ENVBIN EXTDEP FORTDEP FSTD GINFO \
     DLIBEXT DYNAMIC FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE \
-    CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCC GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% \
+    CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% \
     GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX \
     NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
     LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION \
     HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% \
     abslib applyif uniqadd uniqmov which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
     ctest ftest ldclib ldflib extname objname unquote quote qapath qndir qdir qsuffix qbname qname \
-    BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB)),TBB_%) \
+    BLAS_INCFILE $(if $(filter 0,$(MKL)),MKL_%) $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
     $(if $($V),$V=$(subst $(USER),$(if $(USER),$$USER),$(subst $(HOME),$(if $(HOME),$$HOME),$(subst $(HOMEDIR),$(if $(HOMEDIR),$$HOME),$(filter-out $(EXCLUDE_VALUE),$($V)))))?)))))
 
