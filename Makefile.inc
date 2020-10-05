@@ -1519,7 +1519,7 @@ else # GCC assumed
   ifneq (,$(OMPFLAG_FORCE))
     ifneq (,$(OMPLIBFILE))
       # clang: OMP=libomp
-      ifneq (0,$(call qnum,$(OMP))) # NaN
+      ifneq (0,$(OMP))
         ifneq (0,$(CLANG))
           CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
           CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
