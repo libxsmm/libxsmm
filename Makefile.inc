@@ -2314,7 +2314,7 @@ STATE := $(strip $(foreach V,$(sort $(filter-out \
   $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
   $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
-  $(if $(filter 0,$(MKL)),MKL_%) \
+  $(if $(filter 0,$(MKL)),MKL_%), \
   $(.VARIABLES))),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
 MAKSTATE := $(sort $(shell grep -ow "^ *[^0-9[:punct:]][A-Z0-9_][A-Z0-9_]*" $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
 ENVSTATE := $(strip $(foreach V,$(STATE),$(if $(filter environment%,$(origin $V)),$(filter $(MAKSTATE),$V))))
