@@ -397,17 +397,19 @@ endif
 
 ifneq (,$(PYTHON))
 information = \
-	$(info ================================================================================) \
-	$(info LIBXSMM $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py) ($(UNAME))) \
-	$(info --------------------------------------------------------------------------------) \
-	$(info $(GINFO)) \
-	$(info $(CINFO)) \
-	$(if $(strip $(FC)),$(info $(FINFO)),$(NULL)) \
-	$(if $(strip $(FC)),$(NULL), \
-	$(if $(strip $(FC_VERSION)), \
-	$(info Fortran Compiler $(FC_VERSION) is outdated!), \
-	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
-	$(info --------------------------------------------------------------------------------)
+  $(info ================================================================================) \
+  $(info LIBXSMM $(shell  $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py) ($(UNAME))) \
+  $(info --------------------------------------------------------------------------------) \
+  $(info $(GINFO)) \
+  $(info $(CINFO)) \
+  $(if $(strip $(FC)),$(info $(FINFO))) \
+  $(if $(strip $(FC)),$(NULL), \
+  $(if $(strip $(FC_VERSION)), \
+  $(info Fortran Compiler $(FC_VERSION) is outdated!), \
+  $(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
+  $(info --------------------------------------------------------------------------------) \
+  $(if $(ENVSTATE),$(info Environment: $(ENVSTATE)) \
+  $(info --------------------------------------------------------------------------------))
 endif
 
 ifneq (,$(strip $(TEST)))
