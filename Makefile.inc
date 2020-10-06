@@ -103,6 +103,8 @@ endif
 # Regular expression to match "main" (good-enough pattern)
 CMAIN := "main[[:space:]]*(.*)"
 FMAIN := "^[[:space:]]*PROGRAM[[:space:]][[:space:]]*\w\w*\([[:space:]][[:space:]]*\!.*\)*$$"
+# Regular expression to mazch variable name (Make-key)
+VNAME := "^ *[^0-9[:punct:]][A-Z0-9_][A-Z0-9_]*"
 
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
@@ -2300,23 +2302,24 @@ extname = $(subst .,,$(call qsuffix,$(1)))
 # derives the name of an object files for a given source file
 objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$(ARG)),%-$(call extname,$(ARG)).o,$(call qndir,$(ARG)))))
 
-STATE := $(strip $(foreach V,$(sort $(filter-out \
+STATE := $(sort $(foreach V,$(filter-out \
   $(EXCLUDE_STATE) EXCLUDE_% .% _% XSMM_% HAVE_% LIB_% %STATE MAKE_% MAKELEVEL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX SSE \
   COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO ENVBIN EXTDEP FORTDEP FSTD GINFO DYNAMIC \
   DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE BLAS_INCFILE \
-  CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% HOST% \
-  GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX \
+  CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% HOST% TMUX \
+  GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX VNAME \
   NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
   LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION XDG_DATA_DIRS \
   HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \
+  RUNGCOV CODECOV UPLOAD POSTPROC \
   abslib applyif uniqadd uniqmov which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
   ctest ftest ldclib ldflib extname objname unquote quote qapath qndir qdir qsuffix qbname qname qnum \
   $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
   $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
   $(if $(filter 0,$(MKL)),MKL_%), \
-  $(.VARIABLES))),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
-MAKSTATE := $(sort $(shell grep -ow "^ *[^0-9[:punct:]][A-Z0-9_][A-Z0-9_]*" $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
+  $(shell echo "$(.VARIABLES)" | tr " " "\n" | grep -ow $(VNAME))),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
+MAKSTATE := $(sort $(shell grep -how $(VNAME) $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
 ENVSTATE := $(strip $(foreach V,$(STATE),$(if $(filter environment%,$(origin $V)),$(filter $(MAKSTATE),$V))))
 VALSTATE := $(foreach V,$(STATE),$V=$(subst \
   $(USER),$(if $(USER),$$USER),$(subst \
