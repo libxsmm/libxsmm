@@ -2311,7 +2311,7 @@ STATE := $(strip $(foreach V,$(sort $(filter-out \
   HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \
   abslib applyif uniqadd uniqmov which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
   ctest ftest ldclib ldflib extname objname unquote quote qapath qndir qdir qsuffix qbname qname qnum \
-  $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET), \
+  $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
   $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
   $(if $(filter 0,$(MKL)),MKL_%) \
