@@ -40,7 +40,8 @@
 #   define LIBXSMM_TIMER_RDTSC(CYCLE) { \
       CYCLE = __ppc_get_timebase(); \
     }
-# elif ((defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER) || defined(__PGI)) && (64 <= (LIBXSMM_BITS)))
+# elif ((defined(LIBXSMM_PLATFORM_X86) && (64 <= (LIBXSMM_BITS))) && \
+        (defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER) || defined(__PGI)))
 #   define LIBXSMM_TIMER_RDTSC(CYCLE) { libxsmm_timer_tickint libxsmm_timer_rdtsc_hi_; \
       __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
       CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
