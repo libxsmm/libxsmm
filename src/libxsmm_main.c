@@ -4081,8 +4081,8 @@ LIBXSMM_API libxsmm_sububmmfunction_reducebatch_strd libxsmm_sububmmdispatch_red
 
 /* GEMMs fused with eltwise kernels */
 /* -------------------------------- */
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_bcbiasact libxsmm_bmmdispatch_reducebatch_strd_bcbiasact(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  libxsmm_meltw_cbiasact_flags meltw_flags, const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_reducebatch_strd_meltwfused(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
+  libxsmm_meltw_flags meltw_flags, const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch)
 {
   const int gemm_flags = (NULL == flags ? (LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_VNNI_A) : *flags);
@@ -4099,14 +4099,14 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_bcbiasact libxsmm_bmmdispatch_r
     return NULL;
   }
   desc->meltw_datatype_aux = desc->datatype;
-  desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_cbiasact_flags(meltw_flags);
+  desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_flags(meltw_flags);
   desc->meltw_operation = LIBXSMM_MELTW_OPERATION_COLBIAS_ACT;
   result = libxsmm_xmmdispatch(desc);
-  return result.bmrs_bcbiasact;
+  return result.bmrs_meltwfused;
 }
 
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_bcbiasact libxsmm_bmmdispatch_reducebatch_strd_bcbiasact_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  libxsmm_meltw_cbiasact_flags meltw_flags, const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
+  libxsmm_meltw_flags meltw_flags, const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch)
 {
   const int gemm_flags = (NULL == flags ? (LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_VNNI_A) : *flags);
@@ -4124,59 +4124,10 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_bcbiasact libxsmm_bmmdispatch_r
     return NULL;
   }
   desc->meltw_datatype_aux = desc->datatype;
-  desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_cbiasact_flags(meltw_flags);
+  desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_flags(meltw_flags);
   desc->meltw_operation = LIBXSMM_MELTW_OPERATION_COLBIAS_ACT;
   result = libxsmm_xmmdispatch(desc);
-  return result.bmrs_bcbiasact;
-}
-
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_scbiasact libxsmm_bmmdispatch_reducebatch_strd_scbiasact(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  libxsmm_meltw_cbiasact_flags meltw_flags, const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch)
-{
-  const int gemm_flags = (NULL == flags ? (LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_VNNI_A) : *flags);
-  libxsmm_descriptor_blob blob;
-  /*const*/ libxsmm_gemm_descriptor *const desc = libxsmm_bgemm_descriptor_init(&blob, m, n, k,
-    NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
-    NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
-    NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
-    gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
-  /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
-  if ( (stride_a < 0) || (stride_b < 0) ) {
-    return NULL;
-  }
-  desc->meltw_datatype_aux = LIBXSMM_DATATYPE_F32;
-  desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_cbiasact_flags(meltw_flags);
-  desc->meltw_operation = LIBXSMM_MELTW_OPERATION_COLBIAS_ACT;
-  result = libxsmm_xmmdispatch(desc);
-  return result.bmrs_scbiasact;
-}
-
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_scbiasact libxsmm_bmmdispatch_reducebatch_strd_scbiasact_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  libxsmm_meltw_cbiasact_flags meltw_flags, const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch)
-{
-  const int gemm_flags = (NULL == flags ? (LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_VNNI_A) : *flags);
-  libxsmm_descriptor_blob blob;
-  /*const*/ libxsmm_gemm_descriptor *const desc = libxsmm_bgemm_descriptor_init(&blob, m, n, k,
-    NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
-    NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
-    NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
-    gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
-  /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
-  desc->c3 = (unsigned char)(unroll_hint < 127 ? unroll_hint : 0);
-  if ( (stride_a < 0) || (stride_b < 0) ) {
-    return NULL;
-  }
-  desc->meltw_datatype_aux = LIBXSMM_DATATYPE_F32;
-  desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_cbiasact_flags(meltw_flags);
-  desc->meltw_operation = LIBXSMM_MELTW_OPERATION_COLBIAS_ACT;
-  result = libxsmm_xmmdispatch(desc);
-  return result.bmrs_scbiasact;
+  return result.bmrs_meltwfused;
 }
 
 LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_descriptor* descriptor)

@@ -835,16 +835,16 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
 
   /* TODO: Add support fror more fusions  */
   if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) {
-    if ((libxsmm_get_meltw_cbiasact_flags((libxsmm_meltw_comp_cbiasact_flags)i_xgemm_desc->meltw_flags) & LIBXSMM_MELTW_FLAG_CBIASACT_OVERWRITE_C) > 0) {
+    if ((libxsmm_get_meltw_flags((libxsmm_meltw_comp_flags)i_xgemm_desc->meltw_flags) & LIBXSMM_MELTW_FLAG_OVERWRITE_C) > 0) {
       i_micro_kernel_config->overwrite_C = 1;
     }
-    if ((libxsmm_get_meltw_cbiasact_flags((libxsmm_meltw_comp_cbiasact_flags)i_xgemm_desc->meltw_flags) & LIBXSMM_MELTW_FLAG_CBIASACT_ACT_RELU) > 0) {
+    if ((libxsmm_get_meltw_flags((libxsmm_meltw_comp_flags)i_xgemm_desc->meltw_flags) & LIBXSMM_MELTW_FLAG_ACT_RELU) > 0) {
       i_micro_kernel_config->fused_relu = 1;
     }
-    if ((libxsmm_get_meltw_cbiasact_flags((libxsmm_meltw_comp_cbiasact_flags)i_xgemm_desc->meltw_flags) & LIBXSMM_MELTW_FLAG_CBIASACT_ACT_SIGM) > 0) {
+    if ((libxsmm_get_meltw_flags((libxsmm_meltw_comp_flags)i_xgemm_desc->meltw_flags) & LIBXSMM_MELTW_FLAG_ACT_SIGM) > 0) {
       i_micro_kernel_config->fused_sigmoid = 1;
     }
-    if ((libxsmm_get_meltw_cbiasact_flags((libxsmm_meltw_comp_cbiasact_flags)i_xgemm_desc->meltw_flags) & LIBXSMM_MELTW_FLAG_CBIASACT_COLBIAS) > 0) {
+    if ((libxsmm_get_meltw_flags((libxsmm_meltw_comp_flags)i_xgemm_desc->meltw_flags) & LIBXSMM_MELTW_FLAG_COLBIAS) > 0) {
       if (i_xgemm_desc->meltw_datatype_aux == LIBXSMM_DATATYPE_BF16) {
         i_micro_kernel_config->fused_bcolbias = 1;
       }
@@ -965,7 +965,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   LIBXSMM_UNUSED(m_tiles);
 
   if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) {
-    if (libxsmm_get_meltw_cbiasact_flags((libxsmm_meltw_comp_cbiasact_flags)i_xgemm_desc->meltw_flags) != (unsigned int)LIBXSMM_MELTW_COMP_FLAG_CBIASACT_NONE) {
+    if (libxsmm_get_meltw_flags((libxsmm_meltw_comp_flags)i_xgemm_desc->meltw_flags) != (unsigned int)LIBXSMM_MELTW_COMP_FLAG_NONE) {
       has_colbias_act_fused = 1;
     }
   }
