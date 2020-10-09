@@ -40,7 +40,7 @@ float* temp_output = (float*)handle->scratch;
 LIBXSMM_VLA_DECL(4, float, output_f32, (float*) temp_output, nBlocksOFm, bn, bk);
 
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
-libxsmm_meltw_cbiasact_gemm_param gemm_eltwise_params;
+libxsmm_meltw_gemm_param gemm_eltwise_params;
 #if defined(LIBXSMM_DNN_FC_FWD_FUSE_BIAS)
 int mb2 = 0;
 float* fp32_bias_scratch = (float*)handle->scratch + ltid * handle->desc.K;

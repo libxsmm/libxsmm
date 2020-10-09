@@ -1448,7 +1448,7 @@ LIBXSMM_API_INTERN libxsmm_meltw_acvt_flags libxsmm_get_meltw_acvt_flags( libxsm
 LIBXSMM_API_INTERN libxsmm_meltw_comp_flags libxsmm_get_meltw_comp_flags( libxsmm_meltw_flags flags )
 {
   switch ( flags ) {
-    case LIBXSMM_MELTW_FLAG_NONE:
+    case LIBXSMM_MELTW_FLAG_FUSE_NONE:
       return LIBXSMM_MELTW_COMP_FLAG_NONE;
     case LIBXSMM_MELTW_FLAG_COLBIAS:
       return LIBXSMM_MELTW_COMP_FLAG_COLBIAS;
@@ -1498,7 +1498,7 @@ LIBXSMM_API_INTERN libxsmm_meltw_flags libxsmm_get_meltw_flags( libxsmm_meltw_co
 {
   switch ( flags ) {
     case LIBXSMM_MELTW_COMP_FLAG_NONE:
-      return LIBXSMM_MELTW_FLAG_NONE;
+      return LIBXSMM_MELTW_FLAG_FUSE_NONE;
     case LIBXSMM_MELTW_COMP_FLAG_COLBIAS:
       return LIBXSMM_MELTW_FLAG_COLBIAS;
     case LIBXSMM_MELTW_COMP_FLAG_ACT_RELU:
