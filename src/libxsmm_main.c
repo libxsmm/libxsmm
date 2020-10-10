@@ -4098,7 +4098,7 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
-  desc->meltw_datatype_aux = desc->datatype;
+  desc->meltw_datatype_aux = LIBXSMM_DATATYPE_F32;
   desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_flags(meltw_flags);
   desc->meltw_operation = LIBXSMM_MELTW_OPERATION_COLBIAS_ACT;
   result = libxsmm_xmmdispatch(desc);
@@ -4123,7 +4123,7 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
-  desc->meltw_datatype_aux = desc->datatype;
+  desc->meltw_datatype_aux = LIBXSMM_DATATYPE_F32;
   desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_flags(meltw_flags);
   desc->meltw_operation = LIBXSMM_MELTW_OPERATION_COLBIAS_ACT;
   result = libxsmm_xmmdispatch(desc);
