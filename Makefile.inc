@@ -47,9 +47,15 @@ ifeq (d,$(filter d,$(MAKEFLAGS)))
   SHELL += -xv
 endif
 
+COMMAND := $(shell which command 2>/dev/null)
+ifneq (,$(COMMAND))
+  which = $(shell $(COMMAND) -v $1)
+else
+  which = $(shell which $(firstword $1) 2>/dev/null)
+endif
+
+# ensure a number or instead return zero (by default) or 2nd argument (if given)
 qnum = $(shell echo "$1" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "$(if $2,$2,0)")
-which  = $(shell which $(firstword $1) 2>/dev/null)
-which ?= $(shell command -v $1)
 
 ifeq (Windows_NT,$(OS))
   UNAME ?= Windows_NT
@@ -635,11 +641,11 @@ MKL_FCRTL ?= intel
 
 # adopt fully equipped archiver
 CCAR := $(call which,$(CC)-ar)
-ifneq (,$(CCAR))
+ifneq (,$(findstring -ar?,$(CCAR)?))
   ifeq (default,$(origin AR))
-    AR := $(firstword $(CC))-ar
+    AR := $(CCAR)
   else
-    AR ?= $(firstword $(CC))-ar
+    AR ?= $(CCAR)
   endif
 endif
 
@@ -1692,6 +1698,8 @@ endif
 ifneq (,$(call ftest,$(FC),$(CTARGET)))
   # inherit CTARGET flags
   FTARGET := $(CTARGET)
+else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET))))
+  FTARGET := $(patsubst -m%,-x%,$(CTARGET))
 endif
 ifeq (,$(call ctest,$(CC),$(CTARGET)))
   # revoke target flags
