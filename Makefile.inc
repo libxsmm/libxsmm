@@ -101,10 +101,10 @@ else
 endif
 
 # Regular expression to match "main" (good-enough pattern)
-CMAIN := "main[[:space:]]*(.*)"
-FMAIN := "^[[:space:]]*PROGRAM[[:space:]][[:space:]]*\w\w*\([[:space:]][[:space:]]*\!.*\)*$$"
+CMAIN := 'main[[:space:]]*(.*)'
+FMAIN := '^[[:space:]]*PROGRAM[[:space:]][[:space:]]*\w\w*\([[:space:]][[:space:]]*\!.*\)*$$'
 # Regular expression to mazch variable name (Make-key)
-VNAME := "^ *[^0-9[:punct:]][A-Z0-9_][A-Z0-9_]*"
+VNAME := '^ *[^0-9[:punct:]][A-Z0-9_][A-Z0-9_]*'
 
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
@@ -2318,8 +2318,8 @@ STATE := $(sort $(foreach V,$(filter-out \
   $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
   $(if $(filter 0,$(MKL)),MKL_%), \
-  $(shell echo "$(.VARIABLES)" | tr " " "\n" | grep -ow '$(VNAME)')),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
-MAKSTATE := $(sort $(shell grep -how '$(VNAME)' $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
+  $(shell echo "$(.VARIABLES)" | tr " " "\n" | grep -ow $(VNAME))),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
+MAKSTATE := $(sort $(shell grep -how $(VNAME) $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
 ENVSTATE := $(strip $(foreach V,$(STATE),$(if $(filter environment%,$(origin $V)),$(filter $(MAKSTATE),$V))))
 VALSTATE := $(foreach V,$(STATE),$V=$(subst \
   $(USER),$(if $(USER),$$USER),$(subst \
