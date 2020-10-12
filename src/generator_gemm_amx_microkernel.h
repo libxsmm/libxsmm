@@ -70,6 +70,14 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
     int                                n_cols);
 
 LIBXSMM_API_INTERN
+void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config,
+    int                                a_offs,
+    unsigned int                       a_lookahead_offs);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            io_generated_code,
                                                      libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                      const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,

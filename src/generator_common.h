@@ -569,6 +569,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_3;
   unsigned int gp_reg_help_4;
   unsigned int gp_reg_help_5;
+/* Auxiliary regs for sparsity in A support  */
+  unsigned int gp_reg_bitmap_a;
+  unsigned int gp_reg_decompressed_a;
 } libxsmm_gp_reg_mapping;
 
 /* structure for storing the current gp reg mapping for matcopy */
