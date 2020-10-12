@@ -672,6 +672,9 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
         /* In case of K = 1 we pad A and B to "bk=2" */
         size_t size_bwd = (handle->desc.K != 1) ? ( sizeof(float) * LIBXSMM_MAX(handle->desc.C * handle->desc.N, handle->desc.threads * handle->bc * handle->bn) + sizeof(libxsmm_bfloat16) * handle->desc.C * handle->desc.K ) : ( sizeof(float) * handle->desc.C * handle->desc.N + sizeof(libxsmm_bfloat16) * handle->desc.C * 2 + sizeof(libxsmm_bfloat16) * 2 * handle->desc.N );
         size_t size_upd = sizeof(float) * LIBXSMM_MAX(handle->desc.C * handle->desc.K, handle->desc.threads * handle->bc * handle->bk) + sizeof(libxsmm_bfloat16) * handle->desc.threads * handle->bk * handle->bc + sizeof(libxsmm_bfloat16) * (handle->desc.N * (handle->desc.C + handle->desc.K));
+        if (handle->compressed_A == 1) {
+          size_fwd += handle->desc.trheads * handle->desc.C * handle->bk *sizeof(libxsmm_bfloat16);
+        }
         handle->scratch_size = LIBXSMM_MAX(LIBXSMM_MAX(size_fwd, size_bwd), size_upd);
         handle->doutput_scratch_mark = handle->scratch_size;
         handle->scratch_size += 2 * sizeof(libxsmm_bfloat16) * handle->desc.N *  handle->desc.K;
@@ -756,20 +759,20 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
                 sparsity_factor_flag = LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_32;
               }
               l_flags = l_flags | sparsity_factor_flag;
-              handle->gemm_fwd9.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
-              handle->gemm_fwd10.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+              handle->gemm_fwd9.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
+              handle->gemm_fwd10.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
               handle->fwd_config_kernel = libxsmm_bsmmdispatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
-              handle->gemm_fwd11.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+              handle->gemm_fwd11.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
               fusion_flags = LIBXSMM_MELTW_FLAG_COLBIAS_OVERWRITE_C;
-              handle->gemm_fwd12.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+              handle->gemm_fwd12.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
               fusion_flags = LIBXSMM_MELTW_FLAG_ACT_RELU_OVERWRITE_C;
-              handle->gemm_fwd13.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+              handle->gemm_fwd13.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
               fusion_flags = LIBXSMM_MELTW_FLAG_ACT_SIGM_OVERWRITE_C;
-              handle->gemm_fwd14.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+              handle->gemm_fwd14.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
               fusion_flags = LIBXSMM_MELTW_FLAG_COLBIAS_ACT_RELU_OVERWRITE_C;
-              handle->gemm_fwd15.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+              handle->gemm_fwd15.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
               fusion_flags = LIBXSMM_MELTW_FLAG_COLBIAS_ACT_SIGM_OVERWRITE_C;
-              handle->gemm_fwd16.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+              handle->gemm_fwd16.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, fusion_flags, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
             }
 
             /* Also JIT eltwise functions... */
