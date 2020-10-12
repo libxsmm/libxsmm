@@ -47,7 +47,7 @@ ifeq (d,$(filter d,$(MAKEFLAGS)))
   SHELL += -xv
 endif
 
-qnum = $(shell echo "$1" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")
+qnum = $(shell echo "$1" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "$(if $2,$2,0)")
 which  = $(shell which $(firstword $1) 2>/dev/null)
 which ?= $(shell command -v $1)
 
