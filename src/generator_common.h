@@ -504,6 +504,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int fused_sigmoid;
   unsigned int overwrite_C;
   unsigned int vnni_format_C;
+  unsigned int sparsity_factor_A;
+  unsigned int decompress_A;
 
   /* Register names/logistics for fusion boo-keeping  */
   unsigned int reserved_zmms;
@@ -724,7 +726,11 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_ARG_7              =  9,
   LIBXSMM_GEMM_STACK_VAR_ARG_8              = 10,
   LIBXSMM_GEMM_STACK_VAR_ARG_9              = 11,
-  LIBXSMM_GEMM_STACK_VAR_ARG_10             = 12
+  LIBXSMM_GEMM_STACK_VAR_ARG_10             = 12,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BUF1           = 13,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BUF2           = 14,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BITMAP_PTR     = 15,
+  LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF = 16
 } libxsmm_gemm_stack_var;
 
 /* compressed meltw reduce structure */
