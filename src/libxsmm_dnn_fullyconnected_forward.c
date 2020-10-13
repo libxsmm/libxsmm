@@ -367,6 +367,8 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_amx(libx
   typedef libxsmm_bfloat16 element_filter_type;
   libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel              = handle->gemm_fwd.xgemm.bsmrs;
   libxsmm_bmmfunction_reducebatch_strd bf16_batchreduce_kernel_zerobeta = handle->gemm_fwd3.xgemm.bmrs;
+  libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel_decompress   = handle->gemm_fwd9.xgemm.bsmrs;
+  libxsmm_bmmfunction_reducebatch_strd bf16_batchreduce_kernel_zerobeta_decompress = handle->gemm_fwd11.xgemm.bmrs;
   libxsmm_bsmmfunction tile_config_kernel = handle->fwd_config_kernel;
 
   /* some portable macrros fof BF16 <-> FP32 */
