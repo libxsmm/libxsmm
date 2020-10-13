@@ -657,7 +657,7 @@ void bf16_vnni_reformat(libxsmm_bfloat16 *_in, libxsmm_bfloat16 *_out, int M, in
 #endif
     }
     in += 2*ld_in;
-    out += 2*ld_out;
+    out += 2*ld_in;
   }
   if (half_n_pair == 1) {
     for (m = 0; m < M; m+=32) {
