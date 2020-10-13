@@ -31,8 +31,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
    *      GEMM_scratch ptr in stack (to be filled)  <-- RBP-48
    *      Eltwise bias ptr                          <-- RBP-56
    *      Eltwise output_ptr                        <-- RBP-64
-   *      Eltwise buf1_ptr                          <-- RBP-72   
-   *      Eltwise buf2_ptr                          <-- RBP-80      
+   *      Eltwise buf1_ptr                          <-- RBP-72
+   *      Eltwise buf2_ptr                          <-- RBP-80
    *
    * */
 
@@ -62,7 +62,7 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
     case LIBXSMM_GEMM_STACK_VAR_ELT_BITMAP_PTR:
       return -72;
     case LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF:
-      return -80;   
+      return -80;
     case LIBXSMM_GEMM_STACK_VAR_ARG_7:
       return 16;
     case LIBXSMM_GEMM_STACK_VAR_ARG_8:

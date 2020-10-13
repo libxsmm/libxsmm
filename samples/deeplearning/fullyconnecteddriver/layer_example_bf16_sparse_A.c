@@ -86,6 +86,9 @@ int main(int argc, char* argv[])
   int bc = 32;
   int sparsity_factor = 2;
 
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
+
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads(); /* number of threads */
 #else

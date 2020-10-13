@@ -641,7 +641,7 @@ void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
   unsigned int expanded_cl, current_mask_reg, current_zmm;
   unsigned int reserved_mask_regs       = i_micro_kernel_config->reserved_mask_regs;
   unsigned int reserved_zmms            = i_micro_kernel_config->reserved_zmms;
-  
+
   unsigned int n_elts_decompressed_reg  = i_gp_reg_mapping->gp_reg_help_0;
   unsigned int popcnt_reg               = i_gp_reg_mapping->gp_reg_help_1;
   unsigned int decompress_loop_reg      = LIBXSMM_X86_GP_REG_R14;
@@ -649,7 +649,7 @@ void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
   libxsmm_x86_instruction_push_reg( io_generated_code, n_elts_decompressed_reg);
   libxsmm_x86_instruction_push_reg( io_generated_code, popcnt_reg);
   libxsmm_x86_instruction_push_reg( io_generated_code, decompress_loop_reg);
-  
+
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_mov_instruction, n_elts_decompressed_reg, 0);
   libxsmm_generator_gemm_header_decompress_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, decompress_loop_reg );
 
@@ -719,7 +719,7 @@ void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SARQ, decompress_loop_reg, 1);
   libxsmm_generator_gemm_footer_decompress_loop_amx( io_generated_code,  io_loop_label_tracker, i_micro_kernel_config, decompress_loop_reg, 128);
-  
+
   libxsmm_x86_instruction_pop_reg( io_generated_code, decompress_loop_reg);
   libxsmm_x86_instruction_pop_reg( io_generated_code, popcnt_reg);
   libxsmm_x86_instruction_pop_reg( io_generated_code, n_elts_decompressed_reg);

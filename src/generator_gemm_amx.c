@@ -257,7 +257,7 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0, ((i_xgemm_desc->m)*(i_micro_kernel_config->datatype_size)) );
         libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF, i_gp_reg_mapping->gp_reg_help_0 );
         libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
-      }  
+      }
        if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2          ||
           i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C    ) {
             libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
@@ -1042,7 +1042,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   }
 
   if (i_micro_kernel_config->sparsity_factor_A > 1) {
-    i_micro_kernel_config->decompress_A = 1;  
+    i_micro_kernel_config->decompress_A = 1;
   }
 
   if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) {
@@ -1054,7 +1054,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   has_eltwise_fused = ((has_colbias_act_fused == 1)) ? 1: 0;
   i_micro_kernel_config->fused_eltwise = has_eltwise_fused;
   if (i_micro_kernel_config->decompress_A == 1) {
-    i_micro_kernel_config->fused_eltwise = 1;  
+    i_micro_kernel_config->fused_eltwise = 1;
   }
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
@@ -1279,8 +1279,8 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
    *      GEMM_scratch ptr in stack (to be filled)  <-- RBP-48
    *      Eltwise bias ptr                          <-- RBP-56
    *      Eltwise output_ptr                        <-- RBP-64
-   *      Eltwise buf1_ptr                          <-- RBP-72   
-   *      Eltwise buf2_ptr                          <-- RBP-80, RSP  
+   *      Eltwise buf1_ptr                          <-- RBP-72
+   *      Eltwise buf2_ptr                          <-- RBP-80, RSP
    *
    */
 
@@ -1324,8 +1324,8 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
    *      GEMM_scratch ptr in stack             <-- RBP-48
    *      Eltwise bias ptr                      <-- RBP-56
    *      Eltwise output_ptr                    <-- RBP-64
-   *      Eltwise buf1_ptr                      <-- RBP-72   
-   *      Eltwise buf2_ptr                      <-- RBP-80   
+   *      Eltwise buf1_ptr                      <-- RBP-72
+   *      Eltwise buf2_ptr                      <-- RBP-80
    *      [ Potentianl  pad for 64b align ]
    *      GEMM scratch, 64b aligned             <-- (RBP-48) contains this address
    *      Callee-saved registers                <-- RSP
@@ -1801,7 +1801,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
           libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_help_0);
           libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF, i_gp_reg_mapping->gp_reg_help_0 );
           libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_1 );
-          libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );       
+          libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
         }
         libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_reduce_loop, i_gp_reg_mapping->gp_reg_b);
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_b, i_xgemm_desc->c2);
