@@ -504,6 +504,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int fused_sigmoid;
   unsigned int overwrite_C;
   unsigned int vnni_format_C;
+  unsigned int sparsity_factor_A;
+  unsigned int decompress_A;
 
   /* Register names/logistics for fusion boo-keeping  */
   unsigned int reserved_zmms;
@@ -567,6 +569,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_3;
   unsigned int gp_reg_help_4;
   unsigned int gp_reg_help_5;
+/* Auxiliary regs for sparsity in A support  */
+  unsigned int gp_reg_bitmap_a;
+  unsigned int gp_reg_decompressed_a;
 } libxsmm_gp_reg_mapping;
 
 /* structure for storing the current gp reg mapping for matcopy */
@@ -724,7 +729,11 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_ARG_7              =  9,
   LIBXSMM_GEMM_STACK_VAR_ARG_8              = 10,
   LIBXSMM_GEMM_STACK_VAR_ARG_9              = 11,
-  LIBXSMM_GEMM_STACK_VAR_ARG_10             = 12
+  LIBXSMM_GEMM_STACK_VAR_ARG_10             = 12,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BUF1           = 13,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BUF2           = 14,
+  LIBXSMM_GEMM_STACK_VAR_ELT_BITMAP_PTR     = 15,
+  LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF = 16
 } libxsmm_gemm_stack_var;
 
 /* compressed meltw reduce structure */
@@ -799,28 +808,28 @@ typedef enum libxsmm_meltw_comp_acvt_flags {
 } libxsmm_meltw_comp_acvt_flags;
 
 /* compressed meltw cbiasact strcuture */
-typedef enum libxsmm_meltw_comp_cbiasact_flags {
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_NONE                         =  0,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS                      =  1,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_RELU                     =  2,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_TANH                     =  3,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_SIGM                     =  4,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_GELU                     =  5,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_OVERWRITE_C                  =  6,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_RELU             =  7,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_TANH             =  8,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_SIGM             =  9,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_GELU             = 10,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_RELU_OVERWRITE_C = 11,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_TANH_OVERWRITE_C = 12,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_SIGM_OVERWRITE_C = 13,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_ACT_GELU_OVERWRITE_C = 14,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_COLBIAS_OVERWRITE_C          = 15,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_RELU_OVERWRITE_C         = 16,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_TANH_OVERWRITE_C         = 17,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_SIGM_OVERWRITE_C         = 18,
-  LIBXSMM_MELTW_COMP_FLAG_CBIASACT_ACT_GELU_OVERWRITE_C         = 19
-} libxsmm_meltw_comp_cbiasact_flags;
+typedef enum libxsmm_meltw_comp_flags {
+  LIBXSMM_MELTW_COMP_FLAG_NONE                         =  0,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS                      =  1,
+  LIBXSMM_MELTW_COMP_FLAG_ACT_RELU                     =  2,
+  LIBXSMM_MELTW_COMP_FLAG_ACT_TANH                     =  3,
+  LIBXSMM_MELTW_COMP_FLAG_ACT_SIGM                     =  4,
+  LIBXSMM_MELTW_COMP_FLAG_ACT_GELU                     =  5,
+  LIBXSMM_MELTW_COMP_FLAG_OVERWRITE_C                  =  6,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS_ACT_RELU             =  7,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS_ACT_TANH             =  8,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS_ACT_SIGM             =  9,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS_ACT_GELU             = 10,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS_ACT_RELU_OVERWRITE_C = 11,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS_ACT_TANH_OVERWRITE_C = 12,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS_ACT_SIGM_OVERWRITE_C = 13,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS_ACT_GELU_OVERWRITE_C = 14,
+  LIBXSMM_MELTW_COMP_FLAG_COLBIAS_OVERWRITE_C          = 15,
+  LIBXSMM_MELTW_COMP_FLAG_ACT_RELU_OVERWRITE_C         = 16,
+  LIBXSMM_MELTW_COMP_FLAG_ACT_TANH_OVERWRITE_C         = 17,
+  LIBXSMM_MELTW_COMP_FLAG_ACT_SIGM_OVERWRITE_C         = 18,
+  LIBXSMM_MELTW_COMP_FLAG_ACT_GELU_OVERWRITE_C         = 19
+} libxsmm_meltw_comp_flags;
 
 LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker );
@@ -889,8 +898,8 @@ LIBXSMM_API_INTERN libxsmm_meltw_comp_cvta_flags libxsmm_get_meltw_comp_cvta_fla
 LIBXSMM_API_INTERN libxsmm_meltw_cvta_flags libxsmm_get_meltw_cvta_flags( libxsmm_meltw_comp_cvta_flags flags );
 LIBXSMM_API_INTERN libxsmm_meltw_comp_acvt_flags libxsmm_get_meltw_comp_acvt_flags( libxsmm_meltw_acvt_flags flags );
 LIBXSMM_API_INTERN libxsmm_meltw_acvt_flags libxsmm_get_meltw_acvt_flags( libxsmm_meltw_comp_acvt_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_comp_cbiasact_flags libxsmm_get_meltw_comp_cbiasact_flags( libxsmm_meltw_cbiasact_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_cbiasact_flags libxsmm_get_meltw_cbiasact_flags( libxsmm_meltw_comp_cbiasact_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_comp_flags libxsmm_get_meltw_comp_flags( libxsmm_meltw_flags flags );
+LIBXSMM_API_INTERN libxsmm_meltw_flags libxsmm_get_meltw_flags( libxsmm_meltw_comp_flags flags );
 
 #endif /* GENERATOR_COMMON_H */
 

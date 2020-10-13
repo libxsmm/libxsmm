@@ -17,6 +17,19 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_header_decompress_loop_amx( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_footer_decompress_loop_amx( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg,
+    unsigned int                       n_iters);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
     const libxsmm_micro_kernel_config*             i_micro_kernel_config,
     const unsigned int                             i_vec_x,
@@ -70,7 +83,16 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
     int                                n_cols);
 
 LIBXSMM_API_INTERN
+void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config,
+    int                                a_offs,
+    unsigned int                       a_lookahead_offs);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            io_generated_code,
+                                                     libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                      const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                      libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -79,7 +101,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
                                                      unsigned int                       offset_A,
                                                      unsigned int                       offset_B,
                                                      unsigned int                       is_last_k,
-                                                     int                                i_brgemm_loop  );
+                                                     int                                i_brgemm_loop,
+                                                     unsigned int                       fully_unrolled_brloop  );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*            io_generated_code,
@@ -90,7 +113,8 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
                                                       libxsmm_blocking_info_t*           n_blocking_info,
                                                       libxsmm_blocking_info_t*           m_blocking_info,
                                                       unsigned int                       A_offs,
-                                                      unsigned int                       B_offs );
+                                                      unsigned int                       B_offs,
+                                                      unsigned int                       fully_unrolled_brloop );
 
 #endif /* GENERATOR_GEMM_AMX_MICROKERNEL_H */
 

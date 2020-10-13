@@ -23,6 +23,26 @@
 #endif
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_header_decompress_loop_amx( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, cnt_reg, 0);
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_footer_decompress_loop_amx( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg,
+    unsigned int                       n_iters) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, cnt_reg, 32);
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, cnt_reg, n_iters );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
     const libxsmm_micro_kernel_config*             i_micro_kernel_config,
     const unsigned int                             i_vec_x,
@@ -631,7 +651,103 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
 }
 
 LIBXSMM_API_INTERN
+void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config,
+    int                                a_offs,
+    unsigned int                       a_lookahead_offs) {
+
+  unsigned int expanded_cl, current_mask_reg, current_zmm;
+  unsigned int reserved_mask_regs       = i_micro_kernel_config->reserved_mask_regs;
+  unsigned int reserved_zmms            = i_micro_kernel_config->reserved_zmms;
+
+  unsigned int n_elts_decompressed_reg  = i_gp_reg_mapping->gp_reg_help_0;
+  unsigned int popcnt_reg               = i_gp_reg_mapping->gp_reg_help_1;
+  unsigned int decompress_loop_reg      = LIBXSMM_X86_GP_REG_R14;
+
+  libxsmm_x86_instruction_push_reg( io_generated_code, n_elts_decompressed_reg);
+  libxsmm_x86_instruction_push_reg( io_generated_code, popcnt_reg);
+  libxsmm_x86_instruction_push_reg( io_generated_code, decompress_loop_reg);
+
+  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_mov_instruction, n_elts_decompressed_reg, 0);
+  libxsmm_generator_gemm_header_decompress_loop_amx( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, decompress_loop_reg );
+
+  for (expanded_cl = 0; expanded_cl < 8; expanded_cl++ ) {
+    current_mask_reg = reserved_mask_regs + (expanded_cl % (8-reserved_mask_regs));
+    current_zmm      = expanded_cl % (32-reserved_zmms) + reserved_zmms;
+
+    /* Load bit mask for current expand operation */
+    libxsmm_x86_instruction_mask_move_mem( io_generated_code,
+        LIBXSMM_X86_INSTR_KMOVD,
+        i_gp_reg_mapping->gp_reg_bitmap_a,
+        decompress_loop_reg,
+        1,
+        (a_offs*i_micro_kernel_config->sparsity_factor_A)/16 + expanded_cl * 4 + (a_lookahead_offs * i_micro_kernel_config->sparsity_factor_A)/16,
+        current_mask_reg,
+        0 );
+
+    /* Expand operation */
+    libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
+                                                 LIBXSMM_X86_INSTR_VPEXPANDW,
+                                                 i_micro_kernel_config->vector_name,
+                                                 i_gp_reg_mapping->gp_reg_a,
+                                                 n_elts_decompressed_reg,
+                                                 2,
+                                                 a_offs + a_lookahead_offs,
+                                                 0,
+                                                 LIBXSMM_X86_VEC_REG_UNDEF,
+                                                 current_zmm,
+                                                 current_mask_reg,
+                                                 1,
+                                                 0);
+    /* Move zmm to reg */
+    libxsmm_x86_instruction_mask_move( io_generated_code,
+      LIBXSMM_X86_INSTR_KMOVD,
+      popcnt_reg,
+      current_mask_reg, 1 );
+
+    /* Popcount */
+    libxsmm_x86_instruction_alu_reg( io_generated_code,
+        LIBXSMM_X86_INSTR_POPCNT,
+        popcnt_reg,
+        popcnt_reg);
+
+    /* Adjust count of decompressed elements  */
+    libxsmm_x86_instruction_alu_reg( io_generated_code,
+        LIBXSMM_X86_INSTR_ADDQ,
+        popcnt_reg,
+        n_elts_decompressed_reg);
+  }
+
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SALQ, decompress_loop_reg, 1);
+
+  for (expanded_cl = 0; expanded_cl < 8; expanded_cl++ ) {
+    current_mask_reg = reserved_mask_regs + (expanded_cl % (8-reserved_mask_regs));
+    current_zmm      = expanded_cl % (32-reserved_zmms) + reserved_zmms;
+
+    /* Store zmm to scratch */
+    libxsmm_x86_instruction_vec_move( io_generated_code,
+      i_micro_kernel_config->instruction_set,
+      LIBXSMM_X86_INSTR_VMOVUPS,
+      i_gp_reg_mapping->gp_reg_decompressed_a,
+      decompress_loop_reg, 8,
+      a_offs * i_micro_kernel_config->sparsity_factor_A + expanded_cl * 64 + a_lookahead_offs * i_micro_kernel_config->sparsity_factor_A,
+      i_micro_kernel_config->vector_name,
+      current_zmm, 0, 0, 1 );
+  }
+
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SARQ, decompress_loop_reg, 1);
+  libxsmm_generator_gemm_footer_decompress_loop_amx( io_generated_code,  io_loop_label_tracker, i_micro_kernel_config, decompress_loop_reg, 128);
+
+  libxsmm_x86_instruction_pop_reg( io_generated_code, decompress_loop_reg);
+  libxsmm_x86_instruction_pop_reg( io_generated_code, popcnt_reg);
+  libxsmm_x86_instruction_pop_reg( io_generated_code, n_elts_decompressed_reg);
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -640,7 +756,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     unsigned int                       offset_A,
     unsigned int                       offset_B,
     unsigned int                       is_last_k,
-    int                                i_brgemm_loop  ) {
+    int                                i_brgemm_loop,
+    unsigned int                       fully_unrolled_brloop  ) {
   int m_tiles = m_blocking_info->tiles;
   int n_tiles = n_blocking_info->tiles;
   int i, im, in;
@@ -649,6 +766,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int use_paired_tilestores = ((LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0)) ? 1 : 0;
   int n_CL_to_pf;
   unsigned int tile_compute_instr = 0;
+  unsigned int gp_reg_a;
 
   /* Tiles in the kernel are organized as indicated below when we use 2x2 2D blocking
    *
@@ -754,7 +872,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + _im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size;
+        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size)/i_micro_kernel_config->sparsity_factor_A;
         _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;
       }
     }
@@ -774,7 +892,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _in[i];
-        _A_offsets[i] = offset_A + _im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size;
+        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size)/i_micro_kernel_config->sparsity_factor_A;
         _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;
       }
     }
@@ -794,7 +912,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + _im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size;
+        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size)/i_micro_kernel_config->sparsity_factor_A;
         _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;
       }
     }
@@ -814,7 +932,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + _im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size;
+        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size)/i_micro_kernel_config->sparsity_factor_A;
         _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;
       }
     }
@@ -834,7 +952,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + _im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size;
+        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * i_micro_kernel_config->datatype_size)/i_micro_kernel_config->sparsity_factor_A;
         _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;
       }
     }
@@ -855,15 +973,27 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   for (i = 0; i < m_tiles*n_tiles; i++) {
     im = _im[i];
     in = _in[i];
+    gp_reg_a = (i_micro_kernel_config->decompress_A == 0) ? i_gp_reg_mapping->gp_reg_a : i_gp_reg_mapping->gp_reg_decompressed_a;
+
+    if (i_micro_kernel_config->decompress_A == 1) {
+      /* Decompress first block of A */
+      if ((_A_tile_id_load[i] > 0) && (_A_tile_id_load[i] % 2 == 0) && (i_brgemm_loop <= 0)) {
+        decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], 0);
+      }
+      /* Check if SW pipelining is doable for the A decompression...  */
+      if ((_A_tile_id_load[i] > 0) && (_A_tile_id_load[i] % 2 == 0) && (i_brgemm_loop >= 0) && (i_brgemm_loop < i_xgemm_desc->c3 - 1) && (fully_unrolled_brloop == 1)) {
+        decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], i_xgemm_desc->c1);
+      }
+    }
 
     if (_A_tile_id_load[i] > 0) {
       libxsmm_x86_instruction_tile_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
           _A_tileload_instr[i],
-          i_gp_reg_mapping->gp_reg_a,
+          gp_reg_a,
           i_gp_reg_mapping->gp_reg_lda,
           4,
-          _A_offsets[i],
+          _A_offsets[i] * i_micro_kernel_config->sparsity_factor_A,
           _A_tile_id_load[i]);
 
       if (i_brgemm_loop + pf_dist < i_xgemm_desc->c3) {
@@ -948,7 +1078,8 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info,
     unsigned int                       A_offs,
-    unsigned int                       B_offs ) {
+    unsigned int                       B_offs,
+    unsigned int                       fully_unrolled_brloop ) {
 
   unsigned int l_k_blocking = 16;
   unsigned int k;
@@ -956,7 +1087,6 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
   unsigned int offset_B = 0;
   int i_brgemm_loop = -2;
   int is_last_k = 0;
-  LIBXSMM_UNUSED( io_loop_label_tracker );
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
     i_brgemm_loop = A_offs/((unsigned int)i_xgemm_desc->c1);
@@ -969,9 +1099,9 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
   /* For now fully unroll the k loop  */
   for (k = 0; k < i_xgemm_desc->k; k+= l_k_blocking) {
     is_last_k = (k + l_k_blocking >= i_xgemm_desc->k) ? 1 : 0;
-    offset_A = k * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size + A_offs;
+    offset_A = (k * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size)/i_micro_kernel_config->sparsity_factor_A + A_offs;
     offset_B = k * i_micro_kernel_config->datatype_size + B_offs;
-    libxsmm_generator_gemm_amx_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info, offset_A, offset_B, is_last_k, i_brgemm_loop);
+    libxsmm_generator_gemm_amx_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info, offset_A, offset_B, is_last_k, i_brgemm_loop, fully_unrolled_brloop);
   }
 }
 
