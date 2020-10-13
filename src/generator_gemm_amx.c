@@ -1054,6 +1054,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   has_eltwise_fused = ((has_colbias_act_fused == 1)) ? 1: 0;
   i_micro_kernel_config->fused_eltwise = has_eltwise_fused;
   if (i_micro_kernel_config->decompress_A == 1) {
+    has_eltwise_fused = 1;
     i_micro_kernel_config->fused_eltwise = 1;
   }
 
