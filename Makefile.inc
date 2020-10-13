@@ -47,9 +47,15 @@ ifeq (d,$(filter d,$(MAKEFLAGS)))
   SHELL += -xv
 endif
 
-qnum = $(shell echo "$1" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")
-which  = $(shell which $(firstword $1) 2>/dev/null)
-which ?= $(shell command -v $1)
+COMMAND := $(shell which command 2>/dev/null)
+ifneq (,$(COMMAND))
+  which = $(shell $(COMMAND) -v $1)
+else
+  which = $(shell which $(firstword $1) 2>/dev/null)
+endif
+
+# ensure a number or instead return zero (by default) or 2nd argument (if given)
+qnum = $(shell echo "$1" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "$(if $2,$2,0)")
 
 ifeq (Windows_NT,$(OS))
   UNAME ?= Windows_NT
@@ -101,10 +107,10 @@ else
 endif
 
 # Regular expression to match "main" (good-enough pattern)
-CMAIN := "main[[:space:]]*(.*)"
-FMAIN := "^[[:space:]]*PROGRAM[[:space:]][[:space:]]*\w\w*\([[:space:]][[:space:]]*\!.*\)*$$"
+CMAIN := main[[:space:]]*(.*)
+FMAIN := ^[[:space:]]*PROGRAM[[:space:]][[:space:]]*\w\w*\([[:space:]][[:space:]]*\!.*\)*$$
 # Regular expression to mazch variable name (Make-key)
-VNAME := "^ *[^0-9[:punct:]][A-Z0-9_][A-Z0-9_]*"
+VNAME := ^ *[^0-9[:punct:]][A-Z0-9_][A-Z0-9_]*
 
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
@@ -635,11 +641,11 @@ MKL_FCRTL ?= intel
 
 # adopt fully equipped archiver
 CCAR := $(call which,$(CC)-ar)
-ifneq (,$(CCAR))
+ifneq (,$(findstring -ar?,$(CCAR)?))
   ifeq (default,$(origin AR))
-    AR := $(firstword $(CC))-ar
+    AR := $(CCAR)
   else
-    AR ?= $(firstword $(CC))-ar
+    AR ?= $(CCAR)
   endif
 endif
 
@@ -1692,6 +1698,8 @@ endif
 ifneq (,$(call ftest,$(FC),$(CTARGET)))
   # inherit CTARGET flags
   FTARGET := $(CTARGET)
+else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET))))
+  FTARGET := $(patsubst -m%,-x%,$(CTARGET))
 endif
 ifeq (,$(call ctest,$(CC),$(CTARGET)))
   # revoke target flags
@@ -2302,7 +2310,8 @@ extname = $(subst .,,$(call qsuffix,$(1)))
 # derives the name of an object files for a given source file
 objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$(ARG)),%-$(call extname,$(ARG)).o,$(call qndir,$(ARG)))))
 
-STATE := $(sort $(foreach V,$(filter-out \
+MAKSTATE := $(sort $(shell grep -how '$(VNAME)' $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
+STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
   $(EXCLUDE_STATE) EXCLUDE_% .% _% XSMM_% HAVE_% LIB_% %STATE MAKE_% MAKELEVEL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX SSE \
   COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO ENVBIN EXTDEP FORTDEP FSTD GINFO DYNAMIC \
   DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE BLAS_INCFILE \
@@ -2312,15 +2321,12 @@ STATE := $(sort $(foreach V,$(filter-out \
   LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION XDG_DATA_DIRS \
   HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \
   RUNGCOV RUNXCOV CODECOV UPLOAD POSTPROC \
-  abslib applyif uniqadd uniqmov which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath solink \
-  ctest ftest ldclib ldflib extname objname unquote quote qapath qndir qdir qsuffix qbname qname qnum \
   $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
   $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
   $(if $(filter 0,$(MKL)),MKL_%), \
-  $(shell echo "$(.VARIABLES)" | tr " " "\n" | grep -ow '$(VNAME)')),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
-MAKSTATE := $(sort $(shell grep -how '$(VNAME)' $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
-ENVSTATE := $(strip $(foreach V,$(STATE),$(if $(filter environment%,$(origin $V)),$(filter $(MAKSTATE),$V))))
+  $(.VARIABLES))),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
+ENVSTATE := $(strip $(foreach V,$(STATE),$(if $(filter environment%,$(origin $V)),$V)))
 VALSTATE := $(foreach V,$(STATE),$V=$(subst \
   $(USER),$(if $(USER),$$USER),$(subst \
   $(HOME),$(if $(HOME),$$HOME),$(subst \
