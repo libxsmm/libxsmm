@@ -1712,7 +1712,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
                (LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_4 & request->descriptor.gemm->flags) ||
                (LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_8 & request->descriptor.gemm->flags) ||
                (LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_16 & request->descriptor.gemm->flags) ||
-               (LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_16 & request->descriptor.gemm->flags)) {
+               (LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_32 & request->descriptor.gemm->flags)) {
             decompress_A = 1;
           }
 
