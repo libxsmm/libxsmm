@@ -88,7 +88,8 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
                                                      unsigned int                       offset_A,
                                                      unsigned int                       offset_B,
                                                      unsigned int                       is_last_k,
-                                                     int                                i_brgemm_loop  );
+                                                     int                                i_brgemm_loop,
+                                                     unsigned int                       fully_unrolled_brloop  );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*            io_generated_code,
@@ -99,7 +100,8 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
                                                       libxsmm_blocking_info_t*           n_blocking_info,
                                                       libxsmm_blocking_info_t*           m_blocking_info,
                                                       unsigned int                       A_offs,
-                                                      unsigned int                       B_offs );
+                                                      unsigned int                       B_offs,
+                                                      unsigned int                       fully_unrolled_brloop );
 
 #endif /* GENERATOR_GEMM_AMX_MICROKERNEL_H */
 
