@@ -1538,7 +1538,7 @@ LIBXSMM_API_INTERN libxsmm_meltw_flags libxsmm_get_meltw_flags( libxsmm_meltw_co
     case LIBXSMM_MELTW_COMP_FLAG_COLBIAS_ACT_GELU_OVERWRITE_C:
       return LIBXSMM_MELTW_FLAG_COLBIAS_ACT_GELU_OVERWRITE_C;
     default:
-      return LIBXSMM_MELTW_FLAG_NONE;
+      return LIBXSMM_MELTW_FLAG_FUSE_NONE;
   }
 }
 
