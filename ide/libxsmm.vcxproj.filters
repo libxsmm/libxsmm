@@ -881,6 +881,12 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_ncnc_kcck_bf16_amx.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\scripts\libxsmm_specialized.py">
