@@ -370,6 +370,7 @@ int main(int argc, char* argv[])
 
     /* Sparsify filters to requested level */
     memset(filter_libxsmm_sparse, 0, nIFm * nOFm * sizeof(libxsmm_bfloat16));
+#if defined(__AVX512BW__)
     for (__i = 0; __i < nIFm * nOFm; __i+= 32 ) {
       unsigned int  cur_mask_int    = random_mask_half_full(sparsity_factor);
       __mmask32     cur_mask        = _cvtu32_mask32(cur_mask_int);
@@ -380,6 +381,10 @@ int main(int argc, char* argv[])
       __k += 1;
       __j += 32/sparsity_factor;
     }
+#else
+    fprintf(stderr, "ERROR:We need at least AVX512BW support for this kernel...\n");
+    exit(EXIT_FAILURE);
+#endif
     /* Copyover the sparse idx tensor after the compressed filter buffer  */
     memcpy((libxsmm_bfloat16*)filter_libxsmm + (nIFm * nOFm)/sparsity_factor, sparse_idx_libxsmm, ((nIFm * nOFm)/32)*sizeof(unsigned int));
     /* Copyover the sparse filter ot the reference filter for correctness checks */
