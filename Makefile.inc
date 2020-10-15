@@ -1539,13 +1539,11 @@ else # GCC assumed
         endif
         CXXFLAGS += $(OMPFLAG_FORCE)
         CFLAGS += $(OMPFLAG_FORCE)
-      else ifneq (0,$(CLANG))
-        ifneq (Darwin,$(UNAME))
-          CXXLDFLAGS := $(OMPFLAG_FORCE) $(CXXLDFLAGS)
-          CLDFLAGS := $(OMPFLAG_FORCE) $(CLDFLAGS)
-          CXXFLAGS += $(OMPFLAG_FORCE)
-          CFLAGS += $(OMPFLAG_FORCE)
-        endif
+      else ifneq (Darwin,$(UNAME))
+        CXXLDFLAGS := $(OMPFLAG_FORCE) $(CXXLDFLAGS)
+        CLDFLAGS := $(OMPFLAG_FORCE) $(CLDFLAGS)
+        CXXFLAGS += $(OMPFLAG_FORCE)
+        CFLAGS += $(OMPFLAG_FORCE)
       endif
       ifeq (3,$(XSMM_GCC)) # pure GNU toolchain
         FLDFLAGS := -fopenmp $(FLDFLAGS)
