@@ -326,7 +326,7 @@ then
           if [ -e "${DIR}/../Makefile" ]; then
             DIR=${DIR}/..
           fi
-          echo "cd ${REPOROOT} && make \${MAKEJ} && cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
+          echo "cd ${REPOROOT} && make -e \${MAKEJ} && cd ${DIR} && make -e \${MAKEJ}" >> ${TESTSCRIPT}
           echo "RESULT=\$?" >> ${TESTSCRIPT}
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> ${TESTSCRIPT}
           # control log
