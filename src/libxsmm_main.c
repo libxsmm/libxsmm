@@ -4109,6 +4109,7 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_
   desc->meltw_datatype_aux = meltw_dt;
   desc->meltw_flags = (unsigned short)meltw_flags;
   desc->meltw_operation = meltw_op;
+  desc->meltw_param = meltw_param;
   result = libxsmm_xmmdispatch(desc);
   return result.bmrs_meltwfused;
 }
@@ -4134,6 +4135,7 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_
   desc->meltw_datatype_aux = meltw_dt;
   desc->meltw_flags = (unsigned short)meltw_flags;
   desc->meltw_operation = meltw_op;
+  desc->meltw_param = meltw_param;
   result = libxsmm_xmmdispatch(desc);
   return result.bmrs_meltwfused;
 }
