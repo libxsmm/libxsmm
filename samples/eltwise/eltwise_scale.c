@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
   }
 
   printf("JITing scale kernel... \n");
-  kernel = libxsmm_dispatch_meltw_scale(m, n, &ld_in, &ld_out, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_flags);
+  kernel = libxsmm_dispatch_meltw_scale(m, n, &ld_in, &ld_out, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_flags, 0);
 
   /* Call JITed kernel and compare result  */
   printf("Calling JITed reduce kernel... \n");

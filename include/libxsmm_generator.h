@@ -88,12 +88,12 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   libxsmm_datatype in_type, libxsmm_datatype out_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldo, libxsmm_blasint ldi,
-  int flags, int operation);
+  unsigned short flags, unsigned char param, unsigned char operation);
 LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_descriptor_blob* blob,
   libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldo, libxsmm_blasint ldi, libxsmm_blasint ldx, libxsmm_blasint ldy,
-  int flags, int operation);
+  unsigned short flags, unsigned char param, unsigned char operation);
 
 /** Initialize packed trsm descriptor as used by low-level routines. */
 LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,

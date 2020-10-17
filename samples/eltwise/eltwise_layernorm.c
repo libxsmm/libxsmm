@@ -204,13 +204,13 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
 
   /* Generate JITED kernels for optimized code */
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
-  reduce_rows_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
+  reduce_rows_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_COLS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
-  reduce_cols_kernel = libxsmm_dispatch_meltw_reduce(bn, mBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
+  reduce_cols_kernel = libxsmm_dispatch_meltw_reduce(bn, mBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
   jit_scale_flags = LIBXSMM_MELTW_FLAG_SCALE_ROWS | LIBXSMM_MELTW_FLAG_SCALE_MULT;
-  scale_kernel = libxsmm_dispatch_meltw_scale(bn, 1, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scale_flags);
+  scale_kernel = libxsmm_dispatch_meltw_scale(bn, 1, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scale_flags, 0);
   jit_scaleout_flags = LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS | LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS;
-  scaleout_kernel = libxsmm_dispatch_meltw_scale(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scaleout_flags);
+  scaleout_kernel = libxsmm_dispatch_meltw_scale(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scaleout_flags, 0);
 
 #if defined(_OPENMP)
 #     pragma omp parallel
@@ -364,11 +364,11 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
 
   /* Generate JITED kernels for optimized code */
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
-  reduce_rows_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
+  reduce_rows_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_COLS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
-  reduce_cols_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
-  reduce_cols_kernel2 = libxsmm_dispatch_meltw_reduce(bm, nBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
-  reduce_cols_kernel3 = libxsmm_dispatch_meltw_reduce(bn, mBlocks, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
+  reduce_cols_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
+  reduce_cols_kernel2 = libxsmm_dispatch_meltw_reduce(bm, nBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
+  reduce_cols_kernel3 = libxsmm_dispatch_meltw_reduce(bn, mBlocks, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
 
 #if !defined(_OPENMP)
   float *const aux = (float*)libxsmm_aligned_scratch((3 * bm * bn) * sizeof(float), 0/*auto-alignment*/);
@@ -653,15 +653,15 @@ int main(int argc, char* argv[])
   /* Generate JITED kernels for optimized code */
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
   printf("JITing reduce kernel... \n");
-  reduce_kernel = libxsmm_dispatch_meltw_reduce(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags);
+  reduce_kernel = libxsmm_dispatch_meltw_reduce(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
 
   jit_scalemean_flags = LIBXSMM_MELTW_FLAG_SCALE_ROWS | LIBXSMM_MELTW_FLAG_SCALE_MULT;
   printf("JITing mean-scale kernel... \n");
-  scalemean_kernel = libxsmm_dispatch_meltw_scale(n, 1, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scalemean_flags);
+  scalemean_kernel = libxsmm_dispatch_meltw_scale(n, 1, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scalemean_flags, 0);
 
   jit_scaleout_flags = LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS | LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS;
   printf("JITing scaling kernel for output... \n");
-  scaleout_kernel = libxsmm_dispatch_meltw_scale(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scaleout_flags);
+  scaleout_kernel = libxsmm_dispatch_meltw_scale(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scaleout_flags, 0);
 #endif
 
   /* Calculate blocked results... */

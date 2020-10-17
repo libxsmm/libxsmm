@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
 
   printf("JITing reduce kernel... \n");
   if (n_cols_idx == 0) {
-    kernel = libxsmm_dispatch_meltw_reduce(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_flags);
+    kernel = libxsmm_dispatch_meltw_reduce(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_flags, 0);
     /* Call JITed kernel and compare result  */
     printf("Calling JITed reduce kernel... \n");
     params.in_ptr = sinp;

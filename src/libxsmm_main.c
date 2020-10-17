@@ -4090,8 +4090,8 @@ LIBXSMM_API libxsmm_sububmmfunction_reducebatch_strd libxsmm_sububmmdispatch_red
 /* GEMMs fused with eltwise kernels */
 /* -------------------------------- */
 LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_reducebatch_strd_meltwfused(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  libxsmm_meltw_flags meltw_flags, const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch)
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch,
+  libxsmm_meltw_operation meltw_op, libxsmm_datatype meltw_dt, libxsmm_meltw_flags meltw_flags, unsigned char meltw_param)
 {
   const int gemm_flags = (NULL == flags ? (LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_VNNI_A) : *flags);
   libxsmm_descriptor_blob blob;
@@ -4106,16 +4106,16 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
-  desc->meltw_datatype_aux = LIBXSMM_DATATYPE_F32;
-  desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_flags(meltw_flags);
-  desc->meltw_operation = LIBXSMM_MELTW_OPERATION_COLBIAS_ACT;
+  desc->meltw_datatype_aux = meltw_dt;
+  desc->meltw_flags = (unsigned short)meltw_flags;
+  desc->meltw_operation = meltw_op;
   result = libxsmm_xmmdispatch(desc);
   return result.bmrs_meltwfused;
 }
 
 LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  libxsmm_meltw_flags meltw_flags, const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch)
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch,
+  libxsmm_meltw_operation meltw_op, libxsmm_datatype meltw_dt, libxsmm_meltw_flags meltw_flags, unsigned char meltw_param)
 {
   const int gemm_flags = (NULL == flags ? (LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_VNNI_A) : *flags);
   libxsmm_descriptor_blob blob;
@@ -4131,9 +4131,9 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
-  desc->meltw_datatype_aux = LIBXSMM_DATATYPE_F32;
-  desc->meltw_flags = (unsigned char)libxsmm_get_meltw_comp_flags(meltw_flags);
-  desc->meltw_operation = LIBXSMM_MELTW_OPERATION_COLBIAS_ACT;
+  desc->meltw_datatype_aux = meltw_dt;
+  desc->meltw_flags = (unsigned short)meltw_flags;
+  desc->meltw_operation = meltw_op;
   result = libxsmm_xmmdispatch(desc);
   return result.bmrs_meltwfused;
 }
@@ -4191,7 +4191,7 @@ LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(libxsmm_blasi
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    0, LIBXSMM_MELTW_OPERATION_COPY);
+    0, 0, LIBXSMM_MELTW_OPERATION_COPY);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4203,7 +4203,7 @@ LIBXSMM_API libxsmm_meltwfunction_zero libxsmm_dispatch_meltw_zero(libxsmm_blasi
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    0, LIBXSMM_MELTW_OPERATION_ZERO);
+    0, 0, LIBXSMM_MELTW_OPERATION_ZERO);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4215,7 +4215,7 @@ LIBXSMM_API libxsmm_meltwfunction_add libxsmm_dispatch_meltw_add(libxsmm_blasint
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    0, LIBXSMM_MELTW_OPERATION_ADD);
+    0, 0, LIBXSMM_MELTW_OPERATION_ADD);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4227,7 +4227,7 @@ LIBXSMM_API libxsmm_meltwfunction_mul libxsmm_dispatch_meltw_mul(libxsmm_blasint
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    0, LIBXSMM_MELTW_OPERATION_MUL);
+    0, 0, LIBXSMM_MELTW_OPERATION_MUL);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4235,11 +4235,11 @@ LIBXSMM_API libxsmm_meltwfunction_mul libxsmm_dispatch_meltw_mul(libxsmm_blasint
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_relu_flags flags) {
+LIBXSMM_API libxsmm_meltwfunction_relu libxsmm_dispatch_meltw_relu(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_relu_flags flags, unsigned char param) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    libxsmm_get_meltw_comp_relu_flags( flags ), LIBXSMM_MELTW_OPERATION_RELU);
+    flags, param, LIBXSMM_MELTW_OPERATION_RELU);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4251,7 +4251,7 @@ LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_meltw_cvtfp32bf16
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    0, LIBXSMM_MELTW_OPERATION_CVTFP32BF16);
+    0, 0, LIBXSMM_MELTW_OPERATION_CVTFP32BF16);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4259,33 +4259,33 @@ LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16 libxsmm_dispatch_meltw_cvtfp32bf16
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16_act libxsmm_dispatch_meltw_cvtfp32bf16_act(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_cvta_flags flags) {
+LIBXSMM_API libxsmm_meltwfunction_cvtfp32bf16_act libxsmm_dispatch_meltw_cvtfp32bf16_act(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_cvta_flags flags, unsigned char param) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    libxsmm_get_meltw_comp_cvta_flags( flags ), LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT);
+    flags, param, LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
   return result.meltw_cvtfp32bf16_act;
 }
 
-LIBXSMM_API libxsmm_meltwfunction_act_cvtfp32bf16 libxsmm_dispatch_meltw_act_cvtfp32bf16(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_acvt_flags flags) {
+LIBXSMM_API libxsmm_meltwfunction_act_cvtfp32bf16 libxsmm_dispatch_meltw_act_cvtfp32bf16(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_acvt_flags flags, unsigned char param) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    libxsmm_get_meltw_comp_acvt_flags( flags ), LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16);
+    flags, param, LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
   return result.meltw_act_cvtfp32bf16;
 }
 
-LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_reduce(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_redu_flags flags) {
+LIBXSMM_API libxsmm_meltwfunction_reduce libxsmm_dispatch_meltw_reduce(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_redu_flags flags, unsigned char param) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    libxsmm_get_meltw_comp_redu_flags( flags ), LIBXSMM_MELTW_OPERATION_REDUCE);
+    flags, param, LIBXSMM_MELTW_OPERATION_REDUCE);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4297,18 +4297,18 @@ LIBXSMM_API libxsmm_meltwfunction_reduce_cols_idx libxsmm_dispatch_meltw_reduce_
   libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, idx_dtype_size, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    0, LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX);
+    0, 0, LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
   return result.meltw_reduce_cols_idx;
 }
 
-LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_scal_flags flags) {
+LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_scal_flags flags, unsigned char param) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    libxsmm_get_meltw_comp_scal_flags( flags ), LIBXSMM_MELTW_OPERATION_SCALE);
+    flags, param, LIBXSMM_MELTW_OPERATION_SCALE);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 

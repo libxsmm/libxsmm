@@ -736,6 +736,7 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF = 16
 } libxsmm_gemm_stack_var;
 
+#if 0
 /* compressed meltw reduce structure */
 typedef enum libxsmm_meltw_comp_redu_flags {
   LIBXSMM_MELTW_COMP_FLAG_REDUCE_NONE         = 0,
@@ -830,6 +831,7 @@ typedef enum libxsmm_meltw_comp_flags {
   LIBXSMM_MELTW_COMP_FLAG_ACT_SIGM_OVERWRITE_C         = 18,
   LIBXSMM_MELTW_COMP_FLAG_ACT_GELU_OVERWRITE_C         = 19
 } libxsmm_meltw_comp_flags;
+#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker );
@@ -886,20 +888,6 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   unsigned int i_size, unsigned int i_max_block,
   unsigned int* o_range_1, unsigned int* o_block_1,
   unsigned int* o_range_2, unsigned int* o_block_2 );
-
-/** helper functions for compressing and decompressing meltw flags */
-LIBXSMM_API_INTERN libxsmm_meltw_comp_redu_flags libxsmm_get_meltw_comp_redu_flags( libxsmm_meltw_redu_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_redu_flags libxsmm_get_meltw_redu_flags( libxsmm_meltw_comp_redu_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_comp_relu_flags libxsmm_get_meltw_comp_relu_flags( libxsmm_meltw_relu_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_relu_flags libxsmm_get_meltw_relu_flags( libxsmm_meltw_comp_relu_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_comp_scal_flags libxsmm_get_meltw_comp_scal_flags( libxsmm_meltw_scal_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_scal_flags libxsmm_get_meltw_scal_flags( libxsmm_meltw_comp_scal_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_comp_cvta_flags libxsmm_get_meltw_comp_cvta_flags( libxsmm_meltw_cvta_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_cvta_flags libxsmm_get_meltw_cvta_flags( libxsmm_meltw_comp_cvta_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_comp_acvt_flags libxsmm_get_meltw_comp_acvt_flags( libxsmm_meltw_acvt_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_acvt_flags libxsmm_get_meltw_acvt_flags( libxsmm_meltw_comp_acvt_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_comp_flags libxsmm_get_meltw_comp_flags( libxsmm_meltw_flags flags );
-LIBXSMM_API_INTERN libxsmm_meltw_flags libxsmm_get_meltw_flags( libxsmm_meltw_comp_flags flags );
 
 #endif /* GENERATOR_COMMON_H */
 

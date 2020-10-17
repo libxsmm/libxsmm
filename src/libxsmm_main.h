@@ -164,9 +164,9 @@
     | (LIBXSMM_NEQ(0, BETA) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
   (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
-  LIBXSMM_PAD((DESCRIPTOR).pad = 0) (DESCRIPTOR).c1 = 0; (DESCRIPTOR).c2 = 0; (DESCRIPTOR).c3 = 0; \
+  (DESCRIPTOR).meltw_datatype_aux = 0; (DESCRIPTOR).c1 = 0; (DESCRIPTOR).c2 = 0; (DESCRIPTOR).c3 = 0; \
   (DESCRIPTOR).meltw_ldx = 0; (DESCRIPTOR).meltw_ldy = 0; (DESCRIPTOR).meltw_ldz = 0; \
-  (DESCRIPTOR).meltw_datatype_aux = 0; (DESCRIPTOR).meltw_flags = 0; \
+  (DESCRIPTOR).meltw_param = 0; (DESCRIPTOR).meltw_flags = 0; \
   (DESCRIPTOR).meltw_operation = 0
 
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
@@ -208,8 +208,8 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descri
   unsigned char prefetch;
   /** Denotes the data-type. */
   unsigned char datatype;
-  /** Ignored entry. */
-  LIBXSMM_PAD(unsigned char pad)
+  /** Denotes of optional eltwise data-type */
+  unsigned char meltw_datatype_aux;
   /** multipurpose 64bit field, currently used for: a) stride_a in brgemm */
   unsigned long long c1;
   /** multipurpose 64bit field, currently used for: a) stride_b in brgemm */
@@ -218,10 +218,10 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descri
   unsigned char c3;
   /** LDx, LDy, LDz,  additional meltw LDs */
   unsigned int meltw_ldx, meltw_ldy, meltw_ldz;
-  /** Size of data element. */
-  unsigned char meltw_datatype_aux;
+  /** optional param field */
+  unsigned char meltw_param;
   /** Set of flags */
-  unsigned char meltw_flags;
+  unsigned short meltw_flags;
   /** operation specifier */
   unsigned char meltw_operation;
 };
@@ -248,7 +248,9 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descr
   unsigned char datatype;
   unsigned char datatype2;
   /** Set of flags */
-  unsigned char flags;
+  unsigned short flags;
+  /** optional param field */
+  unsigned char param;
   /** operation specifier */
   unsigned char operation;
 };
