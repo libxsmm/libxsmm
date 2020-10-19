@@ -875,7 +875,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   i_micro_kernel_config->vnni_format_C      = 0;
 
   /* TODO: Add support fror more fusions  */
-  if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) {
+  if ((i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) || (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A)) {
     if ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_OVERWRITE_C) > 0) {
       i_micro_kernel_config->overwrite_C = 1;
     }
@@ -1009,23 +1009,12 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   LIBXSMM_UNUSED(m_tiles);
 
   /* Determine if we have to decompress A...  */
-  if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_2) {
-    i_micro_kernel_config->sparsity_factor_A = 2;
-  } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_4) {
-    i_micro_kernel_config->sparsity_factor_A = 4;
-  } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_8) {
-    i_micro_kernel_config->sparsity_factor_A = 8;
-  } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_16) {
-    i_micro_kernel_config->sparsity_factor_A = 16;
-  } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_SPARSITY_FACTOR_A_32) {
-    i_micro_kernel_config->sparsity_factor_A = 32;
-  }
-
-  if (i_micro_kernel_config->sparsity_factor_A > 1) {
+  if ((i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_DECOMPRESS_A) || (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A)) {
     i_micro_kernel_config->decompress_A = 1;
+    i_micro_kernel_config->sparsity_factor_A = i_xgemm_desc->meltw_param;
   }
 
-  if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) {
+  if ((i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) || (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A)) {
     if (i_xgemm_desc->meltw_flags != (unsigned int)LIBXSMM_MELTW_FLAG_NONE) {
       has_colbias_act_fused = 1;
     }
