@@ -433,8 +433,8 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
   unsigned int reserved_zmms = 0, max_nm_unrolling = 31, reserved_mask_regs = 1, current_mask_reg = 1;
   unsigned int n_unroll_factor = 1, eager_result_store = 0;
   unsigned int vec_x2 = 0, vec_nom = 0, vec_denom = 0, vec_c0 = 0, vec_c1 = 0, vec_c2 = 0, vec_c3 = 0, vec_c1_d = 0, vec_c2_d = 0, vec_c3_d = 0, vec_hi_bound = 0, vec_lo_bound = 0, vec_ones = 0, vec_neg_ones = 0, vec_halves = 0, mask_hi = 0, mask_lo = 0;
-  unsigned int acvt_flags = (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) ? i_mateltwise_desc->flags : LIBXSMM_MELTW_FLAG_ACVT_NONE;
-  unsigned int cvta_flags = (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) ? i_mateltwise_desc->flags : LIBXSMM_MELTW_FLAG_CVTA_NONE;
+  unsigned int acvt_flags = (i_mateltwise_desc->operation == (unsigned char)LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) ? (unsigned int)i_mateltwise_desc->flags : (unsigned int)LIBXSMM_MELTW_FLAG_ACVT_NONE;
+  unsigned int cvta_flags = (i_mateltwise_desc->operation == (unsigned char)LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) ? (unsigned int)i_mateltwise_desc->flags : (unsigned int)LIBXSMM_MELTW_FLAG_CVTA_NONE;
   unsigned int fuse_tanh_before_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) && ((acvt_flags & LIBXSMM_MELTW_FLAG_ACVT_FUSE_TANH) > 0) ) ? 1 : 0;
   unsigned int fuse_sigmoid_before_cvt = ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16) &&  ((acvt_flags & LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM) > 0) ) ? 1 : 0;
   unsigned int fuse_relu_after_cvt = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) && ((cvta_flags & LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU) > 0) ) ? 1 : 0;
