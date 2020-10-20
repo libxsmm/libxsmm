@@ -173,7 +173,8 @@ typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_COLBIAS_ACT     = 11,
   LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX = 12,
   LIBXSMM_MELTW_OPERATION_DECOMPRESS_A              = 13,
-  LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A  = 14
+  LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A  = 14,
+  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX = 15,
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
@@ -270,9 +271,27 @@ typedef enum libxsmm_meltw_flags {
   LIBXSMM_MELTW_FLAG_COLBIAS_ACT_GELU_OVERWRITE_C = LIBXSMM_MELTW_FLAG_COLBIAS | LIBXSMM_MELTW_FLAG_ACT_GELU | LIBXSMM_MELTW_FLAG_OVERWRITE_C
 } libxsmm_meltw_flags;
 
+typedef enum libxsmm_meltw_opreduce_vecs_flags {
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_NONE                           = 0,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX           = 1,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN           = 2,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_NONE                        = 4,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_ADD                         = 8,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_SUB                         = 16,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL                         = 32,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DIV                         = 64,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DOT                         = 128,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY                        = 256,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE                     = 512,  
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM                      = 1024,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX                      = 2048,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN                      = 4096
+} libxsmm_meltw_opreduce_vecs_flags;
+
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
   libxsmm_meltw_null_flags     elt_null;
   libxsmm_meltw_redu_flags     elt_redu;
+  libxsmm_meltw_opreduce_vecs_flags     elt_opredvecs;
   libxsmm_meltw_relu_flags     elt_relu;
   libxsmm_meltw_scal_flags     elt_scal;
   libxsmm_meltw_cvta_flags     elt_cvta;
@@ -639,6 +658,15 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_cols_i
   void* out_ptr;          /* output pointer */
 } libxsmm_meltw_reduce_cols_idx_param;
 
+/** argument struct for matrix-eltwise: opreduce vecs indexed */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs_idx_param {
+  unsigned long long n;
+  const void* indices;       /* index array pointer */
+  const void* in_matrix;     /* input matrix pointer */
+  const void* in_vec;        /* input vector pointer */
+  void* out_vec;             /* output pointer */
+} libxsmm_meltw_opreduce_vecs_idx_param;
+
 /** argument struct for matrix-eltwise: scale */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_scale_param {
   const void* in_ptr;           /* input pointer */
@@ -678,6 +706,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_relu)
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16)(const libxsmm_meltw_cvtfp32bf16_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_reduce)(const libxsmm_meltw_reduce_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_reduce_cols_idx)(const libxsmm_meltw_reduce_cols_idx_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_opreduce_vecs_idx)(const libxsmm_meltw_opreduce_vecs_idx_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_scale)(const libxsmm_meltw_scale_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16_act)(const libxsmm_meltw_cvtfp32bf16_act_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_act_cvtfp32bf16)(const libxsmm_meltw_act_cvtfp32bf16_param* in_struct);
@@ -689,6 +718,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   libxsmm_meltwfunction_relu meltw_relu; libxsmm_meltwfunction_cvtfp32bf16 meltw_cvtfp32bf16;
   libxsmm_meltwfunction_reduce meltw_reduce; libxsmm_meltwfunction_scale meltw_scale;
   libxsmm_meltwfunction_reduce_cols_idx meltw_reduce_cols_idx;
+  libxsmm_meltwfunction_opreduce_vecs_idx meltw_opreduce_vecs_idx;
   libxsmm_meltwfunction_cvtfp32bf16_act meltw_cvtfp32bf16_act;
   libxsmm_meltwfunction_act_cvtfp32bf16 meltw_act_cvtfp32bf16;
 } libxsmm_xmeltwfunction;
