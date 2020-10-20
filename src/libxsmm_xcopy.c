@@ -11,6 +11,13 @@
 #include "libxsmm_xcopy.h"
 #include "libxsmm_main.h"
 
+#if !defined(LIBXSMM_ITRANS_BUFFER_MAXSIZE)
+# if defined(NDEBUG)
+#   define LIBXSMM_ITRANS_BUFFER_MAXSIZE (12 << 10/*12kB*/)
+# else
+#   define LIBXSMM_ITRANS_BUFFER_MAXSIZE 1
+# endif
+#endif
 #if !defined(LIBXSMM_MCOPY_JIT_TINY) && 0
 # define LIBXSMM_MCOPY_JIT_TINY
 #endif
@@ -487,12 +494,29 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
       }
     }
     else {
-      if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM ERROR: in-place transpose is not implemented!\n");
+      const libxsmm_blasint size = ld * LIBXSMM_MAX(m, n) * c;
+      if (size <= LIBXSMM_ITRANS_BUFFER_MAXSIZE) {
+        char buffer[LIBXSMM_ITRANS_BUFFER_MAXSIZE];
+        memcpy(buffer, inout, size);
+        libxsmm_otrans(inout, buffer, typesize, m, n, ld, ld);
       }
-      LIBXSMM_ASSERT_MSG(0, "in-place transpose is not implemented!");
+      else {
+        void* buffer;
+        if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, size, 0/*auto-align*/,
+          LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
+          0/*extra*/, 0/*extra_size*/))
+        {
+          assert(NULL != buffer);
+          memcpy(buffer, inout, size);
+          libxsmm_otrans(inout, buffer, typesize, m, n, ld, ld);
+          libxsmm_xfree(buffer, 0/*no check*/);
+        }
+        else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM ERROR: failed to allocate buffer for in-place transpose!\n");
+        }
+      }
     }
   }
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */

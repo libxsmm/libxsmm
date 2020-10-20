@@ -15,14 +15,17 @@
 #endif
 
 
+unsigned int validate(const ELEM_TYPE* a, const ELEM_TYPE* b, const ELEM_TYPE* c, libxsmm_blasint max_size_b,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
+
 int main(void)
 {
-  /* test #:                      1  2  3  4  5  6  7  8  9 10 11 12  13  14  15  16  17  18  19   20   21   22    23 */
-  /* index:                       0  1  2  3  4  5  6  7  8  9 10 11  12  13  14  15  16  17  18   19   20   21    22 */
-  const libxsmm_blasint m[]   = { 0, 1, 1, 1, 1, 2, 3, 4, 5, 5, 5, 5,  5, 13, 13, 16, 22, 63, 64,  16,  16,  75, 2507 };
-  const libxsmm_blasint n[]   = { 0, 1, 7, 7, 7, 2, 3, 1, 1, 1, 1, 5, 13,  5, 13, 16, 22, 31, 64, 500,  32, 130, 1975 };
-  const libxsmm_blasint ldi[] = { 0, 1, 1, 1, 9, 2, 3, 4, 5, 8, 8, 5,  5, 13, 13, 16, 22, 64, 64,  16, 512,  87, 3000 };
-  const libxsmm_blasint ldo[] = { 1, 1, 7, 8, 8, 2, 3, 1, 1, 1, 4, 5, 13,  5, 13, 16, 22, 32, 64, 512,  64, 136, 3072 };
+  /* test #:                      1  2  3  4  5  6  7  8  9 10 11 12  13  14  15  16  17  18  19  20  21   22   23   24    25 */
+  /* index:                       0  1  2  3  4  5  6  7  8  9 10 11  12  13  14  15  16  17  18  19  20   21   22   23    24 */
+  const libxsmm_blasint m[]   = { 0, 1, 1, 1, 1, 2, 3, 4, 5, 5, 5, 5,  5, 13, 13, 16, 22, 23, 23, 63, 64,  16,  16,  75, 2507 };
+  const libxsmm_blasint n[]   = { 0, 1, 7, 7, 7, 2, 3, 1, 1, 1, 1, 5, 13,  5, 13, 16, 22, 17, 29, 31, 64, 500,  32, 130, 1975 };
+  const libxsmm_blasint ldi[] = { 0, 1, 1, 1, 9, 2, 3, 4, 5, 8, 8, 5,  5, 13, 13, 16, 22, 24, 32, 64, 64,  16, 512,  87, 3000 };
+  const libxsmm_blasint ldo[] = { 1, 1, 7, 8, 8, 2, 3, 1, 1, 1, 4, 5, 13,  5, 13, 16, 22, 24, 32, 32, 64, 512,  64, 136, 3072 };
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0;
   ELEM_TYPE *a = NULL, *b = NULL, *c = NULL;
@@ -32,12 +35,12 @@ int main(void)
 
   void (*otrans[])(void*, const void*, unsigned int, libxsmm_blasint,
     libxsmm_blasint, libxsmm_blasint, libxsmm_blasint) = {
-      libxsmm_otrans, libxsmm_otrans_omp
-    };
+    libxsmm_otrans, libxsmm_otrans_omp
+  };
   void (*itrans[])(void*, unsigned int, libxsmm_blasint,
     libxsmm_blasint, libxsmm_blasint) = {
-      libxsmm_itrans, libxsmm_itrans/*_omp*/
-    };
+    libxsmm_itrans, libxsmm_itrans/*_omp*/
+  };
 
   for (test = start; test < ntests; ++test) {
     const libxsmm_blasint size_a = ldi[test] * n[test], size_b = ldo[test] * m[test];
@@ -58,70 +61,25 @@ int main(void)
     for (test = start; test < ntests; ++test) {
       memcpy(c, b, typesize * max_size_b);
       otrans[fun](b, a, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test]);
-      { libxsmm_blasint testerrors = 0, i, j; /* validation */
-        for (i = 0; i < n[test]; ++i) {
-          for (j = 0; j < m[test]; ++j) {
-            const libxsmm_blasint u = i * ldi[test] + j;
-            const libxsmm_blasint v = j * ldo[test] + i;
-            if (LIBXSMM_NEQ(a[u], b[v])) {
-              ++testerrors; i = n[test]; break;
-            }
-          }
-          for (j = m[test]; j < ldi[test] && 0 == testerrors; ++j) {
-            const libxsmm_blasint v = j * ldo[test] + i;
-            if (v < max_size_b && LIBXSMM_NEQ(b[v], c[v])) {
-              ++testerrors;
-            }
-          }
-        }
-        for (i = n[test]; i < ldo[test] && 0 == testerrors; ++i) {
-          for (j = 0; j < m[test]; ++j) {
-            const libxsmm_blasint v = j * ldo[test] + i;
-            if ((v < max_size_b && LIBXSMM_NEQ(b[v], c[v])) || v >= max_size_b) {
-              ++testerrors; break;
-            }
-          }
-          for (j = m[test]; j < ldi[test] && 0 == testerrors; ++j) {
-            const libxsmm_blasint v = j * ldo[test] + i;
-            if (v < max_size_b && LIBXSMM_NEQ(b[v], c[v])) {
-              ++testerrors;
-            }
-          }
-        }
+      nerrors += validate(a, b, c, max_size_b, m[test], n[test], ldi[test], ldo[test]);
 #if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid() && (4 == typesize || 8 == typesize)) {
-          libxsmm_descriptor_blob blob;
-          const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(
-            &blob, (unsigned int)typesize, m[test], n[test], ldo[test]);
-          const libxsmm_xtransfunction kernel = libxsmm_dispatch_trans(desc);
-          if (NULL == kernel) {
+      if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid() && (4 == typesize || 8 == typesize)) {
+        libxsmm_descriptor_blob blob;
+        const libxsmm_trans_descriptor* const desc = libxsmm_trans_descriptor_init(
+          &blob, (unsigned int)typesize, m[test], n[test], ldo[test]);
+        const libxsmm_xtransfunction kernel = libxsmm_dispatch_trans(desc);
+        if (NULL == kernel) {
 # if defined(_DEBUG)
-            fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n", fun + 1, test + 1);
+          fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n", fun + 1, test + 1);
 # endif
-            ++testerrors;
-          }
+          ++nerrors;
         }
-#endif
-        nerrors += testerrors;
       }
-
-      if (LIBXSMM_MAX(n[test], 1) > ldi[test] || 0 != fun) continue;
-#if 1 /* TODO */
-      if (m[test] != ldi[test] || n[test] != ldi[test]) continue;
 #endif
+      if (LIBXSMM_MAX(n[test], 1) > ldi[test] || 0 != fun) continue;
       memcpy(c, b, typesize * max_size_b);
       itrans[fun](b, (unsigned int)typesize, m[test], n[test], ldi[test]);
-      { libxsmm_blasint testerrors = 0, i, j; /* validation */
-        for (i = 0; i < n[test]; ++i) {
-          for (j = 0; j < m[test]; ++j) {
-            const libxsmm_blasint u = i * ldi[test] + j;
-            if (LIBXSMM_NEQ(a[u], b[u])) {
-              ++testerrors; i = n[test]; break;
-            }
-          }
-        }
-        nerrors += testerrors;
-      }
+      nerrors += validate(c, b, c, max_size_b, m[test], n[test], ldi[test], ldi[test]);
     }
   }
 
@@ -140,3 +98,40 @@ int main(void)
   }
 }
 
+
+unsigned int validate(const ELEM_TYPE* a, const ELEM_TYPE* b, const ELEM_TYPE* c, libxsmm_blasint max_size_b,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
+{
+  unsigned int result = 0;
+  libxsmm_blasint i, j;
+  for (i = 0; i < n; ++i) {
+    for (j = 0; j < m; ++j) {
+      const libxsmm_blasint u = i * ldi + j;
+      const libxsmm_blasint v = j * ldo + i;
+      if (LIBXSMM_NEQ(a[u], b[v])) {
+        ++result; i = n; break;
+      }
+    }
+    for (j = m; j < ldi && 0 == result; ++j) {
+      const libxsmm_blasint v = j * ldo + i;
+      if (v < max_size_b && LIBXSMM_NEQ(b[v], c[v])) {
+        ++result;
+      }
+    }
+  }
+  for (i = n; i < ldo && 0 == result; ++i) {
+    for (j = 0; j < m; ++j) {
+      const libxsmm_blasint v = j * ldo + i;
+      if ((v < max_size_b && LIBXSMM_NEQ(b[v], c[v])) || v >= max_size_b) {
+        ++result; break;
+      }
+    }
+    for (j = m; j < ldi && 0 == result; ++j) {
+      const libxsmm_blasint v = j * ldo + i;
+      if (v < max_size_b && LIBXSMM_NEQ(b[v], c[v])) {
+        ++result;
+      }
+    }
+  }
+  return result;
+}
