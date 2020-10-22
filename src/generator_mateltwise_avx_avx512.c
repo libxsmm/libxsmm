@@ -3818,7 +3818,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
   unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVL;
   int pf_dist = 4, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 1, load_acc = 1;
   unsigned int vstore_instr = 0;
-  int apply_op = 0, op_order = -1, op_instr = 0, reduceop_instr = 0;
+  int apply_op = 0, apply_redop = 0, op_order = -1, op_instr = 0, reduceop_instr = 0;
   unsigned int NO_PF_LABEL_START = 0;
   unsigned int NO_PF_LABEL_START_2 = 1;
   unsigned int END_LABEL = 2;
@@ -3941,6 +3941,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
     }
   }
 
+  if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE) == 0) {
+    apply_redop = 1;
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM) == 1) {
+      reduceop_instr = LIBXSMM_X86_INSTR_VADDPS;
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) == 1) {
+      reduceop_instr = LIBXSMM_X86_INSTR_VMAXPS;
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN) == 1) {
+      reduceop_instr = LIBXSMM_X86_INSTR_VMINPS;
+    } else {
+      /* This should not happen  */
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
+  } else {
+    vecin_offset    = 0; 
+  } 
+
   m                 = i_mateltwise_desc->m;
   use_m_masking     = ( m % 16 == 0 ) ? 0 : 1;
   m_trips           = (m + 15) / 16;
@@ -3976,21 +3993,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 
   if (m_trips_loop >= 1) {
     for (im = 0; im < m_unroll_factor; im++) {
-      if (load_acc == 0) {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
-                                               LIBXSMM_X86_INSTR_VPXORD,
-                                               i_micro_kernel_config->vector_name,
-                                               im, im , im);
-      } else {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            i_micro_kernel_config->vmove_instruction_in,
-            i_gp_reg_mapping->gp_reg_out,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            im * 16  * i_micro_kernel_config->datatype_size_out,
-            i_micro_kernel_config->vector_name,
-            im, 0, 0, 0 );
+      if (apply_redop == 1) {
+        if (load_acc == 0) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_micro_kernel_config->instruction_set,
+                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 i_micro_kernel_config->vector_name,
+                                                 im, im , im);
+        } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmove_instruction_in,
+              i_gp_reg_mapping->gp_reg_out,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              im * 16  * i_micro_kernel_config->datatype_size_out,
+              i_micro_kernel_config->vector_name,
+              im, 0, 0, 0 );
+        }
       }
       /* Load input vector in case we have to apply op */
       if (apply_op == 1) {
@@ -4063,13 +4082,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
          }
 
          /* Now apply the Reduce OP  */
-         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+         if (apply_redop == 1) {
+           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_micro_kernel_config->instruction_set,
+                                                 reduceop_instr,
+                                                 i_micro_kernel_config->vector_name,
+                                                 im + vecidxin_offset,
+                                                 im,
+                                                 im);
+         } else {
+           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
-                                               reduceop_instr,
+                                               LIBXSMM_X86_INSTR_VMOVDQU64,
                                                i_micro_kernel_config->vector_name,
                                                im + vecidxin_offset,
-                                               im,
-                                               im);
+                                               im + vecin_offset,
+                                               LIBXSMM_X86_VEC_REG_UNDEF);
+         }
        }
 
         libxsmm_x86_instruction_prefetch(io_generated_code,
@@ -4135,13 +4164,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
         }
 
         /* Now apply the Reduce OP  */
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             i_micro_kernel_config->instruction_set,
-                                             reduceop_instr,
-                                             i_micro_kernel_config->vector_name,
-                                             im + vecidxin_offset,
-                                             im,
-                                             im);
+        if (apply_redop == 1) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                i_micro_kernel_config->instruction_set,
+                                                reduceop_instr,
+                                                i_micro_kernel_config->vector_name,
+                                                im + vecidxin_offset,
+                                                im,
+                                                im);
+        } else {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                              i_micro_kernel_config->instruction_set,
+                                              LIBXSMM_X86_INSTR_VMOVDQU64,
+                                              i_micro_kernel_config->vector_name,
+                                              im + vecidxin_offset,
+                                              im + vecin_offset,
+                                              LIBXSMM_X86_VEC_REG_UNDEF);
+        }
       }
     }
 
@@ -4180,22 +4219,25 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 
     /* Perform the reductions for all columns */
     for (im = 0; im < peeled_m_trips; im++) {
-      if (load_acc == 0) {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
-                                               LIBXSMM_X86_INSTR_VPXORD,
-                                               i_micro_kernel_config->vector_name,
-                                               im, im , im);
-      } else {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            i_micro_kernel_config->vmove_instruction_in,
-            i_gp_reg_mapping->gp_reg_out,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            im * 16  * i_micro_kernel_config->datatype_size_out,
-            i_micro_kernel_config->vector_name,
-            im, (im == peeled_m_trips-1) ? use_m_masking : 0, 0, 0 );
+      if (apply_redop == 1) {
+        if (load_acc == 0) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_micro_kernel_config->instruction_set,
+                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 i_micro_kernel_config->vector_name,
+                                                 im, im , im);
+        } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmove_instruction_in,
+              i_gp_reg_mapping->gp_reg_out,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              im * 16  * i_micro_kernel_config->datatype_size_out,
+              i_micro_kernel_config->vector_name,
+              im, (im == peeled_m_trips-1) ? use_m_masking : 0, 0, 0 );
+        }
       }
+
       if (apply_op == 1) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
@@ -4294,13 +4336,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
           }
 
           /* Now apply the Reduce OP  */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
-                                               reduceop_instr,
-                                               i_micro_kernel_config->vector_name,
-                                               im + vecidxin_offset,
-                                               im,
-                                               im);
+          if (apply_redop == 1) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                  i_micro_kernel_config->instruction_set,
+                                                  reduceop_instr,
+                                                  i_micro_kernel_config->vector_name,
+                                                  im + vecidxin_offset,
+                                                  im,
+                                                  im);
+          } else {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                i_micro_kernel_config->instruction_set,
+                                                LIBXSMM_X86_INSTR_VMOVDQU64,
+                                                i_micro_kernel_config->vector_name,
+                                                im + vecidxin_offset,
+                                                im + vecin_offset,
+                                                LIBXSMM_X86_VEC_REG_UNDEF);
+          }
         }
 
         libxsmm_x86_instruction_prefetch(io_generated_code,
@@ -4393,13 +4445,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
         }
 
         /* Now apply the Reduce OP  */
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             i_micro_kernel_config->instruction_set,
-                                             reduceop_instr,
-                                             i_micro_kernel_config->vector_name,
-                                             im + vecidxin_offset,
-                                             im,
-                                             im);
+        if (apply_redop == 1) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                i_micro_kernel_config->instruction_set,
+                                                reduceop_instr,
+                                                i_micro_kernel_config->vector_name,
+                                                im + vecidxin_offset,
+                                                im,
+                                                im);
+        } else {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                              i_micro_kernel_config->instruction_set,
+                                              LIBXSMM_X86_INSTR_VMOVDQU64,
+                                              i_micro_kernel_config->vector_name,
+                                              im + vecidxin_offset,
+                                              im + vecin_offset,
+                                              LIBXSMM_X86_VEC_REG_UNDEF);
+        }
       }
     }
 
