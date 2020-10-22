@@ -3829,6 +3829,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   unsigned int NO_PF_LABEL_START = 0;
   unsigned int NO_PF_LABEL_START_2 = 1;
   unsigned int END_LABEL = 2;
+  const char *const env_max_m_unroll = getenv("MAX_M_UNROLL_REDUCE_COLS_IDX");
   const char *const env_pf_dist = getenv("PF_DIST_REDUCE_COLS_IDX");
   const char *const env_pf_type = getenv("PF_TYPE_REDUCE_COLS_IDX");
   const char *const env_nts     = getenv("NTS_REDUCE_COLS_IDX");
@@ -3836,6 +3837,10 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
 
+  if ( 0 == env_max_m_unroll ) {
+  } else {
+    max_m_unrolling = atoi(env_max_m_unroll);
+  }
   if ( 0 == env_pf_dist ) {
   } else {
     pf_dist = atoi(env_pf_dist);
