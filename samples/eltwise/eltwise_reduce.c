@@ -13,7 +13,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-
+//#define FP16_REDUCE_COLSIDX
+#ifdef FP16_REDUCE_COLSIDX
+#include <immintrin.h>
+#endif
 
 LIBXSMM_INLINE
 void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n )
@@ -42,6 +45,9 @@ int main(int argc, char* argv[])
   unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, i, j, jj, k, iters = 10000, n_cols_idx = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
+#ifdef FP16_REDUCE_COLSIDX
+  unsigned short *sinp_hp, *result_reduce_elts_hp;
+#endif
   unsigned long long *cols_ind_array;
   libxsmm_meltw_redu_flags jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
   libxsmm_meltwfunction_reduce kernel;
@@ -82,6 +88,20 @@ int main(int argc, char* argv[])
   /* Fill matrices with random data */
   sfill_matrix ( sinp, ld_in, m, n );
 
+#ifdef FP16_REDUCE_COLSIDX
+  sinp_hp  = (unsigned short*) malloc( ld_in*n*sizeof(unsigned short) );
+  result_reduce_elts_hp = (unsigned short*) malloc(result_size*sizeof(unsigned short) );
+  for (i = 0; i < m; i++) {
+    ref_result_reduce_elts[i] = 0;
+    result_reduce_elts_hp[i] = _cvtss_sh(ref_result_reduce_elts[i], _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+  }
+  for (i = 0; i < m; i++) {
+    for (j = 0; j < n; j++) {
+      sinp_hp[j*ld_in + i] = _cvtss_sh(sinp[j*ld_in + i], _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+    }
+  }
+#endif
+
   /* Calculate reference results...  */
   if (reduce_rows == 1) {
     for (j = 0; j < n; j++) {
@@ -106,11 +126,11 @@ int main(int argc, char* argv[])
     } else {
       /* In this case we reduce columns */
       for (j = 0; j < n_cols_idx; j++) {
-        cols_ind_array[j] = rand() % n_cols_idx;
+        cols_ind_array[j] = rand() % n;
       }
       for (i = 0; i < m; i++) {
         ref_result_reduce_elts[i] = 0;
-        ref_result_reduce_elts_squared[i] = 0;
+        result_reduce_elts[i] = 0;
         for (jj = 0; jj < n_cols_idx; jj++) {
           j = cols_ind_array[jj];
           ref_result_reduce_elts[i] += sinp[j*ld_in + i];
@@ -143,14 +163,33 @@ int main(int argc, char* argv[])
     params.out_ptr_1 = result_reduce_elts_squared;
     kernel( &params );
   } else {
+#ifdef FP16_REDUCE_COLSIDX
+    kernel2 = libxsmm_dispatch_meltw_reduce_cols_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_I64);
+#else
     kernel2 = libxsmm_dispatch_meltw_reduce_cols_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64);
+#endif
     /* Call JITed kernel and compare result  */
     printf("Calling JITed reduce cols idx kernel... \n");
     params2.n = n_cols_idx;
     params2.ind_ptr = cols_ind_array;
+#ifdef FP16_REDUCE_COLSIDX
+    params2.inp_ptr = sinp_hp;
+    params2.out_ptr = result_reduce_elts_hp;
+#else
     params2.inp_ptr = sinp;
     params2.out_ptr = result_reduce_elts;
+#endif
+#ifdef FP16_REDUCE_COLSIDX
+    for (i = 0; i < m; i++) {
+      result_reduce_elts_hp[i] = _cvtss_sh(result_reduce_elts[i], _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+    }
+#endif
     kernel2( &params2 );
+#ifdef FP16_REDUCE_COLSIDX
+    for (i = 0; i < m; i++) {
+      result_reduce_elts[i] = _cvtsh_ss(result_reduce_elts_hp[i]);
+    }
+#endif
   }
 
   /* compare */
@@ -185,7 +224,6 @@ int main(int argc, char* argv[])
     printf("Check-norm    : %.24f\n\n", norms_elts_squared.normf_rel);
   }
 
-
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
@@ -216,7 +254,6 @@ int main(int argc, char* argv[])
         }
         for (i = 0; i < m; i++) {
           ref_result_reduce_elts[i] = 0;
-          ref_result_reduce_elts_squared[i] = 0;
           for (jj = 0; jj < n_cols_idx; jj++) {
             j = cols_ind_array[jj];
             ref_result_reduce_elts[i] += sinp[j*ld_in + i];
