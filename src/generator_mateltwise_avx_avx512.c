@@ -3959,7 +3959,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                                    im,
                                                    LIBXSMM_X86_VEC_REG_UNDEF,
                                                    im,
-                                                   0);        
+                                                   0);
         }
       }
     }
@@ -4131,7 +4131,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
             im * 16  * i_micro_kernel_config->datatype_size_out,
             ( LIBXSMM_GEMM_PRECISION_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) ? 'y' :  i_micro_kernel_config->vector_name,
             im, (im == peeled_m_trips-1) ? use_m_masking : 0, 0, 0 );
-        
+
         if ( LIBXSMM_GEMM_PRECISION_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
           libxsmm_x86_instruction_vec_compute_convert ( io_generated_code,
                                                    i_micro_kernel_config->instruction_set,
@@ -4140,7 +4140,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                                    im,
                                                    LIBXSMM_X86_VEC_REG_UNDEF,
                                                    im,
-                                                   0);        
+                                                   0);
         }
       }
     }

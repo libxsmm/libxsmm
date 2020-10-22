@@ -65,11 +65,11 @@
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F64  ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_BF16 ? 2 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_F16 ? 2 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_F16  ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I16  ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I8   ? 1 : ( \
-  0/*invalid*/)))))))
+  0/*invalid*/))))))))
 
 /* Get input or output precision */
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
