@@ -3818,10 +3818,11 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
   unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVL;
   int pf_dist = 4, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 1, load_acc = 1;
   unsigned int vstore_instr = 0;
-  unsigned int apply_op = 0, op_order = -1, op_instr = 0, reduceop_instr = 0;
+  int apply_op = 0, op_order = -1, op_instr = 0, reduceop_instr = 0;
   unsigned int NO_PF_LABEL_START = 0;
   unsigned int NO_PF_LABEL_START_2 = 1;
   unsigned int END_LABEL = 2;
+  const int LIBXSMM_X86_INSTR_DOTPS = -1;
   const char *const env_pf_dist = getenv("PF_DIST_OPREDUCE_VECS_IDX");
   const char *const env_pf_type = getenv("PF_TYPE_OPREDUCE_VECS_IDX");
   const char *const env_nts     = getenv("NTS_OPREDUCE_VECS_IDX");
@@ -3930,9 +3931,9 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
     } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DIV) == 1) {
       op_instr = LIBXSMM_X86_INSTR_VDIVPS;
     } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DOT) == 1) {
-      op_instr = LIBXSMM_X86_INSTR_VMULPS;
+      op_instr = LIBXSMM_X86_INSTR_DOTPS;
     } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY) == 1) {
-      op_instr = LIBXSMM_X86_INSTR_VPORD;
+      op_instr = LIBXSMM_X86_INSTR_VMOVDQU64;
     } else {
       /* This should not happen  */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
@@ -4043,13 +4044,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
               im + vecidxin_offset, 0, 0, 0 );
 
          /* Now apply the OP among the indexed vector and the inut vector */
-         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+         if (op_instr == LIBXSMM_X86_INSTR_VMOVDQU64) {
+           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                               i_micro_kernel_config->instruction_set,
+                                               op_instr,
+                                               i_micro_kernel_config->vector_name,
+                                               (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
+                                               im + vecidxin_offset,
+                                               LIBXSMM_X86_VEC_REG_UNDEF);
+         } else {
+           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                op_instr,
                                                i_micro_kernel_config->vector_name,
                                                (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
                                                (op_order == 0) ? im + vecidxin_offset : im + vecin_offset,
                                                im + vecidxin_offset);
+         }
 
          /* Now apply the Reduce OP  */
          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -4105,13 +4116,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
             im + vecidxin_offset, 0, 0, 0 );
 
         /* Now apply the OP among the indexed vector and the inut vector */
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             i_micro_kernel_config->instruction_set,
-                                             op_instr,
-                                             i_micro_kernel_config->vector_name,
-                                             (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
-                                             (op_order == 0) ? im + vecidxin_offset : im + vecin_offset,
-                                             im + vecidxin_offset);
+        if (op_instr == LIBXSMM_X86_INSTR_VMOVDQU64) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                              i_micro_kernel_config->instruction_set,
+                                               op_instr,
+                                              i_micro_kernel_config->vector_name,
+                                              (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
+                                              im + vecidxin_offset,
+                                              LIBXSMM_X86_VEC_REG_UNDEF);
+        } else {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                              i_micro_kernel_config->instruction_set,
+                                               op_instr,
+                                              i_micro_kernel_config->vector_name,
+                                              (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
+                                              (op_order == 0) ? im + vecidxin_offset : im + vecin_offset,
+                                              im + vecidxin_offset);
+        }
 
         /* Now apply the Reduce OP  */
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -4254,13 +4275,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
           }
 
           /* Now apply the OP among the indexed vector and the inut vector */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
-                                               op_instr,
-                                               i_micro_kernel_config->vector_name,
-                                               (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
-                                               (op_order == 0) ? im + vecidxin_offset : im + vecin_offset,
-                                               im + vecidxin_offset);
+          if (op_instr == LIBXSMM_X86_INSTR_VMOVDQU64) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                i_micro_kernel_config->instruction_set,
+                                                 op_instr,
+                                                i_micro_kernel_config->vector_name,
+                                                (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
+                                                im + vecidxin_offset,
+                                                LIBXSMM_X86_VEC_REG_UNDEF);
+          } else {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                i_micro_kernel_config->instruction_set,
+                                                 op_instr,
+                                                i_micro_kernel_config->vector_name,
+                                                (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
+                                                (op_order == 0) ? im + vecidxin_offset : im + vecin_offset,
+                                                im + vecidxin_offset);
+          }
 
           /* Now apply the Reduce OP  */
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -4343,13 +4374,23 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
         }
 
         /* Now apply the OP among the indexed vector and the inut vector */
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             i_micro_kernel_config->instruction_set,
-                                             op_instr,
-                                             i_micro_kernel_config->vector_name,
-                                             (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
-                                             (op_order == 0) ? im + vecidxin_offset : im + vecin_offset,
-                                             im + vecidxin_offset);
+        if (op_instr == LIBXSMM_X86_INSTR_VMOVDQU64) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                              i_micro_kernel_config->instruction_set,
+                                               op_instr,
+                                              i_micro_kernel_config->vector_name,
+                                              (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
+                                              im + vecidxin_offset,
+                                              LIBXSMM_X86_VEC_REG_UNDEF);
+        } else {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                              i_micro_kernel_config->instruction_set,
+                                               op_instr,
+                                              i_micro_kernel_config->vector_name,
+                                              (op_order == 0) ? im + vecin_offset : im + vecidxin_offset,
+                                              (op_order == 0) ? im + vecidxin_offset : im + vecin_offset,
+                                              im + vecidxin_offset);
+        }
 
         /* Now apply the Reduce OP  */
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
