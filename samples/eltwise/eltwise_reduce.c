@@ -130,6 +130,7 @@ int main(int argc, char* argv[])
       }
       for (i = 0; i < m; i++) {
         ref_result_reduce_elts[i] = 0;
+        result_reduce_elts[i] = 0;
         for (jj = 0; jj < n_cols_idx; jj++) {
           j = cols_ind_array[jj];
           ref_result_reduce_elts[i] += sinp[j*ld_in + i];
@@ -177,6 +178,11 @@ int main(int argc, char* argv[])
 #else
     params2.inp_ptr = sinp;
     params2.out_ptr = result_reduce_elts;
+#endif
+#ifdef FP16_REDUCE_COLSIDX
+    for (i = 0; i < m; i++) {
+      result_reduce_elts_hp[i] = _cvtss_sh(result_reduce_elts[i], _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+    }
 #endif
     kernel2( &params2 );
 #ifdef FP16_REDUCE_COLSIDX
