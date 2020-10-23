@@ -688,7 +688,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 # endif
       {
 #       pragma omp parallel num_threads(nthreads)
-        libxsmm_gemm_thread(handle, scratch, a, b, c, omp_get_thread_num(), nthreads);
+        libxsmm_gemm_task(handle, scratch, a, b, c, omp_get_thread_num(), nthreads);
       }
 # if defined(LIBXSMM_EXT_TASKS)
       else { /* tasks requested */
@@ -698,7 +698,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 #         pragma omp single nowait /* anyone is good */
           { int tid; for (tid = 0; tid < ntasks; ++tid) {
 #             pragma omp task untied
-              libxsmm_gemm_thread(handle, scratch, a, b, c, tid, ntasks);
+              libxsmm_gemm_task(handle, scratch, a, b, c, tid, ntasks);
             }
           }
         } /* implicit synchronization (barrier) */
@@ -710,13 +710,13 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       const int ntasks = nthreads; /* TODO: apply grain-size */
       int tid; for (tid = 0; tid < ntasks; ++tid) {
 #       pragma omp task untied
-        libxsmm_gemm_thread(handle, scratch, a, b, c, tid, ntasks);
+        libxsmm_gemm_task(handle, scratch, a, b, c, tid, ntasks);
       }
       if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #       pragma omp taskwait
       }
 # else
-      libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/, 1/*nthreads*/);
+      libxsmm_gemm_task(handle, scratch, a, b, c, 0/*tid*/, 1/*nthreads*/);
 # endif
     }
     if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
@@ -730,7 +730,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       }
     }
 #else
-    libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/, 1/*nthreads*/);
+    libxsmm_gemm_task(handle, scratch, a, b, c, 0/*tid*/, 1/*nthreads*/);
 #endif /*defined(_OPENMP)*/
     libxsmm_free(scratch);
   }
@@ -763,7 +763,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
   static int error_once = 0;
   LIBXSMM_INIT
   if ( /* check for sensible arguments */
-#if defined(LIBXSMM_GEMM_CHECK)
+#if defined(LIBXSMM_BATCH_CHECK)
     NULL != a && NULL != b && NULL != c && (1 == group_count || -1 == group_count ||
     (0 == index_stride && (NULL == stride_a || 0 != *stride_a) && (NULL == stride_b || 0 != *stride_b) && (NULL == stride_c || 0 != *stride_c))) &&
 #endif
@@ -1003,7 +1003,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
       }
     }
   }
-#if defined(LIBXSMM_GEMM_CHECK)
+#if defined(LIBXSMM_BATCH_CHECK)
   else if (0 != group_count && 0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {

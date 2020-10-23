@@ -31,6 +31,10 @@
 # define LIBXSMM_PAGE_MINSIZE 4096 /* 4 KB */
 #endif
 
+#if !defined(LIBXSMM_BATCH_CHECK) && !defined(NDEBUG)
+# define LIBXSMM_BATCH_CHECK
+#endif
+
 #if !defined(LIBXSMM_NTHREADS_MAX)
 # if (0 != LIBXSMM_SYNC)
 #   define LIBXSMM_NTHREADS_MAX 1024

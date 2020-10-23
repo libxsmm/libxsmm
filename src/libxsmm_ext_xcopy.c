@@ -88,11 +88,11 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           {
 #           pragma omp parallel num_threads(nthreads)
 # if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
-            libxsmm_matcopy_thread_internal(out, in, typesize,
+            libxsmm_matcopy_task_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, omp_get_thread_num(), nthreads);
 #else
-            libxsmm_matcopy_thread_internal(out, in, typesize,
+            libxsmm_matcopy_task_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, omp_get_thread_num(), nthreads);
 #endif
@@ -106,7 +106,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
               { int tid;
                 for (tid = 0; tid < ntasks; ++tid) {
 #                 pragma omp task untied
-                  libxsmm_matcopy_thread_internal(out, in, typesize,
+                  libxsmm_matcopy_task_internal(out, in, typesize,
                     (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
                     tm, tn, kernel, tid, ntasks);
                 }
@@ -124,7 +124,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           int tid;
           for (tid = 0; tid < ntasks; ++tid) {
 #           pragma omp task untied
-            libxsmm_matcopy_thread_internal(out, in, typesize,
+            libxsmm_matcopy_task_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, tid, ntasks);
           }
@@ -132,11 +132,11 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 #           pragma omp taskwait
           }
 # elif (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
-          libxsmm_matcopy_thread_internal(out, in, typesize,
+          libxsmm_matcopy_task_internal(out, in, typesize,
             (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
             tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # else
-          libxsmm_matcopy_thread_internal(out, in, typesize,
+          libxsmm_matcopy_task_internal(out, in, typesize,
             (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
             tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # endif
@@ -214,7 +214,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
             {
 #             pragma omp parallel num_threads(nthreads)
               { /* coverity[divide_by_zero] */
-                libxsmm_otrans_thread_internal(out, in, typesize,
+                libxsmm_otrans_task_internal(out, in, typesize,
                   (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
                   tm, tn, kernel, omp_get_thread_num(), nthreads);
               }
@@ -228,7 +228,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
                 { int tid;
                   for (tid = 0; tid < ntasks; ++tid) {
 #                   pragma omp task untied
-                    libxsmm_otrans_thread_internal(out, in, typesize,
+                    libxsmm_otrans_task_internal(out, in, typesize,
                       (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
                       tm, tn, kernel, tid, ntasks);
                   }
@@ -246,7 +246,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
             int tid;
             for (tid = 0; tid < ntasks; ++tid) {
 #             pragma omp task untied
-              libxsmm_otrans_thread_internal(out, in, typesize,
+              libxsmm_otrans_task_internal(out, in, typesize,
                 (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
                 tm, tn, kernel, tid, ntasks);
             }
@@ -254,7 +254,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 #             pragma omp taskwait
             }
 # else    /* coverity[divide_by_zero] */
-            libxsmm_otrans_thread_internal(out, in, typesize,
+            libxsmm_otrans_task_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # endif
