@@ -17,9 +17,6 @@
 # define LIBXSMM_BLAS_WRAP_DYNAMIC
 #endif
 
-#if !defined(LIBXSMM_GEMM_CHECK) && !defined(NDEBUG)
-# define LIBXSMM_GEMM_CHECK
-#endif
 #if !defined(LIBXSMM_GEMM_LOCK)
 # define LIBXSMM_GEMM_LOCK LIBXSMM_LOCK_DEFAULT
 #endif

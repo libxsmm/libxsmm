@@ -358,6 +358,10 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPEXPANDQ, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPEXPANDW, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPEXPANDB, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGEPS, 0, 0x00, 32 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGEPD, 0, 0x00, 32 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGESS, 0, 0x00, 32 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGESD, 0, 0x00, 32 );
 #endif
 
   /* testing compute mem-reg instructions */
@@ -368,6 +372,10 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPEXPANDQ, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPEXPANDW, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPEXPANDB, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGEPS, 0, 0x00, 32 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGEPD, 0, 0x00, 32 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGESS, 0, 0x00, 32 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGESD, 0, 0x00, 32 );
 #endif
 
   /* testing convert instructions */

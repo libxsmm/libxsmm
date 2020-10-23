@@ -31,7 +31,7 @@
 
 #if (defined(_OPENMP) || (defined(__BLAS) && 1 < (__BLAS)))
 # if !defined(OTRANS_THREAD) && defined(_OPENMP) && 0
-#   define OTRANS_THREAD libxsmm_otrans_thread
+#   define OTRANS_THREAD libxsmm_otrans_task
 # endif
 # define OTRANS libxsmm_otrans_omp
 #else

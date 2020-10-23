@@ -66,10 +66,11 @@
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_BF16 ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F16  ? 2 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_I64  ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I16  ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I8   ? 1 : ( \
-  0/*invalid*/))))))))
+  0/*invalid*/)))))))))
 
 /* Get input or output precision */
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
@@ -288,12 +289,11 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL                         = 32,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DIV                         = 64,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DOT                         = 128,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY                        = 256,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT                = 256,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE                     = 512,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM                      = 1024,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX                      = 2048,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN                      = 4096,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT                = 8192
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN                      = 4096
 } libxsmm_meltw_opreduce_vecs_flags;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {

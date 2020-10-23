@@ -232,7 +232,10 @@
 #define LIBXSMM_X86_INSTR_VFNMSUB231SS 0x300524bf
 
 /* 3arg op codes with imm8 */
-#define LIBXSMM_X86_INSTR_VRANGEPS     20001
+#define LIBXSMM_X86_INSTR_VRANGEPS     0xf00d3650
+#define LIBXSMM_X86_INSTR_VRANGEPD     0xf08d3650
+#define LIBXSMM_X86_INSTR_VRANGESS     0xf00d3651
+#define LIBXSMM_X86_INSTR_VRANGESD     0xf08d3651
 /* 2arg op codes */
 #define LIBXSMM_X86_INSTR_VRCP14PS     0x2005264c
 /* 2arg op codes with imm8 */

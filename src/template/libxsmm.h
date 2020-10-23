@@ -405,7 +405,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_prec
    */
   libxsmm_blasint batchsize,
   /** Thread-ID (TID), and number of threads. */
-  /*unsigned*/int tid, /*unsigned*/int nthreads);
+  /*unsigned*/int tid, /*unsigned*/int ntasks);
 
 /** Process a series of matrix multiplications (batch). See also libxsmm_mmbatch. */
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
@@ -567,9 +567,9 @@ LIBXSMM_API void libxsmm_matcopy(void* out, const void* in, unsigned int typesiz
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix copy function (per-thread form); "in" can be NULL when zeroing (BLAS-like equivalent is "omatcopy"). */
-LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  /*unsigned*/int tid, /*unsigned*/int nthreads);
+  /*unsigned*/int tid, /*unsigned*/int ntasks);
 
 /** Matrix copy function (MT via libxsmmext); "in" can be NULL when zeroing (BLAS-like equivalent is "omatcopy"). */
 LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
@@ -580,9 +580,9 @@ LIBXSMM_API void libxsmm_otrans(void* out, const void* in, unsigned int typesize
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition (per-thread form); out-of-place (BLAS-like equivalent is "omatcopy"). */
-LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  /*unsigned*/int tid, /*unsigned*/int nthreads);
+  /*unsigned*/int tid, /*unsigned*/int ntasks);
 
 /** Matrix transposition (MT via libxsmmext); out-of-place (BLAS-like equivalent is "omatcopy"). */
 LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
@@ -592,6 +592,19 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
+/** Series/batch of matrix transpositions; in-place. See also libxsmm_mmbatch. */
+LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride[], libxsmm_blasint batchsize,
+  /*unsigned*/int tid, /*unsigned*/int ntasks);
+
+/** Series/batch of matrix transpositions ((MT via libxsmmext)); in-place. */
+LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride[], libxsmm_blasint batchsize);
+
 /** Initialize GEMM-handle; allows to better amortize setup overhead. */
 LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
@@ -599,12 +612,12 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, int flags, /*unsigned*/int ntasks);
 
-/** Calculate required scratch buffer size needed to perform libxsmm_gemm_thread. */
+/** Calculate required scratch buffer size needed to perform libxsmm_gemm_task. */
 LIBXSMM_API size_t libxsmm_gemm_handle_get_scratch_size(const libxsmm_gemm_handle* handle);
 
 /** Low-level type-agnostic GEMM suitable for external threads or tasks. */
-LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* scratch,
-  const void* a, const void* b, void* c, /*unsigned*/int tid, /*unsigned*/int nthreads);
+LIBXSMM_API void libxsmm_gemm_task(const libxsmm_gemm_handle* handle, void* scratch,
+  const void* a, const void* b, void* c, /*unsigned*/int tid, /*unsigned*/int ntasks);
 
 /** General dense matrix multiplication (sequential). */
 LIBXSMM_API void libxsmm_xgemm(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,

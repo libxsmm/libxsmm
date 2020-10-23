@@ -88,11 +88,11 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           {
 #           pragma omp parallel num_threads(nthreads)
 # if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
-            libxsmm_matcopy_thread_internal(out, in, typesize,
+            libxsmm_matcopy_task_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, omp_get_thread_num(), nthreads);
 #else
-            libxsmm_matcopy_thread_internal(out, in, typesize,
+            libxsmm_matcopy_task_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, omp_get_thread_num(), nthreads);
 #endif
@@ -106,7 +106,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
               { int tid;
                 for (tid = 0; tid < ntasks; ++tid) {
 #                 pragma omp task untied
-                  libxsmm_matcopy_thread_internal(out, in, typesize,
+                  libxsmm_matcopy_task_internal(out, in, typesize,
                     (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
                     tm, tn, kernel, tid, ntasks);
                 }
@@ -124,7 +124,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           int tid;
           for (tid = 0; tid < ntasks; ++tid) {
 #           pragma omp task untied
-            libxsmm_matcopy_thread_internal(out, in, typesize,
+            libxsmm_matcopy_task_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, tid, ntasks);
           }
@@ -132,11 +132,11 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 #           pragma omp taskwait
           }
 # elif (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
-          libxsmm_matcopy_thread_internal(out, in, typesize,
+          libxsmm_matcopy_task_internal(out, in, typesize,
             (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
             tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # else
-          libxsmm_matcopy_thread_internal(out, in, typesize,
+          libxsmm_matcopy_task_internal(out, in, typesize,
             (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
             tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # endif
@@ -214,7 +214,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
             {
 #             pragma omp parallel num_threads(nthreads)
               { /* coverity[divide_by_zero] */
-                libxsmm_otrans_thread_internal(out, in, typesize,
+                libxsmm_otrans_task_internal(out, in, typesize,
                   (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
                   tm, tn, kernel, omp_get_thread_num(), nthreads);
               }
@@ -228,7 +228,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
                 { int tid;
                   for (tid = 0; tid < ntasks; ++tid) {
 #                   pragma omp task untied
-                    libxsmm_otrans_thread_internal(out, in, typesize,
+                    libxsmm_otrans_task_internal(out, in, typesize,
                       (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
                       tm, tn, kernel, tid, ntasks);
                   }
@@ -246,7 +246,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
             int tid;
             for (tid = 0; tid < ntasks; ++tid) {
 #             pragma omp task untied
-              libxsmm_otrans_thread_internal(out, in, typesize,
+              libxsmm_otrans_task_internal(out, in, typesize,
                 (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
                 tm, tn, kernel, tid, ntasks);
             }
@@ -254,7 +254,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 #             pragma omp taskwait
             }
 # else    /* coverity[divide_by_zero] */
-            libxsmm_otrans_thread_internal(out, in, typesize,
+            libxsmm_otrans_task_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # endif
@@ -313,6 +313,77 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
       }
     }
   }
+}
+
+
+LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride[], libxsmm_blasint batchsize)
+{
+#if defined(_OPENMP)
+  if (1 < batchsize) { /* consider problem-size */
+# if defined(LIBXSMM_EXT_TASKS) && 0/* implies _OPENMP */
+    if (0 == omp_get_active_level())
+# else
+    if (0 == omp_in_parallel())
+# endif
+    { /* enable internal parallelization */
+      const int nthreads = omp_get_max_threads();
+# if defined(LIBXSMM_EXT_TASKS)
+      if (0 >= libxsmm_xcopy_taskscale)
+# endif
+      {
+#       pragma omp parallel num_threads(nthreads)
+        libxsmm_itrans_batch(inout, typesize, m, n, ld,
+          index_base, index_stride, stride, batchsize,
+          omp_get_thread_num(), nthreads);
+      }
+# if defined(LIBXSMM_EXT_TASKS)
+      else { /* tasks requested */
+        const int ntasks = nthreads * libxsmm_xcopy_taskscale;
+#       pragma omp parallel num_threads(nthreads)
+        { /* first thread discovering work will launch all tasks */
+#         pragma omp single nowait /* anyone is good */
+          { int tid;
+            for (tid = 0; tid < ntasks; ++tid) {
+#             pragma omp task untied
+              libxsmm_itrans_batch(inout, typesize, m, n, ld,
+                index_base, index_stride, stride, batchsize,
+                tid, ntasks);
+            }
+          }
+        }
+      }
+# endif
+    }
+    else { /* assume external parallelization */
+# if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+      const int nthreads = omp_get_num_threads();
+      const int ntasks = (0 == libxsmm_xcopy_taskscale
+        ? (LIBXSMM_XCOPY_TASKSCALE)
+        : libxsmm_xcopy_taskscale) * nthreads;
+      int tid;
+      for (tid = 0; tid < ntasks; ++tid) {
+#       pragma omp task untied
+        libxsmm_itrans_batch(inout, typesize, m, n, ld,
+          index_base, index_stride, stride, batchsize,
+          tid, ntasks);
+      }
+      if (0 == libxsmm_nosync) { /* allow to omit synchronization */
+#       pragma omp taskwait
+      }
+      libxsmm_itrans_batch(inout, typesize, m, n, ld,
+        index_base, index_stride, stride, batchsize,
+        0/*tid*/, 1/*ntasks*/);
+# endif
+    }
+  }
+  else
+#endif /*defined(_OPENMP)*/
+  libxsmm_itrans_batch(inout, typesize, m, n, ld,
+    index_base, index_stride, stride, batchsize,
+    0/*tid*/, 1/*ntasks*/);
 }
 
 

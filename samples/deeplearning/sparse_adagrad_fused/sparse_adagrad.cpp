@@ -21,6 +21,7 @@
 #include <time.h>
 #include <math.h>
 #include <unistd.h>
+#include <immintrin.h>
 #ifdef _OPENMP
 #include <omp.h>
 #else
