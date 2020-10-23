@@ -319,6 +319,7 @@ libxsmm_isqrt_u64
 libxsmm_itrans
 libxsmm_itrans_
 libxsmm_itrans_batch
+libxsmm_itrans_batch_omp
 libxsmm_itrans_d1
 libxsmm_itrans_d2
 libxsmm_itrans_p0

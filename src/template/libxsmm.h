@@ -591,12 +591,18 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
-/** Series of Matrix transposition (batch); in-place. See also libxsmm_mmbatch. */
+/** Series/batch of matrix transpositions; in-place. See also libxsmm_mmbatch. */
 LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride[], libxsmm_blasint batchsize,
   /*unsigned*/int tid, /*unsigned*/int ntasks);
+
+/** Series/batch of matrix transpositions ((MT via libxsmmext)); in-place. */
+LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride[], libxsmm_blasint batchsize);
 
 /** Initialize GEMM-handle; allows to better amortize setup overhead. */
 LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob,
