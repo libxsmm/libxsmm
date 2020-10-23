@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-//#define FP16_REDUCE_COLSIDX
+/*#define FP16_REDUCE_COLSIDX*/
 #ifdef FP16_REDUCE_COLSIDX
 #include <immintrin.h>
 #endif
