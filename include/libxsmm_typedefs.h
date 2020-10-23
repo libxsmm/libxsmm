@@ -674,6 +674,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs
   const void* in_matrix;     /* input matrix pointer */
   const void* in_vec;        /* input vector pointer */
   void* out_vec;             /* output pointer */
+  const void* scale_vals;    /* scale values of indexed vectors after ops */
 } libxsmm_meltw_opreduce_vecs_idx_param;
 
 /** argument struct for matrix-eltwise: scale */

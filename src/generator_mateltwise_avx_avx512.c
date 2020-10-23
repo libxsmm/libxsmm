@@ -3826,7 +3826,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
   unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVL;
   int pf_dist = 4, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 1, load_acc = 1;
   unsigned int vstore_instr = 0;
-  int apply_op = 0, apply_redop = 0, op_order = -1, op_instr = 0, reduceop_instr = 0;
+  int apply_op = 0, apply_redop = 0, op_order = -1, op_instr = 0, reduceop_instr = 0, scale_op_result = 0, pushpop_scaleop_reg = 0;
   unsigned int NO_PF_LABEL_START = 0;
   unsigned int NO_PF_LABEL_START_2 = 1;
   unsigned int END_LABEL = 2;
@@ -3872,7 +3872,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
   i_gp_reg_mapping->gp_reg_n_loop   = LIBXSMM_X86_GP_REG_RDX;
   i_gp_reg_mapping->gp_reg_in       = LIBXSMM_X86_GP_REG_RSI;
   i_gp_reg_mapping->gp_reg_in_pf    = LIBXSMM_X86_GP_REG_RCX;
-  i_gp_reg_mapping->gp_reg_invec    = LIBXSMM_X86_GP_REG_RDI;
+  i_gp_reg_mapping->gp_reg_invec    = LIBXSMM_X86_GP_REG_RDI; 
 
   libxsmm_x86_instruction_alu_mem( io_generated_code,
       i_micro_kernel_config->alu_mov_instruction,
@@ -3908,6 +3908,27 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
       32,
       i_gp_reg_mapping->gp_reg_out,
       0 );
+
+  if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT) > 0) {
+    scale_op_result = 1;
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_NONE) > 0) {
+      i_gp_reg_mapping->gp_reg_scale_base = LIBXSMM_X86_GP_REG_RDI;
+    } else if (pf_dist == 0) {
+      i_gp_reg_mapping->gp_reg_scale_base = LIBXSMM_X86_GP_REG_RCX;
+    } else {
+      i_gp_reg_mapping->gp_reg_scale_base = LIBXSMM_X86_GP_REG_R12;
+      pushpop_scaleop_reg = 1;
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_scale_base );
+    }
+
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+        i_micro_kernel_config->alu_mov_instruction,
+        i_gp_reg_mapping->gp_reg_param_struct,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        40,
+        i_gp_reg_mapping->gp_reg_scale_base,
+        0 );
+  }
 
   if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_NONE) == 0) {
     apply_op = 1;
@@ -4076,6 +4097,18 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
           }
         }
 
+        if (scale_op_result == 1) {
+          libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
+              LIBXSMM_X86_INSTR_VMULPS,
+              i_micro_kernel_config->vector_name,
+              i_gp_reg_mapping->gp_reg_scale_base,
+              i_gp_reg_mapping->gp_reg_n_loop,
+              4, 0, 1,
+              (apply_op == 1) ? ((apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset) : im + vecidxin_offset,
+              (apply_op == 1) ? ((apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset) : im + vecidxin_offset,
+              0, 0, 0);
+        }
+
         /* Now apply the Reduce OP */
         if (apply_redop == 1) {
           libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
@@ -4135,6 +4168,18 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
               op_imm);
         }
       }
+
+      if (scale_op_result == 1) {
+        libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
+            LIBXSMM_X86_INSTR_VMULPS,
+            i_micro_kernel_config->vector_name,
+            i_gp_reg_mapping->gp_reg_scale_base,
+            i_gp_reg_mapping->gp_reg_n_loop,
+            4, 0, 1,
+            (apply_op == 1) ? ((apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset) : im + vecidxin_offset,
+            (apply_op == 1) ? ((apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset) : im + vecidxin_offset,
+            0, 0, 0);
+      } 
 
       /* Now apply the Reduce OP */
       if (apply_redop == 1) {
@@ -4259,6 +4304,18 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
           }
         }
 
+        if (scale_op_result == 1) {
+          libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
+              LIBXSMM_X86_INSTR_VMULPS,
+              i_micro_kernel_config->vector_name,
+              i_gp_reg_mapping->gp_reg_scale_base,
+              i_gp_reg_mapping->gp_reg_n_loop,
+              4, 0, 1,
+              (apply_op == 1) ? ((apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset) : im + vecidxin_offset,
+              (apply_op == 1) ? ((apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset) : im + vecidxin_offset,
+              0, 0, 0);
+        }      
+
         /* Now apply the Reduce OP */
         if (apply_redop == 1) {
           libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
@@ -4318,6 +4375,18 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
         }
       }
 
+      if (scale_op_result == 1) {
+        libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
+            LIBXSMM_X86_INSTR_VMULPS,
+            i_micro_kernel_config->vector_name,
+            i_gp_reg_mapping->gp_reg_scale_base,
+            i_gp_reg_mapping->gp_reg_n_loop,
+            4, 0, 1,
+            (apply_op == 1) ? ((apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset) : im + vecidxin_offset,
+            (apply_op == 1) ? ((apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset) : im + vecidxin_offset,
+            0, 0, 0);
+      }
+
       /* Now apply the Reduce OP */
       if (apply_redop == 1) {
         libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
@@ -4347,6 +4416,9 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
     }
   }
 
+  if (pushpop_scaleop_reg == 1) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_scale_base );
+  }
   libxsmm_x86_instruction_register_jump_label(io_generated_code, END_LABEL, &l_jump_label_tracker);
 }
 
