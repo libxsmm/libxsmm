@@ -1780,6 +1780,10 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     case LIBXSMM_X86_INSTR_VPEXPANDD:
     case LIBXSMM_X86_INSTR_VPEXPANDW:
     case LIBXSMM_X86_INSTR_VPEXPANDB:
+    case LIBXSMM_X86_INSTR_VRANGEPS:
+    case LIBXSMM_X86_INSTR_VRANGEPD:
+    case LIBXSMM_X86_INSTR_VRANGESS:
+    case LIBXSMM_X86_INSTR_VRANGESD:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
@@ -2019,6 +2023,10 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPEXPANDD:
     case LIBXSMM_X86_INSTR_VPEXPANDW:
     case LIBXSMM_X86_INSTR_VPEXPANDB:
+    case LIBXSMM_X86_INSTR_VRANGEPS:
+    case LIBXSMM_X86_INSTR_VRANGEPD:
+    case LIBXSMM_X86_INSTR_VRANGESS:
+    case LIBXSMM_X86_INSTR_VRANGESD:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
