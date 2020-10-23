@@ -1932,7 +1932,7 @@ endif
 
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
     printf "$(CHAR_HASH)include <features.h>\n$(CHAR_HASH)if !defined(__GNU_LIBRARY__) && !defined(__GLIBC__)\n0\n$(CHAR_HASH)endif\n" > $${INFILE} && \
-    RESULT=$$($(CC) -c $${INFILE} -o $${INFILE}.o 2>&1); if [ "$${RESULT}" ]; then echo "1"; else echo "$$?"; fi; \
+    if [ "$$($(CC) -c $${INFILE} -o $${INFILE}.o 2>&1 || echo 'x')" ]; then echo "1"; else echo "0"; fi; \
     rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
   GLIBC := 1
 endif
@@ -1948,7 +1948,7 @@ endif
 ifneq (,$(OMPFLAG_FORCE))
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
     printf "$(CHAR_HASH)if defined(_OPENMP)\n$(CHAR_HASH) include <omp.h>\nint main() { return 0; }\n$(CHAR_HASH)endif\n" > $${INFILE} && \
-    RESULT=$$($(CC) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1); if [ "$${RESULT}" ]; then echo "1"; else echo "$$?"; fi; \
+    if [ "$$($(CC) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1 || echo 'x')" ]; then echo "1"; else echo "0"; fi; \
     rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
   OMPFLAG := $(OMPFLAG_FORCE)
 endif
@@ -2342,4 +2342,3 @@ $(DIRSTATE)/.state: $(firstword $(PRESTATE))
 	@touch $@
 
 .DEFAULT_GOAL := $(NULL)
-
