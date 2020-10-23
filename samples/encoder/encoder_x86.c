@@ -362,6 +362,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGEPD, 0, 0x00, 32 );
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGESS, 0, 0x00, 32 );
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGESD, 0, 0x00, 32 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VMULPS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VADDPS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
 #endif
 
   /* testing compute mem-reg instructions */
@@ -376,6 +378,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGEPD, 0, 0x00, 32 );
   test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGESS, 0, 0x00, 32 );
   test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VRANGESD, 0, 0x00, 32 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VMULPS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VADDPS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
 #endif
 
   /* testing convert instructions */
@@ -398,6 +402,7 @@ int main( /*int argc, char* argv[]*/ ) {
   /* testing prefetches */
 #if 0
   test_prefetch( &mycode, LIBXSMM_X86_INSTR_CLDEMOTE );
+  test_prefetch( &mycode, LIBXSMM_X86_INSTR_CLFLUSHOPT );
 #endif
 
   /* testing tile move */
