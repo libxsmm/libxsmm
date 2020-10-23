@@ -289,7 +289,7 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DIV                         = 64,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DOT                         = 128,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY                        = 256,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE                     = 512,  
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE                     = 512,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM                      = 1024,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX                      = 2048,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN                      = 4096

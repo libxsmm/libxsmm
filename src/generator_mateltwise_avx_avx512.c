@@ -3915,32 +3915,32 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         24,
-        i_gp_reg_mapping->gp_reg_vecin,
+        i_gp_reg_mapping->gp_reg_invec,
         0 );
   }
 
   if (apply_op == 1) {
-    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX) == 1) {
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX) > 0) {
       op_order = 0;
-    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN) == 1) {
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN) > 0) {
       op_order = 1;
     } else {
       /* This should not happen  */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
-    
-    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_ADD) == 1) {
+
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_ADD) > 0) {
       op_instr = LIBXSMM_X86_INSTR_VADDPS;
-    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_SUB) == 1) {
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_SUB) > 0) {
       op_instr = LIBXSMM_X86_INSTR_VSUBPS;
-    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL) == 1) {
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL) > 0) {
       op_instr = LIBXSMM_X86_INSTR_VMULPS;
-    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DIV) == 1) {
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DIV) > 0) {
       op_instr = LIBXSMM_X86_INSTR_VDIVPS;
-    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DOT) == 1) {
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DOT) > 0) {
       op_instr = LIBXSMM_X86_INSTR_DOTPS;
-    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY) == 1) {
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY) > 0) {
       op_instr = LIBXSMM_X86_INSTR_VMOVDQU64;
     } else {
       /* This should not happen  */
@@ -3951,20 +3951,20 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 
   if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE) == 0) {
     apply_redop = 1;
-    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM) == 1) {
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM) > 0) {
       reduceop_instr = LIBXSMM_X86_INSTR_VADDPS;
-    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) == 1) {
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0) {
       reduceop_instr = LIBXSMM_X86_INSTR_VMAXPS;
-    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN) == 1) {
-      reduceop_instr = LIBXSMM_X86_INSTR_VMINPS;
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN) > 0) {
+      reduceop_instr = LIBXSMM_X86_INSTR_VMAXPS;
     } else {
       /* This should not happen  */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
   } else {
-    vecin_offset    = 0; 
-  } 
+    vecin_offset    = 0;
+  }
 
   m                 = i_mateltwise_desc->m;
   use_m_masking     = ( m % 16 == 0 ) ? 0 : 1;
@@ -4024,7 +4024,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
             i_micro_kernel_config->vmove_instruction_in,
-            i_gp_reg_mapping->gp_reg_vecin,
+            i_gp_reg_mapping->gp_reg_invec,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             im * 16  * i_micro_kernel_config->datatype_size_out,
             i_micro_kernel_config->vector_name,
