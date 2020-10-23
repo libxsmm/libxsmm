@@ -1558,23 +1558,18 @@ LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strat
 
 LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
 {
-  switch (datatype) {
-    case LIBXSMM_DATATYPE_F64:  return 8;
-    case LIBXSMM_DATATYPE_F32:  return 4;
-    case LIBXSMM_DATATYPE_BF16: return 2;
-    case LIBXSMM_DATATYPE_I64:  return 8;
-    case LIBXSMM_DATATYPE_I32:  return 4;
-    case LIBXSMM_DATATYPE_I16:  return 2;
-    case LIBXSMM_DATATYPE_I8:   return 1;
-    case LIBXSMM_DATATYPE_UNSUPPORTED: {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: unsupported data type!\n");
-      }
-    } break;
+  const unsigned char result = (unsigned char)LIBXSMM_TYPESIZE(datatype);
+  if (0 != result) {
+    return result;
   }
-  LIBXSMM_ASSERT_MSG(0, "unsupported data type");
-  return 1; /* avoid to return 0 to avoid div-by-zero in static analysis of depending code */
+  else {
+    static int error_once = 0;
+    LIBXSMM_ASSERT_MSG(0, "unsupported data type");
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: unsupported data type!\n");
+    }
+    return 1; /* avoid to return 0 to avoid div-by-zero in static analysis of depending code */
+  }
 }
 
 
@@ -1583,11 +1578,12 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
   int result = EXIT_SUCCESS;
   if (NULL != value && NULL != dvalue) {
     switch (datatype) {
-      case LIBXSMM_DATATYPE_F64: *dvalue =         (*(const double*)value); break;
-      case LIBXSMM_DATATYPE_F32: *dvalue = (double)(*(const float *)value); break;
-      case LIBXSMM_DATATYPE_I32: *dvalue = (double)(*(const int   *)value); break;
-      case LIBXSMM_DATATYPE_I16: *dvalue = (double)(*(const short *)value); break;
-      case LIBXSMM_DATATYPE_I8:  *dvalue = (double)(*(const char  *)value); break;
+      case LIBXSMM_DATATYPE_F64: *dvalue =         (*(const double   *)value); break;
+      case LIBXSMM_DATATYPE_F32: *dvalue = (double)(*(const float    *)value); break;
+      case LIBXSMM_DATATYPE_I64: *dvalue = (double)(*(const long long*)value); break;
+      case LIBXSMM_DATATYPE_I32: *dvalue = (double)(*(const int      *)value); break;
+      case LIBXSMM_DATATYPE_I16: *dvalue = (double)(*(const short    *)value); break;
+      case LIBXSMM_DATATYPE_I8:  *dvalue = (double)(*(const char     *)value); break;
       default: result = EXIT_FAILURE;
     }
   }
@@ -1604,6 +1600,7 @@ LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_F64:  return "f64";
     case LIBXSMM_DATATYPE_F32:  return "f32";
     case LIBXSMM_DATATYPE_BF16: return "bf16";
+    case LIBXSMM_DATATYPE_F16:  return "f16";
     case LIBXSMM_DATATYPE_I64:  return "i64";
     case LIBXSMM_DATATYPE_I32:  return "i32";
     case LIBXSMM_DATATYPE_I16:  return "i16";
