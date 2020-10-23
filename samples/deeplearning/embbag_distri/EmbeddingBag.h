@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Dhiraj Kalamkar, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-//#define JIT_REDUCE_COLS_IDX
+#define JIT_REDUCE_COLS_IDX
 #ifdef JIT_REDUCE_COLS_IDX
 #include <libxsmm.h>
 #endif

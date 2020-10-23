@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
   if ( argc > 8 ) n_cols_idx = atoi(argv[8]);
 
 
-  libxsmm_meltw_opreduce_vecs_flags opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE;
+  libxsmm_meltw_opreduce_vecs_flags opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM;
   libxsmm_meltwfunction_opreduce_vecs_idx new_kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64, opredop_flags);
 
 

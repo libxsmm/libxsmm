@@ -1824,10 +1824,10 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
       l_encoder_arch = 0;
     }
-    if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
-      l_encoder = 1;
-    } else if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
+    if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;
+    } else if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
+      l_encoder = 1;
     } else {
       l_encoder = 0;
     }
@@ -2065,7 +2065,9 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
       l_encoder_arch = 0;
     }
-    if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
+    if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
+      l_encoder = 2;
+    } else if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
       l_encoder = 1;
     } else if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;

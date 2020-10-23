@@ -4148,12 +4148,6 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
             reduceop_mask_rnd_exp_cntl,
             reduceop_imm);
       }
-
-      libxsmm_x86_instruction_prefetch(io_generated_code,
-          pf_instr,
-          i_gp_reg_mapping->gp_reg_in_pf,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          im * 16 * i_micro_kernel_config->datatype_size_in);
     }
 
     libxsmm_generator_mateltwise_footer_n_dyn_loop(io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop, i_gp_reg_mapping->gp_reg_n);
