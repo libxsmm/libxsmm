@@ -1001,6 +1001,7 @@ endif
 DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/embbag_distri/ \
 	| grep -v /deeplearning/sparse_training/fairseq/docs/ \
+	| grep -v /deeplearning/sparse_adagrad_fused/ \
 	| grep -v /deeplearning/tvm_cnnlayer/ \
 	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
