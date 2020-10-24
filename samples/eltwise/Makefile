@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_scale $(OUTDIR)/eltwise_layernorm
+XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_opreduce $(OUTDIR)/eltwise_scale $(OUTDIR)/eltwise_layernorm
 .PHONY: all
 all: $(XFILES)
 
@@ -46,6 +46,9 @@ compile: $(OBJECTS)
 
 $(OUTDIR)/eltwise_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_reduce-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_opreduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_opreduce-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_opreduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/eltwise_scale: $(OUTDIR)/.make $(BLDDIR)/eltwise_scale-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_scale-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
