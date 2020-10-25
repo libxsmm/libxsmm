@@ -511,6 +511,7 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
       libxsmm_itrans_internal(inout, typesize, m, n, ld);
     }
     else {
+      /* TODO: reduce memory consumption by relying on matcopy */
       const size_t size = ld * LIBXSMM_MAX(m, n) * typesize;
       if (size <= LIBXSMM_ITRANS_BUFFER_MAXSIZE) {
         char buffer[LIBXSMM_ITRANS_BUFFER_MAXSIZE];
@@ -538,7 +539,7 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for in-place transpose!\n");
+    fprintf(stderr, "LIBXSMM ERROR: invalid argument(s) for in-place transpose!\n");
   }
 }
 
@@ -551,6 +552,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
 {
   static int error_once = 0;
   if (NULL != inout && 0 < typesize && m <= ld && LIBXSMM_MAX(n, 1) <= ld) {
+    /* TODO: reduce memory consumption by relying on matcopy */
     const size_t scratchsize = ld * LIBXSMM_MAX(m, n) * typesize;
     const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
     const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, ntasks);
@@ -629,7 +631,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for in-place batch-transpose!\n");
+    fprintf(stderr, "LIBXSMM ERROR: invalid argument(s) for in-place batch-transpose!\n");
   }
 }
 
