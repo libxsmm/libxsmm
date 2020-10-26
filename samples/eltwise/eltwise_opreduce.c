@@ -113,6 +113,8 @@ int main(int argc, char* argv[])
   } else if (op == OP_DOT) {
     opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DOT;
     sprintf(opname, "DOT");
+    printf("ERROR: DOT OP requested, and is not supported yet!!!\n");
+    return EXIT_SUCCESS;
   } else {
     printf("ERROR: Invalid OP requested!!!\n");
     return EXIT_SUCCESS;
