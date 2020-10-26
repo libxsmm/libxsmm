@@ -26,11 +26,13 @@ int main(void)
   const libxsmm_blasint n[]   = { 0, 1, 7, 7, 7, 2, 3, 1, 1, 1, 1, 5, 13,  5, 13, 16, 22, 17, 29, 31, 64, 500,  32, 130, 1975 };
   const libxsmm_blasint ldi[] = { 0, 1, 1, 1, 9, 2, 3, 4, 5, 8, 8, 5,  5, 13, 13, 16, 22, 24, 32, 64, 64,  16, 512,  87, 3000 };
   const libxsmm_blasint ldo[] = { 1, 1, 7, 8, 8, 2, 3, 1, 1, 1, 4, 5, 13,  5, 13, 16, 22, 24, 32, 32, 64, 512,  64, 136, 3072 };
+  const libxsmm_blasint batchsize = 13;
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
-  libxsmm_blasint max_size_a = 0, max_size_b = 0;
+  libxsmm_blasint max_size_a = 0, max_size_b = 0, i;
   ELEM_TYPE *a = NULL, *b = NULL, *c = NULL;
   const size_t typesize = sizeof(ELEM_TYPE);
   unsigned int nerrors = 0;
+  int* batchidx = NULL;
   int test, fun;
 
   void (*otrans[])(void*, const void*, unsigned int, libxsmm_blasint,
@@ -49,13 +51,18 @@ int main(void)
     max_size_b = LIBXSMM_MAX(max_size_b, size_b);
   }
   a = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_a);
-  b = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_b);
-  c = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_b);
+  b = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_b * batchsize);
+  c = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_b * batchsize);
+  batchidx = (int*)libxsmm_malloc(sizeof(int) * batchsize);
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c);
 
   /* initialize data */
-  LIBXSMM_MATINIT(ELEM_TYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
-  LIBXSMM_MATINIT(ELEM_TYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
+  LIBXSMM_MATINIT(ELEM_TYPE, 42/*seed*/, a, max_size_a, 1, max_size_a, 1.0/*scale*/);
+  for (i = 0; i < batchsize; ++i) {
+    LIBXSMM_MATINIT(ELEM_TYPE, 24 + i/*seed*/, b + (size_t)i * max_size_b,
+      max_size_b, 1, max_size_b, 1.0/*scale*/);
+    batchidx[i] = i * max_size_b;
+  }
 
   for (fun = 0; fun < 2; ++fun) {
     for (test = start; test < ntests; ++test) {
@@ -76,13 +83,36 @@ int main(void)
         }
       }
 #endif
-      if (LIBXSMM_MAX(n[test], 1) > ldi[test] || 0 != fun) continue;
-      memcpy(c, b, typesize * max_size_b);
-      itrans[fun](b, (unsigned int)typesize, m[test], n[test], ldi[test]);
-      nerrors += validate(c, b, c, max_size_b, m[test], n[test], ldi[test], ldi[test]);
+      if (0 == fun) {
+        if (m[test] <= ldi[test] && n[test] <= ldi[test]) {
+          memcpy(c, b, typesize * max_size_b);
+          itrans[fun](b, (unsigned int)typesize, m[test], n[test], ldi[test]);
+          nerrors += validate(c, b, c, max_size_b, m[test], n[test], ldi[test], ldi[test]);
+        }
+        if (m[test] <= ldo[test] && n[test] <= ldo[test]) {
+          memcpy(c, b, typesize * max_size_b);
+          itrans[fun](b, (unsigned int)typesize, m[test], n[test], ldo[test]);
+          nerrors += validate(c, b, c, max_size_b, m[test], n[test], ldo[test], ldo[test]);
+        }
+      }
     }
   }
 
+  for (test = start; test < ntests; ++test) {
+    if (LIBXSMM_MAX(m[test], n[test]) <= ldo[test]) {
+      memcpy(c, b, typesize * max_size_b * batchsize);
+      libxsmm_itrans_batch(b, (unsigned int)typesize, m[test], n[test], ldo[test],
+        0/*index_base*/, sizeof(int)/*index_stride*/, batchidx, batchsize,
+        0/*tid*/, 1/*ntasks*/);
+      for (i = 0; i < batchsize; ++i) {
+        const size_t stride = (size_t)i * max_size_b;
+        nerrors += validate(c + stride, b + stride, c + stride,
+          max_size_b, m[test], n[test], ldo[test], ldo[test]);
+      }
+    }
+  }
+
+  libxsmm_free(batchidx);
   libxsmm_free(a);
   libxsmm_free(b);
   libxsmm_free(c);
