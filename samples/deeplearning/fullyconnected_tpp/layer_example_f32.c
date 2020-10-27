@@ -49,7 +49,6 @@ typedef struct my_fwd_config {
   libxsmm_blasint fwd_2d_blocking;
   libxsmm_blasint fwd_row_teams;
   libxsmm_blasint fwd_column_teams;
-  void*           scratch;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
   libxsmm_smmfunction_reducebatch_strd gemm_fwd;
@@ -75,7 +74,6 @@ typedef struct my_bwd_config {
   libxsmm_blasint upd_column_teams;
   libxsmm_blasint ifm_subtasks;
   libxsmm_blasint ofm_subtasks;
-  void*           scratch;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
   libxsmm_smmfunction_reducebatch_strd gemm_bwd;
@@ -145,7 +143,6 @@ my_fwd_config setup_my_forward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bla
   }
 
   /* init scratch */
-  res.scratch = NULL;
   res.scratch_size = 0;
 
   return res;
@@ -262,14 +259,13 @@ my_bwd_config setup_my_backward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bl
   }
 
   /* init scratch */
-  res.scratch = NULL;
   res.scratch_size =  sizeof(float) * ( (((size_t)res.C + (size_t)res.K) * (size_t)res.N) + ((size_t)res.C * (size_t)res.K) );
 
   return res;
 }
 
 void my_forward( my_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
-                 const float* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid ) {
+                 const float* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
   const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
@@ -299,6 +295,7 @@ void my_forward( my_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr
 
   unsigned long long  blocks = nBlocksIFm;
   libxsmm_blasint CB_BLOCKS = nBlocksIFm, BF = 1;
+  LIBXSMM_UNUSED( scratch );
 
   BF = cfg.fwd_bf;
   CB_BLOCKS = nBlocksIFm/BF;
@@ -469,7 +466,7 @@ void my_forward( my_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr
 
 void my_backward( my_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
                   const float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
-                  float* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid ) {
+                  float* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch ) {
   /* here we assume that input and output blocking is similar */
   const libxsmm_blasint bn = cfg.bn;
   const libxsmm_blasint bk = cfg.bk;
@@ -504,7 +501,7 @@ void my_backward( my_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
   /* loop variables */
   libxsmm_blasint ofm1 = 0, mb1 = 0, ofm2 = 0, mb2 = 0;
 
-  const float *grad_output_ptr = (const float*)(((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) ? ((float*)cfg.scratch)+(cfg.C*cfg.K) : dout_act_ptr);
+  const float *grad_output_ptr = (const float*)(((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) ? ((float*)scratch)+(cfg.C*cfg.K) : dout_act_ptr);
   LIBXSMM_VLA_DECL(4, const float, doutput_orig,    dout_act_ptr, nBlocksOFm, bn, bk);
   LIBXSMM_VLA_DECL(4,       float,      doutput, grad_output_ptr, nBlocksOFm, bn, bk);
 
@@ -574,9 +571,9 @@ void my_backward( my_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
     libxsmm_blasint ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0;
     libxsmm_blasint im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
 
-    LIBXSMM_VLA_DECL(4, const float,    filter,              wt_ptr, nBlocksIFm, bc, bk);
-    LIBXSMM_VLA_DECL(4,       float,    dinput,         din_act_ptr, nBlocksIFm, bn, bc);
-    LIBXSMM_VLA_DECL(4,       float, filter_tr, (float*)cfg.scratch, nBlocksOFm, bk, bc);
+    LIBXSMM_VLA_DECL(4, const float,    filter,          wt_ptr, nBlocksIFm, bc, bk);
+    LIBXSMM_VLA_DECL(4,       float,    dinput,     din_act_ptr, nBlocksIFm, bn, bc);
+    LIBXSMM_VLA_DECL(4,       float, filter_tr, (float*)scratch, nBlocksOFm, bk, bc);
 
     unsigned long long  blocks = nBlocksOFm;
     libxsmm_blasint KB_BLOCKS = nBlocksOFm, BF = 1;
@@ -798,7 +795,6 @@ int main(int argc, char* argv[])
 
   naive_fullyconnected_t naive_param;
   void* scratch;
-  size_t scratch_size = 0;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -981,9 +977,8 @@ int main(int argc, char* argv[])
   /* let's allocate and bind scratch */
   if ( my_fwd.scratch_size > 0 || my_bwd.scratch_size > 0 ) {
     size_t alloc_size = LIBXSMM_MAX( my_fwd.scratch_size, my_bwd.scratch_size);
-    my_fwd.scratch = libxsmm_aligned_scratch( alloc_size, 2097152 );
-    my_bwd.scratch = my_fwd.scratch;
-    init_buf( (float*)(my_fwd.scratch), (my_fwd.scratch_size)/4, 0, 0 );
+    scratch = libxsmm_aligned_scratch( alloc_size, 2097152 );
+    init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
 
   if ((type == 'A' || type == 'F') && LIBXSMM_NEQ(0, check)) {
@@ -1001,7 +996,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       my_forward( my_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
-                  bias_libxsmm, relumask_libxsmm, 0, tid );
+                  bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
     }
 
     matrix_copy_NCNC_to_NC( output_libxsmm, naive_libxsmm_output, 1, nImg, nOFm, bn, bk );
@@ -1033,7 +1028,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       my_backward( my_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-                   input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid );
+                   input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
     }
 
     matrix_copy_NCNC_to_NC( delinput_libxsmm, naive_libxsmm_delinput, 1, nImg, nIFm, bn, bc );
@@ -1087,7 +1082,7 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < iters; ++i) {
         my_forward( my_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
-                    bias_libxsmm, relumask_libxsmm, 0, tid );
+                    bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -1120,7 +1115,7 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < iters; ++i) {
         my_backward( my_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-                     input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid );
+                     input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -1138,7 +1133,7 @@ int main(int argc, char* argv[])
   }
 
   /* deallocate data */
-  if ( my_fwd.scratch_size > 0 ) {
+  if ( scratch != NULL ) {
     libxsmm_free(scratch);
   }
   libxsmm_free(naive_input);
