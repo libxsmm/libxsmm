@@ -57,6 +57,9 @@ endif
 # ensure a number or instead return zero (by default) or 2nd argument (if given)
 qnum = $(shell echo "$1" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "$(if $2,$2,0)")
 
+ifeq (,$(HOSTNAME))
+  HOSTNAME := $(shell hostname 2>/dev/null)
+endif
 ifeq (Windows_NT,$(OS))
   UNAME ?= Windows_NT
   # Cygwin/MinGW based
