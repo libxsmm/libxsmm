@@ -37,9 +37,9 @@ if [ "" = "${SED}" ]; then
   SED=$(command -v sed)
 fi
 
-if [ "" != "${WGET}" ] && [ "" != "${SED}" ] && [ "" != "${PIPELINE}" ] && \
-   [ "" != "${BUILDKITE_ORGANIZATION_SLUG}" ] && \
-   [ "" != "${BUILDKITE_AGENT_ACCESS_TOKEN}" ];
+if [ "${WGET}" ] && [ "${SED}" ] && [ "${PIPELINE}" ] && \
+   [ "${BUILDKITE_ORGANIZATION_SLUG}" ] && \
+   [ "${BUILDKITE_AGENT_ACCESS_TOKEN}" ];
 then
   REVSTART=$(${WGET} -qO- \
   https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
@@ -49,32 +49,32 @@ if [ "" = "${REVSTART}" ]; then
   REVSTART="HEAD^"
 fi
 
-if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
-   [ "" != "${DIFF}" ] && [ "" != "${GREP}" ] && [ "" != "${SED}" ] && \
-   [ "" != "${LS}" ] && [ "" != "${TR}" ] && \
-   [ "" != "${RM}" ] && [ "" != "${CP}" ];
+if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${CHMOD}" ] && \
+   [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ] && \
+   [ "${LS}" ] && [ "${TR}" ] && \
+   [ "${RM}" ] && [ "${CP}" ];
 then
   # check if full/unlimited tests are triggered
-  if [ "" != "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
+  if [ "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
     LIMIT=0
   fi
-  if [ "0" != "${LIMIT}" ] && [ "" != "${GIT}" ] && \
-     [ "" != "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "\[full ci\]")" ];
+  if [ "0" != "${LIMIT}" ] && [ "${GIT}" ] && \
+     [ "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "\[full ci\]")" ];
   then
     LIMIT=0
   fi
 
   # set the case number
-  if [ "" != "$1" ] && [ -e "$1" ]; then
+  if [ "$1" ] && [ -e "$1" ]; then
     export TESTSETFILE=$1
-    if [ "" != "${BASENAME}" ]; then
+    if [ "${BASENAME}" ]; then
       export TESTID=$(${BASENAME} ${TESTSETFILE%.*})
     else
       export TESTID=${TESTSETFILE}
     fi
     export TESTSET=${TESTID}
   else # case number given
-    if [ "" != "$1" ] && [ "0" != "$1" ]; then
+    if [ "$1" ] && [ "0" != "$1" ]; then
       export TESTID=$1
     else
       export TESTID=1
@@ -89,7 +89,7 @@ then
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${REPOROOT}
   fi
-  if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "${UNAME}" ]; then
+  if [ "" = "${TRAVIS_OS_NAME}" ] && [ "${UNAME}" ]; then
     export TRAVIS_OS_NAME=$(${UNAME})
   fi
   if [ "" = "${HOSTNAME}" ]; then
@@ -98,7 +98,7 @@ then
 
   # setup PARTITIONS for multi-tests
   if [ "" = "${PARTITIONS}" ]; then
-    if [ "" != "${PARTITION}" ]; then
+    if [ "${PARTITION}" ]; then
       PARTITIONS=${PARTITION}
     else
       PARTITIONS=none
@@ -117,18 +117,18 @@ then
 
   # setup CONFIGS (multiple configurations)
   if [ "" = "${CONFIGS}" ]; then
-    if [ "" != "${CONFIG}" ]; then
+    if [ "${CONFIG}" ]; then
       CONFIGS=${CONFIG}
     else
       CONFIGS=none
     fi
-  elif [ "" != "${CONFIG}" ]; then
+  elif [ "${CONFIG}" ]; then
     # singular CONFIG replaces set of CONFIGS
     CONFIGS=${CONFIG}
   fi
   # setup ENVS (multiple environments)
   if [ "" = "${ENVS}" ]; then
-    if [ "" != "${ENV}" ]; then
+    if [ "${ENV}" ]; then
       ENVS=${ENV}
     else
       ENVS=none
@@ -154,21 +154,21 @@ then
     TEST=${TESTSETFILE}
   fi
 
-  if [ "" != "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ] && \
-     [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ];
+  if [ "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ] && \
+     [ "${LIMIT}" ] && [ "0" != "${LIMIT}" ];
   then
     LIMITRUN=$((LIMIT<LIMITRUN?LIMIT:LIMITRUN))
   fi
 
   # setup batch execution (TEST may be a singular test given by filename)
-  if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
-    if [ "" != "${BUILDKITE_LABEL}" ]; then
+  if [ "" = "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
+    if [ "${BUILDKITE_LABEL}" ]; then
       LABEL=$(echo "${BUILDKITE_LABEL}" | ${TR} -s [:punct:][:space:] - | ${SED} -e "s/^-//" -e "s/-$//")
     fi
-    if [ "" != "${LABEL}" ]; then
+    if [ "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
     fi
-    if [ "" != "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ]; then
+    if [ "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ]; then
       # convert: seconds -> minutes
       SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMITRUN/60))"
     fi
@@ -180,7 +180,7 @@ then
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT}"
-  elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ]; then
+  elif [ "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ]; then
     umask 007
     # eventually cleanup run-script of terminated/previous sessions
     ${RM} -f "${HERE}/../.tool_??????.sh"
@@ -194,7 +194,7 @@ then
     SHOW_PARTITION=0
     LAUNCH="\${TEST}"
   fi
-  if [ "" != "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
+  if [ "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
     LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
   fi
 
@@ -207,11 +207,11 @@ then
   RESULT=0
   # control log
   echo && echo "^^^ +++"
-  while [ "" != "${TEST}" ] || TEST=$(eval " \
+  while [ "${TEST}" ] || TEST=$(eval " \
     ${SED} -n -e '/^ *script: *$/,\$p' ${HERE}/../${TESTSETFILE} | ${SED} -e '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
     ${SED} -e 's/^ *- *//' -e 's/^  *//' | ${TR} '\n' ' ' | \
-    ${SED} -e 's/  *$//'") && [ "" != "${TEST}" ];
+    ${SED} -e 's/  *$//'") && [ "${TEST}" ];
   do
     if [ -d "${TEST}" ]; then
       SLURMDIR=${TEST}
@@ -227,26 +227,26 @@ then
     fi
     if [ "none" = "${PARTITIONS}" ] && [ "$0" != "${SLURMFILE}" ] && [ -e "${SLURMFILE}" ]; then
       PARTITION=$(${SED} -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
-      if [ "" != "${PARTITION}" ]; then PARTITIONS=${PARTITION}; fi
+      if [ "${PARTITION}" ]; then PARTITIONS=${PARTITION}; fi
     fi
-    if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
-       [ "" != "$(command -v stat)" ] && \
-       [ "" != "$(command -v date)" ];
+    if [ "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
+       [ "$(command -v stat)" ] && \
+       [ "$(command -v date)" ];
     then
       NOW=$(date +%s)
       LIMITFILE=$(echo "${LABEL}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
       if [ "" = "${LIMITFILE}" ]; then
         LIMITFILE=$(echo "${TESTID}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
       fi
-      if [ "" != "${LIMITFILE}" ]; then
-        if [ "" != "${PIPELINE}" ]; then LIMITBASE="${PIPELINE}-"; fi
-        if [ "" != "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
+      if [ "${LIMITFILE}" ]; then
+        if [ "${PIPELINE}" ]; then LIMITBASE="${PIPELINE}-"; fi
+        if [ "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
           LIMITFILE=${LIMITDIR}/${LIMITBASE}${LIMITFILE}
         else
           LIMITFILE=${REPOROOT}/${LIMITBASE}${LIMITFILE}
         fi
       fi
-      if [ "" != "${LIMITFILE}" ] && [ -e "${LIMITFILE}" ]; then
+      if [ "${LIMITFILE}" ] && [ -e "${LIMITFILE}" ]; then
         OLD=$(stat -c %Y ${LIMITFILE})
       else # ensure build is not skipped
         OLD=${NOW}
@@ -267,9 +267,9 @@ then
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     CONFIGFILE=""
-    if [ "" != "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ]; then
+    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ]; then
       CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
-      if [ "" != "${CONFIGPAT}" ]; then
+      if [ "${CONFIGPAT}" ]; then
         CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
       else
         CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
@@ -285,25 +285,25 @@ then
     fi
     for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
-        if [ "" != "${CUT}" ]; then ENVVAL=$(echo "${ENV}" | ${CUT} -d= -f2); fi
+        if [ "${CUT}" ]; then ENVVAL=$(echo "${ENV}" | ${CUT} -d= -f2); fi
         ENVSTR=${ENV}
       fi
       # print some header if all tests are selected or in case of multi-tests
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ] || [ "none" != "${ENV}" ]; then
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
-          if [ "" != "${ENVVAL}" ]; then
+          if [ "${ENVVAL}" ]; then
             echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG}/${ENVVAL})"
           else
             echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG})"
           fi
-        elif [ "" != "${ENVVAL}" ]; then
+        elif [ "${ENVVAL}" ]; then
           echo "+++ TEST ${TESTID} (${CONFIG}/${ENVVAL})"
         else
           echo "+++ TEST ${TESTID} (${CONFIG})"
         fi
       fi
       # prepare temporary script for remote environment/execution
-      if [ "" != "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
+      if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" > ${TESTSCRIPT}
         echo "set -eo pipefail" >> ${TESTSCRIPT}
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
@@ -338,12 +338,12 @@ then
             -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
             ${SLURMFILE} > ${SLURMFILE}.run && ${CHMOD} +rx ${SLURMFILE}.run
           RUNFILE=$(readlink -f ${SLURMFILE}.run)
-          if [ "" != "${TOOL_COMMAND}" ]; then
+          if [ "${TOOL_COMMAND}" ]; then
             if [ "0" = "${TOOL_INJECT}" ] || [ "" = "$(${SED} -n "/^taskset/p" ${RUNFILE})" ]; then
               echo -n "${TOOL_COMMAND} ${RUNFILE} ${TOOL_COMMAND_POST}" >> ${TESTSCRIPT}
             else # inject TOOL_COMMAND
               TOOL_COMMAND_SED1="$(echo "${TOOL_COMMAND}" | ${SED} "s/\//\\\\\//g") "
-              if [ "" != "${TOOL_COMMAND_POST}" ]; then
+              if [ "${TOOL_COMMAND_POST}" ]; then
                 TOOL_COMMAND_SED2=" $(echo "${TOOL_COMMAND_POST}" | ${SED} "s/\//\\\\\//g")"
               fi
               ${SED} -i "s/\(^taskset[[:space:]]..*\)/${TOOL_COMMAND_SED1}\1${TOOL_COMMAND_SED2}/" ${RUNFILE}
@@ -352,8 +352,8 @@ then
           else
             echo -n "${RUNFILE}" >> ${TESTSCRIPT}
           fi
-          if [ "" != "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
-             [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ];
+          if [ "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
+             [ "$(command -v cat)" ] && [ "$(command -v tail)" ];
           then
             echo " | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
           else
@@ -364,12 +364,12 @@ then
           echo "${TEST}" >> ${TESTSCRIPT}
         fi
         echo >> ${TESTSCRIPT}
-        if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
+        if [ "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
         fi
       else
         # setup environment on a per-test basis
-        if [ "" != "${CONFIGFILE}" ]; then
+        if [ "${CONFIGFILE}" ]; then
           if [ -e "${ENVFILE}" ]; then
             eval ${HERE}/tool_envrestore.sh "${ENVFILE}"
           fi
@@ -379,7 +379,7 @@ then
 
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
-      if [ "" != "${LABEL}" ] && [ "" != "$(command -v tee)" ]; then
+      if [ "${LABEL}" ] && [ "$(command -v tee)" ]; then
         if [ -t 0 ]; then
           eval "${COMMAND} 2>&1 | tee .test-${LABEL}.log"
         else
@@ -393,7 +393,7 @@ then
 
       # exit the loop in case of an error
       if [ "0" != "${RESULT}" ]; then
-        if [ "" != "${TOUCHFILE}" ]; then
+        if [ "${TOUCHFILE}" ]; then
           ${RM} -f "${TOUCHFILE}"
           TOUCHFILE=""
         fi
@@ -402,7 +402,7 @@ then
     done # ENVS
     done # CONFIGS
     done # PARTITIONS
-    if [ "" != "${TOUCHFILE}" ]; then
+    if [ "${TOUCHFILE}" ]; then
       echo "${JOBID}" > ${TOUCHFILE}
       TOUCHFILE=""
     fi
@@ -419,10 +419,10 @@ then
   done # TEST
 
   # remove temporary files
-  if [ "" != "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
+  if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
     ${RM} "${TESTSCRIPT}"
   fi
-  if [ "" != "${ENVFILE}" ] && [ -e "${ENVFILE}" ]; then
+  if [ "${ENVFILE}" ] && [ -e "${ENVFILE}" ]; then
     ${RM} "${ENVFILE}"
   fi
 
@@ -438,7 +438,7 @@ then
   fi
 
   # override result code (alternative outcome)
-  if [ "" != "${RESULTCODE}" ]; then
+  if [ "${RESULTCODE}" ]; then
     RESULT=${RESULTCODE}
   fi
 
