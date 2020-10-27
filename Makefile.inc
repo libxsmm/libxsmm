@@ -40,7 +40,7 @@ MAKEFLAGS += -O
 endif
 
 #MAKEINC := $(abspath $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
-MAKEINC := $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST)))
+MAKEINC := $(patsubst %/,%,$(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 
 ifeq (d,$(filter d,$(MAKEFLAGS)))
   #SHELL := bash -xv
@@ -82,17 +82,17 @@ MV ?= $(call which,mv)
 MAKE ?= make
 
 # Python interpreter per PYTHON=/path/to/python
-PYTHON3 ?= $(call which,python3)
+PYTHON3 := $(call which,python3)
 # Python3 by default
 ifneq (,$(PYTHON3))
-  PYTHON ?= $(PYTHON3)
+  PYTHON := $(PYTHON3)
 else ifneq (,$(call which,python))
   ifneq (Windows_NT,$(UNAME))
     #SHELL := $(ENVBIN) PATH=$(MAKEINC):$(PATH) $(SHELL)
     PYTHON3 := $(shell ln -s $(call which,python) $(MAKEINC)/python3 2>/dev/null)
-    PYTHON ?= $(MAKEINC)/python3
+    PYTHON := $(MAKEINC)/python3
   else
-    PYTHON ?= python
+    PYTHON := python
   endif
 endif
 
