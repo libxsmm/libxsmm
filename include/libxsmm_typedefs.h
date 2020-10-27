@@ -182,7 +182,7 @@ typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX = 12,
   LIBXSMM_MELTW_OPERATION_DECOMPRESS_A              = 13,
   LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A  = 14,
-  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX = 15,
+  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX = 15
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
