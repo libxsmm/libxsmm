@@ -22,7 +22,10 @@
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
-#define MY_LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32(in, out, length) do { \
+#define _mm512_loadcvt_bf16_fp32(A)   LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)(A)))
+#define LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( A, B ) (__m512i)_mm512_cvtne2ps_pbh( A, B )
+
+#define LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32(in, out, length) do { \
   unsigned int full_chunks = length / 16; \
   unsigned int remainder = length % 16; \
   int __i = 0; \
@@ -40,6 +43,23 @@
   } \
 } while(0)
 
+#define LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(in, out, length) do { \
+  unsigned int full_chunks = length / 32; \
+  unsigned int remainder = length % 32; \
+  int __i = 0; \
+  if (remainder == 0) { \
+    for ( __i = 0; __i < length; __i+= 32) { \
+      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i))); \
+    } \
+  } else { \
+    unsigned int chunk; \
+    for ( chunk = 0; chunk < full_chunks; chunk++) { \
+      __i = chunk * 32; \
+      _mm512_storeu_si512((libxsmm_bfloat16*)out+__i, LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((const float*)in+__i))); \
+    } \
+    libxsmm_rne_convert_fp32_bf16((const float*)in+32*full_chunks, (libxsmm_bfloat16*)out+32*full_chunks, remainder); \
+  } \
+} while(0)
 void my_bf16_vnni_transpose_16x16(void* source_void, void* dest_void, int source_stride, int dest_stride)
 {
   libxsmm_bfloat16 *source = (libxsmm_bfloat16*)source_void;
@@ -645,6 +665,7 @@ typedef struct my_bwd_config {
   libxsmm_blasint ifm_subtasks;
   libxsmm_blasint ofm_subtasks;
   size_t          scratch_size;
+  size_t  doutput_scratch_mark;
   libxsmm_barrier* barrier;
   libxsmm_bsmmfunction bwd_config_kernel;
   libxsmm_bsmmfunction upd_config_kernel;
@@ -942,7 +963,8 @@ my_bwd_config setup_my_backward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bl
   /* init scratch */
   size_bwd_scratch = sizeof(float) * LIBXSMM_MAX(res.C * res.N, res.threads * res.bc * res.bn) + sizeof(libxsmm_bfloat16) * res.C * res.K;
   size_upd_scratch = sizeof(float) * LIBXSMM_MAX(res.C * res.K, res.threads * res.bc * res.bk) + sizeof(libxsmm_bfloat16) * res.threads * res.bk * res.bc + sizeof(libxsmm_bfloat16) * (res.N * (res.C + res.K));
-  res.scratch_size = size_bwd_scratch + size_upd_scratch;
+  res.scratch_size = LIBXSMM_MAX(size_bwd_scratch, size_upd_scratch) + 2 * sizeof(libxsmm_bfloat16) * res.N * res.K;
+  res.doutput_scratch_mark = LIBXSMM_MAX(size_bwd_scratch, size_upd_scratch) ;
 
   return res;
 }
@@ -998,7 +1020,6 @@ void my_forward( my_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsm
     bf16_batchreduce_kernel_zerobeta_fused_eltwise = cfg.gemm_fwd5;
   }
 
-
   BF = cfg.fwd_bf;
   CB_BLOCKS = nBlocksIFm/BF;
   blocks = CB_BLOCKS;
@@ -1029,7 +1050,7 @@ void my_forward( my_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsm
             if ( ifm1 == 0 ) {
               if ( (cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS ) {
                 for ( mb2 = 0; mb2 <cfg.bn; ++mb2 ) {
-                  MY_LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, ofm1, 0,cfg.bk), &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, 0, nBlocksOFm,cfg.bn,cfg.bk), cfg.bk );
+                  LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, ofm1, 0,cfg.bk), &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, 0, nBlocksOFm,cfg.bn,cfg.bk), cfg.bk );
                 }
               } else {
                 memset(&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk), 0, cfg.bn*cfg.bk*sizeof(float));
@@ -1057,7 +1078,7 @@ void my_forward( my_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsm
       }
     } else {
       if ( (cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS ) {
-        MY_LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,cfg.bk), fp32_bias_scratch, cfg.K );
+        LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,cfg.bk), fp32_bias_scratch, cfg.K );
       }
       for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
         for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
@@ -1089,7 +1110,7 @@ void my_forward( my_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsm
           if ( ifm1 == 0 ) {
             if ( (cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS ) {
               for ( mb2 = 0; mb2 <cfg.bn; ++mb2 ) {
-                MY_LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, ofm1, 0,cfg.bk), &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, 0, nBlocksOFm,cfg.bn,cfg.bk), cfg.bk );
+                LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, ofm1, 0,cfg.bk), &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, 0, nBlocksOFm,cfg.bn,cfg.bk), cfg.bk );
               }
             } else {
               memset(&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk), 0, cfg.bn*cfg.bk*sizeof(float));
@@ -1115,7 +1136,7 @@ void my_forward( my_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsm
       }
     } else {
       if ( (cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS ) {
-        MY_LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,cfg.bk), fp32_bias_scratch, cfg.K );
+        LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,cfg.bk), fp32_bias_scratch, cfg.K );
       }
       for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
         mb1  = mb1ofm1%nBlocksMB;
@@ -1181,12 +1202,12 @@ void my_backward( my_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfl
   const libxsmm_blasint dbias_thr_begin = (ltid * dbias_chunksize < dbias_work) ? (ltid * dbias_chunksize) : dbias_work;
   const libxsmm_blasint dbias_thr_end = ((ltid + 1) * dbias_chunksize < dbias_work) ? ((ltid + 1) * dbias_chunksize) : dbias_work;
 
-  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dbias, ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) ? (libxsmm_bfloat16*) cfg.grad_bias->data : NULL, cfg.bk);
-  LIBXSMM_VLA_DECL(4,     __mmask32, relubitmask, ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) ? (__mmask32*)cfg.relumask->data : NULL, nBlocksOFm, cfg.bn, cfg.bk/32);
+  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dbias, ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) ? (libxsmm_bfloat16*) dbias_ptr : NULL, cfg.bk);
+  LIBXSMM_VLA_DECL(4,     __mmask32, relubitmask, ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) ? (__mmask32*)relu_ptr : NULL, nBlocksOFm, cfg.bn, cfg.bk/32);
 
-  libxsmm_bfloat16 *grad_output_ptr = (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) ? (libxsmm_bfloat16*)((char*)cfg.scratch + cfg.doutput_scratch_mark) : (libxsmm_bfloat16*)cfg.grad_output->data;
-  libxsmm_bfloat16 *tr_doutput_ptr = (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) ? (libxsmm_bfloat16*)grad_output_ptr + cfg.N * cfg.K : (libxsmm_bfloat16*)cfg.scratch;
-  LIBXSMM_VLA_DECL(4, const libxsmm_bfloat16,   doutput_orig, (libxsmm_bfloat16*)cfg.grad_output->data, nBlocksOFm, bn, bk);
+  libxsmm_bfloat16 *grad_output_ptr = (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) ? (libxsmm_bfloat16*)((char*)scratch + cfg.doutput_scratch_mark) : (libxsmm_bfloat16*)dout_act_ptr;
+  libxsmm_bfloat16 *tr_doutput_ptr = (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) ? (libxsmm_bfloat16*)grad_output_ptr + cfg.N * cfg.K : (libxsmm_bfloat16*)scratch;
+  LIBXSMM_VLA_DECL(4, const libxsmm_bfloat16,   doutput_orig, (libxsmm_bfloat16*)dout_act_ptr, nBlocksOFm, bn, bk);
   libxsmm_meltw_relu_param   relu_params;
   libxsmm_meltwfunction_relu relu_kernel = cfg.bwd_relu_kernel;
   LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,   doutput, grad_output_ptr, nBlocksOFm, bn, bk);
@@ -1225,7 +1246,7 @@ void my_backward( my_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfl
 
   /* Accumulation of bias happens in f32 */
   if (((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS)) {
-    float *scratch_dbias = (float*) ((libxsmm_bfloat16*)cfg.scratch + cfg.N * (cfg.K + cfg.C) + ltid * bk * 2);
+    float *scratch_dbias = (float*) ((libxsmm_bfloat16*)scratch + cfg.N * (cfg.K + cfg.C) + ltid * bk * 2);
     if (cfg.bk % 32 == 0) {
       for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
         for ( iterj = 0; iterj < cfg.bk; iterj += 32 ) {
@@ -1291,10 +1312,10 @@ void my_backward( my_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfl
     libxsmm_blasint ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0;
     libxsmm_blasint im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
 
-    LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, filter, (libxsmm_bfloat16*)cfg.reg_filter->data, nBlocksIFm, bc_lp, bk, lpb);
-    LIBXSMM_VLA_DECL(4,        libxsmm_bfloat16,    dinput, (libxsmm_bfloat16* )cfg.grad_input->data, nBlocksIFm, bn, bc);
-    LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, filter_tr, (libxsmm_bfloat16*)cfg.scratch, nBlocksOFm, bk_lp, bc, lpb);
-    float* temp_output = (float*)cfg.scratch + (cfg.C * cfg.K)/2;
+    LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, filter, (libxsmm_bfloat16*)wt_ptr, nBlocksIFm, bc_lp, bk, lpb);
+    LIBXSMM_VLA_DECL(4,        libxsmm_bfloat16,    dinput, (libxsmm_bfloat16* )din_act_ptr, nBlocksIFm, bn, bc);
+    LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, filter_tr, (libxsmm_bfloat16*)scratch, nBlocksOFm, bk_lp, bc, lpb);
+    float* temp_output = (float*)scratch + (cfg.C * cfg.K)/2;
     LIBXSMM_VLA_DECL(4,        float,    dinput_f32, (float*) temp_output, nBlocksIFm, bn, bc);
 
     unsigned long long  blocks = nBlocksOFm;
@@ -1430,11 +1451,11 @@ void my_backward( my_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfl
     /* Batch reduce related variables */
     unsigned long long  blocks = nBlocksMB/BF;
 
-    LIBXSMM_VLA_DECL(4, const libxsmm_bfloat16,  input,    (libxsmm_bfloat16* )cfg.reg_input->data, nBlocksIFm, bn, bc);
-    LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, dfilter,  (libxsmm_bfloat16*)cfg.grad_filter->data, nBlocksIFm, bc_lp, bk, lpb);
+    LIBXSMM_VLA_DECL(4, const libxsmm_bfloat16,  input,    (libxsmm_bfloat16* )in_act_ptr, nBlocksIFm, bn, bc);
+    LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, dfilter,  (libxsmm_bfloat16*)dwt_ptr, nBlocksIFm, bc_lp, bk, lpb);
 
     /* Set up tensors for transposing/scratch before vnni reformatting dfilter */
-    libxsmm_bfloat16  *tr_inp_ptr = (libxsmm_bfloat16*) ((libxsmm_bfloat16*)cfg.scratch + cfg.N * cfg.K);
+    libxsmm_bfloat16  *tr_inp_ptr = (libxsmm_bfloat16*) ((libxsmm_bfloat16*)scratch + cfg.N * cfg.K);
     float               *dfilter_f32_ptr = (float*) ((libxsmm_bfloat16*)tr_inp_ptr + cfg.N * cfg.C);
     libxsmm_bfloat16 *dfilter_scratch = (libxsmm_bfloat16*) ((float*)dfilter_f32_ptr + cfg.C * cfg.K) + ltid * bc * bk;
 
