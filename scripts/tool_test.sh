@@ -17,6 +17,7 @@ MKDIR=$(command -v mkdir)
 CHMOD=$(command -v chmod)
 UNAME=$(command -v uname)
 DIFF=$(command -v diff)
+# flush asynchronous NFS mount
 SYNC=$(command -v sync)
 GREP=$(command -v grep)
 WGET=$(command -v wget)
@@ -306,6 +307,7 @@ then
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" > ${TESTSCRIPT}
         echo "set -eo pipefail" >> ${TESTSCRIPT}
+        if [ "${SYNC}" ]; then echo "${SYNC}" >> ${TESTSCRIPT}; fi
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >> ${TESTSCRIPT}; fi
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
@@ -365,9 +367,7 @@ then
           echo "${TEST}" >> ${TESTSCRIPT}
         fi
         echo >> ${TESTSCRIPT}
-        if [ "${SYNC}" ]; then # flush asynchronous NFS mount
-          ${SYNC}
-        fi
+        if [ "${SYNC}" ]; then ${SYNC}; fi
       else
         # setup environment on a per-test basis
         if [ "${CONFIGFILE}" ]; then
