@@ -130,6 +130,7 @@ my_fwd_config setup_my_forward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bla
   float zerobeta = 0.0f;
   libxsmm_meltw_flags fusion_flags;
   int l_flags, l_tc_flags;
+  int l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
   libxsmm_blasint unroll_hint;
 
   /* setting up some handle values */
@@ -237,7 +238,11 @@ my_fwd_config setup_my_forward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bla
     fprintf( stderr, "JIT for TPP fwd_sigmoid_cvtfp32bf16_kernel failed. Bailing...!\n");
     exit(-1);
   }
-
+  res.tilerelease_kernel = libxsmm_bsmmdispatch(res.bk, res.bk, res.bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
+  if ( res.tilerelease_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP tilerelease_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
   /* init scratch */
   res.scratch_size = sizeof(float) *  LIBXSMM_MAX(res.K * res.N, res.threads * LIBXSMM_MAX(res.bk * res.bn, res.K));
 
@@ -259,6 +264,7 @@ my_bwd_config setup_my_backward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bl
   libxsmm_blasint updN;
   libxsmm_meltw_flags fusion_flags;
   int l_flags, l_tc_flags;
+  int l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
   libxsmm_blasint unroll_hint;
   size_t size_bwd_scratch;
   size_t size_upd_scratch;
@@ -384,6 +390,12 @@ my_bwd_config setup_my_backward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bl
   res.upd_config_kernel = libxsmm_bsmmdispatch(updM, updN, res.bn, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
   if ( res.upd_config_kernel == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP upd_config_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  res.tilerelease_kernel = libxsmm_bsmmdispatch(res.bk, res.bk, res.bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
+  if ( res.tilerelease_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP tilerelease_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
