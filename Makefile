@@ -864,7 +864,7 @@ module: module_hst module_mic
 
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
-$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
+$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
 ifeq (0,$(STATIC))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(OBJFILES_GEN_LIB) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
