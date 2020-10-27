@@ -29,6 +29,13 @@ typedef enum my_eltwise_fuse {
   MY_ELTWISE_FUSE_BIAS_RELU = MY_ELTWISE_FUSE_BIAS | MY_ELTWISE_FUSE_RELU
 } my_eltwise_fuse;
 
+typedef enum my_pass {
+  MY_PASS_FWD   = 1,
+  MY_PASS_BWD_D = 2,
+  MY_PASS_BWD_W = 4,
+  MY_PASS_BWD   = 6
+} my_pass;
+
 typedef struct my_fwd_config {
   libxsmm_blasint N;
   libxsmm_blasint C;
@@ -70,7 +77,6 @@ typedef struct my_bwd_config {
   libxsmm_blasint ofm_subtasks;
   void*           scratch;
   size_t          scratch_size;
-  unsigned char   kind;
   libxsmm_barrier* barrier;
   libxsmm_smmfunction_reducebatch_strd gemm_bwd;
   libxsmm_smmfunction_reducebatch_strd gemm_bwd2;
@@ -258,9 +264,6 @@ my_bwd_config setup_my_backward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bl
   /* init scratch */
   res.scratch = NULL;
   res.scratch_size =  sizeof(float) * ( (((size_t)res.C + (size_t)res.K) * (size_t)res.N) + ((size_t)res.C * (size_t)res.K) );
-
-  /* we run backward and update */
-  res.kind = 2;
 
   return res;
 }
@@ -466,7 +469,7 @@ void my_forward( my_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr
 
 void my_backward( my_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
                   const float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
-                  float* dbias_ptr, const unsigned char* relu_ptr, int start_tid, int my_tid ) {
+                  float* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid ) {
   /* here we assume that input and output blocking is similar */
   const libxsmm_blasint bn = cfg.bn;
   const libxsmm_blasint bk = cfg.bk;
@@ -548,7 +551,7 @@ void my_backward( my_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
 
-  if ( (cfg.kind == 0) || (cfg.kind == 2) ) {
+  if ( (pass & MY_PASS_BWD_D) == MY_PASS_BWD_D ) {
     const libxsmm_blasint use_2d_blocking = cfg.bwd_2d_blocking;
 
     /* number of tasks that could be run in parallel */
@@ -669,7 +672,7 @@ void my_backward( my_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
 
-  if ( (cfg.kind == 1) || (cfg.kind == 2) ) {
+  if ( (pass & MY_PASS_BWD_W) == MY_PASS_BWD_W ) {
     /* number of tasks that could be run in parallel */
     const libxsmm_blasint ofm_subtasks = (cfg.upd_2d_blocking == 1) ? 1 : cfg.ofm_subtasks;
     const libxsmm_blasint ifm_subtasks = (cfg.upd_2d_blocking == 1) ? 1 : cfg.ifm_subtasks;
@@ -1030,7 +1033,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       my_backward( my_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-                   input_libxsmm, delbias_libxsmm, relumask_libxsmm, 0, tid );
+                   input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid );
     }
 
     matrix_copy_NCNC_to_NC( delinput_libxsmm, naive_libxsmm_delinput, 1, nImg, nIFm, bn, bc );
@@ -1117,7 +1120,7 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < iters; ++i) {
         my_backward( my_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-                     input_libxsmm, delbias_libxsmm, relumask_libxsmm, 0, tid );
+                     input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid );
       }
     }
     l_end = libxsmm_timer_tick();
