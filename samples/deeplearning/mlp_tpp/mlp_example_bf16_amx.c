@@ -1812,7 +1812,7 @@ void my_smax_fwd_exec( my_smax_fwd_config cfg, const libxsmm_bfloat16* in_act_pt
   const libxsmm_blasint nc_thr_end = ((ltid + 1) * nc_chunksize < nc_work) ? ((ltid + 1) * nc_chunksize) : nc_work;
 
   libxsmm_bfloat16* poutput_bf16 = out_act_ptr;
-  libxsmm_bfloat16* pinput_bf16  = in_act_ptr;
+  const libxsmm_bfloat16* pinput_bf16  = in_act_ptr;
   float*            poutput_fp32 = (float*)scratch;
   float*            pinput_fp32  = ((float*)scratch)+(cfg.N*cfg.C);
   LIBXSMM_VLA_DECL(4,       float, output, poutput_fp32, Bc, bn, bc);
@@ -1823,7 +1823,7 @@ void my_smax_fwd_exec( my_smax_fwd_config cfg, const libxsmm_bfloat16* in_act_pt
   libxsmm_barrier_init( cfg.barrier, ltid );
 
 #if defined(__AVX512BW__)
-  LIBXSMM_DNN_CONVERT_BF16_F32(pinput_bf16+nc_thr_begin, pinput_fp32+nc_thr_begin, nc_thr_end-nc_thr_begin);
+  LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32(pinput_bf16+nc_thr_begin, pinput_fp32+nc_thr_begin, nc_thr_end-nc_thr_begin);
 #else
   for ( i = nc_thr_begin; i < nc_thr_end; ++i ) {
     libxsmm_bfloat16_hp in;
@@ -1889,12 +1889,12 @@ void my_smax_fwd_exec( my_smax_fwd_config cfg, const libxsmm_bfloat16* in_act_pt
   libxsmm_barrier_wait( cfg.barrier, ltid );
 
 #if defined(__AVX512BW__)
-  LIBXSMM_DNN_CONVERT_F32_BF16(poutput_fp32+nc_thr_begin, poutput_bf16+nc_thr_begin, nc_thr_end-nc_thr_begin);
+  LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(poutput_fp32+nc_thr_begin, poutput_bf16+nc_thr_begin, nc_thr_end-nc_thr_begin);
 #else
   for ( i = nc_thr_begin; i < nc_thr_end; ++i ) {
     libxsmm_bfloat16_hp in;
     in.f = poutput_fp32[i];
-    poutput_bf16[i] = in.i[1];  
+    poutput_bf16[i] = in.i[1];
   }
 #endif
   libxsmm_barrier_wait( cfg.barrier, ltid );
@@ -1930,7 +1930,7 @@ void my_smax_bwd_exec( my_smax_bwd_config cfg, libxsmm_bfloat16* delin_act_ptr, 
   const int nc_thr_begin = (ltid * nc_chunksize < nc_work) ? (ltid * nc_chunksize) : nc_work;
   const int nc_thr_end = ((ltid + 1) * nc_chunksize < nc_work) ? ((ltid + 1) * nc_chunksize) : nc_work;
 
-  libxsmm_bfloat16* poutput_bf16 = out_act_ptr;
+  const libxsmm_bfloat16* poutput_bf16 = out_act_ptr;
   libxsmm_bfloat16* pdinput_bf16 = delin_act_ptr;
   float*            poutput_fp32 = (float*)scratch;
   float*            pdinput_fp32 = ((float*)scratch)+(cfg.N*cfg.C);
@@ -1942,7 +1942,7 @@ void my_smax_bwd_exec( my_smax_bwd_config cfg, libxsmm_bfloat16* delin_act_ptr, 
   libxsmm_barrier_init( cfg.barrier, ltid );
 
 #if defined(__AVX512BW__)
-  LIBXSMM_DNN_CONVERT_BF16_F32(poutput_bf16+nc_thr_begin, poutput_fp32+nc_thr_begin, nc_thr_end-nc_thr_begin);
+  LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32(poutput_bf16+nc_thr_begin, poutput_fp32+nc_thr_begin, nc_thr_end-nc_thr_begin);
 #else
   for ( i = nc_thr_begin; i < nc_thr_end; ++i ) {
     libxsmm_bfloat16_hp out;
@@ -1970,17 +1970,17 @@ void my_smax_bwd_exec( my_smax_bwd_config cfg, libxsmm_bfloat16* delin_act_ptr, 
         }
       }
     }
-  }  
+  }
 
   libxsmm_barrier_wait( cfg.barrier, ltid );
 
 #if defined(__AVX512BW__)
-  LIBXSMM_DNN_CONVERT_F32_BF16(pdinput_fp32+nc_thr_begin, pdinput_bf16+nc_thr_begin, nc_thr_end-nc_thr_begin);
+  LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(pdinput_fp32+nc_thr_begin, pdinput_bf16+nc_thr_begin, nc_thr_end-nc_thr_begin);
 #else
   for ( i = nc_thr_begin; i < nc_thr_end; ++i ) {
     libxsmm_bfloat16_hp in;
     in.f = pdinput_fp32[i];
-    pdinput_bf16[i] = in.i[1];  
+    pdinput_bf16[i] = in.i[1];
   }
 #endif
   libxsmm_barrier_wait( cfg.barrier, ltid );
@@ -2230,7 +2230,7 @@ int main(int argc, char* argv[])
       init_buf( (float*)(scratch), (scratch_size)/4, 0, 0 );
     }
   }
-  
+
   if (type == 'A' || type == 'F') {
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
@@ -2291,11 +2291,11 @@ int main(int argc, char* argv[])
         for ( i = num_layers-1; i > 0; --i) {
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
-          my_opt_exec( my_opt[i], fil_libxsmm[i], delfil_libxsmm[i], 0, tid, scratch );
+          my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
         }
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch );
-        my_opt_exec( my_opt[0], fil_libxsmm[0], delfil_libxsmm[0], 0, tid, scratch );
+        my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -2342,11 +2342,11 @@ int main(int argc, char* argv[])
         for ( i = num_layers-1; i > 0; --i) {
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
-          my_opt_exec( my_opt[i], fil_libxsmm[i], delfil_libxsmm[i], 0, tid, scratch );
+          my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
         }
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch );
-        my_opt_exec( my_opt[0], fil_libxsmm[0], delfil_libxsmm[0], 0, tid, scratch );
+        my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -2408,6 +2408,6 @@ int main(int argc, char* argv[])
   /* some empty lines at the end */
   printf("\n\n\n");
 
-  return global_status;
+  return 0;
 }
 
