@@ -132,9 +132,8 @@ libxsmm_barrier_wait( handle->barrier, ltid );
 #if defined(LIBXSMM_DNN_SOFTMAXLOSS_BWD_BF16)
 for ( i = nc_thr_begin; i < nc_thr_end; ++i ) {
   libxsmm_bfloat16_hp din;
-  din.i[0] = 0;
-  din.i[1] = pdinput_bf16[i];
-  pdinput_fp32[i] = din.f;
+  din.f = pdinput_fp32[i];
+  pdinput_bf16[i] = din.i[1];
 }
 
 libxsmm_barrier_wait( handle->barrier, ltid );
