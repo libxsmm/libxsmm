@@ -710,7 +710,7 @@ LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
   size_t code_size;
   code.xgemm = kernel;
   if (NULL != libxsmm_get_kernel_xinfo(code, &desc, &code_size) &&
-      NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == desc->kind)
+      NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
   {
     libxsmm_gemm_dprint2(ostream,
       (libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(desc->gemm.desc.datatype),

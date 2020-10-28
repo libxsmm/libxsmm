@@ -1279,7 +1279,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
         /*const*/ libxsmm_code_pointer code = registry[i];
         if (NULL != code.ptr_const) {
           /* check if the registered entity is a GEMM kernel */
-          switch (registry_keys[i].kind) {
+          switch (LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].kind)) {
             case LIBXSMM_KERNEL_KIND_MATMUL: {
               const libxsmm_gemm_descriptor *const desc = &registry_keys[i].gemm.desc;
               if (1 < desc->m && 1 < desc->n) {
@@ -2261,7 +2261,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #else
             mode = 2; /* enter code generation */
 #endif
-            if (LIBXSMM_KERNEL_KIND_MATMUL == desc->kind) {
+            if (LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind)) {
               internal_update_mmstatistic(&desc->gemm.desc, 0, 1/*collision*/, 0, 0);
             }
           }
@@ -2274,8 +2274,8 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         LIBXSMM_UNUSED(user_size);
 #else
         if (LIBXSMM_X86_AVX <= libxsmm_target_archid || /* check if JIT is supported (CPUID) */
-           (LIBXSMM_X86_SSE3 <= libxsmm_target_archid && LIBXSMM_KERNEL_KIND_MATMUL == desc->kind) ||
-           (LIBXSMM_KERNEL_KIND_USER == desc->kind))
+           (LIBXSMM_X86_SSE3 <= libxsmm_target_archid && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind)) ||
+           (LIBXSMM_KERNEL_KIND_USER == LIBXSMM_DESCRIPTOR_KIND(desc->kind)))
         {
           LIBXSMM_ASSERT(0 != mode || NULL == flux_entry.ptr_const/*code version does not exist*/);
           INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.ptr); /* lock the registry entry */
@@ -2318,7 +2318,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
               }
 # endif
             }
-            if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == desc->kind) {
+            if (LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind)) {
               internal_update_mmstatistic(&desc->gemm.desc, 1/*try*/, 0, 0, 0);
             }
             /* leave here even in case of a build-error; do not use break (inside of locked region) */
@@ -2343,7 +2343,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         else /* JIT-code generation not available */
 #endif
         { /* leave the dispatch loop */
-          if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == desc->kind) {
+          if (LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind)) {
             internal_update_mmstatistic(&desc->gemm.desc, 1/*try*/, 0, 0, 0);
           }
 #if !defined(NDEBUG) && (0 != LIBXSMM_JIT)
@@ -2387,7 +2387,11 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   flux_entry.uval &= ~LIBXSMM_CODE_STATIC; /* clear non-JIT flag */
 #endif
 #if (0 != LIBXSMM_JIT)
-  assert(LIBXSMM_KERNEL_KIND_MATMUL != desc->kind || NULL != flux_entry.ptr_const || EXIT_SUCCESS != build || 1 == internal_reglock_count); /*!LIBXSMM_ASSERT*/
+  assert( /*!LIBXSMM_ASSERT*/
+    LIBXSMM_KERNEL_KIND_MATMUL != LIBXSMM_DESCRIPTOR_KIND(desc->kind)
+    || NULL != flux_entry.ptr_const
+    || 1 == internal_reglock_count
+    || EXIT_SUCCESS != build);
 #endif
   return flux_entry;
 }
@@ -2436,7 +2440,7 @@ LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info*
     if (NULL != desc) {
       const libxsmm_kernel_kind kind = (libxsmm_kernel_kind)desc->kind;
       result_info.kind = kind;
-      if (LIBXSMM_KERNEL_KIND_USER == kind) {
+      if (LIBXSMM_KERNEL_KIND_USER == LIBXSMM_DESCRIPTOR_KIND(kind)) {
         result_info.code_size = 0; /* invalid */
       }
     }
@@ -2470,7 +2474,7 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
   if (NULL != info) {
     const libxsmm_descriptor* desc;
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
-        NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == desc->kind)
+        NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
     {
       info->iprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(desc->gemm.desc.datatype);
       info->oprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_OUT(desc->gemm.desc.datatype);
@@ -2519,7 +2523,7 @@ LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libx
   if (NULL != info) {
     const libxsmm_descriptor* desc;
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
-        NULL != desc && LIBXSMM_KERNEL_KIND_TRANS == desc->kind)
+        NULL != desc && LIBXSMM_KERNEL_KIND_TRANS == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
     {
       info->typesize = desc->trans.desc.typesize;
       info->ldo = desc->trans.desc.ldo;
@@ -2557,7 +2561,7 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
   if (NULL != info) {
     const libxsmm_descriptor* desc;
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
-        NULL != desc && LIBXSMM_KERNEL_KIND_MCOPY == desc->kind)
+        NULL != desc && LIBXSMM_KERNEL_KIND_MCOPY == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
     {
       info->typesize = desc->mcopy.desc.typesize;
       info->prefetch = desc->mcopy.desc.prefetch;
@@ -2598,7 +2602,7 @@ LIBXSMM_API int libxsmm_get_meltwkernel_info(libxsmm_xmeltwfunction kernel, libx
   if (NULL != info) {
     const libxsmm_descriptor* desc;
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
-        NULL != desc && LIBXSMM_KERNEL_KIND_MELTW == desc->kind)
+        NULL != desc && LIBXSMM_KERNEL_KIND_MELTW == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
     {
       info->datatype = desc->meltw.desc.datatype;
       info->operation = desc->meltw.desc.operation;
@@ -2683,7 +2687,8 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t val
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
-    wrap.kind = LIBXSMM_KERNEL_KIND_USER;
+    wrap.kind = (LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
+      ? LIBXSMM_KERNEL_KIND_USER : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
     dst = internal_find_code(&wrap, key_size, value_size).ptr;
     if (NULL != dst) {
       size_t size;
@@ -2735,7 +2740,8 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
-    wrap.kind = LIBXSMM_KERNEL_KIND_USER;
+    wrap.kind = (LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
+      ? LIBXSMM_KERNEL_KIND_USER : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
     result = internal_find_code(&wrap, key_size, 0/*user_size*/).ptr;
   }
 #if !defined(NDEBUG)
@@ -2767,12 +2773,17 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
 #endif
   if (NULL != descriptor) {
+    const int batch_reduce =
+      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS |
+      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET |
+      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
     libxsmm_descriptor wrap;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.gemm.desc, descriptor);
-    wrap.kind = LIBXSMM_KERNEL_KIND_MATMUL;
+    wrap.kind = (0 != (batch_reduce & descriptor->flags)
+      ? LIBXSMM_KERNEL_KIND_MATMUL : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
       wrap.gemm.desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     }
@@ -4225,7 +4236,7 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.meltw.desc, descriptor);
-    wrap.kind = LIBXSMM_KERNEL_KIND_MELTW;
+    wrap.kind = LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MELTW);
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xmateltw;
   }
   else {
@@ -4679,7 +4690,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* kernel)
         libxsmm_kernel_info info;
 #if !defined(LIBXSMM_ENABLE_DEREG)
         if (EXIT_SUCCESS == libxsmm_get_kernel_info(kernel, &info)
-          && LIBXSMM_KERNEL_KIND_USER == info.kind)
+          && LIBXSMM_KERNEL_KIND_USER == LIBXSMM_DESCRIPTOR_KIND(info.kind))
 #endif
         {
           LIBXSMM_ASSERT(LIBXSMM_KERNEL_UNREGISTERED > info.kind);

@@ -878,8 +878,14 @@ typedef enum libxsmm_build_kind {
 
 /** Integral type (libxsmm_kernel_kind, libxsmm_build_kind). */
 #if defined(LIBXSMM_UNPACKED)
-typedef size_t libxsmm_descriptor_kind;
+# define LIBXSMM_DESCRIPTOR_BIG(KIND) ((libxsmm_descriptor_kind)((KIND) | 0x8000000000000000))
+# define LIBXSMM_DESCRIPTOR_ISBIG(KIND) ((int)((KIND) >> 63))
+# define LIBXSMM_DESCRIPTOR_KIND(KIND) ((int)((KIND) & 0x7FFFFFFFFFFFFFFF))
+typedef uint64_t libxsmm_descriptor_kind;
 #else
+# define LIBXSMM_DESCRIPTOR_BIG(KIND) ((libxsmm_descriptor_kind)((KIND) | 0x80))
+# define LIBXSMM_DESCRIPTOR_ISBIG(KIND) ((int)((KIND) >> 7))
+# define LIBXSMM_DESCRIPTOR_KIND(KIND) ((int)((KIND) & 0x7F))
 typedef unsigned char libxsmm_descriptor_kind;
 #endif
 

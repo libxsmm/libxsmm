@@ -223,9 +223,9 @@ LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
     LIBXSMM_EXPECT_NOT(NULL, libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/));
     LIBXSMM_ASSERT(NULL != desc);
 #if defined(LIBXSMM_XCOPY_MELTW)
-    LIBXSMM_ASSERT(LIBXSMM_KERNEL_KIND_MELTW == desc->kind);
+    LIBXSMM_ASSERT(LIBXSMM_KERNEL_KIND_MELTW == LIBXSMM_DESCRIPTOR_KIND(desc->kind));
 #else
-    LIBXSMM_ASSERT(LIBXSMM_KERNEL_KIND_MCOPY == desc->kind);
+    LIBXSMM_ASSERT(LIBXSMM_KERNEL_KIND_MCOPY == LIBXSMM_DESCRIPTOR_KIND(desc->kind));
     if (0 != desc->mcopy.desc.prefetch) {
       LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_PF, kernel,
         out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
