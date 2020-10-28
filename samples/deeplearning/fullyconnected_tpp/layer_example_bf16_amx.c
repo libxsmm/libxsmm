@@ -615,7 +615,7 @@ typedef enum my_pass {
   MY_PASS_BWD   = 6
 } my_pass;
 
-typedef struct my_fwd_config {
+typedef struct my_fc_fwd_config {
   libxsmm_blasint N;
   libxsmm_blasint C;
   libxsmm_blasint K;
@@ -643,9 +643,9 @@ typedef struct my_fwd_config {
   libxsmm_meltwfunction_cvtfp32bf16     fwd_cvtfp32bf16_kernel;
   libxsmm_meltwfunction_cvtfp32bf16_act fwd_cvtfp32bf16_relu_kernel;
   libxsmm_meltwfunction_act_cvtfp32bf16 fwd_sigmoid_cvtfp32bf16_kernel;
-} my_fwd_config;
+} my_fc_fwd_config;
 
-typedef struct my_bwd_config {
+typedef struct my_fc_bwd_config {
   libxsmm_blasint N;
   libxsmm_blasint C;
   libxsmm_blasint K;
@@ -678,11 +678,11 @@ typedef struct my_bwd_config {
   libxsmm_bmmfunction_reducebatch_strd gemm_upd3;
   libxsmm_meltwfunction_cvtfp32bf16     bwd_cvtfp32bf16_kernel;
   libxsmm_meltwfunction_relu            bwd_relu_kernel;
-} my_bwd_config;
+} my_fc_bwd_config;
 
-my_fwd_config setup_my_forward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
-                               libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
-  my_fwd_config res;
+my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
+                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
+  my_fc_fwd_config res;
   libxsmm_blasint lda = bk;
   libxsmm_blasint ldb = bc;
   libxsmm_blasint ldc = bk;
@@ -810,9 +810,9 @@ my_fwd_config setup_my_forward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bla
   return res;
 }
 
-my_bwd_config setup_my_backward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
-                                libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
-  my_bwd_config res;
+my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
+                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
+  my_fc_bwd_config res;
   const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_descriptor_blob blob;
   libxsmm_blasint lda = bk;
@@ -969,8 +969,8 @@ my_bwd_config setup_my_backward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bl
   return res;
 }
 
-void my_forward( my_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
-                 const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
+void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
+                     const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
   const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
@@ -1164,9 +1164,9 @@ void my_forward( my_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsm
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void my_backward( my_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
-                  const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
-                  libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch ) {
+void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+                     const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+                     libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch ) {
   /* size variables, all const */
   /* here we assume that input and output blocking is similar */
   const libxsmm_blasint bn = cfg.bn;
@@ -1645,8 +1645,8 @@ int main(int argc, char* argv[])
   libxsmm_bfloat16 *input_libxsmm, *filter_libxsmm, *delinput_libxsmm, *delfilter_libxsmm, *output_libxsmm, *deloutput_libxsmm, *bias_libxsmm, *delbias_libxsmm;
   unsigned char *relumask_libxsmm;
   my_eltwise_fuse my_fuse;
-  my_fwd_config my_fwd;
-  my_bwd_config my_bwd;
+  my_fc_fwd_config my_fc_fwd;
+  my_fc_bwd_config my_fc_bwd;
   naive_fullyconnected_t naive_param;
   void* scratch;
   size_t scratch_size = 0;
@@ -1836,8 +1836,8 @@ int main(int argc, char* argv[])
     /* cannot happen */
   }
 
-  my_fwd = setup_my_forward(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse);
-  my_bwd = setup_my_backward(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse);
+  my_fc_fwd = setup_my_fc_fwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse);
+  my_fc_bwd = setup_my_fc_bwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse);
 
   /* we can also use the layout functions and set the data on our
      own external to the library */
@@ -1852,8 +1852,8 @@ int main(int argc, char* argv[])
 
 
   /* let's allocate and bind scratch */
-  if ( my_fwd.scratch_size > 0 || my_bwd.scratch_size > 0 ) {
-    size_t alloc_size = LIBXSMM_MAX( my_fwd.scratch_size, my_bwd.scratch_size);
+  if ( my_fc_fwd.scratch_size > 0 || my_fc_bwd.scratch_size > 0 ) {
+    size_t alloc_size = LIBXSMM_MAX( my_fc_fwd.scratch_size, my_fc_bwd.scratch_size);
     scratch = libxsmm_aligned_scratch( alloc_size, 2097152 );
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
@@ -1872,8 +1872,8 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      my_forward( my_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
-                  bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+      my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
+                      bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
     }
 
     /* copy out data */
@@ -1906,8 +1906,8 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      my_backward( my_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-                   input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
+      my_fc_bwd_exec( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
+                      input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
     }
 
     /* copy out data */
@@ -1967,8 +1967,8 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (i = 0; i < iters; ++i) {
-        my_forward( my_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
-                    bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+        my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
+                        bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -2000,8 +2000,8 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (i = 0; i < iters; ++i) {
-        my_backward( my_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-                     input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
+        my_fc_bwd_exec( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
+                        input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
