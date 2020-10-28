@@ -212,13 +212,16 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descri
   unsigned char prefetch;
   /** Denotes the data-type. */
   unsigned char datatype;
+  /**
+   * Do not reorder elements between above and below blocks!
+   */
   /** Denotes of optional eltwise data-type */
   unsigned char meltw_datatype_aux;
-  /** multipurpose 64bit field, currently used for: a) stride_a in brgemm */
+  /** multipurpose 64-bit field, currently used for: a) stride_a in brgemm */
   unsigned long long c1;
-  /** multipurpose 64bit field, currently used for: a) stride_b in brgemm */
+  /** multipurpose 64-bit field, currently used for: a) stride_b in brgemm */
   unsigned long long c2;
-  /** multipurpose 8bit field, currently used for: a) unroll hint in brgemm */
+  /** multipurpose 8-bit field, currently used for: a) unroll hint in brgemm */
   unsigned char c3;
   /** LDx, LDy, LDz,  additional meltw LDs */
   unsigned int meltw_ldx, meltw_ldy, meltw_ldz;
@@ -879,8 +882,8 @@ typedef enum libxsmm_build_kind {
 /** Integral type (libxsmm_kernel_kind, libxsmm_build_kind). */
 #if defined(LIBXSMM_UNPACKED)
 # define LIBXSMM_DESCRIPTOR_BIG(KIND) ((libxsmm_descriptor_kind)((KIND) | 0x8000000000000000))
-# define LIBXSMM_DESCRIPTOR_ISBIG(KIND) ((int)((KIND) >> 63))
-# define LIBXSMM_DESCRIPTOR_KIND(KIND) ((int)((KIND) & 0x7FFFFFFFFFFFFFFF))
+# define LIBXSMM_DESCRIPTOR_ISBIG(KIND) ((int)(((libxsmm_descriptor_kind)(KIND)) >> 63))
+# define LIBXSMM_DESCRIPTOR_KIND(KIND) ((int)(((libxsmm_descriptor_kind)(KIND)) & 0x7FFFFFFFFFFFFFFF))
 typedef uint64_t libxsmm_descriptor_kind;
 #else
 # define LIBXSMM_DESCRIPTOR_BIG(KIND) ((libxsmm_descriptor_kind)((KIND) | 0x80))
