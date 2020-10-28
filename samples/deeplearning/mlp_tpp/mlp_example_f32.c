@@ -36,7 +36,39 @@ typedef enum my_pass {
   MY_PASS_BWD   = 6
 } my_pass;
 
-typedef struct my_fwd_config {
+typedef struct my_opt_config {
+  libxsmm_blasint C;
+  libxsmm_blasint K;
+  libxsmm_blasint bc;
+  libxsmm_blasint bk;
+  libxsmm_blasint threads;
+  float           lr;
+  size_t          scratch_size;
+  libxsmm_barrier* barrier;
+} my_opt_config;
+
+typedef struct my_smax_fwd_config {
+  libxsmm_blasint N;
+  libxsmm_blasint C;
+  libxsmm_blasint bn;
+  libxsmm_blasint bc;
+  libxsmm_blasint threads;
+  size_t          scratch_size;
+  libxsmm_barrier* barrier;
+} my_smax_fwd_config;
+
+typedef struct my_smax_bwd_config {
+  libxsmm_blasint N;
+  libxsmm_blasint C;
+  libxsmm_blasint bn;
+  libxsmm_blasint bc;
+  libxsmm_blasint threads;
+  size_t          scratch_size;
+  float           loss_weight;
+  libxsmm_barrier* barrier;
+} my_smax_bwd_config;
+
+typedef struct my_fc_fwd_config {
   libxsmm_blasint N;
   libxsmm_blasint C;
   libxsmm_blasint K;
@@ -53,9 +85,9 @@ typedef struct my_fwd_config {
   libxsmm_barrier* barrier;
   libxsmm_smmfunction_reducebatch_strd gemm_fwd;
   libxsmm_smmfunction_reducebatch_strd gemm_fwd2;
-} my_fwd_config;
+} my_fc_fwd_config;
 
-typedef struct my_bwd_config {
+typedef struct my_fc_bwd_config {
   libxsmm_blasint N;
   libxsmm_blasint C;
   libxsmm_blasint K;
@@ -81,11 +113,11 @@ typedef struct my_bwd_config {
   libxsmm_smmfunction_reducebatch_strd gemm_upd;
   libxsmm_smmfunction_reducebatch_strd gemm_upd2;
   libxsmm_xtransfunction tr_kernel;
-} my_bwd_config;
+} my_fc_bwd_config;
 
-my_fwd_config setup_my_forward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
-                               libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
-  my_fwd_config res;
+my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
+                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
+  my_fc_fwd_config res;
   libxsmm_blasint lda = bk;
   libxsmm_blasint ldb = bc;
   libxsmm_blasint ldc = bk;
@@ -148,9 +180,9 @@ my_fwd_config setup_my_forward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bla
   return res;
 }
 
-my_bwd_config setup_my_backward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
-                                libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
-  my_bwd_config res;
+my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
+                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
+  my_fc_bwd_config res;
   const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_descriptor_blob blob;
   libxsmm_blasint lda = bc;
@@ -264,8 +296,70 @@ my_bwd_config setup_my_backward(libxsmm_blasint N, libxsmm_blasint C, libxsmm_bl
   return res;
 }
 
-void my_forward( my_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
-                 const float* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
+my_opt_config setup_my_opt(libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bc, libxsmm_blasint bk,
+                           libxsmm_blasint threads, float lr) {
+  my_opt_config res;
+
+  /* setting up some handle values */
+  res.C = C;
+  res.K = K;
+  res.bc = bc;
+  res.bk = bk;
+  res.threads = threads;
+  res.lr = lr;
+
+  /* setting up the barrier */
+  res.barrier = libxsmm_barrier_create(threads, 1);
+
+  /* init scratch */
+  res.scratch_size = 0;
+
+  return res;
+}
+
+my_smax_fwd_config setup_my_smax_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint bn, libxsmm_blasint bc,
+                                     libxsmm_blasint threads) {
+  my_smax_fwd_config res;
+
+  /* setting up some handle values */
+  res.C = C;
+  res.N = N;
+  res.bc = bc;
+  res.bn = bn;
+  res.threads = threads;
+
+  /* setting up the barrier */
+  res.barrier = libxsmm_barrier_create(threads, 1);
+
+  /* init scratch */
+  res.scratch_size = 0;
+
+  return res;
+}
+
+my_smax_bwd_config setup_my_smax_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint bn, libxsmm_blasint bc,
+                                     libxsmm_blasint threads, float loss_weight) {
+  my_smax_bwd_config res;
+
+  /* setting up some handle values */
+  res.C = C;
+  res.N = N;
+  res.bc = bc;
+  res.bn = bn;
+  res.threads = threads;
+  res.loss_weight = loss_weight;
+
+  /* setting up the barrier */
+  res.barrier = libxsmm_barrier_create(threads, 1);
+
+  /* init scratch */
+  res.scratch_size = 0;
+
+  return res;
+}
+
+void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
+                     const float* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
   const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
@@ -464,9 +558,9 @@ void my_forward( my_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void my_backward( my_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
-                  const float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
-                  float* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch ) {
+void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
+                     const float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
+                     float* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch ) {
   /* here we assume that input and output blocking is similar */
   const libxsmm_blasint bn = cfg.bn;
   const libxsmm_blasint bk = cfg.bk;
@@ -781,14 +875,180 @@ void my_backward( my_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
   }
 }
 
+void my_opt_exec( my_opt_config cfg, float* wt_ptr, const float* delwt_ptr, int start_tid, int my_tid, void* scratch ) {
+  /* loop counters */
+  libxsmm_blasint i;
+
+  /* computing first logical thread */
+  const libxsmm_blasint ltid = my_tid - start_tid;
+
+  /* number of tasks that could run in parallel for the filters */
+  const libxsmm_blasint work = cfg.C * cfg.K;
+  /* compute chunk size */
+  const libxsmm_blasint chunksize = (work % cfg.threads == 0) ? (work / cfg.threads) : ((work / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+
+  /* lazy barrier init */
+  libxsmm_barrier_init( cfg.barrier, ltid );
+
+  libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
+  __m512 vlr = _mm512_set1_ps( cfg.lr );
+  for ( i = thr_begin; i < iv; i+=16 ) {
+    _mm512_storeu_ps( wt_ptr+i, _mm512_sub_ps( _mm512_loadu_ps( wt_ptr+i ), _mm512_mul_ps( vlr, _mm512_loadu_ps( delwt_ptr + i ) ) ) ) ;
+  }
+  for ( i = iv; i < thr_end; ++i ) {
+    wt_ptr[i] = wt_ptr[i] - (cfg.lr*delwt_ptr[i]);
+  }
+
+  libxsmm_barrier_wait( cfg.barrier, ltid );
+}
+
+void my_smax_fwd_exec( my_smax_fwd_config cfg, const float* in_act_ptr, float* out_act_ptr, const int* label_ptr, float* loss, int start_tid, int my_tid, void* scratch ) {
+  libxsmm_blasint bn = cfg.bn;
+  libxsmm_blasint Bn = cfg.N/cfg.bn;
+  libxsmm_blasint bc = cfg.bc;
+  libxsmm_blasint Bc = cfg.C/cfg.bc;
+
+  /* loop counters */
+  libxsmm_blasint i = 0;
+  libxsmm_blasint img1, img2, ifm1, ifm2;
+
+  /* computing first logical thread */
+  const libxsmm_blasint ltid = my_tid - start_tid;
+
+  /* number of tasks that could run in parallel for the batch */
+  const libxsmm_blasint n_work = Bn * bn;
+  /* compute chunk size */
+  const libxsmm_blasint n_chunksize = (n_work % cfg.threads == 0) ? (n_work / cfg.threads) : ((n_work / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint n_thr_begin = (ltid * n_chunksize < n_work) ? (ltid * n_chunksize) : n_work;
+  const libxsmm_blasint n_thr_end = ((ltid + 1) * n_chunksize < n_work) ? ((ltid + 1) * n_chunksize) : n_work;
+
+  LIBXSMM_VLA_DECL(4,       float, output, out_act_ptr, Bc, bn, bc);
+  LIBXSMM_VLA_DECL(4, const float,  input,  in_act_ptr, Bc, bn, bc);
+  LIBXSMM_VLA_DECL(2,   const int,  label,   label_ptr,         bn);
+
+  /* lazy barrier init */
+  libxsmm_barrier_init( cfg.barrier, ltid );
+
+  for ( i = n_thr_begin; i < n_thr_end; ++i ) {
+    float max =        FLT_MIN;
+    float sum_of_exp = 0.0f;
+
+    img1 = i/bn;
+    img2 = i%bn;
+
+    /* set output to input and set compute max per image */
+    for ( ifm1 = 0; ifm1 < Bc; ++ifm1 ) {
+      for ( ifm2 = 0; ifm2 < bc; ++ifm2 ) {
+        LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) = LIBXSMM_VLA_ACCESS( 4, input, img1, ifm1, img2, ifm2, Bc, bn, bc );
+        if ( LIBXSMM_VLA_ACCESS( 4, input, img1, ifm1, img2, ifm2, Bc, bn, bc ) > max ) {
+          max = LIBXSMM_VLA_ACCESS( 4, input, img1, ifm1, img2, ifm2, Bc, bn, bc );
+        }
+      }
+    }
+
+    /* sum exp over outputs */
+    for ( ifm1 = 0; ifm1 < Bc; ++ifm1 ) {
+      for ( ifm2 = 0; ifm2 < bc; ++ifm2 ) {
+        LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) = (float)exp( (double)(LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) - max) );
+        sum_of_exp += LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc );
+      }
+    }
+
+    /* scale output */
+    sum_of_exp = 1.0f/sum_of_exp;
+    for ( ifm1 = 0; ifm1 < Bc; ++ifm1 ) {
+      for ( ifm2 = 0; ifm2 < bc; ++ifm2 ) {
+        LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) = LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) * sum_of_exp;
+      }
+    }
+  }
+
+  libxsmm_barrier_wait( cfg.barrier, ltid );
+
+  /* calculate loss single threaded */
+  if ( ltid == 0 ) {
+    (*loss) = 0.0f;
+    for ( img1 = 0; img1 < Bn; ++img1 ) {
+      for ( img2 = 0; img2 <bn; ++img2 ) {
+        libxsmm_blasint ifm = (libxsmm_blasint)LIBXSMM_VLA_ACCESS( 2, label, img1, img2, bn );
+        libxsmm_blasint ifm1b = ifm/bc;
+        libxsmm_blasint ifm2b = ifm%bc;
+        float val = ( LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) > FLT_MIN ) ? LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) : FLT_MIN;
+        *loss = LIBXSMM_LOGF( val );
+      }
+    }
+    *loss = ((-1.0f)*(*loss))/cfg.N;
+  }
+
+  libxsmm_barrier_wait( cfg.barrier, ltid );
+}
+
+void my_smax_bwd_exec( my_smax_bwd_config cfg, float* delin_act_ptr, const float* out_act_ptr, const int* label_ptr, int start_tid, int my_tid, void* scratch ) {
+  libxsmm_blasint bn = cfg.bn;
+  libxsmm_blasint Bn = cfg.N/cfg.bn;
+  libxsmm_blasint bc = cfg.bc;
+  libxsmm_blasint Bc = cfg.C/cfg.bc;
+
+  /* loop counters */
+  libxsmm_blasint i = 0;
+  libxsmm_blasint img1, img2, ifm1, ifm2;
+
+  float rcp_N = 1.0f/cfg.N;
+
+  /* computing first logical thread */
+  const libxsmm_blasint ltid = my_tid - start_tid;
+  /* number of tasks that could run in parallel for the batch */
+  const libxsmm_blasint n_work = Bn * bn;
+  /* compute chunk size */
+  const libxsmm_blasint n_chunksize = (n_work % cfg.threads == 0) ? (n_work / cfg.threads) : ((n_work / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint n_thr_begin = (ltid * n_chunksize < n_work) ? (ltid * n_chunksize) : n_work;
+  const libxsmm_blasint n_thr_end = ((ltid + 1) * n_chunksize < n_work) ? ((ltid + 1) * n_chunksize) : n_work;
+
+  LIBXSMM_VLA_DECL(4, const float, output,   out_act_ptr,  Bc, bn, bc);
+  LIBXSMM_VLA_DECL(4,       float, dinput, delin_act_ptr,  Bc, bn, bc);
+  LIBXSMM_VLA_DECL(2,   const int,  label,     label_ptr,          bn);
+
+  /* lazy barrier init */
+  libxsmm_barrier_init( cfg.barrier, ltid );
+
+  for ( i = n_thr_begin; i < n_thr_end; ++i ) {
+    img1 = i/bn;
+    img2 = i%bn;
+
+    /* set output to input and set compute max per image */
+    for ( ifm1 = 0; ifm1 < Bc; ++ifm1 ) {
+      for ( ifm2 = 0; ifm2 < bc; ++ifm2 ) {
+        if ( (ifm1*Bc)+ifm2 == (libxsmm_blasint)LIBXSMM_VLA_ACCESS( 2, label, img1, img2, bn ) ) {
+          LIBXSMM_VLA_ACCESS( 4, dinput, img1, ifm1, img2, ifm2, Bc, bn, bc ) =
+            ( LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) - 1.0f ) * rcp_N * cfg.loss_weight;
+        } else {
+          LIBXSMM_VLA_ACCESS( 4, dinput, img1, ifm1, img2, ifm2, Bc, bn, bc ) =
+            LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1, img2, ifm2, Bc, bn, bc ) * rcp_N * cfg.loss_weight;
+        }
+      }
+    }
+  }
+
+  libxsmm_barrier_wait( cfg.barrier, ltid );
+}
+
 int main(int argc, char* argv[])
 {
   float **act_libxsmm, **fil_libxsmm, **delact_libxsmm, **delfil_libxsmm;
   float **bias_libxsmm, **delbias_libxsmm;
   unsigned char **relumask_libxsmm;
+  int *label_libxsmm;
   my_eltwise_fuse my_fuse;
-  my_fwd_config* my_fwd;
-  my_bwd_config* my_bwd;
+  my_fc_fwd_config* my_fc_fwd;
+  my_fc_bwd_config* my_fc_bwd;
+  my_opt_config* my_opt;
+  my_smax_fwd_config my_smax_fwd;
+  my_smax_bwd_config my_smax_bwd;
   void* scratch = NULL;
   size_t scratch_size;
 
@@ -816,6 +1076,9 @@ int main(int argc, char* argv[])
   int i, j;
   double fil_size = 0.0;
   double act_size = 0.0;
+  float lr = 0.1f;
+  float loss = 0;
+  float loss_weight = 0.1f;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff;
   libxsmm_matdiff_clear(&norms_fwd);
@@ -918,6 +1181,7 @@ int main(int argc, char* argv[])
   for ( i = 0 ; i < num_layers; ++i ) {
     relumask_libxsmm[i]           = (unsigned char*)libxsmm_aligned_malloc( MB*C[i+1]*sizeof(unsigned char), 2097152);
   }
+  label_libxsmm = (int*)libxsmm_aligned_malloc( MB*sizeof(int), 2097152);
 
   /* init data */
   for ( i = 0 ; i < num_layers+2; ++i ) {
@@ -941,6 +1205,7 @@ int main(int argc, char* argv[])
   for ( i = 0 ; i < num_layers; ++i ) {
     zero_buf_uint8( relumask_libxsmm[i], MB*C[i+1] );
   }
+  zero_buf_int32( label_libxsmm, MB );
 
   printf("\n");
   printf("##########################################\n");
@@ -959,28 +1224,55 @@ int main(int argc, char* argv[])
     /* cannot happen */
   }
 
-  my_fwd = (my_fwd_config*) malloc( num_layers*sizeof(my_fwd_config) );
-  my_bwd = (my_bwd_config*) malloc( num_layers*sizeof(my_bwd_config) );
+  /* allocating handles */
+  my_fc_fwd = (my_fc_fwd_config*) malloc( num_layers*sizeof(my_fc_fwd_config) );
+  my_fc_bwd = (my_fc_bwd_config*) malloc( num_layers*sizeof(my_fc_bwd_config) );
+  my_opt    = (my_opt_config*)    malloc( num_layers*sizeof(my_opt_config)    );
 
+  /* setting up handles + scratch */
   for ( i = 0; i < num_layers; ++i ) {
-    my_fwd[i] = setup_my_forward(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
-                                                (C[i  ] % bc == 0) ? bc : C[i  ],
-                                                (C[i+1] % bk == 0) ? bk : C[i+1],
-                                                nThreads, my_fuse);
-    my_bwd[i] = setup_my_backward(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
-                                                 (C[i  ] % bc == 0) ? bc : C[i  ],
-                                                 (C[i+1] % bk == 0) ? bk : C[i+1],
-                                                 nThreads, my_fuse);
+    my_fc_fwd[i] = setup_my_fc_fwd(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
+                                             (C[i  ] % bc == 0) ? bc : C[i  ],
+                                             (C[i+1] % bk == 0) ? bk : C[i+1],
+                                             nThreads, my_fuse);
+
+    my_fc_bwd[i] = setup_my_fc_bwd(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
+                                             (C[i  ] % bc == 0) ? bc : C[i  ],
+                                             (C[i+1] % bk == 0) ? bk : C[i+1],
+                                              nThreads, my_fuse);
+
+    my_opt[i] = setup_my_opt( C[i], C[i+1], (C[i  ] % bc == 0) ? bc : C[i  ],
+                                            (C[i+1] % bk == 0) ? bk : C[i+1],
+                                            nThreads, lr );
 
     /* let's allocate and bind scratch */
-    if ( my_fwd[i].scratch_size > 0 || my_bwd[i].scratch_size > 0 ) {
-      size_t alloc_size = LIBXSMM_MAX( my_fwd[i].scratch_size, my_bwd[i].scratch_size);
+    if ( my_fc_fwd[i].scratch_size > 0 || my_fc_bwd[i].scratch_size > 0 || my_opt[i].scratch_size > 0 ) {
+      size_t alloc_size = LIBXSMM_MAX( LIBXSMM_MAX( my_fc_fwd[i].scratch_size, my_fc_bwd[i].scratch_size), my_opt[i].scratch_size );
       if ( alloc_size > scratch_size ) {
         if ( scratch != NULL ) libxsmm_free( scratch );
         scratch_size = alloc_size;
         scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
         init_buf( (float*)(scratch), (scratch_size)/4, 0, 0 );
       }
+    }
+  }
+
+  /* softmax+loss is treated as N+! layer */
+  my_smax_fwd = setup_my_smax_fwd( MB, C[num_layers+1], (MB % bn == 0) ? bn : MB,
+                                       (C[num_layers+1] % bk == 0) ? bk : C[num_layers+1],
+                                       nThreads );
+
+  my_smax_bwd = setup_my_smax_bwd( MB, C[num_layers+1], (MB % bn == 0) ? bn : MB,
+                                       (C[num_layers+1] % bk == 0) ? bk : C[num_layers+1],
+                                       nThreads, loss_weight );
+
+  if ( my_smax_fwd.scratch_size > 0 || my_smax_bwd.scratch_size > 0 ) {
+    size_t alloc_size = LIBXSMM_MAX( my_smax_fwd.scratch_size, my_smax_bwd.scratch_size );
+    if ( alloc_size > scratch_size ) {
+      if ( scratch != NULL ) libxsmm_free( scratch );
+      scratch_size = alloc_size;
+      scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+      init_buf( (float*)(scratch), (scratch_size)/4, 0, 0 );
     }
   }
 
@@ -1000,9 +1292,11 @@ int main(int argc, char* argv[])
 #endif
       for (j = 0; j < iters; ++j) {
         for ( i = 0; i < num_layers; ++i) {
-          my_forward( my_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
-                      bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
+          my_fc_fwd_exec( my_fc_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
+                          bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
         }
+        my_smax_fwd_exec( my_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm, &loss,
+                          0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -1037,12 +1331,16 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (j = 0; j < iters; ++j) {
+        my_smax_bwd_exec( my_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm,
+                          0, tid, scratch );
         for ( i = num_layers-1; i > 0; --i) {
-          my_backward( my_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
-                       act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
+          my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+                          act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
+          my_opt_exec( my_opt[i], fil_libxsmm[i], delfil_libxsmm[i], 0, tid, scratch );
         }
-        my_backward( my_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
-                     act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD_W, 0, tid, scratch );
+        my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+                        act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch );
+        my_opt_exec( my_opt[0], fil_libxsmm[0], delfil_libxsmm[0], 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -1079,15 +1377,21 @@ int main(int argc, char* argv[])
 #endif
       for (j = 0; j < iters; ++j) {
         for ( i = 0; i < num_layers; ++i) {
-          my_forward( my_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
-                      bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
+          my_fc_fwd_exec( my_fc_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
+                          bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
         }
+        my_smax_fwd_exec( my_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm, &loss,
+                          0, tid, scratch );
+        my_smax_bwd_exec( my_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm,
+                          0, tid, scratch );
         for ( i = num_layers-1; i > 0; --i) {
-          my_backward( my_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
-                       act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
+          my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+                          act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
+          my_opt_exec( my_opt[i], fil_libxsmm[i], delfil_libxsmm[i], 0, tid, scratch );
         }
-        my_backward( my_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
-                     act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD_W, 0, tid, scratch );
+        my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+                        act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch );
+        my_opt_exec( my_opt[0], fil_libxsmm[0], delfil_libxsmm[0], 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -1127,6 +1431,11 @@ int main(int argc, char* argv[])
     libxsmm_free(relumask_libxsmm[i]);
   }
   libxsmm_free(act_libxsmm[num_layers+1]);
+  libxsmm_free(label_libxsmm);
+
+  free( my_opt );
+  free( my_fc_fwd );
+  free( my_fc_bwd );
 
   free( act_libxsmm );
   free( delact_libxsmm );
