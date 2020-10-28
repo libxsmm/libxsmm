@@ -30,6 +30,7 @@ int main(int argc, char* argv[])
   float **act_libxsmm, **fil_libxsmm, **delact_libxsmm, **delfil_libxsmm;
   float **bias_libxsmm, **delbias_libxsmm;
   unsigned char **relumask_libxsmm;
+  int *label_libxsmm;
   void* scratch = NULL;
   size_t scratch_size = 0;
 
@@ -74,6 +75,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor**            libxsmm_bias;
   libxsmm_dnn_tensor**            libxsmm_delbias;
   libxsmm_dnn_tensor**            libxsmm_relumask;
+  libxsmm_dnn_tensor*             libxsmm_label;
   libxsmm_dnn_tensor_datalayout*  libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
@@ -173,6 +175,7 @@ int main(int argc, char* argv[])
   for ( i = 0 ; i < num_layers; ++i ) {
     relumask_libxsmm[i]           = (unsigned char*)libxsmm_aligned_malloc( MB*C[i+1]*sizeof(unsigned char), 2097152);
   }
+  label_libxsmm = (int*)libxsmm_aligned_malloc( MB*sizeof(int), 2097152 );
 
   /* init data */
   for ( i = 0 ; i < num_layers+2; ++i ) {
@@ -196,6 +199,7 @@ int main(int argc, char* argv[])
   for ( i = 0 ; i < num_layers; ++i ) {
     zero_buf_uint8( relumask_libxsmm[i], MB*C[i+1] );
   }
+  zero_buf_int32( label_libxsmm, MB );
 
   printf("\n");
   printf("##########################################\n");
@@ -346,9 +350,14 @@ int main(int argc, char* argv[])
   libxsmm_act[num_layers+1]  = libxsmm_dnn_link_tensor( libxsmm_layout, act_libxsmm[num_layers+1], &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_tensor( libxsmm_softmax, libxsmm_act[num_layers],      LIBXSMM_DNN_REGULAR_INPUT ) );
+  libxsmm_layout = libxsmm_dnn_softmaxloss_create_tensor_datalayout( libxsmm_softmax, LIBXSMM_DNN_LABEL, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_label  = libxsmm_dnn_link_tensor( libxsmm_layout, label_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_tensor( libxsmm_softmax, libxsmm_act[num_layers],      LIBXSMM_DNN_REGULAR_INPUT  ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_tensor( libxsmm_softmax, libxsmm_delact[num_layers],   LIBXSMM_DNN_GRADIENT_INPUT ) );
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_tensor( libxsmm_softmax, libxsmm_act[num_layers+1],      LIBXSMM_DNN_REGULAR_OUTPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_tensor( libxsmm_softmax, libxsmm_act[num_layers+1],    LIBXSMM_DNN_REGULAR_OUTPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_bind_tensor( libxsmm_softmax, libxsmm_label,                LIBXSMM_DNN_LABEL          ) );
 
   if ( libxsmm_dnn_softmaxloss_get_scratch_size( libxsmm_softmax, &status ) > scratch_size ) {
     scratch_size = libxsmm_dnn_softmaxloss_get_scratch_size( libxsmm_softmax, &status );
@@ -515,6 +524,7 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_release_tensor( libxsmm_softmax, LIBXSMM_DNN_REGULAR_INPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_release_tensor( libxsmm_softmax, LIBXSMM_DNN_GRADIENT_INPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_release_tensor( libxsmm_softmax, LIBXSMM_DNN_REGULAR_OUTPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_softmaxloss_release_tensor( libxsmm_softmax, LIBXSMM_DNN_LABEL          ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_softmaxloss( libxsmm_softmax ) );
 
   for ( i = 0; i < num_layers; ++i ) {
@@ -531,6 +541,7 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_relumask[i] ) );
   }
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_act[num_layers+1] ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_label ) );
 
   /* deallocate data */
   libxsmm_free(scratch);
@@ -549,6 +560,7 @@ int main(int argc, char* argv[])
     libxsmm_free(relumask_libxsmm[i]);
   }
   libxsmm_free(act_libxsmm[num_layers+1]);
+  libxsmm_free(label_libxsmm);
 
   free( libxsmm_act );
   free( libxsmm_delact );
