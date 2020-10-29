@@ -3831,25 +3831,25 @@ void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                   
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           i_vec_in, i_vec_in, i_vec_tmp1, 0x4e );
+                                           i_vec_inout, i_vec_inout, i_vec_tmp1, 0x4e );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VADDPS,
                                            i_micro_kernel_config->vector_name,
-                                           i_vec_in, i_vec_tmp1, i_vec_in );
+                                           i_vec_inout, i_vec_tmp1, i_vec_inout );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VSHUFF64X2,
                                            i_micro_kernel_config->vector_name,
-                                           i_vec_in, i_vec_in, i_vec_tmp1, 0xb1 );
+                                           i_vec_inout, i_vec_inout, i_vec_tmp1, 0xb1 );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VADDPS,
                                            i_micro_kernel_config->vector_name,
-                                           i_vec_in, i_vec_tmp1, i_vec_tmp2 );
+                                           i_vec_inout, i_vec_tmp1, i_vec_tmp2 );
 
   libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
@@ -3873,7 +3873,7 @@ void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                   
                                            i_micro_kernel_config->instruction_set,
                                            LIBXSMM_X86_INSTR_VADDPS,
                                            i_micro_kernel_config->vector_name,
-                                           i_vec_tmp2, i_vec_tmp1, i_vec_in );
+                                           i_vec_tmp2, i_vec_tmp1, i_vec_inout );
 }
 
 LIBXSMM_API_INTERN
