@@ -42,12 +42,12 @@ libxsmm_barrier_init( handle->barrier, ltid );
 {
   libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
   __m512 vlr = _mm512_set1_ps( handle->desc.learning_rate );
-  for ( i = thr_begin; i < iv; i+=16 ) {
+  for ( i = thr_begin; i <thr_begin + iv; i+=16 ) {
     __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( master+i ), _mm512_mul_ps( vlr, _mm512_load_fil( dfilter + i ) ) );
     _mm512_store_fil( filter+i, newfilter );
     _mm512_storeu_ps( master+i, newfilter );
   }
-  for ( i = iv; i < thr_end; ++i ) {
+  for ( i = thr_begin + iv; i < thr_end; ++i ) {
     libxsmm_bfloat16_hp t1, t2;
     t1.i[0] =0;
     t1.i[1] = dfilter[i];
@@ -73,10 +73,10 @@ for ( i = thr_begin; i < thr_end; ++i ) {
 {
   libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
   __m512 vlr = _mm512_set1_ps( handle->desc.learning_rate );
-  for ( i = thr_begin; i < iv; i+=16 ) {
+  for ( i = thr_begin; i < thr_begin + iv; i+=16 ) {
     _mm512_storeu_ps( filter+i, _mm512_sub_ps( _mm512_loadu_ps( filter+i ), _mm512_mul_ps( vlr, _mm512_loadu_ps( dfilter + i ) ) ) ) ;
   }
-  for ( i = iv; i < thr_end; ++i ) {
+  for ( i = thr_begin + iv; i < thr_end; ++i ) {
     filter[i] = filter[i] - (handle->desc.learning_rate*dfilter[i]);
   }
 }

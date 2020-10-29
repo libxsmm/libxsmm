@@ -25,7 +25,7 @@
 #define _mm512_loadcvt_bf16_fp32(A)   LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)(A)))
 #define LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( A, B ) (__m512i)_mm512_cvtne2ps_pbh( A, B )
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
-#define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16((B)),16)))
+#define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), _mm512_cvtneps_pbh((B)))
 
 #define LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32(in, out, length) do { \
   unsigned int full_chunks = length / 16; \
@@ -1755,12 +1755,12 @@ void my_opt_exec( my_opt_config cfg, libxsmm_bfloat16* wt_ptr, float* master_wt_
 #if defined(__AVX512BW__)
   libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
   __m512 vlr = _mm512_set1_ps( cfg.lr );
-  for ( i = thr_begin; i < iv; i+=16 ) {
+  for ( i = thr_begin; i < thr_begin+iv; i+=16 ) {
     __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( master_wt_ptr+i ), _mm512_mul_ps( vlr, _mm512_load_fil( delwt_ptr + i ) ) );
     _mm512_store_fil( wt_ptr+i, newfilter );
     _mm512_storeu_ps( master_wt_ptr+i, newfilter );
   }
-  for ( i = iv; i < thr_end; ++i ) {
+  for ( i = thr_begin+iv; i < thr_end; ++i ) {
     libxsmm_bfloat16_hp t1, t2;
     t1.i[0] =0;
     t1.i[1] = delwt_ptr[i];
