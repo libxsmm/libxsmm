@@ -3815,6 +3815,68 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                        io_generated_code,
+    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
+    const unsigned int                             i_vec_inout,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2) {
+
+  if (i_vec_tmp1 > 15 || i_vec_tmp2 > 15 ) {
+    /* This should not happen  */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                           i_micro_kernel_config->vector_name,
+                                           i_vec_in, i_vec_in, i_vec_tmp1, 0x4e );
+
+  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           i_micro_kernel_config->vector_name,
+                                           i_vec_in, i_vec_tmp1, i_vec_in );
+
+  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                           i_micro_kernel_config->vector_name,
+                                           i_vec_in, i_vec_in, i_vec_tmp1, 0xb1 );
+
+  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           i_micro_kernel_config->vector_name,
+                                           i_vec_in, i_vec_tmp1, i_vec_tmp2 );
+
+  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           LIBXSMM_X86_INSTR_VSHUFPS,
+                                           'y',
+                                           i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x4e );
+
+  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           'y',
+                                           i_vec_tmp2, i_vec_tmp1, i_vec_tmp2 );
+
+  libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           LIBXSMM_X86_INSTR_VSHUFPS,
+                                           'y',
+                                           i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x1 );
+
+  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           i_micro_kernel_config->vector_name,
+                                           i_vec_tmp2, i_vec_tmp1, i_vec_in );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
     libxsmm_loop_label_tracker*                    io_loop_label_tracker,
     libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
