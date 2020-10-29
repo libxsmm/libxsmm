@@ -331,8 +331,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_optimizer_execute_st(libxsmm_dnn_optim
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
-    LIBXSMM_UNUSED(start_thread);
-    LIBXSMM_UNUSED(tid);
+    if (handle->desc.opt_type == LIBXSMM_DNN_OPTIMIZER_SGD) {
+      libxsmm_dnn_optimizer_sgd_st( handle, start_thread, tid );
+    } else {
+      status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+    }
   }
   else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
