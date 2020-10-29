@@ -895,10 +895,10 @@ void my_opt_exec( my_opt_config cfg, float* wt_ptr, const float* delwt_ptr, int 
 
   libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
   __m512 vlr = _mm512_set1_ps( cfg.lr );
-  for ( i = thr_begin; i < iv; i+=16 ) {
+  for ( i = thr_begin; i < thr_begin+iv; i+=16 ) {
     _mm512_storeu_ps( wt_ptr+i, _mm512_sub_ps( _mm512_loadu_ps( wt_ptr+i ), _mm512_mul_ps( vlr, _mm512_loadu_ps( delwt_ptr + i ) ) ) ) ;
   }
-  for ( i = iv; i < thr_end; ++i ) {
+  for ( i = thr_begin+iv; i < thr_end; ++i ) {
     wt_ptr[i] = wt_ptr[i] - (cfg.lr*delwt_ptr[i]);
   }
 
@@ -1050,7 +1050,7 @@ int main(int argc, char* argv[])
   my_smax_fwd_config my_smax_fwd;
   my_smax_bwd_config my_smax_bwd;
   void* scratch = NULL;
-  size_t scratch_size;
+  size_t scratch_size = 0;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
