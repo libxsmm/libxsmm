@@ -498,7 +498,7 @@ LIBXSMM_API_INTERN void libxsmm_itrans_scratch(void* inout, void* scratch, unsig
 {
   LIBXSMM_ASSERT(NULL != inout && 0 < typesize && m <= ld && n <= ld);
   memcpy(scratch, inout, size);
-  libxsmm_otrans(inout, scratch, typesize, m, n, ld, ld);
+  LIBXSMM_XCOPY_TILE(LIBXSMM_TCOPY_KERNEL, typesize, inout, scratch, ld, ld, 0, m, 0, n);
 }
 
 
@@ -576,6 +576,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
           fprintf(stderr, "LIBXSMM ERROR: failed to allocate buffer for in-place transpose!\n");
         }
       }
+      /* TODO: build JIT-kernel */
     }
     if (NULL != stride) {
       if (0 != index_stride) { /* stride array contains indexes */
