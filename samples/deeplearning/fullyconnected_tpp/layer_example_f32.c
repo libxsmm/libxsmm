@@ -789,7 +789,7 @@ int main(int argc, char* argv[])
   float *input_libxsmm, *output_libxsmm, *filter_libxsmm, *delinput_libxsmm, *deloutput_libxsmm, *delfilter_libxsmm;
   float *bias_libxsmm, *delbias_libxsmm;
   unsigned char *relumask_libxsmm;
-  my_eltwise_fuse my_fuse;
+  my_eltwise_fuse my_fuse = MY_ELTWISE_FUSE_NONE;
   my_fc_fwd_config my_fc_fwd;
   my_fc_bwd_config my_fc_bwd;
 

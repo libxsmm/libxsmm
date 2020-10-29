@@ -1359,7 +1359,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
               dbias_reg_1 = _mm512_add_ps(dbias_reg_1, doutput_reg_1);
             }
           }
-          _mm512_store_si512(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, cfg.bk), LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(dbias_reg_1, dbias_reg_0));
+          LIBXSMM_INTRINSICS_MM512_STREAM_SI512(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, cfg.bk), LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(dbias_reg_1, dbias_reg_0));
         }
       }
     } else {

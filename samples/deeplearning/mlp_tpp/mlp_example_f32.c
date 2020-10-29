@@ -559,7 +559,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_
 }
 
 void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
-                     const float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
+                     float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
                      float* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch ) {
   /* here we assume that input and output blocking is similar */
   const libxsmm_blasint bn = cfg.bn;
@@ -595,12 +595,12 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
   /* loop variables */
   libxsmm_blasint ofm1 = 0, mb1 = 0, ofm2 = 0, mb2 = 0;
 
-  const float *grad_output_ptr = (const float*)(((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) ? ((float*)scratch)+(cfg.C*cfg.K) : dout_act_ptr);
+  float *grad_output_ptr = (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) ? ((float*)scratch)+(cfg.C*cfg.K) : dout_act_ptr);
   LIBXSMM_VLA_DECL(4, const float, doutput_orig,    dout_act_ptr, nBlocksOFm, bn, bk);
   LIBXSMM_VLA_DECL(4,       float,      doutput, grad_output_ptr, nBlocksOFm, bn, bk);
 
-  LIBXSMM_VLA_DECL(2,         float,    dbias, dbias_ptr,                     cfg.bk);
-  LIBXSMM_VLA_DECL(4, unsigned char, relumask,  relu_ptr, nBlocksOFm, cfg.bn, cfg.bk);
+  LIBXSMM_VLA_DECL(2,               float,    dbias, dbias_ptr,                     cfg.bk);
+  LIBXSMM_VLA_DECL(4, const unsigned char, relumask,  relu_ptr, nBlocksOFm, cfg.bn, cfg.bk);
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
@@ -696,7 +696,6 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
       ifm1 = ifm1ofm1 % nBlocksIFm;
       tr_kernel(&LIBXSMM_VLA_ACCESS(4,    filter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &ubk,
                 &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc), &ubc);
-
     }
 
     /* wait for transpose to finish */
@@ -890,11 +889,12 @@ void my_opt_exec( my_opt_config cfg, float* wt_ptr, const float* delwt_ptr, int 
   const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
   const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
+  libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
+  __m512 vlr = _mm512_set1_ps( cfg.lr );
+
   /* lazy barrier init */
   libxsmm_barrier_init( cfg.barrier, ltid );
 
-  libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
-  __m512 vlr = _mm512_set1_ps( cfg.lr );
   for ( i = thr_begin; i < thr_begin+iv; i+=16 ) {
     _mm512_storeu_ps( wt_ptr+i, _mm512_sub_ps( _mm512_loadu_ps( wt_ptr+i ), _mm512_mul_ps( vlr, _mm512_loadu_ps( delwt_ptr + i ) ) ) ) ;
   }
