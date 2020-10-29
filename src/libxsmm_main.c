@@ -45,7 +45,8 @@
 # define LIBXSMM_DIFF_SIZE LIBXSMM_DESCRIPTOR_SIGSIZE
 #endif
 #if !defined(LIBXSMM_HASH_SIZE)
-# define LIBXSMM_HASH_SIZE LIBXSMM_DESCRIPTOR_SIGSIZE
+/* can be smaller than MAXSIZE/SIGSIZE at the expense of collisions */
+# define LIBXSMM_HASH_SIZE 32
 #endif
 #if !defined(LIBXSMM_HASH_SEED)
 # define LIBXSMM_HASH_SEED 25071975
