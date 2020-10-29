@@ -1648,8 +1648,7 @@ int main(int argc, char* argv[])
   my_fc_fwd_config my_fc_fwd;
   my_fc_bwd_config my_fc_bwd;
   naive_fullyconnected_t naive_param;
-  void* scratch;
-  size_t scratch_size = 0;
+  void* scratch = 0;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -1684,7 +1683,7 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&diff);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters nImg nIFm nOFm fuse_type type format\n", argv[0]);
+    printf("Usage: %s iters nImg nIFm nOFm fuse_type type bn bk bc\n", argv[0]);
     return 0;
   }
   libxsmm_rng_set_seed(1);
