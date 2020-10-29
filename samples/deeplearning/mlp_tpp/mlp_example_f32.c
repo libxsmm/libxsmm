@@ -1282,7 +1282,7 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     l_start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#   pragma omp parallel private(i)
+#   pragma omp parallel private(i,j)
 #endif
     {
 #if defined(_OPENMP)
@@ -1322,7 +1322,7 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     l_start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#   pragma omp parallel private(i)
+#   pragma omp parallel private(i,j)
 #endif
     {
 #if defined(_OPENMP)
@@ -1367,7 +1367,7 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     l_start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#   pragma omp parallel private(i)
+#   pragma omp parallel private(i,j)
 #endif
     {
 #if defined(_OPENMP)
