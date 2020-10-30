@@ -63,6 +63,26 @@
   } \
 } while(0)
 
+LIBXSMM_INLINE void my_init_buf(float* buf, size_t size, int initPos, int initOne)
+{
+  int i;
+  zero_buf(buf, size);
+  for (i = 0; i < (int)size; ++i) {
+    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rng_f64() : (0.05 - libxsmm_rng_f64()/10.0)));
+  }
+}
+
+LIBXSMM_INLINE void my_init_buf_bf16(libxsmm_bfloat16* buf, size_t size, int initPos, int initOne)
+{
+  int i;
+  zero_buf_bf16(buf, size);
+  for (i = 0; i < (int)size; ++i) {
+    libxsmm_bfloat16_hp tmp;
+    tmp.f = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rng_f64() : (0.05 - libxsmm_rng_f64()/10.0)));
+    buf[i] = tmp.i[1];
+  }
+}
+
 void my_bf16_vnni_transpose_16x16(void* source_void, void* dest_void, int source_stride, int dest_stride)
 {
   libxsmm_bfloat16 *source = (libxsmm_bfloat16*)source_void;
@@ -2001,6 +2021,8 @@ int main(int argc, char* argv[])
   my_smax_bwd_config my_smax_bwd;
   void* scratch = NULL;
   size_t scratch_size = 0;
+  float *last_act_fwd_f32 = NULL;
+  float *first_wt_bwdupd_f32 = NULL;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -2139,23 +2161,23 @@ int main(int argc, char* argv[])
 
   /* init data */
   for ( i = 0 ; i < num_layers+2; ++i ) {
-    init_buf_bf16( act_libxsmm[i], MB*C[i], 0, 0 );
+    my_init_buf_bf16( act_libxsmm[i], MB*C[i], 0, 0 );
   }
   for ( i = 0 ; i < num_layers+1; ++i ) {
-    init_buf_bf16( delact_libxsmm[i], MB*C[i], 0, 0 );
+    my_init_buf_bf16( delact_libxsmm[i], MB*C[i], 0, 0 );
   }
   for ( i = 0 ; i < num_layers; ++i ) {
-    init_buf( fil_master[i], C[i]*C[i+1], 0, 0 );
+    my_init_buf( fil_master[i], C[i]*C[i+1], 0, 0 );
     libxsmm_rne_convert_fp32_bf16( fil_master[i], fil_libxsmm[i], C[i]*C[i+1] );
   }
   for ( i = 0 ; i < num_layers; ++i ) {
-    init_buf_bf16( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 );
+    my_init_buf_bf16( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 );
   }
   for ( i = 0 ; i < num_layers; ++i ) {
-    init_buf_bf16( bias_libxsmm[i], C[i+1], 0, 0 );
+    my_init_buf_bf16( bias_libxsmm[i], C[i+1], 0, 0 );
   }
   for ( i = 0 ; i < num_layers; ++i ) {
-    init_buf_bf16( delbias_libxsmm[i], C[i+1], 0, 0 );
+    my_init_buf_bf16( delbias_libxsmm[i], C[i+1], 0, 0 );
   }
   for ( i = 0 ; i < num_layers; ++i ) {
     zero_buf_uint8( relumask_libxsmm[i], MB*C[i+1] );
@@ -2207,7 +2229,7 @@ int main(int argc, char* argv[])
         if ( scratch != NULL ) libxsmm_free( scratch );
         scratch_size = alloc_size;
         scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
-        init_buf( (float*)(scratch), (scratch_size)/4, 0, 0 );
+        my_init_buf( (float*)(scratch), (scratch_size)/4, 0, 0 );
       }
     }
   }
@@ -2227,7 +2249,7 @@ int main(int argc, char* argv[])
       if ( scratch != NULL ) libxsmm_free( scratch );
       scratch_size = alloc_size;
       scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
-      init_buf( (float*)(scratch), (scratch_size)/4, 0, 0 );
+      my_init_buf( (float*)(scratch), (scratch_size)/4, 0, 0 );
     }
   }
 
@@ -2250,8 +2272,10 @@ int main(int argc, char* argv[])
           my_fc_fwd_exec( my_fc_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
                           bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
         }
+#ifdef USE_SOFTMAX
         my_smax_fwd_exec( my_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm, &loss,
                           0, tid, scratch );
+#endif
       }
     }
     l_end = libxsmm_timer_tick();
@@ -2286,8 +2310,10 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (j = 0; j < iters; ++j) {
+#ifdef USE_SOFTMAX   
         my_smax_bwd_exec( my_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm,
                           0, tid, scratch );
+#endif
         for ( i = num_layers-1; i > 0; --i) {
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
@@ -2335,10 +2361,12 @@ int main(int argc, char* argv[])
           my_fc_fwd_exec( my_fc_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
                           bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
         }
+#ifdef USE_SOFTMAX
         my_smax_fwd_exec( my_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm, &loss,
                           0, tid, scratch );
         my_smax_bwd_exec( my_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm,
                           0, tid, scratch );
+#endif
         for ( i = num_layers-1; i > 0; --i) {
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
@@ -2351,6 +2379,22 @@ int main(int argc, char* argv[])
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
+
+    /* Print some norms on last act for fwd and weights of first layer after all iterations */
+    last_act_fwd_f32    = (float*) malloc(MB*C[num_layers]*sizeof(float));
+    first_wt_bwdupd_f32 = (float*) malloc(C[0]*C[1]*sizeof(float));
+    matrix_copy_bf16_f32(MB*C[num_layers], act_libxsmm[num_layers], last_act_fwd_f32);
+    matrix_copy_bf16_f32(C[0]*C[1], fil_libxsmm[0], first_wt_bwdupd_f32);
+
+    libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, MB*C[num_layers], 1, last_act_fwd_f32, last_act_fwd_f32, 0, 0);
+    printf("L1 of act[num_layers]  : %.25g\n", norms_fwd.l1_ref);
+    libxsmm_matdiff_reduce(&diff, &norms_fwd);
+    libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, C[0]*C[1], 1, first_wt_bwdupd_f32, first_wt_bwdupd_f32, 0, 0);
+    printf("L1 of wt[0]  : %.25g\n", norms_fwd.l1_ref);
+    libxsmm_matdiff_reduce(&diff, &norms_bwd);
+
+    free(first_wt_bwdupd_f32);
+    free(last_act_fwd_f32);
 
     gflop = 0.0;
     for ( i = num_layers-1; i > 0; --i) {
