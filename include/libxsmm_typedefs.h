@@ -92,7 +92,7 @@
 
 /** Maximum size available to store a descriptor/blob (GEMM, MCOPY, TRANS, TRSM, TRMM). */
 #if !defined(LIBXSMM_DESCRIPTOR_MAXSIZE)
-# define LIBXSMM_DESCRIPTOR_MAXSIZE 72
+# define LIBXSMM_DESCRIPTOR_MAXSIZE 96
 #endif
 /** Size of the descriptor considered as unique/small signature. */
 #if !defined(LIBXSMM_DESCRIPTOR_SIGSIZE)
