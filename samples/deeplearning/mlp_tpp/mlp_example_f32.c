@@ -1415,6 +1415,7 @@ int main(int argc, char* argv[])
     l_total = libxsmm_timer_duration(l_start, l_end);
 
 #ifdef CHECK_L1
+#if 1
     /* Print some norms on last act for fwd and weights of first layer after all iterations */
     libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, MB*C[num_layers], 1, act_libxsmm[num_layers], act_libxsmm[num_layers], 0, 0);
     printf("L1 of act[num_layers]  : %.25g\n", norms_fwd.l1_ref);
@@ -1422,6 +1423,26 @@ int main(int argc, char* argv[])
     libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, C[0]*C[1], 1, fil_libxsmm[0], fil_libxsmm[0], 0, 0);
     printf("L1 of wt[0]  : %.25g\n", norms_bwd.l1_ref);
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
+#else
+    {
+      int e = 0;
+      FILE *fileAct, *fileWt;
+      fileAct = fopen("acts.txt","w+");
+      if (fileAct != NULL) {
+        for (e = 0; e < MB*C[num_layers]; e++) {
+          fprintf(fileAct, "%.10g\n", *((float*)act_libxsmm[num_layers] + e));
+        }
+        fclose(fileAct);
+      }
+      fileWt = fopen("weights.txt","w+");
+      if (fileWt != NULL) {
+        for (e = 0; e < C[0]*C[1]; e++) {
+          fprintf(fileWt, "%.10g\n", *((float*)fil_libxsmm[0] + e));
+        }
+        fclose(fileWt);
+      }
+    }
+#endif
 #endif
 
     gflop = 0.0;

@@ -85,6 +85,27 @@ LIBXSMM_INLINE void my_init_buf_bf16(libxsmm_bfloat16* buf, size_t size, int ini
   }
 }
 
+#if 0
+LIBXSMM_INLINE void my_matrix_copy_KCCK_to_KCCK_vnni(float *src, float *dst, int C, int K, int bc, int bk)
+{
+  int k1, k2, c1, c2;
+  int kBlocks = K/bk;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(4, float, real_src, src, cBlocks, bc, bk);
+  LIBXSMM_VLA_DECL(5, float, real_dst, dst, cBlocks, bc/2, bk, 2);
+
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (k2 = 0; k2 < bk; k2++) {
+            LIBXSMM_VLA_ACCESS(5, real_dst, k1, c1, c2/2, k2, c2%2, cBlocks, bc/2, bk, 2) = LIBXSMM_VLA_ACCESS(4, real_src, k1, c1, c2, k2, cBlocks, bc, bk);
+        }
+      }
+    }
+  }
+}
+#endif
+
 void my_bf16_vnni_transpose_16x16(void* source_void, void* dest_void, int source_stride, int dest_stride)
 {
   libxsmm_bfloat16 *source = (libxsmm_bfloat16*)source_void;
@@ -2171,11 +2192,31 @@ int main(int argc, char* argv[])
     my_init_buf_bf16( delact_libxsmm[i], MB*C[i], 0, 0 );
   }
   for ( i = 0 ; i < num_layers; ++i ) {
+#if 0
+  {
+    float *cur_fil = (float*) malloc(C[i]*C[i+1]*sizeof(float));
+    my_init_buf( cur_fil, C[i]*C[i+1], 0, 0 );
+    my_matrix_copy_KCCK_to_KCCK_vnni(cur_fil, fil_master[i], C[i], C[i+1], bc, bk);
+    libxsmm_rne_convert_fp32_bf16( fil_master[i], fil_libxsmm[i], C[i]*C[i+1] );
+    free(cur_fil);
+  }
+#else
     my_init_buf( fil_master[i], C[i]*C[i+1], 0, 0 );
     libxsmm_rne_convert_fp32_bf16( fil_master[i], fil_libxsmm[i], C[i]*C[i+1] );
+#endif
   }
   for ( i = 0 ; i < num_layers; ++i ) {
+#if 0
+    float *cur_fil = (float*) malloc(C[i]*C[i+1]*sizeof(float));
+    float *cur_fil_vnni = (float*) malloc(C[i]*C[i+1]*sizeof(float));
+    my_init_buf( cur_fil, C[i]*C[i+1], 0, 0 );
+    my_matrix_copy_KCCK_to_KCCK_vnni(cur_fil, cur_fil_vnni, C[i], C[i+1], bc, bk);
+    libxsmm_rne_convert_fp32_bf16( cur_fil_vnni, delfil_libxsmm[i], C[i]*C[i+1] );
+    free(cur_fil);
+    free(cur_fil_vnni);
+#else
     my_init_buf_bf16( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 );
+#endif
   }
   for ( i = 0 ; i < num_layers; ++i ) {
     my_init_buf_bf16( bias_libxsmm[i], C[i+1], 0, 0 );
@@ -2388,16 +2429,84 @@ int main(int argc, char* argv[])
     /* Print some norms on last act for fwd and weights of first layer after all iterations */
     last_act_fwd_f32    = (float*) malloc(MB*C[num_layers]*sizeof(float));
     first_wt_bwdupd_f32 = (float*) malloc(C[0]*C[1]*sizeof(float));
-    matrix_copy_bf16_f32(MB*C[num_layers], act_libxsmm[num_layers], last_act_fwd_f32);
-    matrix_copy_bf16_f32(C[0]*C[1], fil_libxsmm[0], first_wt_bwdupd_f32);
-
+    libxsmm_convert_bf16_f32( act_libxsmm[num_layers], last_act_fwd_f32, MB*C[num_layers]);
+#if 1
+    libxsmm_convert_bf16_f32( fil_libxsmm[0], first_wt_bwdupd_f32, C[0]*C[1]);
     libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, MB*C[num_layers], 1, last_act_fwd_f32, last_act_fwd_f32, 0, 0);
     printf("L1 of act[num_layers]  : %.25g\n", norms_fwd.l1_ref);
     libxsmm_matdiff_reduce(&diff, &norms_fwd);
     libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, C[0]*C[1], 1, first_wt_bwdupd_f32, first_wt_bwdupd_f32, 0, 0);
     printf("L1 of wt[0]  : %.25g\n", norms_bwd.l1_ref);
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
+#else
+    {
+      int e = 0;
+      FILE *fileAct, *fileWt;
+      float *ref_last_act_fwd_f32    = (float*) malloc(MB*C[num_layers]*sizeof(float));
+      float *ref_first_wt_bwdupd_f32 = (float*) malloc(C[0]*C[1]*sizeof(float));
+      float *ref_first_wt_bwdupd_f32_kc = (float*) malloc(C[0]*C[1]*sizeof(float));
+      libxsmm_bfloat16 *first_wt_bwdupd_bf16 = (libxsmm_bfloat16*) malloc(C[0]*C[1]*sizeof(libxsmm_bfloat16));
 
+      fileAct = fopen("acts.txt","r");
+      if (fileAct != NULL) {
+        int bufferLength = 255;
+        char buffer[bufferLength];
+        e = 0;
+        while(fgets(buffer, bufferLength, fileAct)) {
+          ref_last_act_fwd_f32[e] = atof(buffer);
+          e++;
+        }
+        fclose(fileAct);
+      }
+      /* compare */
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, MB*C[num_layers], 1, ref_last_act_fwd_f32, last_act_fwd_f32, 0, 0);
+      printf("##########################################\n");
+      printf("#   Correctness - Last fwd act           #\n");
+      printf("##########################################\n");
+      printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_fwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_fwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_fwd);
+
+
+      fileWt = fopen("weights.txt","r");
+      if (fileWt != NULL) {
+        int bufferLength = 255;
+        char buffer[bufferLength];
+        e = 0;
+        while(fgets(buffer, bufferLength, fileWt)) {
+          ref_first_wt_bwdupd_f32[e] = atof(buffer);
+          e++;
+        }
+        fclose(fileWt);
+      }
+      matrix_copy_KCCK_to_KC( ref_first_wt_bwdupd_f32, ref_first_wt_bwdupd_f32_kc, C[0], C[1], bc, bk );
+      matrix_copy_KCCK_to_KC_bf16( fil_libxsmm[0], first_wt_bwdupd_bf16, C[0], C[1], bc, bk );
+      libxsmm_convert_bf16_f32( first_wt_bwdupd_bf16, first_wt_bwdupd_f32, C[0]*C[1] );
+      /* compare */
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, C[0]*C[1], 1, ref_first_wt_bwdupd_f32_kc, first_wt_bwdupd_f32, 0, 0);
+      printf("##########################################\n");
+      printf("#   Correctness - First bwdupd wt        #\n");
+      printf("##########################################\n");
+      printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_bwd);
+
+      free(ref_last_act_fwd_f32);
+      free(ref_first_wt_bwdupd_f32);
+      free(ref_first_wt_bwdupd_f32_kc);
+      free(first_wt_bwdupd_bf16);
+    }
+#endif
     free(first_wt_bwdupd_f32);
     free(last_act_fwd_f32);
 #endif
