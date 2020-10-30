@@ -494,11 +494,11 @@ LIBXSMM_API_INTERN void libxsmm_itrans_internal(void* inout, unsigned int typesi
 
 
 LIBXSMM_API_INTERN void libxsmm_itrans_scratch(void* inout, void* scratch, unsigned int typesize,
-  size_t size, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
   LIBXSMM_ASSERT(NULL != inout && 0 < typesize && m <= ld && n <= ld);
-  memcpy(scratch, inout, size);
-  LIBXSMM_XCOPY_TILE(LIBXSMM_TCOPY_KERNEL, typesize, inout, scratch, ld, ld, 0, m, 0, n);
+  LIBXSMM_XCOPY_TILE(LIBXSMM_MCOPY_KERNEL, typesize, scratch, inout, ld, m, 0, n, 0, m);
+  LIBXSMM_XCOPY_TILE(LIBXSMM_TCOPY_KERNEL, typesize, inout, scratch, m, ld, 0, m, 0, n);
 }
 
 
@@ -511,21 +511,20 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
       libxsmm_itrans_internal(inout, typesize, m, n, ld);
     }
     else {
-      /* TODO: reduce memory consumption by relying on matcopy */
-      const size_t size = ld * LIBXSMM_MAX(m, n) * typesize;
-      if (size <= LIBXSMM_ITRANS_BUFFER_MAXSIZE) {
+      const libxsmm_blasint scratchsize = m * n * typesize;
+      if (scratchsize <= LIBXSMM_ITRANS_BUFFER_MAXSIZE) {
         char buffer[LIBXSMM_ITRANS_BUFFER_MAXSIZE];
-        libxsmm_itrans_scratch(inout, buffer, typesize, size, m, n, ld);
+        libxsmm_itrans_scratch(inout, buffer, typesize, m, n, ld);
       }
       else {
         void* buffer;
         LIBXSMM_INIT
-        if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, size, 0/*auto-align*/,
+        if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, scratchsize, 0/*auto-align*/,
           LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
           0/*extra*/, 0/*extra_size*/))
         {
           LIBXSMM_ASSERT(NULL != buffer);
-          libxsmm_itrans_scratch(inout, buffer, typesize, size, m, n, ld);
+          libxsmm_itrans_scratch(inout, buffer, typesize, m, n, ld);
           libxsmm_xfree(buffer, 0/*no check*/);
         }
         else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -552,8 +551,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
 {
   static int error_once = 0;
   if (NULL != inout && 0 < typesize && m <= ld && n <= ld) {
-    /* TODO: reduce memory consumption by relying on matcopy */
-    const size_t scratchsize = ld * LIBXSMM_MAX(m, n) * typesize;
+    const libxsmm_blasint scratchsize = m * n * typesize;
     const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
     const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, ntasks);
     const libxsmm_blasint begin = tid * tasksize, span = begin + tasksize;
@@ -590,14 +588,14 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
         else {
           for (i = begin * index_stride; i < (end * index_stride); i += index_stride) {
             char *const mat = &mat0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride, i) - index_base) * typesize];
-            libxsmm_itrans_scratch(mat, scratch, typesize, scratchsize, m, n, ld);
+            libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ld);
           }
         }
       }
       else { /* singular stride is measured in Bytes */
         const libxsmm_blasint d = *stride - index_base * sizeof(void*);
-        const char *const endi = mat0 + end * d;
-        char* i = mat0 + begin * d;
+        const char *const endi = mat0 + (size_t)d * end;
+        char* i = mat0 + begin * (size_t)d;
         if (NULL == scratch) {
           for (; i < endi; i += d) {
             void *const mat = *((void**)i);
@@ -612,9 +610,9 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
           for (; i < endi; i += d) {
             void *const mat = *((void**)i);
 #if defined(LIBXSMM_BATCH_CHECK)
-            if (NULL != mat) libxsmm_itrans_scratch(mat, scratch, typesize, scratchsize, m, n, ld);
+            if (NULL != mat) libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ld);
 #else
-            libxsmm_itrans_scratch(mat, scratch, typesize, scratchsize, m, n, ld);
+            libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ld);
 #endif
           }
         }
