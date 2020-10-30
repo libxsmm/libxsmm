@@ -502,15 +502,24 @@ LIBXSMM_API_INTERN void libxsmm_itrans_scratch(void* inout, void* scratch, unsig
 }
 
 
+LIBXSMM_API_INTERN void libxsmm_itrans_scratch_jit(void* inout, void* scratch, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_xcopykernel kernel)
+{
+  LIBXSMM_ASSERT(NULL != inout && 0 < typesize && m <= ld && n <= ld);
+  LIBXSMM_XCOPY_TILE(LIBXSMM_MCOPY_KERNEL, typesize, scratch, inout, ld, m, 0, n, 0, m);
+  LIBXSMM_TCOPY_CALL(kernel, typesize, scratch, m, inout, ld);
+}
+
+
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
   static int error_once = 0;
   if (NULL != inout && 0 < typesize && m <= ld && n <= ld) {
-    if (m == n && typesize <= 127) {
+    if (m == n && typesize <= 127) { /* in-place transpose */
       libxsmm_itrans_internal(inout, typesize, m, n, ld);
     }
-    else {
+    else { /* out-of-place transpose */
       const libxsmm_blasint scratchsize = m * n * typesize;
       if (scratchsize <= LIBXSMM_ITRANS_BUFFER_MAXSIZE) {
         char buffer[LIBXSMM_ITRANS_BUFFER_MAXSIZE];
@@ -559,6 +568,9 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
     char buffer[LIBXSMM_ITRANS_BUFFER_MAXSIZE];
     char *const mat0 = (char*)inout;
     void* scratch = NULL;
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+    libxsmm_xcopykernel kernel = { NULL };
+#endif
     if (m != n || 127 < typesize) {
       if (scratchsize <= LIBXSMM_ITRANS_BUFFER_MAXSIZE) {
         scratch = buffer;
@@ -574,18 +586,35 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
           fprintf(stderr, "LIBXSMM ERROR: failed to allocate buffer for in-place transpose!\n");
         }
       }
-      /* TODO: build JIT-kernel */
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+      if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
+        /* avoid outgrown transpose kernel upfront */
+        && (m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))
+      {
+        libxsmm_descriptor_blob blob;
+        kernel.xtrans = libxsmm_dispatch_trans(libxsmm_trans_descriptor_init(&blob,
+          typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ld));
+      }
+#endif
     }
     if (NULL != stride) {
       if (0 != index_stride) { /* stride array contains indexes */
         libxsmm_blasint i;
-        if (NULL == scratch) {
+        if (NULL == scratch) { /* in-place transpose */
           for (i = begin * index_stride; i < (end * index_stride); i += index_stride) {
             char *const mat = &mat0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride, i) - index_base) * typesize];
             libxsmm_itrans_internal(mat, typesize, m, n, ld);
           }
         }
-        else {
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+        else if (NULL != kernel.ptr) { /* out-of-place transpose using JIT'ted kernel */
+          for (i = begin * index_stride; i < (end * index_stride); i += index_stride) {
+            char* const mat = &mat0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride, i) - index_base) * typesize];
+            libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ld, kernel);
+          }
+        }
+#endif
+        else { /* out-of-place transpose */
           for (i = begin * index_stride; i < (end * index_stride); i += index_stride) {
             char *const mat = &mat0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride, i) - index_base) * typesize];
             libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ld);
@@ -596,7 +625,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
         const libxsmm_blasint d = *stride - index_base * sizeof(void*);
         const char *const endi = mat0 + (size_t)d * end;
         char* i = mat0 + begin * (size_t)d;
-        if (NULL == scratch) {
+        if (NULL == scratch) { /* in-place transpose */
           for (; i < endi; i += d) {
             void *const mat = *((void**)i);
 #if defined(LIBXSMM_BATCH_CHECK)
@@ -606,7 +635,19 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
 #endif
           }
         }
-        else {
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+        else if (NULL != kernel.ptr) { /* out-of-place transpose using JIT'ted kernel */
+          for (; i < endi; i += d) {
+            void *const mat = *((void**)i);
+# if defined(LIBXSMM_BATCH_CHECK)
+            if (NULL != mat) libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ld, kernel);
+# else
+            libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ld, kernel);
+# endif
+          }
+        }
+#endif
+        else { /* out-of-place transpose */
           for (; i < endi; i += d) {
             void *const mat = *((void**)i);
 #if defined(LIBXSMM_BATCH_CHECK)
