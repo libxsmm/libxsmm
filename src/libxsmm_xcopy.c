@@ -478,18 +478,7 @@ LIBXSMM_API void libxsmm_otrans(void* out, const void* in, unsigned int typesize
 LIBXSMM_API_INTERN void libxsmm_itrans_internal(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
-  const signed char c = (signed char)typesize;
-  libxsmm_blasint i, j;
-  LIBXSMM_ASSERT(NULL != inout && 0 < typesize && m <= ld && n <= ld);
-  LIBXSMM_ASSERT(m == n && typesize <= 127);
-  for (i = 0; i < m; ++i) {
-    for (j = 0; j < i; ++j) {
-      char *const a = &((char*)inout)[(i*ld+j)*typesize];
-      char *const b = &((char*)inout)[(j*ld+i)*typesize];
-      signed char k = 0;
-      for (; k < c; ++k) LIBXSMM_ISWAP(a[k], b[k]);
-    }
-  }
+  LIBXSMM_ITRANS(typesize, inout, ld, m, n);
 }
 
 

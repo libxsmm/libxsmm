@@ -133,6 +133,50 @@
   } \
 }
 
+#define LIBXSMM_ITRANS_LOOP(TYPE, INOUT, LD, M, N) { \
+  libxsmm_blasint libxsmm_itrans_loop_i_, libxsmm_itrans_loop_j_; \
+  LIBXSMM_ASSERT(NULL != (INOUT) && (M) == (N) && (M) <= (LD) && (N) <= (LD)); \
+  for (libxsmm_itrans_loop_i_ = 0; libxsmm_itrans_loop_i_ < (M); ++libxsmm_itrans_loop_i_) { \
+    for (libxsmm_itrans_loop_j_ = 0; libxsmm_itrans_loop_j_ < libxsmm_itrans_loop_i_; ++libxsmm_itrans_loop_j_) { \
+      TYPE *const libxsmm_itrans_loop_a_ = ((TYPE*)(INOUT)) + (size_t)(LD) * libxsmm_itrans_loop_i_ + libxsmm_itrans_loop_j_; \
+      TYPE *const libxsmm_itrans_loop_b_ = ((TYPE*)(INOUT)) + (size_t)(LD) * libxsmm_itrans_loop_j_ + libxsmm_itrans_loop_i_; \
+      LIBXSMM_ISWAP(*libxsmm_itrans_loop_a_, *libxsmm_itrans_loop_b_); \
+    } \
+  } \
+}
+
+#define LIBXSMM_ITRANS(TYPESIZE, INOUT, LD, M, N) { \
+  switch(TYPESIZE) { \
+    case 2: { \
+      LIBXSMM_ITRANS_LOOP(short, INOUT, LD, M, N); \
+    } break; \
+    case 4: { \
+      LIBXSMM_ITRANS_LOOP(int, INOUT, LD, M, N); \
+    } break; \
+    case 8: { \
+      LIBXSMM_ITRANS_LOOP(int64_t, INOUT, LD, M, N); \
+    } break; \
+    default: { /* generic type-size */ \
+      const signed char libxsmm_itrans_c_ = (signed char)(TYPESIZE); \
+      libxsmm_blasint libxsmm_itrans_i_, libxsmm_itrans_j_; \
+      LIBXSMM_ASSERT(NULL != (INOUT) && (M) == (N) && (M) <= (LD) && (N) <= (LD)); \
+      LIBXSMM_ASSERT(0 < (TYPESIZE) && (TYPESIZE) <= 127); \
+      for (libxsmm_itrans_i_ = 0; libxsmm_itrans_i_ < (M); ++libxsmm_itrans_i_) { \
+        for (libxsmm_itrans_j_ = 0; libxsmm_itrans_j_ < libxsmm_itrans_i_; ++libxsmm_itrans_j_) { \
+          char *const libxsmm_itrans_a_ = &((char*)(INOUT))[((LD)*libxsmm_itrans_i_+libxsmm_itrans_j_)*(TYPESIZE)]; \
+          char *const libxsmm_itrans_b_ = &((char*)(INOUT))[((LD)*libxsmm_itrans_j_+libxsmm_itrans_i_)*(TYPESIZE)]; \
+          signed char libxsmm_itrans_k_ = 0; \
+          for (; libxsmm_itrans_k_ < libxsmm_itrans_c_; ++libxsmm_itrans_k_) { \
+            LIBXSMM_ISWAP( \
+              libxsmm_itrans_a_[libxsmm_itrans_k_], \
+              libxsmm_itrans_b_[libxsmm_itrans_k_]); \
+          } \
+        } \
+      } \
+    } \
+  } \
+}
+
 #define LIBXSMM_MZERO_KERNEL_TILE(XKERNEL, TYPESIZE, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
   LIBXSMM_XCOPY_TILE(XKERNEL, TYPESIZE, OUT, IN, LDI, LDO, N0, N1, M0, M1)
 #define LIBXSMM_MCOPY_KERNEL_TILE(XKERNEL, TYPESIZE, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
