@@ -22,6 +22,8 @@
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
+#define CHECK_L1
+
 #define _mm512_loadcvt_bf16_fp32(A)   LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)(A)))
 #define LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( A, B ) (__m512i)_mm512_cvtne2ps_pbh( A, B )
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
@@ -2021,8 +2023,10 @@ int main(int argc, char* argv[])
   my_smax_bwd_config my_smax_bwd;
   void* scratch = NULL;
   size_t scratch_size = 0;
+#ifdef CHECK_L1
   float *last_act_fwd_f32 = NULL;
   float *first_wt_bwdupd_f32 = NULL;
+#endif
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -2051,7 +2055,7 @@ int main(int argc, char* argv[])
   int i, j;
   double act_size = 0.0;
   double fil_size = 0.0;
-  float lr = 0.1f;
+  float lr = 0.2f;
   float loss = 0;
   float loss_weight = 0.1f;
 
@@ -2253,7 +2257,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  if (type == 'A' || type == 'F') {
+  if ( type == 'F') {
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -2295,7 +2299,7 @@ int main(int argc, char* argv[])
     printf("%f,%f\n", ((double)(l_total/iters)), gflop/l_total);
   }
 
-  if (type == 'A' || type == 'B') {
+  if (type == 'B') {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -2310,7 +2314,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (j = 0; j < iters; ++j) {
-#ifdef USE_SOFTMAX   
+#ifdef USE_SOFTMAX
         my_smax_bwd_exec( my_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm,
                           0, tid, scratch );
 #endif
@@ -2380,6 +2384,7 @@ int main(int argc, char* argv[])
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
 
+#ifdef CHECK_L1
     /* Print some norms on last act for fwd and weights of first layer after all iterations */
     last_act_fwd_f32    = (float*) malloc(MB*C[num_layers]*sizeof(float));
     first_wt_bwdupd_f32 = (float*) malloc(C[0]*C[1]*sizeof(float));
@@ -2390,11 +2395,12 @@ int main(int argc, char* argv[])
     printf("L1 of act[num_layers]  : %.25g\n", norms_fwd.l1_ref);
     libxsmm_matdiff_reduce(&diff, &norms_fwd);
     libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, C[0]*C[1], 1, first_wt_bwdupd_f32, first_wt_bwdupd_f32, 0, 0);
-    printf("L1 of wt[0]  : %.25g\n", norms_fwd.l1_ref);
+    printf("L1 of wt[0]  : %.25g\n", norms_bwd.l1_ref);
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
 
     free(first_wt_bwdupd_f32);
     free(last_act_fwd_f32);
+#endif
 
     gflop = 0.0;
     for ( i = num_layers-1; i > 0; --i) {

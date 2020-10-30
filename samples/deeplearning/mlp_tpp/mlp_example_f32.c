@@ -19,6 +19,8 @@
 # include <omp.h>
 #endif
 
+#define CHECK_L1
+
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
@@ -1085,7 +1087,7 @@ int main(int argc, char* argv[])
   int i, j;
   double fil_size = 0.0;
   double act_size = 0.0;
-  float lr = 0.1f;
+  float lr = 0.2f;
   float loss = 0;
   float loss_weight = 0.1f;
 
@@ -1285,7 +1287,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  if (type == 'A' || type == 'F') {
+  if ( type == 'F') {
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -1327,7 +1329,7 @@ int main(int argc, char* argv[])
     printf("%f,%f\n", ((double)(l_total/iters)), gflop/l_total);
   }
 
-  if (type == 'A' || type == 'B') {
+  if (type == 'B') {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -1342,7 +1344,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (j = 0; j < iters; ++j) {
-#ifdef USE_SOFTMAX    
+#ifdef USE_SOFTMAX
         my_smax_bwd_exec( my_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm,
                           0, tid, scratch );
 #endif
@@ -1393,7 +1395,7 @@ int main(int argc, char* argv[])
           my_fc_fwd_exec( my_fc_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
                           bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
         }
-#ifdef USE_SOFTMAX      
+#ifdef USE_SOFTMAX
         my_smax_fwd_exec( my_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm, &loss,
                           0, tid, scratch );
         my_smax_bwd_exec( my_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm,
@@ -1412,13 +1414,15 @@ int main(int argc, char* argv[])
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
 
+#ifdef CHECK_L1
     /* Print some norms on last act for fwd and weights of first layer after all iterations */
     libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, MB*C[num_layers], 1, act_libxsmm[num_layers], act_libxsmm[num_layers], 0, 0);
     printf("L1 of act[num_layers]  : %.25g\n", norms_fwd.l1_ref);
     libxsmm_matdiff_reduce(&diff, &norms_fwd);
     libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, C[0]*C[1], 1, fil_libxsmm[0], fil_libxsmm[0], 0, 0);
-    printf("L1 of wt[0]  : %.25g\n", norms_fwd.l1_ref);
+    printf("L1 of wt[0]  : %.25g\n", norms_bwd.l1_ref);
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
+#endif
 
     gflop = 0.0;
     for ( i = num_layers-1; i > 0; --i) {
