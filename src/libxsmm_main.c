@@ -66,6 +66,9 @@
 #if !defined(LIBXSMM_UNIFY_LOCKS) && 1
 # define LIBXSMM_UNIFY_LOCKS
 #endif
+#if !defined(LIBXSMM_REGKEY_PAD) && 1
+# define LIBXSMM_REGKEY_PAD
+#endif
 #if !defined(LIBXSMM_CACHE_PAD) && 1
 # define LIBXSMM_CACHE_PAD
 #endif
@@ -216,11 +219,18 @@ LIBXSMM_APIVAR_DEFINE(internal_cache_type* internal_cache_buffer);
 LIBXSMM_APIVAR_DEFINE(int internal_cache_size);
 #endif /*defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))*/
 
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_regkey_type {
+#if defined(LIBXSMM_REGKEY_PAD)
+  char pad[LIBXSMM_UP2(sizeof(libxsmm_descriptor), LIBXSMM_CACHELINE)];
+#endif
+  libxsmm_descriptor entry;
+} internal_regkey_type;
+
 /** Determines the try-lock property (1<N: disabled, N=1: enabled [N=0: disabled in case of RW-lock]). */
 LIBXSMM_APIVAR_DEFINE(int internal_reglock_count);
 LIBXSMM_APIVAR_DEFINE(size_t internal_registry_nbytes);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_registry_nleaks);
-LIBXSMM_APIVAR_DEFINE(libxsmm_descriptor* internal_registry_keys);
+LIBXSMM_APIVAR_DEFINE(internal_regkey_type* internal_registry_keys);
 LIBXSMM_APIVAR_DEFINE(libxsmm_code_pointer* internal_registry);
 LIBXSMM_APIVAR_DEFINE(internal_statistic_type internal_statistic[2/*DP/SP*/][4/*sml/med/big/xxx*/]);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_sml);
@@ -571,8 +581,8 @@ LIBXSMM_API_INLINE void internal_register_static_code(
       LIBXSMM_ASSERT(NULL == dst_entry->ptr_const || i == i0);
     }
     if (NULL == dst_entry->ptr_const) { /* registry not exhausted */
-      internal_registry_keys[i].kind = LIBXSMM_KERNEL_KIND_MATMUL;
-      LIBXSMM_ASSIGN127(&internal_registry_keys[i].gemm.desc, desc);
+      internal_registry_keys[i].entry.kind = LIBXSMM_KERNEL_KIND_MATMUL;
+      LIBXSMM_ASSIGN127(&internal_registry_keys[i].entry.gemm.desc, desc);
       dst_entry->xgemm = xgemm;
       /* mark current entry as static code (non-JIT) */
       dst_entry->uval |= LIBXSMM_CODE_STATIC;
@@ -986,7 +996,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         sizeof(internal_cache_type) * (LIBXSMM_NTHREADS_MAX), LIBXSMM_CACHELINE/*alignment*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/) && NULL != new_cache) &&
 #endif
-      (EXIT_SUCCESS == libxsmm_xmalloc(&new_keys, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_descriptor), 0/*auto-align*/,
+      (EXIT_SUCCESS == libxsmm_xmalloc(&new_keys, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(internal_regkey_type), 0/*auto-align*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/) && NULL != new_keys) &&
       (EXIT_SUCCESS == libxsmm_xmalloc(&new_registry, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer), 0/*auto-align*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/) && NULL != new_registry))
@@ -1023,7 +1033,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       LIBXSMM_ASSERT(NULL == internal_cache_buffer);
       internal_cache_buffer = (internal_cache_type*)new_cache;
 #endif
-      internal_registry_keys = (libxsmm_descriptor*)new_keys; /* prior to registering static kernels */
+      internal_registry_keys = (internal_regkey_type*)new_keys; /* prior to registering static kernels */
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_DEFAULT_CONFIG)
 #     include <libxsmm_dispatch.h>
 #endif
@@ -1242,7 +1252,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
     registry = (libxsmm_code_pointer*)regptr;
     if (NULL != registry) {
-      libxsmm_descriptor *const registry_keys = internal_registry_keys;
+      internal_regkey_type*const registry_keys = internal_registry_keys;
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       internal_cache_type *const cache_buffer = internal_cache_buffer;
 #endif
@@ -1271,9 +1281,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
         /*const*/ libxsmm_code_pointer code = registry[i];
         if (NULL != code.ptr_const) {
           /* check if the registered entity is a GEMM kernel */
-          switch (LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].kind)) {
+          switch (LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].entry.kind)) {
             case LIBXSMM_KERNEL_KIND_MATMUL: {
-              const libxsmm_gemm_descriptor *const desc = &registry_keys[i].gemm.desc;
+              const libxsmm_gemm_descriptor *const desc = &registry_keys[i].entry.gemm.desc;
               if (1 < desc->m && 1 < desc->n) {
                 const unsigned int njit = (0 == (LIBXSMM_CODE_STATIC & code.uval) ? 1 : 0);
                 const unsigned int nsta = (0 != (LIBXSMM_CODE_STATIC & code.uval) ? 1 : 0);
@@ -1303,7 +1313,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             case LIBXSMM_KERNEL_KIND_USER: {
               ++internal_statistic_num_user;
             } break;
-            default: if (LIBXSMM_KERNEL_UNREGISTERED <= LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].kind)) {
+            default: if (LIBXSMM_KERNEL_UNREGISTERED <= LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].entry.kind)) {
               ++errors;
             }
             else {
@@ -2366,9 +2376,9 @@ LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_
 #else
         && code.ptr_const == internal_registry[result->registered].ptr_const
 #endif
-        && LIBXSMM_KERNEL_UNREGISTERED > LIBXSMM_DESCRIPTOR_KIND(internal_registry_keys[result->registered].kind))
+        && LIBXSMM_KERNEL_UNREGISTERED > LIBXSMM_DESCRIPTOR_KIND(internal_registry_keys[result->registered].entry.kind))
       {
-        *desc = internal_registry_keys + result->registered;
+        *desc = &internal_registry_keys[result->registered].entry;
       }
       else *desc = NULL;
     }
