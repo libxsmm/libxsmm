@@ -478,7 +478,7 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
 
 /** Code generation routine for matrix-eltwise using a descriptor. */
 LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_descriptor* descriptor);
-LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type);
+LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_copy_flags flags);
 LIBXSMM_API libxsmm_meltwfunction_zero libxsmm_dispatch_meltw_zero(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type);
 LIBXSMM_API libxsmm_meltwfunction_add libxsmm_dispatch_meltw_add(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type);
 LIBXSMM_API libxsmm_meltwfunction_mul libxsmm_dispatch_meltw_mul(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type);

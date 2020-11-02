@@ -4205,11 +4205,11 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type) {
+LIBXSMM_API libxsmm_meltwfunction_copy libxsmm_dispatch_meltw_copy(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_copy_flags flags) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    0, 0, LIBXSMM_MELTW_OPERATION_COPY);
+    (unsigned short)flags, 0, LIBXSMM_MELTW_OPERATION_COPY);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
