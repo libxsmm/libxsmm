@@ -197,7 +197,8 @@ typedef enum libxsmm_meltw_relu_flags {
 
 typedef enum libxsmm_meltw_copy_flags {
   LIBXSMM_MELTW_FLAG_COPY_NONE      = 0,
-  LIBXSMM_MELTW_FLAG_COPY_ZERO      = 1
+  LIBXSMM_MELTW_FLAG_COPY_ZERO      = 1,
+  LIBXSMM_MELTW_FLAG_COPY_COLBCAST  = 2
 } libxsmm_meltw_copy_flags;
 
 typedef enum libxsmm_meltw_redu_flags {
