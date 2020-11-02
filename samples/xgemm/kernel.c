@@ -1584,7 +1584,7 @@ int main(int argc, char* argv []) {
   libxsmm_matdiff_clear(&l_diff);
 
   /* check argument count for a valid range */
-  if ( argc == 20 ) {
+  if ( argc == 20 || argc == 19 ) {
     /* xgemm sizes */
     l_m = atoi(argv[1]);
     l_n = atoi(argv[2]);
@@ -1606,7 +1606,11 @@ int main(int argc, char* argv []) {
     l_br = atoi(argv[16]);
     l_br_unroll = atoi(argv[17]);
     g_reps = atoi(argv[18]);
-    l_tc_config = atoi(argv[19]);
+    if ( argc == 20 ) {
+      l_tc_config = atoi(argv[19]);
+    } else {
+      l_tc_config = 0;
+    }
 
     /* set value of prefetch flag */
     if (strcmp("nopf", argv[13]) == 0) {
@@ -1654,7 +1658,7 @@ int main(int argc, char* argv []) {
 
     l_file_input = 0;
     l_run_check = 1;
-  } else if ( argc == 15 ) {
+  } else if ( argc == 15 || argc == 14 ) {
     l_file_input = 1;
     l_file_name = argv[1];
     l_alpha = atof(argv[2]);
@@ -1666,7 +1670,11 @@ int main(int argc, char* argv []) {
     l_precision = argv[8];
     l_br = atoi(argv[10]);
     l_br_unroll = atoi(argv[11]);
-    l_tc_config = atoi(argv[14]);
+    if ( argc == 15 ) {
+      l_tc_config = atoi(argv[14]);
+    } else {
+      l_tc_config = 0;
+    }
 
     if (strcmp("nobr", argv[9]) == 0) {
       l_br_type = 0;
@@ -1698,7 +1706,7 @@ int main(int argc, char* argv []) {
       env_arch == libxsmm_stristr(env_arch, "amx"));
   int arch_cpuid = libxsmm_cpuid();
 
-  if ((!is_env_SPR && arch_cpuid != LIBXSMM_X86_AVX512_SPR)
+  if ((!is_env_SPR && arch_cpuid < LIBXSMM_X86_AVX512_SPR)
        && (l_tc_config)) {
     printf("Warning: external tile configuratoin will be ingnored\n");
     l_tc_config = 0;
