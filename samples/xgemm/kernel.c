@@ -485,8 +485,8 @@ double run_jit_short_int( const gemm_def*     i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
-  libxsmm_xmmfunction cfg_tr;
-  libxsmm_xmmfunction rls_tr;
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
 
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
@@ -665,8 +665,8 @@ double run_jit_uschar_int( const gemm_def*      i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
-  libxsmm_xmmfunction cfg_tr;
-  libxsmm_xmmfunction rls_tr;
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
 
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
@@ -845,8 +845,8 @@ double run_jit_suchar_int( const gemm_def*      i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
-  libxsmm_xmmfunction cfg_tr;
-  libxsmm_xmmfunction rls_tr;
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
 
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
@@ -1038,8 +1038,8 @@ double run_jit_suchar_uchar( const gemm_def*        i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
-  libxsmm_xmmfunction cfg_tr;
-  libxsmm_xmmfunction rls_tr;
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
 
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
@@ -1218,8 +1218,8 @@ double run_jit_bfloat16_float( const gemm_def*         i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
-  libxsmm_xmmfunction cfg_tr;
-  libxsmm_xmmfunction rls_tr;
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
 
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
@@ -1397,8 +1397,8 @@ double run_jit_bfloat16( const gemm_def*         i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
-  libxsmm_xmmfunction cfg_tr;
-  libxsmm_xmmfunction rls_tr;
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
 
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
