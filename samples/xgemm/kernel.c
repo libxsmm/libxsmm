@@ -1698,7 +1698,7 @@ int main(int argc, char* argv []) {
       env_arch == libxsmm_stristr(env_arch, "amx"));
   int arch_cpuid = libxsmm_cpuid();
 
-  if ((!is_env_SPR || arch_cpuid != LIBXSMM_X86_AVX512_SPR)
+  if ((!is_env_SPR && arch_cpuid != LIBXSMM_X86_AVX512_SPR)
        && (l_tc_config)) {
     printf("Warning: external tile configuratoin will be ingnored\n");
     l_tc_config = 0;
