@@ -764,7 +764,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
             }
 
             /* Also JIT eltwise functions... */
-            handle->fwd_cvtfp32bf16_kernel          = libxsmm_dispatch_meltw_cvtfp32bf16(handle->bk, handle->bn, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
+            handle->fwd_cvtfp32bf16_kernel          = libxsmm_dispatch_meltw_cvtfp32bf16(handle->bk, handle->bn, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVT_NONE);
             handle->fwd_cvtfp32bf16_relu_kernel     = libxsmm_dispatch_meltw_cvtfp32bf16_act(handle->bk, handle->bn, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU, 0);
             handle->fwd_sigmoid_cvtfp32bf16_kernel  = libxsmm_dispatch_meltw_act_cvtfp32bf16(handle->bk, handle->bn, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_ACVT_FUSE_SIGM, 0);
           } else {
@@ -788,7 +788,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
               handle->bwd_config_kernel = libxsmm_bsmmdispatch(handle->bc, handle->bn, handle->bk, &ldb, &lda, &ldb, NULL, &beta, &l_tc_flags, NULL);
               handle->gemm_bwd3.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd_unroll(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &ldb, &lda, &ldb, &alpha, &zerobeta, &l_flags, NULL);
               /* Also JIT eltwise functions... */
-              handle->bwd_cvtfp32bf16_kernel  = libxsmm_dispatch_meltw_cvtfp32bf16(handle->bc, handle->bn, &ldb, &ldb, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
+              handle->bwd_cvtfp32bf16_kernel  = libxsmm_dispatch_meltw_cvtfp32bf16(handle->bc, handle->bn, &ldb, &ldb, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVT_NONE);
               handle->bwd_relu_kernel  = libxsmm_dispatch_meltw_relu(handle->bc, handle->bn, &ldb, &ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_BWD, 0);
             } else {
               handle->gemm_bwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &lda, &ldb, &alpha, &beta, NULL, NULL);

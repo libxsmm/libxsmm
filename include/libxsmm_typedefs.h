@@ -249,6 +249,11 @@ typedef enum libxsmm_meltw_scal_flags {
   LIBXSMM_MELTW_FLAG_SCALE_MULT_SHIFT_ADD_BIAS_ROWS_COLS = LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_SHIFT | LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS | LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS
 } libxsmm_meltw_scal_flags;
 
+typedef enum libxsmm_meltw_cvt_flags {
+  LIBXSMM_MELTW_FLAG_CVT_NONE           = 0,
+  LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT    = 1
+} libxsmm_meltw_cvt_flags;
+
 typedef enum libxsmm_meltw_cvta_flags {
   LIBXSMM_MELTW_FLAG_CVTA_NONE           = 0,
   LIBXSMM_MELTW_FLAG_CVTA_FUSE_RELU      = 1,
@@ -310,6 +315,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
   libxsmm_meltw_copy_flags     elt_copy;
   libxsmm_meltw_scal_flags     elt_scal;
   libxsmm_meltw_cvta_flags     elt_cvta;
+  libxsmm_meltw_cvt_flags      elt_cvt;
   libxsmm_meltw_acvt_flags     elt_acvt;
   libxsmm_meltw_flags          elt_meltwfused;
 } libxsmm_xmelt_flags;
