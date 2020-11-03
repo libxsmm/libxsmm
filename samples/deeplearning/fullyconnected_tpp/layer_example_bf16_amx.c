@@ -677,6 +677,7 @@ typedef struct my_fc_bwd_config {
   libxsmm_bsmmfunction_reducebatch_strd gemm_upd2;
   libxsmm_bmmfunction_reducebatch_strd gemm_upd3;
   libxsmm_meltwfunction_cvtfp32bf16     bwd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_cvtfp32bf16     upd_cvtfp32bf16_kernel;
   libxsmm_meltwfunction_relu            bwd_relu_kernel;
 } my_fc_bwd_config;
 
@@ -829,6 +830,8 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint unroll_hint;
   size_t size_bwd_scratch;
   size_t size_upd_scratch;
+  libxsmm_blasint bbk;
+  libxsmm_blasint bbc;
 
   /* setting up some handle values */
   res.N = N;
@@ -864,6 +867,9 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
   }
+
+  bbk = (res.upd_2d_blocking == 1) ? bk : bk/res.ofm_subtasks;
+  bbc = (res.upd_2d_blocking == 1) ? bc : bc/res.ifm_subtasks;
 
 #if 0
   res.bwd_bf = atoi(getenv("BWD_BF"));
@@ -957,6 +963,13 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.tilerelease_kernel = libxsmm_bsmmdispatch(res.bk, res.bk, res.bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
   if ( res.tilerelease_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP tilerelease_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  /* Also JIT eltwise TPPs... */
+  res.upd_cvtfp32bf16_kernel  = libxsmm_dispatch_meltw_cvtfp32bf16(bbk, bbc, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT);
+  if ( res.upd_cvtfp32bf16_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP upd_cvtfp32bf16_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -1213,7 +1226,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
   LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,   doutput, grad_output_ptr, nBlocksOFm, bn, bk);
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, doutput_tr, tr_doutput_ptr, nBlocksMB, bn_lp, bk, lpb);
 
-  libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel = cfg.bwd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel  = cfg.bwd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel2 = cfg.upd_cvtfp32bf16_kernel;
   libxsmm_meltw_cvtfp32bf16_param   eltwise_params;
 
   /* lazy barrier init */
@@ -1556,25 +1570,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
               cfg.gemm_upd(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
               /* Downconvert result to BF16 and vnni format */
               if (bfn == BF-1) {
-                if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
-                  for (jc = 0; jc < bbc; jc+=2) {
-                    for (jk = 0; jk < bbk; jk+=16) {
-                      a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc+1, ofm2*bbk+jk, nBlocksIFm, bc, bk));
-                      b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk+jk, nBlocksIFm, bc, bk));
-                      c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(a01, b01);
-                      _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
-                    }
-                  }
-                } else {
-                  for (jc = 0; jc < bbc; jc++) {
-                    LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk, nBlocksIFm, bc, bk), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk, bk), bbk);
-                  }
-                  for (ii = 0; ii < bbc; ii++) {
-                    for (jj = 0; jj < bbk; jj++) {
-                      LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/lpb, ofm2*bbk+jj, (ifm2*bbc+ii)%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
-                    }
-                  }
-                }
+                eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+                eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+                eltwise_kernel2(&eltwise_params);
               }
             }
           }
@@ -1607,25 +1605,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
             cfg.gemm_upd(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
             /* Downconvert result to BF16 and vnni format */
             if (bfn == BF-1) {
-              if ((bbc % 2 == 0) && (bbk % 16 == 0)) {
-                for (jc = 0; jc < bbc; jc+=2) {
-                  for (jk = 0; jk < bbk; jk+=16) {
-                    a01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc+1, ofm2*bbk+jk, nBlocksIFm, bc, bk));
-                    b01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk+jk, nBlocksIFm, bc, bk));
-                    c01 = LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(a01, b01);
-                    _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+jc)/lpb, ofm2*bbk+jk, 0, nBlocksIFm, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
-                  }
-                }
-              } else {
-                for (jc = 0; jc < bbc; jc++) {
-                  LIBXSMM_DNN_CONVERT_BUFFER_F32_BF16(&LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc+jc, ofm2*bbk, nBlocksIFm, bc, bk), &LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+jc, ofm2*bbk, bk), bbk);
-                }
-                for (ii = 0; ii < bbc; ii++) {
-                  for (jj = 0; jj < bbk; jj++) {
-                    LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc+ii)/lpb, ofm2*bbk+jj, (ifm2*bbc+ii)%lpb, nBlocksIFm, bc_lp, bk, lpb) = LIBXSMM_VLA_ACCESS(2, dfilter_block, ifm2*bbc+ii, ofm2*bbk+jj, bk);
-                  }
-                }
-              }
+              eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk);
+              eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
+              eltwise_kernel2(&eltwise_params);
             }
           }
         }
