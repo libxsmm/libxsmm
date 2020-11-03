@@ -1275,7 +1275,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
     _ldi = handle->ofmblock * handle->ofwp;
     _ldo = handle->ofmblock * handle->ofwp;
-    handle->fwd_cvtfp32bf16_kernel = libxsmm_dispatch_meltw_cvtfp32bf16(handle->ofmblock * handle->fwd_ofw_rb, handle->fwd_ofh_rb, &_ldi, &_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
+    handle->fwd_cvtfp32bf16_kernel = libxsmm_dispatch_meltw_cvtfp32bf16(handle->ofmblock * handle->fwd_ofw_rb, handle->fwd_ofh_rb, &_ldi, &_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVT_NONE);
   }
 
   /* Create strided BRGEMMs for i8i32 convolutions  */

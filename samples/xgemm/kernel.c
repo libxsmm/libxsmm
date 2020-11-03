@@ -32,6 +32,7 @@ typedef struct gemm_def {
   int br_type;
   libxsmm_blasint br_count;
   int br_unroll;
+  int tc_config;
 } gemm_def;
 
 int g_reps = 0;
@@ -57,6 +58,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
   printf("    #repetitions\n");
+  printf("    tile configuratoin: 1 - external, 0 - internal\n");
   printf("\n\n");
   printf("2. Usage (dense*dense=dense, performance only option available):\n");
   printf("    filename with space-sperated sizes (M N K LDA LDB LDC)\n");
@@ -72,6 +74,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    BRunroll: 0/1\n");
   printf("    #repetitions\n");
   printf("    0: no check, otherwise: run check\n");
+  printf("    tile configuratoin: 1 - external, 0 - internal\n");
   printf("\n\n");
 }
 
@@ -482,7 +485,26 @@ double run_jit_short_int( const gemm_def*     i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
+
+  int l_cfg_flags = 0;
+  int l_rls_flags = 0;
+  if (i_gemm_def->tc_config) {
+      l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
+      l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
+  }
+
   l_start = libxsmm_timer_tick();
+  if (i_gemm_def->tc_config) {
+      cfg_tr.wimm  = libxsmm_wimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                        &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                        NULL, &l_beta, &l_cfg_flags, NULL);
+      rls_tr.wimm  = libxsmm_wimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                             NULL, NULL, NULL, NULL, NULL, &l_rls_flags, NULL);
+      l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
+  }
+
   if (i_gemm_def->br_type == 0) {
     l_test_jit.wimm = libxsmm_wimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
                                          &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
@@ -529,7 +551,9 @@ double run_jit_short_int( const gemm_def*     i_gemm_def,
 
   /* receive kernel information */
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
-
+  if (i_gemm_def->tc_config) {
+    cfg_tr.wimm(NULL, NULL, NULL);
+  }
   l_start = libxsmm_timer_tick();
   if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
     if (i_gemm_def->br_type == 0) {
@@ -577,7 +601,9 @@ double run_jit_short_int( const gemm_def*     i_gemm_def,
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-
+  if (i_gemm_def->tc_config) {
+    rls_tr.wimm(NULL, NULL, NULL);
+  }
   if ( i_print_jit_info == 0 ) {
     printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
     printf("%fs for creating jit\n", l_jittime);
@@ -639,7 +665,26 @@ double run_jit_uschar_int( const gemm_def*      i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
+
+  int l_cfg_flags = 0;
+  int l_rls_flags = 0;
+  if (i_gemm_def->tc_config) {
+      l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
+      l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
+  }
+
   l_start = libxsmm_timer_tick();
+  if (i_gemm_def->tc_config) {
+      cfg_tr.usbimm  = libxsmm_usbimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                        &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                        NULL, &l_beta, &l_cfg_flags, NULL);
+      rls_tr.usbimm  = libxsmm_usbimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                             NULL, NULL, NULL, NULL, NULL, &l_rls_flags, NULL);
+      l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
+  }
+
   if (i_gemm_def->br_type == 0) {
     l_test_jit.usbimm = libxsmm_usbimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
                                          &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
@@ -686,7 +731,9 @@ double run_jit_uschar_int( const gemm_def*      i_gemm_def,
 
   /* receive kernel information */
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
-
+  if (i_gemm_def->tc_config) {
+    cfg_tr.usbimm(NULL, NULL, NULL);
+  }
   l_start = libxsmm_timer_tick();
   if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
     if (i_gemm_def->br_type == 0) {
@@ -734,7 +781,9 @@ double run_jit_uschar_int( const gemm_def*      i_gemm_def,
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-
+  if (i_gemm_def->tc_config) {
+    rls_tr.usbimm(NULL, NULL, NULL);
+  }
   if ( i_print_jit_info == 0 ) {
     printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
     printf("%fs for creating jit\n", l_jittime);
@@ -796,7 +845,26 @@ double run_jit_suchar_int( const gemm_def*      i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
+
+  int l_cfg_flags = 0;
+  int l_rls_flags = 0;
+  if (i_gemm_def->tc_config) {
+      l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
+      l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
+  }
+
   l_start = libxsmm_timer_tick();
+  if (i_gemm_def->tc_config) {
+      cfg_tr.subimm  = libxsmm_subimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                        &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                        NULL, &l_beta, &l_cfg_flags, NULL);
+      rls_tr.subimm  = libxsmm_subimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                             NULL, NULL, NULL, NULL, NULL, &l_rls_flags, NULL);
+      l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
+  }
+
   if (i_gemm_def->br_type == 0) {
     l_test_jit.subimm = libxsmm_subimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
                                          &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
@@ -843,7 +911,9 @@ double run_jit_suchar_int( const gemm_def*      i_gemm_def,
 
   /* receive kernel information */
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
-
+  if (i_gemm_def->tc_config) {
+    cfg_tr.subimm(NULL, NULL, NULL);
+  }
   l_start = libxsmm_timer_tick();
   if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
     if (i_gemm_def->br_type == 0) {
@@ -891,7 +961,9 @@ double run_jit_suchar_int( const gemm_def*      i_gemm_def,
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-
+  if (i_gemm_def->tc_config) {
+    rls_tr.subimm(NULL, NULL, NULL);
+  }
   if ( i_print_jit_info == 0 ) {
     printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
     printf("%fs for creating jit\n", l_jittime);
@@ -966,7 +1038,26 @@ double run_jit_suchar_uchar( const gemm_def*        i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
+
+  int l_cfg_flags = 0;
+  int l_rls_flags = 0;
+  if (i_gemm_def->tc_config) {
+      l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
+      l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
+  }
+
   l_start = libxsmm_timer_tick();
+  if (i_gemm_def->tc_config) {
+      cfg_tr.subimm  = libxsmm_subimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                        &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                        NULL, &l_beta, &l_cfg_flags, NULL);
+      rls_tr.subimm  = libxsmm_subimmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                             NULL, NULL, NULL, NULL, NULL, &l_rls_flags, NULL);
+      l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
+  }
+
   if (i_gemm_def->br_type == 0) {
     l_test_jit.sububmm = libxsmm_sububmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
                                          &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
@@ -1013,7 +1104,9 @@ double run_jit_suchar_uchar( const gemm_def*        i_gemm_def,
 
   /* receive kernel information */
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
-
+  if (i_gemm_def->tc_config) {
+    cfg_tr.subimm(NULL, NULL, NULL);
+  }
   l_start = libxsmm_timer_tick();
   if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
     if (i_gemm_def->br_type == 0) {
@@ -1061,7 +1154,9 @@ double run_jit_suchar_uchar( const gemm_def*        i_gemm_def,
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-
+  if (i_gemm_def->tc_config) {
+    rls_tr.subimm(NULL, NULL, NULL);
+  }
   if ( i_print_jit_info == 0 ) {
     printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
     printf("%fs for creating jit\n", l_jittime);
@@ -1123,7 +1218,25 @@ double run_jit_bfloat16_float( const gemm_def*         i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
+
+  int l_cfg_flags = 0;
+  int l_rls_flags = 0;
+  if (i_gemm_def->tc_config) {
+      l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
+      l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
+  }
+
   l_start = libxsmm_timer_tick();
+  if (i_gemm_def->tc_config) {
+      cfg_tr.bsmm  = libxsmm_bsmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                        &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                        NULL, &l_beta, &l_cfg_flags, NULL);
+      rls_tr.bsmm  = libxsmm_bsmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                             NULL, NULL, NULL, NULL, NULL, &l_rls_flags, NULL);
+      l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
+  }
   if (i_gemm_def->br_type == 0) {
     l_test_jit.bsmm = libxsmm_bsmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
                                          &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
@@ -1170,7 +1283,9 @@ double run_jit_bfloat16_float( const gemm_def*         i_gemm_def,
 
   /* receive kernel information */
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
-
+  if (i_gemm_def->tc_config) {
+    cfg_tr.bsmm(NULL, NULL, NULL);
+  }
   l_start = libxsmm_timer_tick();
   if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
     if (i_gemm_def->br_type == 0) {
@@ -1218,7 +1333,9 @@ double run_jit_bfloat16_float( const gemm_def*         i_gemm_def,
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-
+  if (i_gemm_def->tc_config) {
+    rls_tr.bsmm(NULL, NULL, NULL);
+  }
   if ( i_print_jit_info == 0 ) {
     printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
     printf("%fs for creating jit\n", l_jittime);
@@ -1280,7 +1397,26 @@ double run_jit_bfloat16( const gemm_def*         i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
+  libxsmm_xmmfunction cfg_tr = { NULL };
+  libxsmm_xmmfunction rls_tr = { NULL };
+
+  int l_cfg_flags = 0;
+  int l_rls_flags = 0;
+  if (i_gemm_def->tc_config) {
+      l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
+      l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
+  }
+
   l_start = libxsmm_timer_tick();
+  if (i_gemm_def->tc_config) {
+      cfg_tr.bsmm  = libxsmm_bsmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                        &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                        NULL, &l_beta, &l_cfg_flags, NULL);
+      rls_tr.bsmm  = libxsmm_bsmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                             NULL, NULL, NULL, NULL, NULL, &l_rls_flags, NULL);
+      l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
+  }
+
   if (i_gemm_def->br_type == 0) {
     l_test_jit.bmm = libxsmm_bmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
                                          &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
@@ -1327,7 +1463,9 @@ double run_jit_bfloat16( const gemm_def*         i_gemm_def,
 
   /* receive kernel information */
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
-
+  if (i_gemm_def->tc_config) {
+    cfg_tr.bsmm(NULL, NULL, NULL);
+  }
   l_start = libxsmm_timer_tick();
   if ( l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
     if (i_gemm_def->br_type == 0) {
@@ -1375,7 +1513,9 @@ double run_jit_bfloat16( const gemm_def*         i_gemm_def,
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-
+  if (i_gemm_def->tc_config) {
+    rls_tr.bsmm(NULL, NULL, NULL);
+  }
   if ( i_print_jit_info == 0 ) {
     printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
     printf("%fs for creating jit\n", l_jittime);
@@ -1436,13 +1576,15 @@ int main(int argc, char* argv []) {
   float* l_c_gold_bf_f = 0;
   double l_total_max_error = 0.0;
 
+  int l_tc_config = 0;
+
   /* scaling factor */
   float l_scf = 1.0;
 
   libxsmm_matdiff_clear(&l_diff);
 
   /* check argument count for a valid range */
-  if ( argc == 19 ) {
+  if ( argc == 20 || argc == 19 ) {
     /* xgemm sizes */
     l_m = atoi(argv[1]);
     l_n = atoi(argv[2]);
@@ -1464,6 +1606,11 @@ int main(int argc, char* argv []) {
     l_br = atoi(argv[16]);
     l_br_unroll = atoi(argv[17]);
     g_reps = atoi(argv[18]);
+    if ( argc == 20 ) {
+      l_tc_config = atoi(argv[19]);
+    } else {
+      l_tc_config = 0;
+    }
 
     /* set value of prefetch flag */
     if (strcmp("nopf", argv[13]) == 0) {
@@ -1511,7 +1658,7 @@ int main(int argc, char* argv []) {
 
     l_file_input = 0;
     l_run_check = 1;
-  } else if ( argc == 14 ) {
+  } else if ( argc == 15 || argc == 14 ) {
     l_file_input = 1;
     l_file_name = argv[1];
     l_alpha = atof(argv[2]);
@@ -1523,6 +1670,12 @@ int main(int argc, char* argv []) {
     l_precision = argv[8];
     l_br = atoi(argv[10]);
     l_br_unroll = atoi(argv[11]);
+    if ( argc == 15 ) {
+      l_tc_config = atoi(argv[14]);
+    } else {
+      l_tc_config = 0;
+    }
+
     if (strcmp("nobr", argv[9]) == 0) {
       l_br_type = 0;
     }
@@ -1545,6 +1698,18 @@ int main(int argc, char* argv []) {
   } else {
     print_help();
     return EXIT_FAILURE;
+  }
+
+  const char *env_arch = getenv("LIBXSMM_TARGET");
+  const int is_env_SPR = (
+      env_arch == libxsmm_stristr(env_arch, "spr") ||
+      env_arch == libxsmm_stristr(env_arch, "amx"));
+  int arch_cpuid = libxsmm_cpuid();
+
+  if ((!is_env_SPR && arch_cpuid < LIBXSMM_X86_AVX512_SPR)
+       && (l_tc_config)) {
+    printf("Warning: external tile configuratoin will be ingnored\n");
+    l_tc_config = 0;
   }
 
   l_br = (l_br < 1) ? 1 : l_br;
@@ -1607,6 +1772,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_a_d = (double*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(double), 64);
       l_b_d = (double*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(double), 64);
@@ -1709,6 +1875,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_a_d = (double*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(double), 64);
       l_b_d = (double*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * (size_t)l_br * sizeof(double), 64);
@@ -1812,6 +1979,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_a_f = (float*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(float), 64);
       l_b_f = (float*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(float), 64);
@@ -1915,6 +2083,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_a_f = (float*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(float), 64);
       l_b_f = (float*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * (size_t)l_br * sizeof(float), 64);
@@ -2020,6 +2189,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_a_w = (short*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(short), 64);
       l_b_w = (short*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(short), 64);
@@ -2134,6 +2304,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_ua_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(unsigned char), 64);
       l_sb_b = (char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(char), 64);
@@ -2248,6 +2419,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_sa_b = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(char), 64);
       l_ub_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(unsigned char), 64);
@@ -2362,6 +2534,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_sa_b = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(char), 64);
       l_ub_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(unsigned char), 64);
@@ -2481,6 +2654,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_a_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(libxsmm_bfloat16), 64);
       l_b_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(libxsmm_bfloat16), 64);
@@ -2603,6 +2777,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.br_type = l_br_type;
       l_gemm_def.br_count = l_br;
       l_gemm_def.br_unroll = l_br_unroll;
+      l_gemm_def.tc_config = l_tc_config;
 
       l_a_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * sizeof(libxsmm_bfloat16), 64);
       l_b_bf = (libxsmm_bfloat16*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * sizeof(libxsmm_bfloat16), 64);
