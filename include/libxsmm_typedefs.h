@@ -182,7 +182,8 @@ typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX = 12,
   LIBXSMM_MELTW_OPERATION_DECOMPRESS_A              = 13,
   LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A  = 14,
-  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX = 15
+  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX = 15,
+  LIBXSMM_MELTW_OPERATION_TRANSFORM       = 16
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
@@ -307,6 +308,13 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX                      = 2048,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN                      = 4096
 } libxsmm_meltw_opreduce_vecs_flags;
+
+typedef enum libxsmm_meltw_trans_flags {
+  LIBXSMM_MELTW_FLAG_TRANS_NORM_TO_VNNI   = 1,
+  LIBXSMM_MELTW_FLAG_TRANS_NORM_TO_NORMT  = 2,
+  LIBXSMM_MELTW_FLAG_TRANS_VNNI_TO_VNNIT  = 4,
+  LIBXSMM_MELTW_FLAG_TRANS_NORM_TO_VNNIT  = 8
+} libxsmm_meltw_trans_flags;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
   libxsmm_meltw_null_flags     elt_null;

@@ -9,6 +9,7 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "generator_mateltwise_avx_avx512.h"
+#include "generator_mateltwise_transform_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
@@ -5633,6 +5634,8 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
+  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TRANSFORM ) {
+    libxsmm_generator_transform_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
   } else  {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
