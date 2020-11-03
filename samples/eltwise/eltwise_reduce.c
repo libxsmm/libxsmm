@@ -82,6 +82,19 @@ int main(int argc, char* argv[])
   ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
   result_size = (reduce_rows == 1) ? n : m;
 
+#if 0
+  int m = E;
+  int ld_in = E;
+  float sum;
+  libxsmm_meltw_redu_flags      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
+  libxsmm_meltwfunction_reduce  kernel = libxsmm_dispatch_meltw_reduce(m, 1, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_flags, 0);
+  libxsmm_meltw_reduce_param    params;
+
+  params.in_ptr = g_sum;
+  params.out_ptr_1 = &sum;
+  kernel( &params );
+#endif
+
   /* Allocate arrays  */
   sinp  = (float*) malloc( ld_in*n*sizeof(float) );
   result_reduce_elts = (float*) malloc(result_size*sizeof(float) );
