@@ -4667,7 +4667,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* kernel)
           LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_RELAXED); /* invalidate code cache (TLS) */
           internal_registry[regindex].ptr = NULL;
 #if !defined(NDEBUG)
-          LIBXSMM_MEMZERO127(internal_registry_keys + regindex);
+          memset(internal_registry_keys + regindex, 0, sizeof(*internal_registry_keys));
 #endif
           libxsmm_xfree(kernel, 0/*no check*/);
         }
