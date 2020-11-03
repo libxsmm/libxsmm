@@ -20,6 +20,10 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
                                                      libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
                                                      const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
                                                      const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
-
+  LIBXSMM_UNUSED( io_generated_code );
+  LIBXSMM_UNUSED( io_loop_label_tracker );
+  LIBXSMM_UNUSED( i_gp_reg_mapping );
+  LIBXSMM_UNUSED( i_micro_kernel_config );
+  LIBXSMM_UNUSED( i_mateltwise_desc );
 }
 
