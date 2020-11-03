@@ -437,6 +437,162 @@ void libxsmm_generator_cvtfp32bf16_avx512_replacement_sequence( libxsmm_generate
       0 );
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_cvtfp32bf16_vnni_format_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
+    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
+    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
+    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
+    const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
+
+  unsigned int m, n, im, in, unroll_iter, use_m_masking = 0, m_trips = 0, n_trips = 0, vlen_in = 16, vlen_out = 32, mask_in_count = 0;
+  unsigned int reserved_zmms = 1, max_nm_unrolling = 31, n_unroll_factor = 2;
+  unsigned int mask_reg_in = 1, mask_reg_out = 2;
+  unsigned int perm_vreg = 0, vreg_in_0 = 0, vreg_in_1 = 0;
+  short vnni_perm_array[32] = {0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31};
+
+  /* Some rudimentary checking of M, N and LDs*/
+  if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) || (i_mateltwise_desc->m > i_mateltwise_desc->ldo) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
+    return;
+  }
+
+  /* n % 2 should be zero in order to support vnni reformating  */
+  if ( i_mateltwise_desc->n % 2 != 0  ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+    return;
+  }
+
+  vlen_in = 16;
+  vlen_out = 32;
+
+  /* Configure the register mapping for this eltwise kernel */
+  i_gp_reg_mapping->gp_reg_in     = LIBXSMM_X86_GP_REG_R8;
+  i_gp_reg_mapping->gp_reg_out    = LIBXSMM_X86_GP_REG_R9;
+  i_gp_reg_mapping->gp_reg_n_loop = LIBXSMM_X86_GP_REG_R10;
+
+  /* Load permute register */
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) vnni_perm_array, "vnni_perm_array_", i_micro_kernel_config->vector_name, perm_vreg);
+
+  /* Load the input pointer and output pointer */
+  libxsmm_x86_instruction_alu_mem( io_generated_code,
+      i_micro_kernel_config->alu_mov_instruction,
+      i_gp_reg_mapping->gp_reg_param_struct,
+      LIBXSMM_X86_GP_REG_UNDEF, 0,
+      0,
+      i_gp_reg_mapping->gp_reg_in,
+      0 );
+
+  libxsmm_x86_instruction_alu_mem( io_generated_code,
+      i_micro_kernel_config->alu_mov_instruction,
+      i_gp_reg_mapping->gp_reg_param_struct,
+      LIBXSMM_X86_GP_REG_UNDEF, 0,
+      8,
+      i_gp_reg_mapping->gp_reg_out,
+      0 );
+
+  /* We fully unroll in M dimension, calculate mask if there is remainder */
+  m                 = i_mateltwise_desc->m;
+  n                 = i_mateltwise_desc->n;
+  use_m_masking     = ( m % vlen_in == 0 ) ? 0 : 1;
+  m_trips           = (m + vlen_in - 1) / vlen_in;
+
+  max_nm_unrolling = max_nm_unrolling - reserved_zmms;
+
+  if (m_trips > max_nm_unrolling) {
+    n_unroll_factor = 2;
+  } else {
+    /* Explore n unrolling opportunities... We unroll only by factors that divide N  */
+    n_unroll_factor = n;
+    while (m_trips * n_unroll_factor > max_nm_unrolling) {
+      n_unroll_factor = n_unroll_factor - 2;
+    }
+    while (n % n_unroll_factor > 0) {
+      n_unroll_factor = n_unroll_factor - 2;
+    }
+  }
+  n_trips = n / n_unroll_factor;
+
+  /* Calculate input and output masks in case we see m_masking */
+  if (use_m_masking == 1) {
+    mask_in_count = vlen_in - m % vlen_in;
+    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R11, mask_reg_in, mask_in_count, LIBXSMM_GETENUM_INP(i_mateltwise_desc->datatype));
+    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R11, mask_reg_out, 2*mask_in_count, LIBXSMM_GETENUM_OUT(i_mateltwise_desc->datatype));
+  }
+
+  if (n_trips > 1) {
+    /* open n loop */
+    libxsmm_generator_mateltwise_header_n_loop(  io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop );
+  }
+
+  for (in = 0; in < n_unroll_factor; in+=2) {
+    for (im = 0; im < m_trips; im++) {
+      unroll_iter = in * m_trips + im * 2;
+      vreg_in_0 = unroll_iter % (max_nm_unrolling - reserved_zmms) + reserved_zmms;
+      vreg_in_1 = vreg_in_0 + 1;
+
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          i_micro_kernel_config->vmove_instruction_in,
+          i_gp_reg_mapping->gp_reg_in,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          (im * vlen_in + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+          i_micro_kernel_config->vector_name,
+          vreg_in_1, ((im == (m_trips-1)) && (use_m_masking == 1)) ? mask_reg_in : 0, 1, 0 );
+
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          i_micro_kernel_config->vmove_instruction_in,
+          i_gp_reg_mapping->gp_reg_in,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          (im * vlen_in + (in+1) * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+          i_micro_kernel_config->vector_name,
+          vreg_in_0, ((im == (m_trips-1)) && (use_m_masking == 1)) ? mask_reg_in : 0, 1, 0 );
+
+      libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
+          i_micro_kernel_config->vector_name,
+          vreg_in_1, vreg_in_0,
+          vreg_in_0,
+          0);
+
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                               i_micro_kernel_config->instruction_set,
+                                               LIBXSMM_X86_INSTR_VPERMW,
+                                               i_micro_kernel_config->vector_name,
+                                               vreg_in_0,
+                                               perm_vreg,
+                                               vreg_in_0);
+
+
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          i_micro_kernel_config->vmove_instruction_out,
+          i_gp_reg_mapping->gp_reg_out,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          (im * vlen_out + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
+          i_micro_kernel_config->vector_name,
+          vreg_in_0, ((im == (m_trips-1)) && (use_m_masking == 1)) ? mask_reg_out : 0, 0, 1 );
+
+    }
+  }
+
+  if (n_trips > 1) {
+    libxsmm_x86_instruction_alu_imm(  io_generated_code,
+        i_micro_kernel_config->alu_add_instruction,
+        i_gp_reg_mapping->gp_reg_in,
+        i_mateltwise_desc->ldi * n_unroll_factor * i_micro_kernel_config->datatype_size_in);
+
+    libxsmm_x86_instruction_alu_imm(  io_generated_code,
+        i_micro_kernel_config->alu_add_instruction,
+        i_gp_reg_mapping->gp_reg_out,
+        i_mateltwise_desc->ldo * n_unroll_factor * i_micro_kernel_config->datatype_size_out);
+
+    /* close n loop */
+    libxsmm_generator_mateltwise_footer_n_loop(  io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop, n_trips);
+  }
+
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
@@ -5285,7 +5441,9 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   libxsmm_loop_label_tracker        l_loop_label_tracker;
   unsigned int skip_pushpops = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX) ||
                                 (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) ||
-                                (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_COPY)) ? 1 : 0;
+                                (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_COPY) ||
+                                (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_COPY) ||
+                                ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT) > 0) )) ? 1 : 0;
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -5307,7 +5465,11 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   /* Depending on the elementwise function, dispatch the proper code JITer */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16)) {
     if ( (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
-      libxsmm_generator_cvtfp32bf16_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+      if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT) > 0) ) {
+        libxsmm_generator_cvtfp32bf16_vnni_format_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+      } else {
+        libxsmm_generator_cvtfp32bf16_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+      }
     } else {
       /* This should not happen  */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );

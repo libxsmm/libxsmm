@@ -72,10 +72,10 @@ int main(int argc, char* argv[])
   if ( argc > 7 ) iters = atoi(argv[7]);
   if ( argc > 8 ) n_cols_idx = atoi(argv[8]);
 
-
+#if 0
   libxsmm_meltw_opreduce_vecs_flags opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT;
   libxsmm_meltwfunction_opreduce_vecs_idx new_kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64, opredop_flags);
-
+#endif
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
