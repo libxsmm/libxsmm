@@ -1136,7 +1136,7 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
-  unsigned int bn, bc, N, C, Nb, Cb, iM, im, in, vreg0, vreg1;
+  unsigned int bn, bc, N, C, Nb, iM, im, in, vreg0, vreg1;
   unsigned int use_m_masking, m_trips, m_outer_trips, m_inner_trips, mask_in_count, mask_out_count;
   unsigned int cur_acc0, cur_acc1, mask_load_0, mask_load_1, mask_store;
 
@@ -1146,7 +1146,6 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
   N   = i_mateltwise_desc->ldo;
 
   Nb  = N/bn;
-  Cb  = C/bc;
 
   if ( (N % bn != 0)  || (C % bc != 0) ) {
     /* This should not happen  */
