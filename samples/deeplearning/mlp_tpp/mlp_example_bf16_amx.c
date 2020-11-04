@@ -24,8 +24,6 @@
 
 #define CHECK_L1
 
-#define _mm512_loadcvt_bf16_fp32(A)   LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)(A)))
-#define LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( A, B ) (__m512i)_mm512_cvtne2ps_pbh( A, B )
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), _mm512_cvtneps_pbh((B)))
 
@@ -727,6 +725,7 @@ typedef struct my_fc_bwd_config {
   libxsmm_meltwfunction_relu            bwd_relu_kernel;
   libxsmm_meltwfunction_copy            bwd_zero_kernel;
   libxsmm_meltwfunction_copy            upd_zero_kernel;
+  libxsmm_meltwfunction_reduce          delbias_reduce_kernel;
 } my_fc_bwd_config;
 
 my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
@@ -891,6 +890,8 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint ldc = bk;
   libxsmm_blasint ld_zero_bwd = bc*bn;
   libxsmm_blasint ld_zero_upd = bk;
+  libxsmm_blasint delbias_K = K;
+  libxsmm_blasint delbias_N = N;
   float alpha = 1.0f;
   float beta = 1.0f;
   float zerobeta = 0.0f;
@@ -1053,6 +1054,12 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.upd_zero_kernel = libxsmm_dispatch_meltw_copy(bbk, bbc, &ld_zero_upd, &ld_zero_upd, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
   if ( res.upd_zero_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP upd_zero_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  res.delbias_reduce_kernel = libxsmm_dispatch_meltw_reduce(bk, bn, &delbias_K, &delbias_N, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_COLS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS | LIBXSMM_MELTW_FLAG_REDUCE_NCNC_FORMAT, 0);
+  if ( res.delbias_reduce_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP delbias_reduce_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -1382,6 +1389,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
   libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel2 = cfg.upd_cvtfp32bf16_kernel;
   libxsmm_meltw_cvtfp32bf16_param   eltwise_params;
   libxsmm_meltw_copy_param          copy_params;
+  libxsmm_meltw_reduce_param        delbias_params;
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
@@ -1413,45 +1421,11 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
 
   /* Accumulation of bias happens in f32 */
   if (((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS)) {
-    float *scratch_dbias = (float*) ((libxsmm_bfloat16*)scratch + cfg.N * (cfg.K + cfg.C) + ltid * bk * 2);
-    if (cfg.bk % 32 == 0) {
-      for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
-        for ( iterj = 0; iterj < cfg.bk; iterj += 32 ) {
-          __m512 doutput_reg_0, doutput_reg_1, dbias_reg_0, dbias_reg_1;
-          dbias_reg_0 = _mm512_setzero_ps();
-          dbias_reg_1 = _mm512_setzero_ps();
-          for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
-            for ( iteri = 0; iteri < cfg.bn; ++iteri ) {
-              doutput_reg_0 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, cfg.bn, cfg.bk));
-              doutput_reg_1 = _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj+16, nBlocksOFm, cfg.bn, cfg.bk));
-              dbias_reg_0 = _mm512_add_ps(dbias_reg_0, doutput_reg_0);
-              dbias_reg_1 = _mm512_add_ps(dbias_reg_1, doutput_reg_1);
-            }
-          }
-          LIBXSMM_INTRINSICS_MM512_STREAM_SI512(&LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, iterj, cfg.bk), LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH(dbias_reg_1, dbias_reg_0));
-        }
-      }
-    } else {
-      for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
-        for ( iterj = 0; iterj < cfg.bk; ++iterj ) {
-          scratch_dbias[iterj] = 0.0;
-        }
-        for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
-          for ( iteri = 0; iteri < cfg.bn; ++iteri ) {
-            for ( iterj = 0; iterj < cfg.bk; ++iterj ) {
-              float doutput_f32 = 0;
-              libxsmm_bfloat16_hp tmp;
-              tmp.i[0] = 0;
-              tmp.i[1] = LIBXSMM_VLA_ACCESS(4,  doutput, mb1, ofm1, iteri, iterj, nBlocksOFm, cfg.bn, cfg.bk);
-              doutput_f32 = tmp.f;
-              scratch_dbias[iterj] += doutput_f32;
-            }
-          }
-        }
-        libxsmm_rne_convert_fp32_bf16(scratch_dbias, &LIBXSMM_VLA_ACCESS( 2, dbias, ofm1, 0, cfg.bk ), cfg.bk);
-      }
+    for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
+      delbias_params.in_ptr     = &LIBXSMM_VLA_ACCESS(4,  doutput, 0, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+      delbias_params.out_ptr_0  = &LIBXSMM_VLA_ACCESS(2,  dbias, ofm1, 0, cfg.bk);
+      cfg.delbias_reduce_kernel(&delbias_params);
     }
-
     /* wait for eltwise to finish */
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
