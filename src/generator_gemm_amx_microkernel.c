@@ -515,7 +515,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
             i_micro_kernel_config->vector_name,
             reg_0,
             i_micro_kernel_config->perm_table_vnni_hi,
-            prev_reg_0); 
+            prev_reg_0);
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
@@ -524,7 +524,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (((in_offset+col)/2+1) * i_xgemm_desc->ldc + im_offset) * 2 * (i_micro_kernel_config->datatype_size/2),
             i_micro_kernel_config->vector_name,
-            prev_reg_0, 0, 1, 1 );      
+            prev_reg_0, 0, 1, 1 );
       }
     }
   }
@@ -915,12 +915,12 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   /* Some checks for this functinality...  */
   if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
     if (LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
-      fprintf(stderr, "For now we support C norm->vnni to external buffer only when C output is in BF16...\n"
+      fprintf(stderr, "For now we support C norm->vnni to external buffer only when C output is in BF16...\n");
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
     if (use_paired_tilestores == 0) {
-      fprintf(stderr, "For now we support C norm->vnni to external buffer only when microkernel perfomrs paired-tilestores...\n"
+      fprintf(stderr, "For now we support C norm->vnni to external buffer only when microkernel perfomrs paired-tilestores...\n");
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }

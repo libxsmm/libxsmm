@@ -873,7 +873,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   i_micro_kernel_config->fused_sigmoid      = 0;
   i_micro_kernel_config->overwrite_C        = 0;
   i_micro_kernel_config->vnni_format_C      = 0;
-  
+
   /* TODO: Add support fror more fusions  */
   if ((i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) || (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A)) {
     if ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_OVERWRITE_C) > 0) {
@@ -901,12 +901,12 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
     if (i_micro_kernel_config->vnni_format_C == 1) {
       /* For now we support C norm->vnni external only when C is norm */
-      fprintf(stderr, "For now we support C norm->vnni to external buffer only when C output is in normal format...\n"); 
+      fprintf(stderr, "For now we support C norm->vnni to external buffer only when C output is in normal format...\n");
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
   }
-  
+
   /* Setup zmms to be reused throughout the kernel  */
   if (i_micro_kernel_config->fused_relu == 1) {
     i_micro_kernel_config->zero_reg = reserved_zmms;
