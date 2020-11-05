@@ -2141,7 +2141,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 LIBXSMM_API_INLINE void internal_pad_descriptor(libxsmm_descriptor* desc, signed char size)
 {
   LIBXSMM_ASSERT(LIBXSMM_DESCRIPTOR_MAXSIZE < 128 && NULL != desc);
-  for (; size < LIBXSMM_DESCRIPTOR_MAXSIZE; ++size) desc->data[size] = 0;
+  LIBXSMM_ASSERT(LIBXSMM_DIFF_SIZE <= LIBXSMM_DESCRIPTOR_MAXSIZE);
+  LIBXSMM_ASSERT(LIBXSMM_HASH_SIZE <= LIBXSMM_DIFF_SIZE);
+  for (; size < LIBXSMM_DIFF_SIZE; ++size) desc->data[size] = 0;
 }
 
 
@@ -2150,6 +2152,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   libxsmm_code_pointer flux_entry = { 0 };
   const int is_big_desc = LIBXSMM_DESCRIPTOR_ISBIG(desc->kind);
   const signed char size = (signed char)(sizeof(libxsmm_descriptor_kind) + desc_size);
+  LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
 #if !defined(NDEBUG) && (0 != LIBXSMM_JIT)
   int build = EXIT_SUCCESS;
 #endif
@@ -2163,16 +2166,21 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 # endif
   unsigned char cache_index;
   internal_pad_descriptor(desc, size);
-  cache_index = (unsigned char)libxsmm_diff_n(desc, cache->entry.keys,
-    0 == is_big_desc ? LIBXSMM_DIFF_SIZE : size, LIBXSMM_CACHE_STRIDE,
-    cache->entry.hit, cache->entry.size);
+  if (0 == is_big_desc) {
+    LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
+    LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), xdesc, cache->entry.keys,
+      LIBXSMM_DIFF_SIZE, LIBXSMM_CACHE_STRIDE, cache->entry.hit, cache->entry.size);
+  }
+  else {
+    cache_index = (unsigned char)libxsmm_diff_n(desc, cache->entry.keys,
+      size, LIBXSMM_CACHE_STRIDE, cache->entry.hit, cache->entry.size);
+  }
   if (cache->entry.id == libxsmm_ninit && cache_index < cache->entry.size) { /* valid hit */
     flux_entry = cache->entry.code[cache_index];
     cache->entry.hit = cache_index;
   }
   else
 #else
-  LIBXSMM_ASSERT(NULL != desc);
   internal_pad_descriptor(desc, size);
 #endif
   {
@@ -2196,8 +2204,10 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
       if ((NULL != flux_entry.ptr_const || 1 == mode) && 2 > mode) { /* check existing entry further */
         if (NULL != flux_entry.ptr_const) {
           if (0 == is_big_desc) {
+#if !defined(LIBXSMM_CACHE_MAXSIZE) || (0 == (LIBXSMM_CACHE_MAXSIZE))
             LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
             LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
+#endif
             diff = LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE)(xdesc, internal_registry_keys + i, 0/*dummy*/);
           }
           else {
@@ -2341,7 +2351,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         cache->entry.size = 1;
         cache_index = 0;
       }
-      LIBXSMM_ASSIGN127(cache->entry.keys + cache_index, desc);
+      LIBXSMM_MEMCPY127(cache->entry.keys + cache_index, desc, 0 == is_big_desc ? LIBXSMM_DIFF_SIZE : size);
       cache->entry.code[cache_index] = flux_entry;
       cache->entry.hit = cache_index;
     }
