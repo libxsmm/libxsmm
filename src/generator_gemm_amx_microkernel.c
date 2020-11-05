@@ -209,7 +209,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
     int                                im_offset,
     int                                in_offset,
     int                                n_cols) {
-  unsigned int col = 0, reg_0 = 0, reg_1 = 0;
+  unsigned int col = 0, reg_0 = 0, reg_1 = 0, prev_reg_0 = 0, copy_prev_reg_0 = 0;
   unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
   unsigned int gp_reg_relu         = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_1 : i_gp_reg_mapping->gp_reg_help_0;
   unsigned int gp_reg_outptr       = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_1 : i_gp_reg_mapping->gp_reg_help_0;
@@ -221,6 +221,8 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
   unsigned int current_mask_reg    = 1;
   unsigned int overwrite_C         = i_micro_kernel_config->overwrite_C;
   unsigned int gp_reg_C            = (overwrite_C == 1) ? i_gp_reg_mapping->gp_reg_c : gp_reg_outptr;
+  unsigned int gp_vnni_out_ext_buf = gp_reg_outptr;
+  unsigned int vnni_cvt_output_ext_buf  = i_micro_kernel_config->vnni_cvt_output_ext_buf;
 
   /* Check if we have to save the tmp registers  */
   if ( (gp_reg_gemm_scratch == i_gp_reg_mapping->gp_reg_help_1) && (i_micro_kernel_config->n_loop_exists == 1)  ) {
@@ -236,7 +238,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
     }
   }
 
-  if (overwrite_C == 0) {
+  if ((overwrite_C == 0) || (vnni_cvt_output_ext_buf == 1)) {
     if ( (gp_reg_outptr == i_gp_reg_mapping->gp_reg_help_1) && (i_micro_kernel_config->n_loop_exists == 1)  ) {
       libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_1 );
     }
@@ -249,6 +251,9 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, gp_reg_gemm_scratch );
   if (fuse_relu == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, gp_reg_relu );
+  }
+  if (vnni_cvt_output_ext_buf == 1) {
+    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, gp_vnni_out_ext_buf );
   }
 
   /* Store FP32 tiles to scratch  */
@@ -273,7 +278,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
   }
 
   /* Fully unroll in N dimension  */
-  eager_result_store = ( ((unsigned int)n_cols > (max_unrolling - reserved_zmms)) || (fuse_relu == 0) || (tile1 < 0) ) ? 1 : 0;
+  eager_result_store = ( ((unsigned int)n_cols > (max_unrolling - reserved_zmms)) || (fuse_relu == 0) || (tile1 < 0) || (vnni_cvt_output_ext_buf == 1)) ? 1 : 0;
 
   for (col = 0; col < (unsigned int)n_cols; col++) {
     if (tile1 >= 0) {
@@ -471,6 +476,57 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
           vname,
           reg_0, 0, 1, 1 );
     }
+
+    if (vnni_cvt_output_ext_buf == 1) {
+      if (col % 2 == 1) {
+        if ((col-1) + reserved_zmms < 16) {
+          prev_reg_0 = (col-1) % (16-reserved_zmms) + reserved_zmms;
+        } else {
+          prev_reg_0 = 16 + (((col-1)-16+reserved_zmms) % 15);
+        }
+        copy_prev_reg_0 = (prev_reg_0 + 16 < 32) ? prev_reg_0 + 16 : 31;
+
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VMOVDQU64,
+            i_micro_kernel_config->vector_name,
+            prev_reg_0, copy_prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF );
+
+        libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VPERMT2W,
+            i_micro_kernel_config->vector_name,
+            reg_0,
+            i_micro_kernel_config->perm_table_vnni_lo,
+            copy_prev_reg_0);
+
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VMOVUPS,
+            gp_vnni_out_ext_buf,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (((in_offset+col)/2) * i_xgemm_desc->ldc + im_offset) * 2 * (i_micro_kernel_config->datatype_size/2),
+            i_micro_kernel_config->vector_name,
+            copy_prev_reg_0, 0, 1, 1 );
+
+        libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VPERMT2W,
+            i_micro_kernel_config->vector_name,
+            reg_0,
+            i_micro_kernel_config->perm_table_vnni_hi,
+            prev_reg_0); 
+
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VMOVUPS,
+            gp_vnni_out_ext_buf,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (((in_offset+col)/2+1) * i_xgemm_desc->ldc + im_offset) * 2 * (i_micro_kernel_config->datatype_size/2),
+            i_micro_kernel_config->vector_name,
+            prev_reg_0, 0, 1, 1 );      
+      }
+    }
   }
 
   /* Store all the downconverted results if we are in "lazy" store mode ... */
@@ -503,7 +559,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
     }
   }
 
-  if (overwrite_C == 0) {
+  if ((overwrite_C == 0) || (vnni_cvt_output_ext_buf == 1)) {
     if ( (gp_reg_outptr == i_gp_reg_mapping->gp_reg_help_1) && (i_micro_kernel_config->n_loop_exists == 1)  ) {
       libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_1 );
     }
@@ -854,6 +910,20 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     /* Should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
+  }
+
+  /* Some checks for this functinality...  */
+  if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
+    if (LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+      fprintf(stderr, "For now we support C norm->vnni to external buffer only when C output is in BF16...\n"
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    }
+    if (use_paired_tilestores == 0) {
+      fprintf(stderr, "For now we support C norm->vnni to external buffer only when microkernel perfomrs paired-tilestores...\n"
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
   }
 
   if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0)  && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0)) {
