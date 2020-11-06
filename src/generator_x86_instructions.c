@@ -1792,6 +1792,9 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
     case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
     case LIBXSMM_X86_INSTR_VPERMQ_I:
+    case LIBXSMM_X86_INSTR_VSHUFI32X4:
+    case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
@@ -2043,6 +2046,9 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
     case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
     case LIBXSMM_X86_INSTR_VPERMQ_I:
+    case LIBXSMM_X86_INSTR_VSHUFI32X4:
+    case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);

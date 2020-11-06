@@ -317,12 +317,12 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN                      = 4096
 } libxsmm_meltw_opreduce_vecs_flags;
 
-typedef enum libxsmm_meltw_trans_flags {
-  LIBXSMM_MELTW_FLAG_TRANS_NORM_TO_VNNI   = 1,
-  LIBXSMM_MELTW_FLAG_TRANS_NORM_TO_NORMT  = 2,
-  LIBXSMM_MELTW_FLAG_TRANS_VNNI_TO_VNNIT  = 4,
-  LIBXSMM_MELTW_FLAG_TRANS_NORM_TO_VNNIT  = 8
-} libxsmm_meltw_trans_flags;
+typedef enum libxsmm_meltw_transform_flags {
+  LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI   = 1,
+  LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT  = 2,
+  LIBXSMM_MELTW_FLAG_TRANSFORM_VNNI_TO_VNNIT  = 4,
+  LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNIT  = 8
+} libxsmm_meltw_transform_flags;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
   libxsmm_meltw_null_flags     elt_null;
@@ -726,6 +726,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cbiasact_para
   void* out_ptr;                /* output pointer */
 } libxsmm_meltw_cbiasact_param;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_transform_param {
+  const void* in_ptr;           /* input pointer */
+  void* out_ptr;                /* output pointer */
+} libxsmm_meltw_transform_param;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_gemm_param {
   const void* bias_ptr;        /* optional, col-bias pointer */
   void* out_ptr;               /* optional, pointer to output after eltwise (contains mask in case of ReLU); */
@@ -750,6 +755,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_opred
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_scale)(const libxsmm_meltw_scale_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16_act)(const libxsmm_meltw_cvtfp32bf16_act_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_act_cvtfp32bf16)(const libxsmm_meltw_act_cvtfp32bf16_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_transform)(const libxsmm_meltw_transform_param* in_struct);
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   void (*xmeltw)(const void* in_struct);
@@ -761,6 +767,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   libxsmm_meltwfunction_opreduce_vecs_idx meltw_opreduce_vecs_idx;
   libxsmm_meltwfunction_cvtfp32bf16_act meltw_cvtfp32bf16_act;
   libxsmm_meltwfunction_act_cvtfp32bf16 meltw_act_cvtfp32bf16;
+  libxsmm_meltwfunction_transform meltw_transform;
 } libxsmm_xmeltwfunction;
 
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
