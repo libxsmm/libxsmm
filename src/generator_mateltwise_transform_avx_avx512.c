@@ -246,8 +246,8 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
   /* fifth shuffle stage */
   {
     unsigned int  l_dst_start = 0;
-    unsigned char l_perm_mask[2]; l_perm_mask[0] = (unsigned char)i_mask_reg_0; l_perm_mask[1] = (unsigned char)i_mask_reg_1;
     unsigned char l_perm_imm[2] = { 0x40, 0x0e };
+    unsigned char l_perm_mask[2]; l_perm_mask[0] = (unsigned char)i_mask_reg_0; l_perm_mask[1] = (unsigned char)i_mask_reg_1;
     libxsmm_generator_transform_16way_permute_network_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                               l_perm_mask, l_perm_imm, l_dst_start, LIBXSMM_X86_INSTR_VPERMQ_I );
   }
