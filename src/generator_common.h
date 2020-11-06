@@ -518,6 +518,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int vnni_format_C;
   unsigned int sparsity_factor_A;
   unsigned int decompress_A;
+  unsigned int vnni_cvt_output_ext_buf;
 
   /* Register names/logistics for fusion boo-keeping  */
   unsigned int reserved_zmms;
@@ -541,6 +542,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int vec_halves;
   unsigned int mask_hi;
   unsigned int mask_lo;
+  unsigned int perm_table_vnni_lo;
+  unsigned int perm_table_vnni_hi;
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
   int use_paired_tilestores;

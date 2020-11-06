@@ -898,6 +898,15 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
     i_micro_kernel_config->vnni_format_C  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_C) > 0) ? 1 : 0;
   }
 
+  if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
+    if (i_micro_kernel_config->vnni_format_C == 1) {
+      /* For now we support C norm->vnni external only when C is norm */
+      fprintf(stderr, "For now we support C norm->vnni to external buffer only when C output is in normal format...\n");
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
+  }
+
   /* Setup zmms to be reused throughout the kernel  */
   if (i_micro_kernel_config->fused_relu == 1) {
     i_micro_kernel_config->zero_reg = reserved_zmms;
@@ -913,6 +922,17 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
     short vnni_perm_array[32] = {0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31};
     i_micro_kernel_config->vnni_perm_reg = reserved_zmms;
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) vnni_perm_array, "vnni_perm_array_", i_micro_kernel_config->vector_name, i_micro_kernel_config->vnni_perm_reg);
+    reserved_zmms++;
+  }
+
+  if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
+    short perm_table_vnni_lo[32] = {32, 0, 33, 1, 34, 2, 35, 3, 36, 4, 37, 5, 38, 6, 39, 7, 40, 8, 41, 9, 42, 10, 43, 11, 44, 12, 45, 13, 46, 14, 47, 15};
+    short perm_table_vnni_hi[32] = {48, 16, 49, 17, 50, 18, 51, 19, 52, 20, 53, 21, 54, 22, 55, 23, 56, 24, 57, 25, 58, 26, 59, 27, 60, 28, 61, 29, 62, 30, 63, 31};
+    i_micro_kernel_config->perm_table_vnni_lo = reserved_zmms;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_lo, "perm_table_vnni_lo_", i_micro_kernel_config->vector_name, i_micro_kernel_config->perm_table_vnni_lo);
+    reserved_zmms++;
+    i_micro_kernel_config->perm_table_vnni_hi = reserved_zmms;
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_hi, "perm_table_vnni_hi_", i_micro_kernel_config->vector_name, i_micro_kernel_config->perm_table_vnni_hi);
     reserved_zmms++;
   }
 
@@ -1004,6 +1024,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   unsigned int scratch_pad_size       = 0;
   i_micro_kernel_config->decompress_A       = 0;
   i_micro_kernel_config->sparsity_factor_A  = 1;
+  i_micro_kernel_config->vnni_cvt_output_ext_buf = 0;
 
   LIBXSMM_UNUSED(i_gp_reg_mapping);
   LIBXSMM_UNUSED(m_tiles);
@@ -1020,9 +1041,18 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
     }
   }
 
+  if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER) {
+    i_micro_kernel_config->vnni_cvt_output_ext_buf = 1;
+  }
+
   has_eltwise_fused = ((has_colbias_act_fused == 1)) ? 1: 0;
   i_micro_kernel_config->fused_eltwise = has_eltwise_fused;
   if (i_micro_kernel_config->decompress_A == 1) {
+    has_eltwise_fused = 1;
+    i_micro_kernel_config->fused_eltwise = 1;
+  }
+
+  if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
     has_eltwise_fused = 1;
     i_micro_kernel_config->fused_eltwise = 1;
   }
@@ -1231,6 +1261,10 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
       libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BITMAP_PTR, temp_reg );
       libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, eltwise_struct_ptr_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,   24, temp_reg, 0 );
       libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF, temp_reg );
+    }
+    if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, eltwise_struct_ptr_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,   8, temp_reg, 0 );
+      libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, temp_reg );
     }
   }
 
