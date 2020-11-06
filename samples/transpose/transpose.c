@@ -115,13 +115,11 @@ int main(int argc, char* argv[])
 {
   const char t = (char)(1 < argc ? *argv[1] : 'o');
   const libxsmm_blasint m = (2 < argc ? atoi(argv[2]) : 4096);
-#if 0 /* TODO: enable when in-place transpose is fully supported */
   const libxsmm_blasint n = (3 < argc ? atoi(argv[3]) : m);
-#else
-  const libxsmm_blasint n = (3 < argc ? (('o' == t || 'O' == t) ? atoi(argv[3]) : m) : m);
-#endif
-  const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
-  const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
+  const libxsmm_blasint ldi = (('o' == t || 'O' == t)
+    ? LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m) : LIBXSMM_MAX(m, n));
+  const libxsmm_blasint ldo = (('o' == t || 'O' == t)
+    ? LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n) : ldi);
   const int r = (6 < argc ? atoi(argv[6]) : 0), s = LIBXSMM_ABS(r);
   const libxsmm_blasint lower = (7 < argc ? atoi(argv[7]) : 0);
   libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi);
@@ -180,11 +178,7 @@ int main(int argc, char* argv[])
           OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
         }
         else {
-#if 0 /* TODO: enable when in-place transpose is fully supported */
           kn = randstart(LIBXSMM_ABS(lower), n);
-#else
-          kn = km;
-#endif
           kldo = kldi;
           /* trigger JIT-generated code */
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
@@ -264,11 +258,7 @@ int main(int argc, char* argv[])
             kldo = LIBXSMM_MAX(rldo, kn);
           }
           else {
-#if 0 /* TODO: enable when in-place transpose is fully supported */
             kn = randstart(LIBXSMM_ABS(lower), n);
-#else
-            kn = km;
-#endif
             kldo = kldi;
           }
         }
@@ -292,8 +282,8 @@ int main(int argc, char* argv[])
           ITRANS_GOLD(&km, &kn, b, &kldi, &kldo);
           duration2 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
 #else
-          fprintf(stderr, "Error: no validation routine available!\n");
-          result = EXIT_FAILURE;
+          fprintf(stderr, "Warning: no validation routine available!\n");
+          continue;
 #endif
         }
         if (1 < check || 0 > check) { /* check */
