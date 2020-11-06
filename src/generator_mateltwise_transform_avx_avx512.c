@@ -150,13 +150,13 @@ void libxsmm_generator_transform_32way_half_store_avx512( libxsmm_generated_code
     unsigned int l_srcdst = (l_i/2) + i_vec_reg_src_start;
 
     if ( l_i % 2 == 1 ) {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VEXTRACTI64X4, i_vector_name,
-                                                          l_srcdst, LIBXSMM_X86_VEC_REG_UNDEF, l_srcdst, 0, 0, 0x1 );
+      libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VEXTRACTI64X4, i_vector_name,
+          i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld, 0, LIBXSMM_X86_VEC_REG_UNDEF, l_srcdst, 0, 0, 0x1);
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_st_instr,
+                                        i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
+                                        'y', l_srcdst, 0, 1, 1 );
     }
-
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_st_instr,
-                                      i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
-                                      'y', l_srcdst, 0, 1, 1 );
   }
 }
 
