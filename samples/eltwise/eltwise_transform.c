@@ -136,9 +136,9 @@ void test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
   libxsmm_meltw_transform_param trans_param;
   libxsmm_meltw_transform_flags trans_flags;
 
-  in       = (unsigned short*)_mm_malloc( sizeof(unsigned short)*N*M, 64);
-  out      = (unsigned short*)_mm_malloc( sizeof(unsigned short)*M*N, 64);
-  out_gold = (unsigned short*)_mm_malloc( sizeof(unsigned short)*M*N, 64);
+  in       = (unsigned short*) libxsmm_aligned_malloc( sizeof(unsigned short)*N*M, 64);
+  out      = (unsigned short*) libxsmm_aligned_malloc( sizeof(unsigned short)*M*N, 64);
+  out_gold = (unsigned short*) libxsmm_aligned_malloc( sizeof(unsigned short)*M*N, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -185,9 +185,9 @@ void test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
     printf("FAILURE 16bit\n");
   }
 
-  _mm_free( out_gold );
-  _mm_free( out );
-  _mm_free( in );
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
 }
 
 #if 0
