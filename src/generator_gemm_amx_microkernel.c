@@ -505,7 +505,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
             LIBXSMM_X86_INSTR_VMOVUPS,
             gp_vnni_out_ext_buf,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (((in_offset+col)/2) * i_xgemm_desc->ldc + im_offset) * 2 * (i_micro_kernel_config->datatype_size/2),
+            (((in_offset/2+col/2)) * i_xgemm_desc->ldc + im_offset) * 2 * (i_micro_kernel_config->datatype_size/2),
             i_micro_kernel_config->vector_name,
             copy_prev_reg_0, 0, 1, 1 );
 
@@ -522,7 +522,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
             LIBXSMM_X86_INSTR_VMOVUPS,
             gp_vnni_out_ext_buf,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (((in_offset+col)/2+1) * i_xgemm_desc->ldc + im_offset) * 2 * (i_micro_kernel_config->datatype_size/2),
+            (((in_offset/2+col/2)) * i_xgemm_desc->ldc  + im_offset + 16) * 2 * (i_micro_kernel_config->datatype_size/2),
             i_micro_kernel_config->vector_name,
             prev_reg_0, 0, 1, 1 );
       }
