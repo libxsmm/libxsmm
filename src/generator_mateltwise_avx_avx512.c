@@ -5775,6 +5775,7 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
                                 (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) ||
                                 (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_COPY) ||
                                 (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE) ||
+                                (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TRANSFORM) ||
                                 ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_SCALE) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE) > 0)) ||
                                 ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT) > 0) )) ? 1 : 0;
 
@@ -5788,6 +5789,12 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
 #else /* match calling convention on Linux */
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RDI;
 #endif
+
+  /* for now we only support AVX512_CORE and higher */
+  if ( io_generated_code->arch < LIBXSMM_X86_AVX512_CORE ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
 
   /* define mateltwise kernel config */
   libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, io_generated_code->arch, i_mateltwise_desc);
