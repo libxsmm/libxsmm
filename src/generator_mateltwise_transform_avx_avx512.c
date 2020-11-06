@@ -180,10 +180,6 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned long long l_mask = 0;
 
-  LIBXSMM_UNUSED( io_loop_label_tracker );
-  LIBXSMM_UNUSED( i_gp_reg_m_loop );
-  LIBXSMM_UNUSED( i_gp_reg_n_loop );
-
   /* set the masks */
   l_mask = 0xcc;
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
@@ -197,10 +193,24 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
   libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB,
                                      i_gp_reg_mask, i_mask_reg_1, 0 );
 
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_m_loop, 32 );
+
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_n_loop, 16 );
+
   /* load 16 registers */
   libxsmm_generator_transform_16way_full_load_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                       i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                                                       i_micro_kernel_config->vmove_instruction_in );
+
+  /* advance input pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_in, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * 16 );
 
   /* first shuffle stage */
   {
@@ -256,6 +266,24 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
   libxsmm_generator_transform_32way_half_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                        i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                        i_micro_kernel_config->vmove_instruction_out );
+
+  /* advance output pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_out, i_micro_kernel_config->datatype_size_in * 16 );
+
+  libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                              i_gp_reg_n_loop, i_mateltwise_desc->n );
+
+  /* advance output pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_out, (32 * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - (i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) );
+
+  /* advance input pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,
+                                   i_gp_reg_in, (i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->n) - (32 * i_micro_kernel_config->datatype_size_in) );
+
+  libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                              i_gp_reg_m_loop, i_mateltwise_desc->m );
 }
 
 LIBXSMM_API_INTERN
@@ -266,8 +294,8 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
                                                      const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
   unsigned int l_gp_reg_in  = LIBXSMM_X86_GP_REG_R8;
   unsigned int l_gp_reg_out = LIBXSMM_X86_GP_REG_R9;
-  unsigned int l_gp_reg_mloop = 0;
-  unsigned int l_gp_reg_nloop = 0;
+  unsigned int l_gp_reg_mloop = LIBXSMM_X86_GP_REG_RAX;
+  unsigned int l_gp_reg_nloop = LIBXSMM_X86_GP_REG_RDX;
   unsigned int l_gp_reg_mask = LIBXSMM_X86_GP_REG_R10;
   unsigned int l_mask_reg_0 = 1;
   unsigned int l_mask_reg_1 = 2;
