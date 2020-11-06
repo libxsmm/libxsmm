@@ -178,8 +178,11 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
                                                                          const unsigned int                      i_mask_reg_1,
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
-  unsigned int l_i = 0;
   unsigned long long l_mask = 0;
+
+  LIBXSMM_UNUSED( io_loop_label_tracker );
+  LIBXSMM_UNUSED( i_gp_reg_m_loop );
+  LIBXSMM_UNUSED( i_gp_reg_n_loop );
 
   /* set the masks */
   l_mask = 0xcc;
@@ -243,7 +246,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
   /* fifth shuffle stage */
   {
     unsigned int  l_dst_start = 0;
-    unsigned char l_perm_mask[2] = { i_mask_reg_0, i_mask_reg_1 };
+    unsigned char l_perm_mask[2]; l_perm_mask[0] = (unsigned char)i_mask_reg_0; l_perm_mask[1] = (unsigned char)i_mask_reg_1;
     unsigned char l_perm_imm[2] = { 0x40, 0x0e };
     libxsmm_generator_transform_16way_permute_network_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                               l_perm_mask, l_perm_imm, l_dst_start, LIBXSMM_X86_INSTR_VPERMQ_I );
