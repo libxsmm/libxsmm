@@ -2205,7 +2205,6 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         if (NULL != flux_entry.ptr_const) {
           if (0 == is_big_desc) {
 #if !defined(LIBXSMM_CACHE_MAXSIZE) || (0 == (LIBXSMM_CACHE_MAXSIZE))
-            LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
             LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
 #endif
             diff = LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE)(xdesc, internal_registry_keys + i, 0/*dummy*/);
