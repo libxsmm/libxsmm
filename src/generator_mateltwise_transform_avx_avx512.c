@@ -450,7 +450,13 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
                                                                          const unsigned int                      i_mask_reg_1,
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
-  unsigned long long l_mask = 0;
+  LIBXSMM_UNUSED( io_loop_label_tracker );
+  LIBXSMM_UNUSED( i_gp_reg_m_loop );
+  LIBXSMM_UNUSED( i_gp_reg_n_loop );
+  LIBXSMM_UNUSED( i_gp_reg_mask );
+  LIBXSMM_UNUSED( i_mask_reg_0 );
+  LIBXSMM_UNUSED( i_mask_reg_1 );
+
   unsigned int  l_shuffle_cntl[16] = { 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a, 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a,
                                        0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a, 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a };
 
@@ -483,12 +489,12 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
     {
       unsigned char l_in_idx[16] = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
       unsigned int  l_src_start = 0;
-      unsigned int  l_dst_start = 8;
+      unsigned int  l_dst_start = 0;
       unsigned int  l_shuffle_op = 31;
       libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char *) l_shuffle_cntl,
                                                           "vnni_to_vnnit_shufl_", i_micro_kernel_config->vector_name, l_shuffle_op);
       libxsmm_generator_transform_Xway_byteshuffle_network_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                                   l_in_idx, l_shuffle_op, 0, 0, LIBXSMM_X86_INSTR_VSHUFB, 8 );
+                                                                   l_in_idx, l_shuffle_op, l_src_start, l_dst_start, LIBXSMM_X86_INSTR_VSHUFB, 8 );
     }
 
     /* second shuffle stage */
