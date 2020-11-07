@@ -372,6 +372,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPUNPCKHQDQ, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VEXTRACTI64X4, 1, 0x01, 32 );
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPERMQ_I, 1, 0x01, 32 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VSHUFB, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
 #endif
 
   /* testing compute mem-reg instructions */
