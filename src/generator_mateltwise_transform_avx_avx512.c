@@ -450,15 +450,15 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
                                                                          const unsigned int                      i_mask_reg_1,
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  unsigned int  l_shuffle_cntl[16] = { 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a, 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a,
+                                       0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a, 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a };
+
   LIBXSMM_UNUSED( io_loop_label_tracker );
   LIBXSMM_UNUSED( i_gp_reg_m_loop );
   LIBXSMM_UNUSED( i_gp_reg_n_loop );
   LIBXSMM_UNUSED( i_gp_reg_mask );
   LIBXSMM_UNUSED( i_mask_reg_0 );
   LIBXSMM_UNUSED( i_mask_reg_1 );
-
-  unsigned int  l_shuffle_cntl[16] = { 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a, 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a,
-                                       0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a, 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a };
 
   /* optimized shuffle network for SIMD aligned sizes */
   if ( (i_mateltwise_desc->m % 16 == 0) && (i_mateltwise_desc->n % 16 == 0) ) {
