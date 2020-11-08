@@ -307,11 +307,27 @@ int main(int argc, char* argv[])
       }
     }
     if (EXIT_SUCCESS == result) {
-      const double d = libxsmm_timer_duration(0, duration);
+      const double d = libxsmm_timer_duration(0, duration), mbyte = (1U << 30);
+      const size_t bwsize = size * ((('o' == t || 'O' == t)) ? 3 : 2);
       if (0 < duration) {
         /* out-of-place transpose bandwidth assumes RFO */
-        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size
-          * ((('o' == t || 'O' == t)) ? 3 : 2) / (d * (1U << 30)));
+        fprintf(stdout, "\tbandwidth: %.2f GB/s\n", bwsize / (d * mbyte));
+#if defined(BATCH_SIZE) && (0 < (BATCH_SIZE))
+        if (0 >= r && ('i' == t || 'I' == t) &&
+          /* limit evaluation to batches of small matrices */
+          km <= LIBXSMM_CONFIG_MAX_DIM && kn <= LIBXSMM_CONFIG_MAX_DIM)
+        {
+          double dbatch;
+          start = libxsmm_timer_tick();
+          libxsmm_itrans_batch(b, sizeof(ELEM_TYPE), km, kn, kldi,
+            0/*index_base*/, 0/*index_stride*/, NULL/*stride*/,
+            BATCH_SIZE, 0/*tid*/, 1/*ntasks*/);
+          dbatch = libxsmm_timer_duration(start, libxsmm_timer_tick());
+          if (0 < dbatch) {
+            fprintf(stdout, "\tbatch: %.1f GB/s\n", bwsize * BATCH_SIZE / (dbatch * mbyte));
+          }
+        }
+#endif
       }
       if (0 == lower) {
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * (d / (0 == r ? (s + 1) : s)));
@@ -322,16 +338,6 @@ int main(int argc, char* argv[])
       if (0 < duration2) {
         fprintf(stdout, "\treference: %.1fx\n", (1.0 * duration) / duration2);
       }
-#if defined(BATCH_SIZE) && (0 < (BATCH_SIZE))
-      if (0 >= r && ('i' == t || 'I' == t)) {
-        start = libxsmm_timer_tick();
-        libxsmm_itrans_batch(b, sizeof(ELEM_TYPE), km, kn, kldi,
-          0/*index_base*/, 0/*index_stride*/, NULL/*stride*/,
-          BATCH_SIZE, 0/*tid*/, 1/*ntasks*/);
-        fprintf(stdout, "\tbatch: %.0f ms\n", 1000.0 *
-          libxsmm_timer_duration(start, libxsmm_timer_tick()) / BATCH_SIZE);
-      }
-#endif
     }
     else if (0 != check) { /* check */
       fprintf(stderr, "Error: validation failed for m=%lli, n=%lli, ldi=%lli, and ldo=%lli!\n",
