@@ -610,7 +610,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
           }
         }
       }
-      else { /* singular stride is measured in Bytes */
+      else { /* array of pointers to matrices (singular stride is measured in Bytes) */
         const libxsmm_blasint d = *stride - index_base * sizeof(void*);
         const char *const endi = mat0 + (size_t)d * end;
         char* i = mat0 + begin * (size_t)d;
@@ -651,10 +651,25 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
         libxsmm_xfree(scratch, 0/*no check*/);
       }
     }
-    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: invalid stride for in-place batch-transpose!\n");
+    else { /* TODO */
+      size_t i;
+      if (NULL == scratch) { /* in-place transpose */
+        for (i = begin; i < end; ++i) {
+          libxsmm_itrans_internal(mat0 + i * typesize, typesize, m, n, ld);
+        }
+      }
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+      else if (NULL != kernel.ptr) { /* out-of-place transpose using JIT'ted kernel */
+        for (i = begin; i < end; ++i) {
+          libxsmm_itrans_scratch_jit(mat0 + i * typesize, scratch, typesize, m, n, ld, kernel);
+        }
+      }
+#endif
+      else { /* out-of-place transpose */
+        for (i = begin; i < end; ++i) {
+          libxsmm_itrans_scratch(mat0 + i * typesize, scratch, typesize, m, n, ld);
+        }
+      }
     }
   }
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */

@@ -29,6 +29,10 @@
 # define RAND_SEED 25071975
 #endif
 
+#if !defined(BATCH_SIZE)
+# define BATCH_SIZE 100
+#endif
+
 #if (defined(_OPENMP) || (defined(__BLAS) && 1 < (__BLAS)))
 # if !defined(OTRANS_THREAD) && defined(_OPENMP) && 0
 #   define OTRANS_THREAD libxsmm_otrans_task
@@ -174,13 +178,13 @@ int main(int argc, char* argv[])
           const libxsmm_blasint rldo = 0 <= lower ? randstart(lower, ldo) : 0;
           kn = randstart(LIBXSMM_ABS(lower), n);
           kldo = LIBXSMM_MAX(rldo, kn);
-          /* trigger JIT-generated code */
+          /* warmup: trigger JIT-generated code */
           OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
         }
         else {
           kn = randstart(LIBXSMM_ABS(lower), n);
           kldo = kldi;
-          /* trigger JIT-generated code */
+          /* warmup: trigger JIT-generated code */
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
         }
       }
@@ -318,6 +322,16 @@ int main(int argc, char* argv[])
       if (0 < duration2) {
         fprintf(stdout, "\treference: %.1fx\n", (1.0 * duration) / duration2);
       }
+#if defined(BATCH_SIZE) && (0 < (BATCH_SIZE))
+      if (0 >= r && ('i' == t || 'I' == t)) {
+        start = libxsmm_timer_tick();
+        libxsmm_itrans_batch(b, sizeof(ELEM_TYPE), km, kn, kldi,
+          0/*index_base*/, 0/*index_stride*/, NULL/*stride*/,
+          BATCH_SIZE, 0/*tid*/, 1/*ntasks*/);
+        fprintf(stdout, "\tbatch: %.0f ms\n", 1000.0 *
+          libxsmm_timer_duration(start, libxsmm_timer_tick()) / BATCH_SIZE);
+      }
+#endif
     }
     else if (0 != check) { /* check */
       fprintf(stderr, "Error: validation failed for m=%lli, n=%lli, ldi=%lli, and ldo=%lli!\n",
