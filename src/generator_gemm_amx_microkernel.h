@@ -91,6 +91,15 @@ void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
     unsigned int                       a_lookahead_offs);
 
 LIBXSMM_API_INTERN
+void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config_gemm,
+    unsigned int                       i_gp_reg_in,
+    unsigned int                       i_offset_in,
+    unsigned int                       i_offset_out);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            io_generated_code,
                                                      libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                      const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,

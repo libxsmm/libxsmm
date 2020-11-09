@@ -4101,7 +4101,7 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_
   desc->meltw_param = (unsigned char)meltw_param;
   desc->meltw_ldx = (unsigned int) meltw_ldx;
   desc->meltw_ldy = (unsigned int) meltw_ldy;
-  desc->meltw_ldz = (unsigned int) meltw_ldz;  
+  desc->meltw_ldz = (unsigned int) meltw_ldz;
   result = libxsmm_xmmdispatch(desc);
   return result.bmrs_meltwfused;
 }

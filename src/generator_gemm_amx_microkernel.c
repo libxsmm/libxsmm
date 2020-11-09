@@ -805,12 +805,12 @@ void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
 LIBXSMM_API_INTERN
 void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
-    const libxsmm_gemm_descriptor*     i_xgemm_desc, 
+    const libxsmm_gemm_descriptor*     i_xgemm_desc,
     libxsmm_micro_kernel_config*       i_micro_kernel_config_gemm,
     unsigned int                       i_gp_reg_in,
     unsigned int                       i_offset_in,
     unsigned int                       i_offset_out) {
-  
+
   int i = 0, reserved_zmms = i_micro_kernel_config_gemm->reserved_zmms;
   libxsmm_mateltwise_kernel_config  config_struct;
   libxsmm_meltw_descriptor          desc_struct;
@@ -834,7 +834,7 @@ void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
   i_mateltwise_desc->m  = 32;
   i_mateltwise_desc->n  = 16;
   i_mateltwise_desc->ldi= i_xgemm_desc->ldb;
-  i_mateltwise_desc->ldo= i_xgemm_desc->n;  
+  i_mateltwise_desc->ldo= i_xgemm_desc->n;
 
   /* Save gp registers  */
   if (reserved_zmms > 0) {
@@ -848,7 +848,7 @@ void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
 
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config_gemm, LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B,  i_gp_reg_out );
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config_gemm, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_zmm_scratch );
-  
+
   if (i_offset_in > 0) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_in, i_offset_in);
   }
@@ -868,11 +868,11 @@ void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
         i, 0, 1, 1 );
   }
 
-  libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker, 
-      i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask, 
-      i_mask_reg_0, i_mask_reg_1, 0, 0, 
+  libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
+      i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask,
+      i_mask_reg_0, i_mask_reg_1, 0, 0,
       i_micro_kernel_config, i_mateltwise_desc );
-  
+
   /* Restore reserved ZMMs if any  */
   for (i = 0; i < reserved_zmms; i++) {
     libxsmm_x86_instruction_vec_move( io_generated_code,
