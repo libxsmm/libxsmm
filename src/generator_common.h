@@ -520,6 +520,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int sparsity_factor_A;
   unsigned int decompress_A;
   unsigned int vnni_cvt_output_ext_buf;
+  unsigned int norm_to_normT_B_ext_buf;
 
   /* Register names/logistics for fusion boo-keeping  */
   unsigned int reserved_zmms;
@@ -545,6 +546,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int mask_lo;
   unsigned int perm_table_vnni_lo;
   unsigned int perm_table_vnni_hi;
+  unsigned int norm_to_normT_mask_reg_0;
+  unsigned int norm_to_normT_mask_reg_1;
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
   int use_paired_tilestores;
@@ -554,6 +557,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   int _C_tile_mate_id[4];
   int _im_offset_prefix_sums[4];
   int _in_offset_prefix_sums[4];
+
+  /* Auxiliary fields to propagate kernel info */
+  unsigned int k_amx_microkernel;
+  unsigned int B_offs_trans;
+  unsigned int stride_b_trans;
+
 } libxsmm_micro_kernel_config;
 
 /* structure for storing the current gp reg mapping */
@@ -751,7 +760,9 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_ELT_BUF1           = 13,
   LIBXSMM_GEMM_STACK_VAR_ELT_BUF2           = 14,
   LIBXSMM_GEMM_STACK_VAR_ELT_BITMAP_PTR     = 15,
-  LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF = 16
+  LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF = 16,
+  LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B    = 17,
+  LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C    = 18
 } libxsmm_gemm_stack_var;
 
 #if 0
