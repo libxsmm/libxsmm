@@ -2048,7 +2048,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
               if (internal_malloc_local_max < watermark) internal_malloc_local_max = watermark; /* accept data-race */
             }
           }
-          else { /* private */
+          else if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) { /* private scratch */
             const size_t watermark = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)(
               &internal_malloc_private_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
             if (internal_malloc_private_max < watermark) internal_malloc_private_max = watermark; /* accept data-race */

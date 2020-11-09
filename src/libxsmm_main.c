@@ -604,7 +604,7 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 }
 
 
-/* Caution: cannot be used multiple time in a single expression! */
+/* Caution: cannot be used multiple times in a single expression! */
 LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
 {
   const int len = (NULL != scale ? ((int)strlen(scale)) : 0);
@@ -672,7 +672,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
-      size_t size_scratch = 0, size_private = 0;
+      char number_format_buffer[32];
       libxsmm_scratch_info scratch_info;
       libxsmm_cpuid_x86_info info;
       libxsmm_cpuid_x86(&info);
@@ -684,55 +684,60 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
       }
-      if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info)) {
-        size_private = scratch_info.internal;
-        size_scratch = scratch_info.size;
-      }
-      if (0 != size_private) { /* should be always true */
-        char size_private_buffer[32], size_code_buffer[32];
-        /* coverity[check_return] */
-        libxsmm_format_size(size_private_buffer, sizeof(size_private_buffer), size_private, "KM", "B", 10);
-        fprintf(stderr, "Registry and code: %s", size_private_buffer);
-        if (0 != libxsmm_format_size(size_code_buffer, sizeof(size_code_buffer), internal_registry_nbytes, "KM", "B", 10)) {
-          fprintf(stderr, " + %s", size_code_buffer);
+      if (0 != libxsmm_format_size(number_format_buffer, sizeof(number_format_buffer),
+#if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
+        sizeof(internal_cache_type) * (LIBXSMM_NTHREADS_MAX) +
+#endif
+        (sizeof(internal_regkey_type) + sizeof(libxsmm_code_pointer)) * (LIBXSMM_CAPACITY_REGISTRY),
+        "KM", "B", 10))
+      {
+        fprintf(stderr, "Registry and code: %s", number_format_buffer);
+        if (0 != libxsmm_format_size(number_format_buffer, sizeof(number_format_buffer), internal_registry_nbytes, "KM", "B", 10)) {
+          fprintf(stderr, " + %s", number_format_buffer);
         }
-      }
-      if (0 != high_verbosity) {
-        unsigned int ngemms = 0;
-        int i; for (i = 0; i < 4; ++i) {
-          ngemms += internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
-          ngemms += internal_statistic[0/*DP*/][i].njit + internal_statistic[1/*SP*/][i].njit;
-        }
-        if (0 != ngemms || 0 != internal_statistic_num_gemv
-          || 0 != internal_statistic_num_mcopy || 0 != internal_statistic_num_tcopy
-          || 0 != libxsmm_statistic_num_spmdm
-          || 0 != internal_statistic_num_user
-          || 0 != internal_registry_nleaks)
-        {
-          const char sep[] = " ", *s = "";
-          fprintf(stderr, " (");
-          if (0 != ngemms) { fprintf(stderr, "gemm=%u", ngemms); s = sep; }
-          if (0 != internal_statistic_num_gemv) { fprintf(stderr, "%sgemv=%u", s, internal_statistic_num_gemv); s = sep; }
-          if (0 != internal_statistic_num_mcopy) { fprintf(stderr, "%smcopy=%u", s, internal_statistic_num_mcopy); s = sep; }
-          if (0 != internal_statistic_num_meltw) { fprintf(stderr, "%smeltw=%u", s, internal_statistic_num_meltw); s = sep; }
-          if (0 != internal_statistic_num_tcopy) { fprintf(stderr, "%stcopy=%u", s, internal_statistic_num_tcopy); s = sep; }
-          if (0 != libxsmm_statistic_num_spmdm) { fprintf(stderr, "%sspmdm=%u", s, libxsmm_statistic_num_spmdm); s = sep; }
-          if (0 != internal_statistic_num_user) { fprintf(stderr, "%suser=%u", s, internal_statistic_num_user); s = sep; }
-          if (0 != internal_registry_nleaks) { fprintf(stderr, "%snleaks=%u", s, internal_registry_nleaks); s = sep; }
-          fprintf(stderr, ")");
-        }
-      }
-      fprintf(stderr, "\n");
-      if (0 != size_scratch) {
-        char size_scratch_buffer[32];
-        /* coverity[check_return] */
-        libxsmm_format_size(size_scratch_buffer, sizeof(size_scratch_buffer), size_scratch, "KM", "B", 10);
-        fprintf(stderr, "Scratch: %s", size_scratch_buffer);
         if (0 != high_verbosity) {
-          fprintf(stderr, " (mallocs=%lu, pools=%u)\n", (unsigned long int)scratch_info.nmallocs, scratch_info.npools);
+          unsigned int ngemms = 0;
+          int i; for (i = 0; i < 4; ++i) {
+            ngemms += internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
+            ngemms += internal_statistic[0/*DP*/][i].njit + internal_statistic[1/*SP*/][i].njit;
+          }
+          if (0 != ngemms || 0 != internal_statistic_num_gemv
+            || 0 != internal_statistic_num_mcopy || 0 != internal_statistic_num_tcopy
+            || 0 != libxsmm_statistic_num_spmdm
+            || 0 != internal_statistic_num_user
+            || 0 != internal_registry_nleaks)
+          {
+            const char sep[] = " ", *s = "";
+            fprintf(stderr, " (");
+            if (0 != ngemms) { fprintf(stderr, "gemm=%u", ngemms); s = sep; }
+            if (0 != internal_statistic_num_gemv) { fprintf(stderr, "%sgemv=%u", s, internal_statistic_num_gemv); s = sep; }
+            if (0 != internal_statistic_num_mcopy) { fprintf(stderr, "%smcopy=%u", s, internal_statistic_num_mcopy); s = sep; }
+            if (0 != internal_statistic_num_meltw) { fprintf(stderr, "%smeltw=%u", s, internal_statistic_num_meltw); s = sep; }
+            if (0 != internal_statistic_num_tcopy) { fprintf(stderr, "%stcopy=%u", s, internal_statistic_num_tcopy); s = sep; }
+            if (0 != libxsmm_statistic_num_spmdm) { fprintf(stderr, "%sspmdm=%u", s, libxsmm_statistic_num_spmdm); s = sep; }
+            if (0 != internal_statistic_num_user) { fprintf(stderr, "%suser=%u", s, internal_statistic_num_user); s = sep; }
+            if (0 != internal_registry_nleaks) { fprintf(stderr, "%snleaks=%u", s, internal_registry_nleaks); s = sep; }
+            fprintf(stderr, ")");
+          }
         }
-        else {
-          fprintf(stderr, "\n");
+        fprintf(stderr, "\n");
+      }
+      if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info)) {
+        if (0 != scratch_info.size &&
+          0 != libxsmm_format_size(number_format_buffer, sizeof(number_format_buffer), scratch_info.size, "KM", "B", 10))
+        {
+          fprintf(stderr, "Scratch: %s", number_format_buffer);
+          if (0 != high_verbosity) {
+            fprintf(stderr, " (mallocs=%lu, pools=%u)\n", (unsigned long int)scratch_info.nmallocs, scratch_info.npools);
+          }
+          else {
+            fprintf(stderr, "\n");
+          }
+        }
+        if (0 != scratch_info.internal && 0 != high_verbosity &&
+          libxsmm_format_size(number_format_buffer, sizeof(number_format_buffer), scratch_info.internal, "KM", "B", 10))
+        {
+          fprintf(stderr, "Private: %s\n", number_format_buffer);
         }
       }
       if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) {
