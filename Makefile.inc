@@ -290,7 +290,7 @@ HOMEDIR := $(call qapath,$(HOME))
 HEREDIR := $(call qapath,.)
 
 # Pickup OpenMP library name if passed as OMP=libname|name
-ifneq (0,$(call qnum,$(OMP))) # NaN
+ifeq (NaN,$(call qnum,$(OMP),NaN))
   OMPRT := $(patsubst lib%,%,$(OMP))
 endif
 OMPRT ?= $(NULL)
@@ -300,14 +300,16 @@ uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
 
 ctest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   echo "int main(void) { return 0; }" > $${INFILE} && if [ "$3" ]; \
-  then $1 -c $${INFILE} -o $${INFILE}.o && $1 $2 $${INFILE}.o -o $${INFILE}.x; \
-  else $1 $2 $${INFILE} -o $${INFILE}.x; fi 2>/dev/null >/dev/null && echo "OK"; \
+  then $1 -c $${INFILE} -o $${INFILE}.o 2>/dev/null >/dev/null && \
+    if [ "$$($1 $2 $${INFILE}.o -o $${INFILE}.x 2>&1)" ]; then false; fi; \
+  else $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null; fi && echo "OK"; \
   rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.c.* 2>/dev/null),$2))
 # INFILE cannot use leading dot when used with certain F-compiler
 ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
   printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && if [ "$3" ]; \
-  then $1 -c $${INFILE} -o $${INFILE}.o && $1 $2 $${INFILE}.o -o $${INFILE}.x; \
-  else $1 $2 $${INFILE} -o $${INFILE}.x; fi 2>&1 >/dev/null || echo "FAILED"; \
+  then $1 -c $${INFILE} -o $${INFILE}.o 2>/dev/null >/dev/null && \
+    if [ "$$($1 $2 $${INFILE}.o -o $${INFILE}.x 2>&1)" ]; then false; fi; \
+  else $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null; fi || echo "FAILED"; \
   rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$(NULL),$2))
 
 ldclib = $(if $1,$(call ctest,$1 $2,-l$(strip $3)))
@@ -1300,7 +1302,11 @@ ifneq (0,$(INTEL))
       CTARGET := -march=core-avx2
     endif
   endif
-  OMPFLAG_FORCE := -fopenmp
+  ifeq (,$(strip $(GFC)))
+    OMPFLAG_FORCE := -qopenmp
+  else
+    OMPFLAG_FORCE := -fopenmp
+  endif
   ifeq (,$(strip $(OMPRT)))
     OMPRT := iomp5
   endif
