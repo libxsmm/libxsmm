@@ -66,7 +66,7 @@
 #if !defined(LIBXSMM_UNIFY_LOCKS) && 1
 # define LIBXSMM_UNIFY_LOCKS
 #endif
-#if !defined(LIBXSMM_REGKEY_PAD) && 1
+#if !defined(LIBXSMM_REGKEY_PAD) && 0
 # define LIBXSMM_REGKEY_PAD
 #endif
 #if !defined(LIBXSMM_CACHE_PAD) && 1
