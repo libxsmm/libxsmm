@@ -481,7 +481,8 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
 #endif
     {
       const int flags_rs = LIBXSMM_MALLOC_FLAG_REALLOC | LIBXSMM_MALLOC_FLAG_SCRATCH;
-      const int flags_mx = LIBXSMM_MALLOC_FLAG_MMAP | LIBXSMM_MALLOC_FLAG_X;
+      const int flags_px = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_PRIVATE;
+      const int flags_mx = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_MMAP;
       const char *const pointer = (const char*)result->pointer;
       union { libxsmm_free_fun fun; const void* ptr; } convert;
       convert.fun = result->free.function;
@@ -495,7 +496,7 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
         || (0 == (LIBXSMM_MALLOC_FLAG_R & result->flags))
         || (pointer == convert.ptr || pointer == result->context || pointer >= buffer || NULL == pointer)
         || (LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_public_max, internal_malloc_local_max), internal_malloc_private_max) < result->size
-            && 0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & result->flags)) || (0 == result->size)
+            && 0 == (flags_px & result->flags)) || (0 == result->size)
         || (2 > libxsmm_ninit) /* before checksum calculation */
 #if !defined(LIBXSMM_MALLOC_CRC_OFF) /* last check: checksum over info */
 # if defined(LIBXSMM_MALLOC_CRC_LIGHT)
