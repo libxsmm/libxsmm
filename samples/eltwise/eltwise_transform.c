@@ -253,8 +253,8 @@ void test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
   unsigned short *out, *out_gold, *out_vnni;
   unsigned int i, j, j2;
   unsigned int s;
-  libxsmm_blasint ldi = M*2;
-  libxsmm_blasint ldo = N*2;
+  libxsmm_blasint ldi = M;
+  libxsmm_blasint ldo = N;
 
   libxsmm_meltw_transform_param trans_param;
   libxsmm_meltw_transform_flags trans_flags;
