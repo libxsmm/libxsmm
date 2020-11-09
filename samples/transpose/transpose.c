@@ -29,6 +29,10 @@
 # define RAND_SEED 25071975
 #endif
 
+#if !defined(BATCH_SIZE)
+# define BATCH_SIZE 100
+#endif
+
 #if (defined(_OPENMP) || (defined(__BLAS) && 1 < (__BLAS)))
 # if !defined(OTRANS_THREAD) && defined(_OPENMP) && 0
 #   define OTRANS_THREAD libxsmm_otrans_task
@@ -115,13 +119,11 @@ int main(int argc, char* argv[])
 {
   const char t = (char)(1 < argc ? *argv[1] : 'o');
   const libxsmm_blasint m = (2 < argc ? atoi(argv[2]) : 4096);
-#if 0 /* TODO: enable when in-place transpose is fully supported */
   const libxsmm_blasint n = (3 < argc ? atoi(argv[3]) : m);
-#else
-  const libxsmm_blasint n = (3 < argc ? (('o' == t || 'O' == t) ? atoi(argv[3]) : m) : m);
-#endif
-  const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
-  const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
+  const libxsmm_blasint ldi = (('o' == t || 'O' == t)
+    ? LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m) : LIBXSMM_MAX(m, n));
+  const libxsmm_blasint ldo = (('o' == t || 'O' == t)
+    ? LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n) : ldi);
   const int r = (6 < argc ? atoi(argv[6]) : 0), s = LIBXSMM_ABS(r);
   const libxsmm_blasint lower = (7 < argc ? atoi(argv[7]) : 0);
   libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi);
@@ -176,17 +178,13 @@ int main(int argc, char* argv[])
           const libxsmm_blasint rldo = 0 <= lower ? randstart(lower, ldo) : 0;
           kn = randstart(LIBXSMM_ABS(lower), n);
           kldo = LIBXSMM_MAX(rldo, kn);
-          /* trigger JIT-generated code */
+          /* warmup: trigger JIT-generated code */
           OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
         }
         else {
-#if 0 /* TODO: enable when in-place transpose is fully supported */
           kn = randstart(LIBXSMM_ABS(lower), n);
-#else
-          kn = km;
-#endif
           kldo = kldi;
-          /* trigger JIT-generated code */
+          /* warmup: trigger JIT-generated code */
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
         }
       }
@@ -264,11 +262,7 @@ int main(int argc, char* argv[])
             kldo = LIBXSMM_MAX(rldo, kn);
           }
           else {
-#if 0 /* TODO: enable when in-place transpose is fully supported */
             kn = randstart(LIBXSMM_ABS(lower), n);
-#else
-            kn = km;
-#endif
             kldo = kldi;
           }
         }
@@ -292,8 +286,8 @@ int main(int argc, char* argv[])
           ITRANS_GOLD(&km, &kn, b, &kldi, &kldo);
           duration2 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
 #else
-          fprintf(stderr, "Error: no validation routine available!\n");
-          result = EXIT_FAILURE;
+          fprintf(stderr, "Warning: no validation routine available!\n");
+          continue;
 #endif
         }
         if (1 < check || 0 > check) { /* check */
@@ -313,11 +307,27 @@ int main(int argc, char* argv[])
       }
     }
     if (EXIT_SUCCESS == result) {
-      const double d = libxsmm_timer_duration(0, duration);
+      const double d = libxsmm_timer_duration(0, duration), mbyte = (1U << 30);
+      const size_t bwsize = size * ((('o' == t || 'O' == t)) ? 3 : 2);
       if (0 < duration) {
         /* out-of-place transpose bandwidth assumes RFO */
-        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size
-          * ((('o' == t || 'O' == t)) ? 3 : 2) / (d * (1U << 30)));
+        fprintf(stdout, "\tbandwidth: %.2f GB/s\n", bwsize / (d * mbyte));
+#if defined(BATCH_SIZE) && (0 < (BATCH_SIZE))
+        if (0 >= r && ('i' == t || 'I' == t) &&
+          /* limit evaluation to batches of small matrices */
+          km <= LIBXSMM_CONFIG_MAX_DIM && kn <= LIBXSMM_CONFIG_MAX_DIM)
+        {
+          double dbatch;
+          start = libxsmm_timer_tick();
+          libxsmm_itrans_batch(b, sizeof(ELEM_TYPE), km, kn, kldi,
+            0/*index_base*/, 0/*index_stride*/, NULL/*stride*/,
+            BATCH_SIZE, 0/*tid*/, 1/*ntasks*/);
+          dbatch = libxsmm_timer_duration(start, libxsmm_timer_tick());
+          if (0 < dbatch) {
+            fprintf(stdout, "\tbatch: %.1f GB/s\n", bwsize * BATCH_SIZE / (dbatch * mbyte));
+          }
+        }
+#endif
       }
       if (0 == lower) {
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * (d / (0 == r ? (s + 1) : s)));

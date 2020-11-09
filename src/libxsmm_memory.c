@@ -493,10 +493,11 @@ LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignme
     ptr_is_aligned = !LIBXSMM_MOD2(address, (uintptr_t)minalign);
   }
   else {
-    *alignment = (1 << LIBXSMM_INTRINSICS_BITSCANFWD64(address));
+    const unsigned int nbits = LIBXSMM_INTRINSICS_BITSCANFWD64(address);
+    *alignment = (32 > nbits ? (1 << nbits) : INT_MAX);
     ptr_is_aligned = (minalign <= *alignment);
   }
-  return ptr_is_aligned && (NULL == inc || !LIBXSMM_MOD2(*inc, minalign));
+  return ptr_is_aligned && (NULL == inc || !LIBXSMM_MOD2(*inc, (size_t)minalign));
 }
 
 

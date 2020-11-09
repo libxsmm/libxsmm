@@ -1493,7 +1493,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
         }
 #endif /*(0 != LIBXSMM_SYNC)*/
       }
-      else { /* singular strides are measured in Bytes */
+      else { /* array of pointers to matrices (singular strides are measured in Bytes) */
         const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
         const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
         const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
@@ -1611,7 +1611,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
             ci = cn;
           } while (i < end_stride);
         }
-        else { /* singular strides are measured in Bytes */
+        else { /* array of pointers to matrices (singular strides are measured in Bytes) */
           const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
           const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
           const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
@@ -1773,7 +1773,7 @@ LIBXSMM_API_INTERN void libxsmm_dmmbatch_blas(const char* transa, const char* tr
         ai = an; bi = bn; ci = cn; /* next */
       }
     }
-    else { /* singular strides are measured in Bytes */
+    else { /* array of pointers to matrices (singular strides are measured in Bytes) */
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
@@ -1821,7 +1821,7 @@ LIBXSMM_API_INTERN void libxsmm_smmbatch_blas(const char* transa, const char* tr
         ai = an; bi = bn; ci = cn; /* next */
       }
     }
-    else { /* singular strides are measured in Bytes */
+    else { /* array of pointers to matrices (singular strides are measured in Bytes) */
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
