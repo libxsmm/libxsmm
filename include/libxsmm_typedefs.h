@@ -286,6 +286,7 @@ typedef enum libxsmm_meltw_flags {
   LIBXSMM_MELTW_FLAG_ACT_SIGM       =  8,
   LIBXSMM_MELTW_FLAG_ACT_GELU       = 16,
   LIBXSMM_MELTW_FLAG_OVERWRITE_C    = 32,
+  LIBXSMM_MELTW_FLAG_ACT_RELU_BWD   = 64,
   LIBXSMM_MELTW_FLAG_COLBIAS_OVERWRITE_C     =  LIBXSMM_MELTW_FLAG_COLBIAS  | LIBXSMM_MELTW_FLAG_OVERWRITE_C,
   LIBXSMM_MELTW_FLAG_ACT_RELU_OVERWRITE_C    =  LIBXSMM_MELTW_FLAG_ACT_RELU | LIBXSMM_MELTW_FLAG_OVERWRITE_C,
   LIBXSMM_MELTW_FLAG_ACT_TANH_OVERWRITE_C    =  LIBXSMM_MELTW_FLAG_ACT_TANH | LIBXSMM_MELTW_FLAG_OVERWRITE_C,
@@ -741,6 +742,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_gemm_param {
                                /* If OVERWRITE_C is true:  C contains post-act output, out_ptr contains the ReLU mask (only when act was ReLU) for other act unused */
   void* sparse_bitmap;
   void* decompress_buffer;
+  void* relu_bitmask_bwd;
 } libxsmm_meltw_gemm_param;
 
 /** Specialized function for matrix-eltw (weak-typed). */

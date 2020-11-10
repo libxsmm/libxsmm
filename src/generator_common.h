@@ -514,6 +514,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int fused_bcolbias;
   unsigned int fused_scolbias;
   unsigned int fused_relu;
+  unsigned int fused_relu_bwd;
   unsigned int fused_sigmoid;
   unsigned int overwrite_C;
   unsigned int vnni_format_C;
@@ -762,7 +763,8 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_ELT_BITMAP_PTR     = 15,
   LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF = 16,
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B    = 17,
-  LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C    = 18
+  LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C    = 18,
+  LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR    = 19
 } libxsmm_gemm_stack_var;
 
 #if 0
