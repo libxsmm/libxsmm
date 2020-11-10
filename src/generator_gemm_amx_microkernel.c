@@ -583,53 +583,55 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
           i_micro_kernel_config->vector_name,
           reg_0, 0, 1, 1 );
 
-      if (col % 2 == 1) {
-        if ((col-1) + reserved_zmms < 16) {
-          prev_reg_0 = (col-1) % (16-reserved_zmms) + reserved_zmms;
-        } else {
-          prev_reg_0 = 16 + (((col-1)-16+reserved_zmms) % 15);
+      if (vnni_cvt_output_ext_buf == 1) {
+        if (col % 2 == 1) {
+          if ((col-1) + reserved_zmms < 16) {
+            prev_reg_0 = (col-1) % (16-reserved_zmms) + reserved_zmms;
+          } else {
+            prev_reg_0 = 16 + (((col-1)-16+reserved_zmms) % 15);
+          }
+          copy_prev_reg_0 = (prev_reg_0 + n_cols < 32) ? prev_reg_0 + n_cols : 31;
+
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMOVDQU64,
+              i_micro_kernel_config->vector_name,
+              prev_reg_0, copy_prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF );
+
+          libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VPERMT2W,
+              i_micro_kernel_config->vector_name,
+              reg_0,
+              i_micro_kernel_config->perm_table_vnni_lo,
+              copy_prev_reg_0);
+
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMOVUPS,
+              gp_vnni_out_ext_buf,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (((in_offset/2+col/2)) * i_xgemm_desc->ldc + im_offset) * 2 * (i_micro_kernel_config->datatype_size/2),
+              i_micro_kernel_config->vector_name,
+              copy_prev_reg_0, 0, 1, 1 );
+
+          libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VPERMT2W,
+              i_micro_kernel_config->vector_name,
+              reg_0,
+              i_micro_kernel_config->perm_table_vnni_hi,
+              prev_reg_0);
+
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMOVUPS,
+              gp_vnni_out_ext_buf,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (((in_offset/2+col/2)) * i_xgemm_desc->ldc  + im_offset + 16) * 2 * (i_micro_kernel_config->datatype_size/2),
+              i_micro_kernel_config->vector_name,
+              prev_reg_0, 0, 1, 1 );
         }
-        copy_prev_reg_0 = (prev_reg_0 + n_cols < 32) ? prev_reg_0 + n_cols : 31;
-
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VMOVDQU64,
-            i_micro_kernel_config->vector_name,
-            prev_reg_0, copy_prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF );
-
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VPERMT2W,
-            i_micro_kernel_config->vector_name,
-            reg_0,
-            i_micro_kernel_config->perm_table_vnni_lo,
-            copy_prev_reg_0);
-
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VMOVUPS,
-            gp_vnni_out_ext_buf,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (((in_offset/2+col/2)) * i_xgemm_desc->ldc + im_offset) * 2 * (i_micro_kernel_config->datatype_size/2),
-            i_micro_kernel_config->vector_name,
-            copy_prev_reg_0, 0, 1, 1 );
-
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VPERMT2W,
-            i_micro_kernel_config->vector_name,
-            reg_0,
-            i_micro_kernel_config->perm_table_vnni_hi,
-            prev_reg_0);
-
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VMOVUPS,
-            gp_vnni_out_ext_buf,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (((in_offset/2+col/2)) * i_xgemm_desc->ldc  + im_offset + 16) * 2 * (i_micro_kernel_config->datatype_size/2),
-            i_micro_kernel_config->vector_name,
-            prev_reg_0, 0, 1, 1 );
       }
     }
   }
