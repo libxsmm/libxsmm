@@ -224,6 +224,8 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
   unsigned int gp_reg_C            = (overwrite_C == 1) ? i_gp_reg_mapping->gp_reg_c : gp_reg_outptr;
   unsigned int gp_vnni_out_ext_buf = gp_reg_outptr;
   unsigned int vnni_cvt_output_ext_buf  = i_micro_kernel_config->vnni_cvt_output_ext_buf;
+  unsigned int gp_reg_relu_bwd      = LIBXSMM_X86_GP_REG_R10;
+  unsigned int fuse_relu_bwd        = i_micro_kernel_config->fused_relu_bwd;
 
   /* Check if we have to save the tmp registers  */
   if ( (gp_reg_gemm_scratch == i_gp_reg_mapping->gp_reg_help_1) && (i_micro_kernel_config->n_loop_exists == 1)  ) {
@@ -248,6 +250,10 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
     }
   }
 
+  if (fuse_relu_bwd == 1) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, gp_reg_relu_bwd );
+  }
+
   /* Load the gemm scratch/relu ptr  */
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, gp_reg_gemm_scratch );
   if (fuse_relu == 1) {
@@ -255,6 +261,9 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
   }
   if (vnni_cvt_output_ext_buf == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, gp_vnni_out_ext_buf );
+  }
+  if (fuse_relu_bwd == 1) {
+    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR, gp_reg_relu_bwd);
   }
 
   /* Store FP32 tiles to scratch  */
@@ -279,7 +288,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
   }
 
   /* Fully unroll in N dimension  */
-  eager_result_store = ( ((unsigned int)n_cols > (max_unrolling - reserved_zmms)) || (fuse_relu == 0) || (tile1 < 0) || (vnni_cvt_output_ext_buf == 1)) ? 1 : 0;
+  eager_result_store = ( ((unsigned int)n_cols > (max_unrolling - reserved_zmms)) || ((fuse_relu == 0) && (fuse_relu_bwd == 0)) || (tile1 < 0)) ? 1 : 0;
 
   for (col = 0; col < (unsigned int)n_cols; col++) {
     if (tile1 >= 0) {
@@ -466,6 +475,32 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
           0 );
     }
 
+    if (fuse_relu_bwd == 1) {
+      /* Load relu mask  */
+      unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD: LIBXSMM_X86_INSTR_KMOVW;
+      current_mask_reg = reserved_mask_regs + (col % (8-reserved_mask_regs));
+      libxsmm_x86_instruction_mask_move_mem( io_generated_code,
+          mask_mov_instr,
+          gp_reg_relu_bwd,
+          LIBXSMM_X86_GP_REG_UNDEF,
+          0,
+          ((in_offset+col) * i_xgemm_desc->ldc + im_offset)/8,
+          current_mask_reg,
+          0 );
+
+      /* Blend output result with zero reg based on relu mask */
+      libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VPBLENDMW,
+          i_micro_kernel_config->vector_name,
+          reg_0,
+          i_micro_kernel_config->zero_reg,
+          reg_0,
+          LIBXSMM_X86_IMM_UNDEF,
+          current_mask_reg,
+          0 );
+    }
+
     if (eager_result_store == 1) {
       char vname = (char)((tile1 >= 0) ? i_micro_kernel_config->vector_name : 'y');
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -478,7 +513,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
           reg_0, 0, 1, 1 );
     }
 
-    if (vnni_cvt_output_ext_buf == 1) {
+    if ((vnni_cvt_output_ext_buf == 1) && (eager_result_store == 1)) {
       if (col % 2 == 1) {
         if ((col-1) + reserved_zmms < 16) {
           prev_reg_0 = (col-1) % (16-reserved_zmms) + reserved_zmms;
@@ -547,10 +582,63 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
           ((in_offset+col) * i_xgemm_desc->ldc + im_offset) * (i_micro_kernel_config->datatype_size/2),
           i_micro_kernel_config->vector_name,
           reg_0, 0, 1, 1 );
+
+      if (col % 2 == 1) {
+        if ((col-1) + reserved_zmms < 16) {
+          prev_reg_0 = (col-1) % (16-reserved_zmms) + reserved_zmms;
+        } else {
+          prev_reg_0 = 16 + (((col-1)-16+reserved_zmms) % 15);
+        }
+        copy_prev_reg_0 = (prev_reg_0 + n_cols < 32) ? prev_reg_0 + n_cols : 31;
+
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VMOVDQU64,
+            i_micro_kernel_config->vector_name,
+            prev_reg_0, copy_prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF );
+
+        libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VPERMT2W,
+            i_micro_kernel_config->vector_name,
+            reg_0,
+            i_micro_kernel_config->perm_table_vnni_lo,
+            copy_prev_reg_0);
+
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VMOVUPS,
+            gp_vnni_out_ext_buf,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (((in_offset/2+col/2)) * i_xgemm_desc->ldc + im_offset) * 2 * (i_micro_kernel_config->datatype_size/2),
+            i_micro_kernel_config->vector_name,
+            copy_prev_reg_0, 0, 1, 1 );
+
+        libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VPERMT2W,
+            i_micro_kernel_config->vector_name,
+            reg_0,
+            i_micro_kernel_config->perm_table_vnni_hi,
+            prev_reg_0);
+
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VMOVUPS,
+            gp_vnni_out_ext_buf,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (((in_offset/2+col/2)) * i_xgemm_desc->ldc  + im_offset + 16) * 2 * (i_micro_kernel_config->datatype_size/2),
+            i_micro_kernel_config->vector_name,
+            prev_reg_0, 0, 1, 1 );
+      }
     }
   }
 
   /* Check if we have to restore the tmp registers  */
+  if (fuse_relu_bwd == 1) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, gp_reg_relu_bwd );
+  }
+
   if ((fuse_relu == 1) && (overwrite_C == 1)) {
     if ( (gp_reg_relu == i_gp_reg_mapping->gp_reg_help_1) && (i_micro_kernel_config->n_loop_exists == 1)  ) {
       libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_1 );
