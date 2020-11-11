@@ -14,48 +14,57 @@
 #include <stdio.h>
 #include <math.h>
 
-#if 0
-void test_normal_to_normalT_64bit() {
+void test_normal_to_normalT_64bit( libxsmm_blasint M, libxsmm_blasint N ) {
   double *in;
   double *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  libxsmm_meltw_transform_param trans_param;
+  libxsmm_meltw_transform_flags trans_flags;
 
-  in       = (double*)_mm_malloc( sizeof(double)*64*64, 64);
-  out      = (double*)_mm_malloc( sizeof(double)*64*64, 64);
-  out_gold = (double*)_mm_malloc( sizeof(double)*64*64, 64);
+  in       = (double*) libxsmm_aligned_malloc( sizeof(double)*N*M, 64);
+  out      = (double*) libxsmm_aligned_malloc( sizeof(double)*M*N, 64);
+  out_gold = (double*) libxsmm_aligned_malloc( sizeof(double)*M*N, 64);
 
   /* init in */
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      in[(i*64)+j] = (double)((i*64)+j);
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*M)+j] = (double)(((i*M)+j)%4096);
     }
   }
 
   /* init out */
-  for ( i = 0; i < 64*64; ++i ) {
-    out[i] = 0.0;
+  for ( i = 0; i < M*N; ++i ) {
+    out[i] = 0;
   }
-  for ( i = 0; i < 64*64; ++i ) {
-    out_gold[i] = 0.0;
+  for ( i = 0; i < M*N; ++i ) {
+    out_gold[i] = 0;
   }
 
   /* compute out_gold */
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      out_gold[(j*64)+i] = in[(i*64)+j];
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      out_gold[(j*N)+i] = in[(i*M)+j];
     }
   }
 
-  /* use our tranpose */
-  transpose_64bit_64by64( in, out );
+  /* use jited tranpose */
+  trans_param.in_ptr  = (void*)in;
+  trans_param.out_ptr = (void*)out;
+  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+  libxsmm_meltwfunction_transform trans_kernel = libxsmm_dispatch_meltw_transform(M, N, &M, &N, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, trans_flags);
+  if ( trans_kernel == NULL ) {
+    fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    exit(-1);
+  }
+  trans_kernel( &trans_param );
 
   /* compare result */
   s = 0;
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      if ( out_gold[(i*64)+j] != out[(i*64)+j] ) {
-        printf("error at possition i=%i, j=%i, %f %f\n", i, j, out_gold[(i*64)+j], out[(i*64)+j]);
+  for ( i = 0; i < M; ++i ) {
+    for ( j = 0; j < N; ++j ) {
+      if ( out_gold[(i*N)+j] != out[(i*N)+j] ) {
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*N)+j], out_gold[(i*N)+j]);
         s = 1;
       }
     }
@@ -66,52 +75,62 @@ void test_normal_to_normalT_64bit() {
     printf("FAILURE 64bit\n");
   }
 
-  _mm_free( out_gold );
-  _mm_free( out );
-  _mm_free( in );
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
 }
 
-void test_normal_to_normalT_32bit() {
+void test_normal_to_normalT_32bit( libxsmm_blasint M, libxsmm_blasint N ) {
   float *in;
   float *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  libxsmm_meltw_transform_param trans_param;
+  libxsmm_meltw_transform_flags trans_flags;
 
-  in       = (float*)_mm_malloc( sizeof(float)*64*64, 64);
-  out      = (float*)_mm_malloc( sizeof(float)*64*64, 64);
-  out_gold = (float*)_mm_malloc( sizeof(float)*64*64, 64);
+  in       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*M, 64);
+  out      = (float*) libxsmm_aligned_malloc( sizeof(float)*M*N, 64);
+  out_gold = (float*) libxsmm_aligned_malloc( sizeof(float)*M*N, 64);
 
   /* init in */
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      in[(i*64)+j] = (float)((i*64)+j);
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*M)+j] = (float)(((i*M)+j)%4096);
     }
   }
 
   /* init out */
-  for ( i = 0; i < 64*64; ++i ) {
-    out[i] = 0.0f;;
+  for ( i = 0; i < M*N; ++i ) {
+    out[i] = 0;
   }
-  for ( i = 0; i < 64*64; ++i ) {
-    out_gold[i] = 0.0f;;
+  for ( i = 0; i < M*N; ++i ) {
+    out_gold[i] = 0;
   }
 
   /* compute out_gold */
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      out_gold[(j*64)+i] = in[(i*64)+j];
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      out_gold[(j*N)+i] = in[(i*M)+j];
     }
   }
 
-  /* use our tranpose */
-  transpose_32bit_64by64( in, out );
+  /* use jited tranpose */
+  trans_param.in_ptr  = (void*)in;
+  trans_param.out_ptr = (void*)out;
+  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+  libxsmm_meltwfunction_transform trans_kernel = libxsmm_dispatch_meltw_transform(M, N, &M, &N, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flags);
+  if ( trans_kernel == NULL ) {
+    fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    exit(-1);
+  }
+  trans_kernel( &trans_param );
 
   /* compare result */
   s = 0;
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      if ( out_gold[(i*64)+j] != out[(i*64)+j] ) {
-        printf("error at possition i=%i, j=%i\n", i, j);
+  for ( i = 0; i < M; ++i ) {
+    for ( j = 0; j < N; ++j ) {
+      if ( out_gold[(i*N)+j] != out[(i*N)+j] ) {
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*N)+j], out_gold[(i*N)+j]);
         s = 1;
       }
     }
@@ -122,11 +141,10 @@ void test_normal_to_normalT_32bit() {
     printf("FAILURE 32bit\n");
   }
 
-  _mm_free( out_gold );
-  _mm_free( out );
-  _mm_free( in );
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
 }
-#endif
 
 void test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
   unsigned short *in;
@@ -194,63 +212,71 @@ void test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
   libxsmm_free( in );
 }
 
-#if 0
-void test_normal_to_normalT_08bit() {
+void test_normal_to_normalT_08bit( libxsmm_blasint M, libxsmm_blasint N ) {
   unsigned char *in;
   unsigned char *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  libxsmm_meltw_transform_param trans_param;
+  libxsmm_meltw_transform_flags trans_flags;
 
-  in       = (unsigned char*)_mm_malloc( sizeof(unsigned char)*64*64, 64);
-  out      = (unsigned char*)_mm_malloc( sizeof(unsigned char)*64*64, 64);
-  out_gold = (unsigned char*)_mm_malloc( sizeof(unsigned char)*64*64, 64);
+  in       = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*M, 64);
+  out      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*M*N, 64);
+  out_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*M*N, 64);
 
   /* init in */
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      in[(i*64)+j] = (unsigned char)(((i*64)+j)%112);
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*M)+j] = (unsigned char)(((i*M)+j)%4096);
     }
   }
 
   /* init out */
-  for ( i = 0; i < 64*64; ++i ) {
+  for ( i = 0; i < M*N; ++i ) {
     out[i] = 0;
   }
-  for ( i = 0; i < 64*64; ++i ) {
+  for ( i = 0; i < M*N; ++i ) {
     out_gold[i] = 0;
   }
 
   /* compute out_gold */
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      out_gold[(j*64)+i] = in[(i*64)+j];
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      out_gold[(j*N)+i] = in[(i*M)+j];
     }
   }
 
-  /* use our tranpose */
-  transpose_08bit_64by64( in, out );
+  /* use jited tranpose */
+  trans_param.in_ptr  = (void*)in;
+  trans_param.out_ptr = (void*)out;
+  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+  libxsmm_meltwfunction_transform trans_kernel = libxsmm_dispatch_meltw_transform(M, N, &M, &N, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, trans_flags);
+  if ( trans_kernel == NULL ) {
+    fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    exit(-1);
+  }
+  trans_kernel( &trans_param );
 
   /* compare result */
   s = 0;
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      if ( out_gold[(i*64)+j] != out[(i*64)+j] ) {
-        printf("error at possition i=%i, j=%i\n", i, j);
+  for ( i = 0; i < M; ++i ) {
+    for ( j = 0; j < N; ++j ) {
+      if ( out_gold[(i*N)+j] != out[(i*N)+j] ) {
+        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, out[(i*N)+j], out_gold[(i*N)+j]);
         s = 1;
       }
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS  8bit\n");
+    printf("SUCCESS 08bit\n");
   } else {
-    printf("FAILURE  8bit\n");
+    printf("FAILURE 08bit\n");
   }
 
-  _mm_free( out_gold );
-  _mm_free( out );
-  _mm_free( in );
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
 }
-#endif
 
 void test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
   unsigned short *in, *in_vnni;
@@ -519,9 +545,18 @@ int main( int argc, char* argv[] ) {
   M     = atoi(argv[3]);
   N     = atoi(argv[4]);
 
-  if ( op == 'T' && dtype == 2 ) {
+  if ( op == 'T' && dtype == 8 ) {
+    printf("Testing 64bit Norm to Norm Transpose\n");
+    test_normal_to_normalT_64bit( M, N );
+  } else if ( op == 'T' && dtype == 4 ) {
+    printf("Testing 32bit Norm to Norm Transpose\n");
+    test_normal_to_normalT_32bit( M, N );
+  } else if ( op == 'T' && dtype == 2 ) {
     printf("Testing 16bit Norm to Norm Transpose\n");
     test_normal_to_normalT_16bit( M, N );
+  } else if ( op == 'T' && dtype == 1 ) {
+    printf("Testing 08bit Norm to Norm Transpose\n");
+    test_normal_to_normalT_08bit( M, N );
   } else if ( op == 'R' && dtype == 2 ) {
     printf("Testing 16bit VNNI to VNNI Transpose\n");
     test_vnni_to_vnniT_16bit( M, N );
