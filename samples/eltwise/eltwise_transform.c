@@ -167,6 +167,10 @@ void test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
   trans_param.out_ptr = (void*)out;
   trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
   libxsmm_meltwfunction_transform trans_kernel = libxsmm_dispatch_meltw_transform(M, N, &M, &N, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  if ( trans_kernel == NULL ) {
+    fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    exit(-1);
+  }
   trans_kernel( &trans_param );
 
   /* compare result */
@@ -309,6 +313,10 @@ void test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
   trans_param.out_ptr = (void*)out;
   trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_VNNI_TO_VNNIT;
   libxsmm_meltwfunction_transform trans_kernel = libxsmm_dispatch_meltw_transform(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  if ( trans_kernel == NULL ) {
+    fprintf( stderr, "JIT for VNNI_TO_VNNIT TPP. Bailing...!\n");
+    exit(-1);
+  }
   trans_kernel( &trans_param );
 
   /* compare result */
@@ -341,13 +349,14 @@ void test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
   unsigned int s;
   libxsmm_blasint ldi = M;
   libxsmm_blasint ldo = M;
+  libxsmm_blasint Nn = N + (N%2);
 
   libxsmm_meltw_transform_param trans_param;
   libxsmm_meltw_transform_flags trans_flags;
 
-  in       = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*M*N, 64);
-  out      = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*M*N, 64);
-  out_gold = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*M*N, 64);
+  in       = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*M*Nn, 64);
+  out      = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*M*Nn, 64);
+  out_gold = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*M*Nn, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -355,17 +364,22 @@ void test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
       in[(i*M)+j] = (unsigned short)(((i*M)+j)%112);
     }
   }
+  for ( i = N; i < Nn; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*M)+j] = 0;
+    }
+  }
 
   /* init out */
-  for ( i = 0; i < M*N; ++i ) {
+  for ( i = 0; i < M*Nn; ++i ) {
     out[i] = 0;
   }
-  for ( i = 0; i < M*N; ++i ) {
+  for ( i = 0; i < M*Nn; ++i ) {
     out_gold[i] = 0;
   }
 
   /* to vnni */
-  for ( j = 0; j < N/2; ++j ) {
+  for ( j = 0; j < Nn/2; ++j ) {
     for ( i = 0; i < M ; ++i ) {
       for( j2 = 0; j2 < 2; ++j2 ) {
         out_gold[(j*M*2)+(i*2)+j2] = in[(((j*2)+j2)*M)+i];
@@ -376,13 +390,21 @@ void test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N ) {
   /* use jited tranpose */
   trans_param.in_ptr  = (void*)in;
   trans_param.out_ptr = (void*)out;
-  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI;
+  if ( N % 2 == 1 ) {
+    trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI_PAD;
+  } else {
+    trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI;
+  }
   libxsmm_meltwfunction_transform trans_kernel = libxsmm_dispatch_meltw_transform(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  if ( trans_kernel == NULL ) {
+    fprintf( stderr, "JIT for NORM_TO_VNNI TPP. Bailing...!\n");
+    exit(-1);
+  }
   trans_kernel( &trans_param );
 
   /* compare result */
   s = 0;
-  for ( i = 0; i < N; ++i ) {
+  for ( i = 0; i < Nn; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( out_gold[(i*M)+j] != out[(i*M)+j] ) {
         printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*M)+j], out[(i*M)+j]);
