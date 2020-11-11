@@ -1303,7 +1303,11 @@ ifneq (0,$(INTEL))
     endif
   endif
   ifeq (,$(strip $(GFC)))
-    OMPFLAG_FORCE := -qopenmp
+    ifneq (0,$(shell echo "$$((150000<=$(FC_VERSION_NUM)))"))
+      OMPFLAG_FORCE := -qopenmp
+    else
+      OMPFLAG_FORCE := -fopenmp
+    endif
   else
     OMPFLAG_FORCE := -fopenmp
   endif

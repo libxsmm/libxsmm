@@ -2667,9 +2667,8 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t val
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
-    wrap.kind = (LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
-      ? (libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_USER
-      : (libxsmm_descriptor_kind)LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
+    wrap.kind = (libxsmm_descriptor_kind)(LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
+      ? LIBXSMM_KERNEL_KIND_USER : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
     dst = internal_find_code(&wrap, key_size, value_size).ptr;
     if (NULL != dst) {
       size_t size;
@@ -2721,9 +2720,8 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
-    wrap.kind = (LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
-      ? (libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_USER
-      : (libxsmm_descriptor_kind)LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
+    wrap.kind = (libxsmm_descriptor_kind)(LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
+      ? LIBXSMM_KERNEL_KIND_USER : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
     result = internal_find_code(&wrap, key_size, 0/*user_size*/).ptr;
   }
 #if !defined(NDEBUG)
@@ -2764,9 +2762,8 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.gemm.desc, descriptor);
-    wrap.kind = (0 == (batch_reduce & descriptor->flags)
-      ? (libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_MATMUL
-      : (libxsmm_descriptor_kind)LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
+    wrap.kind = (libxsmm_descriptor_kind)(0 == (batch_reduce & descriptor->flags)
+      ? LIBXSMM_KERNEL_KIND_MATMUL : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
       wrap.gemm.desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     }
