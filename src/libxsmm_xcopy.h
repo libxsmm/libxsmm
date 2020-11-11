@@ -272,13 +272,21 @@ LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xcopykernel kernel);
-LIBXSMM_API_INTERN void libxsmm_matzero_internal(void* out, unsigned int typesize, unsigned int ldo,
+LIBXSMM_API_INTERN void libxsmm_matzero_internal(void* out,
+  unsigned int typesize, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xcopykernel kernel);
 LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xcopykernel kernel);
+
+LIBXSMM_API_INTERN void libxsmm_itrans_internal(void* inout, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
+LIBXSMM_API_INTERN void libxsmm_itrans_scratch(void* inout, void* scratch, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
+LIBXSMM_API_INTERN void libxsmm_itrans_scratch_jit(void* inout, void* scratch, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_xcopykernel kernel);
 
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
 /** Determines whether JIT-kernels are used or not; values see LIBXSMM_XCOPY_JIT. */
