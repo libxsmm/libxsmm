@@ -25,6 +25,7 @@
 #define CHECK_L1
 #define OVERWRITE_DOUTPUT_BWDUPD
 #define FUSE_WT_TRANS_SGD
+#define FUSE_ACT_TRANS_FWD
 
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), _mm512_cvtneps_pbh((B)))
@@ -151,6 +152,9 @@ typedef struct my_fc_fwd_config {
   libxsmm_meltwfunction_copy            fwd_zero_kernel;
   libxsmm_meltwfunction_copy            fwd_copy_bf16fp32_kernel;
   libxsmm_meltwfunction_copy            fwd_colbcast_bf16fp32_copy_kernel;
+#ifdef FUSE_ACT_TRANS_FWD
+  libxsmm_meltwfunction_transform       norm_to_normT_kernel;
+#endif
 } my_fc_fwd_config;
 
 typedef struct my_fc_bwd_config {
@@ -210,6 +214,10 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   int l_flags, l_tc_flags;
   int l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
   libxsmm_blasint unroll_hint;
+#ifdef FUSE_ACT_TRANS_FWD
+  libxsmm_meltw_transform_flags trans_flags;
+  libxsmm_blasint ldc_trans = bn;
+#endif
 
   /* setting up some handle values */
   res.N = N;
@@ -340,6 +348,15 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     fprintf( stderr, "JIT for TPP fwd_copy_bf16fp32_kernel failed. Bailing...!\n");
     exit(-1);
   }
+
+#ifdef FUSE_ACT_TRANS_FWD
+  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+  res.norm_to_normT_kernel = libxsmm_dispatch_meltw_transform(bk, bn, &ldc, &ldc_trans, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  if ( res.norm_to_normT_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP norm_to_normT_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+#endif
 
   /* init scratch */
   res.scratch_size = sizeof(float) *  LIBXSMM_MAX(res.K * res.N, res.threads * LIBXSMM_MAX(res.bk * res.bn, res.K));
@@ -644,8 +661,14 @@ my_smax_bwd_config setup_my_smax_bwd(libxsmm_blasint N, libxsmm_blasint C, libxs
   return res;
 }
 
+#ifdef FUSE_ACT_TRANS_FWD
 void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
-                     const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
+                     const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch, libxsmm_bfloat16* tr_out_act_ptr, int perform_output_transpose )
+#else
+void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
+                     const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch )
+#endif
+{
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
   const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
@@ -684,6 +707,10 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
   libxsmm_meltw_cvtfp32bf16_param       eltwise_params;
   libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise;
   libxsmm_meltw_copy_param              copy_params;
+#ifdef FUSE_ACT_TRANS_FWD
+  LIBXSMM_VLA_DECL(4, libxsmm_bfloat16, tr_output,  tr_out_act_ptr, nBlocksMB, cfg.bk, cfg.bn);
+  libxsmm_meltw_transform_param trans_param;
+#endif
 
   unsigned long long  blocks = nBlocksIFm;
   libxsmm_blasint CB_BLOCKS = nBlocksIFm, BF = 1;
@@ -749,6 +776,13 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
                 eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
                 eltwise_kernel(&eltwise_params);
               }
+#ifdef FUSE_ACT_TRANS_FWD
+              if (perform_output_transpose > 0) {
+                trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+                trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tr_output, ofm1, mb1, 0, 0, nBlocksMB, cfg.bk, cfg.bn);
+                cfg.norm_to_normT_kernel(&trans_param);
+              }
+#endif
             }
           }
         }
@@ -776,6 +810,13 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
               &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, cfg.bn, cfg.bc),
               &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks);
           }
+#ifdef FUSE_ACT_TRANS_FWD
+          if (perform_output_transpose > 0) {
+            trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+            trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tr_output, ofm1, mb1, 0, 0, nBlocksMB, cfg.bk, cfg.bn);
+            cfg.norm_to_normT_kernel(&trans_param);
+          }
+#endif
         }
       }
     }
@@ -811,6 +852,13 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
               eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
               eltwise_kernel(&eltwise_params);
             }
+#ifdef FUSE_ACT_TRANS_FWD
+            if (perform_output_transpose > 0) {
+              trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+              trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tr_output, ofm1, mb1, 0, 0, nBlocksMB, cfg.bk, cfg.bn);
+              cfg.norm_to_normT_kernel(&trans_param);
+            }
+#endif
           }
         }
       }
@@ -838,6 +886,13 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
             &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, cfg.bn, cfg.bc),
             &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks);
         }
+#ifdef FUSE_ACT_TRANS_FWD
+        if (perform_output_transpose > 0) {
+          trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+          trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tr_output, ofm1, mb1, 0, 0, nBlocksMB, cfg.bk, cfg.bn);
+          cfg.norm_to_normT_kernel(&trans_param);
+        }
+#endif
       }
     }
   }
@@ -847,6 +902,17 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
 }
 
 
+#ifdef FUSE_ACT_TRANS_FWD
+#ifdef FUSE_WT_TRANS_SGD
+void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
+                     const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+                     libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, int perform_filter_tr, libxsmm_bfloat16* tr_in_act_ptr, int perform_input_transpose)
+#else
+void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+                     const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+                     libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, libxsmm_bfloat16* tr_in_act_ptr, int perform_input_transpose)
+#endif
+#else
 #ifdef FUSE_WT_TRANS_SGD
 void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
@@ -855,6 +921,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
 void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch )
+#endif
 #endif
 {
   /* size variables, all const */
@@ -1129,7 +1196,11 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
     LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, dfilter,  (libxsmm_bfloat16*)dwt_ptr, nBlocksIFm, bc_lp, bk, lpb);
 
     /* Set up tensors for transposing/scratch before vnni reformatting dfilter */
+#ifdef FUSE_ACT_TRANS_FWD
+    libxsmm_bfloat16  *tr_inp_ptr = tr_in_act_ptr;
+#else
     libxsmm_bfloat16  *tr_inp_ptr = (libxsmm_bfloat16*) ((libxsmm_bfloat16*)scratch + cfg.N * cfg.K);
+#endif
     float               *dfilter_f32_ptr = (float*) ((libxsmm_bfloat16*)tr_inp_ptr + cfg.N * cfg.C);
     libxsmm_bfloat16 *dfilter_scratch = (libxsmm_bfloat16*) ((float*)dfilter_f32_ptr + cfg.C * cfg.K) + ltid * bc * bk;
 
@@ -1165,6 +1236,18 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
       my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
     }
 
+#ifdef FUSE_ACT_TRANS_FWD
+    /* Required upfront tranposes */
+    if (perform_input_transpose > 0) {
+      for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
+        mb1 = mb1ifm1%nBlocksMB;
+        ifm1 = mb1ifm1/nBlocksMB;
+        trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, input, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc);
+        trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, mb1, 0, 0, nBlocksMB, bc, bn);
+        cfg.norm_to_normT_kernel(&trans_param);
+      }
+    }
+#else
     /* Required upfront tranposes */
     for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
       mb1 = mb1ifm1%nBlocksMB;
@@ -1173,6 +1256,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
       trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, mb1, 0, 0, nBlocksMB, bc, bn);
       cfg.norm_to_normT_kernel(&trans_param);
     }
+#endif
 
     if (performed_doutput_transpose == 0) {
       for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
@@ -1567,6 +1651,9 @@ int main(int argc, char* argv[])
 #ifdef FUSE_WT_TRANS_SGD
   libxsmm_bfloat16 **tr_fil_libxsmm;
 #endif
+#ifdef FUSE_ACT_TRANS_FWD
+  libxsmm_bfloat16 **tr_act_libxsmm;
+#endif
   libxsmm_bfloat16 **bias_libxsmm, **delbias_libxsmm;
   float **fil_master;
   unsigned char **relumask_libxsmm;
@@ -1691,9 +1778,15 @@ int main(int argc, char* argv[])
 
   /* allocate data */
   act_libxsmm    = (libxsmm_bfloat16**)malloc( (num_layers+2)*sizeof(libxsmm_bfloat16*) );
+#ifdef FUSE_ACT_TRANS_FWD
+  tr_act_libxsmm    = (libxsmm_bfloat16**)malloc( (num_layers+2)*sizeof(libxsmm_bfloat16*) );
+#endif
   delact_libxsmm = (libxsmm_bfloat16**)malloc( (num_layers+1)*sizeof(libxsmm_bfloat16*) );
   for ( i = 0 ; i < num_layers+2; ++i ) {
     act_libxsmm[i]                = (libxsmm_bfloat16*)libxsmm_aligned_malloc( MB*C[i]*sizeof(libxsmm_bfloat16), 2097152);
+#ifdef FUSE_ACT_TRANS_FWD
+    tr_act_libxsmm[i]                = (libxsmm_bfloat16*)libxsmm_aligned_malloc( MB*C[i]*sizeof(libxsmm_bfloat16), 2097152);
+#endif
     /* softmax has no incoming gradients */
     if ( i < num_layers+1 ) {
       delact_libxsmm[i]             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( MB*C[i]*sizeof(libxsmm_bfloat16), 2097152);
@@ -1855,8 +1948,10 @@ int main(int argc, char* argv[])
 #endif
       for (j = 0; j < iters; ++j) {
         for ( i = 0; i < num_layers; ++i) {
+#ifndef FUSE_ACT_TRANS_FWD
           my_fc_fwd_exec( my_fc_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
                           bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
+#endif
         }
 #ifdef USE_SOFTMAX
         my_smax_fwd_exec( my_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm, &loss,
@@ -1895,6 +1990,7 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
+#ifndef FUSE_ACT_TRANS_FWD
       for (j = 0; j < iters; ++j) {
 #ifdef USE_SOFTMAX
         my_smax_bwd_exec( my_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm,
@@ -1921,6 +2017,7 @@ int main(int argc, char* argv[])
         my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
 #endif
       }
+#endif
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
@@ -1956,8 +2053,13 @@ int main(int argc, char* argv[])
 #endif
       for (j = 0; j < iters; ++j) {
         for ( i = 0; i < num_layers; ++i) {
+#ifdef FUSE_ACT_TRANS_FWD
+          my_fc_fwd_exec( my_fc_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
+                          bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch, tr_act_libxsmm[i+1], (i < num_layers-1 ) ? 1: 0 );
+#else
           my_fc_fwd_exec( my_fc_fwd[i], fil_libxsmm[i], act_libxsmm[i], act_libxsmm[i+1],
                           bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
+#endif
         }
 #ifdef USE_SOFTMAX
         my_smax_fwd_exec( my_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], label_libxsmm, &loss,
@@ -1966,6 +2068,17 @@ int main(int argc, char* argv[])
                           0, tid, scratch );
 #endif
         for ( i = num_layers-1; i > 0; --i) {
+#ifdef FUSE_ACT_TRANS_FWD
+#ifdef FUSE_WT_TRANS_SGD
+          my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], tr_fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+                          act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, (j == 0) ? 1: 0, tr_act_libxsmm[i], 0);
+          my_opt_exec( my_opt[i], fil_libxsmm[i], tr_fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch, (j < iters-1) ? 1 : 0 );
+#else
+          my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+                          act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, tr_act_libxsmm[i], 0 );
+          my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
+#endif
+#else
 #ifdef FUSE_WT_TRANS_SGD
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], tr_fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, (j == 0) ? 1: 0);
@@ -1975,7 +2088,19 @@ int main(int argc, char* argv[])
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
           my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
 #endif
+#endif
         }
+#ifdef FUSE_ACT_TRANS_FWD
+#ifdef FUSE_WT_TRANS_SGD
+        my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], tr_fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+                        act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, (j == 0) ? 1 : 0, tr_act_libxsmm[0], 1);
+        my_opt_exec( my_opt[0], fil_libxsmm[0], tr_fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch, (j < iters-1) ? 1 : 0);
+#else
+        my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+                        act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, tr_act_libxsmm[0], 1);
+        my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
+#endif
+#else
 #ifdef FUSE_WT_TRANS_SGD
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], tr_fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, (j == 0) ? 1 : 0);
@@ -1984,6 +2109,7 @@ int main(int argc, char* argv[])
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch );
         my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
+#endif
 #endif
       }
     }
