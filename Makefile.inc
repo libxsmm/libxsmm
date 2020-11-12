@@ -336,7 +336,7 @@ ifeq (0,$(GNU))
     endif
   endif
   ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" \
-                         | $(CC) $(ECFLAGS) $(EFLAGS) -E -P - 2>/dev/null \
+                         | $(CC) $(call ctest,$(CC),$(ECFLAGS) $(EFLAGS)) -E -P - 2>/dev/null \
                          | sed "/^[[:space:]]*$$/d" 2>/dev/null))
     ifneq (,$(INTEL))
       ICX := $(INTEL)
@@ -346,7 +346,7 @@ ifeq (0,$(GNU))
   endif
 endif
 ifneq (,$(shell echo "__INTEL_COMPILER" \
-        | $(FC) $(EFCFLAGS) $(EFLAGS) -E -P /dev/stdin 2>/dev/null \
+        | $(FC) $(call ftest,$(FC),$(EFCFLAGS) $(EFLAGS)) -E -P /dev/stdin 2>/dev/null \
         | sed "/^[[:space:]]*$$/d;/^__INTEL_COMPILER$$/d" 2>/dev/null))
   ifneq (,$(INTEL))
     ICX := $(shell echo "$$(($(INTEL)+1))")
