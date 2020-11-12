@@ -30,9 +30,11 @@ MAKE_VERSION_INT := $(shell echo "$$(($(MAKE_VERSION_MAJOR)*10000+$(MAKE_VERSION
 ifeq (0,$(MAKE_PARALLEL))
 .NOTPARALLEL:
 else ifeq (,$(strip $(MAKE_PARALLEL)))
-ifneq (0,$(shell echo "$$((38200>$(MAKE_VERSION_INT)))"))
-.NOTPARALLEL:
-else ifneq (0,$(shell echo "$$((40201<$(MAKE_VERSION_INT)))"))
+# Force parallel build for old GNU Make
+#ifneq (0,$(shell echo "$$((38200>$(MAKE_VERSION_INT)))"))
+#.NOTPARALLEL:
+#else
+ifneq (0,$(shell echo "$$((40201<$(MAKE_VERSION_INT)))"))
 MAKEFLAGS += -O
 endif
 else ifneq (0,$(shell echo "$$((40201<$(MAKE_VERSION_INT)))"))
