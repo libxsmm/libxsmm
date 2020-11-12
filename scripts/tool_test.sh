@@ -311,11 +311,14 @@ then
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >> ${TESTSCRIPT}; fi
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
-        LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
-        ${MKDIR} -p ${REPOROOT}/licenses
-        ${CP} -u /opt/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
-        ${CP} -u ${LICSDIR}/licenses/* ${REPOROOT}/licenses 2>/dev/null
-        echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
+        if [ "" = "${INTEL_LICENSE_FILE}" ]; then
+          LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
+          ${MKDIR} -p ${REPOROOT}/licenses
+          ${CP} -u /$HOME/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
+          ${CP} -u ${LICSDIR}/licenses/* ${REPOROOT}/licenses 2>/dev/null
+          ${CP} -u /opt/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
+          echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
+        fi
         # setup environment on a per-test basis
         echo "if [ \"\" != \"${CONFIGFILE}\" ]; then" >> ${TESTSCRIPT}
         echo "  if [ -e \"${ENVFILE}\" ]; then" >> ${TESTSCRIPT}
