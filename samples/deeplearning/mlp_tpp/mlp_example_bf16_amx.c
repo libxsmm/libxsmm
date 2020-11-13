@@ -23,7 +23,7 @@
 #include "../common/dnn_common.h"
 
 #define CHECK_L1
-//#define OVERWRITE_DOUTPUT_BWDUPD
+#define OVERWRITE_DOUTPUT_BWDUPD
 
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), _mm512_cvtneps_pbh((B)))

@@ -24,9 +24,12 @@
 
 #define CHECK_L1
 #define OVERWRITE_DOUTPUT_BWDUPD
-#define FUSE_WT_TRANS_SGD
-#define FUSE_ACT_TRANS_FWD
-#define FUSE_DACT_TRANS_BWD
+//#define FUSE_WT_TRANS_SGD
+//#define FUSE_ACT_TRANS_FWD
+//#define FUSE_DACT_TRANS_BWD
+#define PRIVATE_WT_TRANS
+#define PRIVATE_ACT_TRANS
+#define PRIVATE_DACT_TRANS
 
 #ifdef FUSE_DACT_TRANS_BWD
 #ifndef OVERWRITE_DOUTPUT_BWDUPD
@@ -201,6 +204,15 @@ typedef struct my_fc_bwd_config {
   libxsmm_blasint upd_column_teams;
   libxsmm_blasint ifm_subtasks;
   libxsmm_blasint ofm_subtasks;
+#ifdef PRIVATE_WT_TRANS
+  size_t  bwd_private_tr_wt_scratch_mark;
+#endif
+#ifdef PRIVATE_ACT_TRANS
+  size_t  upd_private_tr_act_scratch_mark;
+#endif
+#ifdef PRIVATE_DACT_TRANS
+  size_t  upd_private_tr_dact_scratch_mark;
+#endif
   size_t          scratch_size;
   size_t  doutput_scratch_mark;
   libxsmm_barrier* barrier;
@@ -478,9 +490,9 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.bwd_row_teams = 2;
     res.bwd_column_teams = 8;
     res.upd_bf = 1;
-    res.upd_2d_blocking = 0;
-    res.upd_row_teams = 1;
-    res.upd_column_teams = 1;
+    res.upd_2d_blocking = 1;
+    res.upd_row_teams = 2;
+    res.upd_column_teams = 8;
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
   } else {
@@ -510,6 +522,22 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.upd_column_teams = atoi(getenv("UPD_COLUMN_TEAMS"));
   res.ifm_subtasks = atoi(getenv("IFM_SUBTASKS"));
   res.ofm_subtasks = atoi(getenv("OFM_SUBTASKS"));
+#endif
+
+#ifdef PRIVATE_WT_TRANS
+  if (res.bwd_2d_blocking != 1) {
+    printf("Requested private wt transposes, but for the current # of threads the bwd decomposition is not 2D. Will perform upfront/shared wt transposes...\n");
+  }
+#endif
+#ifdef PRIVATE_ACT_TRANS
+  if (res.upd_2d_blocking != 1) {
+    printf("Requested private act transposes, but for the current # of threads the upd decomposition is not 2D. Will perform upfront/shared act transposes...\n");
+  }
+#endif
+#ifdef PRIVATE_DACT_TRANS
+  if (res.upd_2d_blocking != 1) {
+    printf("Requested private dact transposes, but for the current # of threads the upd decomposition is not 2D. Will perform upfront/shared dact transposes...\n");
+  }
 #endif
 
   /* setting up the barrier */
@@ -671,6 +699,10 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   /* init scratch */
   size_bwd_scratch = sizeof(float) * LIBXSMM_MAX(res.C * res.N, res.threads * res.bc * res.bn) + sizeof(libxsmm_bfloat16) * res.C * res.K;
+#ifdef PRIVATE_WT_TRANS
+  res.bwd_private_tr_wt_scratch_mark = size_bwd_scratch;
+  size_bwd_scratch += res.threads * res.bc * res.K * sizeof(libxsmm_bfloat16);
+#endif
   size_upd_scratch = sizeof(float) * LIBXSMM_MAX(res.C * res.K, res.threads * res.bc * res.bk) + sizeof(libxsmm_bfloat16) * res.threads * res.bk * res.bc + sizeof(libxsmm_bfloat16) * (res.N * (res.C + res.K));
 #ifdef OVERWRITE_DOUTPUT_BWDUPD
   res.scratch_size = LIBXSMM_MAX(size_bwd_scratch, size_upd_scratch) + sizeof(libxsmm_bfloat16) * res.N * res.K;
@@ -678,7 +710,14 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.scratch_size = LIBXSMM_MAX(size_bwd_scratch, size_upd_scratch) + 2 * sizeof(libxsmm_bfloat16) * res.N * res.K;
 #endif
   res.doutput_scratch_mark = LIBXSMM_MAX(size_bwd_scratch, size_upd_scratch) ;
-
+#ifdef PRIVATE_DACT_TRANS
+  res.upd_private_tr_dact_scratch_mark = res.scratch_size;
+  res.scratch_size += res.threads * res.bk * res.N * sizeof(libxsmm_bfloat16);
+#endif
+#ifdef PRIVATE_ACT_TRANS
+  res.upd_private_tr_act_scratch_mark = res.scratch_size;
+  res.scratch_size += res.threads * res.bc * res.N * (((res.C/res.bc)+res.upd_row_teams-1)/res.upd_row_teams) * sizeof(libxsmm_bfloat16);
+#endif
   return res;
 }
 
@@ -1129,6 +1168,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
 
 #ifdef FUSE_DACT_TRANS_BWD
 #else
+#ifdef PRIVATE_DACT_TRANS
+if (cfg.upd_2d_blocking == 0) {
+#endif
   /* Apply to doutput potential fusions */
   if (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) {
     for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
@@ -1164,6 +1206,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
     /* wait for eltwise to finish */
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
+#ifdef PRIVATE_DACT_TRANS
+}
+#endif
 #endif
 
   if ( (pass & MY_PASS_BWD_D) == MY_PASS_BWD_D ){
@@ -1231,8 +1276,13 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
         trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb);
         cfg.vnni_to_vnniT_kernel(&trans_param);
       }
+      /* wait for transpose to finish */
+      libxsmm_barrier_wait(cfg.barrier, ltid);
     }
 #else
+#ifdef PRIVATE_WT_TRANS
+  if (cfg.bwd_2d_blocking == 0) {
+#endif
     for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
       ofm1 = ifm1ofm1 / nBlocksIFm;
       ifm1 = ifm1ofm1 % nBlocksIFm;
@@ -1240,24 +1290,42 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
       trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb);
       cfg.vnni_to_vnniT_kernel(&trans_param);
     }
-#endif
-
     /* wait for transpose to finish */
     libxsmm_barrier_wait(cfg.barrier, ltid);
+#ifdef PRIVATE_WT_TRANS
+  }
+#endif
+#endif
 
     if (use_2d_blocking == 1) {
+#ifdef PRIVATE_WT_TRANS
+      LIBXSMM_VLA_DECL(4, libxsmm_bfloat16, tmp_filter_tr, ((libxsmm_bfloat16*)((char*)scratch + cfg.bwd_private_tr_wt_scratch_mark)) + ltid * bc * cfg.K, bk_lp, bc, lpb);
+#endif
       if (BF > 1) {
         for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
           for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
+#ifdef PRIVATE_WT_TRANS
+            for (ofm2 = ofm1*KB_BLOCKS; ofm2 < (ofm1+1)*KB_BLOCKS; ofm2++) {
+              trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(5, filter,  ofm2, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+              trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, ofm2, 0, 0, 0, bk_lp, bc, lpb);
+              cfg.vnni_to_vnniT_kernel(&trans_param);
+            }
+#endif
             for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
               /* Initialize libxsmm_blasintermediate f32 tensor */
               if ( ofm1 == 0 ) {
                 copy_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_f32, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc);
                 cfg.bwd_zero_kernel(&copy_params);
               }
+#ifdef PRIVATE_WT_TRANS
+              cfg.gemm_bwd( &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, ofm1*KB_BLOCKS, 0, 0, 0, bk_lp, bc, lpb),
+                  &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
+                  &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+#else
               cfg.gemm_bwd( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
                   &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bn, bk),
                   &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+#endif
               /* downconvert libxsmm_blasintermediate f32 tensor to bf 16 and store to final C */
               if ( ofm1 == BF-1  ) {
                 eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
@@ -1281,6 +1349,13 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
         }
       } else {
         for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
+#ifdef PRIVATE_WT_TRANS
+          for (ofm2 = 0; ofm2 < nBlocksOFm; ofm2++) {
+            trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(5, filter,  ofm2, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+            trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, ofm2, 0, 0, 0, bk_lp, bc, lpb);
+            cfg.vnni_to_vnniT_kernel(&trans_param);
+          }
+#endif
           for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
 #ifdef FUSE_DACT_TRANS_BWD
             if (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) {
@@ -1291,9 +1366,15 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
                 &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
                 &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks, &eltwise_params_bwd);
 #else
+#ifdef PRIVATE_WT_TRANS
+            cfg.gemm_bwd3( &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, 0, 0, 0, 0, bk_lp, bc, lpb),
+                &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
+                &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+#else
             cfg.gemm_bwd3( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
                 &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
                 &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+#endif
 #endif
           }
         }
@@ -1329,7 +1410,6 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
                 trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, tr_dinput, ifm1,  mb1, 0, 0, 0, nBlocksMB, bn_lp, bc, lpb);
                 cfg.bwd_fused_norm_to_vnni_kernel(&trans_param);
 #endif
-
             }
           }
         }
@@ -1395,7 +1475,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
     libxsmm_blasint BF = cfg.upd_bf;
 
     /* loop variables */
-    libxsmm_blasint ifm1ofm1 = 0, ifm1 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ifm1 = 0, jc = 0, jk = 0;
+    libxsmm_blasint ifm1ofm1 = 0, ifm1 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0, mb1ifm1 = 0, jc = 0, jk = 0, mb3 = 0;
 
     /* Batch reduce related variables */
     unsigned long long  blocks = nBlocksMB/BF;
@@ -1459,6 +1539,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
 #endif
     }
 #else
+#ifdef PRIVATE_ACT_TRANS
+  if (cfg.upd_2d_blocking == 0) {
+#endif
     /* Required upfront tranposes */
     for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
       mb1 = mb1ifm1%nBlocksMB;
@@ -1467,10 +1550,16 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
       trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, mb1, 0, 0, nBlocksMB, bc, bn);
       cfg.norm_to_normT_kernel(&trans_param);
     }
+#ifdef PRIVATE_ACT_TRANS
+  }
+#endif
 #endif
 
 #ifdef FUSE_DACT_TRANS_BWD
 #else
+#ifdef PRIVATE_DACT_TRANS
+  if (cfg.upd_2d_blocking == 0) {
+#endif
     if (performed_doutput_transpose == 0) {
       for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
         mb1 = mb1ofm1%nBlocksMB;
@@ -1482,27 +1571,60 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
     }
 
     libxsmm_barrier_wait(cfg.barrier, ltid);
+#ifdef PRIVATE_DACT_TRANS
+  }
+#endif
 #endif
 
     if (use_2d_blocking == 1) {
+#ifdef PRIVATE_ACT_TRANS
+      LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,  tmp_input_tr, ((libxsmm_bfloat16*)((char*)scratch + cfg.upd_private_tr_act_scratch_mark)) + ltid * bc * cfg.N * im_tasks_per_thread, nBlocksMB, bc, bn);
+#endif
       ifm2 = 0;
       ofm2 = 0;
       if (BF == 1) {
         for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
           for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
+#ifdef PRIVATE_ACT_TRANS
+            /* Transpose input block */
+            if (ofm1 == my_in_start) {
+              for (mb3 = 0; mb3 < nBlocksMB; mb3++) {
+                trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, input, mb3, ifm1, 0, 0, nBlocksIFm, bn, bc);
+                trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, mb3, 0, 0, nBlocksMB, bc, bn);
+                cfg.norm_to_normT_kernel(&trans_param);
+              }
+            }
+            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, 0, 0, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+#else
             cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+#endif
           }
         }
       } else {
         for (bfn = 0; bfn < BF; bfn++) {
           for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
             for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
+#ifdef PRIVATE_ACT_TRANS
+              /* Transpose input block */
+              if (ofm1 == my_in_start) {
+                for (mb3 = bfn*blocks; mb3 < (bfn+1)*blocks; mb3++) {
+                  trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, input, mb3, ifm1, 0, 0, nBlocksIFm, bn, bc);
+                  trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, mb3, 0, 0, nBlocksMB, bc, bn);
+                  cfg.norm_to_normT_kernel(&trans_param);
+                }
+              }
+#endif
               /* initialize current work task to zero */
               if (bfn == 0) {
                 copy_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk);
                 cfg.upd_zero_kernel(&copy_params);
               }
+
+#ifdef PRIVATE_ACT_TRANS
+              cfg.gemm_upd(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+#else
               cfg.gemm_upd(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+#endif
               /* Downconvert result to BF16 and vnni format */
               if (bfn == BF-1) {
                 eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
@@ -2045,6 +2167,27 @@ int main(int argc, char* argv[])
     printf("fuse type needs to be 0 (None), 1 (Bias), 2 (ReLU), 3 (Sigmoid), 4 (Bias+ReLU), 5 (Bias+Sigmoid)\n");
     return -1;
   }
+
+#ifdef PRIVATE_WT_TRANS
+#ifdef FUSE_WT_TRANS_SGD
+  printf("Requested both fused wt trans in sgd AND private wt trans. This makes no sense...\n");
+  return -1;
+#endif
+#endif
+
+#ifdef PRIVATE_ACT_TRANS
+#ifdef FUSE_ACT_TRANS_FWD
+  printf("Requested both fused act trans in fwd in AND private act trans. This makes no sense...\n");
+  return -1;
+#endif
+#endif
+
+#ifdef PRIVATE_DACT_TRANS
+#ifdef FUSE_DACT_TRANS_BWD
+  printf("Requested both fused dact trans in bwd in AND private dact trans. This makes no sense...\n");
+  return -1;
+#endif
+#endif
 
 #if defined(__SSE3__)
   _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
