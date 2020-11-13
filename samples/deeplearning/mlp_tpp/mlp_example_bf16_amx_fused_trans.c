@@ -1580,10 +1580,21 @@ if (cfg.upd_2d_blocking == 0) {
 #ifdef PRIVATE_ACT_TRANS
       LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,  tmp_input_tr, ((libxsmm_bfloat16*)((char*)scratch + cfg.upd_private_tr_act_scratch_mark)) + ltid * bc * cfg.N * im_tasks_per_thread, nBlocksMB, bc, bn);
 #endif
+#ifdef PRIVATE_DACT_TRANS
+      LIBXSMM_VLA_DECL(4, libxsmm_bfloat16, tmp_doutput_tr, ((libxsmm_bfloat16*)((char*)scratch + cfg.upd_private_tr_dact_scratch_mark)) + ltid * bk * cfg.N, bn_lp, bk, lpb);
+#endif
       ifm2 = 0;
       ofm2 = 0;
       if (BF == 1) {
         for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+#ifdef PRIVATE_DACT_TRANS
+          /* Transpose output block  */
+          for (mb3 = 0; mb3 < nBlocksMB; mb3++) {
+            trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, doutput,  mb3, ofm1, 0, 0, nBlocksOFm, bn, bk);
+            trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, mb3, 0, 0, 0, bn_lp, bk, lpb);
+            cfg.norm_to_vnni_kernel(&trans_param);
+          }
+#endif
           for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
 #ifdef PRIVATE_ACT_TRANS
             /* Transpose input block */
@@ -1594,15 +1605,31 @@ if (cfg.upd_2d_blocking == 0) {
                 cfg.norm_to_normT_kernel(&trans_param);
               }
             }
+#ifdef PRIVATE_DACT_TRANS
+            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, 0, 0, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+#else
             cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, 0, 0, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+#endif
+#else
+#ifdef PRIVATE_DACT_TRANS
+            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
 #else
             cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+#endif
 #endif
           }
         }
       } else {
         for (bfn = 0; bfn < BF; bfn++) {
           for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+#ifdef PRIVATE_DACT_TRANS
+            /* Transpose output block  */
+            for (mb3 = bfn*blocks; mb3 < (bfn+1)*blocks; mb3++) {
+              trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, doutput,  mb3, ofm1, 0, 0, nBlocksOFm, bn, bk);
+              trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, mb3, 0, 0, 0, bn_lp, bk, lpb);
+              cfg.norm_to_vnni_kernel(&trans_param);
+            }
+#endif
             for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
 #ifdef PRIVATE_ACT_TRANS
               /* Transpose input block */
@@ -1621,9 +1648,17 @@ if (cfg.upd_2d_blocking == 0) {
               }
 
 #ifdef PRIVATE_ACT_TRANS
+#ifdef PRIVATE_DACT_TRANS
+              cfg.gemm_upd(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, bfn*blocks, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+#else
               cfg.gemm_upd(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+#endif
+#else
+#ifdef PRIVATE_DACT_TRANS
+              cfg.gemm_upd(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, bfn*blocks, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
 #else
               cfg.gemm_upd(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk), &blocks);
+#endif
 #endif
               /* Downconvert result to BF16 and vnni format */
               if (bfn == BF-1) {
