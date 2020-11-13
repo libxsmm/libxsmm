@@ -30,6 +30,10 @@
 #define omp_get_max_threads() (1)
 #endif
 
+#ifdef USE_LIBXSMM_JIT
+#include <libxsmm.h>
+#endif
+
 const int alignment = 64;
 typedef long ITyp;
 typedef float FTyp;
@@ -111,6 +115,13 @@ public:
   {
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
     h = (T*)my_malloc((size_t)M * sizeof(T), alignment);
+
+#ifdef USE_LIBXSMM_JIT
+    _ld = E;
+    kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
+    kernel1 = libxsmm_dispatch_meltw_reduce(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_ROWS_ELTS_SQUARED, 0);
+    kernel2 = libxsmm_dispatch_meltw_scale(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE, 0);
+#endif
   }
 
   ~EmbeddingBagImpl()
@@ -138,13 +149,45 @@ public:
       int start = mb_offsets[u];
       int end = mb_offsets[u+1];
       float g_sum[E] = {0};
+      float sum = 0.0;
+
+#ifdef USE_LIBXSMM_JIT
+
+     // lookup reduction kernel
+      libxsmm_meltw_reduce_cols_idx_param params;
+      params.n = end - start;
+      params.ind_ptr = &mb_indices[start];
+      params.inp_ptr = outGrad;
+      params.out_ptr = &g_sum[0];
+      kernel( &params );
+
+      // squared + reduction kernel
+      libxsmm_meltw_reduce_param    params1;
+      params1.in_ptr = g_sum;
+      params1.out_ptr_1 = &sum;
+      kernel1( &params1 );
+
+      sum /= E;
+      int idx = wt_indices[u];
+      float hi = h[idx];
+      hi += sum;
+      h[idx] = hi;
+      float scale = lr / (sqrt(hi) + eps);
+
+      // scale and accumulate kernel
+      libxsmm_meltw_scale_param params2;
+      params2.in_ptr = g_sum;
+      params2.out_ptr = &wt[idx][0];
+      params2.scale_vals_ptr = &scale;
+      kernel2( &params2 );
+
+#else
       for (int l = start; l < end; l++) {
         int idx = mb_indices[l];
         for (int e = 0; e < E; e++) {
           g_sum[e] += outGrad[idx][e];
         }
       }
-      float sum = 0.0;
       for (int e = 0; e < E; e++) {
         sum += g_sum[e] * g_sum[e];
       }
@@ -155,10 +198,9 @@ public:
       h[idx] = hi;
       float scale = lr / (sqrt(hi) + eps);
       for (int e = 0; e < E; e++) {
-        //auto oldwt = wt[idx][e];
         wt[idx][e] += g_sum[e] * scale;
-        //printf("Update [%d, %d]: old = %g, new = %g, gsum = %g, scale = %g\n", idx, e, oldwt, wt[idx][e], g_sum[e], scale);
       }
+#endif
     }
   }
 
@@ -166,6 +208,13 @@ public:
   T *h;
   int M;
   int E;
+
+#ifdef USE_LIBXSMM_JIT
+  int _ld;
+  libxsmm_meltwfunction_reduce_cols_idx kernel;
+  libxsmm_meltwfunction_reduce kernel1;
+  libxsmm_meltwfunction_scale kernel2;
+#endif
 };
 
 typedef EmbeddingBagImpl<FTyp> EmbeddingBag;
@@ -384,7 +433,7 @@ int main(int argc, char * argv[]) {
   size_t bwdupdBytesMin = ((size_t)2*tU*(E+1)) * sizeof(FTyp) + ((size_t)tNS+tU) * sizeof(ITyp) + ((size_t)iters*LS*N*E) * sizeof(FTyp) + ((size_t)iters*LS*N) * sizeof(ITyp);
   size_t bwdupdBytesMax = ((size_t)2*tU*(E+16)) * sizeof(FTyp) + ((size_t)tNS+tU) * sizeof(ITyp) + ((size_t)iters*LS*N*E) * sizeof(FTyp) + ((size_t)iters*LS*N) * sizeof(ITyp);
 
-  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
+  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %ld, avgU = %ld, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
   //printf("Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f\n", fwdTime, bwdTime, updTime, t1-t0);
   my_printf("Per Iter  Time: %.3f ms  Total: %.3f ms\n", bwdupdTime/(iters), (t1-t0)/(iters));
   my_printf("Per Table Time: %.3f ms  Total: %.3f ms\n", bwdupdTime/(iters*LS), (t1-t0)/(iters*LS));
