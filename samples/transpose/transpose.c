@@ -120,13 +120,12 @@ int main(int argc, char* argv[])
   const char t = (char)(1 < argc ? *argv[1] : 'o');
   const libxsmm_blasint m = (2 < argc ? atoi(argv[2]) : 4096);
   const libxsmm_blasint n = (3 < argc ? atoi(argv[3]) : m);
-  const libxsmm_blasint ldi = (('o' == t || 'O' == t)
-    ? LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m) : LIBXSMM_MAX(m, n));
-  const libxsmm_blasint ldo = (('o' == t || 'O' == t)
-    ? LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n) : ldi);
+  const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
+  const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0,
+    ('o' == t || 'O' == t) ? n : LIBXSMM_MAX(n, ldi));
   const int r = (6 < argc ? atoi(argv[6]) : 0), s = LIBXSMM_ABS(r);
   const libxsmm_blasint lower = (7 < argc ? atoi(argv[7]) : 0);
-  libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi);
+  libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = ldo;
   int result = EXIT_SUCCESS, k;
 
   if (0 == strchr("oOiI", t)) {
@@ -183,7 +182,7 @@ int main(int argc, char* argv[])
         }
         else {
           kn = randstart(LIBXSMM_ABS(lower), n);
-          kldo = kldi;
+          kldo = LIBXSMM_MAX(kldi, kn);
           /* warmup: trigger JIT-generated code */
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
         }
@@ -215,7 +214,7 @@ int main(int argc, char* argv[])
         }
       }
       else {
-        assert(('i' == t || 'I' == t) && kldo == kldi);
+        assert(('i' == t || 'I' == t));
         memcpy(b, a, (size_t)(sizeof(ELEM_TYPE) * kldi * kn));
 
         if (2 > tasks) { /* library-internal parallelization */
@@ -279,7 +278,7 @@ int main(int argc, char* argv[])
           duration2 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
         else {
-          assert(('i' == t || 'I' == t) && kldo == kldi);
+          assert(('i' == t || 'I' == t));
 #if defined(USE_REFERENCE)
           memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
           start = libxsmm_timer_tick();

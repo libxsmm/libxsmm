@@ -476,43 +476,45 @@ LIBXSMM_API void libxsmm_otrans(void* out, const void* in, unsigned int typesize
 
 
 LIBXSMM_API_INTERN void libxsmm_itrans_internal(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
-  LIBXSMM_ITRANS(typesize, inout, ld, m, n);
+  LIBXSMM_ITRANS(typesize, inout, ldi, m, n);
 }
 
 
 LIBXSMM_API_INTERN void libxsmm_itrans_scratch(void* inout, void* scratch, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
-  LIBXSMM_ASSERT(NULL != inout && 0 < typesize && m <= ld && n <= ld);
-  LIBXSMM_XCOPY_TILE(LIBXSMM_MCOPY_KERNEL, typesize, scratch, inout, ld, m, 0, n, 0, m);
-  LIBXSMM_XCOPY_TILE(LIBXSMM_TCOPY_KERNEL, typesize, inout, scratch, m, ld, 0, m, 0, n);
+  const libxsmm_blasint ldo = LIBXSMM_MAX(n, ldi);
+  LIBXSMM_ASSERT(NULL != inout && 0 < typesize && m <= ldi);
+  LIBXSMM_XCOPY_TILE(LIBXSMM_MCOPY_KERNEL, typesize, scratch, inout, ldi, m, 0, n, 0, m);
+  LIBXSMM_XCOPY_TILE(LIBXSMM_TCOPY_KERNEL, typesize, inout, scratch, m, ldo, 0, m, 0, n);
 }
 
 
 LIBXSMM_API_INTERN void libxsmm_itrans_scratch_jit(void* inout, void* scratch, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_xcopykernel kernel)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_xcopykernel kernel)
 {
-  LIBXSMM_ASSERT(NULL != inout && 0 < typesize && m <= ld && n <= ld);
-  LIBXSMM_XCOPY_TILE(LIBXSMM_MCOPY_KERNEL, typesize, scratch, inout, ld, m, 0, n, 0, m);
-  LIBXSMM_TCOPY_CALL(kernel, typesize, scratch, m, inout, ld);
+  const libxsmm_blasint ldo = LIBXSMM_MAX(n, ldi);
+  LIBXSMM_ASSERT(NULL != inout && 0 < typesize && m <= ldi);
+  LIBXSMM_XCOPY_TILE(LIBXSMM_MCOPY_KERNEL, typesize, scratch, inout, ldi, m, 0, n, 0, m);
+  LIBXSMM_TCOPY_CALL(kernel, typesize, scratch, m, inout, ldo);
 }
 
 
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
   static int error_once = 0;
-  if (NULL != inout && 0 < typesize && m <= ld && n <= ld) {
+  if (NULL != inout && 0 < typesize && m <= ldi) {
     if (m == n && typesize <= 127) { /* in-place transpose */
-      libxsmm_itrans_internal(inout, typesize, m, n, ld);
+      libxsmm_itrans_internal(inout, typesize, m, n, ldi);
     }
     else { /* out-of-place transpose */
       const libxsmm_blasint scratchsize = m * n * typesize;
       if (scratchsize <= LIBXSMM_ITRANS_BUFFER_MAXSIZE) {
         char buffer[LIBXSMM_ITRANS_BUFFER_MAXSIZE];
-        libxsmm_itrans_scratch(inout, buffer, typesize, m, n, ld);
+        libxsmm_itrans_scratch(inout, buffer, typesize, m, n, ldi);
       }
       else {
         void* buffer;
@@ -522,7 +524,7 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
           0/*extra*/, 0/*extra_size*/))
         {
           LIBXSMM_ASSERT(NULL != buffer);
-          libxsmm_itrans_scratch(inout, buffer, typesize, m, n, ld);
+          libxsmm_itrans_scratch(inout, buffer, typesize, m, n, ldi);
           libxsmm_xfree(buffer, 0/*no check*/);
         }
         else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -542,13 +544,13 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
 
 
 LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride[], libxsmm_blasint batchsize,
   /*unsigned*/int tid, /*unsigned*/int ntasks)
 {
   static int error_once = 0;
-  if (NULL != inout && 0 < typesize && m <= ld && n <= ld) {
+  if (NULL != inout && 0 < typesize && m <= ldi) {
     const libxsmm_blasint scratchsize = m * n * typesize;
     const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
     const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, ntasks);
@@ -582,7 +584,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
       {
         libxsmm_descriptor_blob blob;
         kernel.xtrans = libxsmm_dispatch_trans(libxsmm_trans_descriptor_init(&blob,
-          typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ld));
+          typesize, (unsigned int)m, (unsigned int)n, (unsigned int)m));
       }
 #endif
     }
@@ -592,21 +594,21 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
         if (NULL == scratch) { /* in-place transpose */
           for (i = begin * index_stride; i < (end * index_stride); i += index_stride) {
             char *const mat = &mat0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride, i) - index_base) * typesize];
-            libxsmm_itrans_internal(mat, typesize, m, n, ld);
+            libxsmm_itrans_internal(mat, typesize, m, n, ldi);
           }
         }
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
         else if (NULL != kernel.ptr) { /* out-of-place transpose using JIT'ted kernel */
           for (i = begin * index_stride; i < (end * index_stride); i += index_stride) {
             char *const mat = &mat0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride, i) - index_base) * typesize];
-            libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ld, kernel);
+            libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ldi, kernel);
           }
         }
 #endif
         else { /* out-of-place transpose */
           for (i = begin * index_stride; i < (end * index_stride); i += index_stride) {
             char *const mat = &mat0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride, i) - index_base) * typesize];
-            libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ld);
+            libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ldi);
           }
         }
       }
@@ -618,9 +620,9 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
           for (; i < endi; i += d) {
             void *const mat = *((void**)i);
 #if defined(LIBXSMM_BATCH_CHECK)
-            if (NULL != mat) libxsmm_itrans_internal(mat, typesize, m, n, ld);
+            if (NULL != mat) libxsmm_itrans_internal(mat, typesize, m, n, ldi);
 #else
-            libxsmm_itrans_internal(mat, typesize, m, n, ld);
+            libxsmm_itrans_internal(mat, typesize, m, n, ldi);
 #endif
           }
         }
@@ -629,9 +631,9 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
           for (; i < endi; i += d) {
             void *const mat = *((void**)i);
 # if defined(LIBXSMM_BATCH_CHECK)
-            if (NULL != mat) libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ld, kernel);
+            if (NULL != mat) libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ldi, kernel);
 # else
-            libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ld, kernel);
+            libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ldi, kernel);
 # endif
           }
         }
@@ -640,9 +642,9 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
           for (; i < endi; i += d) {
             void *const mat = *((void**)i);
 #if defined(LIBXSMM_BATCH_CHECK)
-            if (NULL != mat) libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ld);
+            if (NULL != mat) libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ldi);
 #else
-            libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ld);
+            libxsmm_itrans_scratch(mat, scratch, typesize, m, n, ldi);
 #endif
           }
         }
@@ -655,19 +657,19 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
       libxsmm_blasint i;
       if (NULL == scratch) { /* in-place transpose */
         for (i = begin; i < end; ++i) {
-          libxsmm_itrans_internal(mat0 + (size_t)i * typesize, typesize, m, n, ld);
+          libxsmm_itrans_internal(mat0 + (size_t)i * typesize, typesize, m, n, ldi);
         }
       }
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
       else if (NULL != kernel.ptr) { /* out-of-place transpose using JIT'ted kernel */
         for (i = begin; i < end; ++i) {
-          libxsmm_itrans_scratch_jit(mat0 + (size_t)i * typesize, scratch, typesize, m, n, ld, kernel);
+          libxsmm_itrans_scratch_jit(mat0 + (size_t)i * typesize, scratch, typesize, m, n, ldi, kernel);
         }
       }
 #endif
       else { /* out-of-place transpose */
         for (i = begin; i < end; ++i) {
-          libxsmm_itrans_scratch(mat0 + (size_t)i * typesize, scratch, typesize, m, n, ld);
+          libxsmm_itrans_scratch(mat0 + (size_t)i * typesize, scratch, typesize, m, n, ldi);
         }
       }
     }
@@ -710,12 +712,12 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* out, const void* in, cons
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* /*inout*/, const int* /*typesize*/,
-  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ld*/);
+  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* inout, const int* typesize,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld)
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi)
 {
   LIBXSMM_ASSERT(NULL != typesize && 0 < *typesize && NULL != m);
-  libxsmm_itrans(inout, (unsigned int)*typesize, *m, *(NULL != n ? n : m), *(NULL != ld ? ld : m));
+  libxsmm_itrans(inout, (unsigned int)*typesize, *m, *(NULL != n ? n : m), *(NULL != ldi ? ldi : m));
 }
 
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
