@@ -1090,8 +1090,12 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   }
 
   if ((i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) || (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A)) {
-    if (i_xgemm_desc->meltw_flags != (unsigned int)LIBXSMM_MELTW_FLAG_NONE) {
-      has_colbias_act_fused = 1;
+    if ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_ACT_RELU_BWD) > 0) {
+      i_micro_kernel_config->fused_relu_bwd = 1;
+    }
+    has_colbias_act_fused = 1;
+    if (i_xgemm_desc->meltw_flags == (unsigned int)LIBXSMM_MELTW_FLAG_NONE) {
+      has_colbias_act_fused = 0;
     }
   }
 
