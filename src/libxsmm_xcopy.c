@@ -583,7 +583,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
       {
         libxsmm_descriptor_blob blob;
         kernel.xtrans = libxsmm_dispatch_trans(libxsmm_trans_descriptor_init(&blob,
-          typesize, (unsigned int)m, (unsigned int)n, (unsigned int)m));
+          typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo));
       }
 #endif
     }
