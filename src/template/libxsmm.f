@@ -395,12 +395,12 @@
           !> Transpose a matrix (in-place form).
           !> Implicit FORTRAN 77 interface:
           !> ARRAY        :: matrix
-          !> INTEGER(4|8) :: m, n, ld
+          !> INTEGER(4|8) :: m, n, ldi, ldo
           !> INTEGER(4)   :: typesize
-          PURE SUBROUTINE libxsmm_xitrans(matrix, typesize, m, n, ld)   &
-     &    BIND(C, NAME="libxsmm_itrans_")
+          PURE SUBROUTINE libxsmm_xitrans(matrix, typesize,             &
+     &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_itrans_")
             IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ld
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: matrix
             INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
@@ -410,9 +410,8 @@
           !> ARRAY        :: input, output
           !> INTEGER(4|8) :: m, n, ldi, ldo
           !> INTEGER(4)   :: typesize
-          PURE SUBROUTINE libxsmm_xotrans(output, input,                &
-     &    typesize, m, n, ldi, ldo)                                     &
-     &    BIND(C, NAME="libxsmm_otrans_")
+          PURE SUBROUTINE libxsmm_xotrans(output, input, typesize,      &
+     &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_")
             IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
@@ -424,9 +423,8 @@
           !> ARRAY        :: output, input
           !> INTEGER(4|8) :: m, n, ldi, ldo
           !> INTEGER(4)   :: typesize
-          PURE SUBROUTINE libxsmm_matcopy_omp(output, input,            &
-     &    typesize, m, n, ldi, ldo)                                     &
-     &    BIND(C, NAME="libxsmm_matcopy_omp_")
+          PURE SUBROUTINE libxsmm_matcopy_omp(output, input, typesize,  &
+     &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_matcopy_omp_")
             IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
@@ -438,9 +436,8 @@
           !> ARRAY        :: output, input
           !> INTEGER(4|8) :: m, n, ldi, ldo
           !> INTEGER(4)   :: typesize
-          PURE SUBROUTINE libxsmm_otrans_omp(output, input,             &
-     &    typesize, m, n, ldi, ldo)                                     &
-     &    BIND(C, NAME="libxsmm_otrans_omp_")
+          PURE SUBROUTINE libxsmm_otrans_omp(output, input, typesize,   &
+     &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_omp_")
             IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
@@ -1899,21 +1896,26 @@
 
         !> Transpose a matrix (in-place form).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans_p0
-        PURE SUBROUTINE libxsmm_itrans_p0(matrix, typesize, m, n, ld)
+        PURE SUBROUTINE libxsmm_itrans_p0(matrix, typesize,             &
+     &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n, ld
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
           TYPE(C_PTR),    INTENT(IN) :: matrix
           INTEGER(C_INT), INTENT(IN) :: typesize
-          CALL libxsmm_xitrans(matrix, typesize, m, n, ld)
+          CALL libxsmm_xitrans(matrix, typesize, m, n, ldi, ldo)
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form, DP/rank-1).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans_d1
-        SUBROUTINE libxsmm_itrans_d1(matrix, m, n, ld)
+        SUBROUTINE libxsmm_itrans_d1(matrix, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n, ld
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: matrix(*)
-          CALL libxsmm_xitrans(C_LOC(matrix), 8, m, n, ld)
+          CALL libxsmm_xitrans(C_LOC(matrix), 8, m, n, ldi, ldo)
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form, DP/rank-2).
@@ -1921,16 +1923,18 @@
         SUBROUTINE libxsmm_itrans_d2(matrix, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ld
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: matrix(ld,*)
-          CALL libxsmm_xitrans(C_LOC(matrix), 8, m, n, ld)
+          CALL libxsmm_xitrans(C_LOC(matrix), 8, m, n, ld, ld)
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form, SP/rank-1).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans_s1
-        SUBROUTINE libxsmm_itrans_s1(matrix, m, n, ld)
+        SUBROUTINE libxsmm_itrans_s1(matrix, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n, ld
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: matrix(*)
-          CALL libxsmm_xitrans(C_LOC(matrix), 4, m, n, ld)
+          CALL libxsmm_xitrans(C_LOC(matrix), 4, m, n, ldi, ldo)
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form, SP/rank-2).
@@ -1938,7 +1942,7 @@
         SUBROUTINE libxsmm_itrans_s2(matrix, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ld
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: matrix(ld,*)
-          CALL libxsmm_xitrans(C_LOC(matrix), 4, m, n, ld)
+          CALL libxsmm_xitrans(C_LOC(matrix), 4, m, n, ld, ld)
         END SUBROUTINE
 
         !> Transpose a matrix (out-of-place form).

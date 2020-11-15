@@ -40,7 +40,7 @@ int main(void)
     libxsmm_otrans, libxsmm_otrans_omp
   };
   void (*itrans[])(void*, unsigned int, libxsmm_blasint,
-    libxsmm_blasint, libxsmm_blasint) = {
+    libxsmm_blasint, libxsmm_blasint, libxsmm_blasint) = {
     libxsmm_itrans, libxsmm_itrans/*_omp*/
   };
 
@@ -84,31 +84,22 @@ int main(void)
       }
 #endif
       if (0 == fun) {
-        if (m[test] <= ldi[test] && n[test] <= ldi[test]) {
-          memcpy(c, b, typesize * max_size_b);
-          itrans[fun](b, (unsigned int)typesize, m[test], n[test], ldi[test]);
-          nerrors += validate(c, b, c, max_size_b, m[test], n[test], ldi[test], ldi[test]);
-        }
-        if (m[test] <= ldo[test] && n[test] <= ldo[test]) {
-          memcpy(c, b, typesize * max_size_b);
-          itrans[fun](b, (unsigned int)typesize, m[test], n[test], ldo[test]);
-          nerrors += validate(c, b, c, max_size_b, m[test], n[test], ldo[test], ldo[test]);
-        }
+        memcpy(c, b, typesize * max_size_b);
+        itrans[fun](b, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test]);
+        nerrors += validate(c, b, c, max_size_b, m[test], n[test], ldi[test], ldo[test]);
       }
     }
   }
 
   for (test = start; test < ntests; ++test) {
-    if (LIBXSMM_MAX(m[test], n[test]) <= ldo[test]) {
-      memcpy(c, b, typesize * max_size_b * batchsize);
-      libxsmm_itrans_batch(b, (unsigned int)typesize, m[test], n[test], ldo[test],
-        0/*index_base*/, sizeof(int)/*index_stride*/, batchidx, batchsize,
-        0/*tid*/, 1/*ntasks*/);
-      for (i = 0; i < batchsize; ++i) {
-        const size_t stride = (size_t)i * max_size_b;
-        nerrors += validate(c + stride, b + stride, c + stride,
-          max_size_b, m[test], n[test], ldo[test], ldo[test]);
-      }
+    memcpy(c, b, typesize * max_size_b * batchsize);
+    libxsmm_itrans_batch(b, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test],
+      0/*index_base*/, sizeof(int)/*index_stride*/, batchidx, batchsize,
+      0/*tid*/, 1/*ntasks*/);
+    for (i = 0; i < batchsize; ++i) {
+      const size_t stride = (size_t)i * max_size_b;
+      nerrors += validate(c + stride, b + stride, c + stride,
+        max_size_b, m[test], n[test], ldi[test], ldo[test]);
     }
   }
 

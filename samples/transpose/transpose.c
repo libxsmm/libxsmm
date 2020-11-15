@@ -171,20 +171,17 @@ int main(int argc, char* argv[])
     for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
       if (0 < r) {
         const libxsmm_blasint rldi = 0 <= lower ? randstart(lower, ldi) : 0;
+        const libxsmm_blasint rldo = 0 <= lower ? randstart(lower, ldo) : 0;
         km = randstart(LIBXSMM_ABS(lower), m);
         kldi = LIBXSMM_MAX(rldi, km);
+        kn = randstart(LIBXSMM_ABS(lower), n);
+        kldo = LIBXSMM_MAX(rldo, kn);
+        /* warmup: trigger JIT-generated code */
         if ('o' == t || 'O' == t) {
-          const libxsmm_blasint rldo = 0 <= lower ? randstart(lower, ldo) : 0;
-          kn = randstart(LIBXSMM_ABS(lower), n);
-          kldo = LIBXSMM_MAX(rldo, kn);
-          /* warmup: trigger JIT-generated code */
           OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
         }
         else {
-          kn = randstart(LIBXSMM_ABS(lower), n);
-          kldo = LIBXSMM_MAX(kldi, kn);
-          /* warmup: trigger JIT-generated code */
-          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
         }
       }
       size += (size_t)(sizeof(ELEM_TYPE) * km * kn);
@@ -219,7 +216,7 @@ int main(int argc, char* argv[])
 
         if (2 > tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
-          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
@@ -228,7 +225,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel
 #         pragma omp single
 #endif
-          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
@@ -318,7 +315,7 @@ int main(int argc, char* argv[])
         {
           double dbatch;
           start = libxsmm_timer_tick();
-          libxsmm_itrans_batch(b, sizeof(ELEM_TYPE), km, kn, kldi,
+          libxsmm_itrans_batch(b, sizeof(ELEM_TYPE), km, kn, kldi, kldo,
             0/*index_base*/, 0/*index_stride*/, NULL/*stride*/,
             BATCH_SIZE, 0/*tid*/, 1/*ntasks*/);
           dbatch = libxsmm_timer_duration(start, libxsmm_timer_tick());

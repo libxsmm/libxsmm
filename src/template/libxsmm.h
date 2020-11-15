@@ -591,18 +591,18 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 
 /** Matrix transposition; in-place (BLAS-like equivalent is "imatcopy"). */
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi);
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Series/batch of matrix transpositions; in-place. See also libxsmm_mmbatch. */
 LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride[], libxsmm_blasint batchsize,
   /*unsigned*/int tid, /*unsigned*/int ntasks);
 
 /** Series/batch of matrix transpositions ((MT via libxsmmext)); in-place. */
 LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride[], libxsmm_blasint batchsize);
 
@@ -859,19 +859,24 @@ template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_tran
 
 /** Matrix transposition (in-place form). */
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
+{
+  return libxsmm_itrans(inout, sizeof(T), m, n, ldi, ldo);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
-  return libxsmm_itrans(inout, sizeof(T), m, n, ldi);
+  return libxsmm_itrans(inout, sizeof(T), m, n, ldi, n);
 }
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout,
   libxsmm_blasint m, libxsmm_blasint n)
 {
-  return libxsmm_trans(inout, m, n, m);
+  return libxsmm_itrans(inout, sizeof(T), m, n, m, n);
 }
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout,
-  libxsmm_blasint n)
+  libxsmm_blasint m)
 {
-  return libxsmm_trans(inout, n, n);
+  return libxsmm_itrans(inout, sizeof(T), m, m, m, m);
 }
 
 /** Dispatched general dense matrix multiplication (double-precision). */

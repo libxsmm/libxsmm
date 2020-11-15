@@ -110,9 +110,9 @@
           !$OMP END PARALLEL DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            !CALL libxsmm_itrans(ptr(b1), S, m, n, ldo)
-            !CALL libxsmm_itrans(bn, m, n, ldo)
-            CALL libxsmm_itrans(b1, m, n, ldo)
+            !CALL libxsmm_itrans(ptr(b1), S, m, n, ldi, ldo)
+            !CALL libxsmm_itrans(bn, m, n, ldi)
+            CALL libxsmm_itrans(b1, m, n, ldi)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         END IF

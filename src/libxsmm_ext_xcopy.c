@@ -283,7 +283,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         }
       }
       else if (ldi == ldo) {
-        libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ldi);
+        libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ldi, ldo);
       }
       else if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -317,7 +317,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 
 
 LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride[], libxsmm_blasint batchsize)
 {
@@ -335,7 +335,7 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
 # endif
       {
 #       pragma omp parallel num_threads(nthreads)
-        libxsmm_itrans_batch(inout, typesize, m, n, ld,
+        libxsmm_itrans_batch(inout, typesize, m, n, ldi, ldo,
           index_base, index_stride, stride, batchsize,
           omp_get_thread_num(), nthreads);
       }
@@ -348,7 +348,7 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
           { int tid;
             for (tid = 0; tid < ntasks; ++tid) {
 #             pragma omp task untied
-              libxsmm_itrans_batch(inout, typesize, m, n, ld,
+              libxsmm_itrans_batch(inout, typesize, m, n, ldi, ldo,
                 index_base, index_stride, stride, batchsize,
                 tid, ntasks);
             }
@@ -366,14 +366,14 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
       int tid;
       for (tid = 0; tid < ntasks; ++tid) {
 #       pragma omp task untied
-        libxsmm_itrans_batch(inout, typesize, m, n, ld,
+        libxsmm_itrans_batch(inout, typesize, m, n, ldi, ldo,
           index_base, index_stride, stride, batchsize,
           tid, ntasks);
       }
       if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #       pragma omp taskwait
       }
-      libxsmm_itrans_batch(inout, typesize, m, n, ld,
+      libxsmm_itrans_batch(inout, typesize, m, n, ldi, ldo,
         index_base, index_stride, stride, batchsize,
         0/*tid*/, 1/*ntasks*/);
 # endif
@@ -381,7 +381,7 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
   }
   else
 #endif /*defined(_OPENMP)*/
-  libxsmm_itrans_batch(inout, typesize, m, n, ld,
+  libxsmm_itrans_batch(inout, typesize, m, n, ldi, ldo,
     index_base, index_stride, stride, batchsize,
     0/*tid*/, 1/*ntasks*/);
 }
