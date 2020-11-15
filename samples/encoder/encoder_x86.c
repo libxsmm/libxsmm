@@ -18,7 +18,6 @@ void test_evex_load_store( libxsmm_generated_code* mycode, unsigned int instr ) 
   unsigned int b;
   unsigned int i;
   unsigned int scale = 2;
-  unsigned int bcst;
   int displ[3] = {0, 128, 2097152};
   unsigned int d;
 
@@ -202,7 +201,6 @@ void test_vex_load_store( libxsmm_generated_code* mycode, unsigned int instr ) {
   unsigned int b;
   unsigned int i;
   unsigned int scale = 2;
-  unsigned int bcst;
   int displ[3] = {0, 128, 2097152};
   unsigned int d;
 
@@ -235,7 +233,6 @@ void test_vex_mask_load_store( libxsmm_generated_code* mycode, unsigned int arch
   unsigned int b;
   unsigned int i;
   unsigned int scale = 2;
-  unsigned int bcst;
   int displ[3] = {0, 128, 2097152};
   unsigned int d;
   unsigned int m;
@@ -294,7 +291,6 @@ void test_tile_move( libxsmm_generated_code* mycode, unsigned int instr ) {
   unsigned int b;
   unsigned int i;
   unsigned int scale = 2;
-  unsigned int bcst;
   int displ[3] = {0, 128, 2097152};
   unsigned int d;
 

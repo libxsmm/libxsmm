@@ -449,6 +449,10 @@ void bf16sgemm_trup( const char*  transa,
 #endif
 
 int main(int argc, char* argv []) {
+#ifndef __AVX512F__
+  printf("\nthe binary was built without AVX512 support, tests will fail and not run!!\n\n");
+  return EXIT_SUCCESS;
+#else
   int M, N, K, LDA, LDB, LDC, iters;
   float alpha = -1.0f, beta = 1.0f;
   char transa = 'N', transb = 'N';
@@ -458,12 +462,6 @@ int main(int argc, char* argv []) {
   libxsmm_timer_tickint l_start;
   double l_runtime;
   double l_gflops;
-
-#ifndef __AVX512F__
-  printf("\nthe binary was built without AVX512 support, tests will fail and not run!!\n\n");
-  return EXIT_SUCCESS;
-
-#else
 
   if ( argc != 4 ) {
     printf("wrong arguments, required: ./%s N K iters\n", argv[0]);
