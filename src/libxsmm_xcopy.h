@@ -133,9 +133,9 @@
   } \
 }
 
-#define LIBXSMM_ITRANS_LOOP(TYPE, INOUT, LD, M, N) { \
+#define LIBXSMM_ITRANS_LOOP(TYPE, INOUT, LD, M) { \
   libxsmm_blasint libxsmm_itrans_loop_i_, libxsmm_itrans_loop_j_; \
-  LIBXSMM_ASSERT(NULL != (INOUT) && (M) == (N) && (M) <= (LD) && (N) <= (LD)); \
+  LIBXSMM_ASSERT(NULL != (INOUT) && (M) <= (LD)); \
   for (libxsmm_itrans_loop_i_ = 0; libxsmm_itrans_loop_i_ < (M); ++libxsmm_itrans_loop_i_) { \
     for (libxsmm_itrans_loop_j_ = 0; libxsmm_itrans_loop_j_ < libxsmm_itrans_loop_i_; ++libxsmm_itrans_loop_j_) { \
       TYPE *const libxsmm_itrans_loop_a_ = ((TYPE*)(INOUT)) + (size_t)(LD) * libxsmm_itrans_loop_i_ + libxsmm_itrans_loop_j_; \
@@ -145,21 +145,21 @@
   } \
 }
 
-#define LIBXSMM_ITRANS(TYPESIZE, INOUT, LD, M, N) { \
+#define LIBXSMM_ITRANS(TYPESIZE, INOUT, LD, M) { \
   switch(TYPESIZE) { \
     case 2: { \
-      LIBXSMM_ITRANS_LOOP(short, INOUT, LD, M, N); \
+      LIBXSMM_ITRANS_LOOP(short, INOUT, LD, M); \
     } break; \
     case 4: { \
-      LIBXSMM_ITRANS_LOOP(int, INOUT, LD, M, N); \
+      LIBXSMM_ITRANS_LOOP(int, INOUT, LD, M); \
     } break; \
     case 8: { \
-      LIBXSMM_ITRANS_LOOP(int64_t, INOUT, LD, M, N); \
+      LIBXSMM_ITRANS_LOOP(int64_t, INOUT, LD, M); \
     } break; \
     default: { /* generic type-size */ \
       const signed char libxsmm_itrans_c_ = (signed char)(TYPESIZE); \
       libxsmm_blasint libxsmm_itrans_i_, libxsmm_itrans_j_; \
-      LIBXSMM_ASSERT(NULL != (INOUT) && (M) == (N) && (M) <= (LD) && (N) <= (LD)); \
+      LIBXSMM_ASSERT(NULL != (INOUT) && (M) <= (LD)); \
       LIBXSMM_ASSERT(0 < (TYPESIZE) && (TYPESIZE) <= 127); \
       for (libxsmm_itrans_i_ = 0; libxsmm_itrans_i_ < (M); ++libxsmm_itrans_i_) { \
         for (libxsmm_itrans_j_ = 0; libxsmm_itrans_j_ < libxsmm_itrans_i_; ++libxsmm_itrans_j_) { \
@@ -282,7 +282,7 @@ LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
   unsigned int tm, unsigned int tn, libxsmm_xcopykernel kernel);
 
 LIBXSMM_API_INTERN void libxsmm_itrans_internal(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
+  libxsmm_blasint m, libxsmm_blasint ld);
 LIBXSMM_API_INTERN void libxsmm_itrans_scratch(void* inout, void* scratch, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 LIBXSMM_API_INTERN void libxsmm_itrans_scratch_jit(void* inout, void* scratch, unsigned int typesize,
