@@ -1408,6 +1408,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX:
     case LIBXSMM_X86_SSE4:
     case LIBXSMM_X86_SSE3:
+    case LIBXSMM_AARCH64_V81:
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_archid = id;
     } break;
@@ -1504,6 +1505,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
           || arch == libxsmm_stristr(arch, "sse2"))
     {
       target_archid = LIBXSMM_X86_GENERIC;
+    }
+    else if (arch == libxsmm_stristr(arch, "aarch64"))
+    {
+      target_archid = LIBXSMM_AARCH64_V81;
     }
     else if (arch == libxsmm_stristr(arch, "generic")
           || arch == libxsmm_stristr(arch, "none"))
@@ -1693,7 +1698,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         const unsigned int m = request->descriptor.gemm->m, n = request->descriptor.gemm->n, k = request->descriptor.gemm->k;
         extra.nflops = 2 * m * n * k;
 # if !defined(LIBXSMM_DENY_RETARGET) /* disable: ECFLAGS=-DLIBXSMM_DENY_RETARGET */
-        if (LIBXSMM_X86_AVX2 < libxsmm_target_archid &&
+        if ((LIBXSMM_X86_AVX2 < libxsmm_target_archid) && (libxsmm_target_archid <= LIBXSMM_X86_ALLFEAT) &&
            (LIBXSMM_GEMM_PRECISION_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.gemm->datatype) ||
             LIBXSMM_GEMM_PRECISION_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.gemm->datatype)) &&
            (16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n)))
