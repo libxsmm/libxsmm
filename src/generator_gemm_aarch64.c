@@ -1,10 +1,13 @@
 /******************************************************************************
 * Copyright (c) Friedrich Schiller University Jena - All rights reserved.     *
+*               Intel Corporation - All rights reserved                       *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
+******************************************************************************/
+/* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #include "generator_aarch64_instructions.h"
@@ -659,7 +662,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   }
 
   /* open asm */
-  libxsmm_aarch64_instruction_open_stream( io_generated_code, &l_gp_reg_mapping );
+  libxsmm_aarch64_instruction_open_stream( io_generated_code );
 
   /* apply n_blocking */
   while (l_n_done != (unsigned int)i_xgemm_desc->n) {
@@ -761,6 +764,6 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   }
 
   /* close asm */
-  libxsmm_aarch64_instruction_close_stream( io_generated_code, &l_gp_reg_mapping );
+  libxsmm_aarch64_instruction_close_stream( io_generated_code );
 }
 
