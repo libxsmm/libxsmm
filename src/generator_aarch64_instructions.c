@@ -1,18 +1,20 @@
 /******************************************************************************
 * Copyright (c) Friedrich Schiller University Jena - All rights reserved.     *
+*               Intel Corporation - All rights reserved                       *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
+/* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
+******************************************************************************/
 
 #include "generator_aarch64_instructions.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
-                                              const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                              unsigned int                  i_prefetch ) {
+                                              const libxsmm_gp_reg_mapping* i_gp_reg_mapping ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);
@@ -36,9 +38,8 @@ void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code*       io_g
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code*             io_generated_code,
-                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                               unsigned int                     i_prefetch ) {
+void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
+                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);
@@ -316,12 +317,19 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_code,
-                                           const unsigned int           i_alu_instr,
-                                           const unsigned int           i_gp_reg_addr,
-                                           const unsigned int           i_gp_reg_off,
-                                           const unsigned char           i_gp_reg_srcdst,
-                                           const unsigned char           i_extentd_mode,
-                                           const unsigned char           i_shift_amount ) {
+                                           const unsigned int      i_alu_instr,
+                                           const unsigned int      i_gp_reg_addr,
+                                           const unsigned int      i_gp_reg_off,
+                                           const unsigned char     i_gp_reg_srcdst,
+                                           const unsigned char     i_extentd_mode,
+                                           const unsigned char     i_shift_amount ) {
+  LIBXSMM_UNUSED( io_generated_code );
+  LIBXSMM_UNUSED( i_alu_instr );
+  LIBXSMM_UNUSED( i_gp_reg_addr );
+  LIBXSMM_UNUSED( i_gp_reg_off );
+  LIBXSMM_UNUSED( i_gp_reg_srcdst );
+  LIBXSMM_UNUSED( i_extentd_mode );
+  LIBXSMM_UNUSED( i_shift_amount );
 }
 
 LIBXSMM_API_INTERN

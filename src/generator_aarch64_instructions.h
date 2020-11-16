@@ -1,10 +1,13 @@
 /******************************************************************************
 * Copyright (c) Friedrich Schiller University Jena - All rights reserved.     *
+*               Intel Corporation - All rights reserved                       *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
+******************************************************************************/
+/* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_AARCH64_INSTRUCTIONS_H
@@ -206,24 +209,20 @@ typedef enum libxsmm_aarch64_asimd_tupletype {
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for initialization
- * @param i_prefetch prefetch mode which may result in additional gp reg inits
  */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
-                                              const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                              unsigned int                  i_prefetch );
+                                              const libxsmm_gp_reg_mapping* i_gp_reg_mapping );
 
 /**
  * Closes the inline assembly section / jit stream
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for clobbering
- * @param i_prefetch prefetch mode which may result in additional gp reg clobbers
  */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
-                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                               unsigned int                  i_prefetch );
+                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping );
 
 /**
  * Generates ldp, stp, etc. instructions
