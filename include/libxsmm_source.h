@@ -29,8 +29,10 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include "../src/generator_aarch64_instructions.c"
 #include "../src/generator_common.c"
 #include "../src/generator_gemm.c"
+#include "../src/generator_gemm_aarch64.c"
 #include "../src/generator_gemm_amx.c"
 #include "../src/generator_gemm_amx_microkernel.c"
 #include "../src/generator_gemm_avx2_microkernel.c"
