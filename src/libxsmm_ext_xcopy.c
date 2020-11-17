@@ -323,6 +323,39 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
 {
 #if defined(_OPENMP)
   if (1 < batchsize) { /* consider problem-size */
+    const libxsmm_blasint scratchsize = m * n * typesize;
+    const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
+    char buffer[LIBXSMM_ITRANS_BUFFER_MAXSIZE];
+    char *const mat0 = (char*)inout;
+    void* scratch = NULL;
+    libxsmm_xcopykernel kernel = { NULL };
+    if (m != n || ldi != ldo || 127 < typesize) {
+      if (scratchsize <= LIBXSMM_ITRANS_BUFFER_MAXSIZE) {
+        scratch = buffer;
+      }
+      else {
+        static int error_once = 0;
+        LIBXSMM_INIT
+        if (EXIT_SUCCESS != libxsmm_xmalloc(&scratch, scratchsize, 0/*auto-align*/,
+            LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
+            0/*extra*/, 0/*extra_size*/)
+          && 0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM ERROR: failed to allocate buffer for in-place transpose!\n");
+        }
+      }
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+      if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
+        /* avoid outgrown transpose kernel upfront */
+        && (m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))
+      {
+        libxsmm_descriptor_blob blob;
+        kernel.xtrans = libxsmm_dispatch_trans(libxsmm_trans_descriptor_init(&blob,
+          typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo));
+      }
+#endif
+    }
 # if defined(LIBXSMM_EXT_TASKS) && 0/* implies _OPENMP */
     if (0 == omp_get_active_level())
 # else
@@ -334,23 +367,29 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
       if (0 >= libxsmm_xcopy_taskscale)
 # endif
       {
+        const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, nthreads);
 #       pragma omp parallel num_threads(nthreads)
-        libxsmm_itrans_batch(inout, typesize, m, n, ldi, ldo,
-          index_base, index_stride, stride, batchsize,
-          omp_get_thread_num(), nthreads);
+        {
+          const libxsmm_blasint begin = omp_get_thread_num() * tasksize;
+          const libxsmm_blasint span = begin + tasksize;
+          libxsmm_itrans_internal(mat0, scratch, typesize, m, n, ldi, ldo, index_base,
+            index_stride, stride, kernel, begin, LIBXSMM_MIN(span, size));
+        }
       }
 # if defined(LIBXSMM_EXT_TASKS)
       else { /* tasks requested */
         const int ntasks = nthreads * libxsmm_xcopy_taskscale;
+        const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, ntasks);
 #       pragma omp parallel num_threads(nthreads)
         { /* first thread discovering work will launch all tasks */
 #         pragma omp single nowait /* anyone is good */
           { int tid;
             for (tid = 0; tid < ntasks; ++tid) {
+              const libxsmm_blasint begin = tid * tasksize;
+              const libxsmm_blasint span = begin + tasksize;
 #             pragma omp task untied
-              libxsmm_itrans_batch(inout, typesize, m, n, ldi, ldo,
-                index_base, index_stride, stride, batchsize,
-                tid, ntasks);
+              libxsmm_itrans_internal(mat0, scratch, typesize, m, n, ldi, ldo, index_base,
+                index_stride, stride, kernel, begin, LIBXSMM_MIN(span, size));
             }
           }
         }
@@ -363,20 +402,25 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
       const int ntasks = (0 == libxsmm_xcopy_taskscale
         ? (LIBXSMM_XCOPY_TASKSCALE)
         : libxsmm_xcopy_taskscale) * nthreads;
+      const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, ntasks);
       int tid;
       for (tid = 0; tid < ntasks; ++tid) {
+        const libxsmm_blasint begin = tid * tasksize;
+        const libxsmm_blasint span = begin + tasksize;
 #       pragma omp task untied
-        libxsmm_itrans_batch(inout, typesize, m, n, ldi, ldo,
-          index_base, index_stride, stride, batchsize,
-          tid, ntasks);
+        libxsmm_itrans_internal(mat0, scratch, typesize, m, n, ldi, ldo, index_base,
+          index_stride, stride, kernel, begin, LIBXSMM_MIN(span, size));
       }
       if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #       pragma omp taskwait
       }
-      libxsmm_itrans_batch(inout, typesize, m, n, ldi, ldo,
-        index_base, index_stride, stride, batchsize,
-        0/*tid*/, 1/*ntasks*/);
+# else
+      libxsmm_itrans_internal(mat0, scratch, typesize, m, n, ldi, ldo, index_base,
+        index_stride, stride, kernel, 0, batchsize);
 # endif
+    }
+    if (NULL != scratch && LIBXSMM_ITRANS_BUFFER_MAXSIZE < scratchsize) {
+      libxsmm_xfree(scratch, 0/*no check*/);
     }
   }
   else

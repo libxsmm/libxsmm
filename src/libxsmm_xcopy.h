@@ -16,6 +16,13 @@
 #if !defined(LIBXSMM_XCOPY_CHECK) && !defined(NDEBUG)
 # define LIBXSMM_XCOPY_CHECK
 #endif
+#if !defined(LIBXSMM_ITRANS_BUFFER_MAXSIZE)
+# if defined(NDEBUG)
+#   define LIBXSMM_ITRANS_BUFFER_MAXSIZE (12 << 10/*12kB*/)
+# else
+#   define LIBXSMM_ITRANS_BUFFER_MAXSIZE 1
+# endif
+#endif
 #if !defined(LIBXSMM_XCOPY_TASKSCALE)
 # define LIBXSMM_XCOPY_TASKSCALE 2
 #endif
@@ -280,14 +287,10 @@ LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xcopykernel kernel);
-
-LIBXSMM_API_INTERN void libxsmm_itrans_internal(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint ld);
-LIBXSMM_API_INTERN void libxsmm_itrans_scratch(void* inout, void* scratch, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
-LIBXSMM_API_INTERN void libxsmm_itrans_scratch_jit(void* inout, void* scratch, unsigned int typesize,
+LIBXSMM_API_INTERN void libxsmm_itrans_internal(char* inout, void* scratch, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  libxsmm_xcopykernel kernel);
+  libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride[],
+  libxsmm_xcopykernel kernel, libxsmm_blasint begin, libxsmm_blasint end);
 
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
 /** Determines whether JIT-kernels are used or not; values see LIBXSMM_XCOPY_JIT. */
