@@ -97,5 +97,30 @@ void libxsmm_generator_gemm_amx_kernel_nloop_emu( libxsmm_generated_code*       
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info );
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io_generated_code,
+                                                   const unsigned int      i_instruction_set,
+                                                   const unsigned int      i_vec_instr,
+                                                   const char              i_vector_name,
+                                                   const unsigned int      i_vec_reg_src_0,
+                                                   const unsigned int      i_vec_reg_src_1,
+                                                   const unsigned int      i_vec_reg_dst,
+                                                   const unsigned int      i_shuffle_operand,
+                                                   libxsmm_micro_kernel_config*  i_micro_kernel_config );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_emu( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_instruction_set,
+                                              const unsigned int      i_vec_instr,
+                                              const unsigned int      i_use_broadcast,
+                                              const unsigned int      i_gp_reg_base,
+                                              const unsigned int      i_gp_reg_idx,
+                                              const unsigned int      i_scale,
+                                              const int               i_displacement,
+                                              const char              i_vector_name,
+                                              const unsigned int      i_vec_reg_number_0,
+                                              const unsigned int      i_vec_reg_number_1,
+                                              libxsmm_micro_kernel_config*  i_micro_kernel_config );
+
 #endif /* GENERATOR_GEMM_AMX_EMU_H */
 

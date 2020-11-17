@@ -580,12 +580,19 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   int _im_offset_prefix_sums[4];
   int _in_offset_prefix_sums[4];
 
-  /* Auxiliary data structure when emulating AMX instructions */
+  /* Auxiliary data structure and fields when emulating AMX instructions */
   libxsmm_tile_config tile_config;
   unsigned int emulation_scratch_offset;
   unsigned int lda_emu;
   unsigned int ldb_emu;
   unsigned int ldc_emu;
+  unsigned int emulate_cvt2bf16fp32;
+  unsigned int emulate_cvt2bf16fp32_vperm;
+  unsigned int emulate_cvt2bf16fp32_vaux;
+  unsigned int emulate_cvt2bf16fp32_vaux0;
+  unsigned int emulate_cvt2bf16fp32_vaux1;
+  unsigned int mask_cvt_hi;
+  unsigned int mask_cvt_lo;
 
   /* Auxiliary fields to propagate kernel info */
   unsigned int k_amx_microkernel;
