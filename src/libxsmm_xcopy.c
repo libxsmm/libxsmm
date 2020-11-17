@@ -490,7 +490,7 @@ LIBXSMM_API_INTERN void libxsmm_itrans_scratch_jit(void* inout, void* scratch, u
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_itrans_internal(char* inout, void* scratch, unsigned int typesize,
+LIBXSMM_API void libxsmm_itrans_internal(char* inout, void* scratch, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride[],
   libxsmm_xcopykernel kernel, libxsmm_blasint begin, libxsmm_blasint end)

@@ -1739,7 +1739,7 @@ LIBXSMM_API_INTERN void* internal_xmalloc(void** ptr, internal_malloc_info_type*
 }
 
 
-LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
+LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
   int flags, const void* extra, size_t extra_size)
 {
   int result = EXIT_SUCCESS;
@@ -2110,7 +2110,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
+LIBXSMM_API void libxsmm_xfree(const void* memory, int check)
 {
 #if (!defined(LIBXSMM_MALLOC_HOOK) || defined(_DEBUG))
   static int error_once = 0;

@@ -1012,15 +1012,15 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
 
+/** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
+LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);
+
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
-LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
+LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
 /** Release memory, which was allocated using libxsmm_[*]malloc. */
-LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check);
-
-/** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
-LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);
+LIBXSMM_API void libxsmm_xfree(const void* memory, int check);
 
 /**
  * Format for instance an amount of Bytes like libxsmm_format_size(result, sizeof(result), nbytes, "KMGT", "B", 10).

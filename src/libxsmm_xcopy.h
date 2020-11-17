@@ -287,7 +287,7 @@ LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
   unsigned int typesize, unsigned int ldi, unsigned int ldo,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
   unsigned int tm, unsigned int tn, libxsmm_xcopykernel kernel);
-LIBXSMM_API_INTERN void libxsmm_itrans_internal(char* inout, void* scratch, unsigned int typesize,
+LIBXSMM_API void libxsmm_itrans_internal(char* inout, void* scratch, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride[],
   libxsmm_xcopykernel kernel, libxsmm_blasint begin, libxsmm_blasint end);
