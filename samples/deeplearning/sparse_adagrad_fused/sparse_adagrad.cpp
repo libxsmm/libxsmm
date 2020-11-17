@@ -21,7 +21,6 @@
 #include <time.h>
 #include <math.h>
 #include <unistd.h>
-#include <immintrin.h>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -32,6 +31,10 @@
 
 #ifdef USE_LIBXSMM_JIT
 #include <libxsmm.h>
+#endif
+
+#ifdef USE_PERF_COUNTERS
+#include "counters.h"
 #endif
 
 const int alignment = 64;
@@ -376,6 +379,16 @@ int main(int argc, char * argv[]) {
   int LN = N;
   set_random_seed(777);
 
+#ifdef USE_PERF_COUNTERS
+  ctrs_skx_uc a, b, s;
+  bw_gibs bw_min, bw_max, bw_avg;
+
+  setup_skx_uc_ctrs( CTRS_EXP_DRAM_CAS );
+  zero_skx_uc_ctrs( &a );
+  zero_skx_uc_ctrs( &b );
+  zero_skx_uc_ctrs( &s );
+#endif
+
   EmbeddingInOut *eio[iters][LS];
   EmbeddingBag *eb[LS];
   size_t tNS = 0;
@@ -407,6 +420,9 @@ int main(int argc, char * argv[]) {
     printf("Warmup Iter %4d: Time = %.3f ms\n", i, t1-t0);
   }
 
+#ifdef USE_PERF_COUNTERS
+  read_skx_uc_ctrs( &a );
+#endif
   double t0 = get_time();
   double bwdupdTime = 0.0;
 
@@ -417,10 +433,15 @@ int main(int argc, char * argv[]) {
       eb[s]->fused_backward_update_adagrad(eio[i][s]->U, eio[i][s]->NS, N, eio[i][s]->mb_offsets, eio[i][s]->mb_indices, eio[i][s]->wt_indices, eio[i][s]->gradout, -0.1, 1.0e-6);
     }
     double t1 = get_time();
-    printf("Iter %4d: Time = %.3f ms\n", i, t1-t0);
+    //printf("Iter %4d: Time = %.3f ms\n", i, t1-t0);
     bwdupdTime += t1-t0;
   }
   double t1 = get_time();
+#ifdef USE_PERF_COUNTERS
+  read_skx_uc_ctrs( &b );
+  difa_skx_uc_ctrs( &a, &b, &s );
+  divi_skx_uc_ctrs( &s, iters );
+#endif
 #ifdef VERIFY_CORRECTNESS
   for(int s = 0; s < LS; s++) {
     double psum = get_checksum(eb[s]->weight_, M*E);
@@ -430,16 +451,29 @@ int main(int argc, char * argv[]) {
 #endif
 
   //  tU*E wt RW + N*E gO R + N mb_offsets + NS mb_ind + U wt_ind
-  size_t bwdupdBytesMin = ((size_t)2*tU*(E+1)) * sizeof(FTyp) + ((size_t)tNS+tU) * sizeof(ITyp) + ((size_t)iters*LS*N*E) * sizeof(FTyp) + ((size_t)iters*LS*N) * sizeof(ITyp);
-  size_t bwdupdBytesMax = ((size_t)2*tU*(E+16)) * sizeof(FTyp) + ((size_t)tNS+tU) * sizeof(ITyp) + ((size_t)iters*LS*N*E) * sizeof(FTyp) + ((size_t)iters*LS*N) * sizeof(ITyp);
+  size_t bwdupdBytesMinRd = ((size_t)tU*(E+1)) * sizeof(FTyp) + ((size_t)tNS+tU) * sizeof(ITyp) + ((size_t)iters*LS*N*E) * sizeof(FTyp) + ((size_t)iters*LS*N) * sizeof(ITyp);
+  size_t bwdupdBytesMaxRd = ((size_t)tU*(E+16)) * sizeof(FTyp) + ((size_t)tNS+tU) * sizeof(ITyp) + ((size_t)iters*LS*N*E) * sizeof(FTyp) + ((size_t)iters*LS*N) * sizeof(ITyp);
 
-  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %ld, avgU = %ld, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
+  size_t bwdupdBytesMinWr = ((size_t)tU*(E+1)) * sizeof(FTyp);
+  size_t bwdupdBytesMaxWr = ((size_t)tU*(E+16)) * sizeof(FTyp);
+
+  size_t bwdupdBytesMin = bwdupdBytesMinRd + bwdupdBytesMinWr;
+  size_t bwdupdBytesMax = bwdupdBytesMaxRd + bwdupdBytesMaxWr;
+
+  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
   //printf("Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f\n", fwdTime, bwdTime, updTime, t1-t0);
   my_printf("Per Iter  Time: %.3f ms  Total: %.3f ms\n", bwdupdTime/(iters), (t1-t0)/(iters));
   my_printf("Per Table Time: %.3f ms  Total: %.3f ms\n", bwdupdTime/(iters*LS), (t1-t0)/(iters*LS));
 
-  my_printf("BW: Min: %.3f GB/s   Max: %.3f GB/s\n", bwdupdBytesMin*1e-6/bwdupdTime, bwdupdBytesMax*1e-6/bwdupdTime);
+  double scale = 1000.0/(1024.0*1024.0*1024.0);
+  my_printf("BW: RD Min: %.3f GB/s   Max: %.3f GB/s \n", bwdupdBytesMinRd*scale/bwdupdTime, bwdupdBytesMaxRd*scale/bwdupdTime);
+  my_printf("BW: WR Min: %.3f GB/s   Max: %.3f GB/s \n", bwdupdBytesMinWr*scale/bwdupdTime, bwdupdBytesMaxWr*scale/bwdupdTime);
+  my_printf("BW: TT Min: %.3f GB/s   Max: %.3f GB/s \n", bwdupdBytesMin*scale/bwdupdTime, bwdupdBytesMax*scale/bwdupdTime);
 
+#ifdef USE_PERF_COUNTERS
+  get_cas_ddr_bw_skx( &s, bwdupdTime/iters/1000.0, &bw_avg );
+  printf("Measured AVG GB/s: RD %f   WR %f   TT %f\n", bw_avg.rd, bw_avg.wr, bw_avg.rd + bw_avg.wr);
+#endif
 
 #ifdef VERIFY_CORRECTNESS
   printf("Checksum = %g\n", checksum);
