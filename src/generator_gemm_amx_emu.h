@@ -24,7 +24,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                            const unsigned int      i_tile_src_reg_number_0,
                                            const unsigned int      i_tile_src_reg_number_1,
                                            const unsigned int      i_tile_dst_reg_number,
-                                           libxsmm_micro_kernel_config*  i_micro_kernel_config);    
+                                           libxsmm_micro_kernel_config*  i_micro_kernel_config);
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generated_code,
@@ -39,7 +39,7 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            io_generated_code,
     libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    libxsmm_micro_kernel_config* i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info );

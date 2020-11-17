@@ -161,7 +161,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       if (emu_amx == 0) {
         libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_xgemm_desc_mod );
       } else {
-        libxsmm_generator_gemm_amx_kernel_emu( io_generated_code, &l_xgemm_desc_mod );    
+        libxsmm_generator_gemm_amx_kernel_emu( io_generated_code, &l_xgemm_desc_mod );
       }
     } else {
       libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( io_generated_code, &l_xgemm_desc_mod );

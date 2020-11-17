@@ -9,8 +9,8 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_GEMM_AMX_MICROKERNEL_H
-#define GENERATOR_GEMM_AMX_MICROKERNEL_H
+#ifndef GENERATOR_GEMM_AMX_MICROKERNEL_EMU_H
+#define GENERATOR_GEMM_AMX_MICROKERNEL_EMU_H
 
 #include "generator_common.h"
 #include "generator_gemm_common.h"
@@ -63,5 +63,5 @@ void libxsmm_generator_gemm_amx_kernel_kloop_emu( libxsmm_generated_code*       
                                                       unsigned int                       B_offs,
                                                       unsigned int                       fully_unrolled_brloop );
 
-#endif /* GENERATOR_GEMM_AMX_MICROKERNEL_H */
+#endif /* GENERATOR_GEMM_AMX_MICROKERNEL_EMU_H */
 

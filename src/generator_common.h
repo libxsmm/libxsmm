@@ -484,6 +484,27 @@
     GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1)
 #endif
 
+/* tile config structure */
+typedef struct libxsmm_tile_config {
+  unsigned char  palette_id;
+  unsigned short tile0rowsb;
+  unsigned char  tile0cols;
+  unsigned short tile1rowsb;
+  unsigned char  tile1cols;
+  unsigned short tile2rowsb;
+  unsigned char  tile2cols;
+  unsigned short tile3rowsb;
+  unsigned char  tile3cols;
+  unsigned short tile4rowsb;
+  unsigned char  tile4cols;
+  unsigned short tile5rowsb;
+  unsigned char  tile5cols;
+  unsigned short tile6rowsb;
+  unsigned char  tile6cols;
+  unsigned short tile7rowsb;
+  unsigned char  tile7cols;
+} libxsmm_tile_config;
+
 /* micro kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
@@ -728,27 +749,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
   unsigned int blocking;
   unsigned int block_size;
 } libxsmm_blocking_info_t;
-
-/* tile config structure */
-typedef struct libxsmm_tile_config {
-  unsigned char  palette_id;
-  unsigned short tile0rowsb;
-  unsigned char  tile0cols;
-  unsigned short tile1rowsb;
-  unsigned char  tile1cols;
-  unsigned short tile2rowsb;
-  unsigned char  tile2cols;
-  unsigned short tile3rowsb;
-  unsigned char  tile3cols;
-  unsigned short tile4rowsb;
-  unsigned char  tile4cols;
-  unsigned short tile5rowsb;
-  unsigned char  tile5cols;
-  unsigned short tile6rowsb;
-  unsigned char  tile6cols;
-  unsigned short tile7rowsb;
-  unsigned char  tile7cols;
-} libxsmm_tile_config;
 
 /* Auxiliary stach variable enumeration in GEMM */
 typedef enum libxsmm_gemm_stack_var {

@@ -78,7 +78,8 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                            const unsigned int      i_tile_dst_reg_number,
                                            libxsmm_micro_kernel_config*  i_micro_kernel_config) {
 
-  int im, in, l_k, l_n, i, ld, M, N, K = 32;
+  int im, in, l_k, l_n, i;
+  unsigned int  M, N, K = 32;
   int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
   int tile_scratch_offset_A = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_0 * 32 * 32;
   int tile_scratch_offset_B = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_1 * 32 * 32;
@@ -88,19 +89,11 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
   int i_k_blocking = 32;
   int i_n_blocking = 8;
 
-  if (i_tile_reg_number < 4) {
-    ld = i_micro_kernel_config->ldc_emu;
-  } else if (i_tile_reg_number < 6) {
-    ld = i_micro_kernel_config->lda_emu;
-  } else {
-    ld = i_micro_kernel_config->ldb_emu;
-  }
-
   libxsmm_get_tileinfo( i_tile_dst_reg_number, &M, &N, &tc_conf);
-  
+
   libxsmm_x86_instruction_push_reg( io_generated_code, tile_scratch_gp );
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, tile_scratch_gp );
-  
+
   /* Store reserved ZMMs */
   for (i = 0; i < reserved_zmms; i++) {
     libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -112,7 +105,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
         'z',
         i, 0, 1, 1 );
   }
-  
+
   if (i_tcompute_instr == LIBXSMM_X86_INSTR_TDPBF16PS) {
     for (im = 0; im < M; im += 16) {
       for (in = 0; in < N; in += i_n_blocking) {
@@ -122,12 +115,12 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                                    i_instruction_set,
                                                    LIBXSMM_X86_INSTR_VPXORD,
                                                    'z',
-                                                   4 + l_n * i_n_blocking, 4 + l_n * i_n_blocking, 4 + l_n * i_n_blocking );
+                                                   4 + l_n, 4 + l_n, 4 + l_n );
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    i_instruction_set,
                                                    LIBXSMM_X86_INSTR_VPXORD,
                                                    'z',
-                                                   4 + inl_n * i_n_blocking + i_n_blocking, 4 + l_n * i_n_blocking + i_n_blocking, 4 + l_n * i_n_blocking + i_n_blocking );
+                                                   4 + l_n + i_n_blocking, 4 + l_n + i_n_blocking, 4 + l_n + i_n_blocking );
         }
 
         for (l_k = 0; l_k < i_k_blocking; l_k+=2) {
@@ -167,13 +160,13 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
               0,
               LIBXSMM_X86_VEC_REG_UNDEF,
               16);
-          
+
           for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-            unsigned int l_disp = l_k + (in + l_n * 64) + tile_scratch_offset_B;
+            unsigned int l_disp = l_k*2 + (in + l_n) * 64 + tile_scratch_offset_B;
             unsigned int l_b_reg = tile_scratch_gp;
             unsigned int l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
-            unsigned int l_scale = 0;            
-            
+            unsigned int l_scale = 0;
+
             /* broadcast pair of B matrix values into zmm2 */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               io_generated_code->arch,
@@ -210,7 +203,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                               i_micro_kernel_config->vector_name,
                                               0,
                                               2,
-                                              4 + l_n * i_n_blocking);
+                                              4 + l_n);
 
             /* broadcast pair of B matrix values into zmm2 */
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -239,10 +232,10 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                               i_micro_kernel_config->vector_name,
                                               3,
                                               2,
-                                              4 + l_n * i_n_blocking + i_n_blocking );
-      
+                                              4 + l_n + i_n_blocking );
 
-          }       
+
+          }
         }
 
         for ( l_n = 0; l_n < i_n_blocking; l_n++) {
@@ -251,9 +244,9 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                             io_generated_code->arch,
                                             LIBXSMM_X86_INSTR_VADDPS,
                                             i_micro_kernel_config->vector_name,
-                                            4 + l_n * i_n_blocking,
-                                            4 + l_n * i_n_blocking + i_n_blocking ,
-                                            4 + l_n * i_n_blocking + i_n_blocking );
+                                            4 + l_n,
+                                            4 + l_n + i_n_blocking ,
+                                            4 + l_n + i_n_blocking );
 
           /* Load C fp32 value and add it to the computed inner product  */
           libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
@@ -261,15 +254,15 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                         tile_scratch_gp,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         im * 4 + (in + l_n) * 64 + tile_scratch_offset_C,
-                                        'z', 4 + l_n * i_n_blocking, 0, 1, 0 );
+                                        'z', 4 + l_n, 0, 1, 0 );
 
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                             io_generated_code->arch,
                                             LIBXSMM_X86_INSTR_VADDPS,
                                             i_micro_kernel_config->vector_name,
-                                            4 + l_n * i_n_blocking,
-                                            4 + l_n * i_n_blocking + i_n_blocking ,
-                                            4 + l_n * i_n_blocking + i_n_blocking );
+                                            4 + l_n,
+                                            4 + l_n + i_n_blocking ,
+                                            4 + l_n + i_n_blocking );
 
           /* Store the result to C scratch tiles  */
           libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
@@ -277,10 +270,10 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                         tile_scratch_gp,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         im * 4 + (in + l_n) * 64 + tile_scratch_offset_C,
-                                        'z', 4 + l_n * i_n_blocking + i_n_blocking, 0, 1, 1 );
+                                        'z', 4 + l_n + i_n_blocking, 0, 1, 1 );
         }
       }
-    }  
+    }
   } else {
     fprintf(stderr, "AMX emulation supported only for BF16 datatype\n");
     exit(-1);
@@ -301,7 +294,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
 
   libxsmm_x86_instruction_pop_reg( io_generated_code, tile_scratch_gp );
 }
-      
+
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generated_code,
                                         const unsigned int            i_instruction_set,
@@ -312,7 +305,8 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
                                         const int                     i_displacement,
                                         const unsigned int            i_tile_reg_number,
                                         libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
-  int ir, ic, i, ld, n_rows, n_cols;
+  int ir, ic, i, ld;
+  unsigned int  n_rows, n_cols;
   int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
   int tile_scratch_offset = i_micro_kernel_config->emulation_scratch_offset + i_tile_reg_number * 32 * 32;
   int reserved_zmms = i_micro_kernel_config->reserved_zmms;
@@ -327,10 +321,10 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
   }
 
   libxsmm_get_tileinfo( i_tile_reg_number, &n_rows, &n_cols, &tc_conf);
-  
+
   libxsmm_x86_instruction_push_reg( io_generated_code, tile_scratch_gp );
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, tile_scratch_gp );
-  
+
   /* Store reserved ZMMs */
   for (i = 0; i < reserved_zmms; i++) {
     libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -345,7 +339,7 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
 
   if ((i_tmove_instr == LIBXSMM_X86_INSTR_TILELOADD) || (i_tmove_instr == LIBXSMM_X86_INSTR_TILELOADDT1)) {
     for (ic = 0; ic < n_cols; ic++) {
-      for (ir = 0; ir < n_rows; ir += 64) {
+      for (ir = 0; ir < n_rows; ir += 16) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
@@ -370,7 +364,7 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
 
   if (i_tmove_instr == LIBXSMM_X86_INSTR_TILESTORED) {
     for (ic = 0; ic < n_cols; ic++) {
-      for (ir = 0; ir < n_rows; ir += 64) {
+      for (ir = 0; ir < n_rows; ir += 16) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
@@ -399,7 +393,7 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
                                              'z',
                                              0, 0, 0 );
     for (ic = 0; ic < n_cols; ic++) {
-      for (ir = 0; ir < n_rows; ir += 64) {
+      for (ir = 0; ir < n_rows; ir += 16) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
@@ -430,7 +424,7 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            io_generated_code,
     libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    libxsmm_micro_kernel_config* i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info ) {
@@ -1517,10 +1511,10 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code* io_generated
     libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_ldc, (i_xgemm_desc->ldc * l_micro_kernel_config.datatype_size)/4);
 
     /* Store this auxiliary info for the emulation */
-    i_micro_kernel_config.lda_emu = (i_xgemm_desc->lda * l_micro_kernel_config.datatype_size)/4;
-    i_micro_kernel_config.ldb_emu = (i_xgemm_desc->ldb * l_micro_kernel_config.datatype_size)/4;
-    i_micro_kernel_config.ldc_emu = (i_xgemm_desc->ldc * l_micro_kernel_config.datatype_size)/4;
-    
+    l_micro_kernel_config.lda_emu = (i_xgemm_desc->lda * l_micro_kernel_config.datatype_size)/4;
+    l_micro_kernel_config.ldb_emu = (i_xgemm_desc->ldb * l_micro_kernel_config.datatype_size)/4;
+    l_micro_kernel_config.ldc_emu = (i_xgemm_desc->ldc * l_micro_kernel_config.datatype_size)/4;
+
     libxsmm_generator_gemm_amx_kernel_nloop_emu(io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info);
   }
 
