@@ -83,7 +83,7 @@
 #endif
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-LIBXSMM_EXTERN int posix_memalign(void**, size_t, size_t);
+LIBXSMM_EXTERN int posix_memalign(void**, size_t, size_t) LIBXSMM_THROW;
 #endif
 #if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
 LIBXSMM_EXTERN int putenv(char*) LIBXSMM_THROW;
