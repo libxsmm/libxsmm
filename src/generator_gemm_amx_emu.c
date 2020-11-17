@@ -80,6 +80,7 @@ void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io
                                                    const unsigned int      i_shuffle_operand,
                                                    libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
 
+  LIBXSMM_UNUSED(i_vector_name);
   LIBXSMM_UNUSED(i_shuffle_operand);
 
   if (i_vec_instr != LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) {
