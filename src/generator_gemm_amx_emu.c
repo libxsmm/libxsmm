@@ -78,8 +78,8 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                            const unsigned int      i_tile_dst_reg_number,
                                            libxsmm_micro_kernel_config*  i_micro_kernel_config) {
 
-  unsigned int int im, in, l_k, l_n, i;
-  unsigned int  M, N;
+  unsigned int im, in, l_k, l_n, i;
+  unsigned int M, N;
   unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
   unsigned int tile_scratch_offset_A = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_0 * 32 * 32;
   unsigned int tile_scratch_offset_B = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_1 * 32 * 32;
