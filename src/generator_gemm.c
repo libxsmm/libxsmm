@@ -12,6 +12,7 @@
 #include "generator_gemm_common.h"
 #include "generator_gemm_sse3_avx_avx2_avx512.h"
 #include "generator_gemm_amx.h"
+#include "generator_gemm_amx_emu.h"
 #include "generator_gemm_aarch64.h"
 #include "generator_gemm_noarch.h"
 #include "libxsmm_main.h"
@@ -151,7 +152,17 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         (( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&
          ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
          ( l_xgemm_desc_mod.m % 32 == 0 ) && ( l_xgemm_desc_mod.k % 16 == 0 ))) {
-      libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_xgemm_desc_mod );
+      int emu_amx = 0;
+      const char *const env_emu_amx = getenv("EMULATE_AMX");
+      if ( 0 == env_emu_amx ) {
+      } else {
+        emu_amx = atoi(env_emu_amx);
+      }
+      if (emu_amx == 0) {
+        libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_xgemm_desc_mod );
+      } else {
+        libxsmm_generator_gemm_amx_kernel_emu( io_generated_code, &l_xgemm_desc_mod );    
+      }
     } else {
       libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( io_generated_code, &l_xgemm_desc_mod );
     }
