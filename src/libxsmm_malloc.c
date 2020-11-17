@@ -2204,37 +2204,8 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
         void *const code_ptr = (NULL != info->reloc ? ((void*)(((char*)info->reloc) + alignment)) : *memory);
         LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
         if (name && *name) { /* profiler support requested */
-          if (0 > libxsmm_verbosity) { /* avoid dump when only the profiler is enabled */
-            FILE* code_file = fopen(name, "rb");
-            int diff = 0;
-            if (NULL == code_file) { /* file does not exist */
-              code_file = fopen(name, "wb");
-              if (NULL != code_file) { /* dump byte-code into a file */
-                LIBXSMM_EXPECT(size, fwrite(code_ptr, 1, size, code_file));
-                LIBXSMM_EXPECT(EXIT_SUCCESS, fclose(code_file));
-              }
-            }
-            else { /* check existing file */
-              const char* check_a = (const char*)code_ptr;
-              char check_b[4096];
-              size_t rest = size;
-              do {
-                const size_t n = fread(check_b, 1, LIBXSMM_MIN(sizeof(check_b), rest), code_file);
-                diff += memcmp(check_a, check_b, LIBXSMM_MIN(sizeof(check_b), n));
-                check_a += n;
-                rest -= n;
-              } while (0 < rest && 0 == diff);
-              LIBXSMM_EXPECT(EXIT_SUCCESS, fclose(code_file));
-            }
-            fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", code_ptr, name);
-            if (0 != diff) { /* override existing dump and warn about erroneous condition */
-              fprintf(stderr, "LIBXSMM ERROR: %s is shared by different code!\n", name);
-              code_file = fopen(name, "wb");
-              if (NULL != code_file) { /* dump byte-code into a file */
-                LIBXSMM_EXPECT(size, fwrite(code_ptr, 1, size, code_file));
-                LIBXSMM_EXPECT(EXIT_SUCCESS, fclose(code_file));
-              }
-            }
+          if (0 > libxsmm_verbosity) { /* avoid dump if just the profiler is enabled */
+            LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_dump("LIBXSMM-JIT-DUMP", name, code_ptr, size, 1/*unique*/));
           }
 #if defined(LIBXSMM_VTUNE)
           if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {

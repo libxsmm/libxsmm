@@ -60,6 +60,9 @@
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
 # define LIBXSMM_ENABLE_DEREG
 #endif
+#if !defined(LIBXSMM_REGUSER_HASH) && 1
+# define LIBXSMM_REGUSER_HASH
+#endif
 #if !defined(LIBXSMM_REGLOCK_TRY) && 0
 # define LIBXSMM_REGLOCK_TRY
 #endif
@@ -1349,6 +1352,26 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             code.uval &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
             if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, &size, NULL/*flags*/, &buffer)) {
+              if (LIBXSMM_KERNEL_KIND_USER == LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].entry.kind)
+                /* dump user-data just like JIT'ted code */
+                && 0 > libxsmm_verbosity)
+              {
+                char name[16];
+                int nchar;
+#if defined(LIBXSMM_REGUSER_HASH)
+                const size_t descsize = LIBXSMM_DESCRIPTOR_ISBIG(registry_keys[i].entry.kind)
+                  ? LIBXSMM_DESCRIPTOR_MAXSIZE : LIBXSMM_DESCRIPTOR_SIGSIZE;
+                const unsigned int id = libxsmm_crc32(LIBXSMM_HASH_SEED, registry_keys[i].entry.user.desc,
+                  descsize - sizeof(libxsmm_descriptor_kind));
+                LIBXSMM_ASSERT(descsize > sizeof(libxsmm_descriptor_kind));
+#else
+                const unsigned int id = internal_statistic_num_user;
+#endif
+                nchar = LIBXSMM_SNPRINTF(name, sizeof(name), "%010u.user", id);
+                if (0 < nchar && (int)sizeof(name) > nchar) {
+                  LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_dump("LIBXSMM-USER-DUMP", name, code.ptr_const, size, 0/*unique*/));
+                }
+              }
 #if !defined(NDEBUG)
               registry[i].ptr = NULL;
 #endif
@@ -1661,6 +1684,55 @@ LIBXSMM_API_INLINE void internal_get_typesize_string(char buffer[4], int buffer_
   else {
     LIBXSMM_SNPRINTF(buffer, buffer_size, "%i", (int)typesize);
   }
+}
+
+
+LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const void* data, size_t size, int unique)
+{
+  int result;
+  if (NULL != name && '\0' != *name && NULL != data && 0 != size) {
+    FILE* data_file = fopen(name, "rb");
+    int diff = 0;
+    if (NULL == data_file) { /* file does not exist */
+      data_file = fopen(name, "wb");
+      if (NULL != data_file) { /* dump data into a file */
+        if (size != fwrite(data, 1, size, data_file)) result = EXIT_FAILURE;;
+        result = fclose(data_file);
+      }
+      else result = EXIT_FAILURE;
+    }
+    else if (0 != unique) { /* check existing file */
+      const char* check_a = (const char*)data;
+      char check_b[4096];
+      size_t rest = size;
+      do {
+        const size_t n = fread(check_b, 1, LIBXSMM_MIN(sizeof(check_b), rest), data_file);
+        diff += memcmp(check_a, check_b, LIBXSMM_MIN(sizeof(check_b), n));
+        check_a += n;
+        rest -= n;
+      } while (0 < rest && 0 == diff);
+      result = fclose(data_file);
+    }
+    else {
+      result = EXIT_SUCCESS;
+    }
+    if (EXIT_SUCCESS == result && NULL != title && '\0' != *title) {
+      fprintf(stderr, "%s(ptr:file) %p : %s\n", title, data, name);
+    }
+    if (0 != diff) { /* override existing dump and warn about erroneous condition */
+      fprintf(stderr, "LIBXSMM ERROR: %s is not a unique filename!\n", name);
+      data_file = fopen(name, "wb");
+      if (NULL != data_file) { /* dump data into a file */
+        LIBXSMM_EXPECT(size, fwrite(data, 1, size, data_file));
+        LIBXSMM_EXPECT(EXIT_SUCCESS, fclose(data_file));
+      }
+      result = EXIT_FAILURE;
+    }
+  }
+  else {
+    result = EXIT_FAILURE;
+  }
+  return result;
 }
 
 
