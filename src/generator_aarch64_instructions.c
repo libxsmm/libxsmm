@@ -13,8 +13,7 @@
 #include "generator_aarch64_instructions.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
-                                              const libxsmm_gp_reg_mapping* i_gp_reg_mapping ) {
+void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);
@@ -38,8 +37,7 @@ void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code*       io_g
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
-                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping ) {
+void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);

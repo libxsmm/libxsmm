@@ -187,11 +187,19 @@ include $(ROOTDIR)/Makefile.inc
 INSTRUMENT ?= $(TRACE)
 
 # JIT backend is enabled by default
-ifeq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
+ifeq (0,$(call qnum,$(PLATFORM))) # NaN
   JIT ?= 1
-else # disabled if platform is forced
-# enable: make PLATFORM=1 JIT=1
+else ifeq (1,$(PLATFORM))
+# JIT is disabled if platform is forced
+# enable with "PLATFORM=1 JIT=1" or "PLATFORM=2"
+  VTUNE := 0
+  MKL := 0
   JIT ?= 0
+else
+# imply JIT=1 if PLATFORM=2 (or higher)
+  VTUNE := 0
+  MKL := 0
+  JIT ?= 1
 endif
 
 # target library for a broad range of systems

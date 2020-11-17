@@ -208,21 +208,17 @@ typedef enum libxsmm_aarch64_asimd_tupletype {
  * Opens the inline assembly section / jit stream
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_gp_reg_mapping gp register mapping for initialization
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
-                                              const libxsmm_gp_reg_mapping* i_gp_reg_mapping );
+void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code );
 
 /**
  * Closes the inline assembly section / jit stream
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_gp_reg_mapping gp register mapping for clobbering
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
-                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping );
+void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code );
 
 /**
  * Generates ldp, stp, etc. instructions
