@@ -10,6 +10,7 @@
 ******************************************************************************/
 #include "generator_gemm_amx_microkernel.h"
 #include "generator_gemm_amx_microkernel_emu.h"
+#include "generator_gemm_amx_emu.h"
 #include "generator_mateltwise_transform_avx_avx512.h"
 #include "generator_x86_instructions.h"
 
@@ -27,7 +28,7 @@
 LIBXSMM_API_INTERN
 void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     int                                tile0,
     int                                tile1,
@@ -492,7 +493,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
 LIBXSMM_API_INTERN
 void single_tilestore_emu( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     int                                tile,
     int                                im_offset,

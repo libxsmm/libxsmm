@@ -78,16 +78,16 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                            const unsigned int      i_tile_dst_reg_number,
                                            libxsmm_micro_kernel_config*  i_micro_kernel_config) {
 
-  int im, in, l_k, l_n, i;
-  unsigned int  M, N, K = 32;
-  int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
-  int tile_scratch_offset_A = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_0 * 32 * 32;
-  int tile_scratch_offset_B = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_1 * 32 * 32;
-  int tile_scratch_offset_C = i_micro_kernel_config->emulation_scratch_offset + i_tile_dst_reg_number * 32 * 32;
-  int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+  unsigned int int im, in, l_k, l_n, i;
+  unsigned int  M, N;
+  unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
+  unsigned int tile_scratch_offset_A = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_0 * 32 * 32;
+  unsigned int tile_scratch_offset_B = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_1 * 32 * 32;
+  unsigned int tile_scratch_offset_C = i_micro_kernel_config->emulation_scratch_offset + i_tile_dst_reg_number * 32 * 32;
+  unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
   libxsmm_tile_config tc_conf = i_micro_kernel_config->tile_config;
-  int i_k_blocking = 32;
-  int i_n_blocking = 8;
+  unsigned int i_k_blocking = 32;
+  unsigned int i_n_blocking = 8;
 
   libxsmm_get_tileinfo( i_tile_dst_reg_number, &M, &N, &tc_conf);
 
@@ -306,12 +306,15 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
                                         const unsigned int            i_tile_reg_number,
                                         libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                         unsigned int                  is_stride_0 ) {
-  int ir, ic, _ic, i, ld;
-  unsigned int  n_rows, n_cols;
-  int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
-  int tile_scratch_offset = i_micro_kernel_config->emulation_scratch_offset + i_tile_reg_number * 32 * 32;
-  int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+  unsigned int ir, ic, _ic, i, ld;
+  unsigned int n_rows, n_cols;
+  unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
+  unsigned int tile_scratch_offset = i_micro_kernel_config->emulation_scratch_offset + i_tile_reg_number * 32 * 32;
+  unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
   libxsmm_tile_config tc_conf = i_micro_kernel_config->tile_config;
+
+  LIBXSMM_UNUSED(i_gp_reg_idx);
+  LIBXSMM_UNUSED(i_scale);
 
   if (i_tile_reg_number < 4) {
     ld = i_micro_kernel_config->ldc_emu;
@@ -737,10 +740,10 @@ void libxsmm_generator_gemm_store_C_amx_emu( libxsmm_generated_code*            
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_setup_fusion_infra_emu( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_amx_setup_fusion_infra_emu( libxsmm_generated_code*         io_generated_code,
                                                     const libxsmm_gemm_descriptor*      i_xgemm_desc,
                                                     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                                    libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+                                                    libxsmm_micro_kernel_config*        i_micro_kernel_config ) {
 
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
   unsigned int reserved_zmms      = 0;
@@ -1270,7 +1273,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_destroy_stack_frame_emu( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-    const libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+    libxsmm_micro_kernel_config*        i_micro_kernel_config ) {
   LIBXSMM_UNUSED(i_xgemm_desc);
   LIBXSMM_UNUSED(i_gp_reg_mapping);
 
