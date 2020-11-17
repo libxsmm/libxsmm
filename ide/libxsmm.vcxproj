@@ -52,6 +52,8 @@
     <ClInclude Include="..\include\libxsmm_sync.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
+    <ClInclude Include="..\src\generator_aarch64_instructions.h" />
+    <ClInclude Include="..\src\generator_gemm_aarch64.h" />
     <ClInclude Include="..\src\generator_gemm_amx.h" />
     <ClInclude Include="..\src\generator_gemm_amx_microkernel.h" />
     <ClInclude Include="..\src\generator_mateltwise_avx_avx512.h" />
@@ -122,7 +124,9 @@
     <ClInclude Include="..\src\template\libxsmm_version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\generator_aarch64_instructions.c" />
     <ClCompile Include="..\src\generator_common.c" />
+    <ClCompile Include="..\src\generator_gemm_aarch64.c" />
     <ClCompile Include="..\src\generator_gemm_amx.c" />
     <ClCompile Include="..\src\generator_gemm_amx_microkernel.c" />
     <ClCompile Include="..\src\generator_mateltwise.c" />
