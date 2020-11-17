@@ -1,10 +1,13 @@
 /******************************************************************************
 * Copyright (c) Friedrich Schiller University Jena - All rights reserved.     *
+*               Intel Corporation - All rights reserved                       *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
+******************************************************************************/
+/* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #include "generator_aarch64_instructions.h"
@@ -330,14 +333,24 @@ unsigned int libxsmm_generator_gemm_aarch64_update_m_blocking( libxsmm_micro_ker
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_micro_kernel_config*   io_micro_kernel_config,
+void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*        io_generated_code,
+                                                      libxsmm_micro_kernel_config*   io_micro_kernel_config,
                                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                       const unsigned int             i_arch,
                                                       unsigned int*                  o_n_N,
                                                       unsigned int*                  o_n_n) {
   unsigned int max_n_blocking = libxsmm_generator_gemm_aarch64_get_max_n_blocking( io_micro_kernel_config, i_xgemm_desc, i_arch );
   const unsigned int init_m_blocking = libxsmm_generator_gemm_aarch64_get_initial_m_blocking( io_micro_kernel_config, i_xgemm_desc, i_arch );
-  unsigned int init_m_blocks = LIBXSMM_UPDIV(init_m_blocking, io_micro_kernel_config->vector_length);
+  unsigned int init_m_blocks = 0;
+
+  /* check for valid values */
+  if ( max_n_blocking == 0 || init_m_blocking == 0 || io_micro_kernel_config->vector_length == 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
+  }
+
+  init_m_blocks = LIBXSMM_UPDIV(init_m_blocking, io_micro_kernel_config->vector_length);
+
   /* increment m register blocking in case of 2 remainder registers */
   if ( init_m_blocking % io_micro_kernel_config->vector_length == 3 ) {
     init_m_blocks++;
@@ -350,7 +363,7 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_micro_kernel_confi
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*        io_generated_code,
+void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*            io_generated_code,
                                                      const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                      const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -650,7 +663,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* compute n blocking, based on m blocking */
-  libxsmm_generator_gemm_aarch64_setup_n_blocking( &l_micro_kernel_config, i_xgemm_desc, io_generated_code->arch, l_n_N, l_n_n );
+  libxsmm_generator_gemm_aarch64_setup_n_blocking( io_generated_code, &l_micro_kernel_config, i_xgemm_desc, io_generated_code->arch, l_n_N, l_n_n );
 
   /* check that l_n_N1 is non-zero */
   if ( l_n_N[0] == 0 ) {
@@ -659,7 +672,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   }
 
   /* open asm */
-  libxsmm_aarch64_instruction_open_stream( io_generated_code, &l_gp_reg_mapping );
+  libxsmm_aarch64_instruction_open_stream( io_generated_code );
 
   /* apply n_blocking */
   while (l_n_done != (unsigned int)i_xgemm_desc->n) {
@@ -761,6 +774,6 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   }
 
   /* close asm */
-  libxsmm_aarch64_instruction_close_stream( io_generated_code, &l_gp_reg_mapping );
+  libxsmm_aarch64_instruction_close_stream( io_generated_code );
 }
 
