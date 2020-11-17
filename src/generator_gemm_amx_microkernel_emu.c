@@ -98,7 +98,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
       i_gp_reg_mapping->gp_reg_ldc,
       4,
       0,
-      tile0, i_micro_kernel_config);
+      tile0, i_micro_kernel_config, 0);
 
   if (tile1 >= 0) {
     libxsmm_x86_instruction_tile_move_emu( io_generated_code,
@@ -108,7 +108,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
         i_gp_reg_mapping->gp_reg_ldc,
         4,
         i_xgemm_desc->ldc * n_cols * i_micro_kernel_config->datatype_size,
-        tile1, i_micro_kernel_config);
+        tile1, i_micro_kernel_config, 0);
   }
 
   /* Fully unroll in N dimension  */
@@ -512,7 +512,7 @@ void single_tilestore_emu( libxsmm_generated_code*            io_generated_code,
         i_gp_reg_mapping->gp_reg_ldc,
         4,
         (in_offset * i_xgemm_desc->ldc + im_offset) * i_micro_kernel_config->datatype_size,
-        tile, i_micro_kernel_config);
+        tile, i_micro_kernel_config, 0);
   } else {
     if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       /* If we have some fusion, then we call the paired tilestore code generation with tile1 = -1 and we modify the tile1 manipulaiton  */
@@ -533,7 +533,7 @@ void single_tilestore_emu( libxsmm_generated_code*            io_generated_code,
             i_gp_reg_mapping->gp_reg_ldc,
             4,
             0,
-            tile, i_micro_kernel_config);
+            tile, i_micro_kernel_config, 0);
 
         if (i_micro_kernel_config->vnni_format_C == 0) {
           for (col = 0; col < (unsigned int)n_cols; col++) {
@@ -884,7 +884,7 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
           i_gp_reg_mapping->gp_reg_lda,
           4,
           _A_offsets[i] * i_micro_kernel_config->sparsity_factor_A,
-          _A_tile_id_load[i], i_micro_kernel_config);
+          _A_tile_id_load[i], i_micro_kernel_config, 0);
 
       if (i_brgemm_loop + pf_dist < i_xgemm_desc->c3) {
         n_CL_to_pf = 16;
@@ -905,7 +905,7 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
             i_gp_reg_mapping->gp_reg_ldb,
             4,
             _B_offsets[i],
-            _B_tile_id_load[i], i_micro_kernel_config);
+            _B_tile_id_load[i], i_micro_kernel_config, 0);
 
       if (i_micro_kernel_config->norm_to_normT_B_ext_buf == 1) {
         unsigned int _B_trans_offset = i_micro_kernel_config->B_offs_trans + i_micro_kernel_config->k_amx_microkernel * (i_xgemm_desc->ldb*2)  * i_micro_kernel_config->datatype_size + _in_offset_prefix_sums[_in_tileloads_B[i]] * (i_micro_kernel_config->datatype_size/2);

@@ -239,22 +239,22 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
         }
 
         for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-          /* Now add "0" and "1" accumulators */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                            io_generated_code->arch,
-                                            LIBXSMM_X86_INSTR_VADDPS,
-                                            i_micro_kernel_config->vector_name,
-                                            4 + l_n,
-                                            4 + l_n + i_n_blocking ,
-                                            4 + l_n + i_n_blocking );
-
           /* Load C fp32 value and add it to the computed inner product  */
           libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                         LIBXSMM_X86_INSTR_VMOVUPS,
                                         tile_scratch_gp,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         im * 4 + (in + l_n) * 64 + tile_scratch_offset_C,
-                                        'z', 4 + l_n, 0, 1, 0 );
+                                        'z', 0, 0, 1, 0 );
+
+
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                            io_generated_code->arch,
+                                            LIBXSMM_X86_INSTR_VADDPS,
+                                            i_micro_kernel_config->vector_name,
+                                            4 + l_n + i_n_blocking,
+                                            0 ,
+                                            4 + l_n + i_n_blocking);
 
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                             io_generated_code->arch,
@@ -262,7 +262,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                             i_micro_kernel_config->vector_name,
                                             4 + l_n,
                                             4 + l_n + i_n_blocking ,
-                                            4 + l_n + i_n_blocking );
+                                            4 + l_n);
 
           /* Store the result to C scratch tiles  */
           libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
@@ -270,7 +270,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                         tile_scratch_gp,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         im * 4 + (in + l_n) * 64 + tile_scratch_offset_C,
-                                        'z', 4 + l_n + i_n_blocking, 0, 1, 1 );
+                                        'z', 4 + l_n, 0, 1, 1 );
         }
       }
     }
@@ -304,8 +304,9 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
                                         const unsigned int            i_scale,
                                         const int                     i_displacement,
                                         const unsigned int            i_tile_reg_number,
-                                        libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
-  int ir, ic, i, ld;
+                                        libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                        unsigned int                  is_stride_0 ) {
+  int ir, ic, _ic, i, ld;
   unsigned int  n_rows, n_cols;
   int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
   int tile_scratch_offset = i_micro_kernel_config->emulation_scratch_offset + i_tile_reg_number * 32 * 32;
@@ -340,12 +341,13 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
   if ((i_tmove_instr == LIBXSMM_X86_INSTR_TILELOADD) || (i_tmove_instr == LIBXSMM_X86_INSTR_TILELOADDT1)) {
     for (ic = 0; ic < n_cols; ic++) {
       for (ir = 0; ir < n_rows; ir += 16) {
+        _ic = (is_stride_0 > 0) ? 0 : ic;
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_instruction_set,
             LIBXSMM_X86_INSTR_VMOVUPS,
             i_gp_reg_base,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            ic * ld * 4 + ir + i_displacement,
+            _ic * ld * 4 + ir + i_displacement,
             'z',
             ic, 0, 1, 0 );
 
@@ -496,7 +498,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
               i_gp_reg_mapping->gp_reg_ldc,
               4,
               (i_n_offset * i_xgemm_desc->ldc + i_m_offset) * i_micro_kernel_config->datatype_size,
-              im * n_tiles + in, i_micro_kernel_config);
+              im * n_tiles + in, i_micro_kernel_config, 0);
 
           i_n_offset += n_blocking_info->sizes[in];
         }
@@ -518,7 +520,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
               i_gp_reg_mapping->gp_reg_ldc,
               4,
               (i_n_offset * i_xgemm_desc->ldc + i_m_offset) * i_micro_kernel_config->datatype_size,
-              acc_id, i_micro_kernel_config);
+              acc_id, i_micro_kernel_config, 0);
 
           acc_id++;
           if (n_tiles == 1) {
@@ -551,7 +553,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
                 i_gp_reg_mapping->gp_reg_ldc,
                 4,
                 i_m_offset * i_micro_kernel_config->datatype_size,
-                acc_id, i_micro_kernel_config);
+                acc_id, i_micro_kernel_config, 1);
 
             acc_id++;
             i_n_offset += n_blocking_info->sizes[in];
@@ -641,7 +643,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
                 i_gp_reg_mapping->gp_reg_ldc,
                 4,
                 i_m_offset * i_micro_kernel_config->datatype_size,
-                acc_id, i_micro_kernel_config);
+                acc_id, i_micro_kernel_config, 1);
 
             acc_id++;
             i_n_offset += n_blocking_info->sizes[in];
@@ -676,7 +678,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
               LIBXSMM_X86_GP_REG_UNDEF,
               0,
               0,
-              acc_id, i_micro_kernel_config);
+              acc_id, i_micro_kernel_config, 0);
           acc_id++;
           if (n_tiles == 1) {
             acc_id++;

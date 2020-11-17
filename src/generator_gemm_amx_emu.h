@@ -35,7 +35,8 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
                                         const unsigned int            i_scale,
                                         const int                     i_displacement,
                                         const unsigned int            i_tile_reg_number,
-                                        libxsmm_micro_kernel_config*  i_micro_kernel_config );
+                                        libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                        unsigned int                  is_stride_0 );
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            io_generated_code,
     libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
