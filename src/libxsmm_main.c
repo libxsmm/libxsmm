@@ -79,6 +79,9 @@
 # define INTERNAL_DELIMS ";,:"
 #endif
 
+#if !defined(_WIN32) && !defined(__CYGWIN__)
+LIBXSMM_EXTERN int posix_memalign(void**, size_t, size_t);
+#endif
 #if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
 LIBXSMM_EXTERN int putenv(char*) LIBXSMM_THROW;
 #endif
@@ -285,6 +288,8 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
   void* result;
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_memalign(alignment, size);
+#elif defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__) /*C11*/
+  result = aligned_alloc(alignment, size);
 #elif (defined(_WIN32) || defined(__CYGWIN__))
   LIBXSMM_UNUSED(alignment);
   result = malloc(size);
