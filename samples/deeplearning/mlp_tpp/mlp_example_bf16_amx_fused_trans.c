@@ -101,6 +101,9 @@ typedef struct my_opt_config {
   libxsmm_blasint bc;
   libxsmm_blasint bk;
   libxsmm_blasint threads;
+  libxsmm_blasint opt_2d_blocking;
+  libxsmm_blasint opt_row_teams;
+  libxsmm_blasint opt_column_teams;
   float           lr;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
@@ -744,6 +747,16 @@ my_opt_config setup_my_opt(libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint
   res.bc = bc;
   res.bk = bk;
   res.threads = threads;
+  if (threads == 16) {
+    res.opt_2d_blocking = 1;
+    res.opt_row_teams = 2;
+    res.opt_column_teams = 8;
+  } else {
+    res.opt_2d_blocking = 0;
+    res.opt_row_teams = 1;
+    res.opt_column_teams = 1;
+  }
+
   res.lr = lr;
 
 #ifdef FUSE_WT_TRANS_SGD
@@ -1771,21 +1784,52 @@ void my_opt_exec( my_opt_config cfg, libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16*
   /* lazy barrier init */
   libxsmm_barrier_init( cfg.barrier, ltid );
 #if defined(__AVX512BW__)
-  for (ifm1ofm1 = sgd_thr_begin; ifm1ofm1 < sgd_thr_end; ++ifm1ofm1) {
-    ofm1 = ifm1ofm1 / nBlocksIFm;
-    ifm1 = ifm1ofm1 % nBlocksIFm;
-    dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
-    wt_bf16  = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, filter,         ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
-    wt_fp32  = (float*)             &LIBXSMM_VLA_ACCESS(4, master_filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
-    for ( i = 0; i < bc*bk; i+=16 ) {
-      __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( wt_fp32+i ), _mm512_mul_ps( vlr, _mm512_load_fil( (libxsmm_bfloat16*)dwt_bf16 + i ) ) );
-      _mm512_store_fil( wt_bf16+i, newfilter );
-      _mm512_storeu_ps( wt_fp32+i, newfilter );
+  if (cfg.opt_2d_blocking == 1) {
+    libxsmm_blasint row_teams = cfg.opt_row_teams;
+    libxsmm_blasint column_teams = cfg.opt_column_teams;
+    libxsmm_blasint my_col_id = ltid % column_teams;
+    libxsmm_blasint my_row_id = ltid / column_teams;
+    libxsmm_blasint im_tasks_per_thread = (nBlocksIFm + row_teams-1)/row_teams;
+    libxsmm_blasint in_tasks_per_thread = (nBlocksOFm + column_teams-1)/column_teams;
+    libxsmm_blasint my_im_start = LIBXSMM_MIN( my_row_id * im_tasks_per_thread, nBlocksIFm);
+    libxsmm_blasint my_im_end = LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, nBlocksIFm);
+    libxsmm_blasint my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksOFm);
+    libxsmm_blasint my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
+
+    for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+      for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
+        dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+        wt_bf16  = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, filter,         ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+        wt_fp32  = (float*)             &LIBXSMM_VLA_ACCESS(4, master_filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+        for ( i = 0; i < bc*bk; i+=16 ) {
+          __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( wt_fp32+i ), _mm512_mul_ps( vlr, _mm512_load_fil( (libxsmm_bfloat16*)dwt_bf16 + i ) ) );
+          _mm512_store_fil( wt_bf16+i, newfilter );
+          _mm512_storeu_ps( wt_fp32+i, newfilter );
+        }
+        if (perform_trans == 1) {
+          trans_param.in_ptr  = wt_bf16;
+          trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb);
+          cfg.vnni_to_vnniT_kernel(&trans_param);
+        }
+      }
     }
-    if (perform_trans == 1) {
-      trans_param.in_ptr  = wt_bf16;
-      trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb);
-      cfg.vnni_to_vnniT_kernel(&trans_param);
+  } else {
+    for (ifm1ofm1 = sgd_thr_begin; ifm1ofm1 < sgd_thr_end; ++ifm1ofm1) {
+      ofm1 = ifm1ofm1 / nBlocksIFm;
+      ifm1 = ifm1ofm1 % nBlocksIFm;
+      dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+      wt_bf16  = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, filter,         ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+      wt_fp32  = (float*)             &LIBXSMM_VLA_ACCESS(4, master_filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+      for ( i = 0; i < bc*bk; i+=16 ) {
+        __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( wt_fp32+i ), _mm512_mul_ps( vlr, _mm512_load_fil( (libxsmm_bfloat16*)dwt_bf16 + i ) ) );
+        _mm512_store_fil( wt_bf16+i, newfilter );
+        _mm512_storeu_ps( wt_fp32+i, newfilter );
+      }
+      if (perform_trans == 1) {
+        trans_param.in_ptr  = wt_bf16;
+        trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb);
+        cfg.vnni_to_vnniT_kernel(&trans_param);
+      }
     }
   }
 #else
@@ -1800,6 +1844,14 @@ void my_opt_exec( my_opt_config cfg, libxsmm_bfloat16* wt_ptr, float* master_wt_
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
 
+  const libxsmm_blasint bk = cfg.bk;
+  const libxsmm_blasint bc = cfg.bc;
+  libxsmm_blasint lpb = 2;
+  const libxsmm_blasint bc_lp = bc/lpb;
+  const libxsmm_blasint bk_lp = bk/lpb;
+  const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
+  const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
+
   /* number of tasks that could run in parallel for the filters */
   const libxsmm_blasint work = cfg.C * cfg.K;
   /* compute chunk size */
@@ -1812,20 +1864,51 @@ void my_opt_exec( my_opt_config cfg, libxsmm_bfloat16* wt_ptr, float* master_wt_
   libxsmm_barrier_init( cfg.barrier, ltid );
 
 #if defined(__AVX512BW__)
-  libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
-  __m512 vlr = _mm512_set1_ps( cfg.lr );
-  for ( i = thr_begin; i < thr_begin+iv; i+=16 ) {
-    __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( master_wt_ptr+i ), _mm512_mul_ps( vlr, _mm512_load_fil( delwt_ptr + i ) ) );
-    _mm512_store_fil( wt_ptr+i, newfilter );
-    _mm512_storeu_ps( master_wt_ptr+i, newfilter );
-  }
-  for ( i = thr_begin+iv; i < thr_end; ++i ) {
-    libxsmm_bfloat16_hp t1, t2;
-    t1.i[0] =0;
-    t1.i[1] = delwt_ptr[i];
-    master_wt_ptr[i] = master_wt_ptr[i] - (cfg.lr*t1.f);
-    t2.f = master_wt_ptr[i];
-    wt_ptr[i] = t2.i[1];
+    __m512 vlr = _mm512_set1_ps( cfg.lr );
+  if (cfg.opt_2d_blocking == 1) {
+    libxsmm_blasint row_teams = cfg.opt_row_teams;
+    libxsmm_blasint column_teams = cfg.opt_column_teams;
+    libxsmm_blasint my_col_id = ltid % column_teams;
+    libxsmm_blasint my_row_id = ltid / column_teams;
+    libxsmm_blasint im_tasks_per_thread = (nBlocksIFm + row_teams-1)/row_teams;
+    libxsmm_blasint in_tasks_per_thread = (nBlocksOFm + column_teams-1)/column_teams;
+    libxsmm_blasint my_im_start = LIBXSMM_MIN( my_row_id * im_tasks_per_thread, nBlocksIFm);
+    libxsmm_blasint my_im_end = LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, nBlocksIFm);
+    libxsmm_blasint my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksOFm);
+    libxsmm_blasint my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
+    LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, dfilter,        (libxsmm_bfloat16*)delwt_ptr, nBlocksIFm, bc_lp, bk, lpb);
+    LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, filter,         (libxsmm_bfloat16*)wt_ptr,    nBlocksIFm, bc_lp, bk, lpb);
+    LIBXSMM_VLA_DECL(4,       float,            master_filter,  (float*)master_wt_ptr,        nBlocksIFm, bc, bk);
+    libxsmm_bfloat16  *wt_bf16, *dwt_bf16;
+    float             *wt_fp32;
+
+    for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+      for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
+        dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+        wt_bf16  = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, filter,         ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+        wt_fp32  = (float*)             &LIBXSMM_VLA_ACCESS(4, master_filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+        for ( i = 0; i < bc*bk; i+=16 ) {
+          __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( wt_fp32+i ), _mm512_mul_ps( vlr, _mm512_load_fil( (libxsmm_bfloat16*)dwt_bf16 + i ) ) );
+          _mm512_store_fil( wt_bf16+i, newfilter );
+          _mm512_storeu_ps( wt_fp32+i, newfilter );
+        }
+      }
+    }
+  } else {
+    libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
+    for ( i = thr_begin; i < thr_begin+iv; i+=16 ) {
+      __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( master_wt_ptr+i ), _mm512_mul_ps( vlr, _mm512_load_fil( delwt_ptr + i ) ) );
+      _mm512_store_fil( wt_ptr+i, newfilter );
+      _mm512_storeu_ps( master_wt_ptr+i, newfilter );
+    }
+    for ( i = thr_begin+iv; i < thr_end; ++i ) {
+      libxsmm_bfloat16_hp t1, t2;
+      t1.i[0] =0;
+      t1.i[1] = delwt_ptr[i];
+      master_wt_ptr[i] = master_wt_ptr[i] - (cfg.lr*t1.f);
+      t2.f = master_wt_ptr[i];
+      wt_ptr[i] = t2.i[1];
+    }
   }
 #else
   for ( i = thr_begin; i < thr_end; ++i ) {
