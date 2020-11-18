@@ -100,13 +100,21 @@ double get_checksum(FTyp *buf, size_t sz)
 
 inline void *my_malloc(size_t sz, size_t align)
 {
-    return _mm_malloc(sz, align);
+#ifdef USE_LIBXSMM_JIT
+  return libxsmm_aligned_malloc(sz, align);
+#else
+  return _mm_malloc(sz, align);
+#endif
 }
 
 inline void my_free(void *p)
 {
     if(!p) return;
+#ifdef USE_LIBXSMM_JIT
+    libxsmm_free(p);
+#else
     _mm_free(p);
+#endif
 }
 
 #define DECL_VLA_PTR(type, name, dims, ptr) type (*name)dims = (type (*)dims)ptr
