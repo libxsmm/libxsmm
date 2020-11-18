@@ -637,7 +637,7 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
                                         const unsigned int            i_tile_reg_number,
                                         libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                         unsigned int                  is_stride_0 ) {
-  unsigned int ir, ic, _ic, i, ld;
+  unsigned int ir, ic, _ic, ld;
   unsigned int n_rows, n_cols;
   unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
   unsigned int tile_scratch_offset = i_micro_kernel_config->emulation_scratch_offset + i_tile_reg_number * 32 * 32;
