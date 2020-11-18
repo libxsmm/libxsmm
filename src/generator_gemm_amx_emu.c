@@ -566,6 +566,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
       libxsmm_generator_gemm_footer_generic_loop( io_generated_code, i_micro_kernel_config->io_loop_label_tracker, i_micro_kernel_config, k_loop_gp, 64, 32*i_k_blocking);
 
       for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+        /* Add the two partial inner products  */
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                           io_generated_code->arch,
                                           LIBXSMM_X86_INSTR_VADDPS,
@@ -575,20 +576,15 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                           4 + l_n + i_n_blocking);
 
         /* Load C fp32 value and add it to the computed inner product  */
-        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
-                                      LIBXSMM_X86_INSTR_VMOVUPS,
-                                      tile_scratch_gpb,
-                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                      im * 4 + l_n * 64 + tile_scratch_offset_C,
-                                      'z', 4 + l_n, 0, 1, 0 );
-
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                          io_generated_code->arch,
-                                          LIBXSMM_X86_INSTR_VADDPS,
-                                          i_micro_kernel_config->vector_name,
-                                          4 + l_n + i_n_blocking,
-                                          4 + l_n,
-                                          4 + l_n + i_n_blocking);
+        libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
+            LIBXSMM_X86_INSTR_VADDPS,
+            i_micro_kernel_config->vector_name,
+            tile_scratch_gpb,
+            LIBXSMM_X86_GP_REG_UNDEF, 0, im * 4 + l_n * 64 + tile_scratch_offset_C,
+            0,
+            4 + l_n + i_n_blocking,
+            4 + l_n + i_n_blocking,
+            0, 0, 0);
 
         /* Store the result to C scratch tiles  */
         libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
