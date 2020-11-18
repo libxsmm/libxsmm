@@ -505,6 +505,12 @@ typedef struct libxsmm_tile_config {
   unsigned char  tile7cols;
 } libxsmm_tile_config;
 
+/* structure for tracking local labels in assembly we don't allow overlapping loops */
+LIBXSMM_EXTERN_C typedef struct libxsmm_loop_label_tracker_struct {
+  unsigned int label_address[512];
+  unsigned int label_count;
+} libxsmm_loop_label_tracker;
+
 /* micro kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
@@ -593,6 +599,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int emulate_cvt2bf16fp32_vaux1;
   unsigned int mask_cvt_hi;
   unsigned int mask_cvt_lo;
+  libxsmm_loop_label_tracker *io_loop_label_tracker;
 
   /* Auxiliary fields to propagate kernel info */
   unsigned int k_amx_microkernel;
@@ -730,12 +737,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_kernel_config_struct {
   unsigned int vector_reg_count;
   char vector_name;
 } libxsmm_transpose_kernel_config;
-
-/* structure for tracking local labels in assembly we don't allow overlapping loops */
-LIBXSMM_EXTERN_C typedef struct libxsmm_loop_label_tracker_struct {
-  unsigned int label_address[512];
-  unsigned int label_count;
-} libxsmm_loop_label_tracker;
 
 /* structure to save jump properties to the same destination */
 LIBXSMM_EXTERN_C typedef struct libxsmm_jump_source_struct {

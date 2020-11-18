@@ -29,6 +29,27 @@
 #endif
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_header_generic_loop( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, cnt_reg, 0);
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_footer_generic_loop( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg,
+    unsigned int                       step,
+    unsigned int                       bound) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, cnt_reg, step);
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, cnt_reg, bound );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned int *n_cols, libxsmm_tile_config *tc) {
   switch (tile_id) {
     case 0:
@@ -372,9 +393,10 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                            const unsigned int      i_tile_dst_reg_number,
                                            libxsmm_micro_kernel_config*  i_micro_kernel_config) {
 
-  unsigned int im, in, l_k, l_n, i;
+  unsigned int im, in,l_n, i;
   unsigned int M, N;
-  unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
+  unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14;
+  unsigned int k_loop_gp       = LIBXSMM_X86_GP_REG_R15;
   unsigned int tile_scratch_offset_A = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_0 * 32 * 32;
   unsigned int tile_scratch_offset_B = i_micro_kernel_config->emulation_scratch_offset + i_tile_src_reg_number_1 * 32 * 32;
   unsigned int tile_scratch_offset_C = i_micro_kernel_config->emulation_scratch_offset + i_tile_dst_reg_number * 32 * 32;
@@ -385,6 +407,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
 
   libxsmm_get_tileinfo( i_tile_dst_reg_number, &M, &N, &tc_conf);
 
+  libxsmm_x86_instruction_push_reg( io_generated_code, k_loop_gp );
   libxsmm_x86_instruction_push_reg( io_generated_code, tile_scratch_gp );
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, tile_scratch_gp );
 
@@ -417,32 +440,76 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                                    4 + l_n + i_n_blocking, 4 + l_n + i_n_blocking, 4 + l_n + i_n_blocking );
         }
 
-        for (l_k = 0; l_k < i_k_blocking; l_k+=2) {
-          /* load A */
-          libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
-                                        LIBXSMM_X86_INSTR_VMOVUPS,
-                                        tile_scratch_gp,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        32 * l_k + im * 64 + tile_scratch_offset_A,
-                                        'z', 0, 0, 1, 0 );
+        libxsmm_generator_gemm_header_generic_loop(io_generated_code, i_micro_kernel_config->io_loop_label_tracker, i_micro_kernel_config, k_loop_gp );
 
-          /* we put "0" elements of A matrix into zmm3 */
-          libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-              io_generated_code->arch,
-              LIBXSMM_X86_INSTR_VPSLLD,
-              i_micro_kernel_config->vector_name,
-              0,
-              3,
-              LIBXSMM_X86_VEC_REG_UNDEF,
-              16);
+        /* load A */
+        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
+                                      LIBXSMM_X86_INSTR_VMOVUPS,
+                                      tile_scratch_gp,
+                                      k_loop_gp, 1,
+                                      im * 64 + tile_scratch_offset_A,
+                                      'z', 0, 0, 1, 0 );
 
-          /* we put "1" elements of A matrix into zmm0 */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SARQ, k_loop_gp, 4);
+
+        /* we put "0" elements of A matrix into zmm3 */
+        libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
+            io_generated_code->arch,
+            LIBXSMM_X86_INSTR_VPSLLD,
+            i_micro_kernel_config->vector_name,
+            0,
+            3,
+            LIBXSMM_X86_VEC_REG_UNDEF,
+            16);
+
+        /* we put "1" elements of A matrix into zmm0 */
+        libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
+            io_generated_code->arch,
+            LIBXSMM_X86_INSTR_VPSRAD,
+            i_micro_kernel_config->vector_name,
+            0,
+            0,
+            LIBXSMM_X86_VEC_REG_UNDEF,
+            16);
+
+        libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
+            io_generated_code->arch,
+            LIBXSMM_X86_INSTR_VPSLLD,
+            i_micro_kernel_config->vector_name,
+            0,
+            0,
+            LIBXSMM_X86_VEC_REG_UNDEF,
+            16);
+
+        for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+          unsigned int l_disp = (in + l_n) * 64 + tile_scratch_offset_B;
+          unsigned int l_b_reg = tile_scratch_gp;
+          unsigned int l_b_idx = k_loop_gp;
+          unsigned int l_scale = 1;
+
+          /* broadcast pair of B matrix values into zmm2 */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+                                            io_generated_code->arch,
+                                            LIBXSMM_X86_INSTR_VBROADCASTSS,
+                                            l_b_reg,
+                                            l_b_idx, l_scale,
+                                            l_disp,
+                                            i_micro_kernel_config->vector_name,
+                                            2, 0, 1, 0 );
+
+           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                     i_instruction_set,
+                                     LIBXSMM_X86_INSTR_VMOVDQU64,
+                                     i_micro_kernel_config->vector_name,
+                                     2, 1, LIBXSMM_X86_VEC_REG_UNDEF );
+
+          /* we put "1" elements of B matrix into zmm2 */
           libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
               io_generated_code->arch,
               LIBXSMM_X86_INSTR_VPSRAD,
               i_micro_kernel_config->vector_name,
-              0,
-              0,
+              2,
+              2,
               LIBXSMM_X86_VEC_REG_UNDEF,
               16);
 
@@ -450,113 +517,67 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
               io_generated_code->arch,
               LIBXSMM_X86_INSTR_VPSLLD,
               i_micro_kernel_config->vector_name,
-              0,
-              0,
+              2,
+              2,
               LIBXSMM_X86_VEC_REG_UNDEF,
               16);
 
-          for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-            unsigned int l_disp = l_k*2 + (in + l_n) * 64 + tile_scratch_offset_B;
-            unsigned int l_b_reg = tile_scratch_gp;
-            unsigned int l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
-            unsigned int l_scale = 0;
+          /* perform fma operations for multiplying "1" elements of A and B */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                            io_generated_code->arch,
+                                            LIBXSMM_X86_INSTR_VFMADD231PS,
+                                            i_micro_kernel_config->vector_name,
+                                            0,
+                                            2,
+                                            4 + l_n);
 
-            /* broadcast pair of B matrix values into zmm2 */
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                                              io_generated_code->arch,
-                                              LIBXSMM_X86_INSTR_VBROADCASTSS,
-                                              l_b_reg,
-                                              l_b_idx, l_scale,
-                                              l_disp,
-                                              i_micro_kernel_config->vector_name,
-                                              2, 0, 1, 0 );
+          /* we put "0" elements of B matrix into zmm2 */
+          libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
+              io_generated_code->arch,
+              LIBXSMM_X86_INSTR_VPSLLD,
+              i_micro_kernel_config->vector_name,
+              1,
+              1,
+              LIBXSMM_X86_VEC_REG_UNDEF,
+              16);
 
-            /* we put "1" elements of B matrix into zmm2 */
-            libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-                io_generated_code->arch,
-                LIBXSMM_X86_INSTR_VPSRAD,
-                i_micro_kernel_config->vector_name,
-                2,
-                2,
-                LIBXSMM_X86_VEC_REG_UNDEF,
-                16);
-
-            libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-                io_generated_code->arch,
-                LIBXSMM_X86_INSTR_VPSLLD,
-                i_micro_kernel_config->vector_name,
-                2,
-                2,
-                LIBXSMM_X86_VEC_REG_UNDEF,
-                16);
-
-            /* perform fma operations for multiplying "1" elements of A and B */
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              io_generated_code->arch,
-                                              LIBXSMM_X86_INSTR_VFMADD231PS,
-                                              i_micro_kernel_config->vector_name,
-                                              0,
-                                              2,
-                                              4 + l_n);
-
-            /* broadcast pair of B matrix values into zmm2 */
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                                              io_generated_code->arch,
-                                              LIBXSMM_X86_INSTR_VBROADCASTSS,
-                                              l_b_reg,
-                                              l_b_idx, l_scale,
-                                              l_disp,
-                                              i_micro_kernel_config->vector_name,
-                                              2, 0, 1, 0 );
-
-            /* we put "0" elements of B matrix into zmm2 */
-            libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-                io_generated_code->arch,
-                LIBXSMM_X86_INSTR_VPSLLD,
-                i_micro_kernel_config->vector_name,
-                2,
-                2,
-                LIBXSMM_X86_VEC_REG_UNDEF,
-                16);
-
-            /* perform fma operations for multiplying "0" elements of A and B */
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              io_generated_code->arch,
-                                              LIBXSMM_X86_INSTR_VFMADD231PS,
-                                              i_micro_kernel_config->vector_name,
-                                              3,
-                                              2,
-                                              4 + l_n + i_n_blocking );
-
-
-          }
+          /* perform fma operations for multiplying "0" elements of A and B */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                            io_generated_code->arch,
+                                            LIBXSMM_X86_INSTR_VFMADD231PS,
+                                            i_micro_kernel_config->vector_name,
+                                            3,
+                                            1,
+                                            4 + l_n + i_n_blocking );
         }
 
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SALQ, k_loop_gp, 4);
+        libxsmm_generator_gemm_footer_generic_loop( io_generated_code, i_micro_kernel_config->io_loop_label_tracker, i_micro_kernel_config, k_loop_gp, 64, 32*i_k_blocking);
+
         for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                            io_generated_code->arch,
+                                            LIBXSMM_X86_INSTR_VADDPS,
+                                            i_micro_kernel_config->vector_name,
+                                            4 + l_n + i_n_blocking,
+                                            4 + l_n,
+                                            4 + l_n + i_n_blocking);
+
           /* Load C fp32 value and add it to the computed inner product  */
           libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                         LIBXSMM_X86_INSTR_VMOVUPS,
                                         tile_scratch_gp,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         im * 4 + (in + l_n) * 64 + tile_scratch_offset_C,
-                                        'z', 0, 0, 1, 0 );
-
+                                        'z', 4 + l_n, 0, 1, 0 );
 
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                             io_generated_code->arch,
                                             LIBXSMM_X86_INSTR_VADDPS,
                                             i_micro_kernel_config->vector_name,
                                             4 + l_n + i_n_blocking,
-                                            0 ,
-                                            4 + l_n + i_n_blocking);
-
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                            io_generated_code->arch,
-                                            LIBXSMM_X86_INSTR_VADDPS,
-                                            i_micro_kernel_config->vector_name,
                                             4 + l_n,
-                                            4 + l_n + i_n_blocking ,
-                                            4 + l_n);
+                                            4 + l_n + i_n_blocking);
 
           /* Store the result to C scratch tiles  */
           libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
@@ -564,7 +585,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                         tile_scratch_gp,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         im * 4 + (in + l_n) * 64 + tile_scratch_offset_C,
-                                        'z', 4 + l_n, 0, 1, 1 );
+                                        'z', 4 + l_n + i_n_blocking, 0, 1, 1 );
         }
       }
     }
@@ -587,6 +608,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
   }
 
   libxsmm_x86_instruction_pop_reg( io_generated_code, tile_scratch_gp );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, k_loop_gp );
 }
 
 LIBXSMM_API_INTERN
@@ -1677,6 +1699,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code* io_generated
 
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
+  l_micro_kernel_config.io_loop_label_tracker = &l_loop_label_tracker;
 
   /* Here compute the 2D blocking info based on the M and N values  */
   /* For now super simple, rudimentary logic, to be generalized later on  */

@@ -122,5 +122,20 @@ void libxsmm_x86_instruction_vec_compute_mem_emu( libxsmm_generated_code* io_gen
                                               const unsigned int      i_vec_reg_number_1,
                                               libxsmm_micro_kernel_config*  i_micro_kernel_config );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_header_generic_loop( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_footer_generic_loop( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    unsigned int                       cnt_reg,
+    unsigned int                       step,
+    unsigned int                       bound);
+
 #endif /* GENERATOR_GEMM_AMX_EMU_H */
 
