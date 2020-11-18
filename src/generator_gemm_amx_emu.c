@@ -393,7 +393,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                            const unsigned int      i_tile_dst_reg_number,
                                            libxsmm_micro_kernel_config*  i_micro_kernel_config) {
 
-  unsigned int im, in,l_n, i;
+  unsigned int im, l_n, i;
   unsigned int M, N;
   unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14;
   unsigned int k_loop_gp       = LIBXSMM_X86_GP_REG_R15;
