@@ -21,6 +21,7 @@
 #include <time.h>
 #include <math.h>
 #include <unistd.h>
+#include <immintrin.h>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -460,7 +461,7 @@ int main(int argc, char * argv[]) {
   size_t bwdupdBytesMin = bwdupdBytesMinRd + bwdupdBytesMinWr;
   size_t bwdupdBytesMax = bwdupdBytesMaxRd + bwdupdBytesMaxWr;
 
-  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
+  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %ld, avgU = %ld, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
   //printf("Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f\n", fwdTime, bwdTime, updTime, t1-t0);
   my_printf("Per Iter  Time: %.3f ms  Total: %.3f ms\n", bwdupdTime/(iters), (t1-t0)/(iters));
   my_printf("Per Table Time: %.3f ms  Total: %.3f ms\n", bwdupdTime/(iters*LS), (t1-t0)/(iters*LS));
