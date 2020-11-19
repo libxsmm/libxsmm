@@ -1530,6 +1530,16 @@ if (cfg.upd_2d_blocking == 0) {
     }
   }
 #else
+#ifdef PRIVATE_DACT_TRANS
+  /* Accumulation of bias happens in f32 */
+  if (((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS)) {
+    for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
+      delbias_params.in_ptr     = &LIBXSMM_VLA_ACCESS(4,  doutput, 0, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+      delbias_params.out_ptr_0  = &LIBXSMM_VLA_ACCESS(2,  dbias, ofm1, 0, cfg.bk);
+      cfg.delbias_reduce_kernel(&delbias_params);
+    }
+  }
+#endif
 #endif
 
   if ( (pass & MY_PASS_BWD_W) == MY_PASS_BWD_W ) {
