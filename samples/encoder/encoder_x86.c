@@ -13,7 +13,7 @@
 
 #include <generator_x86_instructions.h>
 
-void test_evex_load_store( libxsmm_generated_code* mycode, unsigned int instr ) {
+void test_evex_load_store( libxsmm_generated_code* mycode, unsigned int instr, unsigned int load_only ) {
   unsigned int z;
   unsigned int b;
   unsigned int i;
@@ -26,8 +26,10 @@ void test_evex_load_store( libxsmm_generated_code* mycode, unsigned int instr ) 
       for (z = 0; z < 32; ++z ) {
         libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'z', z, 0, 0, 0 );
       }
-      for (z = 0; z < 32; ++z ) {
-        libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'z', z, 0, 0, 1 );
+      if ( load_only == 0 ) {
+        for (z = 0; z < 32; ++z ) {
+          libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'z', z, 0, 0, 1 );
+        }
       }
     }
   }
@@ -37,8 +39,10 @@ void test_evex_load_store( libxsmm_generated_code* mycode, unsigned int instr ) 
         for (z = 0; z < 32; ++z ) {
           libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, i, scale, displ[d], 'z', z, 0, 0, 0 );
         }
-        for (z = 0; z < 32; ++z ) {
-          libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, i, scale, displ[d], 'z', z, 0, 0, 1 );
+        if ( load_only == 0 ) {
+          for (z = 0; z < 32; ++z ) {
+            libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, i, scale, displ[d], 'z', z, 0, 0, 1 );
+          }
         }
       }
     }
@@ -335,10 +339,11 @@ int main( /*int argc, char* argv[]*/ ) {
 
   /* testing ld/st instructions */
 #if 0
-  test_evex_load_store( &mycode, LIBXSMM_X86_INSTR_VMOVUPS );
-  test_evex_load_store( &mycode, LIBXSMM_X86_INSTR_VPMOVUSWB );
-  test_evex_load_store( &mycode, LIBXSMM_X86_INSTR_VPMOVSWB );
-  test_evex_load_store( &mycode, LIBXSMM_X86_INSTR_VPMOVWB );
+  test_evex_load_store( &mycode, LIBXSMM_X86_INSTR_VMOVUPS, 0 );
+  test_evex_load_store( &mycode, LIBXSMM_X86_INSTR_VPMOVUSWB, 0 );
+  test_evex_load_store( &mycode, LIBXSMM_X86_INSTR_VPMOVSWB, 0 );
+  test_evex_load_store( &mycode, LIBXSMM_X86_INSTR_VPMOVWB, 0 );
+  test_evex_load_store( &mycode, LIBXSMM_X86_INSTR_VPBROADCASTI64X4, 1 );
 #endif
 
 #if 0
