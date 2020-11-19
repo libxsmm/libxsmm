@@ -24,12 +24,13 @@
 
 #define CHECK_L1
 #define OVERWRITE_DOUTPUT_BWDUPD
-#define FUSE_WT_TRANS_SGD
-#define FUSE_ACT_TRANS_FWD
-#define FUSE_DACT_TRANS_BWD
-//#define PRIVATE_WT_TRANS
-//#define PRIVATE_ACT_TRANS
-//#define PRIVATE_DACT_TRANS
+//#define FUSE_WT_TRANS_SGD
+//#define FUSE_ACT_TRANS_FWD
+//#define FUSE_DACT_TRANS_BWD
+#define PRIVATE_WT_TRANS
+#define PRIVATE_ACT_TRANS
+#define PRIVATE_DACT_TRANS
+#define FUSE_SGD_IN_BWD
 
 #ifdef FUSE_DACT_TRANS_BWD
 #ifndef OVERWRITE_DOUTPUT_BWDUPD
@@ -240,6 +241,7 @@ typedef struct my_fc_bwd_config {
   libxsmm_meltwfunction_transform       vnni_to_vnniT_kernel;
   libxsmm_meltwfunction_transform       norm_to_normT_kernel;
   libxsmm_meltwfunction_transform       norm_to_vnni_kernel;
+  float           lr;
 } my_fc_bwd_config;
 
 
@@ -441,8 +443,14 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   return res;
 }
 
+#ifdef FUSE_SGD_IN_BWD
 my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
-                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
+                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, float lr)
+#else
+my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
+                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type)
+#endif
+{
   my_fc_bwd_config res;
   const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_descriptor_blob blob;
@@ -482,6 +490,9 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.threads = threads;
   res.fuse_type = fuse_type;
   res.fuse_relu_bwd = 0;
+#ifdef FUSE_SGD_IN_BWD
+  res.lr = lr;
+#endif
 
   /* setup parallelization strategy */
   if (threads == 16) {
@@ -1072,45 +1083,69 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
 #ifdef FUSE_DACT_TRANS_BWD
 #ifdef FUSE_ACT_TRANS_FWD
 #ifdef FUSE_WT_TRANS_SGD
-void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, int perform_filter_tr, libxsmm_bfloat16* tr_in_act_ptr, int perform_input_transpose, libxsmm_bfloat16* tr_dout_act_ptr, libxsmm_bfloat16* tr_din_act_ptr)
 #else
-void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+#ifdef FUSE_SGD_IN_BWD
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+                     const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+                     libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, libxsmm_bfloat16* tr_in_act_ptr, int perform_input_transpose, libxsmm_bfloat16* tr_dout_act_ptr, libxsmm_bfloat16* tr_din_act_ptri, float *fil_master)
+#else
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, libxsmm_bfloat16* tr_in_act_ptr, int perform_input_transpose, libxsmm_bfloat16* tr_dout_act_ptr, libxsmm_bfloat16* tr_din_act_ptr)
 #endif
+#endif
 #else
 #ifdef FUSE_WT_TRANS_SGD
-void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, int perform_filter_tr, libxsmm_bfloat16* tr_dout_act_ptr, libxsmm_bfloat16* tr_din_act_ptr)
 #else
-void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+#ifdef FUSE_SGD_IN_BWD
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+                     const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+                     libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, libxsmm_bfloat16* tr_dout_act_ptr, libxsmm_bfloat16* tr_din_act_ptr, float *fil_master)
+#else
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, libxsmm_bfloat16* tr_dout_act_ptr, libxsmm_bfloat16* tr_din_act_ptr)
+#endif
 #endif
 #endif
 #else
 #ifdef FUSE_ACT_TRANS_FWD
 #ifdef FUSE_WT_TRANS_SGD
-void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, int perform_filter_tr, libxsmm_bfloat16* tr_in_act_ptr, int perform_input_transpose)
 #else
-void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+#ifdef FUSE_SGD_IN_BWD
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+                     const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+                     libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, libxsmm_bfloat16* tr_in_act_ptr, int perform_input_transpose, float *fil_master)
+#else
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, libxsmm_bfloat16* tr_in_act_ptr, int perform_input_transpose)
 #endif
+#endif
 #else
 #ifdef FUSE_WT_TRANS_SGD
-void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* tr_wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, int perform_filter_tr )
 #else
-void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+#ifdef FUSE_SGD_IN_BWD
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+                     const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+                     libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch, float *fil_master )
+#else
+void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch )
+#endif
 #endif
 #endif
 #endif
@@ -1256,7 +1291,7 @@ if (cfg.upd_2d_blocking == 0) {
     libxsmm_blasint ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0;
     libxsmm_blasint im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
 
-    LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, filter, (libxsmm_bfloat16*)wt_ptr, nBlocksIFm, bc_lp, bk, lpb);
+    LIBXSMM_VLA_DECL(5,  libxsmm_bfloat16, filter, (libxsmm_bfloat16*)wt_ptr, nBlocksIFm, bc_lp, bk, lpb);
     LIBXSMM_VLA_DECL(4,        libxsmm_bfloat16,    dinput, (libxsmm_bfloat16* )din_act_ptr, nBlocksIFm, bn, bc);
 #ifdef FUSE_DACT_TRANS_BWD
     LIBXSMM_VLA_DECL(5,        libxsmm_bfloat16, tr_dinput, (libxsmm_bfloat16* )tr_din_act_ptr, nBlocksMB, bn_lp, bc, lpb);
@@ -1526,6 +1561,9 @@ if (cfg.upd_2d_blocking == 0) {
 
     LIBXSMM_VLA_DECL(4, const libxsmm_bfloat16,  input,    (libxsmm_bfloat16* )in_act_ptr, nBlocksIFm, bn, bc);
     LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, dfilter,  (libxsmm_bfloat16*)dwt_ptr, nBlocksIFm, bc_lp, bk, lpb);
+#ifdef FUSE_SGD_IN_BWD
+    LIBXSMM_VLA_DECL(4,       float, filter_master,  (float*)fil_master, nBlocksIFm, bc, bk);
+#endif
 
     /* Set up tensors for transposing/scratch before vnni reformatting dfilter */
 #ifdef FUSE_ACT_TRANS_FWD
@@ -1539,6 +1577,11 @@ if (cfg.upd_2d_blocking == 0) {
     LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,  input_tr,    (libxsmm_bfloat16*)tr_inp_ptr, nBlocksMB, bc, bn);
     LIBXSMM_VLA_DECL(4,       float, dfilter_f32,  (float*)dfilter_f32_ptr, nBlocksIFm, bc, bk);
     LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dfilter_block,  (libxsmm_bfloat16*)dfilter_scratch, bk);
+#ifdef FUSE_SGD_IN_BWD
+    LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, filter, (libxsmm_bfloat16*)wt_ptr, nBlocksIFm, bc_lp, bk, lpb);
+    LIBXSMM_VLA_DECL(4, float, master_filter, (float*)fil_master, nBlocksIFm, bc, bk);
+    libxsmm_blasint i;
+#endif
 
     const libxsmm_blasint tr_out_work = nBlocksMB * nBlocksOFm;
     const libxsmm_blasint tr_out_chunksize = (tr_out_work % cfg.threads == 0) ? (tr_out_work / cfg.threads) : ((tr_out_work / cfg.threads) + 1);
@@ -1661,6 +1704,19 @@ if (cfg.upd_2d_blocking == 0) {
             cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
 #endif
 #endif
+#ifdef FUSE_SGD_IN_BWD
+          {
+            __m512 vlr = _mm512_set1_ps( cfg.lr );
+            libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+            libxsmm_bfloat16 *wt_bf16  = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, filter,         ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+            float *wt_fp32  = (float*)             &LIBXSMM_VLA_ACCESS(4, master_filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+            for ( i = 0; i < bc*bk; i+=16 ) {
+              __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( wt_fp32+i ), _mm512_mul_ps( vlr, _mm512_load_fil( (libxsmm_bfloat16*)dwt_bf16 + i ) ) );
+              _mm512_store_fil( wt_bf16+i, newfilter );
+              _mm512_storeu_ps( wt_fp32+i, newfilter );
+            }
+          }
+#endif
           }
         }
       } else {
@@ -1709,6 +1765,19 @@ if (cfg.upd_2d_blocking == 0) {
                 eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
                 eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
                 eltwise_kernel2(&eltwise_params);
+#ifdef FUSE_SGD_IN_BWD
+                {
+                  __m512 vlr = _mm512_set1_ps( cfg.lr );
+                  libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+                  libxsmm_bfloat16 *wt_bf16  = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, filter,         ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+                  float *wt_fp32  = (float*)             &LIBXSMM_VLA_ACCESS(4, master_filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+                  for ( i = 0; i < bc*bk; i+=16 ) {
+                    __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( wt_fp32+i ), _mm512_mul_ps( vlr, _mm512_load_fil( (libxsmm_bfloat16*)dwt_bf16 + i ) ) );
+                    _mm512_store_fil( wt_bf16+i, newfilter );
+                    _mm512_storeu_ps( wt_fp32+i, newfilter );
+                  }
+                }
+#endif
               }
             }
           }
@@ -1722,6 +1791,19 @@ if (cfg.upd_2d_blocking == 0) {
           ifm1 = ((ifm1ofm1 % Cck_work) % Cc_work) / ifm_subtasks;
           ifm2 = ((ifm1ofm1 % Cck_work) % Cc_work) % ifm_subtasks;
           cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+#ifdef FUSE_SGD_IN_BWD
+          {
+            __m512 vlr = _mm512_set1_ps( cfg.lr );
+            libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+            libxsmm_bfloat16 *wt_bf16  = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, filter,         ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+            float *wt_fp32  = (float*)             &LIBXSMM_VLA_ACCESS(4, master_filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+            for ( i = 0; i < bc*bk; i+=16 ) {
+              __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( wt_fp32+i ), _mm512_mul_ps( vlr, _mm512_load_fil( (libxsmm_bfloat16*)dwt_bf16 + i ) ) );
+              _mm512_store_fil( wt_bf16+i, newfilter );
+              _mm512_storeu_ps( wt_fp32+i, newfilter );
+            }
+          }
+#endif
         }
       } else {
         for (bfn = 0; bfn < BF; bfn++) {
@@ -1741,6 +1823,19 @@ if (cfg.upd_2d_blocking == 0) {
               eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk);
               eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
               eltwise_kernel2(&eltwise_params);
+#ifdef FUSE_SGD_IN_BWD
+              {
+                __m512 vlr = _mm512_set1_ps( cfg.lr );
+                libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+                libxsmm_bfloat16 *wt_bf16  = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, filter,         ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+                float *wt_fp32  = (float*)             &LIBXSMM_VLA_ACCESS(4, master_filter,  ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+                for ( i = 0; i < bc*bk; i+=16 ) {
+                  __m512 newfilter = _mm512_sub_ps( _mm512_loadu_ps( wt_fp32+i ), _mm512_mul_ps( vlr, _mm512_load_fil( (libxsmm_bfloat16*)dwt_bf16 + i ) ) );
+                  _mm512_store_fil( wt_bf16+i, newfilter );
+                  _mm512_storeu_ps( wt_fp32+i, newfilter );
+                }
+              }
+#endif
             }
           }
         }
@@ -2351,6 +2446,13 @@ int main(int argc, char* argv[])
 #endif
 #endif
 
+#ifdef FUSE_SGD_IN_BWD
+#ifndef PRIVATE_WT_TRANS
+  printf("We support SGD fusion in bwd pass only when private wt trans is enabled...\n");
+  return -1;
+#endif
+#endif
+
 #if defined(__SSE3__)
   _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
   _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
@@ -2505,11 +2607,17 @@ int main(int argc, char* argv[])
                                              (C[i  ] % bc == 0) ? bc : C[i  ],
                                              (C[i+1] % bk == 0) ? bk : C[i+1],
                                              nThreads, my_fuse);
-
+#ifdef FUSE_SGD_IN_BWD
+    my_fc_bwd[i] = setup_my_fc_bwd(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
+                                             (C[i  ] % bc == 0) ? bc : C[i  ],
+                                             (C[i+1] % bk == 0) ? bk : C[i+1],
+                                              nThreads, my_fuse, lr);
+#else
     my_fc_bwd[i] = setup_my_fc_bwd(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
                                              (C[i  ] % bc == 0) ? bc : C[i  ],
                                              (C[i+1] % bk == 0) ? bk : C[i+1],
                                               nThreads, my_fuse);
+#endif
 
     my_opt[i] = setup_my_opt( C[i], C[i+1], (C[i  ] % bc == 0) ? bc : C[i  ],
                                             (C[i+1] % bk == 0) ? bk : C[i+1],
@@ -2626,9 +2734,14 @@ int main(int argc, char* argv[])
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, (j == 0) ? 1 : 0 );
           my_opt_exec( my_opt[i], fil_libxsmm[i], tr_fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch, (j < iters-1) ? 1 : 0 );
 #else
+#ifdef FUSE_SGD_IN_BWD
+          my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+                          act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, fil_master[i] );
+#else
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
           my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
+#endif
 #endif
         }
 #ifdef FUSE_WT_TRANS_SGD
@@ -2636,9 +2749,14 @@ int main(int argc, char* argv[])
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, (j == 0) ? 1 : 0 );
         my_opt_exec( my_opt[0], fil_libxsmm[0], tr_fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch, (j < iters-1) ? 1 : 0 );
 #else
+#ifdef FUSE_SGD_IN_BWD
+        my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+                        act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, fil_master[0] );
+#else
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch );
         my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
+#endif
 #endif
       }
 #endif
@@ -2719,9 +2837,14 @@ int main(int argc, char* argv[])
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i-1], MY_PASS_BWD, 0, tid, scratch, (j == 0) ? 1: 0, tr_act_libxsmm[i], 0, tr_delact_libxsmm[(i+1)%2], tr_delact_libxsmm[i%2]);
           my_opt_exec( my_opt[i], fil_libxsmm[i], tr_fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch, (j < iters-1) ? 1 : 0 );
 #else
+#ifdef FUSE_SGD_IN_BWD
+          my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+                          act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i-1], MY_PASS_BWD, 0, tid, scratch, tr_act_libxsmm[i], 0, tr_delact_libxsmm[(i+1)%2], tr_delact_libxsmm[i%2], fil_master[i]);
+#else
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i-1], MY_PASS_BWD, 0, tid, scratch, tr_act_libxsmm[i], 0, tr_delact_libxsmm[(i+1)%2], tr_delact_libxsmm[i%2]);
           my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
+#endif
 #endif
 #else
 #ifdef FUSE_WT_TRANS_SGD
@@ -2729,9 +2852,14 @@ int main(int argc, char* argv[])
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i-1], MY_PASS_BWD, 0, tid, scratch, (j == 0) ? 1: 0, tr_delact_libxsmm[(i+1)%2], tr_delact_libxsmm[i%2]);
           my_opt_exec( my_opt[i], fil_libxsmm[i], tr_fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch, (j < iters-1) ? 1 : 0 );
 #else
+#ifdef FUSE_SGD_IN_BWD
+          my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+                          act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i-1], MY_PASS_BWD, 0, tid, scratch, tr_delact_libxsmm[(i+1)%2], tr_delact_libxsmm[i%2], fil_master[i]);
+#else
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i-1], MY_PASS_BWD, 0, tid, scratch, tr_delact_libxsmm[(i+1)%2], tr_delact_libxsmm[i%2]);
           my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
+#endif
 #endif
 #endif
 #else
@@ -2741,9 +2869,14 @@ int main(int argc, char* argv[])
                           act_libxsmm[i], delbias_libxsmm[i], (my_fc_bwd[i].fuse_relu_bwd > 0) ? relumask_libxsmm[i-1] : relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, (j == 0) ? 1: 0, tr_act_libxsmm[i], 0);
           my_opt_exec( my_opt[i], fil_libxsmm[i], tr_fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch, (j < iters-1) ? 1 : 0 );
 #else
+#ifdef FUSE_SGD_IN_BWD
+          my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+                          act_libxsmm[i], delbias_libxsmm[i], (my_fc_bwd[i].fuse_relu_bwd > 0) ? relumask_libxsmm[i-1] : relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, tr_act_libxsmm[i], 0, fil_master[i] );
+#else
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], (my_fc_bwd[i].fuse_relu_bwd > 0) ? relumask_libxsmm[i-1] : relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, tr_act_libxsmm[i], 0 );
           my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
+#endif
 #endif
 #else
 #ifdef FUSE_WT_TRANS_SGD
@@ -2751,9 +2884,14 @@ int main(int argc, char* argv[])
                           act_libxsmm[i], delbias_libxsmm[i], (my_fc_bwd[i].fuse_relu_bwd > 0) ? relumask_libxsmm[i-1] : relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, (j == 0) ? 1: 0);
           my_opt_exec( my_opt[i], fil_libxsmm[i], tr_fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch, (j < iters-1) ? 1 : 0 );
 #else
+#ifdef FUSE_SGD_IN_BWD
+          my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+                          act_libxsmm[i], delbias_libxsmm[i], (my_fc_bwd[i].fuse_relu_bwd > 0) ? relumask_libxsmm[i-1] : relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, fil_master[i] );
+#else
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], (my_fc_bwd[i].fuse_relu_bwd > 0) ? relumask_libxsmm[i-1] : relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
           my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
+#endif
 #endif
 #endif
 #endif
@@ -2765,9 +2903,14 @@ int main(int argc, char* argv[])
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, (j == 0) ? 1 : 0, tr_act_libxsmm[0], 1, tr_delact_libxsmm[(0+1)%2], tr_delact_libxsmm[0%2]);
         my_opt_exec( my_opt[0], fil_libxsmm[0], tr_fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch, (j < iters-1) ? 1 : 0);
 #else
+#ifdef FUSE_SGD_IN_BWD
+        my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+                        act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, tr_act_libxsmm[0], 1, tr_delact_libxsmm[(0+1)%2], tr_delact_libxsmm[0%2], fil_master[0]);
+#else
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, tr_act_libxsmm[0], 1, tr_delact_libxsmm[(0+1)%2], tr_delact_libxsmm[0%2]);
         my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
+#endif
 #endif
 #else
 #ifdef FUSE_WT_TRANS_SGD
@@ -2775,9 +2918,14 @@ int main(int argc, char* argv[])
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, (j == 0) ? 1 : 0, tr_delact_libxsmm[(0+1)%2], tr_delact_libxsmm[0%2]);
         my_opt_exec( my_opt[0], fil_libxsmm[0], tr_fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch, (j < iters-1) ? 1 : 0);
 #else
+#ifdef FUSE_SGD_IN_BWD
+        my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+                        act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, tr_delact_libxsmm[(0+1)%2], tr_delact_libxsmm[0%2], fil_master[0]);
+#else
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, tr_delact_libxsmm[(0+1)%2], tr_delact_libxsmm[0%2]);
         my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
+#endif
 #endif
 #endif
 #else
@@ -2787,9 +2935,14 @@ int main(int argc, char* argv[])
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, (j == 0) ? 1 : 0, tr_act_libxsmm[0], 1);
         my_opt_exec( my_opt[0], fil_libxsmm[0], tr_fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch, (j < iters-1) ? 1 : 0);
 #else
+#ifdef FUSE_SGD_IN_BWD
+        my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+                        act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, tr_act_libxsmm[0], 1, fil_master[0]);
+#else
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, tr_act_libxsmm[0], 1);
         my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
+#endif
 #endif
 #else
 #ifdef FUSE_WT_TRANS_SGD
@@ -2797,9 +2950,14 @@ int main(int argc, char* argv[])
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, (j == 0) ? 1 : 0);
         my_opt_exec( my_opt[0], fil_libxsmm[0], tr_fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch, (j < iters-1) ? 1 : 0);
 #else
+#ifdef FUSE_SGD_IN_BWD
+        my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+                        act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, fil_master[0] );
+#else
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch );
         my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
+#endif
 #endif
 #endif
 #endif
