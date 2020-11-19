@@ -29,10 +29,7 @@
 #define omp_get_thread_num() (0)
 #define omp_get_max_threads() (1)
 #endif
-
-#ifdef USE_LIBXSMM_JIT
 #include <libxsmm.h>
-#endif
 
 #ifdef USE_PERF_COUNTERS
 #include "counters.h"
@@ -100,21 +97,13 @@ double get_checksum(FTyp *buf, size_t sz)
 
 inline void *my_malloc(size_t sz, size_t align)
 {
-#ifdef USE_LIBXSMM_JIT
   return libxsmm_aligned_malloc(sz, align);
-#else
-  return _mm_malloc(sz, align);
-#endif
 }
 
 inline void my_free(void *p)
 {
     if(!p) return;
-#ifdef USE_LIBXSMM_JIT
     libxsmm_free(p);
-#else
-    _mm_free(p);
-#endif
 }
 
 #define DECL_VLA_PTR(type, name, dims, ptr) type (*name)dims = (type (*)dims)ptr
