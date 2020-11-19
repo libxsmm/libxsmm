@@ -303,6 +303,12 @@
     <ClInclude Include="..\src\generator_aarch64_instructions.h">
       <Filter>src\generator</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_amx_emu.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_amx_microkernel_emu.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -903,6 +909,12 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_aarch64_instructions.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_amx_emu.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_amx_microkernel_emu.c">
       <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>
