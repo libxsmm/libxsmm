@@ -1866,6 +1866,7 @@ void my_opt_exec( my_opt_config cfg, libxsmm_bfloat16* wt_ptr, float* master_wt_
 #if defined(__AVX512BW__)
     __m512 vlr = _mm512_set1_ps( cfg.lr );
   if (cfg.opt_2d_blocking == 1) {
+    libxsmm_blasint ofm1, ifm1;
     libxsmm_blasint row_teams = cfg.opt_row_teams;
     libxsmm_blasint column_teams = cfg.opt_column_teams;
     libxsmm_blasint my_col_id = ltid % column_teams;
