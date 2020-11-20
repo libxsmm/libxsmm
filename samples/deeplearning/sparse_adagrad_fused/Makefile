@@ -14,10 +14,12 @@ OMP = 1
 SYM = 1
 
 VERIFY_CORRECTNESS = 1
-USE_LIBXSMM_JIT = 0
+USE_LIBXSMM_JIT = 1
+USE_PERF_COUNTERS=1
 
 yesnolist += VERIFY_CORRECTNESS
 yesnolist += USE_LIBXSMM_JIT
+yesnolist += USE_PERF_COUNTERS
 #yesnolist +=
 
 DFLAGS += $(strip $(foreach var, $(yesnolist), $(if $(filter 1, $($(var))), -D$(var))))
