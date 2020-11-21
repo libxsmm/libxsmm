@@ -1862,7 +1862,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
   }
 
   /* check for currently support archs in this encoder */
-  if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
   } else {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_imm8: target error!\n");
     exit(-1);
@@ -2177,7 +2177,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
   }
 
   /* check for currently support archs in this encoder */
-  if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
   } else {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: target error!\n");
     exit(-1);
