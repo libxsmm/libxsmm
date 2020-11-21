@@ -1862,7 +1862,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
   }
 
   /* check for currently support archs in this encoder */
-  if ( (io_generated_code->arch == LIBXSMM_X86_AVX) || (io_generated_code->arch == LIBXSMM_X86_AVX2) || (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) ) {
+  if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
   } else {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_imm8: target error!\n");
     exit(-1);
@@ -1915,6 +1915,14 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     } else {
       l_reg_number_dst = i_reg_number_dst;
       l_reg_number_src0 = i_reg_number_src0;
+    }
+
+    /* on Knights platfrom, attempt to fallback to VEX for ymm and xmm VL,
+     * will error out in the encoder if instruction doesn't have VEX encoding
+     * Core will always take AVX512VL route */
+    if ( ( (io_generated_code->arch == LIBXSMM_X86_AVX512_MIC) || (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) &&
+         ( (i_vector_name == 'x') || (i_vector_name == 'y') ) && (l_encoder == 2) ) {
+      l_encoder = 1;
     }
 
     /* encode main instruction */
@@ -2169,7 +2177,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
   }
 
   /* check for currently support archs in this encoder */
-  if ( (io_generated_code->arch == LIBXSMM_X86_AVX) || (io_generated_code->arch == LIBXSMM_X86_AVX2) || (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) ) {
+  if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
   } else {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: target error!\n");
     exit(-1);
@@ -2211,6 +2219,14 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
       l_reg_number_src1 = 0;
     } else {
       l_reg_number_src1 = i_reg_number_src1;
+    }
+
+    /* on Knights platfrom, attempt to fallback to VEX for ymm and xmm VL,
+     * will error out in the encoder if instruction doesn't have VEX encoding
+     * Core will always take AVX512VL route */
+    if ( ( (io_generated_code->arch == LIBXSMM_X86_AVX512_MIC) || (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) &&
+         ( (i_vector_name == 'x') || (i_vector_name == 'y') ) && (l_encoder == 2) ) {
+      l_encoder = 1;
     }
 
     /* encode main instruction */
