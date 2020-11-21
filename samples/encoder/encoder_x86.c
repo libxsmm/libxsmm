@@ -163,6 +163,29 @@ void test_evex_compute_reg( libxsmm_generated_code* mycode, unsigned int instr )
   }
 }
 
+void test_evex_shuffle_reg( libxsmm_generated_code* mycode, unsigned int instr, unsigned int twoops, unsigned short imm ) {
+  unsigned int i;
+
+  if ( twoops == 0 ) {
+    for (i = 0; i < 32; ++i ) {
+      libxsmm_x86_instruction_vec_shuffle_reg ( mycode, mycode->arch, instr, 'z', i, 0, 0, imm );
+    }
+    for (i = 0; i < 32; ++i ) {
+      libxsmm_x86_instruction_vec_shuffle_reg ( mycode, mycode->arch, instr, 'z', 0, i, 0, imm );
+    }
+    for (i = 0; i < 32; ++i ) {
+      libxsmm_x86_instruction_vec_shuffle_reg ( mycode, mycode->arch, instr, 'z', 0, 0, i, imm );
+    }
+  } else {
+    for (i = 0; i < 32; ++i ) {
+      libxsmm_x86_instruction_vec_shuffle_reg ( mycode, mycode->arch, instr, 'z', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, imm );
+    }
+    for (i = 0; i < 32; ++i ) {
+      libxsmm_x86_instruction_vec_shuffle_reg ( mycode, mycode->arch, instr, 'z', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, imm );
+    }
+  }
+}
+
 void test_evex_compute_mem( libxsmm_generated_code* mycode, unsigned int instr ) {
   unsigned int z;
   unsigned int b;
@@ -407,6 +430,28 @@ int main( /*int argc, char* argv[]*/ ) {
 #if 0
   test_vex_mask_load_store( &mycode, LIBXSMM_X86_INSTR_VMASKMOVPD );
   test_vex_mask_load_store( &mycode, LIBXSMM_X86_INSTR_VMASKMOVPS );
+#endif
+
+  /* testing evex shuffle */
+#if 0
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VSHUFPS,       0, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VSHUFPD,       0, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VPSHUFB,       0, LIBXSMM_X86_IMM_UNDEF );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VPSHUFD,       1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VPSHUFHW,      1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VPSHUFLW,      1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VSHUFF32X4,    0, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VSHUFF64X2,    0, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VSHUFI32X4,    0, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VSHUFI64X2,    0, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VEXTRACTF32X4, 1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VEXTRACTF64X2, 1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VEXTRACTF32X8, 1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VEXTRACTF64X4, 1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VEXTRACTI32X4, 1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VEXTRACTI64X2, 1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VEXTRACTI32X8, 1, 0x00 );
+  test_evex_shuffle_reg( &mycode, LIBXSMM_X86_INSTR_VEXTRACTI64X4, 1, 0x00 );
 #endif
 
   /* testing prefetches */

@@ -1656,8 +1656,55 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
 {
   /* check if passed in a correct instruction */
   switch ( i_vec_instr ) {
+    /* shuffle,extract,blend,unpack,permute */
     case LIBXSMM_X86_INSTR_VSHUFPS:
     case LIBXSMM_X86_INSTR_VSHUFPD:
+    case LIBXSMM_X86_INSTR_VPSHUFB:
+    case LIBXSMM_X86_INSTR_VPSHUFD:
+    case LIBXSMM_X86_INSTR_VPSHUFHW:
+    case LIBXSMM_X86_INSTR_VPSHUFLW:
+    case LIBXSMM_X86_INSTR_VSHUFF32X4:
+    case LIBXSMM_X86_INSTR_VSHUFF64X2:
+    case LIBXSMM_X86_INSTR_VSHUFI32X4:
+    case LIBXSMM_X86_INSTR_VSHUFI64X2:
+    case LIBXSMM_X86_INSTR_VEXTRACTF128:
+    case LIBXSMM_X86_INSTR_VEXTRACTI128:
+    case LIBXSMM_X86_INSTR_VEXTRACTF32X4:
+    case LIBXSMM_X86_INSTR_VEXTRACTF64X2:
+    case LIBXSMM_X86_INSTR_VEXTRACTF32X8:
+    case LIBXSMM_X86_INSTR_VEXTRACTF64X4:
+    case LIBXSMM_X86_INSTR_VEXTRACTI32X4:
+    case LIBXSMM_X86_INSTR_VEXTRACTI64X2:
+    case LIBXSMM_X86_INSTR_VEXTRACTI32X8:
+    case LIBXSMM_X86_INSTR_VEXTRACTI64X4:
+    case LIBXSMM_X86_INSTR_VBLENDMPS:
+    case LIBXSMM_X86_INSTR_VBLENDMPD:
+    case LIBXSMM_X86_INSTR_VPBLENDMB:
+    case LIBXSMM_X86_INSTR_VPBLENDMW:
+    case LIBXSMM_X86_INSTR_VPBLENDMD:
+    case LIBXSMM_X86_INSTR_VPBLENDMQ:
+    case LIBXSMM_X86_INSTR_VEXPANDPD:
+    case LIBXSMM_X86_INSTR_VEXPANDPS:
+    case LIBXSMM_X86_INSTR_VPEXPANDQ:
+    case LIBXSMM_X86_INSTR_VPEXPANDD:
+    case LIBXSMM_X86_INSTR_VPEXPANDW:
+    case LIBXSMM_X86_INSTR_VPEXPANDB:
+    case LIBXSMM_X86_INSTR_VUNPCKLPD:
+    case LIBXSMM_X86_INSTR_VUNPCKLPS:
+    case LIBXSMM_X86_INSTR_VUNPCKHPD:
+    case LIBXSMM_X86_INSTR_VUNPCKHPS:
+    case LIBXSMM_X86_INSTR_VPUNPCKLWD:
+    case LIBXSMM_X86_INSTR_VPUNPCKHWD:
+    case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKHDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
+    case LIBXSMM_X86_INSTR_VPERM2F128:
+    case LIBXSMM_X86_INSTR_VPERMQ_I:
+    case LIBXSMM_X86_INSTR_VPERMD:
+    case LIBXSMM_X86_INSTR_VPERMT2W:
+    case LIBXSMM_X86_INSTR_VPERMT2B:
+    /* basic compute operations */
     case LIBXSMM_X86_INSTR_VFMADD132PS:
     case LIBXSMM_X86_INSTR_VFMADD132PD:
     case LIBXSMM_X86_INSTR_VFMADD213PS:
@@ -1682,7 +1729,6 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     case LIBXSMM_X86_INSTR_VFNMSUB213PD:
     case LIBXSMM_X86_INSTR_VFNMSUB231PS:
     case LIBXSMM_X86_INSTR_VFNMSUB231PD:
-    case LIBXSMM_X86_INSTR_VPERMW:
     case LIBXSMM_X86_INSTR_VFMADD132SD:
     case LIBXSMM_X86_INSTR_VFMADD213SD:
     case LIBXSMM_X86_INSTR_VFMADD231SD:
@@ -1732,10 +1778,6 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     case LIBXSMM_X86_INSTR_VPADDSW:
     case LIBXSMM_X86_INSTR_VPADDSB:
     case LIBXSMM_X86_INSTR_VPSUBD:
-    case LIBXSMM_X86_INSTR_VUNPCKLPD:
-    case LIBXSMM_X86_INSTR_VUNPCKLPS:
-    case LIBXSMM_X86_INSTR_VUNPCKHPD:
-    case LIBXSMM_X86_INSTR_VUNPCKHPS:
     case LIBXSMM_X86_INSTR_VPSRAVD:
     case LIBXSMM_X86_INSTR_VCVTDQ2PS:
     case LIBXSMM_X86_INSTR_VDIVPS:
@@ -1746,10 +1788,8 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     case LIBXSMM_X86_INSTR_VMAXPD:
     case LIBXSMM_X86_INSTR_VMAXPS:
     case LIBXSMM_X86_INSTR_VCVTPH2PS:
-    case LIBXSMM_X86_INSTR_VPERMD:
     case LIBXSMM_X86_INSTR_VPMOVDW:
     case LIBXSMM_X86_INSTR_VPORD:
-    case LIBXSMM_X86_INSTR_VPERMT2W:
     case LIBXSMM_X86_INSTR_VPMOVSXWD:
     case LIBXSMM_X86_INSTR_VPMOVDB:
     case LIBXSMM_X86_INSTR_VPMOVSDB:
@@ -1759,18 +1799,11 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     case LIBXSMM_X86_INSTR_VPMOVZXWD:
     case LIBXSMM_X86_INSTR_VPMOVSXBD:
     case LIBXSMM_X86_INSTR_VPMOVZXBD:
-    case LIBXSMM_X86_INSTR_VBLENDMPS:
-    case LIBXSMM_X86_INSTR_VBLENDMPD:
-    case LIBXSMM_X86_INSTR_VPBLENDMB:
-    case LIBXSMM_X86_INSTR_VPBLENDMW:
-    case LIBXSMM_X86_INSTR_VPBLENDMD:
-    case LIBXSMM_X86_INSTR_VPBLENDMQ:
     case LIBXSMM_X86_INSTR_VPMAXSD:
     case LIBXSMM_X86_INSTR_VPMINSD:
     case LIBXSMM_X86_INSTR_VPMOVUSWB:
     case LIBXSMM_X86_INSTR_VPMOVSWB:
     case LIBXSMM_X86_INSTR_VPMOVWB:
-    case LIBXSMM_X86_INSTR_VPERMT2B:
     case LIBXSMM_X86_INSTR_VPDPBUSD:
     case LIBXSMM_X86_INSTR_VPDPBUSDS:
     case LIBXSMM_X86_INSTR_VPDPWSSD:
@@ -1778,28 +1811,12 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     case LIBXSMM_X86_INSTR_VDPBF16PS:
     case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
     case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
-    case LIBXSMM_X86_INSTR_VEXPANDPD:
-    case LIBXSMM_X86_INSTR_VEXPANDPS:
-    case LIBXSMM_X86_INSTR_VPEXPANDQ:
-    case LIBXSMM_X86_INSTR_VPEXPANDD:
-    case LIBXSMM_X86_INSTR_VPEXPANDW:
-    case LIBXSMM_X86_INSTR_VPEXPANDB:
     case LIBXSMM_X86_INSTR_VRANGEPS:
     case LIBXSMM_X86_INSTR_VRANGEPD:
     case LIBXSMM_X86_INSTR_VRANGESS:
     case LIBXSMM_X86_INSTR_VRANGESD:
-    case LIBXSMM_X86_INSTR_VEXTRACTI64X4:
-    case LIBXSMM_X86_INSTR_VPUNPCKLWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKHWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
-    case LIBXSMM_X86_INSTR_VPERMQ_I:
-    case LIBXSMM_X86_INSTR_VSHUFI32X4:
     case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
     case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
-    case LIBXSMM_X86_INSTR_VSHUFB:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
@@ -1851,7 +1868,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
       if ( i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_imm8: In case of a 1 src operand instruciont (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_imm8: In case of a 1 src operand instruction (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
       l_reg_number_src1 = 0;
@@ -1914,8 +1931,55 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
 {
   /* check if passed in a correct instruction */
   switch ( i_vec_instr ) {
+    /* shuffle,extract,blend,unpack,permute */
     case LIBXSMM_X86_INSTR_VSHUFPS:
     case LIBXSMM_X86_INSTR_VSHUFPD:
+    case LIBXSMM_X86_INSTR_VPSHUFB:
+    case LIBXSMM_X86_INSTR_VPSHUFD:
+    case LIBXSMM_X86_INSTR_VPSHUFHW:
+    case LIBXSMM_X86_INSTR_VPSHUFLW:
+    case LIBXSMM_X86_INSTR_VSHUFF32X4:
+    case LIBXSMM_X86_INSTR_VSHUFF64X2:
+    case LIBXSMM_X86_INSTR_VSHUFI32X4:
+    case LIBXSMM_X86_INSTR_VSHUFI64X2:
+    case LIBXSMM_X86_INSTR_VEXTRACTF128:
+    case LIBXSMM_X86_INSTR_VEXTRACTI128:
+    case LIBXSMM_X86_INSTR_VEXTRACTF32X4:
+    case LIBXSMM_X86_INSTR_VEXTRACTF64X2:
+    case LIBXSMM_X86_INSTR_VEXTRACTF32X8:
+    case LIBXSMM_X86_INSTR_VEXTRACTF64X4:
+    case LIBXSMM_X86_INSTR_VEXTRACTI32X4:
+    case LIBXSMM_X86_INSTR_VEXTRACTI64X2:
+    case LIBXSMM_X86_INSTR_VEXTRACTI32X8:
+    case LIBXSMM_X86_INSTR_VEXTRACTI64X4:
+    case LIBXSMM_X86_INSTR_VBLENDMPS:
+    case LIBXSMM_X86_INSTR_VBLENDMPD:
+    case LIBXSMM_X86_INSTR_VPBLENDMB:
+    case LIBXSMM_X86_INSTR_VPBLENDMW:
+    case LIBXSMM_X86_INSTR_VPBLENDMD:
+    case LIBXSMM_X86_INSTR_VPBLENDMQ:
+    case LIBXSMM_X86_INSTR_VEXPANDPD:
+    case LIBXSMM_X86_INSTR_VEXPANDPS:
+    case LIBXSMM_X86_INSTR_VPEXPANDQ:
+    case LIBXSMM_X86_INSTR_VPEXPANDD:
+    case LIBXSMM_X86_INSTR_VPEXPANDW:
+    case LIBXSMM_X86_INSTR_VPEXPANDB:
+    case LIBXSMM_X86_INSTR_VUNPCKLPD:
+    case LIBXSMM_X86_INSTR_VUNPCKLPS:
+    case LIBXSMM_X86_INSTR_VUNPCKHPD:
+    case LIBXSMM_X86_INSTR_VUNPCKHPS:
+    case LIBXSMM_X86_INSTR_VPUNPCKLWD:
+    case LIBXSMM_X86_INSTR_VPUNPCKHWD:
+    case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKHDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
+    case LIBXSMM_X86_INSTR_VPERM2F128:
+    case LIBXSMM_X86_INSTR_VPERMQ_I:
+    case LIBXSMM_X86_INSTR_VPERMD:
+    case LIBXSMM_X86_INSTR_VPERMT2W:
+    case LIBXSMM_X86_INSTR_VPERMT2B:
+    /* basic compute operations */
     case LIBXSMM_X86_INSTR_VFMADD132PS:
     case LIBXSMM_X86_INSTR_VFMADD132PD:
     case LIBXSMM_X86_INSTR_VFMADD213PS:
@@ -1940,7 +2004,6 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VFNMSUB213PD:
     case LIBXSMM_X86_INSTR_VFNMSUB231PS:
     case LIBXSMM_X86_INSTR_VFNMSUB231PD:
-    case LIBXSMM_X86_INSTR_VPERMW:
     case LIBXSMM_X86_INSTR_VFMADD132SD:
     case LIBXSMM_X86_INSTR_VFMADD213SD:
     case LIBXSMM_X86_INSTR_VFMADD231SD:
@@ -1990,10 +2053,6 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPADDSW:
     case LIBXSMM_X86_INSTR_VPADDSB:
     case LIBXSMM_X86_INSTR_VPSUBD:
-    case LIBXSMM_X86_INSTR_VUNPCKLPD:
-    case LIBXSMM_X86_INSTR_VUNPCKLPS:
-    case LIBXSMM_X86_INSTR_VUNPCKHPD:
-    case LIBXSMM_X86_INSTR_VUNPCKHPS:
     case LIBXSMM_X86_INSTR_VPSRAVD:
     case LIBXSMM_X86_INSTR_VCVTDQ2PS:
     case LIBXSMM_X86_INSTR_VDIVPS:
@@ -2004,10 +2063,8 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VMAXPD:
     case LIBXSMM_X86_INSTR_VMAXPS:
     case LIBXSMM_X86_INSTR_VCVTPH2PS:
-    case LIBXSMM_X86_INSTR_VPERMD:
     case LIBXSMM_X86_INSTR_VPMOVDW:
     case LIBXSMM_X86_INSTR_VPORD:
-    case LIBXSMM_X86_INSTR_VPERMT2W:
     case LIBXSMM_X86_INSTR_VPMOVSXWD:
     case LIBXSMM_X86_INSTR_VPMOVDB:
     case LIBXSMM_X86_INSTR_VPMOVSDB:
@@ -2017,18 +2074,11 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPMOVZXWD:
     case LIBXSMM_X86_INSTR_VPMOVSXBD:
     case LIBXSMM_X86_INSTR_VPMOVZXBD:
-    case LIBXSMM_X86_INSTR_VBLENDMPS:
-    case LIBXSMM_X86_INSTR_VBLENDMPD:
-    case LIBXSMM_X86_INSTR_VPBLENDMB:
-    case LIBXSMM_X86_INSTR_VPBLENDMW:
-    case LIBXSMM_X86_INSTR_VPBLENDMD:
-    case LIBXSMM_X86_INSTR_VPBLENDMQ:
     case LIBXSMM_X86_INSTR_VPMAXSD:
     case LIBXSMM_X86_INSTR_VPMINSD:
     case LIBXSMM_X86_INSTR_VPMOVUSWB:
     case LIBXSMM_X86_INSTR_VPMOVSWB:
     case LIBXSMM_X86_INSTR_VPMOVWB:
-    case LIBXSMM_X86_INSTR_VPERMT2B:
     case LIBXSMM_X86_INSTR_VPDPBUSD:
     case LIBXSMM_X86_INSTR_VPDPBUSDS:
     case LIBXSMM_X86_INSTR_VPDPWSSD:
@@ -2036,28 +2086,12 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VDPBF16PS:
     case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
     case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
-    case LIBXSMM_X86_INSTR_VEXPANDPD:
-    case LIBXSMM_X86_INSTR_VEXPANDPS:
-    case LIBXSMM_X86_INSTR_VPEXPANDQ:
-    case LIBXSMM_X86_INSTR_VPEXPANDD:
-    case LIBXSMM_X86_INSTR_VPEXPANDW:
-    case LIBXSMM_X86_INSTR_VPEXPANDB:
     case LIBXSMM_X86_INSTR_VRANGEPS:
     case LIBXSMM_X86_INSTR_VRANGEPD:
     case LIBXSMM_X86_INSTR_VRANGESS:
     case LIBXSMM_X86_INSTR_VRANGESD:
-    case LIBXSMM_X86_INSTR_VEXTRACTI64X4:
-    case LIBXSMM_X86_INSTR_VPUNPCKLWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKHWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
-    case LIBXSMM_X86_INSTR_VPERMQ_I:
-    case LIBXSMM_X86_INSTR_VSHUFI32X4:
     case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
     case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
-    case LIBXSMM_X86_INSTR_VSHUFB:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
@@ -5631,43 +5665,16 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_0,
                                               const unsigned int      i_vec_reg_number_1,
                                               const unsigned int      i_vec_reg_number_2,
-                                              const unsigned int      i_shuffle_operand )
-{
-
-  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&
+                                              const unsigned int      i_shuffle_operand ) {
+  /* invoke streamlined encoder */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
        (i_vec_instr >= 16777216) &&
        (io_generated_code->code_type > 1 ) ) {
-
-#if 0
-     printf("DEBUG: Calling new encoder (3reg_imm8) within vec_shuffle_reg\n");
-#endif
-     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
-        /* Two operand instruction */
-        int l_reversal = (i_vec_instr >> 27) & 1;
-        if ( i_vec_reg_number_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
-           if ( i_vec_reg_number_1 != 0 ) {
-              /* It might otherwise be intentional */
-              printf("WARNING: You are using 2 operand instruction in vec_shuffle_reg but i_vec_reg_number_1 is %u not UNDEF\n", i_vec_reg_number_1);
-           }
-        }
-        if ( l_reversal ) {
-           libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
-                           i_vec_instr, i_vector_name,
-                           i_vec_reg_number_2, i_vec_reg_number_0,
-                           (unsigned char) i_shuffle_operand );
-        } else {
-           libxsmm_x86_instruction_vec_compute_2reg_imm8 ( io_generated_code,
-                            i_vec_instr, i_vector_name,
-                           i_vec_reg_number_0, i_vec_reg_number_2,
-                           (unsigned char) i_shuffle_operand );
-        }
-     } else {
-        libxsmm_x86_instruction_vec_compute_3reg_imm8 ( io_generated_code,
-          i_vec_instr, i_vector_name,
-          i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2,
-          (unsigned char) i_shuffle_operand );
-     }
-     return ;
+    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( io_generated_code,
+                                                         i_vec_instr, i_vector_name,
+                                                         i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2,
+                                                         0, 0, (unsigned short)i_shuffle_operand );
+    return;
   }
 
   /* @TODO add checks in debug mode */

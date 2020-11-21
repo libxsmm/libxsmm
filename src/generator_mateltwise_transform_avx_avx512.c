@@ -616,7 +616,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
       unsigned int  l_src_start = 0;
       unsigned int  l_dst_start = 0;
       libxsmm_generator_transform_Xway_byteshuffle_network_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                                   l_in_idx, l_shuffle_op, l_src_start, l_dst_start, LIBXSMM_X86_INSTR_VSHUFB, 8 );
+                                                                   l_in_idx, l_shuffle_op, l_src_start, l_dst_start, LIBXSMM_X86_INSTR_VPSHUFB, 8 );
     }
 
     /* second shuffle stage */
