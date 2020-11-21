@@ -417,6 +417,18 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VSCALEFPD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VSCALEFSS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VSCALEFSD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VCMPPS, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VCMPSS, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VCMPPD, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VCMPSD, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPB, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPUB, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPW, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPUW, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPD, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPUD, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPQ, 0, 0x00, 8 );
+  test_evex_compute_3reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPUQ, 0, 0x00, 8 );
 #endif
 
   /* testing compute mem-reg instructions */
@@ -453,6 +465,18 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VSCALEFPD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VSCALEFSS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VSCALEFSD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VCMPPS, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VCMPSS, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VCMPPD, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VCMPSD, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPB, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPUB, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPW, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPUW, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPD, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPUD, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPQ, 0, 0x00, 8 );
+  test_evex_compute_mem_2reg_general( &mycode, LIBXSMM_X86_INSTR_VPCMPUQ, 0, 0x00, 8 );
 #endif
 
   /* testing convert instructions */
