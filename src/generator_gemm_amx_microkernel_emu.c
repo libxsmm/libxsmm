@@ -386,7 +386,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
             i_micro_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VMOVDQU64,
             i_micro_kernel_config->vector_name,
-            prev_reg_0, copy_prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF );
+            prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF, copy_prev_reg_0 );
 
         libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
             i_micro_kernel_config->instruction_set,
@@ -456,7 +456,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
               i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VMOVDQU64,
               i_micro_kernel_config->vector_name,
-              prev_reg_0, copy_prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF );
+              prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF, copy_prev_reg_0 );
 
           libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
               i_micro_kernel_config->instruction_set,

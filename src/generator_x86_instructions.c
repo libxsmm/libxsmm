@@ -5126,31 +5126,6 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
   }
 }
 
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_mem_imm8( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const unsigned int      i_use_broadcast,
-                                              const unsigned int      i_gp_reg_base,
-                                              const unsigned int      i_gp_reg_idx,
-                                              const unsigned int      i_scale,
-                                              const int               i_displacement,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1,
-                                              const unsigned char     i_imm8 )
-{
-  unsigned char* code = (unsigned char *) io_generated_code->generated_code;
-  libxsmm_x86_instruction_vec_compute_mem ( io_generated_code,
-                                            i_instruction_set, i_vec_instr,
-                                            i_use_broadcast, i_gp_reg_base,
-                                            i_gp_reg_idx, i_scale,
-                                            i_displacement, i_vector_name,
-                                            i_vec_reg_number_0,
-                                            i_vec_reg_number_1 );
-  /* add imm byte */
-  code[io_generated_code->code_size++] = i_imm8;
-}
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_generated_code,

@@ -339,7 +339,7 @@ void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io
                                      i_micro_kernel_config->instruction_set,
                                      LIBXSMM_X86_INSTR_VMOVDQU64,
                                      i_micro_kernel_config->vector_name,
-                                     i_vec_reg_src_1, i_vec_reg_dst, LIBXSMM_X86_VEC_REG_UNDEF );
+                                     i_vec_reg_src_1, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_reg_dst );
 
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
@@ -512,7 +512,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                    i_instruction_set,
                                    LIBXSMM_X86_INSTR_VMOVDQU64,
                                    i_micro_kernel_config->vector_name,
-                                   2, 1, LIBXSMM_X86_VEC_REG_UNDEF );
+                                   2, LIBXSMM_X86_VEC_REG_UNDEF, 1 );
 
         /* we put "1" elements of B matrix into zmm2 */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,

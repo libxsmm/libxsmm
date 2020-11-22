@@ -92,7 +92,7 @@ void libxsmm_generator_gemm_tanh_ps_rational_78_avx512( libxsmm_generated_code* 
                                        i_micro_kernel_config->instruction_set,
                                        LIBXSMM_X86_INSTR_VMOVDQU64,
                                        i_micro_kernel_config->vector_name,
-                                       i_vec_x2, i_vec_nom, LIBXSMM_X86_VEC_REG_UNDEF );
+                                       i_vec_x2, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_nom );
 
    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                        i_micro_kernel_config->instruction_set,
@@ -146,7 +146,7 @@ void libxsmm_generator_gemm_tanh_ps_rational_78_avx512( libxsmm_generated_code* 
                                        i_micro_kernel_config->instruction_set,
                                        LIBXSMM_X86_INSTR_VRCP14PS,
                                        i_micro_kernel_config->vector_name,
-                                       i_vec_denom, i_vec_denom, LIBXSMM_X86_VEC_REG_UNDEF );
+                                       i_vec_denom, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_denom );
 
   libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                         i_micro_kernel_config->instruction_set,
@@ -526,7 +526,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
             i_micro_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VMOVDQU64,
             i_micro_kernel_config->vector_name,
-            prev_reg_0, copy_prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF );
+            prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF, copy_prev_reg_0 );
 
         libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
             i_micro_kernel_config->instruction_set,
@@ -596,7 +596,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
               i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VMOVDQU64,
               i_micro_kernel_config->vector_name,
-              prev_reg_0, copy_prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF );
+              prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF, copy_prev_reg_0 );
 
           libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
               i_micro_kernel_config->instruction_set,

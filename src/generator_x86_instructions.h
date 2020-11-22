@@ -287,37 +287,6 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_1 );
 
 /**
- * Generates vector instructions which require an immediate and mask. immediate is optional.
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_instruction_set requested instruction set to encode
- * @param i_vec_instr actual operation variant
- * @param i_use_broadcast if != 0 memory operand is interpreted as a scalar and broadcasted in fused fashion, only supported on AVX512
- * @param i_gp_reg_base base address register for memory broadcast
- * @param i_gp_reg_idx index register for memory broadcast, can be LIBXSMM_X86_GP_REG_UNDEF -> then regular displacement version is generated
- * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF
- * @param i_displacement displacement to SIB address
- * @param i_vector_name the vector register name prefix (z)
- * @param i_vec_reg_number_0 the first vector register number (zmm: 0-31)
- * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
- * @param i_immediate immediate just as the compare value for a compare instruction
- * @param i_mask_reg_number the mask register to read/write
- * @param i_use_zero_masking 0: merge masking; !=0: zero masking
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_mem_imm8 ( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const unsigned int      i_use_broadcast,
-                                              const unsigned int      i_gp_reg_base,
-                                              const unsigned int      i_gp_reg_idx,
-                                              const unsigned int      i_scale,
-                                              const int               i_displacement,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1,
-                                              const unsigned char     i_imm8 );
-/**
  *  Just like libxsmm_x86_instruction_vec_compute_mem except also has an immediate/shuffle parameter
  */
 LIBXSMM_API_INTERN

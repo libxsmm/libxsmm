@@ -1487,8 +1487,8 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
             LIBXSMM_X86_INSTR_VCVTDQ2PS,
             i_micro_kernel_config->vector_name,
             reg_X,
-            reg_X,
-            LIBXSMM_X86_VEC_REG_UNDEF);
+            LIBXSMM_X86_VEC_REG_UNDEF,
+            reg_X );
 
         /* Multiply with scaling factor */
         libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
