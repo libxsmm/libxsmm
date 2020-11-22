@@ -1800,183 +1800,36 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
 {
   LIBXSMM_UNUSED( i_instruction_set );
 
+  switch ( i_vec_instr ) {
+    case LIBXSMM_X86_INSTR_VCVTDQ2PS:
+    case LIBXSMM_X86_INSTR_VPMOVDB:
+    case LIBXSMM_X86_INSTR_VPMOVSDB:
+    case LIBXSMM_X86_INSTR_VPMOVUSDB:
+    case LIBXSMM_X86_INSTR_VCVTPS2DQ:
+    case LIBXSMM_X86_INSTR_VCVTPS2UDQ:
+    case LIBXSMM_X86_INSTR_VCVTPS2PD:
+    case LIBXSMM_X86_INSTR_VCVTPS2PH:
+    case LIBXSMM_X86_INSTR_VCVTPH2PS:
+    case LIBXSMM_X86_INSTR_VPMOVDW:
+    case LIBXSMM_X86_INSTR_VPMOVSXWD:
+    case LIBXSMM_X86_INSTR_VPMOVZXWD:
+    case LIBXSMM_X86_INSTR_VPMOVSXBD:
+    case LIBXSMM_X86_INSTR_VPMOVZXBD:
+    case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
+    case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_instruction_vec_compute_convert: Unknown instruction type: %u\n", i_vec_instr);
+      break;
+  }
   if ( io_generated_code->code_type > 1 ) {
     libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( io_generated_code,
                                                          i_vec_instr, i_vector_name,
                                                          i_vec_reg_src_0, i_vec_reg_src_1, i_vec_reg_dst,
                                                          0, 0, (unsigned short)i_shuffle_operand );
-#if 0
-  if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size; /* i = *loc; */
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_vec0 = 0, l_vec1 = 0, l_second = 0, l_third = 0, l_fourth = 0, l_fifth = 0;
-    int l_vecval0, l_vecgrp0, l_oddgrp0, l_2or3grp0;
-    int l_vecval1, l_vecgrp1, l_oddgrp1, l_2or3grp1;
-    /* these defines are for LIBXSMM_X86_INSTR_VCVTNE2PS2BF16 only: */
-    int l_vecvalsrc1, l_vecgrpsrc1, l_oddgrpsrc1, l_2or3grpsrc1;
-
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
-    }
-    switch ( i_vector_name ) {
-       case 'x':
-       case 'y':
-          fprintf(stderr, "libxsmm_instruction_vec_compute_convert: the highest register should be zmm: use that\n");
-          break;
-       case 'z':
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_vec_compute_convert: Unknown sort (%c) of fp registers\n",i_vector_name);
-          exit(-1);
-    }
-
-    if ( (i_vec_instr == LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) && (i_vec_reg_src_1 == LIBXSMM_X86_VEC_REG_UNDEF) ) {
-      fprintf(stderr, "libxsmm_instruction_vec_compute_convert: VCVTNE2PS2BF16 needs two inputs\n");
-      exit(-1);
-    }
-
-    switch ( i_vec_instr ) {
-       case LIBXSMM_X86_INSTR_VCVTDQ2PS:
-          l_fifth = 0x48;
-          l_vec0 = i_vec_reg_src_0;
-          l_vec1 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVDB:
-          l_second = 0x1;
-          l_third += 2;
-          l_fifth = 0x1E;
-          l_vec0 = i_vec_reg_dst;
-          l_vec1 = i_vec_reg_src_0;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVSDB:
-          l_second = 0x1;
-          l_third += 2;
-          l_fifth = 0xE;
-          l_vec0 = i_vec_reg_dst;
-          l_vec1 = i_vec_reg_src_0;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVUSDB:
-          l_second = 0x1;
-          l_third += 2;
-          l_fifth = -2;
-          l_vec0 = i_vec_reg_dst;
-          l_vec1 = i_vec_reg_src_0;
-          break;
-       case LIBXSMM_X86_INSTR_VCVTPS2DQ:
-          l_fifth = 0x48;
-          l_third += 1;
-          l_vec0 = i_vec_reg_src_0;
-          l_vec1 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VCVTPS2UDQ:
-          l_fifth = 0x66;
-          l_vec0 = i_vec_reg_src_0;
-          l_vec1 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VCVTPS2PD:
-          l_fifth = 0x47;
-          l_vec0 = i_vec_reg_src_0;
-          l_vec1 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VCVTPS2PH:
-          l_second = 2;
-          l_third = 1;
-          l_fifth = 0x0a;
-          l_vec1 = i_vec_reg_src_0;
-          l_vec0 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VCVTPH2PS:
-          l_second = 1;
-          l_third = 1;
-          l_vec0 = i_vec_reg_src_0;
-          l_vec1 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVDW:
-          l_second = 1;
-          l_third = 2;
-          l_fifth = 0x20;
-          l_vec1 = i_vec_reg_src_0;
-          l_vec0 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVSXWD:
-          l_second = 1;
-          l_third = 1;
-          l_fifth = 0x10;
-          l_vec0 = i_vec_reg_src_0;
-          l_vec1 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVZXWD:
-          l_second = 1;
-          l_third = 1;
-          l_fifth = 0x20;
-          l_vec0 = i_vec_reg_src_0;
-          l_vec1 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVSXBD:
-          l_second = 1;
-          l_third = 1;
-          l_fifth = 0xE;
-          l_vec0 = i_vec_reg_src_0;
-          l_vec1 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVZXBD:
-          l_second = 1;
-          l_third = 1;
-          l_fifth = 0x1E;
-          l_vec0 = i_vec_reg_src_0;
-          l_vec1 = i_vec_reg_dst;
-          break;
-       case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
-          l_second = 1;
-          l_third = 2;
-          l_fifth = 0x5F;
-          l_vec1 = i_vec_reg_dst;
-          l_vec0 = i_vec_reg_src_0;
-          break;
-       case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
-          l_vecvalsrc1 = i_vec_reg_src_1 % 8;
-          l_vecgrpsrc1 = i_vec_reg_src_1 / 8;
-          l_oddgrpsrc1 = ((l_vecgrpsrc1 % 2)==1);
-          l_2or3grpsrc1 = (l_vecgrpsrc1>=2);
-          l_second = 1;
-          l_third = 3 - l_oddgrpsrc1*0x40 - l_vecvalsrc1*0x08;
-          l_fourth = -l_2or3grpsrc1 * 0x08;
-          l_fifth = 0x5F;
-          l_vec1 = i_vec_reg_dst;
-          l_vec0 = i_vec_reg_src_0;
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_vec_compute_convert: Unknown instruction type: %u\n", i_vec_instr);
-          break;
-    }
-    l_vecval0 = l_vec0 % 8;
-    l_vecgrp0 = l_vec0 / 8;
-    l_oddgrp0 = ((l_vecgrp0 % 2)==1);
-    l_2or3grp0 = (l_vecgrp0>=2);
-    l_vecval1 = l_vec1 % 8;
-    l_vecgrp1 = l_vec1 / 8;
-    l_oddgrp1 = ((l_vecgrp1 % 2)==1);
-    l_2or3grp1 = (l_vecgrp1>=2);
-
-    buf[i++] = (unsigned char)(0x62);
-    buf[i++] = (unsigned char)(0xf1 + l_second - l_oddgrp0 * 0x20 - l_oddgrp1 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp1 * 0x10);
-    buf[i++] = (unsigned char)(0x7c + l_third);
-    buf[i++] = (unsigned char)(0x48 + l_fourth);
-    buf[i++] = (unsigned char)(0x13 + l_fifth);
-    buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval1*8);
-
-    if ( i_vec_instr == LIBXSMM_X86_INSTR_VCVTPS2PH )
-    {
-       buf[i++] = (unsigned char)(i_shuffle_operand);
-    }
-
-    io_generated_code->code_size = i;
-    /* *loc = i; */
-#endif
   } else {
+    fprintf(stderr, "libxsmm_instruction_vec_compute_convert: GENERAL ERROR!\n");
+    exit(-1);
   }
 }
 
