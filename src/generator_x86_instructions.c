@@ -2470,7 +2470,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
     int l_reg0, l_reg1; /* l_reg2;*/
     int l_vreg0   = i_vec_reg_number_0;
     int l_vreg1   = i_vec_reg_number_1;
-    int l_vreg2   = i_vec_reg_number_2;
+    /*int l_vreg2   = i_vec_reg_number_2;*/
     /*int l_fpadj=0;
     int l_fpadj2=0;
     int l_bytes=4;
@@ -3918,8 +3918,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
     /*unsigned int l_maxsize = 1024;*/
     /*int l_second=0, l_third=0, l_fourth=0, l_xreg=0;*/
     /*int l_reg0 = 0;*/
-    int l_vec_0 = i_vec_reg_number_0;
-    int l_vec_1 = i_vec_reg_number_1;
+    /*int l_vec_0 = i_vec_reg_number_0;*/
+    /*int l_vec_1 = i_vec_reg_number_1;*/
     /*int l_reg1   = l_vec_0;*/
     /*int l_reg2   = l_vec_1;*/
     int l_fpadj=0; /*l_place=0;*/
@@ -5472,7 +5472,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
     int l_vecgrp1 = i_vec_reg_number_1 / 8;
     /*int l_oddgrp1 = ((l_vecgrp1 % 2)==1);*/
     /*int l_vecval2 = i_vec_reg_number_2 % 8;*/
-    int l_vecgrp2 = i_vec_reg_number_2 / 8;
+    /*int l_vecgrp2 = i_vec_reg_number_2 / 8;*/
     /*int l_oddgrp2 = ((l_vecgrp2 % 2)==1);*/
     int l_extra_byte = 0;
     /*int l_extra_offset = 0;*/
