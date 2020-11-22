@@ -2187,7 +2187,112 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_0,
                                               const unsigned int      i_vec_reg_number_1 )
 {
-  /* @TODO add checks in debug mode */
+  switch ( i_vec_instr ) {
+    case LIBXSMM_X86_INSTR_VXORPD:
+    case LIBXSMM_X86_INSTR_VMULPD:
+    case LIBXSMM_X86_INSTR_VADDPD:
+    case LIBXSMM_X86_INSTR_VPANDD:
+    case LIBXSMM_X86_INSTR_VSUBPD:
+    case LIBXSMM_X86_INSTR_VMAXPD:
+    case LIBXSMM_X86_INSTR_VMAXPS:
+    case LIBXSMM_X86_INSTR_VPERMW:
+    case LIBXSMM_X86_INSTR_VPERMD:
+    case LIBXSMM_X86_INSTR_VFMADD231PD:
+    case LIBXSMM_X86_INSTR_VFMADD213PD:
+    case LIBXSMM_X86_INSTR_VFMADD132PD:
+    case LIBXSMM_X86_INSTR_VFMSUB231PD:
+    case LIBXSMM_X86_INSTR_VFMSUB213PD:
+    case LIBXSMM_X86_INSTR_VFMSUB132PD:
+    case LIBXSMM_X86_INSTR_VFNMADD231PD:
+    case LIBXSMM_X86_INSTR_VFNMADD213PD:
+    case LIBXSMM_X86_INSTR_VFNMADD132PD:
+    case LIBXSMM_X86_INSTR_VFNMSUB231PD:
+    case LIBXSMM_X86_INSTR_VFNMSUB213PD:
+    case LIBXSMM_X86_INSTR_VFNMSUB132PD:
+    case LIBXSMM_X86_INSTR_VFMADD231SD:
+    case LIBXSMM_X86_INSTR_VFMADD213SD:
+    case LIBXSMM_X86_INSTR_VFMADD132SD:
+    case LIBXSMM_X86_INSTR_VFMSUB231SD:
+    case LIBXSMM_X86_INSTR_VFMSUB213SD:
+    case LIBXSMM_X86_INSTR_VFMSUB132SD:
+    case LIBXSMM_X86_INSTR_VFNMADD231SD:
+    case LIBXSMM_X86_INSTR_VFNMADD213SD:
+    case LIBXSMM_X86_INSTR_VFNMADD132SD:
+    case LIBXSMM_X86_INSTR_VFNMSUB231SD:
+    case LIBXSMM_X86_INSTR_VFNMSUB213SD:
+    case LIBXSMM_X86_INSTR_VFNMSUB132SD:
+    case LIBXSMM_X86_INSTR_VFMADD231PS:
+    case LIBXSMM_X86_INSTR_VFMADD213PS:
+    case LIBXSMM_X86_INSTR_VFMADD132PS:
+    case LIBXSMM_X86_INSTR_VFMSUB231PS:
+    case LIBXSMM_X86_INSTR_VFMSUB213PS:
+    case LIBXSMM_X86_INSTR_VFMSUB132PS:
+    case LIBXSMM_X86_INSTR_VFNMADD231PS:
+    case LIBXSMM_X86_INSTR_VFNMADD213PS:
+    case LIBXSMM_X86_INSTR_VFNMADD132PS:
+    case LIBXSMM_X86_INSTR_VFNMSUB231PS:
+    case LIBXSMM_X86_INSTR_VFNMSUB213PS:
+    case LIBXSMM_X86_INSTR_VFNMSUB132PS:
+    case LIBXSMM_X86_INSTR_VFMADD231SS:
+    case LIBXSMM_X86_INSTR_VFMADD213SS:
+    case LIBXSMM_X86_INSTR_VFMADD132SS:
+    case LIBXSMM_X86_INSTR_VFMSUB231SS:
+    case LIBXSMM_X86_INSTR_VFMSUB213SS:
+    case LIBXSMM_X86_INSTR_VFMSUB132SS:
+    case LIBXSMM_X86_INSTR_VFNMADD231SS:
+    case LIBXSMM_X86_INSTR_VFNMADD213SS:
+    case LIBXSMM_X86_INSTR_VFNMADD132SS:
+    case LIBXSMM_X86_INSTR_VFNMSUB231SS:
+    case LIBXSMM_X86_INSTR_VFNMSUB213SS:
+    case LIBXSMM_X86_INSTR_VFNMSUB132SS:
+    case LIBXSMM_X86_INSTR_VMULSD:
+    case LIBXSMM_X86_INSTR_VADDSD:
+    case LIBXSMM_X86_INSTR_VSUBSD:
+    case LIBXSMM_X86_INSTR_VPMOVDW:
+    case LIBXSMM_X86_INSTR_VPMOVSXWD:
+    case LIBXSMM_X86_INSTR_VPMOVZXWD:
+    case LIBXSMM_X86_INSTR_VPMOVSXBD:
+    case LIBXSMM_X86_INSTR_VPMOVZXBD:
+    case LIBXSMM_X86_INSTR_VXORPS:
+    case LIBXSMM_X86_INSTR_VMULPS:
+    case LIBXSMM_X86_INSTR_VDPBF16PS:
+    case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
+    case LIBXSMM_X86_INSTR_VADDPS:
+    case LIBXSMM_X86_INSTR_VSUBPS:
+    case LIBXSMM_X86_INSTR_VMULSS:
+    case LIBXSMM_X86_INSTR_VADDSS:
+    case LIBXSMM_X86_INSTR_VSUBSS:
+    case LIBXSMM_X86_INSTR_VPXORD:
+    case LIBXSMM_X86_INSTR_VPORD:
+    case LIBXSMM_X86_INSTR_VPADDD:
+    case LIBXSMM_X86_INSTR_MOVAPD:
+    case LIBXSMM_X86_INSTR_MOVUPD:
+    case LIBXSMM_X86_INSTR_MOVAPS:
+    case LIBXSMM_X86_INSTR_MOVUPS:
+    case LIBXSMM_X86_INSTR_MOVSD:
+    case LIBXSMM_X86_INSTR_MOVSS:
+    case LIBXSMM_X86_INSTR_MOVDDUP:
+    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_XORPS:
+    case LIBXSMM_X86_INSTR_MULPD:
+    case LIBXSMM_X86_INSTR_MULSS:
+    case LIBXSMM_X86_INSTR_MULPS:
+    case LIBXSMM_X86_INSTR_ADDPD:
+    case LIBXSMM_X86_INSTR_ADDSS:
+    case LIBXSMM_X86_INSTR_ADDPS:
+    case LIBXSMM_X86_INSTR_ADDSD:
+    case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_SUBSS:
+    case LIBXSMM_X86_INSTR_SUBPS:
+    case LIBXSMM_X86_INSTR_SUBSD:
+    case LIBXSMM_X86_INSTR_MULSD:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown instruction type: %u\n", i_vec_instr);
+      exit(-1);
+      break;
+  }
+
   if ( (i_instruction_set < LIBXSMM_X86_AVX512)  &&
        (i_use_broadcast != 0) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_AVX512_BCAST );
@@ -2204,915 +2309,89 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
               (io_generated_code->code_type > 1 ) ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    /*int i = *loc;*/
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    /*unsigned int l_maxsize = 1024;*/
-    /*int l_second=0, l_third=0, l_fourth=0, l_xreg=0;*/
-    /*int l_reg0 = 0;*/
-    /*int l_vec_0 = i_vec_reg_number_0;*/
-    /*int l_vec_1 = i_vec_reg_number_1;*/
-    /*int l_reg1   = l_vec_0;*/
-    /*int l_reg2   = l_vec_1;*/
-    int l_fpadj=0; /*l_place=0;*/
-    /*int l_fpadj2=0;*/
-    /*int l_bytes=4;*/
-    /*int l_regi=0;*/
+    int l_fpadj=0;
     int l_forced_offset=0;
-    /*int l_sizereg=64;*/
     int l_scaleadj=0;
-    /*int l_sse3 = 0;*/
     int l_insert_extra_byte = 0;
-    /*int l_fma = 0;*/
-    /* int l_iregoff = 0; */
-
-    /*int l_broadcast = (int)i_use_broadcast;*/
 
     if ( l_maxsize - i < 20 )
     {
        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
-#if 0
-    switch ( i_vector_name ) {
-       case 'x':
-          l_sizereg = 1;
-          if ( l_broadcast == 1 )
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: broadcasts aren't enabled with xmm yet\n");
-             exit(-1);
-          }
-          break;
-       case 'y':
-          l_sizereg = 1;
-          if ( l_broadcast == 1 )
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: broadcasts aren't enabled with ymm yet\n");
-             exit(-1);
-          }
-          break;
-       case 'z':
-          l_bytes = 6;
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown sort (%c) of fp registers\n",i_vector_name);
-          exit(-1);
-    }
-    if ( l_broadcast == 1 ) l_sizereg = 8;
-#endif
     switch ( i_vec_instr ) {
-#if 0
-       case LIBXSMM_X86_INSTR_VXORPD:
-          l_fpadj = -2;
-          break;
-       case LIBXSMM_X86_INSTR_VMULPD:
-          break;
-       case LIBXSMM_X86_INSTR_VADDPD:
-          l_fpadj = -1;
-          break;
-       case LIBXSMM_X86_INSTR_VPANDD:
-          l_fpadj = 0x82;
-          l_fpadj2 = 0x80;
-          l_bytes = 6;
-          l_sizereg = 64;
-          if ( i_vector_name == 'x' )
-          {
-             l_fourth -= 0x40;
-             l_sizereg = 16;
-          } else if ( i_vector_name == 'y' )
-          {
-             l_fourth -= 0x20;
-             l_sizereg = 32;
-          }
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          break;
-       case LIBXSMM_X86_INSTR_VSUBPD:
-          l_fpadj = 3;
-          break;
-       case LIBXSMM_X86_INSTR_VMAXPD:
-          l_fpadj = 6;
-          break;
-       case LIBXSMM_X86_INSTR_VMAXPS:
-          l_fpadj = 6;
-          l_fpadj2 = -0x81;
-          if ( i_vector_name == 'x' )
-          {
-             l_fourth -= 0x40;
-             l_third += 0x80;
-          } else if ( i_vector_name == 'y' )
-          {
-             l_third -= 0x80;
-          }
-          break;
-       case LIBXSMM_X86_INSTR_VPERMW:
-          l_second += 0x01;
-          l_fpadj = 0x34;
-          l_bytes = 6;
-          if ( i_vector_name == 'x' )
-          {
-             l_fourth -= 0x40;
-             l_sizereg = 16;
-          } else if ( i_vector_name == 'y' )
-          {
-             l_fourth -= 0x20;
-             l_sizereg = 32;
-          }
-          break;
-       case LIBXSMM_X86_INSTR_VPERMD:
-          if (i_vector_name == 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vpermd not enabled with xmm\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_bytes = 5;
-          l_fma = 1;  /* This is not a FMA, but it does decode as one */
-          l_fpadj = -0x23;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD231PD:
-          l_fpadj  += 0x5f;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD213PD:
-          l_fpadj  += 0x4f;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD132PD:
-          l_fpadj  += 0x3f;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB231PD:
-          l_fpadj  += 0x61;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB213PD:
-          l_fpadj  += 0x51;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB132PD:
-          l_fpadj  += 0x41;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD231PD:
-          l_fpadj  += 0x63;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD213PD:
-          l_fpadj  += 0x53;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD132PD:
-          l_fpadj  += 0x43;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB231PD:
-          l_fpadj  += 0x65;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB213PD:
-          l_fpadj  += 0x55;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB132PD:
-          l_fpadj  += 0x45;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD231SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmadd231sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x60;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD213SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmadd213sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x50;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD132SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmadd132sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x40;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB231SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmsub231sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x62;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB213SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmsub213sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x52;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB132SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmsub132sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x42;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD231SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmadd231sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x64;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD213SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmadd213sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x54;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD132SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmadd132sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x44;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB231SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmsub231sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x66;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB213SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmsub213sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x56;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB132SD:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmsub132sd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x46;
-          l_fpadj2 += 0x80;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD231PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x5f;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD213PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x4f;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD132PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x3f;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB231PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x61;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB213PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x51;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB132PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x41;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD231PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x63;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD213PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x53;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD132PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x43;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB231PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x65;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB213PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x55;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB132PS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj  += 0x45;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD231SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmadd231ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x60;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD213SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmadd213ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x50;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMADD132SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmadd132ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x40;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB231SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmsub231ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x62;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB213SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmsub213ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x52;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFMSUB132SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfmsub132ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x42;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD231SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmadd231ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x64;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD213SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmadd213ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x54;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMADD132SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmadd132ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x44;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB231SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmsub231ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x66;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB213SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmsub213ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x56;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VFNMSUB132SS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vfnmsub132ss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  += 0x46;
-          l_fma = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VMULSD:
-          l_fpadj2 = 2;
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vmulsd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          break;
-       case LIBXSMM_X86_INSTR_VADDSD:
-          l_fpadj  =-1;
-          l_fpadj2 = 2;
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vaddsd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          break;
-       case LIBXSMM_X86_INSTR_VSUBSD:
-          l_fpadj  = 3;
-          l_fpadj2 = 2;
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vsubsd and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVDW:
-          if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
-          {
-             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
-             fprintf(stderr,"Please call VPMOVDW with vector reg 0 only. Use UNDEF with reg 1\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_bytes = 6;
-          l_second += 0x1;
-          l_fpadj2 -= 0x7F;
-          l_fpadj -= 0x26;
-          l_sizereg = 32;
-          if ( i_vector_name == 'x' )
-          {
-             l_fourth -= 0x40;
-             l_sizereg = 8 ;
-          } else if ( i_vector_name == 'y' )
-          {
-             l_fourth -= 0x20;
-             l_sizereg = 16;
-          }
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVSXWD:
-          if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
-          {
-             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
-             fprintf(stderr,"Please call VPMOVSXWD with vector reg 0 only. Use UNDEF with reg 1\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_bytes = 5;
-          l_second += 0x21;
-          l_fpadj -= 0x36;
-          l_fpadj2 -= 0x0;
-          l_sizereg = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVZXWD:
-          if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
-          {
-             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
-             fprintf(stderr,"Please call VPMOVZXWD with vector reg 0 only. Use UNDEF with reg 1\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_bytes = 5;
-          l_second += 0x21;
-          l_fpadj -= 0x26;
-          l_fpadj2 -= 0x0;
-          l_sizereg = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVSXBD:
-          if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
-          {
-             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
-             fprintf(stderr,"Please call VPMOVSXBD with vector reg 0 only. Use UNDEF with reg 1\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_bytes = 5;
-          l_second += 0x21;
-          l_fpadj -= 0x38;
-          l_fpadj2 -= 0x0;
-          l_sizereg = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VPMOVZXBD:
-          if ( l_vec_1 != LIBXSMM_X86_VEC_REG_UNDEF )
-          {
-             /*LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );*/
-             fprintf(stderr,"Please call VPMOVZXBD with vector reg 0 only. Use UNDEF with reg 1\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_bytes = 5;
-          l_second += 0x21;
-          l_fpadj -= 0x28;
-          l_fpadj2 -= 0x0;
-          l_sizereg = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VXORPS:
-          l_fpadj2 = -1;
-          l_fpadj = -2;
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          if ( i_vector_name == 'z' )
-          {
-             l_fpadj2 -= 0x80;
-          }
-          break;
-       case LIBXSMM_X86_INSTR_VMULPS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
-               l_fpadj2 = -1;
-          else l_fpadj2 = -0x81;
-          break;
-       case LIBXSMM_X86_INSTR_VDPBF16PS:
-          if ( i_vector_name=='y' ) { l_sizereg = 32; l_fourth -= 0x20; }
-          if ( i_vector_name=='x' ) { l_sizereg = 16; l_fourth -= 0x40; }
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
-               l_fpadj2 = -0x81;
-          else l_fpadj2 = -0x81;
-          l_fpadj2 += 0x02;
-          l_fpadj = -7;
-          l_second += 1;
-          l_bytes = 6;
-          break;
-       case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
-          if ( i_vector_name=='y' ) { l_sizereg = 32; l_fourth -= 0x20; }
-          if ( i_vector_name=='x' ) { l_sizereg = 16; l_fourth -= 0x40; }
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-#if 0 /* if/else branches with same outcome */
-          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
-#endif
-          {
-               l_fpadj2 = -0x81;
-          }
-#if 0 /* if/else branches with same outcome */
-          else l_fpadj2 = -0x81;
-#endif
-          l_fpadj2 += 0x02;
-          l_fpadj = 0x19;
-          l_second += 1;
-          l_third += 1;
-          l_bytes = 6;
-          break;
-       case LIBXSMM_X86_INSTR_VADDPS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
-               l_fpadj2 = -1;
-          else l_fpadj2 = -0x81;
-          l_fpadj = -1;
-          break;
-       case LIBXSMM_X86_INSTR_VSUBPS:
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
-               l_fpadj2 = -1;
-          else l_fpadj2 = -0x81;
-          l_fpadj = 3;
-          break;
-       case LIBXSMM_X86_INSTR_VMULSS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vmulss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj2 = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VADDSS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vaddss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  =-1;
-          l_fpadj2 = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VSUBSS:
-          if (i_vector_name != 'x')
-          {
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vsubss and ymm/zmm?\n");
-#ifdef ERROR_EXIT
-             exit(-1);
-#endif
-          }
-          l_fpadj  = 3;
-          l_fpadj2 = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VPXORD:
-          l_bytes = 6;
-          if ( i_vector_name == 'x' )
-          {
-             l_fourth -= 0x40;
-             l_sizereg = 16;
-          } else if ( i_vector_name == 'y' )
-          {
-             l_fourth -= 0x20;
-             l_sizereg = 32;
-          }
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj += 0x96;
-          l_fpadj2 += 0x80;
-          break;
-       case LIBXSMM_X86_INSTR_VPORD:
-          l_bytes = 6;
-          if ( i_vector_name == 'x' )
-          {
-             l_fourth -= 0x40;
-             l_sizereg = 16;
-          } else if ( i_vector_name == 'y' )
-          {
-             l_fourth -= 0x20;
-             l_sizereg = 32;
-          }
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          l_fpadj += 0x92;
-          l_fpadj2 += 0x80;
-          break;
-       case LIBXSMM_X86_INSTR_VPSRAVD:
-          l_second += 0x01;
-          l_fpadj  -= 0x13;
-          l_fpadj2 -= 0x80;
-#if 1
-          if ( i_vector_name == 'x' )
-          {
-             l_second += 0x20;
-             l_third -= 0x80;
-             l_fourth -= 0x40;
-             if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
-                l_second -= 0x20;
-             } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ) {
-                l_second -= 0x20;
-             }
-          } else if ( i_vector_name == 'y' )
-          {
-             l_second += 0x20;
-             l_third -= 0x80;
-             l_fourth -= 0x20;
-             if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
-                l_second -= 0x20;
-             } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ) {
-                l_second -= 0x20;
-             }
-          }
-#endif
-          l_bytes = 5;
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          break;
-       case LIBXSMM_X86_INSTR_VPADDD:
-          l_fpadj2 -= 0x80;
-          l_fpadj  += 0xA5;
-          if ( i_vector_name == 'x' )
-          {
-             /* Either l_third, l_second, or l_fpadj2 is off by 0x80 */
-             l_second += 0x80;
-             if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
-                l_second += 0x80;
-                l_third -= 0x80;
-             } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ) {
-                l_second += 0x80;
-                l_third -= 0x80;
-             }
-          } else if ( i_vector_name == 'y' )
-          {
-             l_second += 0x80;
-             if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
-                l_second += 0x80;
-                l_third -= 0x80;
-             } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ) {
-                l_second += 0x80;
-                l_third -= 0x80;
-             }
-          }
-          if ( l_broadcast == 1 ) l_sizereg = 4;
-          break;
-#endif
        case LIBXSMM_X86_INSTR_MOVAPD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x18;
           break;
        case LIBXSMM_X86_INSTR_MOVUPD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0x66;
           break;
        case LIBXSMM_X86_INSTR_MOVAPS:
-          /*l_sse3 = 1;*/
           l_fpadj = 0x18;
           break;
        case LIBXSMM_X86_INSTR_MOVUPS:
-          /*l_sse3 = 1;*/
           break;
        case LIBXSMM_X86_INSTR_MOVSD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0xF2;
           break;
        case LIBXSMM_X86_INSTR_MOVSS:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0xF3;
           break;
        case LIBXSMM_X86_INSTR_MOVDDUP:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0xF2;
           l_fpadj = 2;
           break;
        case LIBXSMM_X86_INSTR_XORPD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x47;
           break;
        case LIBXSMM_X86_INSTR_XORPS:
-          /*l_sse3 = 1;*/
           l_fpadj = 0x47;
           break;
        case LIBXSMM_X86_INSTR_MULPD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x49;
           break;
        case LIBXSMM_X86_INSTR_MULSS:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0xF3;
           l_fpadj = 0x49;
           break;
        case LIBXSMM_X86_INSTR_MULPS:
-          /*l_sse3 = 1;*/
           l_fpadj = 0x49;
           break;
        case LIBXSMM_X86_INSTR_ADDPD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x48;
           break;
        case LIBXSMM_X86_INSTR_ADDSS:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0xF3;
           l_fpadj = 0x48;
           break;
        case LIBXSMM_X86_INSTR_ADDPS:
-          /*l_sse3 = 1;*/
           l_fpadj = 0x48;
           break;
        case LIBXSMM_X86_INSTR_ADDSD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0xF2;
           l_fpadj = 0x48;
           break;
        case LIBXSMM_X86_INSTR_SUBPD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x4c;
           break;
        case LIBXSMM_X86_INSTR_SUBSS:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0xF3;
           l_fpadj = 0x4c;
           break;
        case LIBXSMM_X86_INSTR_SUBPS:
-          /*l_sse3 = 1;*/
           l_fpadj = 0x4c;
           break;
        case LIBXSMM_X86_INSTR_SUBSD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0xF2;
           l_fpadj = 0x4c;
           break;
        case LIBXSMM_X86_INSTR_MULSD:
-          /*l_sse3 = 1;*/
           l_insert_extra_byte = 0xF2;
           l_fpadj = 0x49;
           break;
@@ -3142,192 +2421,6 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
             exit(-1);
        }
     }
-#if 0
-    if ( !l_sse3 )
-    {
-
-    if ( l_fma == 1 ) {
-       /* Common code to all 48 FMAs. Pulling outside case statement */
-       if ( i_vector_name == 'z' )
-       {
-          l_second += 0x1;
-          l_fpadj2 -= 0x80;
-       } else {
-          l_second += 0x21;
-          if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
-             l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ) {
-             l_second -= 0x20;
-          }
-       }
-       l_bytes = 5;
-    }
-
-    if ( (i_gp_reg_base >= 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF) )
-    {
-       if ( l_bytes < 5 ) l_bytes = 5;
-       /* else l_iregoff -= 0x20; */
-    }
-    /* Note to Greg: i_gp_reg_idx is an unsigned number hence no comparison against negative range */
-    /* Note from Greg: Oh, I know. But I reused this code elsewhere in a case where i_gp_reg_idx being UNDEF was -1. I just wanted the same code to work in both places. */
-    if ( (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) /*|| (i_gp_reg_idx < 0)*/ || (i_gp_reg_idx > 15) ) {
-       l_regi = 0;
-    } else {
-       l_regi = i_gp_reg_idx;
-    }
-    if ( (i_gp_reg_idx  >= 8) && (i_gp_reg_idx <=15) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) )
-    {
-       if ( l_bytes < 5 ) l_bytes = 5;
-       l_regi = i_gp_reg_idx-8;
-    }
-    if ( i_vector_name == 'x' ) l_xreg = -4;
-    l_reg0 = i_gp_reg_base % 8;
-    l_reg1 = l_vec_0 % 8;
-    l_reg2 = l_vec_1 % 8;
-    if ( i_vec_instr == LIBXSMM_X86_INSTR_VPMOVDW )
-    {
-       /* We only have 1 vector register input */
-       l_reg2 = l_vec_0 % 8;
-       l_reg1 = 0;
-       l_vec_1 = l_vec_0;
-       l_vec_0 = 0;
-    }
-    if ( (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVSXWD) ||
-         (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVZXWD) ||
-         (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVSXBD) ||
-         (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVZXBD) )
-    {
-       /* We only have 1 vector register input */
-       l_reg2 = i_vec_reg_number_0 % 8;
-       l_reg1 = 0;
-       l_vec_0 = 0;
-       l_vec_1 = i_vec_reg_number_0;
-       if ((i_gp_reg_base >= 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF))
-       {
-          if ((i_gp_reg_idx < 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF))
-          {
-             l_second -= 0x20;
-          }
-       }
-       if ((i_gp_reg_base < 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF))
-       {
-          if ((i_gp_reg_idx >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF))
-          {
-             l_second -= 0x20;
-          }
-          if ( i_vector_name == 'z' )
-          {
-             if ( (i_gp_reg_idx < 8) || (i_gp_reg_idx==LIBXSMM_X86_GP_REG_UNDEF) )
-             {
-                l_second += 0xE0;
-             }
-             if ( (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVSXBD) ||
-                  (i_vec_instr == LIBXSMM_X86_INSTR_VPMOVZXBD) )
-             {
-                l_sizereg = 16;
-             } else {
-                l_sizereg = 32;
-             }
-          }
-       }
-       if ( i_vector_name == 'z' ) l_third -= 0x80;
-    }
-    if ( l_vec_0 >= 8 ) { l_third  -= 0x40; }
-    if ( l_vec_1 >= 8 ) { l_second -= 0x80; }
-    if ( (i_vector_name == 'z') || (l_vec_0 > 15) || (l_vec_1 > 15) )
-        l_bytes = 6;
-
-    if ( l_bytes == 4 )
-    {
-       buf[i++] = 0xc5;
-       buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_second + l_xreg + l_fpadj2);
-       buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       /* i_gp_reg_idx is an unsigned number hence no comparison against negative range */
-       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) /*&& (i_gp_reg_idx >=0)*/ && (i_gp_reg_idx <=15) )
-       {
-          buf[i++] = (unsigned char)(0x04 + 8*l_reg2);
-          l_place = i-1;
-          buf[i++] = (unsigned char)(0x00 + l_reg0 + l_scaleadj + 8*l_regi);
-       } else {
-          buf[i++] = (unsigned char)(0x00 + l_reg0 + 8*l_reg2);
-       }
-    } else if ( l_bytes == 5 )
-    {
-       if ((i_gp_reg_base >= 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF))
-       {
-          if ((i_gp_reg_idx >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF))
-          {
-             l_second -= 0x20;
-          }
-       }
-       if ((i_gp_reg_idx >= 8) && (i_gp_reg_idx <=15) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF))
-       {
-          l_second -= 0x20;
-       }
-       buf[i++] = 0xc4;
-       buf[i++] = (unsigned char)(0xc1 + l_second);
-       buf[i++] = (unsigned char)(0x7d - 8*l_reg1   + l_third + l_xreg + l_fpadj2);
-       buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       /* i_gp_reg_idx is an unsigned number hence no comparison against negative range */
-       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) /*&& (i_gp_reg_idx >=0)*/ && (i_gp_reg_idx <=15) )
-       {
-          buf[i++] = (unsigned char)(0x04 + 8*l_reg2);
-          l_place = i-1;
-          buf[i++] = (unsigned char)(0x00 + l_reg0 + l_scaleadj + 8*l_regi);
-       } else {
-          buf[i++] = (unsigned char)(0x00 + l_reg0 + 8*l_reg2);
-       }
-    } else if ( l_bytes == 6 )
-    {
-       if ( i_gp_reg_base >= 8 ) { l_second -= 0x20; }
-       if ( (i_gp_reg_idx >= 8) && (i_gp_reg_idx <= 15) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) )
-       {
-          l_second -= 0x40;
-       }
-
-/*     if ( l_vec_0 >= 8 ) { l_third -= 0x40; } */
-       if ( l_vec_0 >= 16) { l_third += 0x40; l_fourth -= 0x8; }
-       if ( l_vec_0 >= 24) { l_third -= 0x40; }
-
-/*     if ( l_vec_1 >= 8 ) { l_second -= 0x80; } */
-       if ( l_vec_1 >= 16) { l_second += 0x70; }
-       if ( l_vec_1 >= 24) { l_second -= 0x80; }
-       if ( l_broadcast == 1 ) { l_fourth += 0x10; }
-
-       buf[i++] = 0x62;
-       buf[i++] = (unsigned char)(0xf1 + l_second);
-       buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_fpadj2);
-       buf[i++] = (unsigned char)(0x48 + l_fourth);
-       buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       /* i_gp_reg_idx is an unsigned number hence no comparison against negative range */
-       if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) /*&& (i_gp_reg_idx >=0)*/ && (i_gp_reg_idx <=15) )
-       {
-          buf[i++] = (unsigned char)(0x04 + 8*l_reg2);
-          l_place = i-1;
-          buf[i++] = (unsigned char)(0x00 + l_reg0 + l_scaleadj + 8*l_regi);
-       } else {
-          buf[i++] = (unsigned char)(0x00 + l_reg0    + 8*l_reg2);
-       }
-    }
-    if (l_place==0) l_place = i - 1;
-    if ( ((i_gp_reg_base % 8) == LIBXSMM_X86_GP_REG_RSP) &&
-          (i_gp_reg_idx==LIBXSMM_X86_GP_REG_UNDEF) )
-    {
-       buf[i++] = 0x24;
-    }
-    if ( ( (i_gp_reg_base%8) == 5) && (i_displacement==0) )
-    {
-       /* Registers like rbp/r13 when you have a displacement of 0, we need
-          force the single byte of zero to appear. */
-       l_forced_offset = 1;
-    }
-
-    i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
-
-    io_generated_code->code_size = i;
-    /* *loc = i; */
-    } else /* SSE3 code */
-#endif
     {
         int l_vecgrp0 = 0;
         int l_vecval0 = i_vec_reg_number_0 % 8;
@@ -3377,7 +2470,6 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
             l_forced_offset = 1;
         }
         i += internal_x86_instructions_add_offset( l_place1, i, i_displacement, l_forced_offset, 1, buf );
-        /* *loc = i; */
         io_generated_code->code_size = i;
      }
   } else {
