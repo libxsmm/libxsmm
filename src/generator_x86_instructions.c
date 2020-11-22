@@ -876,6 +876,32 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 
      /* LD/ST insturction have only 2 operanads */
     if ( ((i_vmove_instr >> 28) & 0x3) == 2 ) {
+      unsigned int l_encoder; /* 2=EVEX, 1=VEX, 0=REX */
+      unsigned int l_encoder_arch = 2;
+      unsigned int l_encoder_instr = ((i_vmove_instr >> 30) & 0x03);
+
+      /* determine encoder */
+      if ( io_generated_code->arch < LIBXSMM_X86_AVX512) {
+        l_encoder_arch = 1;
+      } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+        l_encoder_arch = 0;
+      }
+      if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
+        l_encoder = 2;
+      } else if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
+        l_encoder = 1;
+      } else {
+        l_encoder = 0;
+      }
+
+      /* on Knights platfrom, attempt to fallback to VEX for ymm and xmm VL,
+       * will error out in the encoder if instruction doesn't have VEX encoding
+       * Core will always take AVX512VL route */
+      if ( ( (io_generated_code->arch == LIBXSMM_X86_AVX512_MIC) || (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) &&
+           ( (i_vector_name == 'x') || (i_vector_name == 'y') ) && (l_encoder == 2) ) {
+        l_encoder = 1;
+      }
+
       /* as LD/ST semantics have different op codes we need some fix-ups here */
       switch (i_vmove_instr) {
         case LIBXSMM_X86_INSTR_VMOVAPD:
@@ -919,12 +945,12 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           break;
       }
 
-      if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) {
+      if ( l_encoder == 2 ) {
         libxsmm_x86_instruction_evex_compute_2reg_mem ( io_generated_code,
               l_vmove_instr, 0, i_gp_reg_base,
               i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
               0, i_vec_reg_number_0, i_mask_reg_number, i_use_zero_masking );
-      } else {
+      } else if ( l_encoder == 1 ) {
         /* we need to patch some instructions for VEX from the EVEX header */
         switch (l_vmove_instr) {
           case LIBXSMM_X86_INSTR_VBROADCASTSD:
@@ -938,9 +964,13 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
               l_vmove_instr, i_gp_reg_base,
               i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
               0, i_vec_reg_number_0 );
+      } else {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_move: No REX encoder available!\n");
+        exit(-1);
       }
     } else {
       printf("WARNING: You are calling vec_move with a 3-operand instruction. Are you sure you know what you're doing?\n");
+      exit(-1);
     }
     return;
   } else if ( (io_generated_code->arch < LIBXSMM_X86_AVX) &&
