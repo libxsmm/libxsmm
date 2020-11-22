@@ -1037,11 +1037,11 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
           /* shift 16 bits to the left to generate valid FP32 numbers */
           libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
               i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSLLD,
+              LIBXSMM_X86_INSTR_VPSLLD_I,
               i_micro_kernel_config->vector_name,
               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-              l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
               LIBXSMM_X86_VEC_REG_UNDEF,
+              l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
               16);
         }
       }
@@ -1321,11 +1321,11 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         /* shift FP32 by 16bit to right */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VPSRAD,
+            LIBXSMM_X86_INSTR_VPSRAD_I,
             i_micro_kernel_config->vector_name,
             reg_X,
-            reg_X,
             LIBXSMM_X86_VEC_REG_UNDEF,
+            reg_X,
             16);
 
         /* shift FP32 by 16bit to right */

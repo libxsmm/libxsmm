@@ -466,30 +466,30 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
       /* we put "0" elements of A matrix into zmm3 */
       libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
           io_generated_code->arch,
-          LIBXSMM_X86_INSTR_VPSLLD,
+          LIBXSMM_X86_INSTR_VPSLLD_I,
           i_micro_kernel_config->vector_name,
           0,
-          3,
           LIBXSMM_X86_VEC_REG_UNDEF,
+          3,
           16);
 
       /* we put "1" elements of A matrix into zmm0 */
       libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
           io_generated_code->arch,
-          LIBXSMM_X86_INSTR_VPSRAD,
+          LIBXSMM_X86_INSTR_VPSRAD_I,
           i_micro_kernel_config->vector_name,
           0,
-          0,
           LIBXSMM_X86_VEC_REG_UNDEF,
+          0,
           16);
 
       libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
           io_generated_code->arch,
-          LIBXSMM_X86_INSTR_VPSLLD,
+          LIBXSMM_X86_INSTR_VPSLLD_I,
           i_micro_kernel_config->vector_name,
           0,
-          0,
           LIBXSMM_X86_VEC_REG_UNDEF,
+          0,
           16);
 
       for ( l_n = 0; l_n < i_n_blocking; l_n++) {
@@ -517,20 +517,20 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
         /* we put "1" elements of B matrix into zmm2 */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             io_generated_code->arch,
-            LIBXSMM_X86_INSTR_VPSRAD,
+            LIBXSMM_X86_INSTR_VPSRAD_I,
             i_micro_kernel_config->vector_name,
             2,
-            2,
             LIBXSMM_X86_VEC_REG_UNDEF,
+            2,
             16);
 
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             io_generated_code->arch,
-            LIBXSMM_X86_INSTR_VPSLLD,
+            LIBXSMM_X86_INSTR_VPSLLD_I,
             i_micro_kernel_config->vector_name,
             2,
-            2,
             LIBXSMM_X86_VEC_REG_UNDEF,
+            2,
             16);
 
         /* perform fma operations for multiplying "1" elements of A and B */
@@ -545,11 +545,11 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
         /* we put "0" elements of B matrix into zmm2 */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             io_generated_code->arch,
-            LIBXSMM_X86_INSTR_VPSLLD,
+            LIBXSMM_X86_INSTR_VPSLLD_I,
             i_micro_kernel_config->vector_name,
             1,
-            1,
             LIBXSMM_X86_VEC_REG_UNDEF,
+            1,
             16);
 
         /* perform fma operations for multiplying "0" elements of A and B */
@@ -782,11 +782,11 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
             /* shift 16 bits to the left to generate valid FP32 numbers */
             libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
                 i_micro_kernel_config->instruction_set,
-                LIBXSMM_X86_INSTR_VPSLLD,
+                LIBXSMM_X86_INSTR_VPSLLD_I,
                 i_micro_kernel_config->vector_name,
                 zmm_reg,
-                zmm_reg,
                 LIBXSMM_X86_VEC_REG_UNDEF,
+                zmm_reg,
                 16);
             /* Store upconverted column to GEMM scratch */
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -919,11 +919,11 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
           /* shift 16 bits to the left to generate valid FP32 numbers */
           libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
               i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSLLD,
+              LIBXSMM_X86_INSTR_VPSLLD_I,
               i_micro_kernel_config->vector_name,
               zmm_reg,
-              zmm_reg,
               LIBXSMM_X86_VEC_REG_UNDEF,
+              zmm_reg,
               16);
           /* Store upconverted column to GEMM scratch */
           libxsmm_x86_instruction_vec_move( io_generated_code,

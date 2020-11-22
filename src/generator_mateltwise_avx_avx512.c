@@ -1013,11 +1013,11 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
           /* shift FP32 by 16bit to right */
           libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
               i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSRAD,
+              LIBXSMM_X86_INSTR_VPSRAD_I,
               i_micro_kernel_config->vector_name,
               reg_0,
-              reg_0,
               LIBXSMM_X86_VEC_REG_UNDEF,
+              reg_0,
               16);
           /* store 16 bit values into lower portion of reg_0 */
           libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
@@ -1252,11 +1252,11 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
         /* shift 16 bits to the left to generate valid FP32 numbers */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VPSLLD,
+            LIBXSMM_X86_INSTR_VPSLLD_I,
             i_micro_kernel_config->vector_name,
             vreg0,
-            vreg0,
             LIBXSMM_X86_VEC_REG_UNDEF,
+            vreg0,
             16);
 
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -1287,11 +1287,11 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
           /* shift 16 bits to the left to generate valid FP32 numbers */
           libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
               i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSLLD,
+              LIBXSMM_X86_INSTR_VPSLLD_I,
               i_micro_kernel_config->vector_name,
               vreg1,
-              vreg1,
               LIBXSMM_X86_VEC_REG_UNDEF,
+              vreg1,
               16);
 
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -5685,11 +5685,11 @@ void libxsmm_generator_copy_avx512_microkernel( libxsmm_generated_code*         
         /* shift 16 bits to the left to generate valid FP32 numbers */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VPSLLD,
+            LIBXSMM_X86_INSTR_VPSLLD_I,
             i_micro_kernel_config->vector_name,
             vreg_in,
-            vreg_in,
             LIBXSMM_X86_VEC_REG_UNDEF,
+            vreg_in,
             16);
       }
     }
@@ -5733,11 +5733,11 @@ void libxsmm_generator_copy_avx512_microkernel( libxsmm_generated_code*         
         /* shift 16 bits to the left to generate valid FP32 numbers */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_micro_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VPSLLD,
+            LIBXSMM_X86_INSTR_VPSLLD_I,
             i_micro_kernel_config->vector_name,
             vreg_in,
-            vreg_in,
             LIBXSMM_X86_VEC_REG_UNDEF,
+            vreg_in,
             16);
       }
 

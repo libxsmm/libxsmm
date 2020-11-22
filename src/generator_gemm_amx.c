@@ -593,11 +593,11 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
             /* shift 16 bits to the left to generate valid FP32 numbers */
             libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
                 i_micro_kernel_config->instruction_set,
-                LIBXSMM_X86_INSTR_VPSLLD,
+                LIBXSMM_X86_INSTR_VPSLLD_I,
                 i_micro_kernel_config->vector_name,
                 zmm_reg,
-                zmm_reg,
                 LIBXSMM_X86_VEC_REG_UNDEF,
+                zmm_reg,
                 16);
             /* Store upconverted column to GEMM scratch */
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -730,11 +730,11 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
           /* shift 16 bits to the left to generate valid FP32 numbers */
           libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
               i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSLLD,
+              LIBXSMM_X86_INSTR_VPSLLD_I,
               i_micro_kernel_config->vector_name,
               zmm_reg,
-              zmm_reg,
               LIBXSMM_X86_VEC_REG_UNDEF,
+              zmm_reg,
               16);
           /* Store upconverted column to GEMM scratch */
           libxsmm_x86_instruction_vec_move( io_generated_code,

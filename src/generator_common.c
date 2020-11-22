@@ -372,10 +372,10 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VPSRAVD:
       libxsmm_strncpy(o_instr_name, "vpsravd", i_instr_name_max_length, 7 );
       break;
-    case LIBXSMM_X86_INSTR_VPSRAD:
+    case LIBXSMM_X86_INSTR_VPSRAD_I:
       libxsmm_strncpy(o_instr_name, "vpsrad", i_instr_name_max_length, 6 );
       break;
-    case LIBXSMM_X86_INSTR_VPSLLD:
+    case LIBXSMM_X86_INSTR_VPSLLD_I:
       libxsmm_strncpy(o_instr_name, "vpslld", i_instr_name_max_length, 6 );
       break;
     case LIBXSMM_X86_INSTR_VPCMPD:
