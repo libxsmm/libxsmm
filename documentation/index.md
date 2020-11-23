@@ -10,10 +10,6 @@ For a list questions and answers, please also have a look at [https://github.com
 * **PDF**: [main](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf) documentation file, and separate [sample](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm_samples.pdf) documentation.
 * **Articles**: [magazine article](https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf) incl. [sample code](https://github.com/hfp/libxsmm/tree/master/samples/magazine) (full list of [Articles](#articles)).
 
-**<a name="what-is-a-small-matrix-multiplication"></a>What is a small matrix multiplication?** When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within *(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64* (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library is typically used to generate code up to the specified [threshold](libxsmm_tune.md#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M or K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For auto-dispatched problem-sizes above the configurable threshold (explicitly JIT'ted code is **not** subject to the threshold), LIBXSMM is falling back to BLAS. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
-
-**<a name="what-is-a-small-convolution"></a>What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy to use invocation of small (direct) convolutions, which are intended for CNN training and classification.
-
 **<a name="getting-started"></a><a name="hello-libxsmm"></a>Getting Started**: The following C++ code is focused on a specific functionality but may be considered as [Hello LIBXSMM](https://github.com/hfp/libxsmm/tree/master/samples/hello). Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile with `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
 
 ```cpp
@@ -40,6 +36,10 @@ int main(/*int argc, char* argv[]*/) {
 ```
 
 Plain [C code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.c) as well as [Fortran code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.f) resemble the same [example](https://github.com/hfp/libxsmm/tree/master/samples/hello).
+
+**<a name="what-is-a-small-matrix-multiplication"></a>What is a small matrix multiplication?** When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within *(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64* (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library is typically used to generate code up to the specified [threshold](libxsmm_tune.md#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M or K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For auto-dispatched problem-sizes above the configurable threshold (explicitly JIT'ted code is **not** subject to the threshold), LIBXSMM is falling back to BLAS. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
+
+**<a name="what-is-a-small-convolution"></a>What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy to use invocation of small (direct) convolutions, which are intended for CNN training and classification.
 
 ## Interfaces and Domains<a name="interfaces"></a>
 
@@ -92,7 +92,7 @@ The [service function domain (AUX)](libxsmm_aux.md) contains routines for:
 
 ### Backend<a name="jit-backend"></a>
 
-More information about the JIT-backend and the code generator can be found in a separate [document](libxsmm_be.md), which also includes information about LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](libxsmm_be.md#generator-driver) programs.
+More information about the JIT-backend and the code generator can be found in a separate [document](libxsmm_be.md). The [encoder sample collection](https://github.com/hfp/libxsmm/tree/master/samples/encoder) can help to get started writing a kernel using LIBXSMM. Please note, LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](libxsmm_be.md#generator-driver) is considered legacy.
 
 ## Build Instructions
 

@@ -1350,7 +1350,7 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily,showstringspaces=false}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
 	@cd $(ROOTDIR)/documentation && ( \
@@ -1373,7 +1373,7 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-e 's/----*//g' \
 	| pandoc \
 		--template=$(call qndir,$(TMPFILE)) --listings \
-		-f markdown_github+all_symbols_escapable+subscript+superscript \
+		-f gfm+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
 		-V author-meta="Hans Pabst, Alexander Heinecke" \
@@ -1399,13 +1399,13 @@ $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily,showstringspaces=false}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
 	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_samples.md \
 	| pandoc \
 		--template=$(TMPFILE) --listings \
-		-f markdown_github+all_symbols_escapable+subscript+superscript \
+		-f gfm+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Sample Code Summary" \
 		-V classoption=DIV=45 \
@@ -1420,7 +1420,7 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily,showstringspaces=false}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
 	@cd $(ROOTDIR)/documentation && iconv -t utf-8 tensorflow.md \
@@ -1430,7 +1430,7 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 		-e 's/----*//g' \
 	| pandoc \
 		--template=$(call qndir,$(TMPFILE)) --listings \
-		-f markdown_github+all_symbols_escapable+subscript+superscript \
+		-f gfm+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="TensorFlow with LIBXSMM" \
 		-V author-meta="Hans Pabst" \
