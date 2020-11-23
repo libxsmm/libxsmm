@@ -1490,6 +1490,94 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( libxsmm_generated_code*
   }
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_3reg( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_vec_instr,
+                                               const char              i_vector_name,
+                                               const unsigned int      i_reg_number_src0,
+                                               const unsigned int      i_reg_number_src1,
+                                               const unsigned int      i_reg_number_dst ) {
+  libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
+                                                       i_reg_number_src0, i_reg_number_src1, i_reg_number_dst,
+                                                       0, 0, LIBXSMM_X86_IMM_UNDEF );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_3reg_mask( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const char              i_vector_name,
+                                                    const unsigned int      i_reg_number_src0,
+                                                    const unsigned int      i_reg_number_src1,
+                                                    const unsigned int      i_reg_number_dst,
+                                                    const unsigned int      i_mask_reg_number,
+                                                    const unsigned int      i_mask_rnd_exp_cntl ) {
+  libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
+                                                       i_reg_number_src0, i_reg_number_src1, i_reg_number_dst,
+                                                       i_mask_reg_number, i_mask_rnd_exp_cntl, LIBXSMM_X86_IMM_UNDEF );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_3reg_imm8( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const char              i_vector_name,
+                                                    const unsigned int      i_reg_number_src0,
+                                                    const unsigned int      i_reg_number_src1,
+                                                    const unsigned int      i_reg_number_dst,
+                                                    const unsigned short    i_imm8 ) {
+  libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
+                                                       i_reg_number_src0, i_reg_number_src1, i_reg_number_dst,
+                                                       0, 0, i_imm8 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_2reg_mask_imm8( libxsmm_generated_code* io_generated_code,
+                                                         const unsigned int      i_vec_instr,
+                                                         const char              i_vector_name,
+                                                         const unsigned int      i_reg_number_src0,
+                                                         const unsigned int      i_reg_number_dst,
+                                                         const unsigned int      i_mask_reg_number,
+                                                         const unsigned int      i_mask_rnd_exp_cntl,
+                                                         const unsigned short    i_imm8 ) {
+  libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
+                                                       i_reg_number_src0, LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                       i_mask_reg_number, i_mask_rnd_exp_cntl, i_imm8 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_2reg( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_vec_instr,
+                                               const char              i_vector_name,
+                                               const unsigned int      i_reg_number_src0,
+                                               const unsigned int      i_reg_number_dst ) {
+  libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
+                                                       i_reg_number_src0, LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                       0, 0, LIBXSMM_X86_IMM_UNDEF );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_2reg_mask( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const char              i_vector_name,
+                                                    const unsigned int      i_reg_number_src0,
+                                                    const unsigned int      i_reg_number_dst,
+                                                    const unsigned int      i_mask_reg_number,
+                                                    const unsigned int      i_mask_rnd_exp_cntl) {
+  libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
+                                                       i_reg_number_src0, LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                       i_mask_reg_number, i_mask_rnd_exp_cntl, LIBXSMM_X86_IMM_UNDEF );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned int      i_vec_instr,
+                                                    const char              i_vector_name,
+                                                    const unsigned int      i_reg_number_src0,
+                                                    const unsigned int      i_reg_number_dst,
+                                                    const unsigned short    i_imm8 ) {
+  libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
+                                                       i_reg_number_src0, LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                       0, 0, i_imm8 );
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_code* io_generated_code,
@@ -1816,6 +1904,129 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
   }
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_2reg( libxsmm_generated_code* io_generated_code,
+                                                   const unsigned int      i_vec_instr,
+                                                   const char              i_vector_name,
+                                                   const unsigned int      i_gp_reg_base,
+                                                   const unsigned int      i_gp_reg_idx,
+                                                   const unsigned int      i_scale,
+                                                   const int               i_displacement,
+                                                   const unsigned int      i_use_broadcast,
+                                                   const unsigned int      i_reg_number_src1,
+                                                   const unsigned int      i_reg_number_dst ) {
+  libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
+                                                          i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
+                                                          i_reg_number_src1, i_reg_number_dst,
+                                                          0, 0, LIBXSMM_X86_IMM_UNDEF );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_2reg_mask( libxsmm_generated_code* io_generated_code,
+                                                        const unsigned int      i_vec_instr,
+                                                        const char              i_vector_name,
+                                                        const unsigned int      i_gp_reg_base,
+                                                        const unsigned int      i_gp_reg_idx,
+                                                        const unsigned int      i_scale,
+                                                        const int               i_displacement,
+                                                        const unsigned int      i_use_broadcast,
+                                                        const unsigned int      i_reg_number_src1,
+                                                        const unsigned int      i_reg_number_dst,
+                                                        const unsigned int      i_mask_reg_number,
+                                                        const unsigned int      i_mask_rnd_exp_cntl ) {
+  libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
+                                                          i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
+                                                          i_reg_number_src1, i_reg_number_dst,
+                                                          i_mask_reg_number, i_mask_rnd_exp_cntl, LIBXSMM_X86_IMM_UNDEF );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( libxsmm_generated_code* io_generated_code,
+                                                        const unsigned int      i_vec_instr,
+                                                        const char              i_vector_name,
+                                                        const unsigned int      i_gp_reg_base,
+                                                        const unsigned int      i_gp_reg_idx,
+                                                        const unsigned int      i_scale,
+                                                        const int               i_displacement,
+                                                        const unsigned int      i_use_broadcast,
+                                                        const unsigned int      i_reg_number_src1,
+                                                        const unsigned int      i_reg_number_dst,
+                                                        const unsigned short    i_imm8 ) {
+  libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
+                                                          i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
+                                                          i_reg_number_src1, i_reg_number_dst,
+                                                          0, 0, i_imm8 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_1reg_mask_imm8( libxsmm_generated_code* io_generated_code,
+                                                             const unsigned int      i_vec_instr,
+                                                             const char              i_vector_name,
+                                                             const unsigned int      i_gp_reg_base,
+                                                             const unsigned int      i_gp_reg_idx,
+                                                             const unsigned int      i_scale,
+                                                             const int               i_displacement,
+                                                             const unsigned int      i_use_broadcast,
+                                                             const unsigned int      i_reg_number_dst,
+                                                             const unsigned int      i_mask_reg_number,
+                                                             const unsigned int      i_mask_rnd_exp_cntl,
+                                                             const unsigned short    i_imm8 ) {
+  libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
+                                                          i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
+                                                          LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                          i_mask_reg_number, i_mask_rnd_exp_cntl, i_imm8 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_1reg( libxsmm_generated_code* io_generated_code,
+                                                   const unsigned int      i_vec_instr,
+                                                   const char              i_vector_name,
+                                                   const unsigned int      i_gp_reg_base,
+                                                   const unsigned int      i_gp_reg_idx,
+                                                   const unsigned int      i_scale,
+                                                   const int               i_displacement,
+                                                   const unsigned int      i_use_broadcast,
+                                                   const unsigned int      i_reg_number_dst ) {
+  libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
+                                                          i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
+                                                          LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                          0, 0, LIBXSMM_X86_IMM_UNDEF );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_1reg_mask( libxsmm_generated_code* io_generated_code,
+                                                        const unsigned int      i_vec_instr,
+                                                        const char              i_vector_name,
+                                                        const unsigned int      i_gp_reg_base,
+                                                        const unsigned int      i_gp_reg_idx,
+                                                        const unsigned int      i_scale,
+                                                        const int               i_displacement,
+                                                        const unsigned int      i_use_broadcast,
+                                                        const unsigned int      i_reg_number_dst,
+                                                        const unsigned int      i_mask_reg_number,
+                                                        const unsigned int      i_mask_rnd_exp_cntl ) {
+  libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
+                                                          i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
+                                                          LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                          i_mask_reg_number, i_mask_rnd_exp_cntl, LIBXSMM_X86_IMM_UNDEF );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vec_compute_mem_1reg_imm8( libxsmm_generated_code* io_generated_code,
+                                                        const unsigned int      i_vec_instr,
+                                                        const char              i_vector_name,
+                                                        const unsigned int      i_gp_reg_base,
+                                                        const unsigned int      i_gp_reg_idx,
+                                                        const unsigned int      i_scale,
+                                                        const int               i_displacement,
+                                                        const unsigned int      i_use_broadcast,
+                                                        const unsigned int      i_reg_number_dst,
+                                                        const unsigned short    i_imm8 ) {
+  libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
+                                                          i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
+                                                          LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
+                                                          0, 0, i_imm8 );
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_generated_code,
@@ -2159,6 +2370,8 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
                                                    const unsigned int      i_mask_reg_number,
                                                    const unsigned int      i_use_zero_masking )
 {
+  LIBXSMM_UNUSED( i_instruction_set );
+
   switch ( i_vec_instr ) {
     case LIBXSMM_X86_INSTR_VBLENDMPS:
     case LIBXSMM_X86_INSTR_VPBLENDMB:
