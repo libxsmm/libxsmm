@@ -23,9 +23,8 @@ In case of an MPI-parallelized application, it can be useful to only collect res
 
 ```bash
 mpirun -gtool 'vtune -r resultdir -data-limit 0 -collect hotspots \
-                     -knob enable-stack-collection=true \
-                     -knob sampling-mode=hw \
-                     -knob stack-size=0:4=exclusive' \
+               -knob sampling-mode=hw -knob enable-stack-collection=true \
+               -knob stack-size=0:4=exclusive' \
   [...] ./myapplication
 ```
 
