@@ -1,0 +1,4 @@
+# ninja log v5
+0	17447	1606209622277958315	/data/nfs_home/nchaudh1/libxsmm/samples/deeplearning/conv1dopti_layer/Conv1dOpti-extension/build/temp.linux-x86_64-3.6/Conv1dOpti.o	b457302d34d82170
+159	24110	1606211152151201715	/data/nfs_home/nchaudh1/libxsmm/samples/deeplearning/conv1dopti_layer/Conv1dOpti-extension/build/temp.linux-x86_64-3.6/Conv1dOpti.o	b457302d34d82170
+294	26763	1606240141559746118	/data/nfs_home/nchaudh1/libxsmm/samples/deeplearning/conv1dopti_layer/Conv1dOpti-extension/build/temp.linux-x86_64-3.6/Conv1dOpti.o	b457302d34d82170
