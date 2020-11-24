@@ -1843,12 +1843,22 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
       if ( i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 1 src operand instruciont (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 1 src operand instruction (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
       l_reg_number_src1 = 0;
     } else {
       l_reg_number_src1 = i_reg_number_src1;
+    }
+
+    /* check that we have an UNDEF for both vec reg operands */
+    if ( ((i_vec_instr >> 28) & 3) == 1 ) {
+      if ( (i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF) || (i_reg_number_dst != LIBXSMM_X86_VEC_REG_UNDEF) ) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 0 src operand instruction (%u), i_reg_number_src1 and i_reg_number_dst needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        exit(-1);
+      }
+      l_reg_number_src1 = 0;
+      l_reg_number_dst = 0;
     }
 
     /* check if we have op-code extension in modrm/reg */
@@ -1857,7 +1867,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
         l_reg_number_src1 = l_reg_number_dst;
         l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_imm8: In case of a op-code modrm/reg extended instruciotn (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_imm8: In case of a op-code modrm/reg extended instruction (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
     }
