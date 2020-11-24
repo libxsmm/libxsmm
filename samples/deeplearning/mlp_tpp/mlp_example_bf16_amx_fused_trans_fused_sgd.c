@@ -283,7 +283,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.fwd_2d_blocking = 1;
     res.fwd_row_teams = 2;
     res.fwd_column_teams = 7;
-  } else {  
+  } else {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 0;
     res.fwd_row_teams = 1;
