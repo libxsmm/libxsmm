@@ -1565,6 +1565,13 @@ void libxsmm_generator_gemm_amx_setup_stack_frame_emu( libxsmm_generated_code*  
     gemm_scratch_size += scratch_pad_size;
   }
 
+  if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+    i_micro_kernel_config->emulation_scratch_offset = 0;
+    gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
+    scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
+    gemm_scratch_size += scratch_pad_size;
+  }
+
   if (gemm_scratch_size > 0) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, gemm_scratch_size );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
