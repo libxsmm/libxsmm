@@ -1,3 +1,15 @@
+/******************************************************************************
+* Copyright (c) Intel Corporation - All rights reserved.                      *
+* This file is part of the LIBXSMM library.                                   *
+*                                                                             *
+* For information on the license, see the LICENSE file.                       *
+* Further information: https://github.com/hfp/libxsmm/                        *
+* SPDX-License-Identifier: BSD-3-Clause                                       *
+******************************************************************************/
+/* Narendra Chaudhary, Dhiraj Kalamkar (Intel Corp.)
+******************************************************************************/
+
+
 #include<immintrin.h>
 // #include<x86intrin.h>
 #include<iostream>

@@ -1,3 +1,15 @@
+###############################################################################
+# Copyright (c) Intel Corporation - All rights reserved.                      #
+# This file is part of the LIBXSMM library.                                   #
+#                                                                             #
+# For information on the license, see the LICENSE file.                       #
+# Further information: https://github.com/hfp/libxsmm/                        #
+# SPDX-License-Identifier: BSD-3-Clause                                       #
+###############################################################################
+# Narendra Chaudhary (Intel Corp.)
+###############################################################################
+
+
 #!/bin/bash
 
 export KMP_AFFINITY=compact,1,0,granularity=fine              # Set KMP affinity
