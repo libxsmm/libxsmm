@@ -43,8 +43,8 @@ void libxsmm_generator_transform_Xway_unpack_network_avx512( libxsmm_generated_c
     unsigned int in0 = in1           + i_out_offset;
     unsigned int dst = l_i           + i_vec_reg_dst_start;
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, l_shuffle_instr, i_vector_name,
-                                                        in0, in1, dst, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, l_shuffle_instr, i_vector_name,
+                                                            in0, in1, dst, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
   }
 }
 
@@ -76,8 +76,8 @@ void libxsmm_generator_transform_Xway_shuffle_network_avx512( libxsmm_generated_
     unsigned int in0 = in1           + i_out_offset;
     unsigned int dst = l_i           + i_vec_reg_dst_start;
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, i_shuffle_instr, i_vector_name,
-                                                        in0, in1, dst, 0, 0, i_shuf_imm[l_i] );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, i_shuffle_instr, i_vector_name,
+                                                            in0, in1, dst, 0, 0, 0, i_shuf_imm[l_i] );
   }
 }
 
@@ -107,8 +107,8 @@ void libxsmm_generator_transform_Xway_byteshuffle_network_avx512( libxsmm_genera
     unsigned int in0 = i_in_idx[l_i] + i_vec_reg_src_start;
     unsigned int dst = l_i           + i_vec_reg_dst_start;
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, i_shuffle_instr, i_vector_name,
-                                                        i_vec_reg_suffle_cntl, in0, dst, 0, 0, 0 );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, i_shuffle_instr, i_vector_name,
+                                                            i_vec_reg_suffle_cntl, in0, dst, 0, 0, 0, 0 );
   }
 }
 
@@ -131,24 +131,24 @@ void libxsmm_generator_transform_16way_permute_network_avx512( libxsmm_generated
     unsigned int in0 = l_i + i_vec_reg_srcdst_start;
     unsigned int dst = (in0 + 16)%32;
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_vector_name,
-                                                        in0, LIBXSMM_X86_VEC_REG_UNDEF, dst, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_vector_name,
+                                                            in0, LIBXSMM_X86_VEC_REG_UNDEF, dst, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
   }
 
   for ( l_i = 0; l_i < 8; ++l_i ) {
     unsigned int in0 = l_i + i_vec_reg_srcdst_start + 8;
     unsigned int dst = l_i + i_vec_reg_srcdst_start;
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, i_perm_instr, i_vector_name,
-                                                        in0, LIBXSMM_X86_VEC_REG_UNDEF, dst, i_perm_mask[0], 0, i_perm_imm[0] );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, i_perm_instr, i_vector_name,
+                                                            in0, LIBXSMM_X86_VEC_REG_UNDEF, dst, i_perm_mask[0], 0, 0, i_perm_imm[0] );
   }
 
   for ( l_i = 8; l_i < 16; ++l_i ) {
     unsigned int in0 = ((l_i-8) + i_vec_reg_srcdst_start + 16)%32;
     unsigned int dst = l_i + i_vec_reg_srcdst_start;
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, i_perm_instr, i_vector_name,
-                                                        in0, LIBXSMM_X86_VEC_REG_UNDEF, dst, i_perm_mask[1], 0, i_perm_imm[1] );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, i_perm_instr, i_vector_name,
+                                                            in0, LIBXSMM_X86_VEC_REG_UNDEF, dst, i_perm_mask[1], 0, 0, i_perm_imm[1] );
   }
 }
 
@@ -171,22 +171,22 @@ void libxsmm_generator_transform_08way_permutevar_network_avx512( libxsmm_genera
     unsigned int in0 = l_i + i_vec_reg_srcdst_start;
     unsigned int dst = (((l_i/2)*4) + (l_i%2) + i_vec_reg_srcdst_start + 8) % 16;
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_vector_name,
-                                                        in0, LIBXSMM_X86_VEC_REG_UNDEF, dst, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_vector_name,
+                                                            in0, LIBXSMM_X86_VEC_REG_UNDEF, dst, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_vector_name,
-                                                        in0, LIBXSMM_X86_VEC_REG_UNDEF, dst+2, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_vector_name,
+                                                            in0, LIBXSMM_X86_VEC_REG_UNDEF, dst+2, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
    }
 
   for ( l_i = 0; l_i < 4; ++l_i ) {
     unsigned int in0 = l_i + i_vec_reg_srcdst_start + 4;
     unsigned int dst = (((l_i/2)*4) + (l_i%2) + i_vec_reg_srcdst_start + 8) % 16;
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, i_perm_instr, i_vector_name,
-                                                        in0, i_vec_reg_perm_idx_lo, dst, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, i_perm_instr, i_vector_name,
+                                                            in0, i_vec_reg_perm_idx_lo, dst, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, i_perm_instr, i_vector_name,
-                                                        in0, i_vec_reg_perm_idx_hi, dst+2, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, i_perm_instr, i_vector_name,
+                                                            in0, i_vec_reg_perm_idx_hi, dst+2, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
   }
 }
 
@@ -256,8 +256,8 @@ void libxsmm_generator_transform_Xway_half_load_blend_avx512( libxsmm_generated_
                                       i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_ld_fact * i_ld) + l_stride_offset + l_offset,
                                       i_vector_name, l_dst + i_ways, 0, 1, 0 );
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, i_blend_instr, i_vector_name,
-                                                        l_dst + i_ways, l_dst, l_dst, i_mask_reg, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, i_blend_instr, i_vector_name,
+                                                            l_dst + i_ways, l_dst, l_dst, i_mask_reg, 0, 0, LIBXSMM_X86_IMM_UNDEF );
   }
 
   for ( l_i = 0 ; l_i < i_ways/2 ; ++l_i ) {
@@ -273,8 +273,8 @@ void libxsmm_generator_transform_Xway_half_load_blend_avx512( libxsmm_generated_
                                       i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_ld_fact * i_ld) + l_stride_offset + l_offset,
                                       i_vector_name, l_dst + i_ways, 0, 1, 0 );
 
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, i_blend_instr, i_vector_name,
-                                                        l_dst + i_ways, l_dst, l_dst, i_mask_reg, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, i_blend_instr, i_vector_name,
+                                                            l_dst + i_ways, l_dst, l_dst, i_mask_reg, 0, 0, LIBXSMM_X86_IMM_UNDEF );
   }
 }
 
@@ -1010,12 +1010,12 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( libxsmm_
                                      i_gp_reg_in, 32 * i_micro_kernel_config->datatype_size_in );
 
     /* create VNNI interleaved format */
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
-                                                        1, LIBXSMM_X86_VEC_REG_UNDEF, 8, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                        0, l_vnni_lo_reg, 1, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                        0, l_vnni_hi_reg, 8, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
+                                                            1, LIBXSMM_X86_VEC_REG_UNDEF, 8, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            0, l_vnni_lo_reg, 1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            0, l_vnni_hi_reg, 8, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
     /* storing 2 registers */
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
                                       i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
@@ -1024,12 +1024,12 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( libxsmm_
                                       i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 32 * i_micro_kernel_config->datatype_size_out,
                                       i_micro_kernel_config->vector_name, 8, 0, 1, 1 );
     /* create VNNI interleaved format */
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
-                                                        3, LIBXSMM_X86_VEC_REG_UNDEF, 8, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                        2, l_vnni_lo_reg, 3, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                        2, l_vnni_hi_reg, 8, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
+                                                            3, LIBXSMM_X86_VEC_REG_UNDEF, 8, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            2, l_vnni_lo_reg, 3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            2, l_vnni_hi_reg, 8, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
     /* storing 2 registers */
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
                                       i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 2 * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
@@ -1039,12 +1039,12 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( libxsmm_
                                       i_micro_kernel_config->vector_name, 8, 0, 1, 1 );
 
     /* create VNNI interleaved format */
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
-                                                        5, LIBXSMM_X86_VEC_REG_UNDEF, 8, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                        4, l_vnni_lo_reg, 5, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                        4, l_vnni_hi_reg, 8, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
+                                                            5, LIBXSMM_X86_VEC_REG_UNDEF, 8, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            4, l_vnni_lo_reg, 5, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            4, l_vnni_hi_reg, 8, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
     /* storing 2 registers */
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
                                       i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 4 * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
@@ -1053,12 +1053,12 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( libxsmm_
                                       i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, (4 * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) + (32 * i_micro_kernel_config->datatype_size_out),
                                       i_micro_kernel_config->vector_name, 8, 0, 1, 1 );
     /* create VNNI interleaved format */
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
-                                                        7, LIBXSMM_X86_VEC_REG_UNDEF, 8, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                        6, l_vnni_lo_reg, 7, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-    libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
-                                                        6, l_vnni_hi_reg, 8, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
+                                                            7, LIBXSMM_X86_VEC_REG_UNDEF, 8, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            6, l_vnni_lo_reg, 7, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            6, l_vnni_hi_reg, 8, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
     /* storing 2 registers */
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
                                       i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, 6 * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
@@ -1164,8 +1164,8 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( libxsmm_
 
     if ( (i_mateltwise_desc->n % 2 == 1) && (i_pad_vnni == 1) ) {
       /* set zmm1 to 0 */
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'x',
-                                                          1, 1, 1, 0, 0, 0 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'x',
+                                                              1, 1, 1, 0, 0, 0, 0 );
 
       /* m loop header */
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);

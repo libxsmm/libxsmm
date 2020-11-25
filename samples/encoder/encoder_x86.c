@@ -90,25 +90,25 @@ void test_evex_compute_3reg_general( char* test_name, libxsmm_generated_code* my
   for (i = 0; i < 32; ++i ) {
     for ( m = 0; m < 8; ++m ) {
       if ( twoops ) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, m, 0, 0, imm8 );
       } else {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', i, 0, 0, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', i, 0, 0, m, 0, 0, imm8 );
       }
     }
   }
   if ( !twoops ) {
     for (i = 0; i < 32; ++i ) {
       for ( m = 0; m < 8; ++m ) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', 0, i, 0, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', 0, i, 0, m, 0, 0, imm8 );
       }
     }
   }
   for (i = init_dst; i < max_dst; ++i ) {
     for ( m = 0; m < 8; ++m ) {
       if ( twoops ) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, m, 0, 0, imm8 );
       } else {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', 0, 0, i, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', 0, 0, i, m, 0, 0, imm8 );
       }
     }
   }
@@ -123,21 +123,21 @@ void test_vex_compute_3reg_general( char* test_name, libxsmm_generated_code* myc
 
   for (i = 0; i < 16; ++i ) {
     if ( twoops ) {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, 0, 0, 0, imm8 );
     } else {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', i, 0, 0, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', i, 0, 0, 0, 0, 0, imm8 );
     }
   }
   if ( !twoops ) {
     for (i = 0; i < 16; ++i ) {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', 0, i, 0, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', 0, i, 0, 0, 0, 0, imm8 );
     }
   }
   for (i = 0; i < 16; ++i ) {
     if ( twoops ) {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, 0, 0, 0, imm8 );
     } else {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', 0, 0, i, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', 0, 0, i, 0, 0, 0, imm8 );
     }
   }
 
