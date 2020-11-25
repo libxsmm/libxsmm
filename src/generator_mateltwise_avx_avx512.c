@@ -4397,7 +4397,8 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
   unsigned int NO_PF_LABEL_START_2 = 1;
   unsigned int END_LABEL = 2;
   const int LIBXSMM_X86_INSTR_DOTPS = -1;
-  unsigned int op_mask = 0, reduceop_mask = 0, op_mask_rnd_exp_cntl = 0, reduceop_mask_rnd_exp_cntl = 0, op_imm = 0, reduceop_imm = 0;
+  unsigned int op_mask = 0, reduceop_mask = 0, op_mask_cntl = 0, reduceop_mask_cntl = 0, op_imm = 0, reduceop_imm = 0;
+  unsigned char op_sae_cntl = 0, reduceop_sae_cntl = 0;
   const char *const env_pf_dist = getenv("PF_DIST_OPREDUCE_VECS_IDX");
   const char *const env_pf_type = getenv("PF_TYPE_OPREDUCE_VECS_IDX");
   const char *const env_nts     = getenv("NTS_OPREDUCE_VECS_IDX");
@@ -4651,14 +4652,15 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
           if (op_instr == LIBXSMM_X86_INSTR_DOTPS) {
             /* TODO: Add DOT op sequence here  */
           } else {
-            libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
+            libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
                 op_instr,
                 i_micro_kernel_config->vector_name,
                 (op_order == 0)    ? im + vecin_offset : im + vecidxin_offset,
                 (op_order == 0)    ? im + vecidxin_offset : im + vecin_offset,
                 (apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset,
                 op_mask,
-                op_mask_rnd_exp_cntl,
+                op_mask_cntl,
+                op_sae_cntl,
                 op_imm);
           }
         }
@@ -4677,14 +4679,15 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 
         /* Now apply the Reduce OP */
         if (apply_redop == 1) {
-          libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
               reduceop_instr,
               i_micro_kernel_config->vector_name,
               im + vecidxin_offset,
               im + vecout_offset,
               im + vecout_offset,
               reduceop_mask,
-              reduceop_mask_rnd_exp_cntl,
+              reduceop_mask_cntl,
+              reduceop_sae_cntl,
               reduceop_imm);
         }
 
@@ -4723,14 +4726,15 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
         if (op_instr == LIBXSMM_X86_INSTR_DOTPS) {
           /* TODO: Add DOT op sequence here  */
         } else {
-          libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
               op_instr,
               i_micro_kernel_config->vector_name,
               (op_order == 0)    ? im + vecin_offset : im + vecidxin_offset,
               (op_order == 0)    ? im + vecidxin_offset : im + vecin_offset,
               (apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset,
               op_mask,
-              op_mask_rnd_exp_cntl,
+              op_mask_cntl,
+              op_sae_cntl,
               op_imm);
         }
       }
@@ -4749,14 +4753,15 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 
       /* Now apply the Reduce OP */
       if (apply_redop == 1) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
             reduceop_instr,
             i_micro_kernel_config->vector_name,
             im + vecidxin_offset,
             im + vecout_offset,
             im + vecout_offset,
             reduceop_mask,
-            reduceop_mask_rnd_exp_cntl,
+            reduceop_mask_cntl,
+            reduceop_sae_cntl,
             reduceop_imm);
       }
     }
@@ -4858,14 +4863,15 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
           if (op_instr == LIBXSMM_X86_INSTR_DOTPS) {
             /* TODO: Add DOT op sequence here  */
           } else {
-            libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
+            libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
                 op_instr,
                 i_micro_kernel_config->vector_name,
                 (op_order == 0)    ? im + vecin_offset : im + vecidxin_offset,
                 (op_order == 0)    ? im + vecidxin_offset : im + vecin_offset,
                 (apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset,
                 op_mask,
-                op_mask_rnd_exp_cntl,
+                op_mask_cntl,
+                op_sae_cntl,
                 op_imm);
           }
         }
@@ -4884,14 +4890,15 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 
         /* Now apply the Reduce OP */
         if (apply_redop == 1) {
-          libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
               reduceop_instr,
               i_micro_kernel_config->vector_name,
               im + vecidxin_offset,
               im + vecout_offset,
               im + vecout_offset,
               reduceop_mask,
-              reduceop_mask_rnd_exp_cntl,
+              reduceop_mask_cntl,
+              reduceop_sae_cntl,
               reduceop_imm);
         }
 
@@ -4929,14 +4936,15 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
         if (op_instr == LIBXSMM_X86_INSTR_DOTPS) {
           /* TODO: Add DOT op sequence here  */
         } else {
-          libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
               op_instr,
               i_micro_kernel_config->vector_name,
               (op_order == 0)    ? im + vecin_offset : im + vecidxin_offset,
               (op_order == 0)    ? im + vecidxin_offset : im + vecin_offset,
               (apply_redop == 1) ? im + vecidxin_offset : im + vecin_offset,
               op_mask,
-              op_mask_rnd_exp_cntl,
+              op_mask_cntl,
+              op_sae_cntl,
               op_imm);
         }
       }
@@ -4955,14 +4963,15 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 
       /* Now apply the Reduce OP */
       if (apply_redop == 1) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8( io_generated_code,
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
             reduceop_instr,
             i_micro_kernel_config->vector_name,
             im + vecidxin_offset,
             im + vecout_offset,
             im + vecout_offset,
             reduceop_mask,
-            reduceop_mask_rnd_exp_cntl,
+            reduceop_mask_cntl,
+            reduceop_sae_cntl,
             reduceop_imm);
       }
     }
