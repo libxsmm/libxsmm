@@ -12,7 +12,7 @@ libxsmm_?gemm(NULL/*transa*/, NULL/*transb*/,
    NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
-For the C interface (with type prefix 's' or 'd'), all arguments including m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface.
+For the C interface (with type prefix `s` or `d`), all arguments including m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface.
 
 ```C
 libxsmm_gemm(NULL/*transa*/, NULL/*transb*/,
@@ -204,7 +204,7 @@ Intercepted GEMMs can also build a sophisticated statistic (histogram) with LIBX
 
 #### Static Linkage
 
-An application which is linked statically against BLAS requires to wrap the 'sgemm_' and the 'dgemm_' symbol (an alternative is to wrap only 'dgemm_'). To relink the application (without editing the build system) can often be accomplished by copying and pasting the linker command as it appeared in the console output of the build system, and then re-invoking a modified link step (please also consider `-Wl,--export-dynamic`).
+An application which is linked statically against BLAS requires to wrap the `sgemm_` and the `dgemm_` symbol (an alternative is to wrap only `dgemm_`). To relink the application (without editing the build system) can often be accomplished by copying and pasting the linker command as it appeared in the console output of the build system, and then re-invoking a modified link step (please also consider `-Wl,--export-dynamic`).
 
 ```bash
 gcc [...] -Wl,--wrap=dgemm_,--wrap=sgemm_ \

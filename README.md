@@ -113,9 +113,9 @@ The build system relies on <span>GNU&#160;Make</span> (typically associated with
 
 <a name="zero-config-abi"></a>In contrast to [header-only](#zero-config) which does not require configuration by default, 3rd-party build systems can compile and link LIBXSMM's sources but still avoid configuring the library (per `libxsmm_config.py`). The prerequisite to omit configuration is to opt-in by defining LIBXSMM_DEFAULT_CONFIG (`-D`). The zero-config feature is not available for LIBXSMM's Fortran interface.
 
-**NOTE**: By default, C/C++ and FORTRAN compilers are needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran` and maybe `AR=ar`), the need for a FORTRAN compiler can be relaxed (`make FC=` or `make FORTRAN=0`). The latter affects the availability of the MODule file and the corresponding 'libxsmm.f' library (the interface 'libxsmm.f' is still generated).
+**NOTE**: By default, C/C++ and FORTRAN compilers are needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran` and maybe `AR=ar`), the need for a FORTRAN compiler can be relaxed (`make FC=` or `make FORTRAN=0`). The latter affects the availability of the MODule file and the corresponding `libxsmm.f` library (the interface `libxsmm.f` is still generated).
 
-The build system considers a set of given key-value pairs as a single unique build and triggers a rebuild for a distinct set of flags. For more advanced builds or additional background, please consult the section about [Customization](documentation/libxsmm_tune.md). To generate the interface of the library inside of the 'include' directory and to build the static library (by default, STATIC=1 is activated). Run any (or both) of the following command(s):
+The build system considers a set of given key-value pairs as a single unique build and triggers a rebuild for a distinct set of flags. For more advanced builds or additional background, please consult the section about [Customization](documentation/libxsmm_tune.md). To generate the interface of the library inside of the `include` directory and to build the static library (by default, STATIC=1 is activated). Run any (or both) of the following command(s):
 
 ```bash
 make STATIC=0
@@ -155,23 +155,23 @@ make realclean
 
 <a name="fortran"></a>FORTRAN code can make use of LIBXSMM:
 
-* By using the module and linking with 'libxsmmf', 'libxsmm', and (optionally) 'libxsmmext',
-* <a name="header-only-fortran"></a>By including 'libxsmm.f' and linking with 'libxsmm', and (optionally) 'libxsmmext', or
-* By (implicitly) calling a SUBROUTINE and linking with 'libxsmm', and (optionally) 'libxsmmext'.
+* By using the module and linking with `libxsmmf`, `libxsmm`, and (optionally) `libxsmmext`,
+* <a name="header-only-fortran"></a>By including `libxsmm.f` and linking with `libxsmm`, and (optionally) `libxsmmext`, or
+* By (implicitly) calling a SUBROUTINE and linking with `libxsmm`, and (optionally) `libxsmmext`.
 
-**Note**: Using the Fortran module or including the interface, requires at least a <span>Fortran&#160;2003</span> compiler (F2K3). <span>FORTRAN&#160;77</span> compatibility is only implicitly available (no interface), and the available subset of routines is documented in 'libxsmm.f' and marked with [comments](https://github.com/hfp/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
+**Note**: Using the Fortran module or including the interface, requires at least a <span>Fortran&#160;2003</span> compiler (F2K3). <span>FORTRAN&#160;77</span> compatibility is only implicitly available (no interface), and the available subset of routines is documented in `libxsmm.f` and marked with [comments](https://github.com/hfp/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
 
 ### Header-Only
 
-<span>Version&#160;1.4.4</span> introduced support for "header-only" usage in C and C++. By only including 'libxsmm_source.h' allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and it may also ensure to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but can also increase the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since this header file relies on the [src](https://github.com/hfp/libxsmm/tree/master/src) directory (with the implications as noted earlier).
+<span>Version&#160;1.4.4</span> introduced support for "header-only" usage in C and C++. By only including `libxsmm_source.h` allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and it may also ensure to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but can also increase the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since this header file relies on the [src](https://github.com/hfp/libxsmm/tree/master/src) directory (with the implications as noted earlier).
 
-<a name="zero-config"></a>The header-only form depends on 'libxsmm_source.h' which is *generated* according to the content of the source folder (`src`). <span>LIBXSMM&#160;1.16</span> (and later) provides header-only support without invoking a make-target (zero configuration) for any given checkout of LIBXSMM. To use configured header-only (non-default), LIBXSMM_CONFIGURED must be defined (`-D`). Previously, it was necessary to invoke `make header-only` (v1.6.2 or later), `make cheader` (prior to v1.6.2), or any target building the library (`make`). The zero-config feature allows 3rd-party build systems an easier integration of LIBXSMM, which also holds true if the system builds LIBXSMM from source (see [classic ABI](#zero-config-abi)). Fortran code may [include](#header-only-fortran) `libxsmm.f` but still requires that interface to be generated.
+<a name="zero-config"></a>The header-only form depends on `libxsmm_source.h` which is *generated* according to the content of the source folder (`src`). <span>LIBXSMM&#160;1.16</span> (and later) provides header-only support without invoking a make-target (zero configuration) for any given checkout of LIBXSMM. To use configured header-only (non-default), LIBXSMM_CONFIGURED must be defined (`-D`). Previously, it was necessary to invoke `make header-only` (v1.6.2 or later), `make cheader` (prior to v1.6.2), or any target building the library (`make`). The zero-config feature allows 3rd-party build systems an easier integration of LIBXSMM, which also holds true if the system builds LIBXSMM from source (see [classic ABI](#zero-config-abi)). Fortran code may [include](#header-only-fortran) `libxsmm.f` but still requires that interface to be generated.
 
 **NOTE**: building an application applies the same build settings to LIBXSMM! For instance, to omit debug code inside of LIBXSMM `NDEBUG` must be defined (`-DNDEBUG`).
 
 ## Link Instructions
 
-Using the [classic ABI](#classic-library-abi) (including [Fortran](#fortran) code), requires linking LIBXSMM against the application. The library is agnostic with respect to the threading-runtime, and therefore an application is free to use any threading runtime (e.g., OpenMP). The library is also thread-safe, and multiple application threads can call LIBXSMM's routines concurrently. Enabling OpenMP for LIBXSMM's main library is supported as well (OMP=1), and mostly affects the synchronization primitives used inside of the library. All of the "omp" functionality (function postfix) is served by the 'libxsmmext' library, which is automatically built with OpenMP enabled. When using this "omp" functionality, 'libxsmmext' needs to be present at the link line.
+Using the [classic ABI](#classic-library-abi) (including [Fortran](#fortran) code), requires linking LIBXSMM against the application. The library is agnostic with respect to the threading-runtime, and therefore an application is free to use any threading runtime (e.g., OpenMP). The library is also thread-safe, and multiple application threads can call LIBXSMM's routines concurrently. Enabling OpenMP for LIBXSMM's main library is supported as well (OMP=1), and mostly affects the synchronization primitives used inside of the library. All of the "omp" functionality (function postfix) is served by the `libxsmmext` library, which is automatically built with OpenMP enabled. When using this "omp" functionality, `libxsmmext` needs to be present at the link line.
 
 <a name="table-of-libraries"></a>Library | Purpose
 :-------------|---------
@@ -187,9 +187,9 @@ export PKG_CONFIG_PATH=/path/to/libxsmm/lib
 pkg-config libxsmm --libs
 ```
 
-Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1&#124;2) may prevent a user from making this decision at the time of linking the actual application. To use LIBXSMM without GEMM-related functionality, any BLAS-dependency can be removed in two ways: <span>(1)&#160;building</span> a special library with `make BLAS=0`, or <span>(2)&#160;linking</span> the application against the 'libxsmmnoblas' library. If an application however uses BLAS already, the [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper) can be used to intercept existing BLAS calls (and to rely on LIBXSMM instead).
+Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1&#124;2) may prevent a user from making this decision at the time of linking the actual application. To use LIBXSMM without GEMM-related functionality, any BLAS-dependency can be removed in two ways: <span>(1)&#160;building</span> a special library with `make BLAS=0`, or <span>(2)&#160;linking</span> the application against the `libxsmmnoblas` library. If an application however uses BLAS already, the [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper) can be used to intercept existing BLAS calls (and to rely on LIBXSMM instead).
 
-**NOTE**: LIBXSMM does not support to dynamically link 'libxsmm' or 'libxsmmext' ("so"), when BLAS is linked statically ("a"). If BLAS is linked statically, the static version of LIBXSMM must be used!
+**NOTE**: LIBXSMM does not support to dynamically link `libxsmm` or `libxsmmext` ("so"), when BLAS is linked statically ("a"). If BLAS is linked statically, the static version of LIBXSMM must be used!
 
 ### Installation
 
@@ -208,7 +208,7 @@ make MNK="1 2 3 4 5" PREFIX=/path/to/libxsmm-install install
 
 <a name="install-destdir"></a>Both `PREFIX` and `DESTDIR` are equivalent and can be relative or absolute paths. An installation can be repeated for different locations without triggering a rebuild. The prefix directory *inside* of each of the [package configuration files](#pkg-config) is set to where LIBXSMM is built (staging folder) unless `PREFIX` or `DESTDIR` is specified. The effect of `PREFIX` (or `DESTDIR`) with respect to the pkg-config files is independent of whether the install-target is invoked or not (make).
 
-Further, performing `make install-minimal` omits the documentation (default: 'PREFIX/share/libxsmm'). Moreover, PINCDIR, POUTDIR, PBINDIR, and PDOCDIR allow to customize the locations underneath of the PREFIX location. To build a general package for an unpredictable audience (Linux distribution, or similar), it is advised to not over-specify or customize the build step, i.e., JIT, SSE, AVX, OMP, BLAS, etc. should not be used. The following is building and installing a complete set of libraries where the generated interface matches both the static and the shared libraries:
+Further, performing `make install-minimal` omits the documentation (default: `PREFIX/share/libxsmm`). Moreover, PINCDIR, POUTDIR, PBINDIR, and PDOCDIR allow to customize the locations underneath of the PREFIX location. To build a general package for an unpredictable audience (Linux distribution, or similar), it is advised to not over-specify or customize the build step, i.e., JIT, SSE, AVX, OMP, BLAS, etc. should not be used. The following is building and installing a complete set of libraries where the generated interface matches both the static and the shared libraries:
 
 ```bash
 make PREFIX=/path/to/libxsmm-install STATIC=0 install
@@ -297,7 +297,7 @@ Please note that comparing performance results depends on whether the operands o
 
 ### High Performance Computing (HPC)
 
-<b>[1]&#160;</b>[https://cp2k.org/](https://cp2k.org/): Open Source Molecular Dynamics and the [DBCSR library](https://github.com/cp2k/dbcsr), which processes batches of small matrix multiplications. The batches originate from a distributed block-sparse matrix with problem-specific small matrices. Starting with [CP2K&#160;3.0](https://www.cp2k.org/version_history), LIBXSMM can substitute CP2K's 'libsmm' library.
+<b>[1]&#160;</b>[https://cp2k.org/](https://cp2k.org/): Open Source Molecular Dynamics and the [DBCSR library](https://github.com/cp2k/dbcsr), which processes batches of small matrix multiplications. The batches originate from a distributed block-sparse matrix with problem-specific small matrices. Starting with [CP2K&#160;3.0](https://www.cp2k.org/version_history), LIBXSMM can substitute CP2K's `libsmm` library.
 
 <b>[2]&#160;</b>[https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/): SeisSol is one of the leading codes for earthquake scenarios, for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see [https://github.com/TUM-I5/seissol_kernels/](https://github.com/TUM-I5/seissol_kernels/).
 
