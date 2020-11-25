@@ -280,10 +280,16 @@ int zipf_dist(double alpha, int M)
   static int init_done = 0;
   static double k = 0;
   static double *sum_probs;
+  static int prev_M = 0;
   double z;
   int value;
   int    i;
   int low, high, mid;
+
+  if (prev_M != M) {
+    init_done = 0;
+    prev_M = M;
+  }
 
   if (!init_done) {
     for (i=1; i<=M; i++)
