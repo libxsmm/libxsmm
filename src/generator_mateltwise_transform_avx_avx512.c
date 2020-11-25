@@ -448,9 +448,9 @@ void libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( libxsmm
                                        i_gp_reg_mask, i_mask_reg_0, 0 );
 
     /* load permute vectors to zmm31 and zmm30 */
-    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (void*)l_perm_lo, "i64_perm_lo",
+    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (unsigned char*)l_perm_lo, "i64_perm_lo",
                                                         i_micro_kernel_config->vector_name, 31 );
-    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (void*)l_perm_hi, "i64_perm_hi",
+    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (unsigned char*)l_perm_hi, "i64_perm_hi",
                                                         i_micro_kernel_config->vector_name, 30 );
 
     /* open m loop */
