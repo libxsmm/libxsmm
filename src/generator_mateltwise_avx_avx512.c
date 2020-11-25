@@ -5267,7 +5267,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                                  im,
                                                  LIBXSMM_X86_VEC_REG_UNDEF,
                                                  im,
-                                                 0);
+                                                 3);
       }
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -5503,7 +5503,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                                  im,
                                                  LIBXSMM_X86_VEC_REG_UNDEF,
                                                  im,
-                                                 0);
+                                                 3);
       }
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
