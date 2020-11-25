@@ -832,7 +832,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     case LIBXSMM_X86_INSTR_VPMOVSWB:
     case LIBXSMM_X86_INSTR_VPMOVWB:
     case LIBXSMM_X86_INSTR_VMOVDDUP:
-    case LIBXSMM_X86_INSTR_VPBROADCASTI64X4:
+    case LIBXSMM_X86_INSTR_VBROADCASTI64X4:
     case LIBXSMM_X86_INSTR_MOVUPD:
     case LIBXSMM_X86_INSTR_MOVAPS:
     case LIBXSMM_X86_INSTR_MOVUPS:
