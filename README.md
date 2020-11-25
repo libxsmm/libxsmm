@@ -217,6 +217,10 @@ make PREFIX=/path/to/libxsmm-install install
 
 ## Runtime Control<a name="running"></a>
 
+### Handling Errors
+
+The library handles errors with mechanisms available to the C programming language (no exceptions). The backend uses result codes passed by an argument rather than an actual return value. Such an argument is often a descriptor (struct) guiding and covering the state of the code generation. The frontend however may not hand-out any error state, which can be a big relief on the call-side. Instead, the frontend implements a [verbose mode](#verbose-mode) to inform about unexpected input or an error captured from the backend. Guiding principles of LIBXSMM are muted operation by default (non-verbose) and no unexpected exit from execution.
+
 ### Verbose Mode
 
 The [verbose mode](documentation/libxsmm_aux.md#getting-and-setting-the-verbosity) (level of verbosity) allows for an insight into the code dispatch mechanism by receiving a small tabulated statistic as soon as the library terminates. The design point for this functionality is to not impact the performance of any critical code path, i.e., verbose mode is always enabled and does not require symbols (SYM=1) or debug code (DBG=1). The statistics appears (`stderr`) when the environment variable LIBXSMM_VERBOSE is set to a non-zero value. For example:
