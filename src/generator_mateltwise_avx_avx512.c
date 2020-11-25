@@ -5124,7 +5124,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
         if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
           libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8(io_generated_code,
                                                              LIBXSMM_X86_INSTR_VCVTPH2PS,
-                                                             'y',
+                                                             'z',
                                                              i_gp_reg_mapping->gp_reg_out,
                                                              LIBXSMM_X86_GP_REG_UNDEF,
                                                              0,
@@ -5166,7 +5166,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
         if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
           libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8(io_generated_code,
                                                              LIBXSMM_X86_INSTR_VCVTPH2PS,
-                                                             'y',
+                                                             'z',
                                                              i_gp_reg_mapping->gp_reg_in,
                                                              LIBXSMM_X86_GP_REG_UNDEF,
                                                              0,
@@ -5221,7 +5221,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
       if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
         libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8(io_generated_code,
                                                            LIBXSMM_X86_INSTR_VCVTPH2PS,
-                                                           'y',
+                                                           'z',
                                                            i_gp_reg_mapping->gp_reg_in,
                                                            LIBXSMM_X86_GP_REG_UNDEF,
                                                            0,
@@ -5307,7 +5307,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
         if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
           libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8(io_generated_code,
                                                              LIBXSMM_X86_INSTR_VCVTPH2PS,
-                                                             'y',
+                                                             'z',
                                                              i_gp_reg_mapping->gp_reg_out,
                                                              LIBXSMM_X86_GP_REG_UNDEF,
                                                              0,
@@ -5350,7 +5350,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
           if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
             libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8(io_generated_code,
                                                            LIBXSMM_X86_INSTR_VCVTPH2PS,
-                                                           'y',
+                                                           'z',
                                                            i_gp_reg_mapping->gp_reg_in,
                                                            LIBXSMM_X86_GP_REG_UNDEF,
                                                            0,
@@ -5382,7 +5382,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
           if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
             libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8(io_generated_code,
                                                            LIBXSMM_X86_INSTR_VCVTPH2PS,
-                                                           'y',
+                                                           'z',
                                                            i_gp_reg_mapping->gp_reg_in,
                                                            LIBXSMM_X86_GP_REG_UNDEF,
                                                            0,
@@ -5438,7 +5438,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
         if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
           libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8(io_generated_code,
                                                          LIBXSMM_X86_INSTR_VCVTPH2PS,
-                                                         'y',
+                                                         'z',
                                                          i_gp_reg_mapping->gp_reg_in,
                                                          LIBXSMM_X86_GP_REG_UNDEF,
                                                          0,
@@ -5469,7 +5469,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
         if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
           libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8(io_generated_code,
                                                          LIBXSMM_X86_INSTR_VCVTPH2PS,
-                                                         'y',
+                                                         'z',
                                                          i_gp_reg_mapping->gp_reg_in,
                                                          LIBXSMM_X86_GP_REG_UNDEF,
                                                          0,
