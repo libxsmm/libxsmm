@@ -5268,8 +5268,8 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                                              LIBXSMM_X86_VEC_REG_UNDEF,
                                                              im,
                                                              0,
-                                                             3,
-                                                             0 );
+                                                             0,
+                                                             3 );
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
@@ -5517,8 +5517,8 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                                              LIBXSMM_X86_VEC_REG_UNDEF,
                                                              im,
                                                              (im == peeled_m_trips-1) ? use_m_masking : 0,
-                                                             3,
-                                                             0 );
+                                                             0,
+                                                             3 );
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
