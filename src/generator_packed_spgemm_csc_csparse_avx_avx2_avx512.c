@@ -15,7 +15,7 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_packed_spgemm_csc_csparse_avx_axv2_avx512_single( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_single( libxsmm_generated_code*            io_generated_code,
                                                                          libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
@@ -206,7 +206,7 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_axv2_avx512_single( libxsmm
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_packed_spgemm_csc_csparse_avx_axv2_avx512_16accs( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_16accs( libxsmm_generated_code*            io_generated_code,
                                                                          libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
@@ -742,16 +742,16 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512( libxsmm_genera
 
     if ( l_col_elements > 2 ) {
       for ( l_m = 0; l_m < (l_col_elements/16)*16; l_m+=16 ) {
-        libxsmm_generator_packed_spgemm_csc_csparse_avx_axv2_avx512_16accs( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+        libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_16accs( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
                                                                             i_row_idx, i_column_idx, i_packed_width, l_n, l_m, 16 );
       }
       if ( l_col_elements % 16 != 0 ) {
-        libxsmm_generator_packed_spgemm_csc_csparse_avx_axv2_avx512_16accs( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+        libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_16accs( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
                                                                             i_row_idx, i_column_idx, i_packed_width, l_n, l_m, l_col_elements%16 );
       }
     } else {
       for ( l_m = 0; l_m < l_col_elements; ++l_m ) {
-        libxsmm_generator_packed_spgemm_csc_csparse_avx_axv2_avx512_single( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+        libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_single( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
                                                                             i_row_idx, i_column_idx, i_packed_width, l_n, l_m );
       }
     }
