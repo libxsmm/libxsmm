@@ -110,9 +110,9 @@ int main(int argc, char* argv[]) {
   l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION(REALTYPE),
     l_m, l_n, l_k, l_k, l_n, l_n, l_alpha, l_beta, flags, prefetch);
 #if defined(__EDGE_EXECUTE_F32__)
-  mykernel = libxsmm_create_pgemm_ac_rm( l_xgemm_desc, l_r ).smm;
+  mykernel = libxsmm_create_packed_xgemm_ac_rm( l_xgemm_desc, l_r ).smm;
 #else
-  mykernel = libxsmm_create_pgemm_ac_rm( l_xgemm_desc, l_r ).dmm;
+  mykernel = libxsmm_create_packed_xgemm_ac_rm( l_xgemm_desc, l_r ).dmm;
 #endif
 
   /* run reference */

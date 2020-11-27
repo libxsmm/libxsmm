@@ -306,21 +306,21 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_trsm_descri
   char transa;
 };
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csr_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
   const void* values;
   unsigned int packed_width;
-} libxsmm_csr_soa_descriptor;
+} libxsmm_pspgemm_csr_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csc_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csc_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* column_ptr;
   const unsigned int* row_idx;
   const void* values;
   unsigned int packed_width;
-} libxsmm_csc_soa_descriptor;
+} libxsmm_pspgemm_csc_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
@@ -874,8 +874,8 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_USER       = LIBXSMM_KERNEL_KIND_USER,
   LIBXSMM_BUILD_KIND_PGEMMRMAC  = LIBXSMM_KERNEL_UNREGISTERED,
   LIBXSMM_BUILD_KIND_PGEMMRMBC,
-  LIBXSMM_BUILD_KIND_SRSOA,
-  LIBXSMM_BUILD_KIND_SCSOA,
+  LIBXSMM_BUILD_KIND_PSPGEMM_CSR,
+  LIBXSMM_BUILD_KIND_PSPGEMM_CSC,
   LIBXSMM_BUILD_KIND_SREG
 } libxsmm_build_kind;
 
@@ -904,8 +904,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
   union {
     const void* ptr; /* raw content */
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
-    const libxsmm_csr_soa_descriptor* srsoa;
-    const libxsmm_csc_soa_descriptor* scsoa;
+    const libxsmm_pspgemm_csr_descriptor* pspgemm_csr;
+    const libxsmm_pspgemm_csc_descriptor* pspgemm_csc;
     const libxsmm_pgemm_ac_rm_descriptor* pgemmacrm;
     const libxsmm_pgemm_bc_rm_descriptor* pgemmbcrm;
     const libxsmm_csr_reg_descriptor* sreg;

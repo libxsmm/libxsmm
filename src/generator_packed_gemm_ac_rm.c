@@ -21,7 +21,7 @@ LIBXSMM_API void libxsmm_generator_packed_gemm_ac_rm( libxsmm_generated_code*   
                                                          i_xgemm_desc,
                                                          i_packed_width );
   } else {
-    fprintf( stderr, "RM AC SOA is only available for AVX/AVX2/AVX512 at this point\n" );
+    fprintf( stderr, "PACKED RM AC is only available for AVX/AVX2/AVX512 at this point\n" );
     exit(-1);
   }
 }
