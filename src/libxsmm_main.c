@@ -291,7 +291,8 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
   void* result;
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_memalign(alignment, size);
-#elif !defined(__cplusplus) && defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__) /*C11*/
+#elif defined(LIBXSMM_BUILD) && ( /*C11*/ \
+  defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__))
   result = aligned_alloc(alignment, size);
 #elif (defined(_WIN32) || defined(__CYGWIN__))
   LIBXSMM_UNUSED(alignment);
