@@ -29,7 +29,7 @@
 
 #define XS_TILE_FORWARD 64
 #define XS_TILE_DBACKWARD 64
-#define XS_TILE_WBACKWARD 256
+#define XS_TILE_WBACKWARD 64                // 256 for peak performance
 
 
 
