@@ -3663,15 +3663,128 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
        case LIBXSMM_X86_INSTR_ANDQ:
           l_second += 0x20;
           break;
-       case LIBXSMM_X86_INSTR_CMOVZ:
+       case LIBXSMM_X86_INSTR_CMOVA:
+       case LIBXSMM_X86_INSTR_CMOVNBE:
           l_second += 0x0e;
+          l_third += 0x03;
           l_extra_byte = 1;
           l_reg1 = i_gp_reg_number_dest;
           l_reg0 = i_gp_reg_number_src;
           break;
+       case LIBXSMM_X86_INSTR_CMOVAE:
+       case LIBXSMM_X86_INSTR_CMOVNB:
+       case LIBXSMM_X86_INSTR_CMOVNC:
+          l_second += 0x0e;
+          l_third -= 0x01;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVB:
+       case LIBXSMM_X86_INSTR_CMOVC:
+       case LIBXSMM_X86_INSTR_CMOVNAE:
+          l_second += 0x0e;
+          l_third -= 0x02;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVBE:
+       case LIBXSMM_X86_INSTR_CMOVNA:
+          l_second += 0x0e;
+          l_third += 0x02;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVE:
+       case LIBXSMM_X86_INSTR_CMOVZ:
+          l_second += 0x0e;
+          l_third += 0x00;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVG:
+       case LIBXSMM_X86_INSTR_CMOVNLE:
+          l_second += 0x0e;
+          l_third += 0x0b;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVGE:
+       case LIBXSMM_X86_INSTR_CMOVNL:
+          l_second += 0x0e;
+          l_third += 0x09;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVL:
+       case LIBXSMM_X86_INSTR_CMOVNGE:
+          l_second += 0x0e;
+          l_third += 0x08;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVLE:
+       case LIBXSMM_X86_INSTR_CMOVNG:
+          l_second += 0x0e;
+          l_third += 0x0a;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVNE:
        case LIBXSMM_X86_INSTR_CMOVNZ:
           l_second += 0x0e;
           l_third += 0x01;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVNO:
+          l_second += 0x0e;
+          l_third -= 0x03;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+        case LIBXSMM_X86_INSTR_CMOVNP:
+        case LIBXSMM_X86_INSTR_CMOVPO:
+          l_second += 0x0e;
+          l_third += 0x07;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+        case LIBXSMM_X86_INSTR_CMOVNS:
+          l_second += 0x0e;
+          l_third += 0x05;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVO:
+          l_second += 0x0e;
+          l_third -= 0x04;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVP:
+       case LIBXSMM_X86_INSTR_CMOVPE:
+          l_second += 0x0e;
+          l_third += 0x06;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_CMOVS:
+          l_second += 0x0e;
+          l_third += 0x04;
           l_extra_byte = 1;
           l_reg1 = i_gp_reg_number_dest;
           l_reg0 = i_gp_reg_number_src;
