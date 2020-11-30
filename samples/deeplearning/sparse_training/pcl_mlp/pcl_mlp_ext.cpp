@@ -440,9 +440,9 @@ at::Tensor mlp_sparse_forward(
               &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), NB / nb, KB, CB, CB,
               0, KB, alpha, beta, flags, prefetch);
       mykernel[blk_idx] =
-          libxsmm_create_xcsc_soa(l_xgemm_desc[blk_idx], b_colptr[blk_idx],
+          libxsmm_create_packed_spxgemm_csc(l_xgemm_desc[blk_idx], nb, b_colptr[blk_idx],
                   b_rowidx[blk_idx],
-                  (const void *)b_values[blk_idx], nb).smm;
+                  (const void *)b_values[blk_idx]).smm;
   }
 
   // Execute kernels amoung threads
@@ -730,9 +730,9 @@ RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}
               &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), NB / nb, CB, KB, KB,
               0, CB, alpha, beta, flags, prefetch);
       mykernel[blk_idx] =
-          libxsmm_create_xcsc_soa(l_xgemm_desc[blk_idx], b_colptr[blk_idx],
+          libxsmm_create_packed_spxgemm_csc(l_xgemm_desc[blk_idx], nb, b_colptr[blk_idx],
                   b_rowidx[blk_idx],
-                  (const void *)b_values[blk_idx], nb).smm;
+                  (const void *)b_values[blk_idx]).smm;
   }
 
   printf("Executing kernels\n");
@@ -971,11 +971,11 @@ at::Tensor mlp_sparse_update(
               KB, 0, alpha, beta, flags, prefetch);
       // Creating update micro kernels
       upd_kernel[blk_idx] =
-          libxsmm_create_xcsc_soa(
-                  l_xgemm_desc[blk_idx],
+          libxsmm_create_packed_spxgemm_csc(
+                  l_xgemm_desc[blk_idx], nb,
                   c_colptr[blk_idx],
                   c_rowidx[blk_idx],
-                  (const void *)c_values[blk_idx], nb).smm;
+                  (const void *)c_values[blk_idx]).smm;
   }
 
 int k, n, c;

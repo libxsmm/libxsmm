@@ -382,6 +382,21 @@ void test_tile_compute( char* test_name, libxsmm_generated_code* mycode, unsigne
   dump_code_buffer( mycode, test_name );
 }
 
+void test_alu_reg( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned int t;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (t = 0; t < 16; ++t ) {
+    libxsmm_x86_instruction_alu_reg ( mycode, instr, t, 0 );
+  }
+  for (t = 0; t < 16; ++t ) {
+    libxsmm_x86_instruction_alu_reg ( mycode, instr, 0, t );
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 int main( /*int argc, char* argv[]*/ ) {
   unsigned char* codebuffer = (unsigned char*)malloc( 8388608*sizeof(unsigned char) );
   libxsmm_generated_code mycode;
@@ -893,6 +908,45 @@ int main( /*int argc, char* argv[]*/ ) {
 
   test_vex_mask_load_store( "vex_mov_VMASKMOVPD", &mycode, LIBXSMM_X86_INSTR_VMASKMOVPD );
   test_vex_mask_load_store( "vex_mov_VMASKMOVPS", &mycode, LIBXSMM_X86_INSTR_VMASKMOVPS );
+
+  /* test VEX/GP instructions */
+  test_alu_reg( "alu_reg_ADDQ", &mycode, LIBXSMM_X86_INSTR_ADDQ );
+  test_alu_reg( "alu_reg_SUBQ", &mycode, LIBXSMM_X86_INSTR_SUBQ );
+  test_alu_reg( "alu_reg_MOVQ", &mycode, LIBXSMM_X86_INSTR_MOVQ );
+  test_alu_reg( "alu_reg_CMPQ", &mycode, LIBXSMM_X86_INSTR_CMPQ );
+  test_alu_reg( "alu_reg_AMDQ", &mycode, LIBXSMM_X86_INSTR_ANDQ );
+  test_alu_reg( "alu_reg_CMOVA", &mycode, LIBXSMM_X86_INSTR_CMOVA );
+  test_alu_reg( "alu_reg_CMOVAE", &mycode, LIBXSMM_X86_INSTR_CMOVAE );
+  test_alu_reg( "alu_reg_CMOVB", &mycode, LIBXSMM_X86_INSTR_CMOVB );
+  test_alu_reg( "alu_reg_CMOVBE", &mycode, LIBXSMM_X86_INSTR_CMOVBE );
+  test_alu_reg( "alu_reg_CMOVC", &mycode, LIBXSMM_X86_INSTR_CMOVC );
+  test_alu_reg( "alu_reg_CMOVE", &mycode, LIBXSMM_X86_INSTR_CMOVE );
+  test_alu_reg( "alu_reg_CMOVG", &mycode, LIBXSMM_X86_INSTR_CMOVG );
+  test_alu_reg( "alu_reg_CMOVGE", &mycode, LIBXSMM_X86_INSTR_CMOVGE );
+  test_alu_reg( "alu_reg_CMOVL", &mycode, LIBXSMM_X86_INSTR_CMOVL );
+  test_alu_reg( "alu_reg_CMOVLE", &mycode, LIBXSMM_X86_INSTR_CMOVLE );
+  test_alu_reg( "alu_reg_CMOVNA", &mycode, LIBXSMM_X86_INSTR_CMOVNA );
+  test_alu_reg( "alu_reg_CMOVNAE", &mycode, LIBXSMM_X86_INSTR_CMOVNAE );
+  test_alu_reg( "alu_reg_CMOVNB", &mycode, LIBXSMM_X86_INSTR_CMOVNB );
+  test_alu_reg( "alu_reg_CMOVNBE", &mycode, LIBXSMM_X86_INSTR_CMOVNBE );
+  test_alu_reg( "alu_reg_CMOVNC", &mycode, LIBXSMM_X86_INSTR_CMOVNC );
+  test_alu_reg( "alu_reg_CMOVNE", &mycode, LIBXSMM_X86_INSTR_CMOVNE );
+  test_alu_reg( "alu_reg_CMOVNG", &mycode, LIBXSMM_X86_INSTR_CMOVNG );
+  test_alu_reg( "alu_reg_CMOVNGE", &mycode, LIBXSMM_X86_INSTR_CMOVNGE );
+  test_alu_reg( "alu_reg_CMOVNL", &mycode, LIBXSMM_X86_INSTR_CMOVNL );
+  test_alu_reg( "alu_reg_CMOVNLE", &mycode, LIBXSMM_X86_INSTR_CMOVNLE );
+  test_alu_reg( "alu_reg_CMOVNO", &mycode, LIBXSMM_X86_INSTR_CMOVNO );
+  test_alu_reg( "alu_reg_CMOVNP", &mycode, LIBXSMM_X86_INSTR_CMOVNP );
+  test_alu_reg( "alu_reg_CMOVNS", &mycode, LIBXSMM_X86_INSTR_CMOVNS );
+  test_alu_reg( "alu_reg_CMOVNZ", &mycode, LIBXSMM_X86_INSTR_CMOVNZ );
+  test_alu_reg( "alu_reg_CMOVO", &mycode, LIBXSMM_X86_INSTR_CMOVO );
+  test_alu_reg( "alu_reg_CMOVP", &mycode, LIBXSMM_X86_INSTR_CMOVP );
+  test_alu_reg( "alu_reg_CMOVPE", &mycode, LIBXSMM_X86_INSTR_CMOVPE );
+  test_alu_reg( "alu_reg_CMOVPO", &mycode, LIBXSMM_X86_INSTR_CMOVPO );
+  test_alu_reg( "alu_reg_CMOVS", &mycode, LIBXSMM_X86_INSTR_CMOVS );
+  test_alu_reg( "alu_reg_CMOVZ", &mycode, LIBXSMM_X86_INSTR_CMOVZ );
+  test_alu_reg( "alu_reg_POPCNT", &mycode, LIBXSMM_X86_INSTR_POPCNT );
+  test_alu_reg( "alu_reg_TZCNT", &mycode, LIBXSMM_X86_INSTR_TZCNT );
 
   free( codebuffer );
 

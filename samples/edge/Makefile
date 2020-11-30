@@ -48,9 +48,9 @@ FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/edge_vol_int \
-	$(OUTDIR)/asparse_srsoa_f64 $(OUTDIR)/bsparse_srsoa_f64 \
-	$(OUTDIR)/asparse_srsoa_f32 $(OUTDIR)/bsparse_srsoa_f32 \
-	$(OUTDIR)/bsparse_scsoa_f64 $(OUTDIR)/bsparse_scsoa_f32 \
+	$(OUTDIR)/asparse_packed_csr_f64 $(OUTDIR)/bsparse_packed_csr_f64 \
+	$(OUTDIR)/asparse_packed_csr_f32 $(OUTDIR)/bsparse_packed_csr_f32 \
+	$(OUTDIR)/bsparse_packed_csc_f64 $(OUTDIR)/bsparse_packed_csc_f32 \
 	$(OUTDIR)/dense_packedacrm_f64 $(OUTDIR)/dense_packedacrm_f32 \
 	$(OUTDIR)/dense_packedbcrm_f64 $(OUTDIR)/dense_packedbcrm_f32
 
@@ -63,23 +63,23 @@ compile: $(OBJECTS) $(FTNOBJS)
 $(OUTDIR)/edge_vol_int: $(OUTDIR)/.make $(BLDDIR)/edge_vol_int-c.o $(BLDDIR)/edge_proxy_common-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/edge_vol_int-c.o $(BLDDIR)/edge_proxy_common-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/asparse_srsoa_f64: $(OUTDIR)/.make $(BLDDIR)/asparse_srsoa-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/asparse_srsoa-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/asparse_packed_csr_f64: $(OUTDIR)/.make $(BLDDIR)/asparse_packed_csr-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/asparse_packed_csr-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/bsparse_srsoa_f64: $(OUTDIR)/.make $(BLDDIR)/bsparse_srsoa-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/bsparse_srsoa-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/bsparse_packed_csr_f64: $(OUTDIR)/.make $(BLDDIR)/bsparse_packed_csr-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/bsparse_packed_csr-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/asparse_srsoa_f32: $(OUTDIR)/.make $(BLDDIR)/asparse_srsoa-c-f32.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/asparse_srsoa-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/asparse_packed_csr_f32: $(OUTDIR)/.make $(BLDDIR)/asparse_packed_csr-c-f32.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/asparse_packed_csr-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/bsparse_srsoa_f32: $(OUTDIR)/.make $(BLDDIR)/bsparse_srsoa-c-f32.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/bsparse_srsoa-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/bsparse_packed_csr_f32: $(OUTDIR)/.make $(BLDDIR)/bsparse_packed_csr-c-f32.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/bsparse_packed_csr-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/bsparse_scsoa_f64: $(OUTDIR)/.make $(BLDDIR)/bsparse_scsoa-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/bsparse_scsoa-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/bsparse_packed_csc_f64: $(OUTDIR)/.make $(BLDDIR)/bsparse_packed_csc-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/bsparse_packed_csc-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/bsparse_scsoa_f32: $(OUTDIR)/.make $(BLDDIR)/bsparse_scsoa-c-f32.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/bsparse_scsoa-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/bsparse_packed_csc_f32: $(OUTDIR)/.make $(BLDDIR)/bsparse_packed_csc-c-f32.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/bsparse_packed_csc-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/dense_packedacrm_f64: $(OUTDIR)/.make $(BLDDIR)/dense_packedacrm-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/dense_packedacrm-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)

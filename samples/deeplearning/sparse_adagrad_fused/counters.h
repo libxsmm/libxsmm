@@ -45,7 +45,8 @@ typedef enum ctrs_skx_uc_exp {
   CTRS_EXP_DRAM_CAS,
   CTRS_EXP_CHA_ACT,
   CTRS_EXP_CHA_BL_VERT,
-  CTRS_EXP_CHA_BL_HORZ
+  CTRS_EXP_CHA_BL_HORZ,
+  CTRS_EXP_CHA_LLC_LOOKUP
 } ctrs_skx_uc_exp;
 
 typedef struct ctrs_skx_uc
@@ -61,6 +62,8 @@ typedef struct ctrs_skx_uc
   uint64_t vert_ring_bl_in_use_dn[SKX_NCHA];
   uint64_t horz_ring_bl_in_use_lf[SKX_NCHA];
   uint64_t horz_ring_bl_in_use_rt[SKX_NCHA];
+  uint64_t llc_lookup_rd[SKX_NCHA];
+  uint64_t llc_lookup_wr[SKX_NCHA];
   uint64_t cha_clockticks[SKX_NCHA];
   ctrs_skx_uc_exp exp;
 } ctrs_skx_uc;
@@ -76,10 +79,10 @@ void zero_skx_uc_ctrs( ctrs_skx_uc *c );
 void divi_skx_uc_ctrs( ctrs_skx_uc *c, uint64_t div );
 void difa_skx_uc_ctrs( const ctrs_skx_uc *a, const ctrs_skx_uc *b, ctrs_skx_uc* c );
 void get_cas_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw );
+void get_llc_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw );
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* COUNTERS_H */
-

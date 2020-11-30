@@ -8,22 +8,23 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include "generator_spgemm_csc_csparse_soa.h"
+
+#include "generator_packed_spgemm_csc_csparse_avx_avx2_avx512.h"
 #include "generator_gemm_common.h"
 #include "generator_x86_instructions.h"
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_single( libxsmm_generated_code*            io_generated_code,
-                                                                 libxsmm_loop_label_tracker*        io_loop_label_tracker,
-                                                                 const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                 const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                 const unsigned int*                i_row_idx,
-                                                                 const unsigned int*                i_column_idx,
-                                                                 const unsigned int                 i_packed_width,
-                                                                 const unsigned int                 i_n,
-                                                                 const unsigned int                 i_m ) {
+void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_single( libxsmm_generated_code*            io_generated_code,
+                                                                         libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                         const unsigned int*                i_row_idx,
+                                                                         const unsigned int*                i_column_idx,
+                                                                         const unsigned int                 i_packed_width,
+                                                                         const unsigned int                 i_n,
+                                                                         const unsigned int                 i_m ) {
   /* compute packed loop trip count */
 #if 0
   unsigned int l_simd_packed_remainder = 0;
@@ -204,19 +205,18 @@ void libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_single( libxsmm_generat
                                     15, 0, 1, 1 );
 }
 
-
 LIBXSMM_API_INTERN
-void libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generated_code*            io_generated_code,
-                                                                 libxsmm_loop_label_tracker*        io_loop_label_tracker,
-                                                                 const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                 const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                 const unsigned int*                i_row_idx,
-                                                                 const unsigned int*                i_column_idx,
-                                                                 const unsigned int                 i_packed_width,
-                                                                 const unsigned int                 i_n,
-                                                                 const unsigned int                 i_m,
-                                                                 const unsigned int                 i_m_blocking ) {
+void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_16accs( libxsmm_generated_code*            io_generated_code,
+                                                                         libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                         const unsigned int*                i_row_idx,
+                                                                         const unsigned int*                i_column_idx,
+                                                                         const unsigned int                 i_packed_width,
+                                                                         const unsigned int                 i_n,
+                                                                         const unsigned int                 i_m,
+                                                                         const unsigned int                 i_m_blocking ) {
   /* some helper variables */
   unsigned int l_i, l_max_m, l_mask_reg, l_mask_val;
   /* compute packed loop trip count */
@@ -657,54 +657,13 @@ void libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_16accs( libxsmm_generat
                                     1, l_mask_reg, 0, 1 );
 }
 
-
 LIBXSMM_API_INTERN
-void libxsmm_generator_spgemm_csc_csparse_soa( libxsmm_generated_code*         io_generated_code,
-                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                               const char*                     i_arch,
-                                               const unsigned int*             i_row_idx,
-                                               const unsigned int*             i_column_idx,
-                                               const void*                     i_values,
-                                               const unsigned int              i_packed_width ) {
-  if ( strcmp(i_arch, "knl") == 0 ||
-       strcmp(i_arch, "knm") == 0 ||
-       strcmp(i_arch, "skx") == 0 ||
-       strcmp(i_arch, "clx") == 0 ||
-       strcmp(i_arch, "cpx") == 0 ) {
-    if ( strcmp(i_arch, "knl") == 0 ) {
-      io_generated_code->arch = LIBXSMM_X86_AVX512_MIC;
-    } else if ( strcmp(i_arch, "knm") == 0 ) {
-      io_generated_code->arch = LIBXSMM_X86_AVX512_KNM;
-    } else if ( strcmp(i_arch, "skx") == 0 ) {
-      io_generated_code->arch = LIBXSMM_X86_AVX512_CORE;
-    } else if ( strcmp(i_arch, "clx") == 0 ) {
-      io_generated_code->arch = LIBXSMM_X86_AVX512_CLX;
-    } else if ( strcmp(i_arch, "cpx") == 0 ) {
-      io_generated_code->arch = LIBXSMM_X86_AVX512_CPX;
-    } else {
-      /* cannot happen */
-    }
-
-    libxsmm_generator_spgemm_csc_csparse_soa_avx256_512( io_generated_code,
-                                                         i_xgemm_desc,
-                                                         i_row_idx,
-                                                         i_column_idx,
-                                                         i_values,
-                                                         i_packed_width );
-  } else {
-    fprintf( stderr, "CSC + SOA is only available for AVX/AVX2/AVX512 at this point\n" );
-    exit(-1);
-  }
-}
-
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_spgemm_csc_csparse_soa_avx256_512( libxsmm_generated_code*         io_generated_code,
-                                                          const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                          const unsigned int*             i_row_idx,
-                                                          const unsigned int*             i_column_idx,
-                                                          const void*                     i_values,
-                                                          const unsigned int              i_packed_width ) {
+void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512( libxsmm_generated_code*         io_generated_code,
+                                                                  const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                                  const unsigned int*             i_row_idx,
+                                                                  const unsigned int*             i_column_idx,
+                                                                  const void*                     i_values,
+                                                                  const unsigned int              i_packed_width ) {
   unsigned int l_n = 0;
   unsigned int l_m = 0;
 
@@ -714,7 +673,7 @@ void libxsmm_generator_spgemm_csc_csparse_soa_avx256_512( libxsmm_generated_code
 
   LIBXSMM_UNUSED(i_values);
 
-  /* select soa width */
+  /* select packed width */
   if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       if ( i_packed_width % 16 != 0 ) {
@@ -783,17 +742,17 @@ void libxsmm_generator_spgemm_csc_csparse_soa_avx256_512( libxsmm_generated_code
 
     if ( l_col_elements > 2 ) {
       for ( l_m = 0; l_m < (l_col_elements/16)*16; l_m+=16 ) {
-        libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_16accs( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
-                                                                    i_row_idx, i_column_idx, i_packed_width, l_n, l_m, 16 );
+        libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_16accs( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+                                                                            i_row_idx, i_column_idx, i_packed_width, l_n, l_m, 16 );
       }
       if ( l_col_elements % 16 != 0 ) {
-        libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_16accs( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
-                                                                    i_row_idx, i_column_idx, i_packed_width, l_n, l_m, l_col_elements%16 );
+        libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_16accs( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+                                                                            i_row_idx, i_column_idx, i_packed_width, l_n, l_m, l_col_elements%16 );
       }
     } else {
       for ( l_m = 0; l_m < l_col_elements; ++l_m ) {
-        libxsmm_generator_spgemm_csc_csparse_soa_axv256_512_single( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
-                                                                    i_row_idx, i_column_idx, i_packed_width, l_n, l_m );
+        libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_single( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+                                                                            i_row_idx, i_column_idx, i_packed_width, l_n, l_m );
       }
     }
   }

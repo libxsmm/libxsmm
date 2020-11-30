@@ -119,9 +119,9 @@ class edge::data::MmXsmmFused< float > {
 
       // generate and store function for this kernels
       if( i_csr )
-        m_kernels.push_back( libxsmm_create_xcsr_soa( m_descs.back(), i_ptr, i_idx, i_val ).smm );
+        m_kernels.push_back( libxsmm_create_packed_spxgemm_csr( m_descs.back(), PP_N_CRUNS, i_ptr, i_idx, i_val ).smm );
       else
-        m_kernels.push_back( libxsmm_create_xcsc_soa( m_descs.back(), i_ptr, i_idx, i_val ).smm );
+        m_kernels.push_back( libxsmm_create_packed_spxgemm_csc( m_descs.back(), PP_N_CRUNS, i_ptr, i_idx, i_val ).smm );
 
 #ifdef PP_USE_EDGE_IO
       // check that we generated a kernel
