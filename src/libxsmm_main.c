@@ -88,6 +88,9 @@ LIBXSMM_EXTERN int posix_memalign(void**, size_t, size_t) LIBXSMM_THROW;
 #if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
 LIBXSMM_EXTERN int putenv(char*) LIBXSMM_THROW;
 #endif
+#if defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__) /*C11*/
+LIBXSMM_EXTERN void* aligned_alloc(size_t, size_t) LIBXSMM_THROW;
+#endif
 
 /* flag fused into the memory address of a code version in case of non-JIT */
 #define LIBXSMM_CODE_STATIC (1ULL << (8 * sizeof(void*) - 1))
