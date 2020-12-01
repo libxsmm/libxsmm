@@ -2046,6 +2046,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       if (4 == request->descriptor.meltw->typesize)
 # endif
       {
+        int emu_amx = 0;
+        const char *const env_emu_amx = getenv("EMULATE_AMX");
+        if ( 0 == env_emu_amx ) {
+        } else {
+          emu_amx = atoi(env_emu_amx);
+        }
+        if (emu_amx > 0) {
+          generated_code.arch = libxsmm_cpuid();
+        }
+
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_mateltwise_kernel, &generated_code, request->descriptor.meltw);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
