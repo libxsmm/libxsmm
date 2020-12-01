@@ -124,11 +124,13 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
       }
 
       if (i_micro_kernel_config->fused_sigmoid == 1) {
-        if (col + reserved_zmms < 16) {
-          reg_1 = col % (16-reserved_zmms) + reserved_zmms + 16;
-        } else {
-          reg_1 = reg_0 + 1;
-        }
+         if (col + reserved_zmms < 16) {
+           reg_0 = col % (16-reserved_zmms) + reserved_zmms;
+           reg_1 = reg_0 + 1;
+         } else {
+           reg_0 = reserved_zmms + (col % (31-reserved_zmms));
+           reg_1 = reg_0 + 1;
+         }
       }
     } else {
       reg_0 = col % (16-reserved_zmms) + reserved_zmms;
@@ -255,7 +257,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
                 i_micro_kernel_config->vector_name,
-                reg_1, reg_0, reg_0, 0, i_micro_kernel_config);
+                reg_0, reg_1, reg_0, 0, i_micro_kernel_config);
       }
 
     } else {
