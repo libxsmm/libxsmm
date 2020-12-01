@@ -20,7 +20,6 @@
 #include<omp.h>
 #include<libxsmm.h>
 #include<libxsmm_intrinsics_x86.h>
-#include "Bfloat16.h"
 
 // #include <torch/csrc/autograd/record_function.h>
 #include <ATen/record_function.h>
@@ -31,7 +30,11 @@
 #define XS_TILE_DBACKWARD 64
 #define XS_TILE_WBACKWARD 64                // 256 for peak performance
 
+#define USE_TPP                             // Flag for using the TPP kernels
 
+#ifndef USE_TPP                             // If not usintg TPP kernels
+    #include "Bfloat16.h"
+#endif
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 void bf16_vnni_reformat(libxsmm_bfloat16 *_in, libxsmm_bfloat16 *_out, int M, int N, int ld_in, int ld_out) {
@@ -97,6 +100,7 @@ libxsmm_xtransfunction get_tr_kernel(int typesize, int M, int N, int LDO) {
     return tr_kernel;
 }
 
+#ifndef USE_TPP
 void convert_f32_bf16(float* in, bfloat16* out, int len)
 {
     /* Function to convert a Float32 array into a BFloat16 array */
@@ -118,7 +122,7 @@ void convert_f32_bf16(float* in, bfloat16* out, int len)
         }
     }
 }
-
+#endif
 
 at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight, int dilation){
 
@@ -409,7 +413,26 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     auto flip_d_weight_tensor = weight.new_empty({WW_t,C_t,F_t});
     libxsmm_bfloat16* flip_d_weight_bf16 = (libxsmm_bfloat16*) flip_d_weight_tensor.data_ptr<at::BFloat16>();
 
+#ifndef USE_TPP
+
     convert_f32_bf16(flip_d_weight_a, flip_d_weight_bf16, F_t*C_t*WW_t);            // Convert FP32 weight gradiant array into BF16 weight gradiant (permuted) array
+#else
+    /* Also JIT eltwise TPPs... */
+    libxsmm_blasint tpp_m = 1;
+    libxsmm_blasint tpp_n = F_t*C_t*WW_t;
+
+    libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel = libxsmm_dispatch_meltw_cvtfp32bf16(tpp_m, tpp_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVT_NONE);
+    if ( eltwise_kernel == NULL ) {
+        fprintf( stderr, "JIT for TPP convert FP32 to BF16 failed. Bailing...!\n");
+        exit(-1);
+    }
+    libxsmm_meltw_cvtfp32bf16_param eltwise_params;
+
+    eltwise_params.in_ptr = &flip_d_weight_a[0];
+    eltwise_params.out_ptr = &flip_d_weight_bf16[0];
+    eltwise_kernel(&eltwise_params);
+
+#endif
 
     for(int kw = 0; kw < WW_t; kw++){                       // permute and write to weight gradiant array for return
         for(int filter=0; filter < F_t; filter++){
@@ -641,8 +664,15 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     unsigned int M_g = W_t;      //Output rows
     unsigned int N_g = F_t;    // Output columns
 
+#ifndef USE_TPP                                 // If not usintg TPP kernels
+
     int short_W_t = XS_TILE_WBACKWARD;
     int edge_W_t = W_t - tile_multiple;
+#else
+    libxsmm_blasint short_W_t = XS_TILE_WBACKWARD;
+    libxsmm_blasint edge_W_t = W_t - tile_multiple;
+    libxsmm_blasint F_tlx = F_t;
+#endif
 
     auto grad_shorttrans_tensor = grad.new_empty({N_t,F_t,short_W_t});              // Tensor for storing transposed short buffer
     float* grad_shorttrans = grad_shorttrans_tensor.data_ptr<float>();
@@ -650,8 +680,23 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     auto grad_edgetrans_tensor = grad.new_empty({N_t,F_t,edge_W_t});                // Tensor for storing transposed short buffer in edge case
     float* grad_edgetrans = grad_edgetrans_tensor.data_ptr<float>();
 
+#ifndef USE_TPP                                 // If not usintg TPP kernels
+
     libxsmm_xtransfunction trans_shortkernel_grad = get_tr_kernel(sizeof(float), short_W_t, F_t, F_t);          // Dispatch transpose kernel
     libxsmm_xtransfunction trans_edgekernel_grad = get_tr_kernel(sizeof(float), edge_W_t, F_t, F_t);            // Dispatch transpose kernel
+#else
+    /* use jited tranpose */
+    libxsmm_meltw_transform_flags trans_flags;
+    trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    libxsmm_meltwfunction_transform trans_shortkernel_grad = libxsmm_dispatch_meltw_transform(short_W_t, F_tlx, &short_W_t, &F_tlx, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flags);
+    libxsmm_meltwfunction_transform trans_edgekernel_grad = libxsmm_dispatch_meltw_transform(edge_W_t, F_tlx, &edge_W_t, &F_tlx, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flags);
+    if ( trans_shortkernel_grad == NULL | trans_edgekernel_grad == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+    libxsmm_meltw_transform_param trans_param_short;
+    libxsmm_meltw_transform_param trans_param_edge;
+#endif
 
     /* Dispatch brGEMM kernel for normal and edge cases*/
     libxsmm_smmfunction kernel_w5 = libxsmm_smmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
@@ -663,8 +708,14 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
         for(int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {                // Normal case
 
-            trans_shortkernel_grad(&grad_a[n*F_t*W_t + wb], &M_g, &grad_shorttrans[n*F_t*short_W_t], &N_g);
+#ifndef USE_TPP                                 // If not usintg TPP kernels
 
+            trans_shortkernel_grad(&grad_a[n*F_t*W_t + wb], &M_g, &grad_shorttrans[n*F_t*short_W_t], &N_g);
+#else
+            trans_param_short.in_ptr  = (void*)&grad_a[n*F_t*W_t + wb];
+            trans_param_short.out_ptr = (void*)&grad_shorttrans[n*F_t*short_W_t];
+            trans_shortkernel_grad( &trans_param_short );
+#endif
             for(int kw = 0; kw < WW_t; kw++) {
                 kernel_w5(&grad_shorttrans[n*F_t*short_W_t], &input_a[n*C_t*Win_t + wb + kw*dial], &flip_d_weight_a[kw*C_t*F_t]);
             }
@@ -672,9 +723,14 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         }
 
         if (W_t % XS_TILE_WBACKWARD != 0){
+#ifndef USE_TPP                                 // If not usintg TPP kernels
 
             trans_edgekernel_grad(&grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD], &M_g, &grad_edgetrans[n*F_t*edge_W_t], &N_g);
-
+#else
+            trans_param_edge.in_ptr  = (void*)&grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD];
+            trans_param_edge.out_ptr = (void*)&grad_edgetrans[n*F_t*edge_W_t];
+            trans_edgekernel_grad( &trans_param_edge );
+#endif
             for(int kw = 0; kw < WW_t; kw++) {
 
                 kernel_w6(&grad_edgetrans[n*F_t*edge_W_t], &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial], &flip_d_weight_a[kw*F_t*C_t]);
