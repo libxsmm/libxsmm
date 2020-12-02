@@ -291,7 +291,8 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
   void* result;
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_memalign(alignment, size);
-#elif defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__) /*C11*/
+#elif defined(LIBXSMM_BUILD) && ( /*C11*/ \
+  defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__))
   result = aligned_alloc(alignment, size);
 #elif (defined(_WIN32) || defined(__CYGWIN__))
   LIBXSMM_UNUSED(alignment);
@@ -2045,6 +2046,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       if (4 == request->descriptor.meltw->typesize)
 # endif
       {
+        int emu_amx = 0;
+        const char *const env_emu_amx = getenv("EMULATE_AMX");
+        if ( 0 == env_emu_amx ) {
+        } else {
+          emu_amx = atoi(env_emu_amx);
+        }
+        if (emu_amx > 0) {
+          generated_code.arch = libxsmm_cpuid();
+        }
+
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_mateltwise_kernel, &generated_code, request->descriptor.meltw);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
