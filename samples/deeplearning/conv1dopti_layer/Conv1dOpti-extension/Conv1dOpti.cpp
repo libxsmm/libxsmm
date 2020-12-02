@@ -33,7 +33,7 @@
 #define USE_TPP                             // Flag for using the TPP kernels
 
 #ifndef USE_TPP                             // If not usintg TPP kernels
-    #include "Bfloat16.h"
+    // #include "Bfloat16.h"
 #endif
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
@@ -101,27 +101,27 @@ libxsmm_xtransfunction get_tr_kernel(int typesize, int M, int N, int LDO) {
 }
 
 #ifndef USE_TPP
-void convert_f32_bf16(float* in, bfloat16* out, int len)
-{
-    /* Function to convert a Float32 array into a BFloat16 array */
+// void convert_f32_bf16(float* in, bfloat16* out, int len)
+// {
+//     /* Function to convert a Float32 array into a BFloat16 array */
 
-    int i = 0;
+//     int i = 0;
 
-    for (i = 0; i < len-16 + 1; i+=16 ) {
-        __m512  vfp32  = fp32_to_bfp16_rne_adjustment_avx512f( _mm512_loadu_ps( in+i ) );
-        __m256i vbfp16 = fp32_to_bfp16_truncate_avx512f( vfp32 );
-        _mm256_storeu_si256( (__m256i*)(out+i), vbfp16 );
-    }
-    if (i < len){
-        for (i = 0; i < len-15; i+=16 ) {
-            __mmask16 Msk = 0xFFFF  >> (16 - (len % 16));
-            __m512  vfp32  = fp32_to_bfp16_rne_adjustment_avx512f( _mm512_maskz_loadu_ps( Msk, (in+i) ) );
-            __m256i vbfp16 = fp32_to_bfp16_truncate_avx512f( vfp32 );
-            // _mm256_storeu_si256( (__m256i*)(out+i), vbfp16 );
-            _mm256_mask_storeu_epi16( (__m256i*)(out+i), Msk, vbfp16 );
-        }
-    }
-}
+//     for (i = 0; i < len-16 + 1; i+=16 ) {
+//         __m512  vfp32  = fp32_to_bfp16_rne_adjustment_avx512f( _mm512_loadu_ps( in+i ) );
+//         __m256i vbfp16 = fp32_to_bfp16_truncate_avx512f( vfp32 );
+//         _mm256_storeu_si256( (__m256i*)(out+i), vbfp16 );
+//     }
+//     if (i < len){
+//         for (i = 0; i < len-15; i+=16 ) {
+//             __mmask16 Msk = 0xFFFF  >> (16 - (len % 16));
+//             __m512  vfp32  = fp32_to_bfp16_rne_adjustment_avx512f( _mm512_maskz_loadu_ps( Msk, (in+i) ) );
+//             __m256i vbfp16 = fp32_to_bfp16_truncate_avx512f( vfp32 );
+//             // _mm256_storeu_si256( (__m256i*)(out+i), vbfp16 );
+//             _mm256_mask_storeu_epi16( (__m256i*)(out+i), Msk, vbfp16 );
+//         }
+//     }
+// }
 #endif
 
 at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight, int dilation){
@@ -178,16 +178,38 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     libxsmm_bmmfunction_reducebatch_strd bmmshortkernel = libxsmm_bmmdispatch_reducebatch_strd(XS_TILE_FORWARD, F_t, C_t, dial*2*sizeof(libxsmm_bfloat16), F_t*C_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
     libxsmm_bmmfunction_reducebatch_strd bmmedgekernel2 = libxsmm_bmmdispatch_reducebatch_strd(W_t - tile_multiple, F_t, C_t, dial*2*sizeof(libxsmm_bfloat16), F_t*C_t*sizeof(libxsmm_bfloat16), &edge_width, &lda, &ldc, NULL, NULL, NULL, NULL);
 
+#ifdef USE_TPP                                  // When using TPP kernel for initialization
+    /* Also JIT eltwise TPPs... */
+    libxsmm_blasint tpp_m = 1;                      // rows
+    libxsmm_blasint tpp_n = XS_TILE_FORWARD;      // columns
+    // libxsmm_blasint ld_zero = F_t;
+
+    libxsmm_meltwfunction_copy copy_kernel = libxsmm_dispatch_meltw_copy(tpp_m, tpp_n, NULL, NULL, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( copy_kernel == NULL ) {
+        fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
+        exit(-1);
+    }
+    libxsmm_meltw_copy_param copy_params;           // Copy parameter variable for holding the pointer
+
+#endif
+
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {                               // Loop for batches
         int last_block = 0;
         for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    // width blocking loop (Normal case)
-            for(int filter = 0; filter < F_t; filter++){                            /* Loop for initilization of output array */
+
+#ifndef USE_TPP
+            for(int filter = 0; filter < F_t; filter++){                            /* Loop for initialization of output array */
                 for(int out_w = wb; out_w < (wb + XS_TILE_FORWARD); out_w++){
                     Y_a[n*F_t*W_t + filter*W_t + out_w] = 0;
                 }
             }
-
+#else
+            for(int filter = 0; filter < F_t; filter++){       /* Loop for initialization of output array */
+                copy_params.out_ptr = &Y_a[n*F_t*W_t + filter*W_t + wb];
+                copy_kernel(&copy_params);
+            }
+#endif
             // VNNI transform and brGEMM
             bf16_vnni_reformat(&input_a[n*C_t*Win_t + 0*Win_t + wb], &input_a_shortvnni[n*C_t*short_width], (XS_TILE_FORWARD + dial*(WW_t-1)), C_t, Win_t, short_width);
             bmmshortkernel(&input_a_shortvnni[n*C_t*short_width], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
@@ -196,7 +218,7 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
         }
 
         if (W_t % XS_TILE_FORWARD != 0){                       // Edge case
-            for(int filter = 0; filter < F_t; filter++){       /* Loop for initilization of output array */
+            for(int filter = 0; filter < F_t; filter++){       /* Loop for initialization of output array */
                 for(int out_w = last_block + XS_TILE_FORWARD; out_w < W_t; out_w++){
                     Y_a[n*F_t*W_t + filter*W_t + out_w] = 0;
                 }
@@ -297,17 +319,39 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_bmmfunction_reducebatch_strd bmmshortkernel = libxsmm_bmmdispatch_reducebatch_strd(XS_TILE_DBACKWARD, C_t, F_t, 2*dial*sizeof(libxsmm_bfloat16), C_t*F_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
     libxsmm_bmmfunction_reducebatch_strd bmmshortkernel2 = libxsmm_bmmdispatch_reducebatch_strd(Win_t - tile_multiple, C_t, F_t, 2*dial*sizeof(libxsmm_bfloat16), C_t*F_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
 
+#ifdef USE_TPP                                  // When using TPP kernel for initialization
+    /* Also JIT eltwise TPPs... */
+    libxsmm_blasint tpp_m = 1;                      // rows
+    libxsmm_blasint tpp_n = XS_TILE_DBACKWARD;      // columns
+    // libxsmm_blasint ld_zero = C_t;
+
+    libxsmm_meltwfunction_copy copy_kernel = libxsmm_dispatch_meltw_copy(tpp_m, tpp_n, NULL, NULL, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( copy_kernel == NULL ) {
+        fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
+        exit(-1);
+    }
+    libxsmm_meltw_copy_param copy_params;           // Copy parameter variable for holding the pointer
+
+#endif
+
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {
         int last_block=0;
 
         for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
-            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initilization of grad array */
+
+#ifndef USE_TPP
+            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
                 for(int in_w = wb; in_w < wb + XS_TILE_DBACKWARD; in_w++){
                     d_input_a[n*C_t*Win_t + channel*Win_t + in_w] = 0;
                 }
             }
-
+#else
+            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
+                copy_params.out_ptr = &d_input_a[n*C_t*Win_t + channel*Win_t + wb];
+                copy_kernel(&copy_params);
+            }
+#endif
             if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD){
                 // Normal case (Take VNNI transform of a portion of grad_a array )
 
@@ -330,7 +374,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
         }
 
         if (Win_t % XS_TILE_DBACKWARD != 0){                                // Edge case
-            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initilization of grad array */
+            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
                 for(int in_w = last_block + XS_TILE_DBACKWARD; in_w < Win_t; in_w++){
                     d_input_a[n*C_t*Win_t + channel*Win_t + in_w] = 0;
                 }
@@ -415,11 +459,11 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
 #ifndef USE_TPP
 
-    convert_f32_bf16(flip_d_weight_a, flip_d_weight_bf16, F_t*C_t*WW_t);            // Convert FP32 weight gradiant array into BF16 weight gradiant (permuted) array
+    // convert_f32_bf16(flip_d_weight_a, flip_d_weight_bf16, F_t*C_t*WW_t);            // Convert FP32 weight gradiant array into BF16 weight gradiant (permuted) array
 #else
     /* Also JIT eltwise TPPs... */
-    libxsmm_blasint tpp_m = 1;
-    libxsmm_blasint tpp_n = F_t*C_t*WW_t;
+    tpp_m = 1;
+    tpp_n = F_t*C_t*WW_t;
 
     libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel = libxsmm_dispatch_meltw_cvtfp32bf16(tpp_m, tpp_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVT_NONE);
     if ( eltwise_kernel == NULL ) {
@@ -492,21 +536,44 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
     libxsmm_smmfunction_reducebatch_strd kernel = libxsmm_smmdispatch_reducebatch_strd(XS_TILE_FORWARD, F_t, C_t, dial*sizeof(float), F_t*C_t*sizeof(float), &ldb, &lda, &ldc, NULL, NULL, NULL, NULL);
     libxsmm_smmfunction_reducebatch_strd kernel2 = libxsmm_smmdispatch_reducebatch_strd(W_t - tile_multiple, F_t, C_t, dial*sizeof(float), F_t*C_t*sizeof(float), &ldb, &lda, &ldc, NULL, NULL, NULL, NULL);
 
+#ifdef USE_TPP                                  // When using TPP kernel for initialization
+    /* Also JIT eltwise TPPs... */
+    libxsmm_blasint tpp_m = 1;                      // rows
+    libxsmm_blasint tpp_n = XS_TILE_FORWARD;      // columns
+    // libxsmm_blasint ld_zero = F_t;
+
+    libxsmm_meltwfunction_copy copy_kernel = libxsmm_dispatch_meltw_copy(tpp_m, tpp_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( copy_kernel == NULL ) {
+        fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
+        exit(-1);
+    }
+    libxsmm_meltw_copy_param copy_params;           // Copy parameter variable for holding the pointer
+
+#endif
+
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {                               // Loop for batches
         int last_block = 0;
         for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    // width blocking loop (Normal case)
-            for(int filter = 0; filter < F_t; filter++){       /* Loop for initilization of output array */
+
+#ifndef USE_TPP                                                 // If not using TPP
+            for(int filter = 0; filter < F_t; filter++){       /* Loop for initialization of output array */
                 for(int out_w = wb; out_w < (wb + XS_TILE_FORWARD); out_w++){
                     Y_a[n*F_t*W_t + filter*W_t + out_w] = 0.0f;
                 }
             }
+#else
+            for(int filter = 0; filter < F_t; filter++){       /* Loop for initialization of output array */
+                copy_params.out_ptr = &Y_a[n*F_t*W_t + filter*W_t + wb];
+                copy_kernel(&copy_params);
+            }
+#endif
             kernel(&input_a[n*C_t*Win_t + 0*Win_t + wb], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
             last_block = wb;
         }
 
         if (W_t % XS_TILE_FORWARD != 0){                        // Edge Case
-            for(int filter = 0; filter < F_t; filter++){       /* Loop for initilization of output array */
+            for(int filter = 0; filter < F_t; filter++){       /* Loop for initialization of output array */
                 for(int out_w = last_block + XS_TILE_FORWARD; out_w < W_t; out_w++){
                     Y_a[n*F_t*W_t + filter*W_t + out_w] = 0.0f;
                 }
@@ -606,17 +673,39 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         }
     }
 
+#ifdef USE_TPP                                  // When using TPP kernel for initialization
+    /* Also JIT eltwise TPPs... */
+    libxsmm_blasint tpp_m = 1;                      // rows
+    libxsmm_blasint tpp_n = XS_TILE_DBACKWARD;      // columns
+    // libxsmm_blasint ld_zero = C_t;
+
+    libxsmm_meltwfunction_copy copy_kernel = libxsmm_dispatch_meltw_copy(tpp_m, tpp_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( copy_kernel == NULL ) {
+        fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
+        exit(-1);
+    }
+    libxsmm_meltw_copy_param copy_params;           // Copy parameter variable for holding the pointer
+
+#endif
+
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {
         int last_block=0;
 
         for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
-            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initilization of grad array */
+
+#ifndef USE_TPP                                                             // Not use TPP kernel
+            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
                 for(int in_w = wb; in_w < wb + XS_TILE_DBACKWARD; in_w++){
                     d_input_a[n*C_t*Win_t + channel*Win_t + in_w] = 0.0f;
                 }
             }
-
+#else
+            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
+                copy_params.out_ptr = &d_input_a[n*C_t*Win_t + channel*Win_t + wb];
+                copy_kernel(&copy_params);
+            }
+#endif
             if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD)              // Normal case
                 kernel(&grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
             else if (wb < (WW_t-1)*dial)                // Right side case
@@ -628,7 +717,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         }
 
         if (Win_t % XS_TILE_DBACKWARD != 0){                                // Edge case
-            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initilization of grad array */
+            for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
                 for(int in_w = last_block + XS_TILE_DBACKWARD; in_w < Win_t; in_w++){
                     d_input_a[n*C_t*Win_t + channel*Win_t + in_w] = 0.0f;
                 }
@@ -664,8 +753,8 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     unsigned int M_g = W_t;      //Output rows
     unsigned int N_g = F_t;    // Output columns
 
-#ifndef USE_TPP                                 // If not usintg TPP kernels
 
+#ifndef USE_TPP                                 // If not usintg TPP kernels
     int short_W_t = XS_TILE_WBACKWARD;
     int edge_W_t = W_t - tile_multiple;
 #else
@@ -799,8 +888,6 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& output){
 
     return d_input;
 }
-
-
 
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
