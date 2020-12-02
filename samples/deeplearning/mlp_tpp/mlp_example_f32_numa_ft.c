@@ -1089,7 +1089,7 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const float* wt_ptr, int start
       for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
         int ofm_offset = ofm1 * OFM_shift;
         for (ifm1 = 0; ifm1 < BF; ++ifm1) {
-          // -> LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, cfg.bc, cfg.bk)
+          /* -> LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, cfg.bc, cfg.bk) */
           int ifm_offset = ifm1 * CB_BLOCKS * IFM_shift;
           float *l_buf = (float*) wt_ptr + ofm_offset + ifm_offset;
           my_init_buf(l_buf, CB_BLOCKS * IFM_shift, 0, 0);
@@ -1108,7 +1108,7 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const float* wt_ptr, int start
       for ( ofm1 = ofm_s; ofm1 < ofm_e; ++ofm1 ) {
         int ofm_offset = ofm1 * OFM_shift;
         for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
-          // -> &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, cfg.bc, cfg.bk),
+          /* -> &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, cfg.bc, cfg.bk), */
           int ifm_offset = ifm1 * CB_BLOCKS * IFM_shift;
           float *l_buf = (float*) wt_ptr + ofm_offset + ifm_offset;
           my_init_buf(l_buf, CB_BLOCKS * IFM_shift, 0, 0);
@@ -1116,7 +1116,7 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const float* wt_ptr, int start
       }
     } else {
       for ( ofm1 = ofm_s; ofm1 < ofm_e; ++ofm1 ) {
-          // -> LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, cfg.bc, cfg.bk),
+          /* -> LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, cfg.bc, cfg.bk), */
           float *l_buf = (float*) wt_ptr + ofm1 * OFM_shift;
           my_init_buf(l_buf, OFM_shift, 0, 0);
       }
@@ -1167,7 +1167,7 @@ void init_on_numa_node_bwd_d ( my_fc_bwd_config cfg, float* filter_tr, int start
       for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
         int ifm_offset = ifm1 * IFM_shift;
         for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
-          // -> &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bk, bc ),
+          /* -> &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bk, bc ), */
           int ofm_offset = ofm1 * KB_BLOCKS * OFM_shift;
           float *l_buf = (float*) filter_tr + ifm_offset + ofm_offset;
           my_init_buf(l_buf, KB_BLOCKS * OFM_shift, 0, 0);
@@ -1175,7 +1175,7 @@ void init_on_numa_node_bwd_d ( my_fc_bwd_config cfg, float* filter_tr, int start
       }
     } else {
       for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
-          // -> &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, 0, 0, 0, nBlocksOFm, bk, bc),
+          /* -> &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, 0, 0, 0, nBlocksOFm, bk, bc), */
         float *l_buf = (float*) filter_tr + ifm1 * IFM_shift;
         my_init_buf(l_buf, IFM_shift, 0, 0);
       }
@@ -1187,7 +1187,7 @@ void init_on_numa_node_bwd_d ( my_fc_bwd_config cfg, float* filter_tr, int start
       for ( ifm1 = ifm_s; ifm1 < ifm_e; ++ifm1 ) {
         int ifm_offset = ifm1 * IFM_shift;
         for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
-          // -> &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bk, bc ),
+          /* -> &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1*KB_BLOCKS, 0, 0, nBlocksOFm, bk, bc ), */
           int ofm_offset = ofm1 * KB_BLOCKS * OFM_shift;
           float *l_buf = (float*) filter_tr + ifm_offset + ofm_offset;
           my_init_buf(l_buf, KB_BLOCKS * OFM_shift, 0, 0);
@@ -1195,7 +1195,7 @@ void init_on_numa_node_bwd_d ( my_fc_bwd_config cfg, float* filter_tr, int start
       }
     } else {
       for ( ifm1 = ifm_s; ifm1 < ifm_e; ++ifm1 ) {
-        // -> &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, 0, 0, 0, nBlocksOFm, bk, bc ),
+        /* -> &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, 0, 0, 0, nBlocksOFm, bk, bc ), */
         float *l_buf = (float*) filter_tr + ifm1 * IFM_shift;
         my_init_buf(l_buf, IFM_shift, 0, 0);
       }
@@ -1259,14 +1259,14 @@ void init_on_numa_node_bwd_w ( my_fc_bwd_config cfg, float *doutput, int start_t
   if (use_2d_blocking == 1) {
     if (BF == 1) {
       for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
-        //-> &LIBXSMM_VLA_ACCESS(4, doutput, 0, ofm1, 0, 0, nBlocksOFm, bn, bk)
+        /* -> &LIBXSMM_VLA_ACCESS(4, doutput, 0, ofm1, 0, 0, nBlocksOFm, bn, bk) */
         float *l_buf = (float*) doutput + ofm1 * OFM_shift;
         my_init_buf(l_buf, OFM_shift, 0, 0);
       }
     } else {
       for (bfn = 0; bfn < BF; bfn++) {
         for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
-          //-> &LIBXSMM_VLA_ACCESS(4, doutput, bfn*blocks, ofm1, 0, 0, nBlocksOFm, bn, bk)
+          /* -> &LIBXSMM_VLA_ACCESS(4, doutput, bfn*blocks, ofm1, 0, 0, nBlocksOFm, bn, bk) */
           float *l_buf = (float*) doutput + bfn * blocks * N_shift +  ofm1 * OFM_shift;
           my_init_buf(l_buf, OFM_shift, 0, 0);
         }
@@ -1275,7 +1275,7 @@ void init_on_numa_node_bwd_w ( my_fc_bwd_config cfg, float *doutput, int start_t
   } else {
     if (BF == 1) {
       for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
-        //-> &LIBXSMM_VLA_ACCESS(4, doutput, 0, ofm1, 0, ofm2*bbk, nBlocksOFm, bn, bk)
+        /* -> &LIBXSMM_VLA_ACCESS(4, doutput, 0, ofm1, 0, ofm2*bbk, nBlocksOFm, bn, bk) */
         ofm1 = ifm1ofm1 / Cck_work;
         ofm2 = (ifm1ofm1 % Cck_work) / Cc_work;
         float *l_buf = (float*) doutput + ofm1 * OFM_shift + ofm2*bbk;
@@ -1284,7 +1284,7 @@ void init_on_numa_node_bwd_w ( my_fc_bwd_config cfg, float *doutput, int start_t
     } else {
       for (bfn = 0; bfn < BF; bfn++) {
         for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
-          //-> &LIBXSMM_VLA_ACCESS(4, doutput, bfn*blocks, ofm1, 0, ofm2*bbk, nBlocksOFm, bn, bk),
+          /* -> &LIBXSMM_VLA_ACCESS(4, doutput, bfn*blocks, ofm1, 0, ofm2*bbk, nBlocksOFm, bn, bk), */
           ofm1 = ifm1ofm1 / Cck_work;
           ofm2 = (ifm1ofm1 % Cck_work) / Cc_work;
           float *l_buf = (float*) doutput + bfn * blocks * N_shift +  ofm1 * OFM_shift + ofm2*bbk;
