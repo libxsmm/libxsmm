@@ -280,44 +280,43 @@ void libxsmm_generator_transform_Xway_half_load_blend_avx512( libxsmm_generated_
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generated_code* io_generated_code,
-                                                              const char              i_vector_name,
-                                                              const unsigned int      i_gp_reg_in,
-                                                              const unsigned int      i_vec_reg_dst_start,
-                                                              const unsigned int      i_ld,
-                                                              const unsigned int      i_ld_instr,
-                                                              const unsigned int      i_ways,
-                                                              const unsigned int      i_mask_reg_0,
-                                                              const unsigned int      i_mask_reg_1,
-                                                              const unsigned int      i_mask_reg_2) {
+                                                                 const char              i_vector_name,
+                                                                 const unsigned int      i_gp_reg_in,
+                                                                 const unsigned int      i_vec_reg_dst_start,
+                                                                 const unsigned int      i_ld,
+                                                                 const unsigned int      i_ld_instr,
+                                                                 const unsigned int      i_ways,
+                                                                 const unsigned int      i_mask_reg_0,
+                                                                 const unsigned int      i_mask_reg_1,
+                                                                 const unsigned int      i_mask_reg_2) {
+  unsigned int l_i = 0;
+  unsigned int l_stride_offset = i_ways * i_ld;
 
-    unsigned int l_i = 0;
-    unsigned int l_stride_offset = i_ways * i_ld;
+  /* supports only up to 32 registers */
+  if (i_ways > 32) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
 
-    // supports only up to 32 registers
-    if (i_ways > 32) {
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-        return;
-    }
+  for ( l_i = 0 ; l_i < i_ways ; ++l_i ) {
+    unsigned int l_dst = l_i + i_vec_reg_dst_start;
 
-    for ( l_i = 0 ; l_i < i_ways ; ++l_i ) {
-        unsigned int l_dst = l_i + i_vec_reg_dst_start;
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
+                                      i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i*i_ld,
+                                      i_vector_name, l_dst, 0, 1, 0 );
 
-        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
-                                        i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i*i_ld,
-                                        i_vector_name, l_dst, 0, 1, 0 );
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
+                                      i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i*i_ld + l_stride_offset,
+                                      i_vector_name, l_dst, i_mask_reg_0, 0, 0 );
 
-        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
-                                        i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i*i_ld + l_stride_offset,
-                                        i_vector_name, l_dst, i_mask_reg_0, 0, 0 );
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
+                                      i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i*i_ld + l_stride_offset*2,
+                                      i_vector_name, l_dst, i_mask_reg_1, 0, 0 );
 
-        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
-                                        i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i*i_ld + l_stride_offset*2,
-                                        i_vector_name, l_dst, i_mask_reg_1, 0, 0 );
-
-        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
-                                        i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i*i_ld + l_stride_offset*3,
-                                        i_vector_name, l_dst, i_mask_reg_2, 0, 0 );
-    }
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
+                                      i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i*i_ld + l_stride_offset*3,
+                                      i_vector_name, l_dst, i_mask_reg_2, 0, 0 );
+  }
 }
 
 LIBXSMM_API_INTERN

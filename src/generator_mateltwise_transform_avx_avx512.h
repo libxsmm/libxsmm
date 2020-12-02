@@ -75,6 +75,18 @@ void libxsmm_generator_transform_Xway_half_load_blend_avx512( libxsmm_generated_
                                                               const unsigned int      i_mask_reg );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generated_code* io_generated_code,
+                                                                 const char              i_vector_name,
+                                                                 const unsigned int      i_gp_reg_in,
+                                                                 const unsigned int      i_vec_reg_dst_start,
+                                                                 const unsigned int      i_ld,
+                                                                 const unsigned int      i_ld_instr,
+                                                                 const unsigned int      i_ways,
+                                                                 const unsigned int      i_mask_reg_0,
+                                                                 const unsigned int      i_mask_reg_1,
+                                                                 const unsigned int      i_mask_reg_2 );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_full_store_avx512( libxsmm_generated_code* io_generated_code,
                                                          const char              i_vector_name,
                                                          const unsigned int      i_gp_reg_out,
