@@ -24,9 +24,9 @@
 
 #define CHECK_L1
 #define OVERWRITE_DOUTPUT_BWDUPD
-//#define FUSE_WT_TRANS_SGD
-//#define FUSE_ACT_TRANS_FWD
-//#define FUSE_DACT_TRANS_BWD
+/*#define FUSE_WT_TRANS_SGD*/
+/*#define FUSE_ACT_TRANS_FWD*/
+/*#define FUSE_DACT_TRANS_BWD*/
 #define PRIVATE_WT_TRANS
 #define PRIVATE_ACT_TRANS
 #define PRIVATE_DACT_TRANS
@@ -1841,7 +1841,7 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr
       for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
         int ofm_offset = ofm1 * OFM_shift;
         for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
-          // -> &LIBXSMM_VLA_ACCESS(5, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
+          /* -> &LIBXSMM_VLA_ACCESS(5, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb), */
           int ifm_offset = ifm1 * CB_BLOCKS * IFM_shift;
           libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*) wt_ptr + ofm_offset + ifm_offset;
           float *l_buf_master = (float*) wt_master_ptr + ofm_offset + ifm_offset;
@@ -1850,7 +1850,7 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr
       }
     } else {
       for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
-        // -> &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
+        /* -> &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb), */
         libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*) wt_ptr + ofm1 * OFM_shift;
         float *l_buf_master = (float*) wt_master_ptr + ofm1 * OFM_shift;
         libxsmm_rne_convert_fp32_bf16( l_buf_master, l_buf, OFM_shift );
@@ -1863,7 +1863,7 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr
       for ( ofm1 = ofm_s; ofm1 < ofm_e; ++ofm1 ) {
         int ofm_offset = ofm1 * OFM_shift;
         for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
-          //-> &LIBXSMM_VLA_ACCESS(5, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
+          /* -> &LIBXSMM_VLA_ACCESS(5, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb), */
           int ifm_offset = ifm1 * CB_BLOCKS * IFM_shift;
           libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*) wt_ptr + ofm_offset + ifm_offset;
           float *l_buf_master = (float*) wt_master_ptr + ofm_offset + ifm_offset;
@@ -1872,7 +1872,7 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr
       }
     } else {
       for ( ofm1 = ofm_s; ofm1 < ofm_e; ++ofm1 ) {
-        //-> LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
+        /* -> LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb), */
         libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*) wt_ptr + ofm1 * OFM_shift;
         float *l_buf_master = (float*) wt_master_ptr + ofm1 * OFM_shift;
         libxsmm_rne_convert_fp32_bf16( l_buf_master, l_buf, OFM_shift );
@@ -1929,12 +1929,12 @@ void init_on_numa_node_bwd_d ( my_fc_bwd_config cfg, libxsmm_bfloat16* scratch, 
     tmp_filter_tr = ((libxsmm_bfloat16*)((char*)scratch + cfg.bwd_private_tr_wt_scratch_mark)) + ltid * bc * cfg.K;
     if (BF > 1) {
       for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
-        // -> &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, ofm1*KB_BLOCKS, 0, 0, 0, bk_lp, bc, lpb))
+        /* -> &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, ofm1*KB_BLOCKS, 0, 0, 0, bk_lp, bc, lpb)) */
         libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*) tmp_filter_tr + ofm1 * KB_BLOCKS * OFM_shift;
         my_init_buf_bf16(l_buf, KB_BLOCKS * OFM_shift, 0, 0);
       }
     } else {
-      // -> &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, 0, 0, 0, 0, bk_lp, bc, lpb))
+      /* -> &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, 0, 0, 0, 0, bk_lp, bc, lpb)) */
       libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*) tmp_filter_tr;
       my_init_buf_bf16(l_buf, IFM_shift, 0, 0);
     }
@@ -2024,29 +2024,29 @@ void init_on_numa_node_bwd_w( my_fc_bwd_config cfg, libxsmm_bfloat16* scratch, i
   libxsmm_blasint ifm2 = 0, ifm1 = 0;
 
   if (use_2d_blocking == 1) {
-    //LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,  tmp_input_tr, ((libxsmm_bfloat16*)((char*)scratch + cfg.upd_private_tr_act_scratch_mark)) + ltid * bc * cfg.N * im_tasks_per_thread, nBlocksMB, bc, bn);
+    /*LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,  tmp_input_tr, ((libxsmm_bfloat16*)((char*)scratch + cfg.upd_private_tr_act_scratch_mark)) + ltid * bc * cfg.N * im_tasks_per_thread, nBlocksMB, bc, bn);*/
     libxsmm_bfloat16 *tmp_input_tr = ((libxsmm_bfloat16*)((char*)scratch + cfg.upd_private_tr_act_scratch_mark)) + ltid * bc * cfg.N * im_tasks_per_thread;
     libxsmm_bfloat16 *tmp_doutput_tr = ((libxsmm_bfloat16*)((char*)scratch + cfg.upd_private_tr_dact_scratch_mark)) + ltid * bk * cfg.N;
 
     if (BF == 1) {
          for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
-            // -> &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, 0, 0, 0, nBlocksMB, bc, bn)
+            /* -> &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, 0, 0, 0, nBlocksMB, bc, bn) */
             libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*)tmp_input_tr + (ifm1-my_im_start) * nBlocksMB * bc * bn;
             my_init_buf_bf16(l_buf, nBlocksMB * bc * bn, 0, 0);
          }
-      // -> &LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb),
+      /* -> &LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb), */
       libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*)tmp_doutput_tr;
       my_init_buf_bf16(l_buf, N_shift, 0, 0);
     } else {
       for (bfn = 0; bfn < BF; bfn++) {
         for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
-          // -> &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn))
+          /* -> &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_im_start, bfn*blocks, ifm2*bbc, 0, nBlocksMB, bc, bn)) */
             libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*)tmp_input_tr + (ifm1-my_im_start) * nBlocksMB * bc * bn
                                                                       + bfn*blocks * bc * bn
                                                                       + ifm2*bbc * bn;
             my_init_buf_bf16(l_buf,  bbc * bn, 0, 0);
         }
-        // -> &LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, bfn*blocks, 0, 0, 0, bn_lp, bk, lpb))
+        /* -> &LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, bfn*blocks, 0, 0, 0, bn_lp, bk, lpb)) */
         libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*) tmp_doutput_tr + bfn * blocks * N_shift;
         my_init_buf_bf16(l_buf, OFM_shift, 0, 0);
       }
@@ -2057,7 +2057,7 @@ void init_on_numa_node_bwd_w( my_fc_bwd_config cfg, libxsmm_bfloat16* scratch, i
       for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
         ofm1 = ifm1ofm1 / Cck_work;
         ofm2 = (ifm1ofm1 % Cck_work) / Cc_work;
-        // -> LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb))
+        /* -> LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb)) */
         libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*)doutput_tr + ofm1 * OFM_shift + ofm2*bbk;
         my_init_buf_bf16(l_buf, bbk * bk, 0, 0);
       }
@@ -2066,7 +2066,7 @@ void init_on_numa_node_bwd_w( my_fc_bwd_config cfg, libxsmm_bfloat16* scratch, i
         for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
           ofm1 = ifm1ofm1 / Cck_work;
           ofm2 = (ifm1ofm1 % Cck_work) / Cc_work;
-          // -> &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb))
+          /* -> &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, bfn*blocks, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb)) */
           libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*)doutput_tr + bfn * blocks * N_shift +  ofm1 * OFM_shift + ofm2*bbk;
           my_init_buf_bf16(l_buf, bbk * bk, 0, 0);
         }

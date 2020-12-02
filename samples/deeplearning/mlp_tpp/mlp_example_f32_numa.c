@@ -1227,7 +1227,7 @@ int setup_my_numa_fwd(my_numa_thr_cfg **numa_thr_cfg_, int num_layers, my_fc_fwd
                 numa_thr_cfg[i].blocksOFm_s[l] = nBlocksOFm;
                 numa_thr_cfg[i].blocksOFm_e[l] = 0;
                 for (thr = numa_thr_cfg[i].thr_s; thr <= numa_thr_cfg[i].thr_e; thr++) {
-                    libxsmm_blasint my_col_id = thr % column_teams; // ltid
+                    libxsmm_blasint my_col_id = thr % column_teams; /* ltid */
 
                     libxsmm_blasint my_in_start = LIBXSMM_MIN(my_col_id * in_tasks_per_thread, nBlocksOFm);
                     libxsmm_blasint my_in_end = LIBXSMM_MIN((my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
@@ -1469,7 +1469,7 @@ int copy_to_numa_buffers_fwd(my_numa_thr_cfg *numa_thr_cfg, my_fc_fwd_config my_
     const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
     const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-    //libxsmm_barrier_init( my_fc_fwd.barrier, my_tid );
+    /*libxsmm_barrier_init( my_fc_fwd.barrier, my_tid );*/
 
     float *inp, *out;
     if (dir) {
@@ -1491,7 +1491,7 @@ int copy_to_numa_buffers_fwd(my_numa_thr_cfg *numa_thr_cfg, my_fc_fwd_config my_
 
     }
 
-    //libxsmm_barrier_wait( my_fc_fwd.barrier, my_tid );
+    /*libxsmm_barrier_wait( my_fc_fwd.barrier, my_tid );*/
 
     return 1;
 }
@@ -1741,7 +1741,7 @@ int main(int argc, char* argv[])
   }
 
   my_numa_thr_cfg *numa_thr_cfg;
-  // Define numa configuration: #numa nodes, #threads on each node
+  /* Define numa configuration: #numa nodes, #threads on each node */
   setup_my_numa(&numa_thr_cfg, num_layers, nThreads);
 
   if ( type == 'F') {
@@ -1853,21 +1853,21 @@ int main(int argc, char* argv[])
     printf("# Performance - FWD-BWD (custom-Storage) #\n");
     printf("##########################################\n");
 
-    // Timers:
+    /* Timers: */
     fwd_time = (unsigned long long *) malloc(sizeof(unsigned long long) * nThreads);
     bwd_time = (unsigned long long *) malloc(sizeof(unsigned long long) * nThreads);
     solver_time = (unsigned long long *) malloc(sizeof(unsigned long long) * nThreads);
 
-    // Calculate chunks of weights used on each nume node on FWD based on FWD thread decomposition
+    /* Calculate chunks of weights used on each nume node on FWD based on FWD thread decomposition */
     setup_my_numa_fwd(&numa_thr_cfg, num_layers, my_fc_fwd);
-    // Calculate chunks of weights used on each nume node on BWD/d based on BWD/d thread decomposition
+    /* Calculate chunks of weights used on each nume node on BWD/d based on BWD/d thread decomposition */
     setup_my_numa_bwd_d(&numa_thr_cfg, num_layers, my_fc_bwd);
-    // NUMA aware allocations of buffers needed for FWD
+    /* NUMA aware allocations of buffers needed for FWD */
     allocate_numa_buffers_fwd(&numa_thr_cfg, num_layers, my_fc_fwd);
-    // NUMA aware allocations of buffers needed for BWD
+    /* NUMA aware allocations of buffers needed for BWD */
     allocate_numa_buffers_bwd_d(&numa_thr_cfg, num_layers, my_fc_bwd);
 
-    // Utility needed for transpoisition of weigths on BWD/d: get numa node based on current ofm
+    /* Utility needed for transpoisition of weigths on BWD/d: get numa node based on current ofm */
     int **fwd_ofm_to_node = (int**)malloc(sizeof(int*) * num_layers);
     set_fwd_ofm_to_node(fwd_ofm_to_node, &numa_thr_cfg, num_layers, my_fc_fwd);
 
@@ -1887,13 +1887,13 @@ int main(int argc, char* argv[])
       solver_time[tid] = 0;
       const int numa_node = numa_node_of_cpu(tid);
       for ( i = 0; i < num_layers; ++i) {
-        // Copy original weights to NUMA FWD buffers. Threading decomposition is the same with FWD.
+        /* Copy original weights to NUMA FWD buffers. Threading decomposition is the same with FWD. */
         copy_to_numa_buffers_fwd(&numa_thr_cfg[numa_node], my_fc_fwd[i], fil_libxsmm[i], numa_node, i, tid, 0);
       }
       for (j = 0; j < iters; ++j) {
        unsigned long long fwd_time_start = libxsmm_timer_tick();
        for ( i = 0; i < num_layers; ++i) {
-          // FWD: Use weights from NUMA FWD buffers
+          /* FWD: Use weights from NUMA FWD buffers */
           my_fc_fwd_exec( my_fc_fwd[i], act_libxsmm[i], act_libxsmm[i+1],
                           bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch, &numa_thr_cfg[numa_node], i );
         }
@@ -1906,29 +1906,29 @@ int main(int argc, char* argv[])
 #endif
         for ( i = num_layers-1; i > 0; --i) {
           unsigned long long bwd_time_start = libxsmm_timer_tick();
-          // Transpose weights from NUMA FWD buffers to NUMA BWD buffer. Threading decomposition is the same with BWD/d.
+          /* Transpose weights from NUMA FWD buffers to NUMA BWD buffer. Threading decomposition is the same with BWD/d. */
           my_fc_bwd_d_transpose( my_fc_bwd[i], tid , &numa_thr_cfg, numa_node, i, fwd_ofm_to_node[i] );
-          // BWD/d: Use weights from NUMA BWD buffers
+          /* BWD/d: Use weights from NUMA BWD buffers */
           my_fc_bwd_exec( my_fc_bwd[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch, &numa_thr_cfg[numa_node], i );
           bwd_time[tid] += (libxsmm_timer_tick() - bwd_time_start);
-          // Solver: Update NUMA FWD buffers. Threading decomposition is the same with FWD.
+          /* Solver: Update NUMA FWD buffers. Threading decomposition is the same with FWD. */
           unsigned long long solver_time_start = libxsmm_timer_tick();
           my_opt_exec( my_opt[i], delfil_libxsmm[i], 0, tid, &numa_thr_cfg[numa_node], i, my_fc_fwd[i] );
           solver_time[tid] += (libxsmm_timer_tick() - solver_time_start);
 
         }
-        // BWD/w: todo
+        /* BWD/w: todo */
         unsigned long long bwd_time_start = libxsmm_timer_tick();
         my_fc_bwd_exec( my_fc_bwd[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch, &numa_thr_cfg[numa_node], 0 );
         bwd_time[tid] += (libxsmm_timer_tick() - bwd_time_start);
-        // Solver: Update NUMA FWD buffers. Threading decomposition is the same with FWD.
+        /* Solver: Update NUMA FWD buffers. Threading decomposition is the same with FWD. */
         unsigned long long solver_time_start = libxsmm_timer_tick();
         my_opt_exec( my_opt[0], delfil_libxsmm[0], 0, tid, &numa_thr_cfg[numa_node], 0, my_fc_fwd[0] );
         solver_time[tid] += (libxsmm_timer_tick() - solver_time_start);
       }
-      // Copy result from NUMA FWD Buffers to original weights. Threading decomposition is the same with FWD.
+      /* Copy result from NUMA FWD Buffers to original weights. Threading decomposition is the same with FWD. */
       for ( i = 0; i < num_layers; ++i) {
         copy_to_numa_buffers_fwd(&numa_thr_cfg[numa_node], my_fc_fwd[i], fil_libxsmm[i], numa_node, i, tid, 1);
       }

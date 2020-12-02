@@ -1596,7 +1596,7 @@ int setup_my_numa_fwd(my_numa_thr_cfg **numa_thr_cfg_, int num_layers, my_fc_fwd
                 numa_thr_cfg[i].blocksOFm_e[l] = 0;
                 for (thr = numa_thr_cfg[i].thr_s; thr <= numa_thr_cfg[i].thr_e
                         && numa_thr_cfg[i].thr_s != numa_thr_cfg[i].thr_e; thr++) {
-                    libxsmm_blasint my_col_id = thr % column_teams; // ltid
+                    libxsmm_blasint my_col_id = thr % column_teams; /* ltid */
 
                     libxsmm_blasint my_in_start = LIBXSMM_MIN(my_col_id * in_tasks_per_thread, nBlocksOFm);
                     libxsmm_blasint my_in_end = LIBXSMM_MIN((my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
