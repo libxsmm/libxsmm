@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
                   l_beta,
                   a,
                   b,
-                  c2);
+                  c1);
 
   /* run optimized */
   mykernel( a, b, c2 );
