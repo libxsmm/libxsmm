@@ -153,6 +153,7 @@ typedef struct my_fc_fwd_config {
   libxsmm_blasint fwd_2d_blocking;
   libxsmm_blasint fwd_row_teams;
   libxsmm_blasint fwd_column_teams;
+  libxsmm_blasint fwd_model_hyperpartitions;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
   libxsmm_bsmmfunction fwd_config_kernel;
@@ -186,10 +187,12 @@ typedef struct my_fc_bwd_config {
   libxsmm_blasint bwd_2d_blocking;
   libxsmm_blasint bwd_row_teams;
   libxsmm_blasint bwd_column_teams;
+  libxsmm_blasint bwd_model_hyperpartitions;
   libxsmm_blasint upd_bf;
   libxsmm_blasint upd_2d_blocking;
   libxsmm_blasint upd_row_teams;
   libxsmm_blasint upd_column_teams;
+  libxsmm_blasint upd_model_hyperpartitions;
   libxsmm_blasint ifm_subtasks;
   libxsmm_blasint ofm_subtasks;
   libxsmm_blasint fuse_relu_bwd;
@@ -274,6 +277,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.fuse_type = fuse_type;
 
   /* setup parallelization strategy */
+  res.fwd_model_hyperpartitions = 1;
   if (threads == 16) {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 1;
@@ -287,8 +291,9 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   } else if (threads == 56) {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 1;
-    res.fwd_row_teams = 4;
-    res.fwd_column_teams = 14;
+    res.fwd_row_teams = 2;
+    res.fwd_column_teams = 7;
+    res.fwd_model_hyperpartitions = 4;
   } else {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 0;
@@ -455,6 +460,8 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.lr = lr;
 
   /* setup parallelization strategy */
+  res.bwd_model_hyperpartitions = 1;
+  res.upd_model_hyperpartitions = 1;
   if (threads == 16) {
     res.bwd_bf = 1;
     res.bwd_2d_blocking = 1;
@@ -480,12 +487,14 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   } else if (threads == 56) {
     res.bwd_bf = 1;
     res.bwd_2d_blocking = 1;
-    res.bwd_row_teams = 4;
-    res.bwd_column_teams = 14;
+    res.bwd_row_teams = 2;
+    res.bwd_column_teams = 7;
+    res.bwd_model_hyperpartitions = 4;
     res.upd_bf = 1;
     res.upd_2d_blocking = 1;
-    res.upd_row_teams = 4;
-    res.upd_column_teams = 14;
+    res.upd_row_teams = 2;
+    res.upd_column_teams = 7;
+    res.upd_model_hyperpartitions = 4;
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
   } else {
@@ -820,16 +829,20 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
   blocks = CB_BLOCKS;
 
   if (use_2d_blocking == 1) {
+    int _ltid, hyperpartition_id, _nBlocksOFm;
     row_teams = cfg.fwd_row_teams;
     column_teams = cfg.fwd_column_teams;
-    my_col_id = ltid % column_teams;
-    my_row_id = ltid / column_teams;
+    _nBlocksOFm = nBlocksOFm/cfg.fwd_model_hyperpartitions;
+    _ltid = ltid % (row_teams * column_teams);
+    hyperpartition_id = ltid / (row_teams * column_teams);
+    my_col_id = _ltid % column_teams;
+    my_row_id = _ltid / column_teams;
     im_tasks_per_thread = (nBlocksMB + row_teams-1)/row_teams;
-    in_tasks_per_thread = (nBlocksOFm + column_teams-1)/column_teams;
+    in_tasks_per_thread = (_nBlocksOFm + column_teams-1)/column_teams;
     my_im_start = LIBXSMM_MIN( my_row_id * im_tasks_per_thread, nBlocksMB);
     my_im_end = LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, nBlocksMB);
-    my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksOFm);
-    my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
+    my_in_start = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksOFm);
+    my_in_end = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksOFm);
   }
 
   /* lazy barrier init */
@@ -1103,16 +1116,20 @@ if (cfg.upd_2d_blocking == 0) {
     blocks = KB_BLOCKS;
 
     if (use_2d_blocking == 1) {
+      int _ltid, hyperpartition_id, _nBlocksIFm;
       row_teams = cfg.bwd_row_teams;
       column_teams = cfg.bwd_column_teams;
-      my_col_id = ltid % column_teams;
-      my_row_id = ltid / column_teams;
+      _nBlocksIFm = nBlocksIFm/cfg.bwd_model_hyperpartitions;
+      _ltid = ltid % (row_teams * column_teams);
+      hyperpartition_id = ltid / (row_teams * column_teams);
+      my_col_id = _ltid % column_teams;
+      my_row_id = _ltid / column_teams;
       im_tasks_per_thread = (nBlocksMB + row_teams-1)/row_teams;
-      in_tasks_per_thread = (nBlocksIFm + column_teams-1)/column_teams;
+      in_tasks_per_thread = (_nBlocksIFm + column_teams-1)/column_teams;
       my_im_start = LIBXSMM_MIN( my_row_id * im_tasks_per_thread, nBlocksMB);
       my_im_end = LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, nBlocksMB);
-      my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksIFm);
-      my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksIFm);
+      my_in_start = hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksIFm);
+      my_in_end = hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksIFm);
     }
 
     /* transpose weight */
@@ -1290,16 +1307,20 @@ if (cfg.upd_2d_blocking == 0) {
     const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
 
     if (use_2d_blocking == 1) {
+      int _ltid, hyperpartition_id, _nBlocksOFm;
       row_teams = cfg.upd_row_teams;
       column_teams = cfg.upd_column_teams;
-      my_col_id = ltid % column_teams;
-      my_row_id = ltid / column_teams;
+      _nBlocksOFm = nBlocksOFm/cfg.upd_model_hyperpartitions;
+      _ltid = ltid % (row_teams * column_teams);
+      hyperpartition_id = ltid / (row_teams * column_teams);
+      my_col_id = _ltid % column_teams;
+      my_row_id = _ltid / column_teams;
       im_tasks_per_thread = (nBlocksIFm + row_teams-1)/row_teams;
-      in_tasks_per_thread = (nBlocksOFm + column_teams-1)/column_teams;
+      in_tasks_per_thread = (_nBlocksOFm + column_teams-1)/column_teams;
       my_im_start = LIBXSMM_MIN( my_row_id * im_tasks_per_thread, nBlocksIFm);
       my_im_end = LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, nBlocksIFm);
-      my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksOFm);
-      my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
+      my_in_start = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksOFm);
+      my_in_end = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksOFm);
     }
 
   if (cfg.upd_2d_blocking == 0) {
@@ -1852,10 +1873,16 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr
   unsigned long long blocks = CB_BLOCKS;
 
   if (use_2d_blocking == 1) {
+    int _ltid, hyperpartition_id, _nBlocksOFm;
+    int row_teams = cfg.fwd_row_teams;
     column_teams = cfg.fwd_column_teams;
-    in_tasks_per_thread = (nBlocksOFm + column_teams-1)/column_teams;
-    my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksOFm);
-    my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
+    _nBlocksOFm = nBlocksOFm/cfg.fwd_model_hyperpartitions;
+    _ltid = ltid % (row_teams * column_teams);
+    hyperpartition_id = ltid / (row_teams * column_teams);
+    my_col_id = _ltid % column_teams;
+    in_tasks_per_thread = (_nBlocksOFm + column_teams-1)/column_teams;
+    my_in_start = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksOFm);
+    my_in_end = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksOFm);
   }
 
   /* lazy barrier init */
@@ -2370,7 +2397,7 @@ int main(int argc, char* argv[])
     free(cur_fil_vnni);
   }
 #else
-    my_init_buf_bf16( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 );
+    //my_init_buf_bf16( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 );
 #endif
   }
   for ( i = 0 ; i < num_layers; ++i ) {
