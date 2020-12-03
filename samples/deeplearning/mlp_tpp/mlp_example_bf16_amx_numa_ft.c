@@ -28,6 +28,8 @@
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), _mm512_cvtneps_pbh((B)))
 
+#define BYPASS_SGD
+
 LIBXSMM_INLINE void my_init_buf(float* buf, size_t size, int initPos, int initOne)
 {
   int i;
@@ -223,6 +225,16 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.fwd_2d_blocking = 1;
     res.fwd_row_teams = 2;
     res.fwd_column_teams = 8;
+  } else if (threads == 14) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_row_teams = 2;
+    res.fwd_column_teams = 7;
+  } else if (threads == 56) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_row_teams = 4;
+    res.fwd_column_teams = 14;
   } else {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 0;
@@ -389,9 +401,31 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.bwd_row_teams = 2;
     res.bwd_column_teams = 8;
     res.upd_bf = 1;
-    res.upd_2d_blocking = 0;
-    res.upd_row_teams = 1;
-    res.upd_column_teams = 1;
+    res.upd_2d_blocking = 1;
+    res.upd_row_teams = 2;
+    res.upd_column_teams = 8;
+    res.ifm_subtasks = 1;
+    res.ofm_subtasks = 1;
+  } else if (threads == 14) {
+    res.bwd_bf = 1;
+    res.bwd_2d_blocking = 1;
+    res.bwd_row_teams = 2;
+    res.bwd_column_teams = 7;
+    res.upd_bf = 1;
+    res.upd_2d_blocking = 1;
+    res.upd_row_teams = 2;
+    res.upd_column_teams = 7;
+    res.ifm_subtasks = 1;
+    res.ofm_subtasks = 1;
+  } else if (threads == 56) {
+    res.bwd_bf = 1;
+    res.bwd_2d_blocking = 1;
+    res.bwd_row_teams = 4;
+    res.bwd_column_teams = 14;
+    res.upd_bf = 1;
+    res.upd_2d_blocking = 1;
+    res.upd_row_teams = 4;
+    res.upd_column_teams = 14;
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
   } else {
@@ -2149,11 +2183,15 @@ int main(int argc, char* argv[])
         for ( i = num_layers-1; i > 0; --i) {
           my_fc_bwd_exec( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                           act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_PASS_BWD, 0, tid, scratch );
+#ifndef BYPASS_SGD
           my_opt_exec( my_opt[i], fil_libxsmm[i], fil_master[i], delfil_libxsmm[i], 0, tid, scratch );
+#endif
         }
         my_fc_bwd_exec( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                         act_libxsmm[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_PASS_BWD_W, 0, tid, scratch );
+#ifndef BYPASS_SGD
         my_opt_exec( my_opt[0], fil_libxsmm[0], fil_master[0], delfil_libxsmm[0], 0, tid, scratch );
+#endif
       }
     }
     l_end = libxsmm_timer_tick();

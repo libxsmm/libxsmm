@@ -32,6 +32,7 @@
 #define PRIVATE_DACT_TRANS
 #define FUSE_SGD_IN_BWD
 
+#define BYPASS_SGD
 
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), _mm512_cvtneps_pbh((B)))
@@ -1323,7 +1324,8 @@ if (cfg.upd_2d_blocking == 0) {
           for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
             /* Transpose input block */
             cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(4, doutput, 0, ofm1, 0, 0, nBlocksOFm, bn, bk), &LIBXSMM_VLA_ACCESS(4, input, 0, ifm1, 0, 0, nBlocksIFm, bn, bc), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
-          {
+#ifndef BYPASS_SGD
+            {
             __m512 vlr = _mm512_set1_ps( cfg.lr );
             libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
             libxsmm_bfloat16 *wt_bf16  = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, filter,         ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
@@ -1334,6 +1336,7 @@ if (cfg.upd_2d_blocking == 0) {
               _mm512_storeu_ps( wt_fp32+i, newfilter );
             }
           }
+#endif
           }
         }
       } else {
@@ -1352,6 +1355,7 @@ if (cfg.upd_2d_blocking == 0) {
                 eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
                 eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
                 eltwise_kernel2(&eltwise_params);
+#ifndef BYPASS_SGD
                 {
                   __m512 vlr = _mm512_set1_ps( cfg.lr );
                   libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
@@ -1363,6 +1367,7 @@ if (cfg.upd_2d_blocking == 0) {
                     _mm512_storeu_ps( wt_fp32+i, newfilter );
                   }
                 }
+#endif
               }
             }
           }
@@ -1376,6 +1381,7 @@ if (cfg.upd_2d_blocking == 0) {
           ifm1 = ((ifm1ofm1 % Cck_work) % Cc_work) / ifm_subtasks;
           ifm2 = ((ifm1ofm1 % Cck_work) % Cc_work) % ifm_subtasks;
           cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+#ifndef BYPASS_SGD
           {
             __m512 vlr = _mm512_set1_ps( cfg.lr );
             libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
@@ -1387,6 +1393,7 @@ if (cfg.upd_2d_blocking == 0) {
               _mm512_storeu_ps( wt_fp32+i, newfilter );
             }
           }
+#endif
         }
       } else {
         for (bfn = 0; bfn < BF; bfn++) {
@@ -1406,6 +1413,7 @@ if (cfg.upd_2d_blocking == 0) {
               eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk);
               eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
               eltwise_kernel2(&eltwise_params);
+#ifndef BYPASS_SGD
               {
                 __m512 vlr = _mm512_set1_ps( cfg.lr );
                 libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
@@ -1417,6 +1425,7 @@ if (cfg.upd_2d_blocking == 0) {
                   _mm512_storeu_ps( wt_fp32+i, newfilter );
                 }
               }
+#endif
             }
           }
         }
