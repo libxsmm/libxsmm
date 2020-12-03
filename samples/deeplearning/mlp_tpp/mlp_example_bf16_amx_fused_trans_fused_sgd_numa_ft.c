@@ -291,9 +291,9 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   } else if (threads == 56) {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 1;
-    res.fwd_row_teams = 2;
-    res.fwd_column_teams = 7;
-    res.fwd_model_hyperpartitions = 4;
+    res.fwd_row_teams = 4;
+    res.fwd_column_teams = 14;
+    res.fwd_model_hyperpartitions = 1;
   } else {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 0;
@@ -487,14 +487,14 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   } else if (threads == 56) {
     res.bwd_bf = 1;
     res.bwd_2d_blocking = 1;
-    res.bwd_row_teams = 2;
-    res.bwd_column_teams = 7;
-    res.bwd_model_hyperpartitions = 4;
+    res.bwd_row_teams = 4;
+    res.bwd_column_teams = 14;
+    res.bwd_model_hyperpartitions = 1;
     res.upd_bf = 1;
     res.upd_2d_blocking = 1;
-    res.upd_row_teams = 2;
-    res.upd_column_teams = 7;
-    res.upd_model_hyperpartitions = 4;
+    res.upd_row_teams = 4;
+    res.upd_column_teams = 14;
+    res.upd_model_hyperpartitions = 1;
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
   } else {
@@ -1873,16 +1873,10 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr
   unsigned long long blocks = CB_BLOCKS;
 
   if (use_2d_blocking == 1) {
-    int _ltid, hyperpartition_id, _nBlocksOFm;
-    int row_teams = cfg.fwd_row_teams;
     column_teams = cfg.fwd_column_teams;
-    _nBlocksOFm = nBlocksOFm/cfg.fwd_model_hyperpartitions;
-    _ltid = ltid % (row_teams * column_teams);
-    hyperpartition_id = ltid / (row_teams * column_teams);
-    my_col_id = _ltid % column_teams;
-    in_tasks_per_thread = (_nBlocksOFm + column_teams-1)/column_teams;
-    my_in_start = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksOFm);
-    my_in_end = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksOFm);
+    in_tasks_per_thread = (nBlocksOFm + column_teams-1)/column_teams;
+    my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksOFm);
+    my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
   }
 
   /* lazy barrier init */
