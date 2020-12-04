@@ -5560,7 +5560,7 @@ void libxsmm_generator_copy_avx512_microkernel( libxsmm_generated_code*         
   char     input_vname = 'z', output_vname = 'z';
 
   /* Some rudimentary checking of M, N and LDs*/
-  if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) || (i_mateltwise_desc->m > i_mateltwise_desc->ldo) ) {
+  if ( ((i_mateltwise_desc->m > i_mateltwise_desc->ldi) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_COPY_ZERO) == 0) ) || (i_mateltwise_desc->m > i_mateltwise_desc->ldo) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
     return;
   }
