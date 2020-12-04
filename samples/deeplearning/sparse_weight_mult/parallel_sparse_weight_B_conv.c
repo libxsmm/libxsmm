@@ -331,9 +331,9 @@ int main(int argc, char **argv) {
             &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), NB / nb, KB, CB, CB,
             0, KB, alpha, beta, flags, prefetch);
         mykernel[blk_idx] =
-            libxsmm_create_xcsc_soa(l_xgemm_desc[blk_idx], b_colptr[blk_idx],
+            libxsmm_create_packed_spxgemm_csc(l_xgemm_desc[blk_idx], nb, b_colptr[blk_idx],
                                     b_rowidx[blk_idx],
-                                    (const void *)b_values[blk_idx], nb).smm;
+                                    (const void *)b_values[blk_idx]).smm;
     }
 
 #ifdef _OPENMP

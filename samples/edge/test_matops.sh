@@ -10,7 +10,7 @@
 
 # sde can be downloaded here
 SDE64_BIN=/swtools/sde/kits/latest/sde64
-SDE64_ARCH="-knl"
+SDE64_ARCH="-skx"
 SDE64_FLAGS="-ptr_check -null_check -ptr_raise"
 SDE=${SDE64_BIN}" "${SDE64_FLAGS}" "${SDE64_ARCH}" -- "
 GREP=$(command -v grep)
@@ -68,8 +68,11 @@ then
   elif [[ $VLEN == "64" ]]
   then
     CRUN=16
+  elif [[ $VLEN == "16" ]]
+  then
+    CRUN=4
   else
-    echo "VLEN need to be either 32/64"
+    echo "VLEN need to be either 16/32/64"
     return -3
   fi
 elif [[ $PREC == "f64" ]]
@@ -80,8 +83,11 @@ then
   elif [[ $VLEN == "64" ]]
   then
     CRUN=8
+  elif [[ $VLEN == "16" ]]
+  then
+    CRUN=2
   else
-    echo "VLEN need to be either 32/64"
+    echo "VLEN need to be either 16/32/64"
     return -3
   fi
 else
@@ -96,6 +102,11 @@ then
   if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512f)" ]; then
     SDE=
   fi
+  if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o asimd)" ]; then
+    SDE=
+  fi
+else
+  SDE=
 fi
 
 # number of quantities is always 9
@@ -104,24 +115,24 @@ M=9
 if [[ $FRMT == "csr" ]]
 then
   # test flux matrices, CSR
-  for i in `ls mats/tet4_${PDEG}_fluxN*_csr.mtx`; do ${SDE} ./bsparse_srsoa_${PREC} ${M} ${N} ${K} ${CRUN} ${REPS} $i; done
-  for i in `ls mats/tet4_${PDEG}_fluxT*_csr.mtx`; do ${SDE} ./bsparse_srsoa_${PREC} ${M} ${K} ${N} ${CRUN} ${REPS} $i; done
+  for i in `ls mats/tet4_${PDEG}_fluxN*_csr.mtx`; do ${SDE} ./bsparse_packed_csr_${PREC} ${M} ${N} ${K} ${CRUN} ${REPS} $i; done
+  for i in `ls mats/tet4_${PDEG}_fluxT*_csr.mtx`; do ${SDE} ./bsparse_packed_csr_${PREC} ${M} ${K} ${N} ${CRUN} ${REPS} $i; done
   # test stiffness matrices, CSR
-  for i in `ls mats/tet4_${PDEG}_stiff*_csr.mtx`; do ${SDE} ./bsparse_srsoa_${PREC} ${M} ${K} ${K} ${CRUN} ${REPS} $i; done
+  for i in `ls mats/tet4_${PDEG}_stiff*_csr.mtx`; do ${SDE} ./bsparse_packed_csr_${PREC} ${M} ${K} ${K} ${CRUN} ${REPS} $i; done
 elif [[ $FRMT == "csc" ]]
 then
   # test flux matrices, CSC
-  for i in `ls mats/tet4_${PDEG}_fluxN*_csc.mtx`; do ${SDE} ./bsparse_scsoa_${PREC} ${M} ${N} ${K} ${CRUN} ${REPS} $i; done
-  for i in `ls mats/tet4_${PDEG}_fluxT*_csc.mtx`; do ${SDE} ./bsparse_scsoa_${PREC} ${M} ${K} ${N} ${CRUN} ${REPS} $i; done
+  for i in `ls mats/tet4_${PDEG}_fluxN*_csc.mtx`; do ${SDE} ./bsparse_packed_csc_${PREC} ${M} ${N} ${K} ${CRUN} ${REPS} $i; done
+  for i in `ls mats/tet4_${PDEG}_fluxT*_csc.mtx`; do ${SDE} ./bsparse_packed_csc_${PREC} ${M} ${K} ${N} ${CRUN} ${REPS} $i; done
   # test stiffness matrices, CSC
-  for i in `ls mats/tet4_${PDEG}_stiff*_csc.mtx`; do ${SDE} ./bsparse_scsoa_${PREC} ${M} ${K} ${K} ${CRUN} ${REPS} $i; done
+  for i in `ls mats/tet4_${PDEG}_stiff*_csc.mtx`; do ${SDE} ./bsparse_packed_csc_${PREC} ${M} ${K} ${K} ${CRUN} ${REPS} $i; done
 else
   echo "FRMT need to be either csr/csc"
   return -4
 fi
 # test star matrices
-${SDE} ./asparse_srsoa_${PREC} ${M} ${K} ${M} ${CRUN} ${REPS} mats/tet4_starMatrix_csr.mtx
+${SDE} ./asparse_packed_csr_${PREC} ${M} ${K} ${M} ${CRUN} ${REPS} mats/tet4_starMatrix_csr.mtx
 # test flux matrices
-${SDE} ./asparse_srsoa_${PREC} ${M} ${K} ${M} ${CRUN} ${REPS} mats/tet4_fluxMatrix_csr_sp.mtx
-${SDE} ./asparse_srsoa_${PREC} ${M} ${K} ${M} ${CRUN} ${REPS} mats/tet4_fluxMatrix_csr_de.mtx
+${SDE} ./asparse_packed_csr_${PREC} ${M} ${K} ${M} ${CRUN} ${REPS} mats/tet4_fluxMatrix_csr_sp.mtx
+${SDE} ./asparse_packed_csr_${PREC} ${M} ${K} ${M} ${CRUN} ${REPS} mats/tet4_fluxMatrix_csr_de.mtx
 
