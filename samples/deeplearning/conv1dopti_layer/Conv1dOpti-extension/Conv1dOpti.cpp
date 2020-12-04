@@ -567,6 +567,8 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
                 copy_params.out_ptr = &Y_a[n*F_t*W_t + filter*W_t + wb];
                 copy_kernel(&copy_params);
             }
+            // copy_params.out_ptr = &Y_a[n*F_t*W_t + wb*F_t];
+            // copy_kernel(&copy_params);
 #endif
             kernel(&input_a[n*C_t*Win_t + 0*Win_t + wb], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
             last_block = wb;
@@ -852,6 +854,8 @@ at::Tensor relu_forward_bf16(at::Tensor& input){
     libxsmm_bfloat16* input_a = (libxsmm_bfloat16*) input.data_ptr<at::BFloat16>();
     libxsmm_bfloat16* Y_a = (libxsmm_bfloat16*) Y.data_ptr<at::BFloat16>();
 
+// #ifndef USE_TPP
+
     #pragma omp parallel for
     for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width loop
         if(input_a[w] >= 32768)                         // sign bit indicates if value is negative
@@ -860,6 +864,19 @@ at::Tensor relu_forward_bf16(at::Tensor& input){
             Y_a[w] = input_a[w];
     }
 
+// #else
+    // libxsmm_blasint tpp_m = 1;                      // rows
+    // libxsmm_blasint tpp_n = N_t*C_t*W_t;      // columns
+//     // relu_fwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, NULL, NULL, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_FWD, 0);
+    // if ( relu_fwd_kernel == NULL ) {
+    //     fprintf( stderr, "JIT for TPP relu_fwd_kernel failed. Bailing...!\n");
+    //     exit(-1);
+    // }
+    // relu_params.in_ptr   = &LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+    // relu_params.out_ptr  = &LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+    // relu_params.mask_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk/32);
+    // relu_kernel(&relu_params);
+// #endif
     return Y;
 }
 
