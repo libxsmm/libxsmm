@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
   REALTYPE l_beta = (REALTYPE)(4 < argc ? atof(argv[4]) : 0);
   REALTYPE l_alpha = 1.0;
   unsigned int l_reps = 5 < argc ? atoi(argv[5]) : 0;
-  double flops = (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
+  double flops = 2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
 
   REALTYPE* a = (REALTYPE*)  libxsmm_aligned_malloc( l_m*l_k*l_r*sizeof(REALTYPE), 64 );
   REALTYPE* b = (REALTYPE*)  libxsmm_aligned_malloc( l_k*l_n*sizeof(REALTYPE), 64 );
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
 
   gflops_ref  = (flops/l_total_ref)/1e9;
   gflops_opt  = (flops/l_total_opt)/1e9;
-  gflops_opt2 = (((double)l_libxsmmflops)/l_total_opt)/1e9;
+  gflops_opt2 = (((double)l_libxsmmflops*l_reps)/l_total_opt)/1e9;
 
   printf("GFLOPS ref: %f\n", gflops_ref);
   printf("GFLOPS opt, calculated: %f\n", gflops_opt);

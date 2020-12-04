@@ -8,8 +8,9 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+
 #include "generator_packed_gemm_bc_rm_avx_avx2_avx512.h"
-#include "generator_gemm_common.h"
+#include "generator_packed_gemm_bc_rm_aarch64.h"
 #include "libxsmm_main.h"
 
 LIBXSMM_API void libxsmm_generator_packed_gemm_bc_rm( libxsmm_generated_code*         io_generated_code,
@@ -20,8 +21,13 @@ LIBXSMM_API void libxsmm_generator_packed_gemm_bc_rm( libxsmm_generated_code*   
     libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( io_generated_code,
                                                          i_xgemm_desc,
                                                          i_packed_width );
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) &&
+              (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_packed_gemm_bc_rm_aarch64( io_generated_code,
+                                                 i_xgemm_desc,
+                                                 i_packed_width );
   } else {
-    fprintf( stderr, "RM AC SOA is only available for AVX/AVX2/AVX512 at this point\n" );
+    fprintf( stderr, "RM AC SOA is only available for AVX/AVX2/AVX512 or AARCH64 at this point\n" );
     exit(-1);
   }
 }

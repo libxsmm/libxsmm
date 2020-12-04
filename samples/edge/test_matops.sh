@@ -68,8 +68,11 @@ then
   elif [[ $VLEN == "64" ]]
   then
     CRUN=16
+  elif [[ $VLEN == "16" ]]
+  then
+    CRUN=4
   else
-    echo "VLEN need to be either 32/64"
+    echo "VLEN need to be either 16/32/64"
     return -3
   fi
 elif [[ $PREC == "f64" ]]
@@ -80,8 +83,11 @@ then
   elif [[ $VLEN == "64" ]]
   then
     CRUN=8
+  elif [[ $VLEN == "16" ]]
+  then
+    CRUN=2
   else
-    echo "VLEN need to be either 32/64"
+    echo "VLEN need to be either 16/32/64"
     return -3
   fi
 else
@@ -96,6 +102,11 @@ then
   if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512f)" ]; then
     SDE=
   fi
+  if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o asimd)" ]; then
+    SDE=
+  fi
+else
+  SDE=
 fi
 
 # number of quantities is always 9

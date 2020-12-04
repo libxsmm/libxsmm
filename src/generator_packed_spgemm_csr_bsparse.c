@@ -11,6 +11,7 @@
 
 #include "generator_packed_spgemm_csr_bsparse.h"
 #include "generator_packed_spgemm_csr_bsparse_avx_avx2_avx512.h"
+#include "generator_packed_spgemm_csr_bsparse_aarch64.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_spgemm_csr_bsparse( libxsmm_generated_code*         io_generated_code,
@@ -27,8 +28,16 @@ void libxsmm_generator_packed_spgemm_csr_bsparse( libxsmm_generated_code*       
                                                                  i_column_idx,
                                                                  i_values,
                                                                  i_packed_width );
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) &&
+              (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_packed_spgemm_csr_bsparse_aarch64( io_generated_code,
+                                                         i_xgemm_desc,
+                                                         i_row_idx,
+                                                         i_column_idx,
+                                                         i_values,
+                                                         i_packed_width );
   } else {
-    fprintf( stderr, "packed CSR is only available for AVX/AVX2/AVX512 at this point\n" );
+    fprintf( stderr, "packed CSR is only available for AVX/AVX2/AVX512 or AARCH64 at this point\n" );
     exit(-1);
   }
 }
