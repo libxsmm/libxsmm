@@ -136,18 +136,18 @@ for p in net2.parameters():
 
 r = wgrad1.max() - wgrad1.min()
 print("Backward weight check: ",((torch.abs(wgrad1 - wgrad2)/r < 0.00001).sum() == Filters*Channels*Kernel_size).item())
-
+# print(r.item(), ((torch.abs(wgrad1 - wgrad2)/r < 0.01).sum() - Filters*Channels*Kernel_size).item())
 Y1 = net1.forward(X)
 Y2 = net2.forward(X)
 r = Y1.max() - Y1.min()
 print("    Foward pass check: ", ((torch.abs(Y1 - Y2)/r < 0.00001).sum() == Batch_size*Filters*Input_width).item())
-
+# print(r.item(), ((torch.abs(Y1 - Y2)/r < 0.01).sum() - Batch_size*Filters*Input_width).item())
 
 dgrad1 = torch.autograd.grad(Y1.sum(),X)
 dgrad2 = torch.autograd.grad(Y2.sum(),X)
 r = dgrad1[0].max() - dgrad2[0].min()
 print("  Backward data check: ", ((torch.abs(dgrad1[0] - dgrad2[0])/r < 0.00001).sum() == Batch_size*Channels*Input_width).item())
-
+# print(r.item(), ((torch.abs(dgrad1[0] - dgrad2[0])/r < 0.01).sum() - Batch_size*Channels*Input_width).item())
 
 
 ###------------------------------------- Timing check part -----------------------------------###
