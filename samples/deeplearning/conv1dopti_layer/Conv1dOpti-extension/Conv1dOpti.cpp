@@ -88,7 +88,7 @@ void bf16_vnni_reformat(libxsmm_bfloat16 *_in, libxsmm_bfloat16 *_out, int M, in
 #endif
 }
 
-
+#ifndef USE_TPP
 libxsmm_xtransfunction get_tr_kernel(int typesize, int M, int N, int LDO) {
     /* Function for fetching a transpose kernel */
     libxsmm_xtransfunction tr_kernel;
@@ -100,7 +100,6 @@ libxsmm_xtransfunction get_tr_kernel(int typesize, int M, int N, int LDO) {
     return tr_kernel;
 }
 
-#ifndef USE_TPP
 // void convert_f32_bf16(float* in, bfloat16* out, int len)
 // {
 //     /* Function to convert a Float32 array into a BFloat16 array */
@@ -412,11 +411,17 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     int ldb_trans_g = F_t;
     int ldc_g = F_t;
 
+#ifndef USE_TPP
     unsigned int M_g = W_t/2;       // Output rows
     unsigned int N_g = F_t;         // Output columns
-
     int short_W_t = XS_TILE_WBACKWARD;
     int edge_W_t = W_t - tile_multiple;
+#else
+    libxsmm_blasint M_g = W_t/2;
+    libxsmm_blasint N_g = F_t;
+    libxsmm_blasint short_W_t = XS_TILE_WBACKWARD;
+    libxsmm_blasint edge_W_t = W_t - tile_multiple;
+#endif
 
     auto grad_shortvnni_tensor2 = grad.new_empty({N_t,F_t,short_W_t});                            // Short buffer for storing VNNI transform
     libxsmm_bfloat16* grad_shortvnni = (libxsmm_bfloat16*) grad_shortvnni_tensor2.data_ptr<at::BFloat16>();
@@ -424,9 +429,22 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     auto grad_edgevnni_tensor2 = grad.new_empty({N_t,F_t,edge_W_t});                              // Short buffer for storing VNNI transform in edge case
     libxsmm_bfloat16* grad_edgevnni = (libxsmm_bfloat16*) grad_edgevnni_tensor2.data_ptr<at::BFloat16>();
 
+#ifndef USE_TPP
     libxsmm_xtransfunction trans_shortkernel_grad = get_tr_kernel(sizeof(float), short_W_t/2, F_t, F_t);      // Dispatch transpose kernel
     libxsmm_xtransfunction trans_edgekernel_grad = get_tr_kernel(sizeof(float), edge_W_t/2, F_t, F_t);        // Dispatch transpose kernel
-
+#else
+/* use jited tranpose */
+    libxsmm_meltw_transform_flags trans_flags;
+    trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    libxsmm_meltwfunction_transform trans_shortkernel_grad = libxsmm_dispatch_meltw_transform(short_W_t/2, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flags);
+    libxsmm_meltwfunction_transform trans_edgekernel_grad = libxsmm_dispatch_meltw_transform(edge_W_t/2, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flags);
+    if ( trans_shortkernel_grad == NULL | trans_edgekernel_grad == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+    libxsmm_meltw_transform_param trans_param_short;
+    libxsmm_meltw_transform_param trans_param_edge;
+#endif
     /* Dispatch brGEMM kernels for the normal case and the edge case*/
     libxsmm_bsmmfunction bsmmkernel5 = libxsmm_bsmmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
     libxsmm_bsmmfunction bsmmkernel6 = libxsmm_bsmmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
@@ -437,8 +455,15 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
         for(int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {            // Normal Case
 
+#ifndef USE_TPP
             /* Take transpose assumping FP32 (This will do both transpose and VNNI transform for BF16) */
             trans_shortkernel_grad(&grad_a[n*F_t*W_t + wb], &M_g, &grad_shortvnni[n*F_t*short_W_t], &N_g);
+#else
+            /* Take transpose assumping FP32 (This will do both transpose and VNNI transform for BF16) */
+            trans_param_short.in_ptr  = &grad_a[n*F_t*W_t + wb];
+            trans_param_short.out_ptr = &grad_shortvnni[n*F_t*short_W_t];
+            trans_shortkernel_grad( &trans_param_short );
+#endif
 
             for(int kw = 0; kw < WW_t; kw++) {
                 // libxsmm_bsmmfunction bsmmkernel5 = libxsmm_bsmmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
@@ -448,8 +473,14 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
         }
 
         if (W_t % XS_TILE_WBACKWARD != 0){              // Edge Case
-            trans_edgekernel_grad(&grad_a[n*F_t*W_t + (last_block + XS_TILE_WBACKWARD)], &M_g, &grad_edgevnni[n*F_t*edge_W_t], &N_g);
 
+#ifndef USE_TPP
+            trans_edgekernel_grad(&grad_a[n*F_t*W_t + (last_block + XS_TILE_WBACKWARD)], &M_g, &grad_edgevnni[n*F_t*edge_W_t], &N_g);
+#else
+            trans_param_edge.in_ptr  = &grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD];
+            trans_param_edge.out_ptr = &grad_edgevnni[n*F_t*edge_W_t];
+            trans_edgekernel_grad( &trans_param_edge );
+#endif
             for(int kw = 0; kw < WW_t; kw++) {
                 // libxsmm_bsmmfunction bsmmkernel6 = libxsmm_bsmmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
                 bsmmkernel6(&grad_edgevnni[n*F_t*edge_W_t], &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial], &flip_d_weight_a[kw*F_t*C_t]);
