@@ -1366,6 +1366,31 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 8,
                                    l_gp_reg_out, 0 );
 
+  /* check leading dimnesions and sizes */
+  if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT) > 0) ||
+       ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TRANSFORM_VNNI_TO_VNNIT) > 0)    ) {
+    if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
+      return;
+    }
+    if ( (i_mateltwise_desc->n > i_mateltwise_desc->ldo) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
+      return;
+    }
+  } else if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI) > 0)     ||
+              ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI_PAD) > 0)    ) {
+    if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
+      return;
+    }
+    if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldo) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
+      return;
+    }
+  } else {
+    /* should not happen */
+  }
+
   if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
        LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
     if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT) > 0 ) {
