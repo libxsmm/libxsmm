@@ -1497,8 +1497,30 @@ void my_smax_bwd_exec( my_smax_bwd_config cfg, libxsmm_bfloat16* delin_act_ptr, 
   libxsmm_barrier_wait( cfg.barrier, ltid );
 }
 
-/*#define FIL_SINGLE_BUF*/
-void init_on_numa_node_fwd( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const float *wt_master_ptr, int start_tid, int my_tid ) {
+void init_on_numa_node_master_weights( my_opt_config cfg, float* master_wt_ptr, int start_tid, int my_tid) {
+  /* loop counters */
+  libxsmm_blasint i;
+
+  /* computing first logical thread */
+  const libxsmm_blasint ltid = my_tid - start_tid;
+
+  /* number of tasks that could run in parallel for the filters */
+  const libxsmm_blasint work = cfg.C * cfg.K;
+  /* compute chunk size */
+  const libxsmm_blasint chunksize = (work % cfg.threads == 0) ? (work / cfg.threads) : ((work / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+
+  /* lazy barrier init */
+  libxsmm_barrier_init( cfg.barrier, ltid );
+
+  my_init_buf(master_wt_ptr, thr_end - thr_begin, 0, 0);
+
+  libxsmm_barrier_wait( cfg.barrier, ltid );
+}
+
+void init_on_numa_node_weights( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const float *wt_master_ptr, int start_tid, int my_tid ) {
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
   const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
@@ -1534,6 +1556,7 @@ void init_on_numa_node_fwd( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr
 
   if (use_2d_blocking == 1) {
     column_teams = cfg.fwd_column_teams;
+    my_col_id = ltid % column_teams;
     in_tasks_per_thread = (nBlocksOFm + column_teams-1)/column_teams;
     my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksOFm);
     my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
@@ -1667,7 +1690,7 @@ void init_on_numa_node_bwd_d ( my_fc_bwd_config cfg, libxsmm_bfloat16* filter_tr
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void init_on_numa_node_bwd_w ( my_fc_bwd_config cfg, libxsmm_bfloat16* doutput, int start_tid, int my_tid ) {
+void init_on_numa_node_bwd_weights( my_fc_bwd_config cfg, libxsmm_bfloat16* doutput, int start_tid, int my_tid ) {
   const libxsmm_blasint bn = cfg.bn;
   const libxsmm_blasint bk = cfg.bk;
   const libxsmm_blasint bc = cfg.bc;
@@ -1757,6 +1780,96 @@ void init_on_numa_node_bwd_w ( my_fc_bwd_config cfg, libxsmm_bfloat16* doutput, 
           my_init_buf_bf16(l_buf, bbk * bk, 0, 0);
         }
       }
+    }
+  }
+
+  libxsmm_barrier_wait(cfg.barrier, ltid);
+
+}
+
+void init_on_numa_node_bwd_dweights ( my_fc_bwd_config cfg, libxsmm_bfloat16* dwt, int start_tid, int my_tid ) {
+  const libxsmm_blasint bn = cfg.bn;
+  const libxsmm_blasint bk = cfg.bk;
+  const libxsmm_blasint bc = cfg.bc;
+  libxsmm_blasint lpb = 2;
+  const libxsmm_blasint bc_lp = bc/lpb;
+  const libxsmm_blasint bk_lp = bk/lpb;
+  const libxsmm_blasint bn_lp = bn/lpb;
+  const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
+  const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
+  const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
+
+  const libxsmm_blasint OFM_shift = bn_lp * bk * lpb;
+  const libxsmm_blasint N_shift = nBlocksOFm * bn_lp * bk * lpb;
+
+  /* computing first logical thread */
+  const libxsmm_blasint ltid = my_tid - start_tid;
+  /* number of tasks that could be run in parallel */
+  const libxsmm_blasint ofm_subtasks = (cfg.upd_2d_blocking == 1) ? 1 : cfg.ofm_subtasks;
+  const libxsmm_blasint ifm_subtasks = (cfg.upd_2d_blocking == 1) ? 1 : cfg.ifm_subtasks;
+  const libxsmm_blasint bbk = (cfg.upd_2d_blocking == 1) ? bk : bk/ofm_subtasks;
+  const libxsmm_blasint bbc = (cfg.upd_2d_blocking == 1) ? bc : bc/ifm_subtasks;
+  const libxsmm_blasint work = nBlocksIFm * ifm_subtasks * nBlocksOFm * ofm_subtasks;
+  const libxsmm_blasint Cck_work = nBlocksIFm * ifm_subtasks * ofm_subtasks;
+  const libxsmm_blasint Cc_work = nBlocksIFm * ifm_subtasks;
+
+  /* 2D blocking parameters  */
+  libxsmm_blasint use_2d_blocking = cfg.upd_2d_blocking;
+  libxsmm_blasint im_tasks_per_thread = 0, in_tasks_per_thread = 0,
+                  my_in_start         = 0, my_in_end           = 0,
+                  my_im_start         = 0, my_im_end           = 0,
+                  my_row_id           = 0, my_col_id           = 0,
+                  row_teams           = 0, column_teams        = 0;
+
+  /* compute chunk size */
+  const libxsmm_blasint chunksize = (work % cfg.threads == 0) ? (work / cfg.threads) : ((work / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+  libxsmm_blasint BF = cfg.upd_bf;
+
+  /* loop variables */
+  libxsmm_blasint ifm1ofm1 = 0, bfn = 0;
+
+  /* Batch reduce related variables */
+  unsigned long long  blocks = nBlocksMB/BF;
+
+  if (use_2d_blocking == 1) {
+      row_teams = cfg.upd_row_teams;
+      column_teams = cfg.upd_column_teams;
+      my_col_id = ltid % column_teams;
+      my_row_id = ltid / column_teams;
+      im_tasks_per_thread = (nBlocksIFm + row_teams-1)/row_teams;
+      in_tasks_per_thread = (nBlocksOFm + column_teams-1)/column_teams;
+      my_im_start = LIBXSMM_MIN( my_row_id * im_tasks_per_thread, nBlocksIFm);
+      my_im_end = LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, nBlocksIFm);
+      my_in_start = LIBXSMM_MIN( my_col_id * in_tasks_per_thread, nBlocksOFm);
+      my_in_end = LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
+  }
+
+  LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, dfilter, dwt, nBlocksIFm, bc_lp, bk, lpb);
+
+  /* lazy barrier init */
+  libxsmm_barrier_init(cfg.barrier, ltid);
+
+  libxsmm_blasint ofm2 = 0, ofm1 = 0;
+  libxsmm_blasint ifm2 = 0, ifm1 = 0;
+  if (use_2d_blocking == 1) {
+    for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+      for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
+        libxsmm_bfloat16 *df_buf = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+        my_init_buf_bf16(df_buf, bc_lp * bk * lpb, 0, 0);
+      }
+    }
+  } else {
+    for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
+      ofm1 = ifm1ofm1 / Cck_work;
+      ofm2 = (ifm1ofm1 % Cck_work) / Cc_work;
+      ifm1 = ((ifm1ofm1 % Cck_work) % Cc_work) / ifm_subtasks;
+      ifm2 = ((ifm1ofm1 % Cck_work) % Cc_work) % ifm_subtasks;
+
+      libxsmm_bfloat16 *df_buf = &LIBXSMM_VLA_ACCESS(5, dfilter , ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
+      my_init_buf_bf16(df_buf, bbk * lpb, 0, 0);
     }
   }
 
@@ -2001,22 +2114,17 @@ int main(int argc, char* argv[])
   for ( i = 0 ; i < num_layers+1; ++i ) {
     my_init_buf_bf16( delact_libxsmm[i], MB*C[i], 0, 0 );
   }
-  for ( i = 0 ; i < num_layers; ++i ) {
 #if 0
-  {
+  for ( i = 0 ; i < num_layers; ++i ) {
     float *cur_fil = (float*) malloc(C[i]*C[i+1]*sizeof(float));
     my_init_buf( cur_fil, C[i]*C[i+1], 0, 0 );
     my_matrix_copy_KCCK_to_KCCK_vnni(cur_fil, fil_master[i], C[i], C[i+1], bc, bk);
     libxsmm_rne_convert_fp32_bf16( fil_master[i], fil_libxsmm[i], C[i]*C[i+1] );
     free(cur_fil);
   }
-#else
-    my_init_buf( fil_master[i], C[i]*C[i+1], 0, 0 );
 #endif
-  }
-  for ( i = 0 ; i < num_layers; ++i ) {
 #if 0
-  {
+  for ( i = 0 ; i < num_layers; ++i ) {
     float *cur_fil = (float*) malloc(C[i]*C[i+1]*sizeof(float));
     float *cur_fil_vnni = (float*) malloc(C[i]*C[i+1]*sizeof(float));
     my_init_buf( cur_fil, C[i]*C[i+1], 0, 0 );
@@ -2025,9 +2133,9 @@ int main(int argc, char* argv[])
     free(cur_fil);
     free(cur_fil_vnni);
   }
-#else
-    //my_init_buf_bf16( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 );
 #endif
+  for ( i = 0 ; i < num_layers; ++i ) {
+    my_init_buf_bf16( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 );
   }
   for ( i = 0 ; i < num_layers; ++i ) {
     my_init_buf_bf16( bias_libxsmm[i], C[i+1], 0, 0 );
@@ -2050,8 +2158,22 @@ int main(int argc, char* argv[])
     const int tid = 0;
 #endif
     int l = 0;
+    for (l = 0; l < num_layers; l++)
+      init_on_numa_node_master_weights( my_opt[l], fil_master[l], 0, tid);
+  }
+
+#if defined(_OPENMP)
+# pragma omp parallel
+#endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    int l = 0;
     for ( l = 0; l < num_layers; ++l )
-      init_on_numa_node_fwd( my_fc_fwd[l], fil_libxsmm[l], fil_master[l], 0, tid );
+      init_on_numa_node_weights( my_fc_fwd[l], fil_libxsmm[l], fil_master[l], 0, tid );
 
     init_on_numa_node_bwd_d( my_fc_bwd[max_bwd_layer], (libxsmm_bfloat16*)scratch, 0, tid );
 
@@ -2062,8 +2184,10 @@ int main(int argc, char* argv[])
 #else
       bwd_wu = (libxsmm_bfloat16*)((char*)scratch + max_doutput_scratch_mark) + my_fc_bwd[max_bwd_wu_layer].N * my_fc_bwd[max_bwd_wu_layer].K;
 #endif
-      init_on_numa_node_bwd_w( my_fc_bwd[max_bwd_wu_layer], bwd_wu, 0, tid );
+      init_on_numa_node_bwd_weights( my_fc_bwd[max_bwd_wu_layer], bwd_wu, 0, tid );
     }
+    for ( l = 0; l < num_layers; ++l )
+      init_on_numa_node_bwd_dweights( my_fc_bwd[l], delfil_libxsmm[l], 0, tid );
   }
 
   if ( type == 'F') {
