@@ -5,7 +5,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 
-from Conv1dOpti_ext import Conv1dOpti, ReLU_bf16                    # Import Layer from the extension
+from Conv1dOpti_ext import Conv1dOpti                    # Import Layer from the extension
 
 
 """
@@ -82,7 +82,6 @@ class ZeroSamePad1d(nn.Module):
         return self.pad(x)
 
 
-
 class Net1(nn.Module):                      # First network containing inbuilt PyTorch layer
     def __init__(self):
         super(Net1, self).__init__()
@@ -93,9 +92,7 @@ class Net1(nn.Module):                      # First network containing inbuilt P
     def forward(self, x):
         x = self.padding_layer(x)           # Explicit padding
         x = self.conv1(x)
-        # x = nn.functional.relu(x)
         return x
-
 
 
 class Net2(nn.Module):                      # Second network containing our optimized layer
@@ -108,9 +105,7 @@ class Net2(nn.Module):                      # Second network containing our opti
     def forward(self, x):
         x = self.padding_layer(x)           # Explicit padding needed for our optimzed convolutional layer
         x = self.conv2(x)
-        # x = ReLU_bf16.apply(x)
         return x
-
 
 
 net1 = Net1()                   # Initilize neural networks
@@ -137,20 +132,17 @@ for p in net2.parameters():
     wgrad2 = p.grad
 
 r = wgrad1.max() - wgrad1.min()
-print("Backward weight check: ",((torch.abs(wgrad1 - wgrad2)/r < 0.01).sum() == Filters*Channels*Kernel_size).item())
-# print(r.item(), ((torch.abs(wgrad1 - wgrad2)/r < 0.01).sum() - Filters*Channels*Kernel_size).item())
+print("Backward weight check: ",((torch.abs(wgrad1 - wgrad2)/r < 0.00001).sum() == Filters*Channels*Kernel_size).item())
 
 Y1 = net1.forward(X)
 Y2 = net2.forward(X)
 r = Y1.max() - Y1.min()
-print("    Foward pass check: ", ((torch.abs(Y1 - Y2)/r < 0.01).sum() == Batch_size*Filters*Input_width).item())
-# print(r.item(), ((torch.abs(Y1 - Y2)/r < 0.01).sum() - Batch_size*Filters*Input_width).item())
+print("    Foward pass check: ", ((torch.abs(Y1 - Y2)/r < 0.00001).sum() == Batch_size*Filters*Input_width).item())
 
 dgrad1 = torch.autograd.grad(Y1.sum(),X)
 dgrad2 = torch.autograd.grad(Y2.sum(),X)
 r = dgrad1[0].max() - dgrad2[0].min()
-print("  Backward data check: ", ((torch.abs(dgrad1[0] - dgrad2[0])/r < 0.01).sum() == Batch_size*Channels*Input_width).item())
-# print(r.item(), ((torch.abs(dgrad1[0] - dgrad2[0])/r < 0.01).sum() - Batch_size*Channels*Input_width).item())
+print("  Backward data check: ", ((torch.abs(dgrad1[0] - dgrad2[0])/r < 0.00001).sum() == Batch_size*Channels*Input_width).item())
 
 
 ###------------------------------------- Timing check part -----------------------------------###

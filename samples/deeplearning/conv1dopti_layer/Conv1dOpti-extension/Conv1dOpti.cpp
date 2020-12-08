@@ -179,19 +179,18 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
 
 #ifdef USE_TPP                                  // When using TPP kernel for initialization
     /* Also JIT eltwise TPPs... */
-    libxsmm_blasint tpp_m = XS_TILE_FORWARD;                      // rows
-    libxsmm_blasint tpp_n = F_t;      // columns
+    libxsmm_blasint tpp_m1 = XS_TILE_FORWARD;                      // columns
+    libxsmm_blasint tpp_m2 = W_t - tile_multiple;                  // columns
+    libxsmm_blasint tpp_n = F_t;                                   // rows
     libxsmm_blasint ld_zero = W_t;
 
-    libxsmm_meltwfunction_copy copy_kernel = libxsmm_dispatch_meltw_copy(tpp_m, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
-    if ( copy_kernel == NULL ) {
+    libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
         fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
         exit(-1);
     }
 
-#endif
-
-#ifdef USE_TPP                                  // When using TPP kernel for VNNI transform
     /* use jited VNNI */
     libxsmm_blasint ldi = Win_t;
     libxsmm_blasint ldo_short = short_width;
@@ -217,13 +216,23 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     for(int n = 0; n < N_t; n++) {                               // Loop for batches
         int last_block = 0;
 #ifdef USE_TPP
-        libxsmm_meltw_copy_param copy_params;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param copy_params_1;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param copy_params_2;
         libxsmm_meltw_transform_param trans_param_short;
         libxsmm_meltw_transform_param trans_param_edge;
 #endif
         for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    // width blocking loop (Normal case)
 
-#ifndef USE_TPP                                     // Not using TPP kernel
+#ifdef USE_TPP                                     // Using TPP kernel
+
+            copy_params_1.out_ptr = &Y_a[n*F_t*W_t + wb];                 /* Initialization of output array */
+            copy_kernel_1(&copy_params_1);
+
+            // VNNI transform
+            trans_param_short.in_ptr  = &input_a[n*C_t*Win_t + 0*Win_t + wb];
+            trans_param_short.out_ptr = &input_a_shortvnni[n*C_t*short_width];
+            trans_shortvnni_kernel( &trans_param_short );
+#else
             for(int filter = 0; filter < F_t; filter++){                            /* Loop for initialization of output array */
                 for(int out_w = wb; out_w < (wb + XS_TILE_FORWARD); out_w++){
                     Y_a[n*F_t*W_t + filter*W_t + out_w] = 0;
@@ -231,38 +240,33 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
             }
             // VNNI transform
             bf16_vnni_reformat(&input_a[n*C_t*Win_t + 0*Win_t + wb], &input_a_shortvnni[n*C_t*short_width], (XS_TILE_FORWARD + dial*(WW_t-1)), C_t, Win_t, short_width);
-#else
-            copy_params.out_ptr = &Y_a[n*F_t*W_t + wb];                 /* Initialization of output array */
-            copy_kernel(&copy_params);
-
-            // VNNI transform
-            trans_param_short.in_ptr  = &input_a[n*C_t*Win_t + 0*Win_t + wb];
-            trans_param_short.out_ptr = &input_a_shortvnni[n*C_t*short_width];
-            trans_shortvnni_kernel( &trans_param_short );
 #endif
-            // VNNI transform and brGEMM
-            // bf16_vnni_reformat(&input_a[n*C_t*Win_t + 0*Win_t + wb], &input_a_shortvnni[n*C_t*short_width], (XS_TILE_FORWARD + dial*(WW_t-1)), C_t, Win_t, short_width);
+            // brGEMM
             bmmshortkernel(&input_a_shortvnni[n*C_t*short_width], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
 
             last_block = wb;        // Store value for last block
         }
 
         if (W_t % XS_TILE_FORWARD != 0){                       // Edge case
+
+#ifdef USE_TPP                                                 // When using TPP kernels
+
+            copy_params_2.out_ptr = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];                 /* Initialization of output array */
+            copy_kernel_2(&copy_params_2);
+            // VNNI transform
+            trans_param_edge.in_ptr  = &input_a[n*C_t*Win_t + 0*Win_t + (last_block + XS_TILE_FORWARD)];
+            trans_param_edge.out_ptr = &input_a_edgevnni[n*C_t*edge_width];
+            trans_edgevnni_kernel( &trans_param_edge );
+#else
             for(int filter = 0; filter < F_t; filter++){       /* Loop for initialization of output array */
                 for(int out_w = last_block + XS_TILE_FORWARD; out_w < W_t; out_w++){
                     Y_a[n*F_t*W_t + filter*W_t + out_w] = 0;
                 }
             }
-#ifndef USE_TPP
             // VNNI transform
             bf16_vnni_reformat(&input_a[n*C_t*Win_t + 0*Win_t + (last_block + XS_TILE_FORWARD)], &input_a_edgevnni[n*C_t*edge_width], (W_t - tile_multiple + dial*(WW_t-1)), C_t, Win_t, edge_width);
-#else
-            // VNNI transform
-            trans_param_edge.in_ptr  = &input_a[n*C_t*Win_t + 0*Win_t + (last_block + XS_TILE_FORWARD)];
-            trans_param_edge.out_ptr = &input_a_edgevnni[n*C_t*edge_width];
-            trans_edgevnni_kernel( &trans_param_edge );
 #endif
-            // bf16_vnni_reformat(&input_a[n*C_t*Win_t + 0*Win_t + (last_block + XS_TILE_FORWARD)], &input_a_edgevnni[n*C_t*edge_width], (W_t - tile_multiple + dial*(WW_t-1)), C_t, Win_t, edge_width);
+            // brGEMM
             bmmedgekernel2(&input_a_edgevnni[n*C_t*edge_width], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + (last_block + XS_TILE_FORWARD)], &l_br);
         }
     }
@@ -358,20 +362,18 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
 #ifdef USE_TPP                                  // When using TPP kernel for initialization
     /* Also JIT eltwise TPPs... */
-    libxsmm_blasint tpp_m = XS_TILE_DBACKWARD;                      // rows
-    libxsmm_blasint tpp_n = C_t;      // columns
+    libxsmm_blasint tpp_m1 = XS_TILE_DBACKWARD;                      // columns
+    libxsmm_blasint tpp_m2 = Win_t - tile_multiple;                      // columns
+    libxsmm_blasint tpp_n = C_t;                                     // rows
     libxsmm_blasint ld_zero = Win_t;
 
-    libxsmm_meltwfunction_copy copy_kernel = libxsmm_dispatch_meltw_copy(tpp_m, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
-    if ( copy_kernel == NULL ) {
+    libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
         fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
         exit(-1);
     }
 
-#endif
-
-
-#ifdef USE_TPP                                  // When using TPP kernel for VNNI transform
     /* use jited VNNI */
     libxsmm_blasint ldi_1 = W_t;
     libxsmm_blasint ldi_2 = ldb_shortpad;
@@ -397,84 +399,90 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     for(int n = 0; n < N_t; n++) {
         int last_block=0;
 #ifdef USE_TPP
-        libxsmm_meltw_copy_param copy_params;                       // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param copy_params_1;                       // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param copy_params_2;
         libxsmm_meltw_transform_param trans_param_1;
         libxsmm_meltw_transform_param trans_param_2;
 #endif
         for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
 
-#ifndef USE_TPP
+#ifdef USE_TPP                                                              // When using TPP kernels
+
+            copy_params_1.out_ptr = &d_input_a[n*C_t*Win_t + wb];             // Initialization
+            copy_kernel_1(&copy_params_1);
+#else
             for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
                 for(int in_w = wb; in_w < wb + XS_TILE_DBACKWARD; in_w++){
                     d_input_a[n*C_t*Win_t + channel*Win_t + in_w] = 0;
                 }
             }
-#else
-            copy_params.out_ptr = &d_input_a[n*C_t*Win_t + wb];
-            copy_kernel(&copy_params);
 #endif
             if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD){
                 // Normal case (Take VNNI transform of a portion of grad_a array )
-#ifndef USE_TPP
-                // VNNI transform
-                bf16_vnni_reformat(&grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, W_t, short_width);
-#else
+#ifdef USE_TPP                          // when using TPP kernels
                 // VNNI transform
                 trans_param_1.in_ptr  = &grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial];
                 trans_param_1.out_ptr = &grad_a_shortvnni[n*F_t*short_width];
                 trans_shortvnni_kernel_1( &trans_param_1 );
+#else
+                // VNNI transform
+                bf16_vnni_reformat(&grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, W_t, short_width);
 #endif
-                // bf16_vnni_reformat(&grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, W_t, short_width);
+                // brGEMM
                 bmmshortkernel(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
             }
             else if (wb < (WW_t-1)*dial){
                 // Right side case (Take VNNI transform of grad_a_shortpad array)
-#ifndef USE_TPP
-                // VNNI transform
-                bf16_vnni_reformat(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, ldb_shortpad, short_width);
-#else
+#ifdef USE_TPP                          // when using TPP kernels
                 // VNNI transform
                 trans_param_2.in_ptr  = &grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb];
                 trans_param_2.out_ptr = &grad_a_shortvnni[n*F_t*short_width];
                 trans_shortvnni_kernel_2( &trans_param_2 );
+#else
+                // VNNI transform
+                bf16_vnni_reformat(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, ldb_shortpad, short_width);
 #endif
-                // bf16_vnni_reformat(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, ldb_shortpad, short_width);
+                // brGEMM
                 bmmshortkernel(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
             }
             else{
                 // Left side case (Take VNNI transform of grad_a_shortpad array)
-#ifndef USE_TPP
-                // VNNI transform
-                bf16_vnni_reformat(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb - Wpad_t + 2*pad_tile_multiple], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, ldb_shortpad, short_width);
-#else
+#ifdef USE_TPP
                 // VNNI transform
                 trans_param_2.in_ptr  = &grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb - Wpad_t + 2*pad_tile_multiple];
                 trans_param_2.out_ptr = &grad_a_shortvnni[n*F_t*short_width];
                 trans_shortvnni_kernel_2( &trans_param_2 );
+#else
+                // VNNI transform
+                bf16_vnni_reformat(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb - Wpad_t + 2*pad_tile_multiple], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, ldb_shortpad, short_width);
 #endif
-                // bf16_vnni_reformat(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb - Wpad_t + 2*pad_tile_multiple], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, ldb_shortpad, short_width);
+                // brGEMM
                 bmmshortkernel(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
             }
             last_block = wb;
         }
 
         if (Win_t % XS_TILE_DBACKWARD != 0){                                // Edge case
+
+            // Right side case (Take VNNI transform of grad_a_shortpad array)
+#ifdef USE_TPP                                                              // When using TPP kernels
+
+            copy_params_2.out_ptr = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];             // Initialization
+            copy_kernel_2(&copy_params_2);
+            // VNNI transform
+            trans_param_2.in_ptr  = &grad_a_shortpad[n*F_t*2*pad_tile_multiple + last_block + XS_TILE_DBACKWARD - Wpad_t + 2*pad_tile_multiple];
+            trans_param_2.out_ptr = &grad_a_shortvnni[n*F_t*short_width];
+            trans_shortvnni_kernel_2( &trans_param_2 );
+#else
             for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
                 for(int in_w = last_block + XS_TILE_DBACKWARD; in_w < Win_t; in_w++){
                     d_input_a[n*C_t*Win_t + channel*Win_t + in_w] = 0;
                 }
             }
-            // Right side case (Take VNNI transform of grad_a_shortpad array)
-#ifndef USE_TPP
             // VNNI transform
             bf16_vnni_reformat(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + last_block + XS_TILE_DBACKWARD - Wpad_t + 2*pad_tile_multiple], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, ldb_shortpad, short_width);
-#else
-            // VNNI transform
-            trans_param_2.in_ptr  = &grad_a_shortpad[n*F_t*2*pad_tile_multiple + last_block + XS_TILE_DBACKWARD - Wpad_t + 2*pad_tile_multiple];
-            trans_param_2.out_ptr = &grad_a_shortvnni[n*F_t*short_width];
-            trans_shortvnni_kernel_2( &trans_param_2 );
 #endif
-            // bf16_vnni_reformat(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + last_block + XS_TILE_DBACKWARD - Wpad_t + 2*pad_tile_multiple], &grad_a_shortvnni[n*F_t*short_width], (XS_TILE_DBACKWARD + dial*(WW_t-1)), F_t, ldb_shortpad, short_width);
+            // brGEMM
             bmmshortkernel2(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD], &l_br);
         }
     }
@@ -501,16 +509,17 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     int ldb_trans_g = F_t;
     int ldc_g = F_t;
 
-#ifndef USE_TPP
-    unsigned int M_g = W_t/2;       // Output rows
-    unsigned int N_g = F_t;         // Output columns
-    int short_W_t = XS_TILE_WBACKWARD;
-    int edge_W_t = W_t - tile_multiple;
-#else
+#ifdef USE_TPP                      // when using TPP kernels
+
     libxsmm_blasint M_g = W_t/2;
     libxsmm_blasint N_g = F_t;
     libxsmm_blasint short_W_t = XS_TILE_WBACKWARD;
     libxsmm_blasint edge_W_t = W_t - tile_multiple;
+#else
+    unsigned int M_g = W_t/2;       // Output rows
+    unsigned int N_g = F_t;         // Output columns
+    int short_W_t = XS_TILE_WBACKWARD;
+    int edge_W_t = W_t - tile_multiple;
 #endif
 
     auto grad_shortvnni_tensor2 = grad.new_empty({N_t,F_t,short_W_t});                            // Short buffer for storing VNNI transform
@@ -519,11 +528,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     auto grad_edgevnni_tensor2 = grad.new_empty({N_t,F_t,edge_W_t});                              // Short buffer for storing VNNI transform in edge case
     libxsmm_bfloat16* grad_edgevnni = (libxsmm_bfloat16*) grad_edgevnni_tensor2.data_ptr<at::BFloat16>();
 
-#ifndef USE_TPP                     // When Not using TPP kernels
-
-    libxsmm_xtransfunction trans_shortkernel_grad = get_tr_kernel(sizeof(float), short_W_t/2, F_t, F_t);      // Dispatch transpose kernel
-    libxsmm_xtransfunction trans_edgekernel_grad = get_tr_kernel(sizeof(float), edge_W_t/2, F_t, F_t);        // Dispatch transpose kernel
-#else
+#ifdef USE_TPP                     // When using TPP kernels
     /* use jited tranpose */
     libxsmm_meltw_transform_flags trans_flags;
     trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
@@ -534,7 +539,11 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
         exit(-1);
     }
 
+#else
+    libxsmm_xtransfunction trans_shortkernel_grad = get_tr_kernel(sizeof(float), short_W_t/2, F_t, F_t);      // Dispatch transpose kernel
+    libxsmm_xtransfunction trans_edgekernel_grad = get_tr_kernel(sizeof(float), edge_W_t/2, F_t, F_t);        // Dispatch transpose kernel
 #endif
+
     /* Dispatch brGEMM kernels for the normal case and the edge case*/
     libxsmm_bsmmfunction bsmmkernel5 = libxsmm_bsmmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
     libxsmm_bsmmfunction bsmmkernel6 = libxsmm_bsmmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
@@ -548,14 +557,14 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 #endif
         for(int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {            // Normal Case
 
-#ifndef USE_TPP
-            /* Take transpose assumping FP32 (This will do both transpose and VNNI transform for BF16) */
-            trans_shortkernel_grad(&grad_a[n*F_t*W_t + wb], &M_g, &grad_shortvnni[n*F_t*short_W_t], &N_g);
-#else
+#ifdef USE_TPP                                      // when using TPP kernels
             /* Take transpose assumping FP32 (This will do both transpose and VNNI transform for BF16) */
             trans_param_short.in_ptr  = &grad_a[n*F_t*W_t + wb];
             trans_param_short.out_ptr = &grad_shortvnni[n*F_t*short_W_t];
             trans_shortkernel_grad( &trans_param_short );
+#else
+            /* Take transpose assumping FP32 (This will do both transpose and VNNI transform for BF16) */
+            trans_shortkernel_grad(&grad_a[n*F_t*W_t + wb], &M_g, &grad_shortvnni[n*F_t*short_W_t], &N_g);
 #endif
 
             for(int kw = 0; kw < WW_t; kw++) {
@@ -567,12 +576,13 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
         if (W_t % XS_TILE_WBACKWARD != 0){              // Edge Case
 
-#ifndef USE_TPP
-            trans_edgekernel_grad(&grad_a[n*F_t*W_t + (last_block + XS_TILE_WBACKWARD)], &M_g, &grad_edgevnni[n*F_t*edge_W_t], &N_g);
-#else
+#ifdef USE_TPP                                          // When using TPP kernels
+
             trans_param_edge.in_ptr  = &grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD];
             trans_param_edge.out_ptr = &grad_edgevnni[n*F_t*edge_W_t];
             trans_edgekernel_grad( &trans_param_edge );
+#else
+            trans_edgekernel_grad(&grad_a[n*F_t*W_t + (last_block + XS_TILE_WBACKWARD)], &M_g, &grad_edgevnni[n*F_t*edge_W_t], &N_g);
 #endif
             for(int kw = 0; kw < WW_t; kw++) {
                 // libxsmm_bsmmfunction bsmmkernel6 = libxsmm_bsmmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
@@ -665,12 +675,14 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
 
 #ifdef USE_TPP                                  // When using TPP kernel for initialization
     /* Also JIT eltwise TPPs... */
-    libxsmm_blasint tpp_m = XS_TILE_FORWARD;                      // columns
+    libxsmm_blasint tpp_m1 = XS_TILE_FORWARD;                      // columns
+    libxsmm_blasint tpp_m2 = W_t - tile_multiple;                      // columns
     libxsmm_blasint tpp_n = F_t;      // rows
     libxsmm_blasint ld_zero = W_t;
 
-    libxsmm_meltwfunction_copy copy_kernel = libxsmm_dispatch_meltw_copy(tpp_m, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
-    if ( copy_kernel == NULL ) {
+    libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
         fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
         exit(-1);
     }
@@ -681,30 +693,39 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
     for(int n = 0; n < N_t; n++) {                               // Loop for batches
         int last_block = 0;
 #ifdef USE_TPP
-        libxsmm_meltw_copy_param copy_params;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param copy_params_1;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param copy_params_2;           // Copy parameter variable for holding the pointer
 #endif
         for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    // width blocking loop (Normal case)
 
-#ifndef USE_TPP                                                 // If not using TPP
+#ifdef USE_TPP                                                 // If using TPP
+
+            copy_params_1.out_ptr = &Y_a[n*F_t*W_t + wb];      // Initialization
+            copy_kernel_1(&copy_params_1);
+#else
             for(int filter = 0; filter < F_t; filter++){       /* Loop for initialization of output array */
                 for(int out_w = wb; out_w < (wb + XS_TILE_FORWARD); out_w++){
                     Y_a[n*F_t*W_t + filter*W_t + out_w] = 0.0f;
                 }
             }
-#else
-            copy_params.out_ptr = &Y_a[n*F_t*W_t + wb];
-            copy_kernel(&copy_params);
 #endif
             kernel(&input_a[n*C_t*Win_t + 0*Win_t + wb], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
             last_block = wb;
         }
 
         if (W_t % XS_TILE_FORWARD != 0){                        // Edge Case
+
+#ifdef USE_TPP                                                  // If using TPP kernel
+
+            copy_params_2.out_ptr = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];     // Initialization
+            copy_kernel_2(&copy_params_2);
+#else
             for(int filter = 0; filter < F_t; filter++){       /* Loop for initialization of output array */
                 for(int out_w = last_block + XS_TILE_FORWARD; out_w < W_t; out_w++){
                     Y_a[n*F_t*W_t + filter*W_t + out_w] = 0.0f;
                 }
             }
+#endif
             kernel2(&input_a[n*C_t*Win_t + 0*Win_t + last_block + XS_TILE_FORWARD], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + last_block + XS_TILE_FORWARD], &l_br);
         }
     }
@@ -802,12 +823,14 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
 #ifdef USE_TPP                                  // When using TPP kernel for initialization
     /* Also JIT eltwise TPPs... */
-    libxsmm_blasint tpp_m = XS_TILE_DBACKWARD;                      // rows
-    libxsmm_blasint tpp_n = C_t;      // columns
+    libxsmm_blasint tpp_m1 = XS_TILE_DBACKWARD;                      // columns
+    libxsmm_blasint tpp_m2 = Win_t - tile_multiple;                      // columns
+    libxsmm_blasint tpp_n = C_t;      // rows
     libxsmm_blasint ld_zero = Win_t;
 
-    libxsmm_meltwfunction_copy copy_kernel = libxsmm_dispatch_meltw_copy(tpp_m, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
-    if ( copy_kernel == NULL ) {
+    libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
         fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
         exit(-1);
     }
@@ -818,19 +841,21 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     for(int n = 0; n < N_t; n++) {
         int last_block=0;
 #ifdef USE_TPP
-        libxsmm_meltw_copy_param copy_params;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param copy_params_1;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param copy_params_2;           // Copy parameter variable for holding the pointer
 #endif
         for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
 
-#ifndef USE_TPP                                                             // Not using TPP kernel
+#ifdef USE_TPP                                                             // Using TPP kernel
+
+            copy_params_1.out_ptr = &d_input_a[n*C_t*Win_t + wb];            // Initialization
+            copy_kernel_1(&copy_params_1);
+#else
             for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
                 for(int in_w = wb; in_w < wb + XS_TILE_DBACKWARD; in_w++){
                     d_input_a[n*C_t*Win_t + channel*Win_t + in_w] = 0.0f;
                 }
             }
-#else
-            copy_params.out_ptr = &d_input_a[n*C_t*Win_t + wb];
-            copy_kernel(&copy_params);
 #endif
             if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD)              // Normal case
                 kernel(&grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
@@ -843,11 +868,18 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         }
 
         if (Win_t % XS_TILE_DBACKWARD != 0){                                // Edge case
+
+#ifdef USE_TPP                                                              // when using TPP kernels
+
+            copy_params_2.out_ptr = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];            // Initialization
+            copy_kernel_2(&copy_params_2);
+#else
             for(int channel = 0; channel < C_t; channel++){                 /* Loop for initialization of grad array */
                 for(int in_w = last_block + XS_TILE_DBACKWARD; in_w < Win_t; in_w++){
                     d_input_a[n*C_t*Win_t + channel*Win_t + in_w] = 0.0f;
                 }
             }
+#endif
             kernel5(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + last_block + XS_TILE_DBACKWARD - Wpad_t + 2*pad_tile_multiple], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD], &l_br);
         }
     }
@@ -876,16 +908,17 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     int ldb_trans_g = F_t;
     int ldc_g = F_t;
 
-#ifndef USE_TPP                                 // If not usintg TPP kernels
-    unsigned int M_g = W_t;      //Output rows
-    unsigned int N_g = F_t;    // Output columns
-    int short_W_t = XS_TILE_WBACKWARD;
-    int edge_W_t = W_t - tile_multiple;
-#else
+#ifdef USE_TPP                                 // If not using TPP kernels
+
     libxsmm_blasint short_W_t = XS_TILE_WBACKWARD;
     libxsmm_blasint edge_W_t = W_t - tile_multiple;
     libxsmm_blasint M_g = W_t;
     libxsmm_blasint N_g = F_t;
+#else
+    unsigned int M_g = W_t;      //Output rows
+    unsigned int N_g = F_t;    // Output columns
+    int short_W_t = XS_TILE_WBACKWARD;
+    int edge_W_t = W_t - tile_multiple;
 #endif
 
     auto grad_shorttrans_tensor = grad.new_empty({N_t,F_t,short_W_t});              // Tensor for storing transposed short buffer
@@ -894,11 +927,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     auto grad_edgetrans_tensor = grad.new_empty({N_t,F_t,edge_W_t});                // Tensor for storing transposed short buffer in edge case
     float* grad_edgetrans = grad_edgetrans_tensor.data_ptr<float>();
 
-#ifndef USE_TPP                                 // If not usintg TPP kernels
-
-    libxsmm_xtransfunction trans_shortkernel_grad = get_tr_kernel(sizeof(float), short_W_t, F_t, F_t);          // Dispatch transpose kernel
-    libxsmm_xtransfunction trans_edgekernel_grad = get_tr_kernel(sizeof(float), edge_W_t, F_t, F_t);            // Dispatch transpose kernel
-#else
+#ifdef USE_TPP                                 // If usintg TPP kernels
     /* use jited tranpose */
     libxsmm_meltw_transform_flags trans_flags;
     trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
@@ -908,7 +937,9 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
     }
-
+#else
+    libxsmm_xtransfunction trans_shortkernel_grad = get_tr_kernel(sizeof(float), short_W_t, F_t, F_t);          // Dispatch transpose kernel
+    libxsmm_xtransfunction trans_edgekernel_grad = get_tr_kernel(sizeof(float), edge_W_t, F_t, F_t);            // Dispatch transpose kernel
 #endif
 
     /* Dispatch brGEMM kernel for normal and edge cases*/
@@ -924,13 +955,13 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 #endif
         for(int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {                // Normal case
 
-#ifndef USE_TPP                                 // If not usintg TPP kernels
+#ifdef USE_TPP                                 // If using TPP kernels
 
-            trans_shortkernel_grad(&grad_a[n*F_t*W_t + wb], &M_g, &grad_shorttrans[n*F_t*short_W_t], &N_g);
-#else
             trans_param_short.in_ptr  = &grad_a[n*F_t*W_t + wb];
             trans_param_short.out_ptr = &grad_shorttrans[n*F_t*short_W_t];
             trans_shortkernel_grad( &trans_param_short );
+#else
+            trans_shortkernel_grad(&grad_a[n*F_t*W_t + wb], &M_g, &grad_shorttrans[n*F_t*short_W_t], &N_g);
 #endif
             for(int kw = 0; kw < WW_t; kw++) {
                 kernel_w5(&grad_shorttrans[n*F_t*short_W_t], &input_a[n*C_t*Win_t + wb + kw*dial], &flip_d_weight_a[kw*C_t*F_t]);
@@ -939,13 +970,14 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         }
 
         if (W_t % XS_TILE_WBACKWARD != 0){
-#ifndef USE_TPP                                 // If not usintg TPP kernels
 
-            trans_edgekernel_grad(&grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD], &M_g, &grad_edgetrans[n*F_t*edge_W_t], &N_g);
-#else
+#ifdef USE_TPP                                 // If using TPP kernels
+
             trans_param_edge.in_ptr  = &grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD];
             trans_param_edge.out_ptr = &grad_edgetrans[n*F_t*edge_W_t];
             trans_edgekernel_grad( &trans_param_edge );
+#else
+            trans_edgekernel_grad(&grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD], &M_g, &grad_edgetrans[n*F_t*edge_W_t], &N_g);
 #endif
             for(int kw = 0; kw < WW_t; kw++) {
 
