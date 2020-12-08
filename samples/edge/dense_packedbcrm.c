@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
   REALTYPE l_beta = (REALTYPE)(4 < argc ? atof(argv[4]) : 0);
   REALTYPE l_alpha = 1.0;
   unsigned int l_reps = 5 < argc ? atoi(argv[5]) : 0;
-  double flops = (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
+  double flops = 2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
 
   REALTYPE* a = (REALTYPE*)  libxsmm_aligned_malloc( l_m*l_k*sizeof(REALTYPE), 64 );
   REALTYPE* b = (REALTYPE*)  libxsmm_aligned_malloc( l_k*l_n*l_r*sizeof(REALTYPE), 64 );
@@ -110,9 +110,9 @@ int main(int argc, char* argv[]) {
   l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION(REALTYPE),
     l_m, l_n, l_k, l_k, l_n, l_n, l_alpha, l_beta, flags, prefetch);
 #if defined(__EDGE_EXECUTE_F32__)
-  mykernel = libxsmm_create_pgemm_bc_rm( l_xgemm_desc, l_r ).smm;
+  mykernel = libxsmm_create_packed_xgemm_bc_rm( l_xgemm_desc, l_r ).smm;
 #else
-  mykernel = libxsmm_create_pgemm_bc_rm( l_xgemm_desc, l_r ).dmm;
+  mykernel = libxsmm_create_packed_xgemm_bc_rm( l_xgemm_desc, l_r ).dmm;
 #endif
 
   /* run reference */
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
 
   gflops_ref = (flops/l_total_ref)/1e9;
   gflops_opt = (flops/l_total_opt)/1e9;
-  gflops_opt2 = (((double)l_libxsmmflops)/l_total_opt)/1e9;
+  gflops_opt2 = (((double)l_libxsmmflops*l_reps)/l_total_opt)/1e9;
 
   printf("GFLOPS ref: %f\n", gflops_ref);
   printf("GFLOPS opt, calculated: %f\n", gflops_opt);

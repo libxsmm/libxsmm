@@ -1053,14 +1053,8 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra_emu( libxsmm_generated_code* 
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
   unsigned int reserved_zmms      = 0;
   unsigned int reserved_mask_regs = 1;
-  const char *const env_emulate_cvt2bf16fp32 = getenv("EMULATE_BF16_CVT");
-  unsigned int emulate_cvt2bf16fp32 = 0;
+  unsigned int emulate_cvt2bf16fp32 = (libxsmm_cpuid() < LIBXSMM_X86_AVX512_CPX) ? 1 : 0;
   LIBXSMM_UNUSED(i_gp_reg_mapping);
-
-   if ( 0 == env_emulate_cvt2bf16fp32 ) {
-  } else {
-    emulate_cvt2bf16fp32 = atoi(env_emulate_cvt2bf16fp32);
-  }
 
   i_micro_kernel_config->fused_bcolbias     = 0;
   i_micro_kernel_config->fused_scolbias     = 0;

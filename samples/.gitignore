@@ -2,9 +2,9 @@ blocked_gemm/blocked_gemm
 deeplearning/cnnlayer/layer_example_*
 deeplearning/lstmdriver/lstmdriver_*
 deeplearning/mlpdriver/mlp_example_*
-edge/asparse_srsoa_*
-edge/bsparse_scsoa_*
-edge/bsparse_srsoa_*
+edge/asparse_packed_csr_*
+edge/bsparse_packed_csc_*
+edge/bsparse_packed_csr_*
 edge/dense_packedacrm_*
 edge/dense_packedbcrm_*
 edge/edge_vol_int

@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="bsparse_srsoa.c" />
+    <ClCompile Include="asparse_packed_csr.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
@@ -36,8 +36,8 @@
     <ClInclude Include="common_edge_proxy.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>bsparse_srsoa</ProjectName>
-    <ProjectGuid>{CFD0F2A1-CC22-4321-A433-21BC6BA0F32D}</ProjectGuid>
+    <ProjectName>asparse_packed_csr</ProjectName>
+    <ProjectGuid>{2377A071-A5AF-4629-91C4-0E5EBF795BD5}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

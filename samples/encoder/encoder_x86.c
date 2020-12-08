@@ -90,25 +90,25 @@ void test_evex_compute_3reg_general( char* test_name, libxsmm_generated_code* my
   for (i = 0; i < 32; ++i ) {
     for ( m = 0; m < 8; ++m ) {
       if ( twoops ) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, m, 0, 0, imm8 );
       } else {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', i, 0, 0, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', i, 0, 0, m, 0, 0, imm8 );
       }
     }
   }
   if ( !twoops ) {
     for (i = 0; i < 32; ++i ) {
       for ( m = 0; m < 8; ++m ) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', 0, i, 0, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', 0, i, 0, m, 0, 0, imm8 );
       }
     }
   }
   for (i = init_dst; i < max_dst; ++i ) {
     for ( m = 0; m < 8; ++m ) {
       if ( twoops ) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, m, 0, 0, imm8 );
       } else {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'z', 0, 0, i, m, 0, imm8 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', 0, 0, i, m, 0, 0, imm8 );
       }
     }
   }
@@ -123,21 +123,21 @@ void test_vex_compute_3reg_general( char* test_name, libxsmm_generated_code* myc
 
   for (i = 0; i < 16; ++i ) {
     if ( twoops ) {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, 0, 0, 0, imm8 );
     } else {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', i, 0, 0, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', i, 0, 0, 0, 0, 0, imm8 );
     }
   }
   if ( !twoops ) {
     for (i = 0; i < 16; ++i ) {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', 0, i, 0, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', 0, i, 0, 0, 0, 0, imm8 );
     }
   }
   for (i = 0; i < 16; ++i ) {
     if ( twoops ) {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, 0, 0, 0, imm8 );
     } else {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_imm8 ( mycode, instr, 'y', 0, 0, i, 0, 0, imm8 );
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'y', 0, 0, i, 0, 0, 0, imm8 );
     }
   }
 
@@ -382,6 +382,21 @@ void test_tile_compute( char* test_name, libxsmm_generated_code* mycode, unsigne
   dump_code_buffer( mycode, test_name );
 }
 
+void test_alu_reg( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned int t;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (t = 0; t < 16; ++t ) {
+    libxsmm_x86_instruction_alu_reg ( mycode, instr, t, 0 );
+  }
+  for (t = 0; t < 16; ++t ) {
+    libxsmm_x86_instruction_alu_reg ( mycode, instr, 0, t );
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 int main( /*int argc, char* argv[]*/ ) {
   unsigned char* codebuffer = (unsigned char*)malloc( 8388608*sizeof(unsigned char) );
   libxsmm_generated_code mycode;
@@ -450,7 +465,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_load_store( "evex_mov_VPMOVSWB", &mycode, LIBXSMM_X86_INSTR_VPMOVSWB, 1 );
   test_evex_load_store( "evex_mov_VPMOVWB", &mycode, LIBXSMM_X86_INSTR_VPMOVWB, 1 );
   test_evex_load_store( "evex_mov_VMOVDDUP", &mycode, LIBXSMM_X86_INSTR_VMOVDDUP, 1 );
-  test_evex_load_store( "evex_mov_VPBROADCASTI64X4", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTI64X4, 1 );
+  test_evex_load_store( "evex_mov_VBROADCASTI64X2", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI64X2, 1 );
+  test_evex_load_store( "evex_mov_VBROADCASTI64X4", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI64X4, 1 );
 
   /* testing compute reg instructions */
   test_evex_compute_3reg_general( "evex_reg_VSHUFPS", &mycode, LIBXSMM_X86_INSTR_VSHUFPS, 0, 0x01, 32 );
@@ -893,6 +909,45 @@ int main( /*int argc, char* argv[]*/ ) {
 
   test_vex_mask_load_store( "vex_mov_VMASKMOVPD", &mycode, LIBXSMM_X86_INSTR_VMASKMOVPD );
   test_vex_mask_load_store( "vex_mov_VMASKMOVPS", &mycode, LIBXSMM_X86_INSTR_VMASKMOVPS );
+
+  /* test VEX/GP instructions */
+  test_alu_reg( "alu_reg_ADDQ", &mycode, LIBXSMM_X86_INSTR_ADDQ );
+  test_alu_reg( "alu_reg_SUBQ", &mycode, LIBXSMM_X86_INSTR_SUBQ );
+  test_alu_reg( "alu_reg_MOVQ", &mycode, LIBXSMM_X86_INSTR_MOVQ );
+  test_alu_reg( "alu_reg_CMPQ", &mycode, LIBXSMM_X86_INSTR_CMPQ );
+  test_alu_reg( "alu_reg_AMDQ", &mycode, LIBXSMM_X86_INSTR_ANDQ );
+  test_alu_reg( "alu_reg_CMOVA", &mycode, LIBXSMM_X86_INSTR_CMOVA );
+  test_alu_reg( "alu_reg_CMOVAE", &mycode, LIBXSMM_X86_INSTR_CMOVAE );
+  test_alu_reg( "alu_reg_CMOVB", &mycode, LIBXSMM_X86_INSTR_CMOVB );
+  test_alu_reg( "alu_reg_CMOVBE", &mycode, LIBXSMM_X86_INSTR_CMOVBE );
+  test_alu_reg( "alu_reg_CMOVC", &mycode, LIBXSMM_X86_INSTR_CMOVC );
+  test_alu_reg( "alu_reg_CMOVE", &mycode, LIBXSMM_X86_INSTR_CMOVE );
+  test_alu_reg( "alu_reg_CMOVG", &mycode, LIBXSMM_X86_INSTR_CMOVG );
+  test_alu_reg( "alu_reg_CMOVGE", &mycode, LIBXSMM_X86_INSTR_CMOVGE );
+  test_alu_reg( "alu_reg_CMOVL", &mycode, LIBXSMM_X86_INSTR_CMOVL );
+  test_alu_reg( "alu_reg_CMOVLE", &mycode, LIBXSMM_X86_INSTR_CMOVLE );
+  test_alu_reg( "alu_reg_CMOVNA", &mycode, LIBXSMM_X86_INSTR_CMOVNA );
+  test_alu_reg( "alu_reg_CMOVNAE", &mycode, LIBXSMM_X86_INSTR_CMOVNAE );
+  test_alu_reg( "alu_reg_CMOVNB", &mycode, LIBXSMM_X86_INSTR_CMOVNB );
+  test_alu_reg( "alu_reg_CMOVNBE", &mycode, LIBXSMM_X86_INSTR_CMOVNBE );
+  test_alu_reg( "alu_reg_CMOVNC", &mycode, LIBXSMM_X86_INSTR_CMOVNC );
+  test_alu_reg( "alu_reg_CMOVNE", &mycode, LIBXSMM_X86_INSTR_CMOVNE );
+  test_alu_reg( "alu_reg_CMOVNG", &mycode, LIBXSMM_X86_INSTR_CMOVNG );
+  test_alu_reg( "alu_reg_CMOVNGE", &mycode, LIBXSMM_X86_INSTR_CMOVNGE );
+  test_alu_reg( "alu_reg_CMOVNL", &mycode, LIBXSMM_X86_INSTR_CMOVNL );
+  test_alu_reg( "alu_reg_CMOVNLE", &mycode, LIBXSMM_X86_INSTR_CMOVNLE );
+  test_alu_reg( "alu_reg_CMOVNO", &mycode, LIBXSMM_X86_INSTR_CMOVNO );
+  test_alu_reg( "alu_reg_CMOVNP", &mycode, LIBXSMM_X86_INSTR_CMOVNP );
+  test_alu_reg( "alu_reg_CMOVNS", &mycode, LIBXSMM_X86_INSTR_CMOVNS );
+  test_alu_reg( "alu_reg_CMOVNZ", &mycode, LIBXSMM_X86_INSTR_CMOVNZ );
+  test_alu_reg( "alu_reg_CMOVO", &mycode, LIBXSMM_X86_INSTR_CMOVO );
+  test_alu_reg( "alu_reg_CMOVP", &mycode, LIBXSMM_X86_INSTR_CMOVP );
+  test_alu_reg( "alu_reg_CMOVPE", &mycode, LIBXSMM_X86_INSTR_CMOVPE );
+  test_alu_reg( "alu_reg_CMOVPO", &mycode, LIBXSMM_X86_INSTR_CMOVPO );
+  test_alu_reg( "alu_reg_CMOVS", &mycode, LIBXSMM_X86_INSTR_CMOVS );
+  test_alu_reg( "alu_reg_CMOVZ", &mycode, LIBXSMM_X86_INSTR_CMOVZ );
+  test_alu_reg( "alu_reg_POPCNT", &mycode, LIBXSMM_X86_INSTR_POPCNT );
+  test_alu_reg( "alu_reg_TZCNT", &mycode, LIBXSMM_X86_INSTR_TZCNT );
 
   free( codebuffer );
 

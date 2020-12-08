@@ -133,6 +133,53 @@ void test_asimd_compute( char* test_name, libxsmm_generated_code* mycode, unsign
   dump_code_buffer( mycode, test_name );
 }
 
+void test_alu_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned char b;
+  unsigned char o;
+  unsigned char d;
+  short offset = 64;
+
+  reset_code_buffer( mycode, test_name );
+
+  if ( (instr == LIBXSMM_AARCH64_INSTR_GP_LDR_R) || (instr == LIBXSMM_AARCH64_INSTR_GP_STR_R) ) {
+    for (b = 32; b < 64; ++b ) {
+      for (o = 0; o < 64; ++o ) {
+        for (d = 0; d < 64; ++d ) {
+          libxsmm_aarch64_instruction_alu_move( mycode, instr, b, o, 0, d );
+        }
+      }
+    }
+  } else {
+    for (b = 32; b < 64; ++b ) {
+      for (d = 0; d < 64; ++d ) {
+        libxsmm_aarch64_instruction_alu_move( mycode, instr, b, 0, offset, d );
+      }
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
+void test_alu_pair_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned char b;
+  unsigned char s;
+  unsigned char t;
+  short offset = 64;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (b = 32; b < 64; ++b ) {
+    for (s = 0; s < 64; ++s ) {
+      unsigned t_start = ( s < 32 ) ? 0 : 32;
+      for (t = t_start; t < t_start + 32; ++t ) {
+        libxsmm_aarch64_instruction_alu_pair_move( mycode, instr, b, offset, s, t );
+      }
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 void test_gpr_alu_move_imm16( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
   unsigned char d;
   unsigned char shift[4] = {0,1,2,3};
@@ -236,20 +283,39 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_move( "asimd_mov_STR_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST );
   test_asimd_move( "asimd_mov_STR_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_PRE );
 
-  test_asimd_pair_move( "asimd_movp_LDP_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_OFF );
-  test_asimd_pair_move( "asimd_movp_LDP_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_POST );
-  test_asimd_pair_move( "asimd_movp_LDP_PRE", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_PRE );
-  test_asimd_pair_move( "asimd_movp_LDNP_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDNP_OFF );
-  test_asimd_pair_move( "asimd_movp_STP_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STP_OFF );
-  test_asimd_pair_move( "asimd_movp_STP_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STP_POST );
-  test_asimd_pair_move( "asimd_movp_STP_PRE", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STP_PRE );
-  test_asimd_pair_move( "asimd_movp_STNP_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STNP_OFF );
+  test_asimd_pair_move( "asimd_movp_LDP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF );
+  test_asimd_pair_move( "asimd_movp_LDP_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_POST );
+  test_asimd_pair_move( "asimd_movp_LDP_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_PRE );
+  test_asimd_pair_move( "asimd_movp_LDNP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDNP_I_OFF );
+  test_asimd_pair_move( "asimd_movp_STP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF );
+  test_asimd_pair_move( "asimd_movp_STP_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_POST );
+  test_asimd_pair_move( "asimd_movp_STP_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_PRE );
+  test_asimd_pair_move( "asimd_movp_STNP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF );
 
   /* test SIMD compute instructions */
   test_asimd_compute( "asimd_comp_FMLA_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V,   0 );
   test_asimd_compute( "asimd_comp_FMLA_E_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V, 1 );
   test_asimd_compute( "asimd_comp_FMLA_E_S", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S, 1 );
   test_asimd_compute( "asimd_comp_EOR_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,    0 );
+
+  /* testing asimd ldr/str instructions */
+  test_alu_move( "alu_mov_LDR_R", &mycode, LIBXSMM_AARCH64_INSTR_GP_LDR_R );
+  test_alu_move( "alu_mov_LDR_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF );
+  test_alu_move( "alu_mov_LDR_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_GP_LDR_I_POST );
+  test_alu_move( "alu_mov_LDR_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_GP_LDR_I_PRE );
+  test_alu_move( "alu_mov_STR_R", &mycode, LIBXSMM_AARCH64_INSTR_GP_STR_R );
+  test_alu_move( "alu_mov_STR_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF );
+  test_alu_move( "alu_mov_STR_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_GP_STR_I_POST );
+  test_alu_move( "alu_mov_STR_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_GP_STR_I_PRE );
+
+  test_alu_pair_move( "alu_movp_LDP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF );
+  test_alu_pair_move( "alu_movp_LDP_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_GP_LDP_I_POST );
+  test_alu_pair_move( "alu_movp_LDP_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_GP_LDP_I_PRE );
+  test_alu_pair_move( "alu_movp_LDNP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_GP_LDNP_I_OFF );
+  test_alu_pair_move( "alu_movp_STP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF );
+  test_alu_pair_move( "alu_movp_STP_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_GP_STP_I_POST );
+  test_alu_pair_move( "alu_movp_STP_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_GP_STP_I_PRE );
+  test_alu_pair_move( "alu_movp_STNP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_GP_STNP_I_OFF );
 
   /* ALU set imm instructions */
   test_gpr_alu_move_imm16( "aarch64_mov_i16_movz", &mycode, LIBXSMM_AARCH64_INSTR_GP_MOVZ );

@@ -312,12 +312,12 @@ int main(int argc, char* argv[]) {
   /* sparse routine */
 #if defined(__EDGE_EXECUTE_F32__)
   if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
-    mykernel = libxsmm_create_xcsc_soa(l_xgemm_desc, l_colptr_padded, l_rowidx_padded, (const void*)l_b_sp, N_CRUNS).smm;
+    mykernel = libxsmm_create_packed_spxgemm_csc(l_xgemm_desc, N_CRUNS, l_colptr_padded, l_rowidx_padded, (const void*)l_b_sp).smm;
   } else {
-    mykernel = libxsmm_create_xcsc_soa(l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp, N_CRUNS).smm;
+    mykernel = libxsmm_create_packed_spxgemm_csc(l_xgemm_desc, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp).smm;
   }
 #else
-  mykernel = libxsmm_create_xcsc_soa(l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp, N_CRUNS).dmm;
+  mykernel = libxsmm_create_packed_spxgemm_csc(l_xgemm_desc, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp).dmm;
 #endif
 
   if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
