@@ -2235,7 +2235,7 @@ void init_on_numa_node_bwd_dweights ( my_fc_bwd_config cfg, libxsmm_bfloat16* dw
   /* Batch reduce related variables */
   unsigned long long  blocks = nBlocksMB/BF;
 
-  if (use_2d_blocking == 1) {
+    if (use_2d_blocking == 1) {
       int _ltid, hyperpartition_id, _nBlocksOFm;
       row_teams = cfg.upd_row_teams;
       column_teams = cfg.upd_column_teams;
@@ -2249,8 +2249,8 @@ void init_on_numa_node_bwd_dweights ( my_fc_bwd_config cfg, libxsmm_bfloat16* dw
       my_im_start = LIBXSMM_MIN( my_row_id * im_tasks_per_thread, nBlocksIFm);
       my_im_end = LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, nBlocksIFm);
       my_in_start = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksOFm);
-      my_in_end = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_threa
-  }
+      my_in_end = hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksOFm);
+    }
 
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, dfilter, dwt, nBlocksIFm, bc_lp, bk, lpb);
 
