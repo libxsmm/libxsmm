@@ -170,24 +170,24 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
   if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE  ) {
     if ( i_precision == LIBXSMM_DATATYPE_F64 || i_precision == LIBXSMM_DATATYPE_I64 ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVB,
+          LIBXSMM_X86_INSTR_KMOVB_GPR_LD,
           i_gp_reg_tmp,
-          i_mask_reg, 0 );
+          i_mask_reg );
     } else if ( i_precision == LIBXSMM_DATATYPE_F32 || i_precision == LIBXSMM_DATATYPE_I32 ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVW,
+          LIBXSMM_X86_INSTR_KMOVW_GPR_LD,
           i_gp_reg_tmp,
-          i_mask_reg, 0 );
+          i_mask_reg );
     } else if ( i_precision == LIBXSMM_DATATYPE_F16 || i_precision == LIBXSMM_DATATYPE_BF16 || i_precision == LIBXSMM_DATATYPE_I16 ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVD,
+          LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
           i_gp_reg_tmp,
-          i_mask_reg, 0 );
+          i_mask_reg );
     } else if ( i_precision == LIBXSMM_GEMM_PRECISION_I8 ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVQ,
+          LIBXSMM_X86_INSTR_KMOVQ_GPR_LD,
           i_gp_reg_tmp,
-          i_mask_reg, 0 );
+          i_mask_reg );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
@@ -1153,13 +1153,12 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
 
         /* Store relu mask */
         libxsmm_x86_instruction_mask_move_mem( io_generated_code,
-            LIBXSMM_X86_INSTR_KMOVD,
+            LIBXSMM_X86_INSTR_KMOVD_ST,
             i_gp_reg_mapping->gp_reg_relumask,
             LIBXSMM_X86_GP_REG_UNDEF,
             0,
             (im * 32 + in * i_mateltwise_desc->ldo)/8,
-            current_mask_reg,
-            1 );
+            current_mask_reg );
 
         /* Blend output result with zero reg based on relu mask */
         libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
@@ -1826,7 +1825,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
   /* move blend mask value to GP register and to mask register 7 */
   if (n != 1) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, 0xff00 );
-    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVW, LIBXSMM_X86_GP_REG_RAX, 7, 0 );
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVW_GPR_LD, LIBXSMM_X86_GP_REG_RAX, 7 );
   }
 
   if (n_full_trips >= 1) {
@@ -4407,9 +4406,9 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
 
         /* Extract the mask from the proper auxiliry gpr */
         libxsmm_x86_instruction_mask_move( io_generated_code,
-            LIBXSMM_X86_INSTR_KMOVD,
+            LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
             gpr_mask_regs[unroll_iter/2],
-            cur_mask_reg, 0 );
+            cur_mask_reg );
 
         /* Shift current mask gpr in order to br able to extract the next mask  */
         if (unroll_iter % 2 == 0) {
@@ -4471,13 +4470,12 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
 
           /* Store mask relu  */
           libxsmm_x86_instruction_mask_move_mem( io_generated_code,
-              LIBXSMM_X86_INSTR_KMOVD,
+              LIBXSMM_X86_INSTR_KMOVD_ST,
               i_gp_reg_mapping->gp_reg_relumask,
               LIBXSMM_X86_GP_REG_UNDEF,
               0,
               (im * 32 + in * i_mateltwise_desc->ldo)/8,
-              cur_mask_reg,
-              1 );
+              cur_mask_reg );
 
           /* Blend output result with zero reg based on relu mask */
           libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
@@ -4493,13 +4491,12 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
         } else {
           /* Load relu mask */
           libxsmm_x86_instruction_mask_move_mem( io_generated_code,
-              LIBXSMM_X86_INSTR_KMOVD,
+              LIBXSMM_X86_INSTR_KMOVD_LD,
               i_gp_reg_mapping->gp_reg_relumask,
               LIBXSMM_X86_GP_REG_UNDEF,
               0,
               (im * 32 + in * i_mateltwise_desc->ldo)/8,
-              cur_mask_reg,
-              0 );
+              cur_mask_reg );
 
           /* Blend output result with zero reg based on relu mask */
           libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
