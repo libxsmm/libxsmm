@@ -119,7 +119,9 @@ void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*      
 LIBXSMM_API_INTERN
 void libxsmm_generator_cvtfp32bf16_avx512_replacement_sequence( libxsmm_generated_code*                        io_generated_code,
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const unsigned int                             i_vec_reg );
+    const unsigned int                             i_vec_reg,
+    const unsigned int                             tmp1,
+    const unsigned int                             tmp2 );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_cvtfp32bf16_vnni_format_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
