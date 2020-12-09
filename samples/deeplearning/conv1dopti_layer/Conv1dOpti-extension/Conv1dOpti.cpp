@@ -147,6 +147,24 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     auto flip_weight = weight.new_empty({WW_t,F_t,C_t});                                // Weight tensor with permuted dimension (width, filters, channels)
     libxsmm_bfloat16* flip_weight_a = (libxsmm_bfloat16*) flip_weight.data_ptr<at::BFloat16>();    // Get BFloat16 data pointers for accessing the tensor
 
+#ifdef USE_TPP
+    /* jited tranpose to permute the array dimensions*/
+    libxsmm_meltw_transform_flags trans_per_flags;
+    trans_per_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    libxsmm_blasint per_m = WW_t;
+    libxsmm_blasint per_n = F_t*C_t;
+    libxsmm_blasint per_ldi = WW_t;
+    libxsmm_blasint per_ldo = F_t*C_t;
+    libxsmm_meltwfunction_transform trans_permute = libxsmm_dispatch_meltw_transform(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_per_flags);
+    if ( trans_permute == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+    libxsmm_meltw_transform_param trans_param_permute;
+    trans_param_permute.in_ptr  = weight_a;
+    trans_param_permute.out_ptr = flip_weight_a;
+    trans_permute( &trans_param_permute );
+#else
     for(int kw = 0; kw < WW_t; kw++){                               // Loop to permute weight tensor dimensions
         for(int filter=0; filter < F_t; filter++){
             for (int channel=0; channel < C_t; channel++){
@@ -155,7 +173,7 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
             }
         }
     }
-
+#endif
     int lda = C_t;                      // Input channels (16)
     int ldb = Win_t;                    // Input width    (60400)
     int ldc = W_t;                      // Output width   (60000)
@@ -303,6 +321,59 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     auto flip_weight_tensor = weight.new_empty({WW_t,C_t,F_t});                             // Weight tensor with permuted dimension (width, channels, filters)
     libxsmm_bfloat16* flip_weight_a = (libxsmm_bfloat16*) flip_weight_tensor.data_ptr<at::BFloat16>();   // Get pointer
 
+#ifdef USE_TPP
+
+    auto weight_buffer = weight.new_empty({F_t,C_t,WW_t});                  // Tensor weight buffer
+    libxsmm_bfloat16* weight_buffer_a = (libxsmm_bfloat16*) weight_buffer.data_ptr<at::BFloat16>();
+
+    #pragma omp parallel for
+    for(int i = 0; i < F_t*C_t; i++){
+        for(int kw = 0; kw < WW_t; kw++){                                   // reverse copy
+            flip_weight_a[i*WW_t + kw] = weight_a[i*WW_t + WW_t - kw - 1];
+        }
+    }
+
+    /* jited tranpose to permute the array dimensions
+        Overall convert (F_t, C_t, WW_t) -----> (WW_t, C_t, F_t)*/
+
+    libxsmm_meltw_transform_flags trans_flip_flags;
+    trans_flip_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    libxsmm_blasint flip_m1 = WW_t;
+    libxsmm_blasint flip_n1 = F_t*C_t;
+    libxsmm_blasint flip_ldi_1 = WW_t;
+    libxsmm_blasint flip_ldo_1 = F_t*C_t;
+    libxsmm_meltwfunction_transform trans_flip_1 = libxsmm_dispatch_meltw_transform(flip_m1, flip_n1, &flip_ldi_1, &flip_ldo_1, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flip_flags);
+    if ( trans_flip_1 == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+
+    // Convert (F_t, C_t, WW_t) -----> (WW_t, F_t, C_t)
+    libxsmm_meltw_transform_param trans_param_flip_1;
+    trans_param_flip_1.in_ptr  = flip_weight_a;
+    trans_param_flip_1.out_ptr = weight_buffer_a;
+    trans_flip_1( &trans_param_flip_1 );
+
+    libxsmm_blasint flip_m2 = C_t;
+    libxsmm_blasint flip_n2 = F_t;
+    libxsmm_blasint flip_ldi_2 = C_t;
+    libxsmm_blasint flip_ldo_2 = F_t;
+    libxsmm_meltwfunction_transform trans_flip_2 = libxsmm_dispatch_meltw_transform(flip_m2, flip_n2, &flip_ldi_2, &flip_ldo_2, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flip_flags);
+    if ( trans_flip_2 == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+
+    // Convert (WW_t, F_t, C_t) -----> (F_t, C_t, WW_t)
+    #pragma omp parallel for
+    for(int kw = 0; kw < WW_t; kw++){                   // permute last two dimensions
+        libxsmm_meltw_transform_param trans_param_flip_2;
+        trans_param_flip_2.in_ptr  = &weight_buffer_a[kw*C_t*F_t];
+        trans_param_flip_2.out_ptr = &flip_weight_a[kw*C_t*F_t];
+        trans_flip_2( &trans_param_flip_2 );
+    }
+
+#else
     for(int kw = 0; kw < WW_t; kw++){                       // Loop to permute and flip weight tensor
         for (int channel=0; channel < C_t; channel++){
             for(int filter=0; filter < F_t; filter++){
@@ -311,6 +382,8 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
             }
         }
     }
+
+#endif
 
     int64_t Wpad_t = W_t + 2*(WW_t - 1)*dial;                             // For padding gradiant on both sides
     int64_t tile_multiple = (Win_t/XS_TILE_DBACKWARD)*XS_TILE_DBACKWARD;  // Number of blocks/tiles in Input
@@ -601,7 +674,6 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     /* Also JIT eltwise TPPs... */
     libxsmm_blasint cvt_m = 1;
     libxsmm_blasint cvt_n = F_t*C_t*WW_t;
-
     libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel = libxsmm_dispatch_meltw_cvtfp32bf16(cvt_m, cvt_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVT_NONE);
     if ( eltwise_kernel == NULL ) {
         fprintf( stderr, "JIT for TPP convert FP32 to BF16 failed. Bailing...!\n");
@@ -609,12 +681,52 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     }
     libxsmm_meltw_cvtfp32bf16_param eltwise_params;
 
-    eltwise_params.in_ptr = &flip_d_weight_a[0];
-    eltwise_params.out_ptr = &flip_d_weight_bf16[0];
+    eltwise_params.in_ptr = flip_d_weight_a;
+    eltwise_params.out_ptr = flip_d_weight_bf16;
     eltwise_kernel(&eltwise_params);
 
 // #endif
 
+#ifdef USE_TPP
+    /* jited tranpose to permute the array dimensions
+        Overall Convert (WW_t, C_t, F_t) -----> (F_t, C_t, WW_t)*/
+    libxsmm_meltw_transform_flags trans_per_flags;
+    trans_per_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    libxsmm_blasint per_m1 = F_t;
+    libxsmm_blasint per_n1 = C_t;
+    libxsmm_blasint ldi_per_1 = F_t;
+    libxsmm_blasint ldo_per_1 = C_t;
+    libxsmm_meltwfunction_transform trans_permute_1 = libxsmm_dispatch_meltw_transform(per_m1, per_n1, &ldi_per_1, &ldo_per_1, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_per_flags);
+    if ( trans_permute_1 == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+    // Convert (WW_t, C_t, F_t) -----> (WW_t, F_t, C_t)
+    #pragma omp parallel for
+    for(int kw = 0; kw < WW_t; kw++){                   // permute last two dimensions
+        libxsmm_meltw_transform_param trans_param_permute_1;
+        trans_param_permute_1.in_ptr  = &flip_d_weight_bf16[kw*C_t*F_t];
+        trans_param_permute_1.out_ptr = &flip_weight_a[kw*C_t*F_t];
+        trans_permute_1( &trans_param_permute_1 );
+    }
+
+    libxsmm_blasint per_m2 = F_t*C_t;
+    libxsmm_blasint per_n2 = WW_t;
+    libxsmm_blasint ldi_per_2 = F_t*C_t;
+    libxsmm_blasint ldo_per_2 = WW_t;
+    libxsmm_meltwfunction_transform trans_permute_2 = libxsmm_dispatch_meltw_transform(per_m2, per_n2, &ldi_per_2, &ldo_per_2, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_per_flags);
+    if ( trans_permute_2 == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+
+    // Convert (WW_t, F_t, C_t) -----> (F_t, C_t, WW_t)
+    libxsmm_meltw_transform_param trans_param_permute_2;
+    trans_param_permute_2.in_ptr  = flip_weight_a;
+    trans_param_permute_2.out_ptr = d_weight_a;
+    trans_permute_2( &trans_param_permute_2 );
+
+#else
     for(int kw = 0; kw < WW_t; kw++){                       // permute and write to weight gradiant array for return
         for(int filter=0; filter < F_t; filter++){
             for (int channel=0; channel < C_t; channel++){
@@ -622,6 +734,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
             }
         }
     }
+#endif
 
     libxsmm_free(flip_d_weight_a);
 
@@ -653,6 +766,24 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
     auto flip_weight = weight.new_empty({WW_t,F_t,C_t});        // Array to store permuted weight tensor (width, filters, channels)
     float* flip_weight_a = flip_weight.data_ptr<float>();
 
+#ifdef USE_TPP
+    /* jited tranpose to permute the array dimensions*/
+    libxsmm_meltw_transform_flags trans_per_flags;
+    trans_per_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    libxsmm_blasint per_m = WW_t;
+    libxsmm_blasint per_n = F_t*C_t;
+    libxsmm_blasint per_ldi = WW_t;
+    libxsmm_blasint per_ldo = F_t*C_t;
+    libxsmm_meltwfunction_transform trans_permute = libxsmm_dispatch_meltw_transform(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_per_flags);
+    if ( trans_permute == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+    libxsmm_meltw_transform_param trans_param_permute;
+    trans_param_permute.in_ptr  = weight_a;
+    trans_param_permute.out_ptr = flip_weight_a;
+    trans_permute( &trans_param_permute );
+#else
     for(int kw = 0; kw < WW_t; kw++){                           // Loops to permute the array dimensions
         for(int filter=0; filter < F_t; filter++){
             for (int channel=0; channel < C_t; channel++){
@@ -661,6 +792,7 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
             }
         }
     }
+#endif
 
     int lda = C_t;                      // Input channels (15)
     int ldb = Win_t;                    // Input width (60400)
@@ -752,7 +884,6 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     auto d_input = input.new_empty({N_t,C_t,Win_t});            // declare data gradiant tensor
     auto d_weight = weight.new_empty({F_t,C_t,WW_t});           // declare weight gradiant tensor
 
-
     float* input_a = input.data_ptr<float>();                   // Get data pointers for accessing tensors
     float* weight_a = weight.data_ptr<float>();
     float* grad_a = grad.data_ptr<float>();
@@ -764,6 +895,59 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     auto flip_weight = weight.new_empty({WW_t,C_t,F_t});                  // Tensor for permuted weights (width, channels, filters)
     float* flip_weight_a = flip_weight.data_ptr<float>();
 
+#ifdef USE_TPP
+
+    auto weight_buffer = weight.new_empty({F_t,C_t,WW_t});                  // Tensor weight buffer
+    float* weight_buffer_a = weight_buffer.data_ptr<float>();
+
+    #pragma omp parallel for
+    for(int i = 0; i < F_t*C_t; i++){
+        for(int kw = 0; kw < WW_t; kw++){                                   // reverse copy
+            flip_weight_a[i*WW_t + kw] = weight_a[i*WW_t + WW_t - kw - 1];
+        }
+    }
+
+    /* jited tranpose to permute the array dimensions
+        Overall convert (F_t, C_t, WW_t) -----> (WW_t, C_t, F_t)*/
+
+    libxsmm_meltw_transform_flags trans_flip_flags;
+    trans_flip_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    libxsmm_blasint flip_m1 = WW_t;
+    libxsmm_blasint flip_n1 = F_t*C_t;
+    libxsmm_blasint flip_ldi_1 = WW_t;
+    libxsmm_blasint flip_ldo_1 = F_t*C_t;
+    libxsmm_meltwfunction_transform trans_flip_1 = libxsmm_dispatch_meltw_transform(flip_m1, flip_n1, &flip_ldi_1, &flip_ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flip_flags);
+    if ( trans_flip_1 == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+
+    // Convert (F_t, C_t, WW_t) -----> (WW_t, F_t, C_t)
+    libxsmm_meltw_transform_param trans_param_flip_1;
+    trans_param_flip_1.in_ptr  = flip_weight_a;
+    trans_param_flip_1.out_ptr = weight_buffer_a;
+    trans_flip_1( &trans_param_flip_1 );
+
+    libxsmm_blasint flip_m2 = C_t;
+    libxsmm_blasint flip_n2 = F_t;
+    libxsmm_blasint flip_ldi_2 = C_t;
+    libxsmm_blasint flip_ldo_2 = F_t;
+    libxsmm_meltwfunction_transform trans_flip_2 = libxsmm_dispatch_meltw_transform(flip_m2, flip_n2, &flip_ldi_2, &flip_ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flip_flags);
+    if ( trans_flip_2 == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+
+    // Convert (WW_t, F_t, C_t) -----> (F_t, C_t, WW_t)
+    #pragma omp parallel for
+    for(int kw = 0; kw < WW_t; kw++){                   // permute last two dimensions
+        libxsmm_meltw_transform_param trans_param_flip_2;
+        trans_param_flip_2.in_ptr  = &weight_buffer_a[kw*C_t*F_t];
+        trans_param_flip_2.out_ptr = &flip_weight_a[kw*C_t*F_t];
+        trans_flip_2( &trans_param_flip_2 );
+    }
+
+#else
     for(int kw = 0; kw < WW_t; kw++){                   // Loop to permute and flip weights
         for (int channel=0; channel < C_t; channel++){
             for(int filter=0; filter < F_t; filter++){
@@ -772,6 +956,8 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
             }
         }
     }
+
+#endif
 
     int64_t Wpad_t = W_t + 2*(WW_t - 1)*dial;
     int64_t tile_multiple = (Win_t/XS_TILE_DBACKWARD)*XS_TILE_DBACKWARD;
@@ -986,14 +1172,56 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         }
     }
 
+#ifdef USE_TPP
+    /* jited tranpose to permute the array dimensions
+        Overall Convert (WW_t, C_t, F_t) -----> (F_t, C_t, WW_t)*/
+    libxsmm_meltw_transform_flags trans_per_flags;
+    trans_per_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    libxsmm_blasint per_m1 = F_t;
+    libxsmm_blasint per_n1 = C_t;
+    libxsmm_blasint ldi_1 = F_t;
+    libxsmm_blasint ldo_1 = C_t;
+    libxsmm_meltwfunction_transform trans_permute_1 = libxsmm_dispatch_meltw_transform(per_m1, per_n1, &ldi_1, &ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_per_flags);
+    if ( trans_permute_1 == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+
+    // Convert (WW_t, C_t, F_t) -----> (WW_t, F_t, C_t)
+    #pragma omp parallel for
+    for(int kw = 0; kw < WW_t; kw++){                   // permute last two dimensions
+        libxsmm_meltw_transform_param trans_param_permute_1;
+        trans_param_permute_1.in_ptr  = &flip_d_weight_a[kw*C_t*F_t];
+        trans_param_permute_1.out_ptr = &flip_weight_a[kw*C_t*F_t];
+        trans_permute_1( &trans_param_permute_1 );
+    }
+
+
+    libxsmm_blasint per_m2 = F_t*C_t;
+    libxsmm_blasint per_n2 = WW_t;
+    libxsmm_blasint ldi_2 = F_t*C_t;
+    libxsmm_blasint ldo_2 = WW_t;
+    libxsmm_meltwfunction_transform trans_permute_2 = libxsmm_dispatch_meltw_transform(per_m2, per_n2, &ldi_2, &ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_per_flags);
+    if ( trans_permute_2 == NULL) {
+        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        exit(-1);
+    }
+
+    // Convert (WW_t, F_t, C_t) -----> (F_t, C_t, WW_t)
+    libxsmm_meltw_transform_param trans_param_permute_2;
+    trans_param_permute_2.in_ptr  = flip_weight_a;
+    trans_param_permute_2.out_ptr = d_weight_a;
+    trans_permute_2( &trans_param_permute_2 );
+
+#else
     for(int kw = 0; kw < WW_t; kw++){                   // permute weight gradiant array for return
         for(int filter=0; filter < F_t; filter++){
             for (int channel=0; channel < C_t; channel++){
-
                 d_weight_a[filter*C_t*WW_t + channel*WW_t + kw] = flip_d_weight_a[kw*C_t*F_t + channel*F_t + filter];
             }
         }
     }
+#endif
 
     return {d_input, d_weight};         // return data gradiant and weight gradiant
 }
@@ -1022,16 +1250,18 @@ at::Tensor relu_forward_bf16(at::Tensor& input){
     }
 
 // #else
-    // libxsmm_blasint tpp_m = 1;                      // rows
-    // libxsmm_blasint tpp_n = N_t*C_t*W_t;      // columns
-    // libxsmm_meltwfunction_relu relu_fwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, NULL, NULL, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_FWD, 0);
+    // libxsmm_blasint tpp_m = 1;                      // columns
+    // libxsmm_blasint tpp_n = N_t*C_t*W_t;            // rows
+    // libxsmm_blasint ld = 1;
+    // libxsmm_meltwfunction_relu relu_fwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_FWD, 0);
     // if ( relu_fwd_kernel == NULL ) {
     //     fprintf( stderr, "JIT for TPP relu_fwd_kernel failed. Bailing...!\n");
     //     exit(-1);
     // }
     // libxsmm_meltw_relu_param relu_params;
-    // relu_params.in_ptr   = &input_a[0];
-    // relu_params.out_ptr  = &Y_a[0];
+    // relu_params.in_ptr   = input_a;
+    // relu_params.out_ptr  = Y_a;
+    // relu_params.mask_ptr = NULL;
     // relu_fwd_kernel(&relu_params);
 // #endif
 
@@ -1063,10 +1293,10 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& output){
     }
 
 // #else
-    // libxsmm_blasint tpp_m = 1;                      // rows
-    // libxsmm_blasint tpp_n = N_t*C_t*W_t;      // columns
-    // libxsmm_blasint ld = 1;
-    // libxsmm_meltwfunction_relu relu_bwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, NULL, NULL, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_BWD, 0);
+    // libxsmm_blasint tpp_m = W_t;                      // columns
+    // libxsmm_blasint tpp_n = N_t*C_t;                                // rows
+    // libxsmm_blasint ld = W_t;
+    // libxsmm_meltwfunction_relu relu_bwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_BWD, 0);
     // if ( relu_bwd_kernel == NULL ) {
     //     fprintf( stderr, "JIT for TPP relu_bwd_kernel failed. Bailing...!\n");
     //     exit(-1);
