@@ -487,19 +487,16 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_CLDEMOTE:
       libxsmm_strncpy(o_instr_name, "cldemote", i_instr_name_max_length, 8 );
       break;
-    case LIBXSMM_X86_INSTR_KMOV:
-      libxsmm_strncpy(o_instr_name, "kmov", i_instr_name_max_length, 4 );
-      break;
-    case LIBXSMM_X86_INSTR_KMOVW:
+    case LIBXSMM_X86_INSTR_KMOVW_GPR_LD:
       libxsmm_strncpy(o_instr_name, "kmovw", i_instr_name_max_length, 5 );
       break;
-    case LIBXSMM_X86_INSTR_KMOVB:
+    case LIBXSMM_X86_INSTR_KMOVB_GPR_LD:
       libxsmm_strncpy(o_instr_name, "kmovb", i_instr_name_max_length, 5 );
       break;
-    case LIBXSMM_X86_INSTR_KMOVD:
+    case LIBXSMM_X86_INSTR_KMOVD_GPR_LD:
       libxsmm_strncpy(o_instr_name, "kmovd", i_instr_name_max_length, 5 );
       break;
-    case LIBXSMM_X86_INSTR_KMOVQ:
+    case LIBXSMM_X86_INSTR_KMOVQ_GPR_LD:
       libxsmm_strncpy(o_instr_name, "kmovq", i_instr_name_max_length, 5 );
       break;
     case LIBXSMM_X86_INSTR_KXNORW:

@@ -69,6 +69,27 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
     const unsigned int                       i_precision);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_mateltwise_xoshiro128pp_avx512( libxsmm_generated_code* io_generated_code,
+                                                       const unsigned int      i_vec_reg_rng_state_0,
+                                                       const unsigned int      i_vec_reg_rng_state_1,
+                                                       const unsigned int      i_vec_reg_rng_state_2,
+                                                       const unsigned int      i_vec_reg_rng_state_3,
+                                                       const unsigned int      i_vec_reg_rng_tmp_0,
+                                                       const unsigned int      i_vec_reg_rng_tmp_1,
+                                                       const unsigned int      o_vec_reg_rng );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateltwise_xoshiro128p_f32_avx512( libxsmm_generated_code* io_generated_code,
+                                                          const unsigned int      i_vec_reg_rng_state_0,
+                                                          const unsigned int      i_vec_reg_rng_state_1,
+                                                          const unsigned int      i_vec_reg_rng_state_2,
+                                                          const unsigned int      i_vec_reg_rng_state_3,
+                                                          const unsigned int      i_vec_reg_rng_tmp_0,
+                                                          const unsigned int      i_vec_reg_rng_tmp_1,
+                                                          const unsigned int      i_vec_reg_rng_one,
+                                                          const unsigned int      o_vec_reg_rng );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_generated_code*         io_generated_code,
     libxsmm_mateltwise_kernel_config*    io_micro_kernel_config,
     const unsigned int              i_arch,
@@ -98,7 +119,9 @@ void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*      
 LIBXSMM_API_INTERN
 void libxsmm_generator_cvtfp32bf16_avx512_replacement_sequence( libxsmm_generated_code*                        io_generated_code,
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const unsigned int                             i_vec_reg );
+    const unsigned int                             i_vec_reg,
+    const unsigned int                             tmp1,
+    const unsigned int                             tmp2 );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_cvtfp32bf16_vnni_format_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,

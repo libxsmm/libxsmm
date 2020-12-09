@@ -641,8 +641,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_code,
                                         const unsigned int      i_mask_instr,
                                         const unsigned int      i_gp_reg_number,
-                                        const unsigned int      i_mask_reg_number,
-                                        const unsigned int      i_is_store );
+                                        const unsigned int      i_mask_reg_number );
 
 /**
  * Allows for mask move instructions in AVX512
@@ -663,8 +662,7 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
                                             const unsigned int      i_gp_reg_idx,
                                             const unsigned int      i_scale,
                                             const int               i_displacement,
-                                            const unsigned int      i_mask_reg_number,
-                                            const unsigned int      i_is_store );
+                                            const unsigned int      i_mask_reg_number );
 
 /**
  * Allows for mask move instructions in AVX512
@@ -674,13 +672,15 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
  * @param i_mask_reg_number_src_0 the first operand register number (att syntax) (k1=1...k7=7)
  * @param i_mask_reg_number_src_1 the second operand register number (att syntax) (k1=1...k7=7)
  * @param i_mask_reg_number_dest the third operand register number (att syntax) (k1=1...k7=7)
+ * @param i_imm8 immediate value
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_mask_instr,
                                                const unsigned int      i_mask_reg_number_src_0,
                                                const unsigned int      i_mask_reg_number_src_1,
-                                               const unsigned int      i_mask_reg_number_dest  );
+                                               const unsigned int      i_mask_reg_number_dest,
+                                               const unsigned char     i_imm8 );
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack
