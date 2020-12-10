@@ -186,6 +186,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
                                                                          const unsigned int                      i_gp_reg_mask,
                                                                          const unsigned int                      i_mask_reg_0,
                                                                          const unsigned int                      i_mask_reg_1,
+                                                                         const unsigned int                      i_mask_reg_2,
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
