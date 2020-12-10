@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_opreduce $(OUTDIR)/eltwise_scale $(OUTDIR)/eltwise_layernorm $(OUTDIR)/eltwise_transform
+XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_opreduce $(OUTDIR)/eltwise_scale $(OUTDIR)/eltwise_layernorm $(OUTDIR)/eltwise_transform $(OUTDIR)/eltwise_dropout
 .PHONY: all
 all: $(XFILES)
 
@@ -58,6 +58,9 @@ $(OUTDIR)/eltwise_layernorm: $(OUTDIR)/.make $(BLDDIR)/eltwise_layernorm-c.o $(L
 
 $(OUTDIR)/eltwise_transform: $(OUTDIR)/.make $(BLDDIR)/eltwise_transform-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_transform-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_dropout: $(OUTDIR)/.make $(BLDDIR)/eltwise_dropout-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_dropout-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
