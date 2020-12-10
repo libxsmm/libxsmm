@@ -271,7 +271,7 @@ void libxsmm_generator_mateltwise_xoshiro128p_f32_avx512( libxsmm_generated_code
                                             o_vec_reg_rng, i_vec_reg_rng_one, o_vec_reg_rng);
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, 'z',
-                                            o_vec_reg_rng, i_vec_reg_rng_one, o_vec_reg_rng);
+                                            i_vec_reg_rng_one, o_vec_reg_rng, o_vec_reg_rng);
 
   libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'z',
                                                  i_vec_reg_rng_state_1, i_vec_reg_rng_tmp_0, 9);

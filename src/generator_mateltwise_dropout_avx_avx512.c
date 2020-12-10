@@ -51,6 +51,8 @@ void libxsmm_generator_dropout_fwd_f32_avx512_microkernel( libxsmm_generated_cod
   if (use_m_masking == 1) {
     mask_out_count = 16 - (m % 16);
     libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_gp_reg_tmp, i_mask_reg_0, mask_out_count, LIBXSMM_GEMM_PRECISION_F32);
+    n_available_mask_regs--;
+    reserved_mask_regs++;
   }
 
   if (m_trips > max_nm_unrolling) {
@@ -85,12 +87,6 @@ void libxsmm_generator_dropout_fwd_f32_avx512_microkernel( libxsmm_generated_cod
                                     i_gp_reg_rng_state, LIBXSMM_X86_GP_REG_UNDEF, 0, 192,
                                     i_micro_kernel_config->vector_name, state3_vreg, 0, 1, 0 );
 
-  /* load probability */
-  libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
-                                    LIBXSMM_X86_INSTR_VBROADCASTSS,
-                                    i_gp_reg_prob, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                    i_micro_kernel_config->vector_name, prob_vreg, 0, 1, 0 );
-
   /* load constant register */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, 0x3f800000);
   libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_tmp );
@@ -100,9 +96,17 @@ void libxsmm_generator_dropout_fwd_f32_avx512_microkernel( libxsmm_generated_cod
                                     i_micro_kernel_config->vector_name, rng_vreg_one, 0, 1, 0 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_tmp );
 
+  /* load probability */
+  libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set,
+                                    LIBXSMM_X86_INSTR_VBROADCASTSS,
+                                    i_gp_reg_prob, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                    i_micro_kernel_config->vector_name, prob_vreg, 0, 1, 0 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, 'z',
+                                            prob_vreg, rng_vreg_one, prob_vreg );
+
   /* load 1/prob */
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VDIVPS, 'z',
-                                            rng_vreg_one, prob_vreg, invprob_vreg );
+                                            prob_vreg, rng_vreg_one, invprob_vreg );
 
   /* open n loop, if needed */
   if (n_trips > 1) {
@@ -121,7 +125,7 @@ void libxsmm_generator_dropout_fwd_f32_avx512_microkernel( libxsmm_generated_cod
           i_micro_kernel_config->vmove_instruction_in,
           i_gp_reg_in,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (im * 32 + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+          (im * 16 + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
           i_micro_kernel_config->vector_name,
           cur_vreg, (im == (m_trips-1)) ? use_m_masking : 0, 1, 0 );
 
@@ -137,24 +141,22 @@ void libxsmm_generator_dropout_fwd_f32_avx512_microkernel( libxsmm_generated_cod
       libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, 'z',
                                                      cur_vreg, invprob_vreg, cur_vreg, cur_mask_reg, 1 );
 
-#if 0
-      /* Load relu mask */
+      /* Store dropout mask */
       libxsmm_x86_instruction_mask_move_mem( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVD,
-          i_gp_reg_mapping->gp_reg_relumask,
+          LIBXSMM_X86_INSTR_KMOVW_ST,
+          i_gp_reg_dropmask,
           LIBXSMM_X86_GP_REG_UNDEF,
           0,
-          (im * 32 + in * i_mateltwise_desc->ldo)/8,
-          cur_mask_reg,
-          0 );
-#endif
+          (im * 16 + in * i_mateltwise_desc->ldo)/8,
+          cur_mask_reg );
+
       /* Store result  */
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
           i_micro_kernel_config->vmove_instruction_out,
           i_gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (im * 32 + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
+          (im * 16 + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
           i_micro_kernel_config->vector_name,
           cur_vreg, (im == (m_trips-1)) ? use_m_masking : 0, 0, 1 );
     }
@@ -170,7 +172,7 @@ void libxsmm_generator_dropout_fwd_f32_avx512_microkernel( libxsmm_generated_cod
     libxsmm_x86_instruction_alu_imm(  io_generated_code,
         i_micro_kernel_config->alu_add_instruction,
         i_gp_reg_out,
-        i_mateltwise_desc->ldo *  n_unroll_factor * i_micro_kernel_config->datatype_size_out);
+        i_mateltwise_desc->ldo * n_unroll_factor * i_micro_kernel_config->datatype_size_out);
 
     /* Adjust also relu ptr, datatype for relumask tensor is "bit" and also it has always the same shape as output  */
     libxsmm_x86_instruction_alu_imm(  io_generated_code,
@@ -305,8 +307,8 @@ void libxsmm_generator_dropout_avx512_microkernel( libxsmm_generated_code*      
   unsigned int l_gp_reg_mloop = LIBXSMM_X86_GP_REG_RAX;
   unsigned int l_gp_reg_nloop = LIBXSMM_X86_GP_REG_RDX;
   unsigned int l_gp_reg_dropmask = LIBXSMM_X86_GP_REG_R10;
-  unsigned int l_gp_reg_rngstate = LIBXSMM_X86_GP_REG_R11;
-  unsigned int l_gp_reg_prob = LIBXSMM_X86_GP_REG_R12;
+  unsigned int l_gp_reg_prob = LIBXSMM_X86_GP_REG_R11;
+  unsigned int l_gp_reg_rngstate = LIBXSMM_X86_GP_REG_R12;
   unsigned int l_gp_reg_tmp = LIBXSMM_X86_GP_REG_R13;
   unsigned int l_mask_reg_0 = 1;
   unsigned int l_mask_reg_1 = 2;
@@ -321,6 +323,21 @@ void libxsmm_generator_dropout_avx512_microkernel( libxsmm_generated_code*      
                                    i_gp_reg_mapping->gp_reg_param_struct,
                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 8,
                                    l_gp_reg_out, 0 );
+
+  libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
+                                   i_gp_reg_mapping->gp_reg_param_struct,
+                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 16,
+                                   l_gp_reg_dropmask, 0 );
+
+  libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
+                                   i_gp_reg_mapping->gp_reg_param_struct,
+                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 24,
+                                   l_gp_reg_prob, 0 );
+
+  libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
+                                   i_gp_reg_mapping->gp_reg_param_struct,
+                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 32,
+                                   l_gp_reg_rngstate, 0 );
 
   /* check leading dimnesions and sizes */
   if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_DROPOUT_FWD) > 0) ||
