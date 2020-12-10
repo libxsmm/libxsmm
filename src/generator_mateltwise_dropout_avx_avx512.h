@@ -34,11 +34,12 @@ void libxsmm_generator_dropout_bwd_f32_avx512_microkernel( libxsmm_generated_cod
                                                            libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                            const unsigned int                      i_gp_reg_in,
                                                            const unsigned int                      i_gp_reg_out,
+                                                           const unsigned int                      i_gp_reg_dropmask,
+                                                           const unsigned int                      i_gp_reg_prob,
                                                            const unsigned int                      i_gp_reg_m_loop,
                                                            const unsigned int                      i_gp_reg_n_loop,
-                                                           const unsigned int                      i_gp_reg_mask,
+                                                           const unsigned int                      i_gp_reg_tmp,
                                                            const unsigned int                      i_mask_reg_0,
-                                                           const unsigned int                      i_mask_reg_1,
                                                            const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                            const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 

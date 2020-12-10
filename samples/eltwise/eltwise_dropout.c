@@ -183,6 +183,99 @@ void test_dropout_f32_fwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   libxsmm_free( mask_gold );
 }
 
+void test_dropout_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  float *in;
+  float *out, *out_gold;
+  unsigned char *mask, *mask_gold;
+  unsigned int i, j;
+  unsigned int s;
+  float p = 0.3f;
+  libxsmm_meltw_dropout_param dropout_param;
+  libxsmm_meltw_dropout_flags dropout_flags;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_dropout_f32_fwd: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if (M > ldo ) {
+    fprintf( stderr, "test_dropout_f32_fwd: ldo needs to be equal to or bigger than N\n");
+    exit(-1);
+  }
+
+  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
+  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*ldi)+j] = (double)(((i*ldi)+j)%4096);
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < N*ldo; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < N*ldo; ++i ) {
+    out_gold[i] = 0;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask[i] = 0xaa;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask_gold[i] = 0xaa;
+  }
+
+  /* compute out_gold */
+  for ( i = 0; i < N; ++i ) {
+    dropout_bwd_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], p );
+  }
+
+  /* use jited tranpose */
+  dropout_param.in_ptr  = (void*)in;
+  dropout_param.out_ptr = (void*)out;
+  dropout_param.mask_ptr = (void*)mask;
+  dropout_param.prob_ptr = (void*)&p;
+  dropout_param.rng_state = NULL;
+  dropout_flags = LIBXSMM_MELTW_FLAG_DROPOUT_BWD;
+  libxsmm_meltwfunction_dropout dropout_kernel = libxsmm_dispatch_meltw_dropout(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, dropout_flags);
+  if ( dropout_kernel == NULL ) {
+    fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
+    exit(-1);
+  }
+  dropout_kernel( &dropout_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+        s = 1;
+      }
+#if 0
+      else {
+        printf("correct at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+      }
+#endif
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS output\n");
+  } else {
+    printf("FAILURE output\n");
+  }
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+  libxsmm_free( mask );
+  libxsmm_free( mask_gold );
+}
+
 int main( int argc, char* argv[] ) {
   libxsmm_blasint dtype;
   char op;
@@ -206,6 +299,9 @@ int main( int argc, char* argv[] ) {
   if ( op == 'F' && dtype == 4 ) {
     printf("Testing F32 forward dropout\n");
     test_dropout_f32_fwd( M, N, ldi, ldo );
+  } else if ( op == 'B' && dtype == 4 ) {
+    printf("Testing F32 backward dropout\n");
+    test_dropout_f32_bwd( M, N, ldi, ldo );
   } else {
     printf(" Not implemented case! Usage: %s [F/B] [4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
