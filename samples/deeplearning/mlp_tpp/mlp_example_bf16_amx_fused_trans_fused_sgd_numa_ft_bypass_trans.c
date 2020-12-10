@@ -57,6 +57,37 @@ LIBXSMM_INLINE void my_init_buf_bf16(libxsmm_bfloat16* buf, size_t size, int ini
   }
 }
 
+LIBXSMM_INLINE void init_buf_bf16_numa_aware(int ltid, int ft_mode, libxsmm_bfloat16* buf, size_t size, int initPos, int initOne)
+{
+  int chunksize, chunks;
+  int my_numa_node = ltid/14;
+  int n_numa_nodes = 4;
+  int l = 0;
+
+  if (ft_mode == 0) {
+    /* Mode 0 : Block cyclic assignment to NUMA nodes  */
+    int bufsize = size * 2;
+    chunksize = 4096;
+    chunks = (bufsize + chunksize - 1)/chunksize;
+    for (l = 0; l < chunks; l++) {
+      int _chunksize = (l < chunks - 1) ? chunksize : bufsize - (chunks-1) * chunksize;
+      if ( l % n_numa_nodes == my_numa_node) {
+        my_init_buf_bf16((libxsmm_bfloat16*) buf+l*(chunksize/2), _chunksize/2, 0, 0 );
+      }
+    }
+  } else {
+    /* Mode 1: Block assignement to NUMA nodes */
+    chunks = n_numa_nodes;
+    chunksize = (size + chunks - 1) /chunks;
+    for (l = 0; l < chunks; l++) {
+      int _chunksize = (l < chunks - 1) ? chunksize : size - (chunks-1) * chunksize;
+      if ( l  == my_numa_node) {
+        my_init_buf_bf16((libxsmm_bfloat16*) buf+l*chunksize, _chunksize, 0, 0 );
+      }
+    }
+  }
+}
+
 #if 0
 LIBXSMM_INLINE void my_matrix_copy_KCCK_to_KCCK_vnni(float *src, float *dst, int C, int K, int bc, int bk)
 {
@@ -1946,7 +1977,8 @@ void init_on_numa_node_weights( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt
         /* -> &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb), */
         libxsmm_bfloat16 *l_buf = (libxsmm_bfloat16*) wt_ptr + ofm1 * OFM_shift;
         float *l_buf_master = (float*) wt_master_ptr + ofm1 * OFM_shift;
-        libxsmm_rne_convert_fp32_bf16( l_buf_master, l_buf, OFM_shift );
+        init_buf_bf16_numa_aware(ltid, 0, l_buf, OFM_shift, 0, 0);
+        //libxsmm_rne_convert_fp32_bf16( l_buf_master, l_buf, OFM_shift );
       }
     }
   } else {
@@ -2265,6 +2297,22 @@ void init_on_numa_node_bwd_dweights ( my_fc_bwd_config cfg, libxsmm_bfloat16* dw
 
 }
 
+void init_buffer_blocked_numa(libxsmm_bfloat16* buf, size_t size) {
+#if defined(_OPENMP)
+# pragma omp parallel
+#endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    if (tid % 14 == 0) {
+      init_buf_bf16_numa_aware(tid, 1, buf, size, 0, 0);
+    }
+  }
+}
+
 int main(int argc, char* argv[])
 {
   libxsmm_bfloat16 **act_libxsmm, **fil_libxsmm, **delact_libxsmm, **delfil_libxsmm;
@@ -2503,10 +2551,18 @@ int main(int argc, char* argv[])
 
   /* init data */
   for ( i = 0 ; i < num_layers+2; ++i ) {
+#if 0
     my_init_buf_bf16( act_libxsmm[i], MB*C[i], 0, 0 );
+#else
+  init_buffer_blocked_numa(act_libxsmm[i], MB*C[i]);
+#endif
   }
   for ( i = 0 ; i < num_layers+1; ++i ) {
+#if 0
     my_init_buf_bf16( delact_libxsmm[i], MB*C[i], 0, 0 );
+#else
+  init_buffer_blocked_numa(delact_libxsmm[i], MB*C[i]);
+#endif
   }
 #if 0
   for ( i = 0 ; i < num_layers; ++i ) {
