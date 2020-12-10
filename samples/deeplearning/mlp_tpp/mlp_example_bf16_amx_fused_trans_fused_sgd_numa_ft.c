@@ -2547,7 +2547,7 @@ int main(int argc, char* argv[])
   }
 #endif
   for ( i = 0 ; i < num_layers; ++i ) {
-   // my_init_buf_bf16( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 );
+   /* my_init_buf_bf16( delfil_libxsmm[i], C[i]*C[i+1], 0, 0 ); */
   }
   for ( i = 0 ; i < num_layers; ++i ) {
     my_init_buf_bf16( bias_libxsmm[i], C[i+1], 0, 0 );
