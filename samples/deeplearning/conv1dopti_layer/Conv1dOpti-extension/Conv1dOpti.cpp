@@ -1274,7 +1274,7 @@ at::Tensor relu_forward_bf16(at::Tensor& input){
         libxsmm_blasint tpp_m = W_t;                      // columns
         libxsmm_blasint tpp_n = N_t*C_t;                  // rows
         libxsmm_blasint ld = W_t;
-        libxsmm_meltwfunction_relu relu_fwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_BWD, 0);
+        libxsmm_meltwfunction_relu relu_fwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_FWD, 0);
         if ( relu_fwd_kernel == NULL ) {
             fprintf( stderr, "JIT for TPP relu_fwd_kernel failed. Bailing...!\n");
             exit(-1);
