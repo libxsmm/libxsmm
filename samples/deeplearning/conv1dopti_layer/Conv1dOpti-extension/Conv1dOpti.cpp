@@ -1235,37 +1235,69 @@ at::Tensor relu_forward_bf16(at::Tensor& input){
     int64_t C_t = input.size(1);                    // Channel
     int64_t W_t = input.size(2);                    // input width
 
-    auto Y = input.new_empty({N_t,C_t,W_t});        // New tensor for output
     libxsmm_bfloat16* input_a = (libxsmm_bfloat16*) input.data_ptr<at::BFloat16>();
-    libxsmm_bfloat16* Y_a = (libxsmm_bfloat16*) Y.data_ptr<at::BFloat16>();
+    // auto Y = input.new_empty({N_t,C_t,W_t});        // New tensor for output
+    // libxsmm_bfloat16* Y_a = (libxsmm_bfloat16*) Y.data_ptr<at::BFloat16>();
 
-// #ifndef USE_TPP
+#ifndef USE_TPP
+
+    // #pragma omp parallel for
+    // for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width loop
+    //     if(input_a[w] >= 32768)                         // sign bit indicates if value is negative
+    //         Y_a[w] = 0;
+    //     else
+    //         Y_a[w] = input_a[w];
+    // }
 
     #pragma omp parallel for
     for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width loop
         if(input_a[w] >= 32768)                         // sign bit indicates if value is negative
-            Y_a[w] = 0;
-        else
-            Y_a[w] = input_a[w];
+            input_a[w] = 0;
     }
 
-// #else
-    // libxsmm_blasint tpp_m = 1;                      // columns
-    // libxsmm_blasint tpp_n = N_t*C_t*W_t;            // rows
-    // libxsmm_blasint ld = 1;
-    // libxsmm_meltwfunction_relu relu_fwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_FWD, 0);
-    // if ( relu_fwd_kernel == NULL ) {
-    //     fprintf( stderr, "JIT for TPP relu_fwd_kernel failed. Bailing...!\n");
-    //     exit(-1);
-    // }
-    // libxsmm_meltw_relu_param relu_params;
-    // relu_params.in_ptr   = input_a;
-    // relu_params.out_ptr  = Y_a;
-    // relu_params.mask_ptr = NULL;
-    // relu_fwd_kernel(&relu_params);
-// #endif
+#else
 
-    return Y;
+    if (W_t%16 == 0 && (N_t*C_t*W_t)%32 == 0){                                   // vectorized case when width divisible by 16 and overall by 32
+        at::Tensor relumask;
+        relumask = at::empty({N_t,C_t,W_t/16}, torch::TensorOptions().dtype(torch::kInt16));
+        unsigned short* relumask_a = (unsigned short*) relumask.data_ptr<short>();
+        short sign_bit_value = 0;
+        #pragma omp parallel for
+        for(unsigned long w = 0; w < N_t*C_t*W_t; w +=32){
+            __mmask32 lcl_relumask;
+            __m512i vout;
+            vout = _mm512_load_epi64(&input_a[w]);
+            lcl_relumask = _mm512_cmp_epi16_mask (vout, _mm512_set1_epi16(sign_bit_value), _MM_CMPINT_NLT);
+            LIBXSMM_INTRINSICS_MM512_STORE_MASK32( &relumask_a[w/16], lcl_relumask );
+        }
+
+        libxsmm_blasint tpp_m = W_t;                      // columns
+        libxsmm_blasint tpp_n = N_t*C_t;                  // rows
+        libxsmm_blasint ld = W_t;
+        libxsmm_meltwfunction_relu relu_fwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_BWD, 0);
+        if ( relu_fwd_kernel == NULL ) {
+            fprintf( stderr, "JIT for TPP relu_fwd_kernel failed. Bailing...!\n");
+            exit(-1);
+        }
+        libxsmm_meltw_relu_param relu_params;
+        relu_params.in_ptr   = input_a;
+        relu_params.out_ptr  = input_a;
+        relu_params.mask_ptr = relumask_a;
+        relu_fwd_kernel(&relu_params);
+    }
+    else{                                           // Scaler case when width is not divisible by 16
+
+        #pragma omp parallel for
+        for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width loop
+            if(input_a[w] >= 32768)                         // sign bit indicates if value is negative
+                input_a[w] = 0;
+        }
+    }
+
+#endif
+
+    // return Y;
+    return input;
 }
 
 at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& output){
@@ -1279,35 +1311,68 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& output){
     libxsmm_bfloat16* output_a = (libxsmm_bfloat16*) output.data_ptr<at::BFloat16>();
     libxsmm_bfloat16* grad_a = (libxsmm_bfloat16*) grad.data_ptr<at::BFloat16>();
 
-    auto d_input = output.new_empty({N_t,C_t,W_t});        // New tensor for input grad
-    libxsmm_bfloat16* d_input_a = (libxsmm_bfloat16*) d_input.data_ptr<at::BFloat16>();
+    // auto d_input = output.new_empty({N_t,C_t,W_t});        // New tensor for input grad
+    // libxsmm_bfloat16* d_input_a = (libxsmm_bfloat16*) d_input.data_ptr<at::BFloat16>();
 
-// #ifndef USE_TPP
+#ifndef USE_TPP
+    // #pragma omp parallel for
+    // for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width blocking loop
+    // //    if(output_a[w] == 0 || output_a[w] == 32768)
+    //     if(output_a[w] == 0)                            // If output array value was zero
+    //         d_input_a[w] = 0;
+    //     else
+    //         d_input_a[w] = grad_a[w];
+    // }
+
     #pragma omp parallel for
     for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width blocking loop
-        // if(output_a[w] == 0 || output_a[w] == 32768)
+    //    if(output_a[w] == 0 || output_a[w] == 32768)
         if(output_a[w] == 0)                            // If output array value was zero
-            d_input_a[w] = 0;
-        else
-            d_input_a[w] = grad_a[w];
+            grad_a[w] = 0;
     }
 
-// #else
-    // libxsmm_blasint tpp_m = W_t;                      // columns
-    // libxsmm_blasint tpp_n = N_t*C_t;                                // rows
-    // libxsmm_blasint ld = W_t;
-    // libxsmm_meltwfunction_relu relu_bwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_BWD, 0);
-    // if ( relu_bwd_kernel == NULL ) {
-    //     fprintf( stderr, "JIT for TPP relu_bwd_kernel failed. Bailing...!\n");
-    //     exit(-1);
-    // }
-    // libxsmm_meltw_relu_param relu_params;
-    // relu_params.in_ptr   = grad_a;
-    // relu_params.out_ptr  = d_input_a;
-    // relu_params.mask_ptr = output_a;
-    // relu_bwd_kernel(&relu_params);
-// #endif
-    return d_input;
+#else
+
+    if (W_t%16 == 0 && (N_t*C_t*W_t)%32 == 0){                                   // vectorized case when width divisible by 16 and overall by 32
+        at::Tensor relumask;
+        relumask = at::empty({N_t,C_t,W_t/16}, torch::TensorOptions().dtype(torch::kInt16));
+        unsigned short* relumask_a = (unsigned short*) relumask.data_ptr<short>();
+
+        #pragma omp parallel for
+        for(unsigned long w = 0; w < N_t*C_t*W_t; w +=32){
+            __mmask32 lcl_relumask;
+            __m512i vout;
+            vout = _mm512_load_epi64(&output_a[w]);
+            lcl_relumask = _mm512_cmp_epi16_mask (vout, _mm512_setzero_epi32(), _MM_CMPINT_NE);
+            LIBXSMM_INTRINSICS_MM512_STORE_MASK32( &relumask_a[w/16], lcl_relumask );
+        }
+
+        libxsmm_blasint tpp_m = W_t;                      // columns
+        libxsmm_blasint tpp_n = N_t*C_t;                                // rows
+        libxsmm_blasint ld = W_t;
+        libxsmm_meltwfunction_relu relu_bwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_BWD, 0);
+        if ( relu_bwd_kernel == NULL ) {
+            fprintf( stderr, "JIT for TPP relu_bwd_kernel failed. Bailing...!\n");
+            exit(-1);
+        }
+        libxsmm_meltw_relu_param relu_params;
+        relu_params.in_ptr   = grad_a;
+        relu_params.out_ptr  = grad_a;
+        relu_params.mask_ptr = relumask_a;
+        relu_bwd_kernel(&relu_params);
+    }
+    else{                                                    // Scaler case when width is not divisible by 16
+        #pragma omp parallel for
+        for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width blocking loop
+        //    if(output_a[w] == 0 || output_a[w] == 32768)
+            if(output_a[w] == 0)                            // If output array value was zero
+                grad_a[w] = 0;
+        }
+    }
+#endif
+
+    // return d_input;
+    return grad;
 }
 
 

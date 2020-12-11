@@ -5,7 +5,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 
-from Conv1dOpti_ext import Conv1dOpti                    # Import Layer from the extension
+from Conv1dOpti_ext import Conv1dOpti, ReLU_bf16                    # Import Layer from the extension
 
 
 """
@@ -92,6 +92,7 @@ class Net1(nn.Module):                      # First network containing inbuilt P
     def forward(self, x):
         x = self.padding_layer(x)           # Explicit padding
         x = self.conv1(x)
+        # x = F.relu(x)                       # If applying relu
         return x
 
 
@@ -105,6 +106,7 @@ class Net2(nn.Module):                      # Second network containing our opti
     def forward(self, x):
         x = self.padding_layer(x)           # Explicit padding needed for our optimzed convolutional layer
         x = self.conv2(x)
+        # x = ReLU_bf16.apply(x)              # If applying BF16 relu
         return x
 
 
