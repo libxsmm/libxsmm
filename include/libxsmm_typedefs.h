@@ -746,8 +746,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_transform_par
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_dropout_param {
   const void* in_ptr;           /* input pointer */
   void* out_ptr;                /* output pointer */
-  void* mask_ptr;               /* dropout mask */
-  const void* prob_ptr;         /* dropout probability */
+  void* mask_ptr;               /* dropout mask; out for forwad, in for backward */
+  const void* prob_ptr;         /* dropout probability; scalar */
+  void* rng_state;              /* state of LIBXSMM rng; size if opague; ignored for backward */
 } libxsmm_meltw_dropout_param;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_gemm_param {

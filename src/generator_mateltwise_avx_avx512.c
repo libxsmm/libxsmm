@@ -200,115 +200,13 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_mateltwise_xoshiro128pp_avx512( libxsmm_generated_code* io_generated_code,
-                                                       const unsigned int      i_vec_reg_rng_state_0,
-                                                       const unsigned int      i_vec_reg_rng_state_1,
-                                                       const unsigned int      i_vec_reg_rng_state_2,
-                                                       const unsigned int      i_vec_reg_rng_state_3,
-                                                       const unsigned int      i_vec_reg_rng_tmp_0,
-                                                       const unsigned int      i_vec_reg_rng_tmp_1,
-                                                       const unsigned int      o_vec_reg_rng ) {
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDD, 'z',
-                                            i_vec_reg_rng_state_0, i_vec_reg_rng_state_3, i_vec_reg_rng_tmp_0 );
-
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'z',
-                                                 i_vec_reg_rng_tmp_0, i_vec_reg_rng_tmp_1, 7 );
-
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, 'z',
-                                                 i_vec_reg_rng_tmp_0, i_vec_reg_rng_tmp_0, 25 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, 'z',
-                                            i_vec_reg_rng_tmp_0, i_vec_reg_rng_tmp_1, i_vec_reg_rng_tmp_0 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDD, 'z',
-                                            i_vec_reg_rng_tmp_0, i_vec_reg_rng_state_0, o_vec_reg_rng);
-
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'z',
-                                                 i_vec_reg_rng_state_1, i_vec_reg_rng_tmp_0, 9);
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_2, i_vec_reg_rng_state_0, i_vec_reg_rng_state_2 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_3, i_vec_reg_rng_state_1, i_vec_reg_rng_state_3 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_1, i_vec_reg_rng_state_2, i_vec_reg_rng_state_1 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_0, i_vec_reg_rng_state_3, i_vec_reg_rng_state_0 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_2, i_vec_reg_rng_tmp_0, i_vec_reg_rng_state_2 );
-
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'z',
-                                                 i_vec_reg_rng_state_3, i_vec_reg_rng_tmp_0, 11 );
-
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, 'z',
-                                                 i_vec_reg_rng_state_3, i_vec_reg_rng_tmp_1, 21 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, 'z',
-                                            i_vec_reg_rng_tmp_0, i_vec_reg_rng_tmp_1, i_vec_reg_rng_state_3);
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_mateltwise_xoshiro128p_f32_avx512( libxsmm_generated_code* io_generated_code,
-                                                          const unsigned int      i_vec_reg_rng_state_0,
-                                                          const unsigned int      i_vec_reg_rng_state_1,
-                                                          const unsigned int      i_vec_reg_rng_state_2,
-                                                          const unsigned int      i_vec_reg_rng_state_3,
-                                                          const unsigned int      i_vec_reg_rng_tmp_0,
-                                                          const unsigned int      i_vec_reg_rng_tmp_1,
-                                                          const unsigned int      i_vec_reg_rng_one,
-                                                          const unsigned int      o_vec_reg_rng ) {
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDD, 'z',
-                                            i_vec_reg_rng_state_3, i_vec_reg_rng_state_0, o_vec_reg_rng);
-
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, 'z',
-                                                 o_vec_reg_rng, o_vec_reg_rng, 9);
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, 'z',
-                                            o_vec_reg_rng, i_vec_reg_rng_one, o_vec_reg_rng);
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, 'z',
-                                            o_vec_reg_rng, i_vec_reg_rng_one, o_vec_reg_rng);
-
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'z',
-                                                 i_vec_reg_rng_state_1, i_vec_reg_rng_tmp_0, 9);
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_2, i_vec_reg_rng_state_0, i_vec_reg_rng_state_2 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_3, i_vec_reg_rng_state_1, i_vec_reg_rng_state_3 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_1, i_vec_reg_rng_state_2, i_vec_reg_rng_state_1 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_0, i_vec_reg_rng_state_3, i_vec_reg_rng_state_0 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
-                                            i_vec_reg_rng_state_2, i_vec_reg_rng_tmp_0, i_vec_reg_rng_state_2 );
-
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'z',
-                                                 i_vec_reg_rng_state_3, i_vec_reg_rng_tmp_0, 11 );
-
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, 'z',
-                                                 i_vec_reg_rng_state_3, i_vec_reg_rng_tmp_1, 21 );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, 'z',
-                                            i_vec_reg_rng_tmp_0, i_vec_reg_rng_tmp_1, i_vec_reg_rng_state_3);
-}
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_generated_code*         io_generated_code,
     libxsmm_mateltwise_kernel_config*    io_micro_kernel_config,
     const unsigned int              i_arch,
     const libxsmm_meltw_descriptor* i_mateltwise_desc) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
   if ( i_arch >= LIBXSMM_X86_AVX512_CORE ) {
-    io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_CORE;
+    io_micro_kernel_config->instruction_set = io_generated_code->arch;
     io_micro_kernel_config->vector_reg_count = 16;
     /* Configure input specific microkernel options */
     if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
