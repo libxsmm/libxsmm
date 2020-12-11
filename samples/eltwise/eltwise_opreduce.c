@@ -70,6 +70,7 @@ int main(int argc, char* argv[])
   unsigned int m = 64, n = 64, i, j, jj, k, iters = 10000, n_cols_idx = 32, op = 0, op_order = 0, scale_op_res = 0, redop = 0;
   libxsmm_blasint ld_in = 64;
   float  *inp_matrix, *result, *ref_result, *vec_in, *_vec_in, *scale_vals;
+  libxsmm_bfloat16 *inp_matrix_bf16, *result_bf16, *_vec_in_bf16, *scale_vals_bf16;
   unsigned long long *cols_ind_array, *all_ns;
   libxsmm_meltw_opreduce_vecs_idx_param     params;
   libxsmm_meltw_opreduce_vecs_flags         opredop_flags;
@@ -81,6 +82,7 @@ int main(int argc, char* argv[])
   char opordername[50];
   char scaleopresname[50];
   char redopname[50];
+  unsigned int use_bf16 = 0;
 
   libxsmm_init();
   libxsmm_matdiff_clear(&norms_elts);
@@ -94,6 +96,7 @@ int main(int argc, char* argv[])
   if ( argc > 7 ) scale_op_res= atoi(argv[7]);
   if ( argc > 8 ) redop       = atoi(argv[8]);
   if ( argc > 9 ) iters       = atoi(argv[9]);
+  if ( argc > 10 ) use_bf16    = atoi(argv[10]);
 
   if (op == OP_NONE) {
     opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_NONE;
@@ -158,8 +161,11 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
   }
 
-  kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64, opredop_flags);
-
+  if (use_bf16 == 0) {
+    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64, opredop_flags);
+  } else {
+    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_I64, opredop_flags);
+  }
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
   ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
@@ -172,6 +178,13 @@ int main(int argc, char* argv[])
   cols_ind_array          = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
   all_ns                  = (unsigned long long*) malloc(n*sizeof(unsigned long long));
   scale_vals              = (float*) malloc(n_cols_idx*sizeof(float));
+
+  if (use_bf16 == 1) {
+    inp_matrix_bf16              = (libxsmm_bfloat16*) malloc(ld_in*n*sizeof(libxsmm_bfloat16) );
+    result_bf16                  = (libxsmm_bfloat16*) malloc(ld_in*sizeof(libxsmm_bfloat16) );
+    _vec_in_bf16                 = (libxsmm_bfloat16*) malloc(ld_in*sizeof(libxsmm_bfloat16) );
+    scale_vals_bf16              = (libxsmm_bfloat16*) malloc(n_cols_idx*sizeof(libxsmm_bfloat16));
+  }
 
   /* Fill matrices with random data */
   for (i = 0; i < n; i++) {
@@ -186,6 +199,13 @@ int main(int argc, char* argv[])
   memcpy(result, ref_result, ld_in * sizeof(float));
   sfill_matrix ( _vec_in, ld_in, m, 1 );
   sfill_matrix ( scale_vals, n_cols_idx, n_cols_idx, 1 );
+
+  if (use_bf16 == 1) {
+    libxsmm_rne_convert_fp32_bf16( inp_matrix, inp_matrix_bf16, ld_in*n );
+    libxsmm_rne_convert_fp32_bf16( _vec_in, _vec_in_bf16, ld_in);
+    libxsmm_rne_convert_fp32_bf16( scale_vals, scale_vals_bf16, n_cols_idx );
+    libxsmm_rne_convert_fp32_bf16( result, result_bf16, ld_in );
+  }
 
   /* Calculate reference results...  */
   for (jj = 0; jj < n_cols_idx; jj++) {
@@ -247,16 +267,26 @@ int main(int argc, char* argv[])
   /* Call JITed kernel */
   params.n            = n_cols_idx;
   params.indices      = cols_ind_array;
-  params.in_matrix    = inp_matrix;
-  params.in_vec       = (redop == REDOP_NONE) ? result : vec_in;
-  params.out_vec      = result;
-  params.scale_vals   = scale_vals;
+  if (use_bf16 == 0) {
+    params.in_matrix    = inp_matrix;
+    params.in_vec       = (redop == REDOP_NONE) ? result : vec_in;
+    params.out_vec      = result;
+    params.scale_vals   = scale_vals;
+  } else {
+    params.in_matrix    = inp_matrix_bf16;
+    params.in_vec       = (redop == REDOP_NONE) ? result_bf16 : _vec_in_bf16;
+    params.out_vec      = result_bf16;
+    params.scale_vals   = scale_vals_bf16;
+  }
   kernel(&params);
 
   /* compare */
   printf("#   Correctness  #\n");
   printf("OP=%s, OPORDER=%s, SCALE_OP_RES=%s, REDOP=%s\n", opname, opordername, scaleopresname, redopname);
   printf("##########################################\n");
+  if (use_bf16 == 1) {
+    libxsmm_convert_bf16_f32( result_bf16, result, ld_in);
+  }
   libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_F32, m, 1, ref_result, result, 0, 0);
   printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
   printf("L1 test       : %.25g\n", norms_elts.l1_tst);
@@ -345,6 +375,12 @@ int main(int argc, char* argv[])
   free(cols_ind_array);
   free(all_ns);
   free(scale_vals);
+  if (use_bf16 == 1) {
+    free(inp_matrix_bf16);
+    free(result_bf16);
+    free(_vec_in_bf16);
+    free(scale_vals_bf16);
+  }
 
   return EXIT_SUCCESS;
 }

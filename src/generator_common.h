@@ -74,20 +74,26 @@
  * 14 Reserved, must be 0 for now
  * 13 M (Map bit, 0F=0x1, 0F38=0x2, 0F3A=0x3)
  * 12 M (Map bit, 0F-0x1, 0F38=0x2, 0F3A=0x3)
- * 11 Disp8: N value constant for VL=128/256/512, 1=yes, 0=no (fullmem)
- * 10 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
- * 9  Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
- * 8  Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
+ * EVEX/VEX:
+ *   11 Disp8: N value constant for VL=128/256/512, 1=yes, 0=no (fullmem)
+ *   10 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
+ *    9 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
+ *    8 Disp8: exp of width (0-6 values mapped to 1 to 64, 7 currently unused)
+ * VEX-only
+ *   11 free
+ *   10 free
+ *    9 L bit
+ *    8 1: override L bit, 0 use L bit from user
  * 1st byte:
  * ---------
- * 7 - Op code byte
- * 6 - Op code byte
- * 5 - Op code byte
- * 4 - Op code byte
- * 3 - Op code byte
- * 2 - Op code byte
- * 1 - Op code byte
- * 0 - Op code byte
+ *  7 - Op code byte
+ *  6 - Op code byte
+ *  5 - Op code byte
+ *  4 - Op code byte
+ *  3 - Op code byte
+ *  2 - Op code byte
+ *  1 - Op code byte
+ *  0 - Op code byte
  */
 
 /* Load/Store/Move instructions -  AVX1,AVX2,AVX512 - deprecated values */
@@ -393,6 +399,73 @@
 #define LIBXSMM_X86_INSTR_VCVTNEPS2BF16    0xe0062672
 #define LIBXSMM_X86_INSTR_VCVTNE2PS2BF16   0xf0072672
 
+/* AVX512 Mask compute instructions  */
+#define LIBXSMM_X86_INSTR_KADDB            0xb005134a
+#define LIBXSMM_X86_INSTR_KADDW            0xb004134a
+#define LIBXSMM_X86_INSTR_KADDD            0xb085134a
+#define LIBXSMM_X86_INSTR_KADDQ            0xb084134a
+#define LIBXSMM_X86_INSTR_KANDB            0xb0051341
+#define LIBXSMM_X86_INSTR_KANDW            0xb0041341
+#define LIBXSMM_X86_INSTR_KANDD            0xb0851341
+#define LIBXSMM_X86_INSTR_KANDQ            0xb0841341
+#define LIBXSMM_X86_INSTR_KANDNB           0xb0051342
+#define LIBXSMM_X86_INSTR_KANDNW           0xb0041342
+#define LIBXSMM_X86_INSTR_KANDND           0xb0851342
+#define LIBXSMM_X86_INSTR_KANDNQ           0xb0841342
+#define LIBXSMM_X86_INSTR_KNOTB            0xa0051144
+#define LIBXSMM_X86_INSTR_KNOTW            0xa0041144
+#define LIBXSMM_X86_INSTR_KNOTD            0xa0851144
+#define LIBXSMM_X86_INSTR_KNOTQ            0xa0841144
+#define LIBXSMM_X86_INSTR_KORB             0xb0051345
+#define LIBXSMM_X86_INSTR_KORW             0xb0041345
+#define LIBXSMM_X86_INSTR_KORD             0xb0851345
+#define LIBXSMM_X86_INSTR_KORQ             0xb0841345
+#define LIBXSMM_X86_INSTR_KORTESTB         0xa0051198
+#define LIBXSMM_X86_INSTR_KORTESTW         0xa0041198
+#define LIBXSMM_X86_INSTR_KORTESTD         0xa0851198
+#define LIBXSMM_X86_INSTR_KORTESTQ         0xa0841198
+#define LIBXSMM_X86_INSTR_KSHIFTLB         0xa00d3132
+#define LIBXSMM_X86_INSTR_KSHIFTLW         0xa08d3132
+#define LIBXSMM_X86_INSTR_KSHIFTLD         0xa00d3133
+#define LIBXSMM_X86_INSTR_KSHIFTLQ         0xa08d3133
+#define LIBXSMM_X86_INSTR_KSHIFTRB         0xa00d3130
+#define LIBXSMM_X86_INSTR_KSHIFTRW         0xa08d3130
+#define LIBXSMM_X86_INSTR_KSHIFTRD         0xa00d3131
+#define LIBXSMM_X86_INSTR_KSHIFTRQ         0xa08d3131
+#define LIBXSMM_X86_INSTR_KTESTB           0xa0051199
+#define LIBXSMM_X86_INSTR_KTESTW           0xa0041199
+#define LIBXSMM_X86_INSTR_KTESTD           0xa0851199
+#define LIBXSMM_X86_INSTR_KTESTQ           0xa0841199
+#define LIBXSMM_X86_INSTR_KUNPCKBW         0xb005134b
+#define LIBXSMM_X86_INSTR_KUNPCKWD         0xb004134b
+#define LIBXSMM_X86_INSTR_KUNPCKDQ         0xb084134b
+#define LIBXSMM_X86_INSTR_KXNORB           0xb0051346
+#define LIBXSMM_X86_INSTR_KXNORW           0xb0041346
+#define LIBXSMM_X86_INSTR_KXNORD           0xb0851346
+#define LIBXSMM_X86_INSTR_KXNORQ           0xb0841346
+#define LIBXSMM_X86_INSTR_KXORB            0xb0051347
+#define LIBXSMM_X86_INSTR_KXORW            0xb0041347
+#define LIBXSMM_X86_INSTR_KXORD            0xb0851347
+#define LIBXSMM_X86_INSTR_KXORQ            0xb0841347
+
+/* AVX512 Mask mov instructions */
+#define LIBXSMM_X86_INSTR_KMOVB_GPR_LD     0xa0051192
+#define LIBXSMM_X86_INSTR_KMOVW_GPR_LD     0xa0041192
+#define LIBXSMM_X86_INSTR_KMOVD_GPR_LD     0xa0071192
+#define LIBXSMM_X86_INSTR_KMOVQ_GPR_LD     0xa0871192
+#define LIBXSMM_X86_INSTR_KMOVB_GPR_ST     0xa8051193
+#define LIBXSMM_X86_INSTR_KMOVW_GPR_ST     0xa8041193
+#define LIBXSMM_X86_INSTR_KMOVD_GPR_ST     0xa8071193
+#define LIBXSMM_X86_INSTR_KMOVQ_GPR_ST     0xa8871193
+#define LIBXSMM_X86_INSTR_KMOVB_LD         0xa0051190
+#define LIBXSMM_X86_INSTR_KMOVW_LD         0xa0041190
+#define LIBXSMM_X86_INSTR_KMOVD_LD         0xa0851190
+#define LIBXSMM_X86_INSTR_KMOVQ_LD         0xa0841190
+#define LIBXSMM_X86_INSTR_KMOVB_ST         0xa0051191
+#define LIBXSMM_X86_INSTR_KMOVW_ST         0xa0041191
+#define LIBXSMM_X86_INSTR_KMOVD_ST         0xa0851191
+#define LIBXSMM_X86_INSTR_KMOVQ_ST         0xa0841191
+
 /* SSE floating point compute */
 #define LIBXSMM_X86_INSTR_XORPD          20063
 #define LIBXSMM_X86_INSTR_MULPD          20064
@@ -472,17 +545,6 @@
 #define LIBXSMM_X86_INSTR_CMOVPO         30059
 #define LIBXSMM_X86_INSTR_CMOVS          30060
 #define LIBXSMM_X86_INSTR_CMOVZ          30061
-
-
-/* Mask move instructions */
-#define LIBXSMM_X86_INSTR_KMOV           40000
-#define LIBXSMM_X86_INSTR_KMOVW          40001
-#define LIBXSMM_X86_INSTR_KMOVB          40002
-#define LIBXSMM_X86_INSTR_KMOVD          40003
-#define LIBXSMM_X86_INSTR_KMOVQ          40004
-
-/* Mask compute instructions */
-#define LIBXSMM_X86_INSTR_KXNORW         45000
 
 /* Tile instructions */
 /* CPUID: AMX-TILE INTERCEPT: SPR */

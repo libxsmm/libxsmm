@@ -1589,19 +1589,19 @@ void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*     
 
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
-        LIBXSMM_X86_INSTR_KMOVW,
+        LIBXSMM_X86_INSTR_KMOVW_GPR_LD,
         i_gp_reg_tmp,
-        LIBXSMM_X86_AVX512_MASK, 0 );
+        LIBXSMM_X86_AVX512_MASK );
     if ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVD,
+          LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
           i_gp_reg_tmp,
-          2, 0 );
+          2 );
     } else if ( ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVQ,
+          LIBXSMM_X86_INSTR_KMOVQ_GPR_LD,
           i_gp_reg_tmp,
-          2, 0 );
+          2 );
     } else {
       /* no addtional mask is needed */
     }
