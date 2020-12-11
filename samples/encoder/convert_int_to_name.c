@@ -20,7 +20,7 @@ void convert_int_to_name ( char *line, unsigned int *ret )
    sprintf(command,"grep %u ../../src/generator_common.h | cut -b 27- > /tmp/gmh1\n",*ret);
    system(command);
    fp = fopen("/tmp/gmh1","r");
-   if ( fp == NULL ) 
+   if ( fp == NULL )
    {
       fprintf(stderr,"fopen in convert_int_to_name() failed to open a file!\n");
       exit(-1);
@@ -54,6 +54,6 @@ void convert_int_to_name ( char *line, unsigned int *ret )
       line[i] = ctmp;
       ++i;
    }
-   line[i] = '\0'; 
-   return ; 
+   line[i] = '\0';
+   return ;
 }
