@@ -44,26 +44,6 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned sh
   }
 }
 
-void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
-  unsigned int i = 0;
-  float pn = 1 - p;
-  __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < M - 15; i+=16) {
-    __m512 vin = _mm512_loadu_ps(in+i);
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_storeu_ps(out+i, vout);
-  }
-  if (i < M) {
-    int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_mask_storeu_ps(out+i, mask, vout);
-  }
-}
-
 void dropout_fwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, void* rng_state, float p) {
   unsigned int i;
   float pn = 1 - p;
@@ -89,6 +69,76 @@ void dropout_fwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bf
   }
 }
 
+void dropout_fwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, void* rng_state, float p) {
+  unsigned int i;
+  float pn = 1 - p;
+  __m512 vp = _mm512_set1_ps(pn);
+  __m512 vpi = _mm512_set1_ps(1.0/pn);
+  for (i = 0; i < M - 15; i+=16) {
+    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
+    __m512 vin = _mm512_loadu_ps(in+i);
+    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm256_storeu_si256((__m256i*)(out+i),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
+    dropout_mask[i/16] = dmsk;
+  }
+  if (i < M) {
+    int rem = M - i;
+    __mmask16 mask = (1 << rem) - 1;
+    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
+    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
+    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm256_mask_storeu_epi16((__m256i*)(out+i), mask, _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
+    dropout_mask[i/16] = dmsk & mask;
+  }
+}
+
+void dropout_fwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
+  unsigned int i;
+  float pn = 1 - p;
+  __m512 vp = _mm512_set1_ps(pn);
+  __m512 vpi = _mm512_set1_ps(1.0/pn);
+  for (i = 0; i < M - 15; i+=16) {
+    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
+    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
+    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm512_storeu_ps(out+i, vout);
+    dropout_mask[i/16] = dmsk;
+  }
+  if (i < M) {
+    int rem = M - i;
+    __mmask16 mask = (1 << rem) - 1;
+    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
+    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_maskz_loadu_epi16(mask, (__m256i*)(in+i))),16));
+    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm512_mask_storeu_ps(out+i, mask, vout);
+    dropout_mask[i/16] = dmsk & mask;
+  }
+}
+
+void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
+  unsigned int i = 0;
+  float pn = 1 - p;
+  __m512 vpi = _mm512_set1_ps(1.0/pn);
+  for (i = 0; i < M - 15; i+=16) {
+    __m512 vin = _mm512_loadu_ps(in+i);
+    __mmask16 dmsk = dropout_mask[i/16];
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm512_storeu_ps(out+i, vout);
+  }
+  if (i < M) {
+    int rem = M - i;
+    __mmask16 mask = (1 << rem) - 1;
+    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
+    __mmask16 dmsk = dropout_mask[i/16];
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm512_mask_storeu_ps(out+i, mask, vout);
+  }
+}
+
 void dropout_bwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, float p) {
   unsigned int i = 0;
   float pn = 1 - p;
@@ -106,6 +156,46 @@ void dropout_bwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bf
     __mmask16 dmsk = dropout_mask[i/16];
     __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
     _mm256_mask_storeu_epi16((__m256i*)(out+i), mask, _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
+  }
+}
+
+void dropout_bwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, float p) {
+  unsigned int i = 0;
+  float pn = 1 - p;
+  __m512 vpi = _mm512_set1_ps(1.0/pn);
+  for (i = 0; i < M - 15; i+=16) {
+    __m512 vin = _mm512_loadu_ps(in+i);
+    __mmask16 dmsk = dropout_mask[i/16];
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm256_storeu_si256((__m256i*)(out+i),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
+  }
+  if (i < M) {
+    int rem = M - i;
+    __mmask16 mask = (1 << rem) - 1;
+    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
+    __mmask16 dmsk = dropout_mask[i/16];
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm256_mask_storeu_epi16((__m256i*)(out+i), mask, _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
+  }
+}
+
+void dropout_bwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned short *dropout_mask, float p) {
+  unsigned int i = 0;
+  float pn = 1 - p;
+  __m512 vpi = _mm512_set1_ps(1.0/pn);
+  for (i = 0; i < M - 15; i+=16) {
+    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
+    __mmask16 dmsk = dropout_mask[i/16];
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm512_storeu_ps(out+i, vout);
+  }
+  if (i < M) {
+    int rem = M - i;
+    __mmask16 mask = (1 << rem) - 1;
+    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_maskz_loadu_epi16(mask, (__m256i*)(in+i))),16));
+    __mmask16 dmsk = dropout_mask[i/16];
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm512_mask_storeu_ps(out+i, mask, vout);
   }
 }
 #endif
@@ -353,6 +443,250 @@ void test_dropout_bf16_bf16_fwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   libxsmm_free( mask_gold );
 }
 
+void test_dropout_f32_bf16_fwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  float *in;
+  libxsmm_bfloat16 *out, *out_gold;
+  unsigned char *mask, *mask_gold;
+  unsigned int *rng_state, *rng_state_gold;
+  unsigned int i, j;
+  unsigned int s;
+  float p = 0.3f;
+  libxsmm_meltw_dropout_param dropout_param;
+  libxsmm_meltw_dropout_flags dropout_flags;
+  union libxsmm_bfloat16_hp bf16_hp;
+  union libxsmm_bfloat16_hp bf16_hp_2;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_dropout_f32_bf16_fwd: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if (M > ldo ) {
+    fprintf( stderr, "test_dropout_f32_bf16_fwd: ldo needs to be equal to or bigger than N\n");
+    exit(-1);
+  }
+
+  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
+  out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*ldi)+j] = (float)(((i*ldi)+j)%4096);
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < N*ldo; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < N*ldo; ++i ) {
+    out_gold[i] = 0;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask[i] = 0;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask_gold[i] = 0;
+  }
+
+  rng_state = libxsmm_rng_create_avx512_extstate( 555 );
+  rng_state_gold = libxsmm_rng_create_avx512_extstate( 555 );
+
+  /* compute out_gold */
+  for ( i = 0; i < N; ++i ) {
+    dropout_fwd_f32_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], rng_state_gold, p );
+  }
+
+  /* use jited tranpose */
+  dropout_param.in_ptr  = (void*)in;
+  dropout_param.out_ptr = (void*)out;
+  dropout_param.mask_ptr = (void*)mask;
+  dropout_param.prob_ptr = (void*)&p;
+  dropout_param.rng_state = (void*)rng_state;
+  dropout_flags = LIBXSMM_MELTW_FLAG_DROPOUT_FWD;
+  libxsmm_meltwfunction_dropout dropout_kernel = libxsmm_dispatch_meltw_dropout(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, dropout_flags);
+  if ( dropout_kernel == NULL ) {
+    fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
+    exit(-1);
+  }
+  dropout_kernel( &dropout_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        bf16_hp.i[1] = out[(i*ldo)+j];
+        bf16_hp_2.i[1] = out_gold[(i*ldo)+j];
+        bf16_hp.i[0] = 0;
+        bf16_hp_2.i[0] = 0;
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, bf16_hp.f, bf16_hp_2.f);
+        s = 1;
+      }
+#if 0
+      else {
+        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+      }
+#endif
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS output\n");
+  } else {
+    printf("FAILURE output\n");
+  }
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M/8; ++j ) {
+      if ( mask_gold[(i*ldo)+j] != mask[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+        s = 1;
+      }
+#if 0
+      else {
+        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+      }
+#endif
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS mask\n");
+  } else {
+    printf("FAILURE mask\n");
+  }
+
+  libxsmm_rng_destroy_avx512_extstate( rng_state );
+  libxsmm_rng_destroy_avx512_extstate( rng_state_gold );
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+  libxsmm_free( mask );
+  libxsmm_free( mask_gold );
+}
+
+void test_dropout_bf16_f32_fwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  libxsmm_bfloat16 *in;
+  float *out, *out_gold;
+  unsigned char *mask, *mask_gold;
+  unsigned int *rng_state, *rng_state_gold;
+  unsigned int i, j;
+  unsigned int s;
+  float p = 0.3f;
+  libxsmm_meltw_dropout_param dropout_param;
+  libxsmm_meltw_dropout_flags dropout_flags;
+  union libxsmm_bfloat16_hp bf16_hp;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_dropout_bf16_f32_fwd: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if (M > ldo ) {
+    fprintf( stderr, "test_dropout_bf16_f32_fwd: ldo needs to be equal to or bigger than N\n");
+    exit(-1);
+  }
+
+  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
+  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      bf16_hp.f = (float)(((i*ldi)+j)%4096);
+      in[(i*ldi)+j] = bf16_hp.i[1];
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < N*ldo; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < N*ldo; ++i ) {
+    out_gold[i] = 0;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask[i] = 0;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask_gold[i] = 0;
+  }
+
+  rng_state = libxsmm_rng_create_avx512_extstate( 555 );
+  rng_state_gold = libxsmm_rng_create_avx512_extstate( 555 );
+
+  /* compute out_gold */
+  for ( i = 0; i < N; ++i ) {
+    dropout_fwd_bf16_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], rng_state_gold, p );
+  }
+
+  /* use jited tranpose */
+  dropout_param.in_ptr  = (void*)in;
+  dropout_param.out_ptr = (void*)out;
+  dropout_param.mask_ptr = (void*)mask;
+  dropout_param.prob_ptr = (void*)&p;
+  dropout_param.rng_state = (void*)rng_state;
+  dropout_flags = LIBXSMM_MELTW_FLAG_DROPOUT_FWD;
+  libxsmm_meltwfunction_dropout dropout_kernel = libxsmm_dispatch_meltw_dropout(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, dropout_flags);
+  if ( dropout_kernel == NULL ) {
+    fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
+    exit(-1);
+  }
+  dropout_kernel( &dropout_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+        s = 1;
+      }
+#if 0
+      else {
+        printf("correct at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+      }
+#endif
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS output\n");
+  } else {
+    printf("FAILURE output\n");
+  }
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M/8; ++j ) {
+      if ( mask_gold[(i*ldo)+j] != mask[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+        s = 1;
+      }
+#if 0
+      else {
+        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+      }
+#endif
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS mask\n");
+  } else {
+    printf("FAILURE mask\n");
+  }
+
+  libxsmm_rng_destroy_avx512_extstate( rng_state );
+  libxsmm_rng_destroy_avx512_extstate( rng_state_gold );
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+  libxsmm_free( mask );
+  libxsmm_free( mask_gold );
+}
+
 void test_dropout_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   float *out, *out_gold;
@@ -546,40 +880,248 @@ void test_dropout_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   libxsmm_free( mask_gold );
 }
 
+void test_dropout_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  float *in;
+  libxsmm_bfloat16 *out, *out_gold;
+  unsigned char *mask, *mask_gold;
+  unsigned int i, j;
+  unsigned int s;
+  float p = 0.3f;
+  libxsmm_meltw_dropout_param dropout_param;
+  libxsmm_meltw_dropout_flags dropout_flags;
+  union libxsmm_bfloat16_hp bf16_hp;
+  union libxsmm_bfloat16_hp bf16_hp_2;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_dropout_f32_bf16_bwd: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if (M > ldo ) {
+    fprintf( stderr, "test_dropout_f32_bf16_bwd: ldo needs to be equal to or bigger than N\n");
+    exit(-1);
+  }
+
+  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
+  out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*ldi)+j] = (float)(((i*ldi)+j)%4096);
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < N*ldo; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < N*ldo; ++i ) {
+    out_gold[i] = 0;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask[i] = 0xaa;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask_gold[i] = 0xaa;
+  }
+
+  /* compute out_gold */
+  for ( i = 0; i < N; ++i ) {
+    dropout_bwd_f32_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], p );
+  }
+
+  /* use jited tranpose */
+  dropout_param.in_ptr  = (void*)in;
+  dropout_param.out_ptr = (void*)out;
+  dropout_param.mask_ptr = (void*)mask;
+  dropout_param.prob_ptr = (void*)&p;
+  dropout_param.rng_state = NULL;
+  dropout_flags = LIBXSMM_MELTW_FLAG_DROPOUT_BWD;
+  libxsmm_meltwfunction_dropout dropout_kernel = libxsmm_dispatch_meltw_dropout(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, dropout_flags);
+  if ( dropout_kernel == NULL ) {
+    fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
+    exit(-1);
+  }
+  dropout_kernel( &dropout_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        bf16_hp.i[1] = out[(i*ldo)+j];
+        bf16_hp_2.i[1] = out_gold[(i*ldo)+j];
+        bf16_hp.i[0] = 0;
+        bf16_hp_2.i[0] = 0;
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, bf16_hp.f, bf16_hp_2.f);
+        s = 1;
+      }
+#if 0
+      else {
+        printf("correct at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+      }
+#endif
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS output\n");
+  } else {
+    printf("FAILURE output\n");
+  }
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+  libxsmm_free( mask );
+  libxsmm_free( mask_gold );
+}
+
+void test_dropout_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  libxsmm_bfloat16 *in;
+  float *out, *out_gold;
+  unsigned char *mask, *mask_gold;
+  unsigned int i, j;
+  unsigned int s;
+  float p = 0.3f;
+  libxsmm_meltw_dropout_param dropout_param;
+  libxsmm_meltw_dropout_flags dropout_flags;
+  union libxsmm_bfloat16_hp bf16_hp;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_dropout_bf16_f32_bwd: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if (M > ldo ) {
+    fprintf( stderr, "test_dropout_bf16_f32_bwd: ldo needs to be equal to or bigger than N\n");
+    exit(-1);
+  }
+
+  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
+  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldo/8, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      bf16_hp.f = (float)(((i*ldi)+j)%4096);
+      in[(i*ldi)+j] = bf16_hp.i[1];
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < N*ldo; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < N*ldo; ++i ) {
+    out_gold[i] = 0;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask[i] = 0xaa;
+  }
+  for ( i = 0; i < N*ldo/8; ++i ) {
+    mask_gold[i] = 0xaa;
+  }
+
+  /* compute out_gold */
+  for ( i = 0; i < N; ++i ) {
+    dropout_bwd_bf16_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], p );
+  }
+
+  /* use jited tranpose */
+  dropout_param.in_ptr  = (void*)in;
+  dropout_param.out_ptr = (void*)out;
+  dropout_param.mask_ptr = (void*)mask;
+  dropout_param.prob_ptr = (void*)&p;
+  dropout_param.rng_state = NULL;
+  dropout_flags = LIBXSMM_MELTW_FLAG_DROPOUT_BWD;
+  libxsmm_meltwfunction_dropout dropout_kernel = libxsmm_dispatch_meltw_dropout(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, dropout_flags);
+  if ( dropout_kernel == NULL ) {
+    fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
+    exit(-1);
+  }
+  dropout_kernel( &dropout_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+        s = 1;
+      }
+#if 0
+      else {
+        printf("correct at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+      }
+#endif
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS output\n");
+  } else {
+    printf("FAILURE output\n");
+  }
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+  libxsmm_free( mask );
+  libxsmm_free( mask_gold );
+}
+
 int main( int argc, char* argv[] ) {
-  libxsmm_blasint dtype;
+  libxsmm_blasint dtype_in;
+  libxsmm_blasint dtype_out;
   char op;
   libxsmm_blasint M;
   libxsmm_blasint N;
   libxsmm_blasint ldi;
   libxsmm_blasint ldo;
 
-  if ( argc != 7 ) {
-    printf(" Error! Usage: %s [F/B] [4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+  if ( argc != 8 ) {
+    printf(" Error! Usage: %s [F/B] [prec_in: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
-  op  = *(argv[1]);
-  dtype = atoi(argv[2]);
-  M     = atoi(argv[3]);
-  N     = atoi(argv[4]);
-  ldi   = atoi(argv[5]);
-  ldo   = atoi(argv[6]);
+  op        = *(argv[1]);
+  dtype_in  = atoi(argv[2]);
+  dtype_out = atoi(argv[3]);
+  M         = atoi(argv[4]);
+  N         = atoi(argv[5]);
+  ldi       = atoi(argv[6]);
+  ldo       = atoi(argv[7]);
 
-  if ( op == 'F' && dtype == 4 ) {
-    printf("Testing F32 forward dropout\n");
+  if ( op == 'F' && dtype_in == 4 && dtype_out == 4  ) {
+    printf("Testing F32 F32 forward dropout\n");
     test_dropout_f32_f32_fwd( M, N, ldi, ldo );
-  } else if ( op == 'B' && dtype == 4 ) {
-    printf("Testing F32 backward dropout\n");
-    test_dropout_f32_f32_bwd( M, N, ldi, ldo );
-  } else if ( op == 'F' && dtype == 2 ) {
-    printf("Testing BF16 forward dropout\n");
+  } else if ( op == 'F' && dtype_in == 2  && dtype_out == 2 ) {
+    printf("Testing BF16 BF16 forward dropout\n");
     test_dropout_bf16_bf16_fwd( M, N, ldi, ldo );
-  } else if ( op == 'B' && dtype == 2 ) {
-    printf("Testing BF16 backward dropout\n");
+  } else if ( op == 'F' && dtype_in == 4  && dtype_out == 2 ) {
+    printf("Testing F32 BF16 forward dropout\n");
+    test_dropout_f32_bf16_fwd( M, N, ldi, ldo );
+  } else if ( op == 'F' && dtype_in == 2  && dtype_out == 4 ) {
+    printf("Testing BF16 F32 forward dropout\n");
+    test_dropout_bf16_f32_fwd( M, N, ldi, ldo );
+  } else if ( op == 'B' && dtype_in == 4 && dtype_out == 4 ) {
+    printf("Testing F32 F32 backward dropout\n");
+    test_dropout_f32_f32_bwd( M, N, ldi, ldo );
+  } else if ( op == 'B' && dtype_in == 2 && dtype_out == 2 ) {
+    printf("Testing BF16 BF16 backward dropout\n");
     test_dropout_bf16_bf16_bwd( M, N, ldi, ldo );
+  } else if ( op == 'B' && dtype_in == 4 && dtype_out == 2 ) {
+    printf("Testing F32 BF16 backward dropout\n");
+    test_dropout_f32_bf16_bwd( M, N, ldi, ldo );
+  } else if ( op == 'B' && dtype_in == 2 && dtype_out == 4 ) {
+    printf("Testing BF16 F32 backward dropout\n");
+    test_dropout_bf16_f32_bwd( M, N, ldi, ldo );
   } else {
-    printf(" Not implemented case! Usage: %s [F/B] [4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Not implemented case! Usage: %s [F/B] [prec_in: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 }
