@@ -126,7 +126,7 @@ int  xed_decode_to_libxsmm_parameters ( unsigned char *buf,
   format_options.no_sign_extend_signed_immediates=0;
   mmode=XED_MACHINE_MODE_LONG_64;
   stack_addr_width =XED_ADDRESS_WIDTH_64b;
-  
+
   xed_format_set_options ( format_options );
   xed_decoded_inst_zero(&xedd);
   xed_decoded_inst_set_mode(&xedd, mmode, stack_addr_width);
@@ -280,7 +280,7 @@ int xed_decode_mismatches_against_libxsmm ( char *xed_instr_name,
                                             unsigned int xsmm_zerom,
                                             unsigned int xed_zerom,
                                             unsigned int xsmm_store,
-                                            unsigned int xed_store, 
+                                            unsigned int xed_store,
                                             unsigned short xsmm_imm8,
                                             unsigned short xed_imm8 )
 {
@@ -329,7 +329,7 @@ int xed_decode_mismatches_against_libxsmm ( char *xed_instr_name,
           } else {
              /* If LIBXSMM passes in 0, UNDEF, x and XED gets 0, x, UNDEF-> this is ok */
              if ( ((xsmm_vec1==LIBXSMM_X86_VEC_REG_UNDEF) || (xsmm_vec2==LIBXSMM_X86_VEC_REG_UNDEF)) && ( xsmm_vec1==xed_vec2 ) && (xsmm_vec2==xed_vec1) ) {
-             } else { 
+             } else {
                 printf("Decode i_vec_reg_number_1 twoop mismatch (exp=%d,got=%d) at byte %d\n",xsmm_vec1,xed_vec1,first);
                 printf("xsmm_vec0=%d xsmm_vec1=%d xsmm_vec2=%d\n",xsmm_vec0,xsmm_vec1,xsmm_vec2);
                 printf("xed_vec0=%d xed_vec1=%d xed_vec2=%d\n",xed_vec0,xed_vec1,xed_vec2);
@@ -348,7 +348,7 @@ int xed_decode_mismatches_against_libxsmm ( char *xed_instr_name,
        okay = 0;
        if ( (xsmm_vec2 == LIBXSMM_X86_VEC_REG_UNDEF) && (xed_vec2==0) ) okay= 1;
        if ( ((xsmm_vec1==LIBXSMM_X86_VEC_REG_UNDEF) || (xsmm_vec2==LIBXSMM_X86_VEC_REG_UNDEF)) && ( xsmm_vec1==xed_vec2 ) && (xsmm_vec2==xed_vec1) ) okay= 1;
-       if ( (xsmm_vec0==LIBXSMM_X86_VEC_REG_UNDEF) && (xsmm_vec1==LIBXSMM_X86_VEC_REG_UNDEF) && (xsmm_vec2==xed_vec0) && (xed_vec1==LIBXSMM_X86_VEC_REG_UNDEF) && (xed_vec2==LIBXSMM_X86_VEC_REG_UNDEF) ) okay=1 ; 
+       if ( (xsmm_vec0==LIBXSMM_X86_VEC_REG_UNDEF) && (xsmm_vec1==LIBXSMM_X86_VEC_REG_UNDEF) && (xsmm_vec2==xed_vec0) && (xed_vec1==LIBXSMM_X86_VEC_REG_UNDEF) && (xed_vec2==LIBXSMM_X86_VEC_REG_UNDEF) ) okay=1 ;
        if ( okay == 0 ) {
           printf("Decode i_vec_reg_number_2 mismatch (exp=%d,got=%d) at byte %d\n",xsmm_vec2,xed_vec2,first);
           printf("xsmm_vec0=%d xsmm_vec1=%d xsmm_vec2=%d\n",xsmm_vec0,xsmm_vec1,xsmm_vec2);
@@ -365,7 +365,7 @@ int xed_decode_mismatches_against_libxsmm ( char *xed_instr_name,
        printf("Decode imm8 mismatch (exp=%d,got=%d) at byte %d\n",xsmm_imm8, xed_imm8, first );
        return ( 11 );
     }
- 
+
     return 0;
 }
 #endif
