@@ -313,15 +313,14 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
 
       /* Store relu mask */
       if ( overwrite_C == 1 ) {
-        unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD: LIBXSMM_X86_INSTR_KMOVW;
+        unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD_ST: LIBXSMM_X86_INSTR_KMOVW_ST;
         libxsmm_x86_instruction_mask_move_mem( io_generated_code,
             mask_mov_instr,
             gp_reg_relu,
             LIBXSMM_X86_GP_REG_UNDEF,
             0,
             ((in_offset+col) * i_xgemm_desc->ldc + im_offset)/8,
-            current_mask_reg,
-            1 );
+            current_mask_reg );
       }
 
       /* Blend output result with zero reg based on relu mask */
@@ -339,7 +338,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
 
     if (fuse_relu_bwd == 1) {
       /* Load relu mask  */
-      unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD: LIBXSMM_X86_INSTR_KMOVW;
+      unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD_LD: LIBXSMM_X86_INSTR_KMOVW_LD;
       current_mask_reg = reserved_mask_regs + (col % (8-reserved_mask_regs));
       libxsmm_x86_instruction_mask_move_mem( io_generated_code,
           mask_mov_instr,
@@ -347,8 +346,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
           LIBXSMM_X86_GP_REG_UNDEF,
           0,
           ((in_offset+col) * i_xgemm_desc->ldc + im_offset)/8,
-          current_mask_reg,
-          0 );
+          current_mask_reg );
 
       /* Blend output result with zero reg based on relu mask */
       libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
