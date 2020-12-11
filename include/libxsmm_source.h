@@ -32,6 +32,7 @@
 #include "../src/generator_aarch64_instructions.c"
 #include "../src/generator_common.c"
 #include "../src/generator_common_aarch64.c"
+#include "../src/generator_common_x86.c"
 #include "../src/generator_gemm.c"
 #include "../src/generator_gemm_aarch64.c"
 #include "../src/generator_gemm_amx.c"
