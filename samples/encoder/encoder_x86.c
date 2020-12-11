@@ -285,8 +285,9 @@ int xed_decode_mismatches_against_libxsmm ( char *xed_instr_name,
                                             unsigned short xed_imm8 )
 {
     int okay = 0;
+    unsigned int lenx = strlen(xed_instr_name);
 
-    if ( strcmp(instr_name,xed_instr_name) ) {
+    if ( strncmp(instr_name,xed_instr_name,lenx) ) {
        printf("Decode problem in the name mismatching. Looking for:%s Got:%s\n",instr_name,xed_instr_name);
        return ( 1 );
     }
