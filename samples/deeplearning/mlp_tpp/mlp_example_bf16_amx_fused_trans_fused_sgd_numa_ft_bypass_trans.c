@@ -118,7 +118,7 @@ void init_buffer_block_cyclic_numa(libxsmm_bfloat16* buf, size_t size) {
     const int tid = 0;
 #endif
     if (tid % THREADS_PER_NUMA == 0) {
-      init_buf_bf16_numa_aware(nThreads, tid, 1, buf, size, 0, 0);
+      init_buf_bf16_numa_aware(nThreads, tid, 0, buf, size, 0, 0);
     }
   }
 }
