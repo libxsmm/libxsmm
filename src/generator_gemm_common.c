@@ -1112,7 +1112,9 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
     /* overwriting C, so let's xout accumulator */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+        /* @TODO: cannot migrate to new encoder as this is also SSE */
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+            io_generated_code->arch,
             i_micro_kernel_config->vxor_instruction,
             i_micro_kernel_config->vector_name,
             l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
