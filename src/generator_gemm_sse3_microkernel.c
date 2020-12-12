@@ -80,13 +80,11 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                       l_n, 0, 1, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
         if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
-          libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_shuffle_sse_reg( io_generated_code,
                                                i_micro_kernel_config->b_shuff_instruction,
                                                i_micro_kernel_config->vector_name,
                                                l_n,
                                                l_n,
-                                               LIBXSMM_X86_VEC_REG_UNDEF,
                                                0 );
         }
       } else {
@@ -107,13 +105,11 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                       l_n, 0, 1, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
         if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
-          libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_shuffle_sse_reg( io_generated_code,
                                                i_micro_kernel_config->b_shuff_instruction,
                                                i_micro_kernel_config->vector_name,
                                                l_n,
                                                l_n,
-                                               LIBXSMM_X86_VEC_REG_UNDEF,
                                                0 );
         }
         if ( l_n == (i_n_blocking -1) ) {
@@ -167,13 +163,11 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                       l_n, 0, 1, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
         if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
-          libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_shuffle_sse_reg( io_generated_code,
                                                i_micro_kernel_config->b_shuff_instruction,
                                                i_micro_kernel_config->vector_name,
                                                l_n,
                                                l_n,
-                                               LIBXSMM_X86_VEC_REG_UNDEF,
                                                0 );
         }
       }
@@ -196,13 +190,11 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                       l_n, 0, 1, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
         if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-          libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_shuffle_sse_reg( io_generated_code,
                                                i_micro_kernel_config->b_shuff_instruction,
                                                i_micro_kernel_config->vector_name,
                                                l_n,
                                                l_n,
-                                               LIBXSMM_X86_VEC_REG_UNDEF,
                                                0 );
         }
       }

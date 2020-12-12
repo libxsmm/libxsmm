@@ -1026,21 +1026,16 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                 0, 0, 1, 0 );
           }
           /* convert 16 bit values into 32 bit (integer convert) */
-          libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
               LIBXSMM_X86_INSTR_VPMOVSXWD,
               i_micro_kernel_config->vector_name,
-              0, LIBXSMM_X86_VEC_REG_UNDEF,
-              l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-              LIBXSMM_X86_VEC_REG_UNDEF);
+              0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
 
           /* shift 16 bits to the left to generate valid FP32 numbers */
-          libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
               LIBXSMM_X86_INSTR_VPSLLD_I,
               i_micro_kernel_config->vector_name,
               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-              LIBXSMM_X86_VEC_REG_UNDEF,
               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
               16);
         }
@@ -1073,21 +1068,15 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
           }
           /* convert 8 bit values into 32 bit (integer convert) */
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_C_UNSIGNED) != 0 ) {
-            libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                 LIBXSMM_X86_INSTR_VPMOVZXBD,
                 i_micro_kernel_config->vector_name,
-                0, LIBXSMM_X86_VEC_REG_UNDEF,
-                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-                LIBXSMM_X86_VEC_REG_UNDEF);
+                0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else {
-            libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                 LIBXSMM_X86_INSTR_VPMOVSXBD,
                 i_micro_kernel_config->vector_name,
-                0, LIBXSMM_X86_VEC_REG_UNDEF,
-                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-                LIBXSMM_X86_VEC_REG_UNDEF);
+                0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           }
         }
       }
@@ -1123,8 +1112,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
     /* overwriting C, so let's xout accumulator */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
             i_micro_kernel_config->vxor_instruction,
             i_micro_kernel_config->vector_name,
             l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
@@ -1245,34 +1233,30 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                                  1 );
 
         /* compute naninf mask k7 */
-        libxsmm_x86_instruction_vec_compute_mem_mask( io_generated_code,
-                                                      i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code,
                                                       LIBXSMM_X86_INSTR_VPCMPD,
-                                                      1,
+                                                      i_micro_kernel_config->vector_name,
                                                       LIBXSMM_X86_GP_REG_RSP,
                                                       LIBXSMM_X86_GP_REG_UNDEF,
                                                       0,
                                                       24,
-                                                      i_micro_kernel_config->vector_name,
+                                                      1,
                                                       0,
-                                                      LIBXSMM_X86_VEC_REG_UNDEF,
-                                                      4,
-                                                      7, 0 );
+                                                      7,
+                                                      4 );
 
         /* compute fixup mask k6 */
-        libxsmm_x86_instruction_vec_compute_mem_mask( io_generated_code,
-                                                      i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code,
                                                       LIBXSMM_X86_INSTR_VPCMPD,
-                                                      1,
+                                                      i_micro_kernel_config->vector_name,
                                                       LIBXSMM_X86_GP_REG_RSP,
                                                       LIBXSMM_X86_GP_REG_UNDEF,
                                                       0,
                                                       16,
-                                                      i_micro_kernel_config->vector_name,
                                                       1,
-                                                      LIBXSMM_X86_VEC_REG_UNDEF,
-                                                      0,
-                                                      6, 0 );
+                                                      1,
+                                                      6,
+                                                      0 );
 
         /* load rneadd */
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1295,47 +1279,39 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                           1, 0, 1, 0 );
 
         /* compute fixup */
-        libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
-                                                      i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
                                                       LIBXSMM_X86_INSTR_VPADDD,
                                                       i_micro_kernel_config->vector_name,
                                                       1,
                                                       0,
                                                       0,
-                                                      LIBXSMM_X86_IMM_UNDEF,
                                                       6,
                                                       0 );
 
         /* compute fixup */
-        libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
-                                                      i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
                                                       LIBXSMM_X86_INSTR_VPADDD,
                                                       i_micro_kernel_config->vector_name,
                                                       0,
                                                       reg_X,
                                                       reg_X,
-                                                      LIBXSMM_X86_IMM_UNDEF,
                                                       7,
                                                       0 );
 
         /* shift FP32 by 16bit to right */
-        libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
             LIBXSMM_X86_INSTR_VPSRAD_I,
             i_micro_kernel_config->vector_name,
             reg_X,
-            LIBXSMM_X86_VEC_REG_UNDEF,
             reg_X,
             16);
 
         /* shift FP32 by 16bit to right */
-        libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
             LIBXSMM_X86_INSTR_VPMOVDW,
             i_micro_kernel_config->vector_name,
-            reg_X, LIBXSMM_X86_VEC_REG_UNDEF,
-            0,
-            LIBXSMM_X86_VEC_REG_UNDEF);
+            reg_X,
+            0 );
 
         /* store 16 bit values into ymm portion of the register */
         if ( (i_micro_kernel_config->use_masking_a_c != 0) && ( l_m == (l_m_blocking - 1) ) ) {
@@ -1375,13 +1351,10 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         for ( l_m = 0 ; l_m < l_m_blocking; l_m++ ) {
           unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
 
-          libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
               LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
               i_micro_kernel_config->vector_name,
-              reg_X, LIBXSMM_X86_VEC_REG_UNDEF,
-              0,
-              0);
+              reg_X, 0 );
 
           /* store 16 bit values into ymm portion of the register */
           if ( l_m == (l_m_blocking - 1) ) {
@@ -1409,13 +1382,10 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
           unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
           unsigned int reg_X2 = l_vec_reg_acc_start + l_m+1 + (l_m_blocking * l_n);
 
-          libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
               i_micro_kernel_config->vector_name,
-              reg_X, reg_X2,
-              0,
-              0);
+              reg_X, reg_X2, 0 );
 
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
@@ -1429,13 +1399,10 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         for (; l_m < l_m_blocking; l_m++ ) {
           unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
 
-          libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
               LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
               i_micro_kernel_config->vector_name,
-              reg_X, LIBXSMM_X86_VEC_REG_UNDEF,
-              0,
-              0);
+              reg_X, 0 );
 
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
@@ -1469,8 +1436,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         3, 0, 1, 0 );
 
     /* Zero out register 0 to perform relu */
-    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-        i_micro_kernel_config->instruction_set,
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
         i_micro_kernel_config->vxor_instruction,
         i_micro_kernel_config->vector_name,
         0,
@@ -1482,17 +1448,14 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
         unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
         /* Convert result to F32  */
-        libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_2reg(  io_generated_code,
             LIBXSMM_X86_INSTR_VCVTDQ2PS,
             i_micro_kernel_config->vector_name,
             reg_X,
-            LIBXSMM_X86_VEC_REG_UNDEF,
             reg_X );
 
         /* Multiply with scaling factor */
-        libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg(  io_generated_code,
             LIBXSMM_X86_INSTR_VMULPS,
             i_micro_kernel_config->vector_name,
             reg_X,
@@ -1500,8 +1463,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
             reg_X );
 
         /* Perform RELU */
-        libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg(  io_generated_code,
             LIBXSMM_X86_INSTR_VMAXPS,
             i_micro_kernel_config->vector_name,
             reg_X,
@@ -1509,14 +1471,10 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
             reg_X);
 
         /* Round result to int32  */
-        libxsmm_x86_instruction_vec_compute_convert(  io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_2reg(  io_generated_code,
             inst_f32_i32,
             i_micro_kernel_config->vector_name,
-            reg_X,
-            LIBXSMM_X86_VEC_REG_UNDEF,
-            reg_X,
-            0);
+            reg_X, reg_X );
 
         /* down-convert to int8 */
         libxsmm_x86_instruction_vec_move( io_generated_code,
