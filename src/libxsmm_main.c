@@ -5431,7 +5431,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xregister)(void** regval, const void* k
   if (NULL != regval && NULL != key && NULL != keysize && NULL != valsize)
 #endif
   {
-    unsigned int hash;
+    unsigned int hash = 0;
     *regval = libxsmm_xregister(key, *keysize, *valsize, valinit, &hash);
     if (NULL != keyhash) {
       *keyhash = (hash & 0x7FFFFFFF/*sign-bit*/);
@@ -5456,7 +5456,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdispatch)(void** regval, const void* k
   if (NULL != regval && NULL != key && NULL != keysize)
 #endif
   {
-    unsigned int hash;
+    unsigned int hash = 0;
     *regval = libxsmm_xdispatch(key, *keysize, &hash);
     if (NULL != keyhash) {
       *keyhash = (hash & 0x7FFFFFFF/*sign-bit*/);
