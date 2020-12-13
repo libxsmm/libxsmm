@@ -55,6 +55,15 @@ void libxsmm_generator_transform_16way_permute_network_avx512( libxsmm_generated
                                                                const unsigned int      i_perm_instr );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_Xway_permute_network_avx512( libxsmm_generated_code* io_generated_code,
+                                                              const char              i_vector_name,
+                                                              const unsigned char     i_perm_mask[2],
+                                                              const unsigned char     i_perm_imm[2],
+                                                              const unsigned int      i_vec_reg_srcdst_start,
+                                                              const unsigned int      i_perm_instr,
+                                                              const unsigned int      i_ways );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_full_load_avx512( libxsmm_generated_code* io_generated_code,
                                                         const char              i_vector_name,
                                                         const unsigned int      i_gp_reg_in,
@@ -69,8 +78,9 @@ void libxsmm_generator_transform_Xway_half_load_blend_avx512( libxsmm_generated_
                                                               const unsigned int      i_gp_reg_in,
                                                               const unsigned int      i_vec_reg_dst_start,
                                                               const unsigned int      i_ld,
+                                                              const unsigned int      i_ld_idx[32],
+                                                              const unsigned int      i_blend_mult,
                                                               const unsigned int      i_ld_instr,
-                                                              const unsigned int      i_blend_instr,
                                                               const unsigned int      i_ways,
                                                               const unsigned int      i_mask_reg );
 
