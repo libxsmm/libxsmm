@@ -33,10 +33,11 @@
 #define FUSE_SGD_IN_BWD
 
 #define BYPASS_SGD
-#define THREADS_PER_NUMA 14
 
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), _mm512_cvtneps_pbh((B)))
+
+static int threads_per_numa = 0;
 
 LIBXSMM_INLINE void my_init_buf(float* buf, size_t size, int initPos, int initOne)
 {
@@ -61,8 +62,8 @@ LIBXSMM_INLINE void my_init_buf_bf16(libxsmm_bfloat16* buf, size_t size, int ini
 LIBXSMM_INLINE void init_buf_bf16_numa_aware(int threads, int ltid, int ft_mode, libxsmm_bfloat16* buf, size_t size, int initPos, int initOne)
 {
   int chunksize, chunks;
-  int my_numa_node = ltid/THREADS_PER_NUMA;
-  int n_numa_nodes = threads/THREADS_PER_NUMA;
+  int my_numa_node = ltid/threads_per_numa;
+  int n_numa_nodes = threads/threads_per_numa;
   int l = 0;
 
   if (ft_mode == 0) {
@@ -100,7 +101,7 @@ void init_buffer_block_numa(libxsmm_bfloat16* buf, size_t size) {
 #else
     const int tid = 0;
 #endif
-    if (tid % THREADS_PER_NUMA == 0) {
+    if (tid % threads_per_numa == 0) {
       init_buf_bf16_numa_aware(nThreads, tid, 1, buf, size, 0, 0);
     }
   }
@@ -117,7 +118,7 @@ void init_buffer_block_cyclic_numa(libxsmm_bfloat16* buf, size_t size) {
 #else
     const int tid = 0;
 #endif
-    if (tid % THREADS_PER_NUMA == 0) {
+    if (tid % threads_per_numa == 0) {
       init_buf_bf16_numa_aware(nThreads, tid, 0, buf, size, 0, 0);
     }
   }
@@ -1993,6 +1994,8 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&norms_upd);
   libxsmm_matdiff_clear(&diff);
 
+  char* env_threads_per_numa;
+
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters MB fuse_type type bn bk bc C1 C2 ... CN\n", argv[0]);
     return 0;
@@ -2035,6 +2038,15 @@ int main(int argc, char* argv[])
   _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
   _MM_SET_ROUNDING_MODE(_MM_ROUND_NEAREST);
 #endif
+
+  /* Read env variables */
+  env_threads_per_numa = getenv("THREADS_PER_NUMA");
+  if ( 0 == env_threads_per_numa ) {
+    printf("please specify THREADS_PER_NUMA to a non-zero value!\n");
+    return -1;
+  } else {
+    threads_per_numa = atoi(env_threads_per_numa);
+  }
 
   /* print some summary */
   printf("##########################################\n");
