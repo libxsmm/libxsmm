@@ -1407,7 +1407,8 @@ else # GCC assumed
     else ifneq (0,$(CLANG))
       CPEDANTIC += -Wno-overlength-strings
     endif
-    ifneq (0,$(shell echo "$$((40500<=$(CC_VERSION_NUM)))"))
+    ifneq (0,$(shell echo "$$((40600<=$(CC_VERSION_NUM)))"))
+      # can yield false positives with older GCC
       CPEDANTIC += -Wshadow
     endif
     ifneq (,$(strip $(FC)))
