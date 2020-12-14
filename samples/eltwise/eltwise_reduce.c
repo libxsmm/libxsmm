@@ -217,29 +217,34 @@ int main(int argc, char* argv[])
   } else {
     printf("#   Correctness - Eltwise reduce colsidx #\n");
   }
-  printf("##########################################\n");
-  libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts, result_reduce_elts, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
-  printf("L1 test       : %.25g\n", norms_elts.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+
+  if (reduce_elts > 0) {
+    printf("##########################################\n");
+    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts, result_reduce_elts, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
+    printf("L1 test       : %.25g\n", norms_elts.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+  }
 
   /* compare */
-  if (n_cols_idx == 0) {
-    printf("##########################################\n");
-    printf("#   Correctness - Eltwise-square reduce  #\n");
-    printf("##########################################\n");
-    libxsmm_matdiff(&norms_elts_squared, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts_squared, result_reduce_elts_squared, 0, 0);
-    printf("L1 reference  : %.25g\n", norms_elts_squared.l1_ref);
-    printf("L1 test       : %.25g\n", norms_elts_squared.l1_tst);
-    printf("L2 abs.error  : %.24f\n", norms_elts_squared.l2_abs);
-    printf("L2 rel.error  : %.24f\n", norms_elts_squared.l2_rel);
-    printf("Linf abs.error: %.24f\n", norms_elts_squared.linf_abs);
-    printf("Linf rel.error: %.24f\n", norms_elts_squared.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_elts_squared.normf_rel);
+  if (reduce_elts_squared > 0) {
+    if (n_cols_idx == 0) {
+      printf("##########################################\n");
+      printf("#   Correctness - Eltwise-square reduce  #\n");
+      printf("##########################################\n");
+      libxsmm_matdiff(&norms_elts_squared, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts_squared, result_reduce_elts_squared, 0, 0);
+      printf("L1 reference  : %.25g\n", norms_elts_squared.l1_ref);
+      printf("L1 test       : %.25g\n", norms_elts_squared.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_elts_squared.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_elts_squared.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_elts_squared.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_elts_squared.linf_rel);
+      printf("Check-norm    : %.24f\n\n", norms_elts_squared.normf_rel);
+    }
   }
 
   l_start = libxsmm_timer_tick();
