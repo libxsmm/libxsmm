@@ -81,17 +81,16 @@ class ReLU_bf16(Function):
     @staticmethod
     def forward(ctx, input):                        # Forward pass method
         input = input.contiguous()
-        result = Conv1dOpti_cpp.relu_forward_bf16(input)
-        ctx.save_for_backward(result)
+        result, relubitmask = Conv1dOpti_cpp.relu_forward_bf16(input)
+        ctx.save_for_backward(relubitmask)
         return result
 
     @staticmethod
     def backward(ctx, grad):                        # Backward pass method
         r = ctx.saved_tensors
-        output= r[0]
-        d_input = Conv1dOpti_cpp.relu_backward_bf16(grad.contiguous(), output.contiguous())
+        relubitmask= r[0]
+        d_input = Conv1dOpti_cpp.relu_backward_bf16(grad.contiguous(), relubitmask.contiguous())
         return d_input
-
 
 
 class Conv1dOptiFunction(Function):
