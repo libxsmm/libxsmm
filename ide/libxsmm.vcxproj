@@ -54,6 +54,7 @@
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
     <ClInclude Include="..\src\generator_aarch64_instructions.h" />
     <ClInclude Include="..\src\generator_common_aarch64.h" />
+    <ClInclude Include="..\src\generator_common_x86.h" />
     <ClInclude Include="..\src\generator_gemm_aarch64.h" />
     <ClInclude Include="..\src\generator_gemm_amx.h" />
     <ClInclude Include="..\src\generator_gemm_amx_emu.h" />
@@ -141,6 +142,7 @@
     <ClCompile Include="..\src\generator_aarch64_instructions.c" />
     <ClCompile Include="..\src\generator_common.c" />
     <ClCompile Include="..\src\generator_common_aarch64.c" />
+    <ClCompile Include="..\src\generator_common_x86.c" />
     <ClCompile Include="..\src\generator_gemm_aarch64.c" />
     <ClCompile Include="..\src\generator_gemm_amx.c" />
     <ClCompile Include="..\src\generator_gemm_amx_emu.c" />
