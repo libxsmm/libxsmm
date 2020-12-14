@@ -662,6 +662,10 @@ ifneq (0,$(FORCE_CXX))
 endif
 endif
 
+ifneq (0,$(WERROR))
+  WERROR_CFLAG := $(call ctest,$(CC),-Werror)
+endif
+
 ifeq (Windows_NT,$(UNAME))
 ifeq (MINGW64,$(MSYSTEM))
   MINGW := 64
