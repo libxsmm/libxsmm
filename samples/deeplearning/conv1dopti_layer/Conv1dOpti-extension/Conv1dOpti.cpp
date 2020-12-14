@@ -34,6 +34,7 @@
 
 #ifndef USE_TPP                             // If not usintg TPP kernels
 
+// #include <bitset>
 // #include "Bfloat16.h"
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
@@ -1252,23 +1253,17 @@ std::tuple<at::Tensor, at::Tensor> relu_forward_bf16(at::Tensor& input){
     //         Y_a[w] = input_a[w];
     // }
 
-    // for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width loop
-    //     if(input_a[w] >= 32768)                         // sign bit indicates if value is negative
-    //         input_a[w] = 0;
-    // }
-
-    short sign_bit_value = 0;
     #pragma omp parallel for
     for(unsigned long w = 0; w < N_t*C_t*W_t; w +=32){  // width loop
+        __mmask32 lcl_relumask;
+        __m512i vout;
+        vout = _mm512_load_epi64(&input_a[w]);
+        lcl_relumask = _mm512_cmp_epi16_mask (_mm512_setzero_epi32(), vout, _MM_CMPINT_LT);
+        LIBXSMM_INTRINSICS_MM512_STORE_MASK32( &relubitmask_a[w/16], lcl_relumask );
         for (int i=0; i < 32; i++){
             if(input_a[w + i] >= 32768)                 // sign bit indicates if value is negative
                 input_a[w + i] = 0;
         }
-        __mmask32 lcl_relumask;
-        __m512i vout;
-        vout = _mm512_load_epi64(&input_a[w]);
-        lcl_relumask = _mm512_cmp_epi16_mask (vout, _mm512_set1_epi16(sign_bit_value), _MM_CMPINT_NLT);
-        LIBXSMM_INTRINSICS_MM512_STORE_MASK32( &relubitmask_a[w/16], lcl_relumask );
     }
 
 #else
@@ -1316,12 +1311,17 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& relubitmask){
     //         d_input_a[w] = grad_a[w];
     // }
 
-    // #pragma omp parallel for
-    // for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width blocking loop
-    // //    if(output_a[w] == 0 || output_a[w] == 32768)
-    //     if(output_a[w] == 0)                            // If output array value was zero
-    //         grad_a[w] = 0;
-    // }
+    #pragma omp parallel for
+    for(unsigned long w = 0; w < N_t*C_t*W_t; w += 16) {    // width blocking loop
+        // std::bitset<16> mask(relubitmask_a[w/16]);
+        for (int i=0; i < 16; i++){
+            if (((relubitmask_a[w/16] >> i) & 1) == 0){
+            // if(!mask[i]){
+                grad_a[w + i] = 0;
+            }
+        }
+    }
+
 
 #else
 
