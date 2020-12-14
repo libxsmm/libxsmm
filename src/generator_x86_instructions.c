@@ -3939,13 +3939,19 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
 
     /* add imm if needed */
     if ( ((i_mask_instr >> 16) & 0x08) == 0x08 ) {
-      if ( i_imm8 != LIBXSMM_X86_IMM_UNDEF ) {
+#if 0 /* TODO: condition is always true since i_imm8 is uchar and UNDEF is 1024 */
+      if ( i_imm8 != LIBXSMM_X86_IMM_UNDEF )
+#endif
+      {
         unsigned char* code = (unsigned char *) io_generated_code->generated_code;
         code[io_generated_code->code_size++] = (unsigned char)i_imm8;
-      } else {
+      }
+#if 0 /* see above */
+      else {
         fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: imm8 required by instr, but LIBXSMM_X86_IMM_UNDEF was provided!\n");
         exit(-1);
       }
+#endif
     }
   } else {
     char l_new_code[512];

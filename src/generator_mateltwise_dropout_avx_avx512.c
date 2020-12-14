@@ -41,6 +41,7 @@ void libxsmm_generator_dropout_fwd_avx512_microkernel( libxsmm_generated_code*  
   unsigned int prob_vreg = 31, state0_vreg = 30, state1_vreg = 29, state2_vreg = 28, state3_vreg = 27;
   unsigned int rng_vreg_tmp0 = 26, rng_vreg_tmp1 = 25, rng_vreg_one = 24, rng_vreg_res = 23, invprob_vreg = 22;
   unsigned int cur_vreg, cur_mask_reg;
+  LIBXSMM_UNUSED(i_gp_reg_m_loop);
 
   /* We fully unroll in M dimension, calculate mask if there is remainder */
   m                 = i_mateltwise_desc->m;
@@ -275,6 +276,7 @@ void libxsmm_generator_dropout_bwd_avx512_microkernel( libxsmm_generated_code*  
   unsigned int reserved_mask_regs = 1, n_available_zmms = 28, n_available_mask_regs = 7, max_nm_unrolling = 16;
   unsigned int prob_vreg = 31, vreg_one = 30, vreg_tmp0 = 29, vreg_tmp1 = 28;
   unsigned int cur_vreg, cur_mask_reg;
+  LIBXSMM_UNUSED(i_gp_reg_m_loop);
 
   /* We fully unroll in M dimension, calculate mask if there is remainder */
   m                 = i_mateltwise_desc->m;
