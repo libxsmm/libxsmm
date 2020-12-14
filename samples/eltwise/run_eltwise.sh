@@ -135,6 +135,45 @@ elif [ "opreduce" = "${KERNEL}" ]; then
       done
     done
   fi
+elif [ "scale" = "${KERNEL}" ]; then
+  if [ $# = 11 ]; then
+    M=$2
+    N=$3
+    LD_IN=$4
+    LD_OUT=$5
+    SHIFT=$6
+    SCALE=$7
+    BIAS=$8
+    SCALE_ROWS=$9
+    SCALE_ROWS_BCAST=$10
+    ITERS=$11
+    ${NUMACTL} ./eltwise_scale ${M} ${N} ${LD_IN} ${LD_OUT} ${SHIFT} ${SCALE} ${BIAS} ${SCALE_ROWS} ${SCALE_ROWS_BCAST} ${ITERS}
+  else
+    ITERS=100
+    for M in 11 16 19 32 34 64 69 ; do
+      for N in 27 32 45 64 ; do
+        LD_LIST=( ${M} $(( M + 7 )) )
+        for LD_IN in "${LD_LIST[@]}" ; do
+          LD_OUT=${LD_IN}
+          for SHIFT in 0 1; do
+            for SCALE in 0 1; do
+              for BIAS in 0 1; do
+                for SCALE_ROWS in 0 1; do
+                  if [ ${SHIFT} != 0 ] || [ ${SCALE} != 0 ] || [ ${BIAS} != 0 ]; then
+                    ${NUMACTL} ./eltwise_scale ${M} ${N} ${LD_IN} ${LD_OUT} ${SHIFT} ${SCALE} ${BIAS} ${SCALE_ROWS} 0 ${ITERS}
+                  else
+                    if [ ${SCALE_ROWS} = 1 ] ; then
+                      ${NUMACTL} ./eltwise_scale ${M} ${N} ${LD_IN} ${LD_OUT} ${SHIFT} ${SCALE} ${BIAS} ${SCALE_ROWS} 1 ${ITERS}
+                    fi
+                  fi
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+  fi
 fi
 
 
