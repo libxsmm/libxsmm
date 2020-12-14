@@ -2761,7 +2761,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
   LIBXSMM_INIT /* verbosity */
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size) {
     libxsmm_descriptor wrap;
-    unsigned int hash;
+    unsigned int hash = 0;
     void* dst;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
@@ -2817,7 +2817,7 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size, unsigned i
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size)
 #endif
   {
-    unsigned int hash;
+    unsigned int hash = 0;
     libxsmm_descriptor wrap;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
