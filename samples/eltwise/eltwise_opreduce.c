@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
   libxsmm_meltw_opreduce_vecs_idx_param     params;
   libxsmm_meltw_opreduce_vecs_flags         opredop_flags;
   libxsmm_meltwfunction_opreduce_vecs_idx   kernel;
-  libxsmm_matdiff_info                      norms_elts;
+  libxsmm_matdiff_info                      norms_elts, diff;
   unsigned long long l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
   char opname[50];
@@ -84,8 +84,12 @@ int main(int argc, char* argv[])
   char redopname[50];
   unsigned int use_bf16 = 0;
 
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
+
   libxsmm_init();
   libxsmm_matdiff_clear(&norms_elts);
+  libxsmm_matdiff_clear(&diff);
 
   if ( argc > 1 ) m           = atoi(argv[1]);
   if ( argc > 2 ) n           = atoi(argv[2]);
@@ -295,6 +299,7 @@ int main(int argc, char* argv[])
   printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+  libxsmm_matdiff_reduce(&diff, &norms_elts);
 
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
@@ -380,6 +385,15 @@ int main(int argc, char* argv[])
     free(result_bf16);
     free(_vec_in_bf16);
     free(scale_vals_bf16);
+  }
+
+  {
+    const char *const env_check_scale = getenv("CHECK_SCALE");
+    const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
+    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
+      fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+      exit(EXIT_FAILURE);
+    }
   }
 
   return EXIT_SUCCESS;

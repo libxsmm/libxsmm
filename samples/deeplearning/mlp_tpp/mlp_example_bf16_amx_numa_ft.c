@@ -1605,7 +1605,7 @@ void my_smax_bwd_exec( my_smax_bwd_config cfg, libxsmm_bfloat16* delin_act_ptr, 
 
 void init_master_weights( my_opt_config cfg, float* master_wt_ptr, size_t size) {
 #ifndef BYPASS_SGD
-  if (0/* && cfg.upd_M_hyperpartitions != 1 */) { // TODO: add hyperpartitions (?)
+  if (0/* && cfg.upd_M_hyperpartitions != 1 */) { /* TODO: add hyperpartitions (?) */
     /* Spread out weights in a blocked fasion since we partition the MODEL dimenstion */
     init_buffer_block_numa((libxsmm_bfloat16*) master_wt_ptr, size/2);
   } else {
