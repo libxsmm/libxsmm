@@ -1886,12 +1886,12 @@ void my_smax_bwd_exec( my_smax_bwd_config cfg, libxsmm_bfloat16* delin_act_ptr, 
 
 void init_master_weights( my_opt_config cfg, float* master_wt_ptr, size_t size) {
 #ifndef BYPASS_SGD
-  if (cfg.upd_M_hyperpartitions != 1) {
+  if (0 && cfg.upd_M_hyperpartitions != 1) { // TODO: add hyperpartitions (?)
     /* Spread out weights in a blocked fasion since we partition the MODEL dimenstion */
-    init_buffer_block_numa((float*) master_wt_ptr, size/2);
+    init_buffer_block_numa((libxsmm_bfloat16*) master_wt_ptr, size/2);
   } else {
     /* Init weights in a block-cyclic fashion */
-    init_buffer_block_cyclic_numa((float*) master_wt_ptr, size/2);
+    init_buffer_block_cyclic_numa((libxsmm_bfloat16*) master_wt_ptr, size/2);
   }
 #endif
 }
@@ -2209,7 +2209,7 @@ int main(int argc, char* argv[])
 #endif
   for ( i = 0 ; i < num_layers; ++i ) {
 #ifndef BYPASS_SGD
-    init_master_weights(my_fc_fwd[i], fil_libxsmm[i], C[i]*C[i+1] );
+    init_master_weights(my_opt[i], fil_master[i], C[i]*C[i+1] );
 #endif
     init_weights(my_fc_fwd[i], fil_libxsmm[i], C[i]*C[i+1]);
     init_dweights(my_fc_bwd[i], delfil_libxsmm[i], C[i]*C[i+1]);
