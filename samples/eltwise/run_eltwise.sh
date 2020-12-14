@@ -97,6 +97,44 @@ if [ "reduce" = "${KERNEL}" ]; then
       done
     done
   fi
+elif [ "opreduce" = "${KERNEL}" ]; then
+  if [ $# = 11 ]; then
+    M=$2
+    N=$3
+    N_COLS_IDX=$4
+    LD=$5
+    OP=$6
+    OP_ORDER=$7
+    SCALE_OP_RES=$8
+    REDOP=$9
+    ITERS=$10
+    USE_BF16=$11
+    ${NUMACTL} ./eltwise_opreduce ${M} ${N} ${N_COLS_IDX} ${LD} ${OP} ${OP_ORDER} ${SCALE_OP_RES} ${REDOP} ${ITERS} ${USE_BF16}
+  else
+    ITERS=100
+    for M in 11 16 19 32 34 64 69 ; do
+      for N in 27 32 45 64 ; do
+        for (( N_COLS_IDX=0; N_COLS_IDX<=${N}; N_COLS_IDX+=10 )); do
+          LD_LIST=( ${M} $(( M + 7 )) )
+          for LD in "${LD_LIST[@]}" ; do
+            for OP in 0 1 2 3 4; do
+              for OP_ORDER in 0 1; do
+                for SCALE_OP_RES in 0 1; do
+                  for REDOP in 0 1 3 3; do
+                    for USE_BF16 in 0 1; do
+                      if [ ${OP} != 0 ] || [ ${REDOP} != 0 ]; then
+                        ${NUMACTL} ./eltwise_opreduce ${M} ${N} ${N_COLS_IDX} ${LD} ${OP} ${OP_ORDER} ${SCALE_OP_RES} ${REDOP} ${ITERS} ${USE_BF16}
+                      fi
+                    done
+                  done
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+  fi
 fi
 
 
