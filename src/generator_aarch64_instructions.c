@@ -520,9 +520,9 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_alu_set_i64( libxsmm_generated_code*  io_generated_code,
-                                              const unsigned int       i_gp_reg_dst,
-                                              const unsigned long long i_imm64 ) {
+void libxsmm_aarch64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
+                                                const unsigned int       i_gp_reg_dst,
+                                                const unsigned long long i_imm64 ) {
   if (        i_imm64 <=         0xffff ) {
     libxsmm_aarch64_instruction_alu_move_imm16( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_MOVZ,
                                                 i_gp_reg_dst, 0, (unsigned short)i_imm64 );
@@ -700,6 +700,74 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_shifted_reg: inline/pure assembly print is not supported!\n");
     exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_alu_compute_imm64( libxsmm_generated_code*         io_generated_code,
+                                                    const unsigned int              i_alu_meta_instr,
+                                                    const unsigned char             i_gp_reg_src,
+                                                    const unsigned char             i_gp_reg_tmp,
+                                                    const unsigned char             i_gp_reg_dst,
+                                                    const unsigned long long        i_imm64 ) {
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm64: at least ARM V81 needs to be specified as target arch!\n");
+    exit(-1);
+  }
+
+  switch ( i_alu_meta_instr ) {
+    case LIBXSMM_AARCH64_INSTR_GP_META_ADD:
+    case LIBXSMM_AARCH64_INSTR_GP_META_SUB:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm64: unexpected instruction number: %u\n", i_alu_meta_instr);
+      exit(-1);
+  }
+
+  /* check for imm being in range */
+  if ( i_imm64 <= 0xffffff ) {
+    unsigned int l_alu_instr;
+    unsigned int l_imm24;
+
+    /* map meta insttuction to ISA */
+    switch( i_alu_meta_instr ) {
+      case LIBXSMM_AARCH64_INSTR_GP_META_ADD:
+        l_alu_instr = LIBXSMM_AARCH64_INSTR_GP_ADD_I;
+        break;
+      case LIBXSMM_AARCH64_INSTR_GP_META_SUB:
+        l_alu_instr = LIBXSMM_AARCH64_INSTR_GP_SUB_I;
+        break;
+      default:
+        fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm64: unexpected instruction number (24bit imm): %u\n", i_alu_meta_instr);
+        exit(-1);
+    }
+    l_imm24 = (unsigned int)(i_imm64 & 0xffffff);
+
+    libxsmm_aarch64_instruction_alu_compute_imm24( io_generated_code, l_alu_instr,
+                                                   i_gp_reg_src, i_gp_reg_dst, l_imm24 );
+  } else {
+    unsigned int l_alu_instr;
+
+    /* map meta insttuction to ISA */
+    switch( i_alu_meta_instr ) {
+      case LIBXSMM_AARCH64_INSTR_GP_META_ADD:
+        l_alu_instr = LIBXSMM_AARCH64_INSTR_GP_ADD_SR;
+        break;
+      case LIBXSMM_AARCH64_INSTR_GP_META_SUB:
+        l_alu_instr = LIBXSMM_AARCH64_INSTR_GP_SUB_SR;
+        break;
+      default:
+        fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm64: unexpected instruction number (64bit imm): %u\n", i_alu_meta_instr);
+        exit(-1);
+    }
+
+    /* move imm64 into the temp register */
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, i_imm64 );
+
+    /* reg-reg instruction */
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, l_alu_instr,
+                                                         i_gp_reg_src, i_gp_reg_tmp, i_gp_reg_dst,
+                                                         0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
   }
 }
 
