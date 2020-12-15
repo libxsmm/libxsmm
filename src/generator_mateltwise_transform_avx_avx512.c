@@ -665,7 +665,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
 
     /* second shuffle stage */
     {
-        unsigned char l_in_idx[8] = { 0x0, 0x0, 0x1, 0x1};
+        unsigned char l_in_idx[4] = { 0x0, 0x0, 0x1, 0x1};
         unsigned int  l_src_start = 4;
         unsigned int  l_dst_start = 0;
         libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_micro_kernel_config->vector_name,
@@ -733,7 +733,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
 
     /* load 8 registers with two half rows */
     {
-        const unsigned int ld_idx[32] = { 0, 2, 4, 6, 8, 10, 12, 14 };
+        const unsigned int ld_idx[8] = { 0x0, 0x2, 0x4, 0x6, 0x8, 0xa, 0xc, 0xe };
         libxsmm_generator_transform_Xway_half_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                  i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                                                                  ld_idx, 8, LIBXSMM_X86_INSTR_VBROADCASTI64X4, 8, i_mask_reg_0 );
