@@ -401,6 +401,42 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     auto grad_shortpad_tensor = grad.new_empty({N_t,F_t,2*pad_tile_multiple});
     libxsmm_bfloat16* grad_a_shortpad = (libxsmm_bfloat16*) grad_shortpad_tensor.data_ptr<at::BFloat16>();   // short buffer for padded gradiant
 
+#ifdef USE_TPP
+
+    libxsmm_blasint virtual_m1 = pad_tile_multiple - ((WW_t - 1)*dial);                      // columns
+    libxsmm_blasint virtual_m2 = ((WW_t - 1)*dial);                      // columns
+    libxsmm_blasint virtual_n = F_t;                                        // rows
+    libxsmm_blasint ldi_virtual = W_t;
+    libxsmm_blasint ldo_virtual = 2*pad_tile_multiple;
+    libxsmm_meltwfunction_copy virtual_copy = libxsmm_dispatch_meltw_copy(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_NONE);
+    libxsmm_meltwfunction_copy virtual_copy_zero = libxsmm_dispatch_meltw_copy(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( virtual_copy == NULL || virtual_copy_zero == NULL) {
+        fprintf( stderr, "JIT for initialization by TPP virtual copy kernel failed. Bailing...!\n");
+        exit(-1);
+    }
+
+    #pragma omp parallel for
+    for(int n = 0; n < N_t; n++){                       // Loops for storing the edge portion of gradinant array into grad_a_shortpad
+        libxsmm_meltw_copy_param vcopy_params;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param vcopy_params_zero;
+
+        vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                                        // copy zeros
+        virtual_copy_zero(&vcopy_params_zero);
+
+        vcopy_params.in_ptr = &grad_a[n*F_t*W_t];                                                             // copy after zeros from start of the grad array
+        vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ((WW_t - 1)*dial)];
+        virtual_copy(&vcopy_params);
+
+        vcopy_params.in_ptr = &grad_a[n*F_t*W_t + W_t - (pad_tile_multiple - ((WW_t - 1)*dial))];              // copy from the end of the grad array
+        vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + pad_tile_multiple];
+        virtual_copy(&vcopy_params);
+
+        vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - ((WW_t - 1)*dial)];     // copy zeros
+        virtual_copy_zero(&vcopy_params_zero);
+    }
+
+#else
+
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++){                   // loop to store the edges for gradiant array into grad_a_shortpad buffer
         for(int filter=0; filter < F_t; filter++){
@@ -424,6 +460,8 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
             }
         }
     }
+
+#endif
 
     int short_width = ((XS_TILE_DBACKWARD + (WW_t-1)*dial)/XS_TILE_DBACKWARD + 1)*XS_TILE_DBACKWARD;    // Width of buffer
 
@@ -983,6 +1021,41 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     libxsmm_smmfunction_reducebatch_strd kernel4 = libxsmm_smmdispatch_reducebatch_strd(XS_TILE_DBACKWARD, C_t, F_t, dial*sizeof(float), C_t*F_t*sizeof(float), &ldb_shortpad, &lda, &ldc, NULL, NULL, NULL, NULL);
     libxsmm_smmfunction_reducebatch_strd kernel5 = libxsmm_smmdispatch_reducebatch_strd(Win_t - tile_multiple, C_t, F_t, dial*sizeof(float), C_t*F_t*sizeof(float), &ldb_shortpad, &lda, &ldc, NULL, NULL, NULL, NULL);
 
+#ifdef USE_TPP                                              // virtual pad array with TPP copy kernel
+
+    libxsmm_blasint virtual_m1 = pad_tile_multiple - ((WW_t - 1)*dial);                      // columns
+    libxsmm_blasint virtual_m2 = ((WW_t - 1)*dial);                      // columns
+    libxsmm_blasint virtual_n = F_t;                                        // rows
+    libxsmm_blasint ldi_virtual = W_t;
+    libxsmm_blasint ldo_virtual = 2*pad_tile_multiple;
+    libxsmm_meltwfunction_copy virtual_copy = libxsmm_dispatch_meltw_copy(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_NONE);
+    libxsmm_meltwfunction_copy virtual_copy_zero = libxsmm_dispatch_meltw_copy(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    if ( virtual_copy == NULL || virtual_copy_zero == NULL) {
+        fprintf( stderr, "JIT for initialization by TPP virtual copy kernel failed. Bailing...!\n");
+        exit(-1);
+    }
+
+    #pragma omp parallel for
+    for(int n = 0; n < N_t; n++){                         // Loops for storing the edge portion of gradinant array into grad_a_shortpad
+        libxsmm_meltw_copy_param vcopy_params;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_copy_param vcopy_params_zero;
+
+        vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                                        // copy zeros
+        virtual_copy_zero(&vcopy_params_zero);
+
+        vcopy_params.in_ptr = &grad_a[n*F_t*W_t];                                                              // copy after zeros from start of the grad array
+        vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ((WW_t - 1)*dial)];
+        virtual_copy(&vcopy_params);
+
+        vcopy_params.in_ptr = &grad_a[n*F_t*W_t + W_t - (pad_tile_multiple - ((WW_t - 1)*dial))];              // copy from the end of the grad array
+        vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + pad_tile_multiple];
+        virtual_copy(&vcopy_params);
+
+        vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - ((WW_t - 1)*dial)];     // copy zeros
+        virtual_copy_zero(&vcopy_params_zero);
+    }
+
+#else
 
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++){                       // Loops for storing the edge portion of gradinant array into grad_a_shortpad
@@ -1007,6 +1080,9 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
             }
         }
     }
+
+#endif
+
 
 #ifdef USE_TPP                                  // When using TPP kernel for initialization
     /* Also JIT eltwise TPPs... */
@@ -1324,15 +1400,6 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& relubitmask){
 
 
 #else
-
-    // #pragma omp parallel for
-    // for(unsigned long w = 0; w < N_t*C_t*W_t; w +=32){
-    //     __mmask32 lcl_relumask;
-    //     __m512i vout;
-    //     vout = _mm512_load_epi64(&output_a[w]);
-    //     lcl_relumask = _mm512_cmp_epi16_mask (vout, _mm512_setzero_epi32(), _MM_CMPINT_NE);
-    //     LIBXSMM_INTRINSICS_MM512_STORE_MASK32( &relubitmask_a[w/16], lcl_relumask );
-    // }
 
     libxsmm_blasint tpp_m = W_t;                      // columns
     libxsmm_blasint tpp_n = N_t*C_t;                                // rows
