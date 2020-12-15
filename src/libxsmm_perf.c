@@ -99,7 +99,7 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
     path_base = getenv("HOME");
   }
   if (path_base == NULL) {
-    path_base = getenv(".");
+    path_base = ".";
   }
 
   LIBXSMM_SNPRINTF(file_path, sizeof(file_path), "%s/.debug/", path_base);
