@@ -700,10 +700,6 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
 
   /* codepath optimized for CLX */
   } else if ( (i_mateltwise_desc->m % 16 == 0) && (i_mateltwise_desc->n % 8 == 0) ) {
-
-    /* set the masks for the load+blend stage */
-    unsigned long long l_mask = 0xf0;
-
     /* set the masks for the permute stage */
     /* even quarters mask */
     l_mask = 0xcc;
