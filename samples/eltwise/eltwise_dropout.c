@@ -291,13 +291,13 @@ void test_dropout_f32_f32_fwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   }
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M/8; ++j ) {
-      if ( mask_gold[(i*ldo)+j] != mask[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+      if ( mask_gold[(i*ldo/8)+j] != mask[(i*ldo/8)+j] ) {
+        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo/8)+j], mask_gold[(i*ldo/8)+j]);
         s = 1;
       }
 #if 0
       else {
-        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo/8)+j], mask_gold[(i*ldo/8)+j]);
       }
 #endif
     }
@@ -416,13 +416,13 @@ void test_dropout_bf16_bf16_fwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   }
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M/8; ++j ) {
-      if ( mask_gold[(i*ldo)+j] != mask[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+      if ( mask_gold[(i*ldo/8)+j] != mask[(i*ldo/8)+j] ) {
+        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo/8)+j], mask_gold[(i*ldo/8)+j]);
         s = 1;
       }
 #if 0
       else {
-        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo/8)+j], mask_gold[(i*ldo/8)+j]);
       }
 #endif
     }
@@ -540,13 +540,13 @@ void test_dropout_f32_bf16_fwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   }
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M/8; ++j ) {
-      if ( mask_gold[(i*ldo)+j] != mask[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+      if ( mask_gold[(i*ldo/8)+j] != mask[(i*ldo/8)+j] ) {
+        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo/8)+j], mask_gold[(i*ldo/8)+j]);
         s = 1;
       }
 #if 0
       else {
-        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo/8)+j], mask_gold[(i*ldo/8)+j]);
       }
 #endif
     }
@@ -660,13 +660,13 @@ void test_dropout_bf16_f32_fwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   }
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M/8; ++j ) {
-      if ( mask_gold[(i*ldo)+j] != mask[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+      if ( mask_gold[(i*ldo/8)+j] != mask[(i*ldo/8)+j] ) {
+        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo/8)+j], mask_gold[(i*ldo/8)+j]);
         s = 1;
       }
 #if 0
       else {
-        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo)+j], mask_gold[(i*ldo)+j]);
+        printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*ldo/8)+j], mask_gold[(i*ldo/8)+j]);
       }
 #endif
     }
