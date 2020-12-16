@@ -72,7 +72,7 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsig
 /** Calculate a 64-bit hash for the given character string; accepts NULL-string. */
 LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string);
 
-/** Returns the pointer to the 1st match of "b" in "a". */
+/** Return the pointer to the 1st match of "b" in "a", or NULL (no match). */
 LIBXSMM_API const char* libxsmm_stristr(const char* a, const char* b);
 
 /**
