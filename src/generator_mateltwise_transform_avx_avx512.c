@@ -833,18 +833,18 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 #if 1
   if ( (i_mateltwise_desc->m % 32 == 0) && (i_mateltwise_desc->n % 8 == 0) ) {
     /* set the masks for the load+blend stage */
-    l_mask = 0x0c;
+    l_mask = 0x00f0;
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                      i_gp_reg_mask, l_mask );
     libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD,
                                        i_gp_reg_mask, i_mask_reg_0 );
 
-    l_mask = 0x30;
+    l_mask = 0x0f00;
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                      i_gp_reg_mask, l_mask );
     libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD,
                                        i_gp_reg_mask, i_mask_reg_1 );
-    l_mask = 0xc0;
+    l_mask = 0xf000;
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                      i_gp_reg_mask, l_mask );
     libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD,
@@ -865,7 +865,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
     /* load 8 registers with four quarter rows */
     libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                        i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
-                                                       LIBXSMM_X86_INSTR_VBROADCASTI64X2, 8, i_mask_reg_0, i_mask_reg_1, i_mask_reg_2 );
+                                                       LIBXSMM_X86_INSTR_VBROADCASTI32X4, 8, i_mask_reg_0, i_mask_reg_1, i_mask_reg_2 );
 
     /* advance input pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
