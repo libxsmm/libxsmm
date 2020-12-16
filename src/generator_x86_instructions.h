@@ -583,7 +583,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
                                                const unsigned int      i_mask_reg_number_src_0,
                                                const unsigned int      i_mask_reg_number_src_1,
                                                const unsigned int      i_mask_reg_number_dest,
-                                               const unsigned char     i_imm8 );
+                                               const unsigned short    i_imm8 );
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack

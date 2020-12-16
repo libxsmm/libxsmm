@@ -220,8 +220,8 @@ typedef struct my_fc_fwd_config {
   libxsmm_blasint fwd_2d_blocking;
   libxsmm_blasint fwd_row_teams;
   libxsmm_blasint fwd_column_teams;
-  libxsmm_blasint fwd_N_hyperpartitions;
-  libxsmm_blasint fwd_M_hyperpartitions;
+  libxsmm_blasint fwd_FM_hyperpartitions;
+  libxsmm_blasint fwd_MB_hyperpartitions;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
   libxsmm_bsmmfunction fwd_config_kernel;
@@ -255,14 +255,14 @@ typedef struct my_fc_bwd_config {
   libxsmm_blasint bwd_2d_blocking;
   libxsmm_blasint bwd_row_teams;
   libxsmm_blasint bwd_column_teams;
-  libxsmm_blasint bwd_N_hyperpartitions;
-  libxsmm_blasint bwd_M_hyperpartitions;
+  libxsmm_blasint bwd_FM_hyperpartitions;
+  libxsmm_blasint bwd_MB_hyperpartitions;
   libxsmm_blasint upd_bf;
   libxsmm_blasint upd_2d_blocking;
   libxsmm_blasint upd_row_teams;
   libxsmm_blasint upd_column_teams;
-  libxsmm_blasint upd_N_hyperpartitions;
-  libxsmm_blasint upd_M_hyperpartitions;
+  libxsmm_blasint upd_FM_hyperpartitions;
+  libxsmm_blasint upd_MB_hyperpartitions;
   libxsmm_blasint ifm_subtasks;
   libxsmm_blasint ofm_subtasks;
   libxsmm_blasint fuse_relu_bwd;
@@ -347,8 +347,8 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.fuse_type = fuse_type;
 
   /* setup parallelization strategy */
-  res.fwd_N_hyperpartitions = 1;
-  res.fwd_M_hyperpartitions = 1;
+  res.fwd_FM_hyperpartitions = 1;
+  res.fwd_MB_hyperpartitions = 1;
   if (threads == 16) {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 1;
@@ -364,8 +364,8 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.fwd_2d_blocking = 1;
     res.fwd_row_teams = 1;
     res.fwd_column_teams = 14;
-    res.fwd_N_hyperpartitions = 1;
-    res.fwd_M_hyperpartitions = 4;
+    res.fwd_FM_hyperpartitions = 1;
+    res.fwd_MB_hyperpartitions = 4;
   } else {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 0;
@@ -532,10 +532,10 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.lr = lr;
 
   /* setup parallelization strategy */
-  res.bwd_N_hyperpartitions = 1;
-  res.upd_N_hyperpartitions = 1;
-  res.bwd_M_hyperpartitions = 1;
-  res.upd_M_hyperpartitions = 1;
+  res.bwd_FM_hyperpartitions = 1;
+  res.upd_FM_hyperpartitions = 1;
+  res.bwd_MB_hyperpartitions = 1;
+  res.upd_MB_hyperpartitions = 1;
   if (threads == 16) {
     res.bwd_bf = 1;
     res.bwd_2d_blocking = 1;
@@ -563,14 +563,14 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.bwd_2d_blocking = 1;
     res.bwd_row_teams = 1;
     res.bwd_column_teams = 14;
-    res.bwd_N_hyperpartitions = 1;
-    res.bwd_M_hyperpartitions = 4;
+    res.bwd_FM_hyperpartitions = 1;
+    res.bwd_MB_hyperpartitions = 4;
     res.upd_bf = 1;
     res.upd_2d_blocking = 1;
     res.upd_row_teams = 1;
     res.upd_column_teams = 14;
-    res.upd_N_hyperpartitions = 1;
-    res.upd_M_hyperpartitions = 4;
+    res.upd_FM_hyperpartitions = 1;
+    res.upd_MB_hyperpartitions = 4;
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
   } else {
@@ -905,23 +905,23 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
   blocks = CB_BLOCKS;
 
   if (use_2d_blocking == 1) {
-    int _ltid, N_hyperpartition_id, M_hyperpartition_id, _nBlocksOFm, _nBlocksMB, hyperteam_id;
+    int _ltid, FM_hyperpartition_id, MB_hyperpartition_id, _nBlocksOFm, _nBlocksMB, hyperteam_id;
     row_teams    = cfg.fwd_row_teams;
     column_teams = cfg.fwd_column_teams;
     hyperteam_id = ltid/(row_teams*column_teams);
-    _nBlocksOFm  = nBlocksOFm/cfg.fwd_N_hyperpartitions;
-    _nBlocksMB   = nBlocksMB/cfg.fwd_M_hyperpartitions;
+    _nBlocksOFm  = nBlocksOFm/cfg.fwd_FM_hyperpartitions;
+    _nBlocksMB   = nBlocksMB/cfg.fwd_MB_hyperpartitions;
     _ltid = ltid % (row_teams * column_teams);
-    N_hyperpartition_id = hyperteam_id % cfg.fwd_N_hyperpartitions;
-    M_hyperpartition_id = hyperteam_id / cfg.fwd_N_hyperpartitions;
+    FM_hyperpartition_id = hyperteam_id % cfg.fwd_FM_hyperpartitions;
+    MB_hyperpartition_id = hyperteam_id / cfg.fwd_FM_hyperpartitions;
     my_col_id = _ltid % column_teams;
     my_row_id = _ltid / column_teams;
     im_tasks_per_thread = (_nBlocksMB + row_teams-1)/row_teams;
     in_tasks_per_thread = (_nBlocksOFm + column_teams-1)/column_teams;
-    my_im_start = M_hyperpartition_id * _nBlocksMB + LIBXSMM_MIN( my_row_id * im_tasks_per_thread, _nBlocksMB);
-    my_im_end   = M_hyperpartition_id * _nBlocksMB + LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, _nBlocksMB);
-    my_in_start = N_hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksOFm);
-    my_in_end   = N_hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksOFm);
+    my_im_start = MB_hyperpartition_id * _nBlocksMB + LIBXSMM_MIN( my_row_id * im_tasks_per_thread, _nBlocksMB);
+    my_im_end   = MB_hyperpartition_id * _nBlocksMB + LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, _nBlocksMB);
+    my_in_start = FM_hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksOFm);
+    my_in_end   = FM_hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksOFm);
   }
 
   /* lazy barrier init */
@@ -1195,23 +1195,23 @@ if (cfg.upd_2d_blocking == 0) {
     blocks = KB_BLOCKS;
 
     if (use_2d_blocking == 1) {
-      int _ltid, N_hyperpartition_id, M_hyperpartition_id, _nBlocksIFm, _nBlocksMB, hyperteam_id;
+      int _ltid, FM_hyperpartition_id, MB_hyperpartition_id, _nBlocksIFm, _nBlocksMB, hyperteam_id;
       row_teams    = cfg.bwd_row_teams;
       column_teams = cfg.bwd_column_teams;
       hyperteam_id = ltid/(row_teams*column_teams);
-      _nBlocksIFm  = nBlocksIFm/cfg.bwd_N_hyperpartitions;
-      _nBlocksMB   = nBlocksMB/cfg.bwd_M_hyperpartitions;
+      _nBlocksIFm  = nBlocksIFm/cfg.bwd_FM_hyperpartitions;
+      _nBlocksMB   = nBlocksMB/cfg.bwd_MB_hyperpartitions;
       _ltid = ltid % (row_teams * column_teams);
-      N_hyperpartition_id = hyperteam_id % cfg.bwd_N_hyperpartitions;
-      M_hyperpartition_id = hyperteam_id / cfg.bwd_N_hyperpartitions;
+      FM_hyperpartition_id = hyperteam_id % cfg.bwd_FM_hyperpartitions;
+      MB_hyperpartition_id = hyperteam_id / cfg.bwd_FM_hyperpartitions;
       my_col_id = _ltid % column_teams;
       my_row_id = _ltid / column_teams;
       im_tasks_per_thread = (_nBlocksMB + row_teams-1)/row_teams;
       in_tasks_per_thread = (_nBlocksIFm + column_teams-1)/column_teams;
-      my_im_start = M_hyperpartition_id * _nBlocksMB + LIBXSMM_MIN( my_row_id * im_tasks_per_thread, _nBlocksMB);
-      my_im_end   = M_hyperpartition_id * _nBlocksMB + LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, _nBlocksMB);
-      my_in_start = N_hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksIFm);
-      my_in_end   = N_hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksIFm);
+      my_im_start = MB_hyperpartition_id * _nBlocksMB + LIBXSMM_MIN( my_row_id * im_tasks_per_thread, _nBlocksMB);
+      my_im_end   = MB_hyperpartition_id * _nBlocksMB + LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, _nBlocksMB);
+      my_in_start = FM_hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksIFm);
+      my_in_end   = FM_hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksIFm);
     }
 
     /* transpose weight */
@@ -1389,23 +1389,23 @@ if (cfg.upd_2d_blocking == 0) {
     const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
 
     if (use_2d_blocking == 1) {
-      int _ltid, N_hyperpartition_id, M_hyperpartition_id, _nBlocksOFm,  _nBlocksIFm, hyperteam_id;
+      int _ltid, FM_hyperpartition_id, MB_hyperpartition_id, _nBlocksOFm,  _nBlocksIFm, hyperteam_id;
       row_teams = cfg.upd_row_teams;
       column_teams = cfg.upd_column_teams;
       hyperteam_id = ltid/(row_teams*column_teams);
-      _nBlocksOFm  = nBlocksOFm/cfg.upd_N_hyperpartitions;
-      _nBlocksIFm  = nBlocksIFm/cfg.upd_M_hyperpartitions;
+      _nBlocksOFm  = nBlocksOFm/cfg.upd_FM_hyperpartitions;
+      _nBlocksIFm  = nBlocksIFm/cfg.upd_MB_hyperpartitions;
       _ltid = ltid % (row_teams * column_teams);
-      N_hyperpartition_id = hyperteam_id % cfg.upd_N_hyperpartitions;
-      M_hyperpartition_id = hyperteam_id / cfg.upd_N_hyperpartitions;
+      FM_hyperpartition_id = hyperteam_id % cfg.upd_FM_hyperpartitions;
+      MB_hyperpartition_id = hyperteam_id / cfg.upd_FM_hyperpartitions;
       my_col_id = _ltid % column_teams;
       my_row_id = _ltid / column_teams;
       im_tasks_per_thread = (_nBlocksIFm + row_teams-1)/row_teams;
       in_tasks_per_thread = (_nBlocksOFm + column_teams-1)/column_teams;
-      my_im_start = M_hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( my_row_id * im_tasks_per_thread, _nBlocksIFm);
-      my_im_end   = M_hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, _nBlocksIFm);
-      my_in_start = N_hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksOFm);
-      my_in_end   = N_hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksOFm);
+      my_im_start = MB_hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( my_row_id * im_tasks_per_thread, _nBlocksIFm);
+      my_im_end   = MB_hyperpartition_id * _nBlocksIFm + LIBXSMM_MIN( (my_row_id+1) * im_tasks_per_thread, _nBlocksIFm);
+      my_in_start = FM_hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( my_col_id * in_tasks_per_thread, _nBlocksOFm);
+      my_in_end   = FM_hyperpartition_id * _nBlocksOFm + LIBXSMM_MIN( (my_col_id+1) * in_tasks_per_thread, _nBlocksOFm);
     }
 
   if (cfg.upd_2d_blocking == 0) {
@@ -1926,7 +1926,7 @@ void my_smax_bwd_exec( my_smax_bwd_config cfg, libxsmm_bfloat16* delin_act_ptr, 
 
 void init_master_weights( my_opt_config cfg, float* master_wt_ptr, size_t size) {
 #ifndef BYPASS_SGD
-  if (0/* && cfg.upd_M_hyperpartitions != 1 */) { /*TODO: add hyperpartitions (?)*/
+  if (0/* && cfg.upd_MB_hyperpartitions != 1 */) { /*TODO: add hyperpartitions (?)*/
     /* Spread out weights in a blocked fasion since we partition the MODEL dimenstion */
     init_buffer_block_numa((libxsmm_bfloat16*) master_wt_ptr, size/2);
   } else {
@@ -1937,7 +1937,7 @@ void init_master_weights( my_opt_config cfg, float* master_wt_ptr, size_t size) 
 }
 
 void init_weights( my_fc_fwd_config cfg, libxsmm_bfloat16* wt_ptr, size_t size) {
-  if (cfg.fwd_N_hyperpartitions != 1) {
+  if (cfg.fwd_FM_hyperpartitions != 1) {
     /* Spread out weights in a blocked fasion since we partition the MODEL dimenstion */
     init_buffer_block_numa(wt_ptr, size);
   } else {
@@ -1947,7 +1947,7 @@ void init_weights( my_fc_fwd_config cfg, libxsmm_bfloat16* wt_ptr, size_t size) 
 }
 
 void init_dweights( my_fc_bwd_config cfg, libxsmm_bfloat16* dwt_ptr, size_t size) {
-  if (cfg.upd_M_hyperpartitions != 1) {
+  if (cfg.upd_MB_hyperpartitions != 1) {
     /* Spread out weights  */
     init_buffer_block_numa(dwt_ptr, size);
   } else {
@@ -1957,7 +1957,7 @@ void init_dweights( my_fc_bwd_config cfg, libxsmm_bfloat16* dwt_ptr, size_t size
 }
 
 void init_acts( my_fc_fwd_config cfg, libxsmm_bfloat16* act_ptr, size_t size) {
-  if (cfg.fwd_M_hyperpartitions != 1) {
+  if (cfg.fwd_MB_hyperpartitions != 1) {
     /* Spread out weights  */
     init_buffer_block_numa(act_ptr, size);
   } else {
@@ -1967,7 +1967,7 @@ void init_acts( my_fc_fwd_config cfg, libxsmm_bfloat16* act_ptr, size_t size) {
 }
 
 void init_delacts( my_fc_bwd_config cfg, libxsmm_bfloat16* delact_ptr, size_t size) {
-  if (cfg.bwd_M_hyperpartitions != 1) {
+  if (cfg.bwd_MB_hyperpartitions != 1) {
     /* Spread out weights  */
     init_buffer_block_numa(delact_ptr, size);
   } else {
