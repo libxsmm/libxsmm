@@ -46,7 +46,8 @@
 
 /** MKL_DIRECT_CALL requires to include the MKL interface. */
 #if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL) || \
-    (defined(__MKL) && !defined(LIBXSMM_BUILD)))
+    (defined(__MKL) && !defined(LIBXSMM_BUILD) && \
+    !defined(__BLAS) || (0 != __BLAS)))
 # if (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
 #   error "Inconsistent ILP64 configuration detected!"
 # endif
