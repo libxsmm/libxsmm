@@ -475,7 +475,10 @@ LIBXSMM_API const char* libxsmm_stristr(const char* a, const char* b)
             break;
           }
         }
-        if ('\0' == *c) break;
+        if ('\0' != c[0] && '\0' != c[1]) {
+          result = NULL;
+        }
+        else break;
       }
     } while ('\0' != *a);
   }
