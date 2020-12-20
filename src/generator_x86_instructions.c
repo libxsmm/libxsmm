@@ -2311,7 +2311,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
     libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
-    if ( i_instruction_set != LIBXSMM_X86_SSE3 ) {
+    if ( i_instruction_set > LIBXSMM_X86_SSE42 ) {
       if ( io_generated_code->code_type == 0 ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
       } else {

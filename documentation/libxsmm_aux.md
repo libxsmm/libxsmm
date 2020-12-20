@@ -17,8 +17,8 @@ Available code paths (IDs and corresponding strings):
 
 * LIBXSMM_TARGET_ARCH_GENERIC: "**generic**", "none", "0"
 * LIBXSMM_X86_GENERIC: "**x86**", "x64", "sse2"
-* LIBXSMM_X86_SSE3: "**sse3**", "sse", "ssse3", "ssse"
-* LIBXSMM_X86_SSE4: "**wsm**", "nhm", "sse4", "sse4_1", "sse4.1", "sse4_2", "sse4.2"
+* LIBXSMM_X86_SSE3: "**sse3**"
+* LIBXSMM_X86_SSE42: "**wsm**", "nhm", "sse4", "sse4_2", "sse4.2"
 * LIBXSMM_X86_AVX: "**snb**", "avx"
 * LIBXSMM_X86_AVX2: "**hsw**", "avx2"
 * LIBXSMM_X86_AVX512_MIC: "**knl**", "mic"
@@ -26,6 +26,7 @@ Available code paths (IDs and corresponding strings):
 * LIBXSMM_X86_AVX512_CORE: "**skx**", "skl", "avx3", "avx512"
 * LIBXSMM_X86_AVX512_CLX: "**clx**"
 * LIBXSMM_X86_AVX512_CPX: "**cpx**"
+* LIBXSMM_X86_AVX512_SPR: "**spr**"
 
 The **bold** names are returned by `libxsmm_get_target_arch` whereas `libxsmm_set_target_arch` accepts all of the above strings (similar to the environment variable LIBXSMM_TARGET).
 

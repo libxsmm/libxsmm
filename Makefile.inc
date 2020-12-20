@@ -1688,11 +1688,11 @@ ifeq (undefined,$(origin TARGET))
               else # maintainer build
                 ifeq (0,$(DEPSTATIC))
                   TARGET := -msse4.2
-                  CTARGET := -msse3
+                  CTARGET := -msse2
                 else ifneq (0,$(SHARED))
                   ifneq (,$(SHARED))
                     TARGET := -msse4.2
-                    CTARGET := -msse3
+                    CTARGET := -msse2
                   else
                     CTARGET := -msse4.2
                   endif
@@ -1701,7 +1701,7 @@ ifeq (undefined,$(origin TARGET))
                 endif
               endif
             else
-              CTARGET := -msse3
+              CTARGET := -msse2
             endif
           endif
           CTARGET ?= -msse4.2
@@ -1712,7 +1712,7 @@ ifeq (undefined,$(origin TARGET))
       ifeq (,$(CTARGET)) # SSE3
       ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
         ifneq (Darwin,$(UNAME))
-          CTARGET ?= -msse3
+          CTARGET ?= -msse2
         else # prevents Clang BE error (CRC32 and others)
           CTARGET ?= -msse4.2
         endif

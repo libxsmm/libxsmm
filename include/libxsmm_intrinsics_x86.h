@@ -189,7 +189,7 @@
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__)
 #   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
-#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE4
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE42
 #   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif defined(__SSE3__)
@@ -311,7 +311,7 @@
 #       else
 #         define LIBXSMM_ATTRIBUTE_TARGET_1003 LIBXSMM_ATTRIBUTE_TARGET_1002
 #       endif
-#       if (LIBXSMM_X86_SSE4 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#       if (LIBXSMM_X86_SSE42 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #         define LIBXSMM_ATTRIBUTE_TARGET_1004 target("sse4.1,sse4.2")
 #       else
 #         define LIBXSMM_ATTRIBUTE_TARGET_1004 LIBXSMM_ATTRIBUTE_TARGET_1003
@@ -595,10 +595,10 @@ LIBXSMM_API_INLINE unsigned int LIBXSMM_ILOG2(unsigned long long n) {
    (!defined(LIBXSMM_INTRINSICS_STATIC) && LIBXSMM_X86_SSE3 <= LIBXSMM_MAX_STATIC_TARGET_ARCH))
 # define LIBXSMM_INTRINSICS_SSE3
 #endif
-/** LIBXSMM_INTRINSICS_SSE4 is defined only if the compiler is able to generate this code without special flags. */
-#if !defined(LIBXSMM_INTRINSICS_SSE4) && !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_SSE4 <= LIBXSMM_STATIC_TARGET_ARCH || \
-   (!defined(LIBXSMM_INTRINSICS_STATIC) && LIBXSMM_X86_SSE4 <= LIBXSMM_MAX_STATIC_TARGET_ARCH))
-# define LIBXSMM_INTRINSICS_SSE4
+/** LIBXSMM_INTRINSICS_SSE42 is defined only if the compiler is able to generate this code without special flags. */
+#if !defined(LIBXSMM_INTRINSICS_SSE42) && !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_SSE42 <= LIBXSMM_STATIC_TARGET_ARCH || \
+   (!defined(LIBXSMM_INTRINSICS_STATIC) && LIBXSMM_X86_SSE42 <= LIBXSMM_MAX_STATIC_TARGET_ARCH))
+# define LIBXSMM_INTRINSICS_SSE42
 #endif
 /** LIBXSMM_INTRINSICS_AVX is defined only if the compiler is able to generate this code without special flags. */
 #if !defined(LIBXSMM_INTRINSICS_AVX) && !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH || \
