@@ -778,6 +778,8 @@ else ifeq (1,$(SSE)) # discover SSE
     SSE := 4
   else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
     SSE := 3
+  else ifneq (0,$(words $(filter sse2 ,$(CPUFLAGS))))
+    SSE := 2
   else ifneq (,$(CPUFLAGS))
     SSE := 0
   endif
