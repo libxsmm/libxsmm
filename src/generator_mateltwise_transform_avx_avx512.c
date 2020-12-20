@@ -885,18 +885,18 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
     l_mask = 0x00f0;
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                      i_gp_reg_mask, l_mask );
-    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD,
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
                                        i_gp_reg_mask, i_mask_reg_0 );
 
     l_mask = 0x0f00;
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                      i_gp_reg_mask, l_mask );
-    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD,
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
                                        i_gp_reg_mask, i_mask_reg_1 );
     l_mask = 0xf000;
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                      i_gp_reg_mask, l_mask );
-    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD,
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
                                        i_gp_reg_mask, i_mask_reg_2 );
 
     /* set the masks for the load+blend stage for partial 32x8 blocks */
@@ -907,7 +907,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 
         for (l_i = 0; l_i < 4; ++l_i) {
             libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_n_8rem_mask << (l_i * 4) );
-            libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] + l_i );
+            libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] + l_i );
         }
     }
 
@@ -996,7 +996,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
     /* Transpose m_32rem blocks */
     if ( l_m_32rem > 0 ) {
       /* set store mask */
-      libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
+      libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
 
       /* transpose m_32rem x 8 blocks */
       if ( l_n_8mul > 0 ) {
@@ -1037,7 +1037,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       /* transpose m_32rem x n_8rem block */
       if ( l_n_8rem > 0 ) {
           /* restore quarter load masks */
-          libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD, i_gp_reg_mask, i_mask_reg_6 );
+          libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, i_mask_reg_6 );
 
           /* load 8 registers with four quarter rows */
           const unsigned int l_mask_regs[4] = {i_mask_reg_3, i_mask_reg_4, i_mask_reg_5, i_mask_reg_6};
@@ -1049,7 +1049,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
           libxsmm_generator_transform_08way_3stage_shuffle_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
 
           /* restore store mask */
-          libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVB_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
+          libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
 
           /* storing n_8rem registers */
           libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
