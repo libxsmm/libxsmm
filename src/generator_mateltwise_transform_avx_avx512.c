@@ -680,7 +680,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
     /* load 4 registers with four quarter rows */
     {
         unsigned int l_mask_regs[4] = { 0 };
-        l_mask_regs[0] = 0;            l_mask_regs[4] = i_mask_reg_0;
+        l_mask_regs[0] = 0;            l_mask_regs[1] = i_mask_reg_0;
         l_mask_regs[2] = i_mask_reg_1; l_mask_regs[3] = i_mask_reg_2;
         libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                     i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
