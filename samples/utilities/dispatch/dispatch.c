@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
 
 #if 0 != LIBXSMM_JIT
-  if (LIBXSMM_X86_SSE3 > libxsmm_get_target_archid()) {
+  if (LIBXSMM_X86_GENERIC > libxsmm_get_target_archid()) {
     fprintf(stderr, "\n\tWarning: JIT support is not available at runtime!\n");
   }
 #else

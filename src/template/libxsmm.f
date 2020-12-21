@@ -128,7 +128,7 @@
      &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
      &    LIBXSMM_X86_GENERIC     = 1002,                               &
      &    LIBXSMM_X86_SSE3        = 1003,                               &
-     &    LIBXSMM_X86_SSE4        = 1004,                               &
+     &    LIBXSMM_X86_SSE42       = 1004,                               &
      &    LIBXSMM_X86_AVX         = 1005,                               &
      &    LIBXSMM_X86_AVX2        = 1006,                               &
      &    LIBXSMM_X86_AVX512      = 1007,                               &

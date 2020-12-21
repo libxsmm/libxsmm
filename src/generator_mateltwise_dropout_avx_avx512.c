@@ -166,13 +166,15 @@ void libxsmm_generator_dropout_fwd_avx512_microkernel( libxsmm_generated_code*  
                                                      cur_vreg, invprob_vreg, cur_vreg, cur_mask_reg, 1 );
 
       /* Store dropout mask */
-      libxsmm_x86_instruction_mask_move_mem( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVW_ST,
-          i_gp_reg_dropmask,
-          LIBXSMM_X86_GP_REG_UNDEF,
-          0,
-          (im * 16 + in * i_mateltwise_desc->ldo)/8,
-          cur_mask_reg );
+      if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_DROPOUT_BITMASK) > 0 ) {
+        libxsmm_x86_instruction_mask_move_mem( io_generated_code,
+            LIBXSMM_X86_INSTR_KMOVW_ST,
+            i_gp_reg_dropmask,
+            LIBXSMM_X86_GP_REG_UNDEF,
+            0,
+            (im * 16 + in * i_mateltwise_desc->ldo)/8,
+            cur_mask_reg );
+      }
 
       /* Store result  */
       if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
@@ -219,10 +221,12 @@ void libxsmm_generator_dropout_fwd_avx512_microkernel( libxsmm_generated_code*  
         i_mateltwise_desc->ldo * n_unroll_factor * i_micro_kernel_config->datatype_size_out);
 
     /* Adjust also relu ptr, datatype for relumask tensor is "bit" and also it has always the same shape as output  */
-    libxsmm_x86_instruction_alu_imm(  io_generated_code,
-        i_micro_kernel_config->alu_add_instruction,
-        i_gp_reg_dropmask,
-        (i_mateltwise_desc->ldo * n_unroll_factor)/8);
+    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_DROPOUT_BITMASK) > 0 ) {
+      libxsmm_x86_instruction_alu_imm(  io_generated_code,
+          i_micro_kernel_config->alu_add_instruction,
+          i_gp_reg_dropmask,
+          (i_mateltwise_desc->ldo * n_unroll_factor)/8);
+    }
 
     /* close n loop */
     libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_n_loop, n_trips );
@@ -273,8 +277,8 @@ void libxsmm_generator_dropout_bwd_avx512_microkernel( libxsmm_generated_code*  
                                                        const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                        const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned int in, im, m, n, use_m_masking, m_trips, n_unroll_factor, n_trips, mask_out_count = 0, unroll_iter = 0;
-  unsigned int reserved_mask_regs = 1, n_available_zmms = 28, n_available_mask_regs = 7, max_nm_unrolling = 16;
-  unsigned int prob_vreg = 31, vreg_one = 30, vreg_tmp0 = 29, vreg_tmp1 = 28;
+  unsigned int reserved_mask_regs = 1, n_available_zmms = 26, n_available_mask_regs = 7, max_nm_unrolling = 16;
+  unsigned int prob_vreg = 31, vreg_one = 30, vreg_tmp0 = 29, vreg_tmp1 = 28, vreg_tmp2 = 27, vreg_zero = 26;
   unsigned int cur_vreg, cur_mask_reg;
   LIBXSMM_UNUSED(i_gp_reg_m_loop);
 
@@ -327,6 +331,14 @@ void libxsmm_generator_dropout_bwd_avx512_microkernel( libxsmm_generated_code*  
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VDIVPS, 'z',
                                             prob_vreg, vreg_one, prob_vreg );
 
+  /* load zero, for masking */
+  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_DROPOUT_BITMASK) > 0 ) {
+     n_available_zmms = 28;
+  } else {
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
+                                              vreg_zero, vreg_zero, vreg_zero );
+  }
+
   /* In this case we have to use CPX replacement sequence for downconverts... */
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) &&
        (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ) {
@@ -371,13 +383,39 @@ void libxsmm_generator_dropout_bwd_avx512_microkernel( libxsmm_generated_code*  
       }
 
       /* load dropout mask */
-      libxsmm_x86_instruction_mask_move_mem( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVW_LD,
-          i_gp_reg_dropmask,
-          LIBXSMM_X86_GP_REG_UNDEF,
-          0,
-          (im * 16 + in * i_mateltwise_desc->ldi)/8,
-          cur_mask_reg );
+      if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_DROPOUT_BITMASK) > 0 ) {
+        libxsmm_x86_instruction_mask_move_mem( io_generated_code,
+            LIBXSMM_X86_INSTR_KMOVW_LD,
+            i_gp_reg_dropmask,
+            LIBXSMM_X86_GP_REG_UNDEF,
+            0,
+            (im * 16 + in * i_mateltwise_desc->ldi)/8,
+            cur_mask_reg );
+      } else {
+        if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmove_instruction_in,
+              i_gp_reg_dropmask,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (im * 16 + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+              'y',
+              vreg_tmp2, (im == (m_trips-1)) ? use_m_masking : 0, 1, 0 );
+
+          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', vreg_tmp2, vreg_tmp2 );
+        } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->vmove_instruction_in,
+              i_gp_reg_dropmask,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (im * 16 + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+              i_micro_kernel_config->vector_name,
+              vreg_tmp2, (im == (m_trips-1)) ? use_m_masking : 0, 1, 0 );
+        }
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCMPPS, 'z',
+                                                       vreg_tmp2, vreg_zero, cur_mask_reg, 0x04  );
+      }
 
       /* weight and zero input */
       libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, 'z',
@@ -427,11 +465,18 @@ void libxsmm_generator_dropout_bwd_avx512_microkernel( libxsmm_generated_code*  
         i_gp_reg_out,
         i_mateltwise_desc->ldo * n_unroll_factor * i_micro_kernel_config->datatype_size_out);
 
-    /* Adjust also relu ptr, datatype for relumask tensor is "bit" and also it has always the same shape as output  */
-    libxsmm_x86_instruction_alu_imm(  io_generated_code,
-        i_micro_kernel_config->alu_add_instruction,
-        i_gp_reg_dropmask,
-        (i_mateltwise_desc->ldi * n_unroll_factor)/8);
+    /* Adjust also mask ptr, datatype for mask tensor might be "bit" and also it has always the same shape as input  */
+    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_DROPOUT_BITMASK) > 0 ) {
+      libxsmm_x86_instruction_alu_imm(  io_generated_code,
+          i_micro_kernel_config->alu_add_instruction,
+          i_gp_reg_dropmask,
+          (i_mateltwise_desc->ldi * n_unroll_factor)/8);
+    } else {
+      libxsmm_x86_instruction_alu_imm(  io_generated_code,
+          i_micro_kernel_config->alu_add_instruction,
+          i_gp_reg_dropmask,
+          i_mateltwise_desc->ldi * n_unroll_factor * i_micro_kernel_config->datatype_size_in);
+    }
 
     /* close n loop */
     libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_n_loop, n_trips );
@@ -489,14 +534,17 @@ void libxsmm_generator_dropout_avx512_microkernel( libxsmm_generated_code*      
   /* check leading dimnesions and sizes */
   if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_DROPOUT_FWD) > 0) ||
        ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_DROPOUT_BWD) > 0)    ) {
-    if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) ||
-         (i_mateltwise_desc->ldi % 16 != 0)                 ) {
+    if ( i_mateltwise_desc->m > i_mateltwise_desc->ldi ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
-    if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldo) ||
-         (i_mateltwise_desc->ldo % 16 != 0)                 ) {
+    if ( i_mateltwise_desc->m > i_mateltwise_desc->ldo ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
+      return;
+    }
+    if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_DROPOUT_BITMASK) > 0) &&
+         ((i_mateltwise_desc->ldi % 16 != 0) || (i_mateltwise_desc->ldo % 16 != 0)) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
   } else {

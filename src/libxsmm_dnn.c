@@ -212,10 +212,9 @@ LIBXSMM_API size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype datatype)
   /* init libxsmm */
   LIBXSMM_INIT
 
-  if ( libxsmm_target_archid == LIBXSMM_X86_GENERIC ) {
-    l_cl_width_bytes = libxsmm_dnn_typesize(datatype);
-  } else if ( libxsmm_target_archid == LIBXSMM_X86_SSE3 ||
-      libxsmm_target_archid == LIBXSMM_X86_SSE4 ) {
+  if ( libxsmm_target_archid == LIBXSMM_X86_GENERIC ||
+       libxsmm_target_archid == LIBXSMM_X86_SSE3    ||
+       libxsmm_target_archid == LIBXSMM_X86_SSE42 ) {
     l_cl_width_bytes = 16;
   } else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ||
       libxsmm_target_archid == LIBXSMM_X86_AVX ) {
