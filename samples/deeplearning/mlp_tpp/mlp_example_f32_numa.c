@@ -599,7 +599,6 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* in_act_ptr, float* out_a
 }
 
 void my_fc_bwd_d_transpose( my_fc_bwd_config cfg, int my_tid, my_numa_thr_cfg **numa_thr_cfg_, int numa_node, int layer, int *ofm_to_node) {
-    int max_cfg_nodes = numa_num_configured_nodes();
     my_numa_thr_cfg *numa_thr_cfg = *numa_thr_cfg_;
 
     /* Transpose kernel to transpose filters  */
@@ -743,7 +742,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, float* din_act_ptr,
     const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
     /* loop variables */
-    libxsmm_blasint ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0;
+    libxsmm_blasint ifm1 = 0, ifm2 = 0, mb1ifm1 = 0;
     libxsmm_blasint N_tasks_per_thread = 0, M_tasks_per_thread = 0, my_M_start = 0, my_M_end = 0, my_N_start = 0, my_N_end = 0, my_col_id = 0, my_row_id = 0, col_teams = 0, row_teams = 0;
 
     LIBXSMM_VLA_DECL(4,       float,    dinput,                 din_act_ptr, nBlocksIFm, bn, bc);
@@ -968,7 +967,6 @@ void my_opt_exec( my_opt_config cfg, const float* delwt_ptr, int start_tid, int 
         int ifm = j % nBlocksIFm;
         float *out = numa_thr_cfg->scratch[l] + ofm * OFM_shift + ifm * IFM_shift;
         float *inp = dw_prt + ofm * OFM_shift + ifm * IFM_shift;
-        #pragma unroll(16)
         for (i = 0; i < IFM_shift; i += 16)
             _mm512_storeu_ps( out+i, _mm512_sub_ps( _mm512_loadu_ps( out+i ), _mm512_mul_ps( vlr, _mm512_loadu_ps( inp + i ) ) ) ) ;
 
@@ -1184,7 +1182,7 @@ int setup_my_numa(my_numa_thr_cfg **numa_thr_cfg_, int num_layers, int n_threads
         for (t = 0; t < bmask->size; t++)
         if (numa_bitmask_isbitset(bmask, t)) num_threads_in_mask++;
 
-        int thr_s = 0, thr_e = 0, node_threads = 0;
+        int node_threads = 0;
         while(thr_count < n_threads && node_threads < num_threads_in_mask) {
             if (numa_bitmask_isbitset(bmask, thr_count)) {
                 numa_thr_cfg[i].thr_s = thr_count;
@@ -1210,7 +1208,6 @@ int setup_my_numa_fwd(my_numa_thr_cfg **numa_thr_cfg_, int num_layers, my_fc_fwd
     int max_cfg_nodes = numa_num_configured_nodes();
     int i = 0;
     for (i = 0; i < max_cfg_nodes; i++) {
-        int n_thr = numa_thr_cfg[i].thr_e - numa_thr_cfg[i].thr_s;
         int l = 0;
         for (l = 0; l < num_layers; l++) {
             const libxsmm_blasint nBlocksOFm = my_fc_fwd[l].K / my_fc_fwd[l].bk;
@@ -1310,7 +1307,6 @@ int setup_my_numa_bwd_d(my_numa_thr_cfg **numa_thr_cfg_, int num_layers, my_fc_b
     int max_cfg_nodes = numa_num_configured_nodes();
     int i = 0;
     for (i = 0; i < max_cfg_nodes; i++) {
-        int n_thr = numa_thr_cfg[i].thr_e - numa_thr_cfg[i].thr_s;
         int l = 0;
         for (l = 0; l < num_layers; l++) {
             if (my_fc_bwd[l].bwd_bf > 1) {
@@ -1362,11 +1358,10 @@ int allocate_numa_buffers_fwd(my_numa_thr_cfg **numa_thr_cfg_, int num_layers, m
      my_numa_thr_cfg *numa_thr_cfg = *numa_thr_cfg_;
 
     int max_cfg_nodes = numa_num_configured_nodes();
-    int i = 0, j = 0, l = 0;
+    int i = 0, l = 0;
     for (i = 0; i < max_cfg_nodes; i++) {
         for (l = 0; l < num_layers; l++) {
             const libxsmm_blasint nBlocksIFm = my_fc_fwd[l].C / my_fc_fwd[l].bc;
-            const libxsmm_blasint nBlocksOFm = my_fc_fwd[l].K / my_fc_fwd[l].bk;
             const libxsmm_blasint OFM_shift = nBlocksIFm *  my_fc_fwd[l].bc * my_fc_fwd[l].bk;
 
             int l_nBlocksOFm = (numa_thr_cfg[i].blocksOFm_e[l] - numa_thr_cfg[i].blocksOFm_s[l]) + 1;
@@ -1388,7 +1383,7 @@ int allocate_numa_buffers_bwd_d(my_numa_thr_cfg **numa_thr_cfg_, int num_layers,
      my_numa_thr_cfg *numa_thr_cfg = *numa_thr_cfg_;
 
     int max_cfg_nodes = numa_num_configured_nodes();
-    int i = 0, j = 0, l = 0;
+    int i = 0, l = 0;
     for (i = 0; i < max_cfg_nodes; i++) {
         int l_nBlocksIFm = 0;
         for (l = 0; l < num_layers; l++) {
@@ -1456,7 +1451,6 @@ int copy_to_numa_buffers_fwd(my_numa_thr_cfg *numa_thr_cfg, my_fc_fwd_config my_
     const libxsmm_blasint ltid = my_tid - numa_thr_cfg->thr_s;
 
     const libxsmm_blasint nBlocksIFm = my_fc_fwd.C / my_fc_fwd.bc;
-    const libxsmm_blasint nBlocksMB  = my_fc_fwd.N / my_fc_fwd.bn;
 
     const libxsmm_blasint IFM_shift = my_fc_fwd.bc * my_fc_fwd.bk;
     const libxsmm_blasint OFM_shift = nBlocksIFm *  my_fc_fwd.bc * my_fc_fwd.bk;
@@ -1480,7 +1474,7 @@ int copy_to_numa_buffers_fwd(my_numa_thr_cfg *numa_thr_cfg, my_fc_fwd_config my_
        inp = fil_libxsmm + numa_thr_cfg->blocksOFm_s[l] * OFM_shift;
     }
 
-    int j = 0, i = 0;
+    int j = 0;
     for (j = thr_begin; j < thr_end; j++) {
         int ofm = j / nBlocksIFm;
         int ifm = j % nBlocksIFm;
@@ -1537,7 +1531,6 @@ int main(int argc, char* argv[])
   double fil_size = 0.0;
   double act_size = 0.0;
   float lr = 0.2f;
-  float loss = 0;
   float loss_weight = 0.1f;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff;
@@ -1685,7 +1678,7 @@ int main(int argc, char* argv[])
   } else if ( fuse_type == 4 ) {
     my_fuse = MY_ELTWISE_FUSE_BIAS_RELU;
   } else {
-    /* cannot happen */
+    my_fuse = MY_ELTWISE_FUSE_NONE;
   }
 
   /* allocating handles */
@@ -1988,7 +1981,7 @@ int main(int argc, char* argv[])
         if (max_bwd_time < bwd_time[i]) max_bwd_time = bwd_time[i];
         if (max_solver_time < solver_time[i]) max_solver_time = solver_time[i];
     }
-    printf("Profiling: fwd_time = %zd, bwd_time = %zd, solver_time = %zd\n",
+    printf("Profiling: fwd_time = %lld, bwd_time = %lld, solver_time = %lld\n",
         max_fwd_time, max_bwd_time, max_solver_time);
   }
 

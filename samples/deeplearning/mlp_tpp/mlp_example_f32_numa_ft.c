@@ -1149,7 +1149,6 @@ void init_on_numa_node_bwd_d ( my_fc_bwd_config cfg, float* filter_tr, int start
 
   libxsmm_blasint BF = cfg.bwd_bf;
   libxsmm_blasint KB_BLOCKS = nBlocksOFm/BF;
-  unsigned long long blocks = KB_BLOCKS;
 
   libxsmm_blasint row_teams = cfg.bwd_row_teams;
   libxsmm_blasint my_row_id = ltid % row_teams;
@@ -1238,7 +1237,7 @@ void init_on_numa_node_bwd_w ( my_fc_bwd_config cfg, float *doutput, int start_t
   libxsmm_blasint BF = cfg.upd_bf;
 
   /* loop variables */
-  libxsmm_blasint ifm1ofm1 = 0, ifm1 = 0, ifm2 = 0, bfn = 0, ii = 0, jj = 0;
+  libxsmm_blasint ifm1ofm1 = 0, bfn = 0;
 
   /* Batch reduce related variables */
   unsigned long long  blocks = nBlocksMB/BF;
@@ -1337,7 +1336,6 @@ int main(int argc, char* argv[])
   double fil_size = 0.0;
   double act_size = 0.0;
   float lr = 0.2f;
-  float loss = 0;
   float loss_weight = 0.1f;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff;
@@ -1457,7 +1455,7 @@ int main(int argc, char* argv[])
   } else if ( fuse_type == 4 ) {
     my_fuse = MY_ELTWISE_FUSE_BIAS_RELU;
   } else {
-    /* cannot happen */
+    my_fuse = MY_ELTWISE_FUSE_NONE;
   }
 
   /* allocating handles */
