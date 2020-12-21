@@ -907,8 +907,8 @@ void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
   }
 
   libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
-      i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask,
-      i_mask_reg_0, i_mask_reg_1, 0, 0,
+      i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask, i_gp_reg_mask,
+      i_mask_reg_0, i_mask_reg_1, 0, 0, 0, 0, 0,
       i_micro_kernel_config, i_mateltwise_desc );
 
   /* Restore reserved ZMMs if any  */

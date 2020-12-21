@@ -835,6 +835,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     case LIBXSMM_X86_INSTR_VPMOVSWB:
     case LIBXSMM_X86_INSTR_VPMOVWB:
     case LIBXSMM_X86_INSTR_VMOVDDUP:
+    case LIBXSMM_X86_INSTR_VBROADCASTI32X4:
     case LIBXSMM_X86_INSTR_VBROADCASTI64X2:
     case LIBXSMM_X86_INSTR_VBROADCASTI64X4:
     case LIBXSMM_X86_INSTR_MOVAPD:
@@ -1201,6 +1202,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VEXTRACTI64X2:
     case LIBXSMM_X86_INSTR_VEXTRACTI32X8:
     case LIBXSMM_X86_INSTR_VEXTRACTI64X4:
+    case LIBXSMM_X86_INSTR_VINSERTI32X4:
     case LIBXSMM_X86_INSTR_VBLENDMPS:
     case LIBXSMM_X86_INSTR_VBLENDMPD:
     case LIBXSMM_X86_INSTR_VPBLENDMB:
@@ -1621,6 +1623,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VEXTRACTI64X2:
     case LIBXSMM_X86_INSTR_VEXTRACTI32X8:
     case LIBXSMM_X86_INSTR_VEXTRACTI64X4:
+    case LIBXSMM_X86_INSTR_VINSERTI32X4:
     case LIBXSMM_X86_INSTR_VBLENDMPS:
     case LIBXSMM_X86_INSTR_VBLENDMPD:
     case LIBXSMM_X86_INSTR_VPBLENDMB:
