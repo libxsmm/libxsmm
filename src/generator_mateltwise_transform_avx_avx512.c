@@ -679,7 +679,9 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
 
     /* load 4 registers with four quarter rows */
     {
-        const unsigned int l_mask_regs[4] = {0, i_mask_reg_0, i_mask_reg_1, i_mask_reg_2};
+        unsigned int l_mask_regs[4] = { 0 };
+        l_mask_regs[0] = 0;            l_mask_regs[4] = i_mask_reg_0;
+        l_mask_regs[2] = i_mask_reg_1; l_mask_regs[3] = i_mask_reg_2;
         libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                     i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                                                                     LIBXSMM_X86_INSTR_VBROADCASTI64X2, 4, l_mask_regs, 16 );
@@ -936,10 +938,11 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_8rem_mask );
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, i_mask_reg_3 );
     } else {
-      const unsigned int l_mask_regs[4] = {i_mask_reg_3, i_mask_reg_4, i_mask_reg_5, i_mask_reg_6};
+      unsigned int l_mask_regs[4] = { 0 };
       const unsigned int l_m_8rem_mask = (1 << (l_m_8rem >> 1)) - 1;
       unsigned int l_i = 0;
-
+      l_mask_regs[0] = i_mask_reg_3; l_mask_regs[1] = i_mask_reg_4;
+      l_mask_regs[2] = i_mask_reg_5; l_mask_regs[3] = i_mask_reg_6;
       for (l_i = 0; l_i < 4; ++l_i) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_8rem_mask << (l_i * 4) );
         libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
@@ -974,7 +977,9 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 
       /* load 8 registers with four quarter rows */
       {
-        const unsigned int l_mask_regs[4] = {0, i_mask_reg_0, i_mask_reg_1, i_mask_reg_2};
+        unsigned int l_mask_regs[4] = { 0 };
+        l_mask_regs[0] = 0;            l_mask_regs[1] = i_mask_reg_0;
+        l_mask_regs[2] = i_mask_reg_1; l_mask_regs[3] = i_mask_reg_2;
         libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                     i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                                                                     LIBXSMM_X86_INSTR_VBROADCASTI32X4, 8, l_mask_regs, 32 );
@@ -1011,7 +1016,9 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 
       /* load 8 registers with four quarter rows */
       {
-        const unsigned int l_mask_regs[4] = {0, i_mask_reg_0, i_mask_reg_1, i_mask_reg_2};
+        unsigned int l_mask_regs[4] = { 0 };
+        l_mask_regs[0] = 0;            l_mask_regs[1] = i_mask_reg_0;
+        l_mask_regs[2] = i_mask_reg_1; l_mask_regs[3] = i_mask_reg_2;
         libxsmm_generator_transform_Xway_quarter_load_blend_avx512(io_generated_code,
                                                                    i_micro_kernel_config->vector_name,
                                                                    i_gp_reg_in, 0, i_mateltwise_desc->ldi *
@@ -1060,7 +1067,9 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 
       /* load 8 registers with four quarter rows */
       if ( l_m_8rem % 2 == 0 ) {
-        const unsigned int l_mask_regs[4] = {i_mask_reg_3, i_mask_reg_4, i_mask_reg_5, i_mask_reg_6};
+        unsigned int l_mask_regs[4] = { 0 };
+        l_mask_regs[0] = i_mask_reg_3; l_mask_regs[1] = i_mask_reg_4;
+        l_mask_regs[2] = i_mask_reg_5; l_mask_regs[3] = i_mask_reg_6;
         libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                     i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                                                                     LIBXSMM_X86_INSTR_VBROADCASTI32X4, 8, l_mask_regs, 32 );
@@ -1095,13 +1104,15 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
     if ( l_n_32rem > 0 ) {
       /* load 8 registers with four quarter rows */
       if ( l_m_8rem % 2 == 0 ) {
-          const unsigned int l_mask_regs[4] = {i_mask_reg_3, i_mask_reg_4, i_mask_reg_5, i_mask_reg_6};
-          libxsmm_generator_transform_Xway_quarter_load_blend_avx512(io_generated_code,
-                                                                     i_micro_kernel_config->vector_name,
-                                                                     i_gp_reg_in, 0, i_mateltwise_desc->ldi *
-                                                                     i_micro_kernel_config->datatype_size_in,
-                                                                     LIBXSMM_X86_INSTR_VBROADCASTI32X4, 8,
-                                                                     l_mask_regs, l_n_32rem);
+        unsigned int l_mask_regs[4] = { 0 };
+        l_mask_regs[0] = i_mask_reg_3; l_mask_regs[1] = i_mask_reg_4;
+        l_mask_regs[2] = i_mask_reg_5; l_mask_regs[3] = i_mask_reg_6;
+        libxsmm_generator_transform_Xway_quarter_load_blend_avx512(io_generated_code,
+                                                                   i_micro_kernel_config->vector_name,
+                                                                   i_gp_reg_in, 0, i_mateltwise_desc->ldi *
+                                                                   i_micro_kernel_config->datatype_size_in,
+                                                                   LIBXSMM_X86_INSTR_VBROADCASTI32X4, 8,
+                                                                   l_mask_regs, l_n_32rem);
       } else {
           libxsmm_generator_transform_Xway_quarter_load_insert_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                        i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
@@ -1340,7 +1351,9 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
 
     /* load 2 registers with four quarter rows */
     {
-        const unsigned int l_mask_regs[4] = {0, i_mask_reg_0, i_mask_reg_1, i_mask_reg_2};
+        unsigned int l_mask_regs[4] = { 0 };
+        l_mask_regs[0] = 0;            l_mask_regs[1] = i_mask_reg_0;
+        l_mask_regs[2] = i_mask_reg_1; l_mask_regs[3] = i_mask_reg_2;
         libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                     i_gp_reg_in, 0, l_ldi * i_micro_kernel_config->datatype_size_in,
                                                                     LIBXSMM_X86_INSTR_VBROADCASTI64X2, 2, l_mask_regs, 8 );
