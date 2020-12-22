@@ -70,11 +70,11 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
     struct collocate {
       int i, j, k, lmax;
     } key = { static_cast<int>(Vtmp.size(0)), static_cast<int>(Vtmp.size(1)), static_cast<int>(Vtmp.size(2)), static_cast<int>(co.size(0)) };
-    libxsmm_mmfunction<T>* kernelset = static_cast<libxsmm_mmfunction<T>*>(libxsmm_xdispatch(&key, sizeof(key)));
+    libxsmm_mmfunction<T>* kernelset = static_cast<libxsmm_mmfunction<T>*>(libxsmm_xdispatch(&key, sizeof(key), NULL));
     if (NULL == kernelset) {
 # if defined(TRIANGULAR)
       kernelset = static_cast<libxsmm_mmfunction<T>*>(libxsmm_xregister(&key, sizeof(key),
-        sizeof(libxsmm_mmfunction<T>) * (static_cast<size_t>(2) * key.lmax - 1), NULL));
+        sizeof(libxsmm_mmfunction<T>) * (static_cast<size_t>(2) * key.lmax - 1), NULL, NULL));
       for (int a1 = 0; a1 < (key.lmax - 1); a1++) {
         kernelset[2*a1+0] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_NONE,
           length_[1], static_cast<libxsmm_blasint>(co.size(1)) - a1, static_cast<libxsmm_blasint>(co.size(2)) - a1,
@@ -90,7 +90,7 @@ template<typename T> void collocate_core(void* scratch, const int length_[3],
         static_cast<libxsmm_blasint>(xyz_alpha_beta.size(1)) * static_cast<libxsmm_blasint>(xyz_alpha_beta.ld()),
         ld, 1/*alpha*/, 0/*beta*/, LIBXSMM_PREFETCH_NONE);
 # else
-      kernelset = static_cast<libxsmm_mmfunction<T>*>(libxsmm_xregister(&key, sizeof(key), 3 * sizeof(libxsmm_mmfunction<T>), NULL));
+      kernelset = static_cast<libxsmm_mmfunction<T>*>(libxsmm_xregister(&key, sizeof(key), 3 * sizeof(libxsmm_mmfunction<T>), NULL, NULL));
       kernelset[0] = libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAG_NONE,
         length_[1], static_cast<libxsmm_blasint>(co.size(2)), static_cast<libxsmm_blasint>(co.size(2)),
         static_cast<libxsmm_blasint>(p_alpha_beta_reduced_.ld()), static_cast<libxsmm_blasint>(co.ld()), static_cast<libxsmm_blasint>(C.ld()),

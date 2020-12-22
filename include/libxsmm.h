@@ -123,9 +123,12 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
  * Registered data is released at program termination but can be also released
  * if needed (libxsmm_xrelease), .e.g., for larger value for the same key.
  */
-LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init);
+LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
+  size_t value_size, const void* value_init, unsigned int* key_hash);
 /** Query user-defined value from LIBXSMM's code registry. */
-LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
+LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size,
+  /** Optionally returns the hashed key. */
+  unsigned int* key_hash);
 /** Remove key-value pair from code registry and release memory. */
 LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size);
 

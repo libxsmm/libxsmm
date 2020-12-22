@@ -45,13 +45,17 @@ int main(int argc, char* argv[])
   libxsmm_meltw_scal_flags jit_flags = 0;
   libxsmm_meltwfunction_scale kernel;
   libxsmm_meltw_scale_param params;
-  libxsmm_matdiff_info norms_out;
+  libxsmm_matdiff_info norms_out, diff;
   unsigned long long l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
+
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
 
   libxsmm_init();
 
   libxsmm_matdiff_clear(&norms_out);
+  libxsmm_matdiff_clear(&diff);
 
   if ( argc > 1 ) m             = atoi(argv[1]);
   if ( argc > 2 ) n             = atoi(argv[2]);
@@ -109,6 +113,7 @@ int main(int argc, char* argv[])
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_out);
 
     l_start = libxsmm_timer_tick();
     /* Calculate reference results...  */
@@ -228,6 +233,7 @@ int main(int argc, char* argv[])
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_out);
 
     l_start = libxsmm_timer_tick();
     /* Calculate reference results...  */
@@ -283,6 +289,15 @@ int main(int argc, char* argv[])
     free(scale_vals);
     free(bias_vals);
     free(shift_vals);
+  }
+
+  {
+    const char *const env_check_scale = getenv("CHECK_SCALE");
+    const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
+    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
+      fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+      exit(EXIT_FAILURE);
+    }
   }
 
   return EXIT_SUCCESS;

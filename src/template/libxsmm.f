@@ -128,7 +128,7 @@
      &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
      &    LIBXSMM_X86_GENERIC     = 1002,                               &
      &    LIBXSMM_X86_SSE3        = 1003,                               &
-     &    LIBXSMM_X86_SSE4        = 1004,                               &
+     &    LIBXSMM_X86_SSE42       = 1004,                               &
      &    LIBXSMM_X86_AVX         = 1005,                               &
      &    LIBXSMM_X86_AVX2        = 1006,                               &
      &    LIBXSMM_X86_AVX512      = 1007,                               &
@@ -1339,43 +1339,49 @@
         !> Registered data is released at program termination but can be also released
         !> if needed (libxsmm_xrelease), .e.g., for larger value for the same key.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
-        FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
-          TYPE(C_PTR), INTENT(IN), VALUE :: key
-          TYPE(C_PTR), INTENT(IN), OPTIONAL :: valinit
-          INTEGER(C_INT), INTENT(IN) :: keysize, valsize
+        FUNCTION libxsmm_xregister(key, keysize, valsize,               &
+     &  valinit, keyhash)
+          TYPE(C_PTR),    INTENT(IN), VALUE     :: key
+          INTEGER(C_INT), INTENT(IN)            :: keysize, valsize
+          TYPE(C_PTR),    INTENT(IN),  OPTIONAL :: valinit
+          INTEGER(C_INT), INTENT(OUT), OPTIONAL :: keyhash
           TYPE(C_PTR) :: libxsmm_xregister
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xregister
           INTERFACE
             SUBROUTINE internal_xregister(regval,                       &
-     &      key, keysize, valsize, valinit)                             &
+     &      key, keysize, valsize, valinit, keyhash)                    &
      &      BIND(C, NAME="libxsmm_xregister_")
               IMPORT :: C_PTR, C_INT
               TYPE(C_PTR), INTENT(OUT) :: regval
               TYPE(C_PTR), INTENT(IN), VALUE :: key, valinit
-              INTEGER(C_INT), INTENT(IN) :: keysize, valsize
+              INTEGER(C_INT), INTENT(IN)  :: keysize, valsize
+              INTEGER(C_INT), INTENT(OUT) :: keyhash
             END SUBROUTINE
           END INTERFACE
           CALL internal_xregister(libxsmm_xregister,                    &
-     &      key, keysize, valsize, valinit)
+     &      key, keysize, valsize, valinit, keyhash)
         END FUNCTION
 
         !> Query user-defined value from LIBXSMM's code registry.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xdispatch
-        FUNCTION libxsmm_xdispatch(key, keysize)
+        FUNCTION libxsmm_xdispatch(key, keysize, keyhash)
           TYPE(C_PTR), INTENT(IN), VALUE :: key
           INTEGER(C_INT), INTENT(IN) :: keysize
+          INTEGER(C_INT), INTENT(OUT), OPTIONAL :: keyhash
           TYPE(C_PTR) :: libxsmm_xdispatch
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xdispatch
           INTERFACE
-            SUBROUTINE internal_xdispatch(regval, key, keysize)         &
+            SUBROUTINE internal_xdispatch(regval, key, keysize, keyhash)&
      &      BIND(C, NAME="libxsmm_xdispatch_")
               IMPORT :: C_PTR, C_INT
               TYPE(C_PTR), INTENT(OUT) :: regval
               TYPE(C_PTR), INTENT(IN), VALUE :: key
-              INTEGER(C_INT), INTENT(IN) :: keysize
+              INTEGER(C_INT), INTENT(IN)  :: keysize
+              INTEGER(C_INT), INTENT(OUT) :: keyhash
             END SUBROUTINE
           END INTERFACE
-          CALL internal_xdispatch(libxsmm_xdispatch, key, keysize)
+          CALL internal_xdispatch(libxsmm_xdispatch,                    &
+     &      key, keysize, keyhash)
         END FUNCTION
 
         !> Auto-dispatched general dense MM (double-precision).

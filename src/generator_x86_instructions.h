@@ -370,54 +370,6 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
 
 
 /**
- * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss convert instructions with 2 vector registers, memory operands are not supported as first operand
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_instruction_set requested instruction set to encode
- * @param i_vec_instr actual operation variant
- * @param i_vector_name the vector register name prefix (x,y or z)
- * @param i_vec_reg_src_0 the first source vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_src_1 the second source vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_dst the destination vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_shuffle_operand is an immediate (only looked at when needed)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_src_0,
-                                              const unsigned int      i_vec_reg_src_1,
-                                              const unsigned int      i_vec_reg_dst,
-                                              const unsigned int      i_shuffle_operand );
-
-/**
- * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 3 vector registers and masking
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_instruction_set requested instruction set to encode
- * @param i_vec_instr actual operation variant
- * @param i_vector_name the vector register name prefix (z)
- * @param i_vec_reg_number_0 the first vector register number (zmm: 0-31)
- * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
- * @param i_vec_reg_number_3 the second vector register number (zmm: 0-31)
- * @param i_immediate immediate just as the compare value for a compare instruction
- * @param i_mask_reg_number the mask register to read/write
- * @param i_use_zero_masking 0: merge masking, !=0 zero masking
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1,
-                                              const unsigned int      i_vec_reg_number_2,
-                                              const unsigned int      i_immediate,
-                                              const unsigned int      i_mask_reg_number,
-                                              const unsigned int      i_use_zero_masking );
-
-/**
  * @param i_instruction_set requested instruction set to encode
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (z)
@@ -440,70 +392,21 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_1 );
 
 /**
- *  Just like libxsmm_x86_instruction_vec_compute_mem except also has an immediate/shuffle parameter
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_mem_mask( libxsmm_generated_code* io_generated_code,
-                                                   const unsigned int      i_instruction_set,
-                                                   const unsigned int      i_vec_instr,
-                                                   const unsigned int      i_use_broadcast,
-                                                   const unsigned int      i_gp_reg_base,
-                                                   const unsigned int      i_gp_reg_idx,
-                                                   const unsigned int      i_scale,
-                                                   const int               i_displacement,
-                                                   const char              i_vector_name,
-                                                   const unsigned int      i_vec_reg_number_0,
-                                                   const unsigned int      i_vec_reg_number_1,
-                                                   const unsigned int      i_immediate,
-                                                   const unsigned int      i_mask_reg_number,
-                                                   const unsigned int      i_use_zero_masking );
-
- /**
-  * Generates quadmadd instructions added in Knights Mill
-  *
-  * @param io_generated_code pointer to the pointer of the generated code structure
-  * @param i_instruction_set requested instruction set to encode
-  * @param i_vec_instr actual operation variant
-  * @param i_gp_reg_base base address register for memory broadcast
-  * @param i_gp_reg_idx index register for memory broadcast, can be LIBXSMM_X86_GP_REG_UNDEF -> then regular displacement version is generated
-  * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF
-  * @param i_displacement displacement to SIB address
-  * @param i_vector_name the vector register name prefix (z)
-  * @param i_vec_reg_number_src the second vector register number (zmm: 0-31), this define a implicit register range
-  * @param i_vec_reg_number_dest the first vector register number (zmm: 0-31)
-  */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_instruction_set,
-                                               const unsigned int      i_vec_instr,
-                                               const unsigned int      i_gp_reg_base,
-                                               const unsigned int      i_gp_reg_idx,
-                                               const unsigned int      i_scale,
-                                               const int               i_displacement,
-                                               const char              i_vector_name,
-                                               const unsigned int      i_vec_reg_number_src,
-                                               const unsigned int      i_vec_reg_number_dest );
-
-/**
- * Generates shuffle instructions with 2 or 3 vector registers, memory operands are not supported as first operand
+ * Generates SSE shuffle instructions with 2 vector registers, memory operands are not supported as first operand
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_instruction_set requested instruction set to encode
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_number_1 the second vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_2 the third vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
  */
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1,
-                                              const unsigned int      i_vec_reg_number_2,
-                                              const unsigned int      i_shuffle_operand );
+void libxsmm_x86_instruction_vec_shuffle_sse_reg( libxsmm_generated_code* io_generated_code,
+                                                  const unsigned int      i_vec_instr,
+                                                  const char              i_vector_name,
+                                                  const unsigned int      i_vec_reg_number_0,
+                                                  const unsigned int      i_vec_reg_number_1,
+                                                  const unsigned int      i_shuffle_operand );
 
 /**
  * Generates shuffle instructions with 2 or 3 vector registers, memory operands are not supported as first operand
@@ -680,7 +583,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
                                                const unsigned int      i_mask_reg_number_src_0,
                                                const unsigned int      i_mask_reg_number_src_1,
                                                const unsigned int      i_mask_reg_number_dest,
-                                               const unsigned char     i_imm8 );
+                                               const unsigned short    i_imm8 );
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack
@@ -789,14 +692,12 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_mateltwise( libxsmm_generated_code*                   io_generated_code,
-                                                  const unsigned int                        i_gp_struct_params,
-                                                  const char*                               i_arch,
-                                                  int                                       skip_push);
+                                                     const unsigned int                        i_gp_struct_params,
+                                                     int                                       skip_push);
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*       io_generated_code,
-                                                   const char*                      i_arch,
-                                                   int                              skip_pop);
+                                                      int                           skip_pop);
 
 /**
  * @TODO: clean-up

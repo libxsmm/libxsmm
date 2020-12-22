@@ -345,6 +345,9 @@
     <ClInclude Include="..\src\generator_mateltwise_dropout_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_common_x86.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -996,6 +999,9 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_mateltwise_dropout_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_common_x86.c">
       <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>

@@ -662,6 +662,10 @@ ifneq (0,$(FORCE_CXX))
 endif
 endif
 
+ifneq (0,$(WERROR))
+  WERROR_CFLAG := $(call ctest,$(CC),-Werror)
+endif
+
 ifeq (Windows_NT,$(UNAME))
 ifeq (MINGW64,$(MSYSTEM))
   MINGW := 64
@@ -774,6 +778,8 @@ else ifeq (1,$(SSE)) # discover SSE
     SSE := 4
   else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
     SSE := 3
+  else ifneq (0,$(words $(filter sse2 ,$(CPUFLAGS))))
+    SSE := 2
   else ifneq (,$(CPUFLAGS))
     SSE := 0
   endif
@@ -1403,7 +1409,8 @@ else # GCC assumed
     else ifneq (0,$(CLANG))
       CPEDANTIC += -Wno-overlength-strings
     endif
-    ifneq (0,$(shell echo "$$((40500<=$(CC_VERSION_NUM)))"))
+    ifneq (0,$(shell echo "$$((40600<=$(CC_VERSION_NUM)))"))
+      # can yield false positives with older GCC
       CPEDANTIC += -Wshadow
     endif
     ifneq (,$(strip $(FC)))
@@ -1683,11 +1690,11 @@ ifeq (undefined,$(origin TARGET))
               else # maintainer build
                 ifeq (0,$(DEPSTATIC))
                   TARGET := -msse4.2
-                  CTARGET := -msse3
+                  CTARGET := -msse2
                 else ifneq (0,$(SHARED))
                   ifneq (,$(SHARED))
                     TARGET := -msse4.2
-                    CTARGET := -msse3
+                    CTARGET := -msse2
                   else
                     CTARGET := -msse4.2
                   endif
@@ -1696,7 +1703,7 @@ ifeq (undefined,$(origin TARGET))
                 endif
               endif
             else
-              CTARGET := -msse3
+              CTARGET := -msse2
             endif
           endif
           CTARGET ?= -msse4.2
@@ -1707,7 +1714,7 @@ ifeq (undefined,$(origin TARGET))
       ifeq (,$(CTARGET)) # SSE3
       ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
         ifneq (Darwin,$(UNAME))
-          CTARGET ?= -msse3
+          CTARGET ?= -msse2
         else # prevents Clang BE error (CRC32 and others)
           CTARGET ?= -msse4.2
         endif
