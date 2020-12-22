@@ -1908,7 +1908,7 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( libxsmm_
       /* close m footer */
       if ( l_m_full > 1 ) {
         libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
-                                                    i_gp_reg_m_loop, i_mateltwise_desc->m );
+                                                    i_gp_reg_m_loop, l_m_full*32 );
       }
     }
     /* m remainder masked */
