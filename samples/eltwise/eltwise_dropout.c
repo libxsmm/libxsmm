@@ -198,6 +198,82 @@ void dropout_bwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out,
     _mm512_mask_storeu_ps(out+i, mask, vout);
   }
 }
+#else
+void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
+  LIBXSMM_UNUSED( M );
+  LIBXSMM_UNUSED( in );
+  LIBXSMM_UNUSED( out );
+  LIBXSMM_UNUSED( dropout_mask );
+  LIBXSMM_UNUSED( rng_state );
+  LIBXSMM_UNUSED( p );
+  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+}
+
+void dropout_fwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, void* rng_state, float p) {
+  LIBXSMM_UNUSED( M );
+  LIBXSMM_UNUSED( in );
+  LIBXSMM_UNUSED( out );
+  LIBXSMM_UNUSED( dropout_mask );
+  LIBXSMM_UNUSED( rng_state );
+  LIBXSMM_UNUSED( p );
+  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+}
+
+void dropout_fwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, void* rng_state, float p) {
+  LIBXSMM_UNUSED( M );
+  LIBXSMM_UNUSED( in );
+  LIBXSMM_UNUSED( out );
+  LIBXSMM_UNUSED( dropout_mask );
+  LIBXSMM_UNUSED( rng_state );
+  LIBXSMM_UNUSED( p );
+  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+}
+
+void dropout_fwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
+  LIBXSMM_UNUSED( M );
+  LIBXSMM_UNUSED( in );
+  LIBXSMM_UNUSED( out );
+  LIBXSMM_UNUSED( dropout_mask );
+  LIBXSMM_UNUSED( rng_state );
+  LIBXSMM_UNUSED( p );
+  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+}
+
+void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
+  LIBXSMM_UNUSED( M );
+  LIBXSMM_UNUSED( in );
+  LIBXSMM_UNUSED( out );
+  LIBXSMM_UNUSED( dropout_mask );
+  LIBXSMM_UNUSED( p );
+  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+}
+
+void dropout_bwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, float p) {
+  LIBXSMM_UNUSED( M );
+  LIBXSMM_UNUSED( in );
+  LIBXSMM_UNUSED( out );
+  LIBXSMM_UNUSED( dropout_mask );
+  LIBXSMM_UNUSED( p );
+  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+}
+
+void dropout_bwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, float p) {
+  LIBXSMM_UNUSED( M );
+  LIBXSMM_UNUSED( in );
+  LIBXSMM_UNUSED( out );
+  LIBXSMM_UNUSED( dropout_mask );
+  LIBXSMM_UNUSED( p );
+  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+}
+
+void dropout_bwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned short *dropout_mask, float p) {
+  LIBXSMM_UNUSED( M );
+  LIBXSMM_UNUSED( in );
+  LIBXSMM_UNUSED( out );
+  LIBXSMM_UNUSED( dropout_mask );
+  LIBXSMM_UNUSED( p );
+  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+}
 #endif
 
 void test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
