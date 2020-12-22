@@ -641,6 +641,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
 
+#if 0
   unsigned long long l_mask = 0;
 
   /* optimized shuffle network for SIMD aligned sizes */
@@ -832,12 +833,15 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
     libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
                                                 i_gp_reg_m_loop, i_mateltwise_desc->m );
 
-  } else {
+  } else
+#endif
+  {
+    LIBXSMM_UNUSED( i_mask_reg_0 );
+    LIBXSMM_UNUSED( i_mask_reg_1 );
 
     libxsmm_generator_transform_norm_to_normt_mbit_scalar_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out,
                                                                               i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask, i_mask_reg_2, i_mask_reg_3,
                                                                               i_micro_kernel_config, i_mateltwise_desc );
-
   }
 }
 
@@ -1863,7 +1867,7 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( libxsmm_
       /* close m footer */
       if ( l_m_full > 1 ) {
         libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
-                                                    i_gp_reg_m_loop, i_mateltwise_desc->m );
+                                                    i_gp_reg_m_loop, l_m_full*32 );
       }
     }
     /* m remainder masked */
@@ -1883,7 +1887,7 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( libxsmm_
     /* close n loop */
     if ( l_n_full > 1 ) {
       libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
-                                                  i_gp_reg_n_loop, i_mateltwise_desc->n );
+                                                  i_gp_reg_n_loop, l_n_full*16  );
     }
   }
 
