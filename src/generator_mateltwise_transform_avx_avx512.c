@@ -840,7 +840,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_08way_3stage_shuffle_avx512( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( libxsmm_generated_code* io_generated_code,
                                                               const char              i_vector_name,
                                                               const unsigned int      i_vec_reg_src_start,
                                                               const unsigned int      i_vec_reg_dst_start )
@@ -985,7 +985,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
                                        i_gp_reg_in, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * 32 );
 
       /* 3-stage shuffle */
-      libxsmm_generator_transform_08way_3stage_shuffle_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
+      libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
 
       /* storing 8 registers */
       libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
@@ -1021,7 +1021,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       }
 
       /* 3-stage shuffle */
-      libxsmm_generator_transform_08way_3stage_shuffle_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
+      libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
 
       /* storing 8 registers */
       libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
@@ -1075,7 +1075,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
                                        i_gp_reg_in, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * 32 );
 
       /* 3-stage shuffle */
-      libxsmm_generator_transform_08way_3stage_shuffle_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
+      libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
 
       /* storing l_m_8rem registers */
       libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
@@ -1109,7 +1109,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       }
 
       /* 3-stage shuffle */
-      libxsmm_generator_transform_08way_3stage_shuffle_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
+      libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
 
       /* restore store mask */
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
