@@ -743,6 +743,13 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
 
   /* codepath optimized for CLX */
   } else if ( (i_mateltwise_desc->m % 16 == 0) && (i_mateltwise_desc->n % 8 == 0) ) {
+    /* set the masks for the load+blend stage */
+    l_mask = 0xff00;
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
+                                     i_gp_reg_mask, l_mask );
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
+                                       i_gp_reg_mask, i_mask_reg_0 );
+
     /* set the masks for the permute stage */
     /* even quarters mask */
     l_mask = 0xcc;
@@ -776,7 +783,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
       const unsigned int l_mask_regs[2] = {0, i_mask_reg_0};
       libxsmm_generator_transform_Xway_half_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
-                                                               ld_idx, 8, LIBXSMM_X86_INSTR_VBROADCASTI64X4, 8, l_mask_regs, 16 );
+                                                               ld_idx, 8, LIBXSMM_X86_INSTR_VBROADCASTI32X8, 8, l_mask_regs, 16 );
     }
 
     /* advance input pointer */
