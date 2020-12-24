@@ -154,7 +154,7 @@ forward2 = 0
 backward1 = 0
 backward2 = 0
 
-N = 5                                      # Number of iterations
+N = 20                                      # Number of iterations
 for _ in range(N):                          # MKLDNN PyTorch layer Forward and Backward pass timing
     start = time.time()
     Y1 = net1.forward(X)
@@ -164,6 +164,8 @@ for _ in range(N):                          # MKLDNN PyTorch layer Forward and B
     Y1.sum().backward()
     backward1 += time.time() - start
 
+if enable_BF16 == True:
+    X = X.to(torch.bfloat16)
 
 for _ in range(N):                          # Optimized PyTorch layer Forward and Backward pass timing
     start = time.time()
