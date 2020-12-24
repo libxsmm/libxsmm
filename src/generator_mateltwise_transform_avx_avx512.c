@@ -757,10 +757,10 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
     /* set the masks for the load+blend stage for partial 8x8 blocks */
     if ( l_m_4rem > 0 ) {
       unsigned int l_mask_regs[4] = { 0 };
-      l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
-      l_mask_regs[2] = i_mask_reg_5;    l_mask_regs[3] = i_mask_reg_6;
       const unsigned int l_m_4rem_mask = (1 << l_m_4rem) - 1;
       unsigned int l_i = 0;
+      l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
+      l_mask_regs[2] = i_mask_reg_5;    l_mask_regs[3] = i_mask_reg_6;
 
       for (l_i = 0; l_i < 4; ++l_i) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_4rem_mask << (l_i * 4) );
@@ -965,9 +965,9 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
     /* set the masks for the load+blend stage for partial 16x8 blocks */
     if ( l_m_8rem > 0 ) {
       unsigned int l_mask_regs[2] = { 0 };
-      l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
       const unsigned int l_m_8rem_mask = (1 << l_m_8rem ) - 1;
       unsigned int l_i = 0;
+      l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
 
       for (l_i = 0; l_i < 2; ++l_i) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_8rem_mask << (l_i * 8) );
@@ -1005,6 +1005,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
           const unsigned int ld_idx[8] = { 0x0, 0x2, 0x4, 0x6, 0x8, 0xa, 0xc, 0xe };
           unsigned int l_mask_regs[2] = { 0 };
           l_mask_regs[0] = 0;    l_mask_regs[1] = i_mask_reg_0;
+
           libxsmm_generator_transform_Xway_half_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                                    i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                                                                    ld_idx, 8, LIBXSMM_X86_INSTR_VBROADCASTI32X8, 8, l_mask_regs, 16 );
@@ -1715,10 +1716,10 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
     /* set the masks for the load+blend stage for partial 8x8 blocks */
     if ( l_m_8rem > 0 ) {
       unsigned int l_mask_regs[4] = { 0 };
-      l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
-      l_mask_regs[2] = i_mask_reg_5;    l_mask_regs[3] = i_mask_reg_6;
       const unsigned int l_m_8rem_mask = (1 << (l_m_8rem >> 1)) - 1;
       unsigned int l_i = 0;
+      l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
+      l_mask_regs[2] = i_mask_reg_5;    l_mask_regs[3] = i_mask_reg_6;
 
       for (l_i = 0; l_i < 4; ++l_i) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_8rem_mask << (l_i * 4) );
@@ -1904,14 +1905,14 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
     /* set the masks for the load+blend stage for partial 8x16 blocks */
     if ( l_m_16rem > 0 ) {
       unsigned int l_mask_regs[2] = { 0 };
-      l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
       const unsigned int l_m_16rem_mask = (1 << (l_m_16rem >> 1)) - 1;
       unsigned int l_i = 0;
+      l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
 
-       for (l_i = 0; l_i < 2; ++l_i) {
-           libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_16rem_mask << (l_i * 8) );
-           libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
-       }
+      for (l_i = 0; l_i < 2; ++l_i) {
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_16rem_mask << (l_i * 8) );
+        libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
+      }
     }
 
     if ( l_n_8rem > 0 ) {
