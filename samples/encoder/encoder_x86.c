@@ -541,6 +541,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_load_store( "evex_mov_VMOVDDUP", &mycode, LIBXSMM_X86_INSTR_VMOVDDUP, 1 );
   test_evex_load_store( "evex_mov_VBROADCASTI32X4", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI32X4, 1 );
   test_evex_load_store( "evex_mov_VBROADCASTI64X2", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI64X2, 1 );
+  test_evex_load_store( "evex_mov_VBROADCASTI32X8", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI32X8, 1 );
   test_evex_load_store( "evex_mov_VBROADCASTI64X4", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI64X4, 1 );
 
   /* testing compute reg instructions */
