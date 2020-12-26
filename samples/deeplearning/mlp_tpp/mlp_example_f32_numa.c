@@ -159,7 +159,7 @@ typedef struct my_fc_fwd_config {
   libxsmm_blasint fwd_2d_blocking;
   libxsmm_blasint fwd_col_teams;
   libxsmm_blasint fwd_row_teams;
-  // TODO: add hyperpartitions support
+  /* TODO: add hyperpartitions support */
   libxsmm_blasint fwd_M_hyperpartitions;
   libxsmm_blasint fwd_N_hyperpartitions;
   size_t          scratch_size;
@@ -181,14 +181,14 @@ typedef struct my_fc_bwd_config {
   libxsmm_blasint bwd_2d_blocking;
   libxsmm_blasint bwd_col_teams;
   libxsmm_blasint bwd_row_teams;
-  // TODO: add hyperpartitions support
+  /* TODO: add hyperpartitions support */
   libxsmm_blasint bwd_M_hyperpartitions;
   libxsmm_blasint bwd_N_hyperpartitions;
   libxsmm_blasint upd_bf;
   libxsmm_blasint upd_2d_blocking;
   libxsmm_blasint upd_col_teams;
   libxsmm_blasint upd_row_teams;
-  // TODO: add hyperpartitions support
+  /* TODO: add hyperpartitions support */
   libxsmm_blasint upd_M_hyperpartitions;
   libxsmm_blasint upd_N_hyperpartitions;
   libxsmm_blasint ifm_subtasks;
@@ -223,7 +223,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.fuse_type = fuse_type;
 
   /* setup parallelization strategy */
-  res.fwd_M_hyperpartitions = 1; //TODO: enable hyperpartitions
+  res.fwd_M_hyperpartitions = 1; /* TODO: enable hyperpartitions */
   res.fwd_N_hyperpartitions = 1;
   if (threads == 16) {
     res.fwd_bf = 1;
@@ -295,7 +295,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.fuse_type = fuse_type;
 
   /* setup parallelization strategy */
-  res.bwd_M_hyperpartitions = 1; //TODO: enable hyperpartitions
+  res.bwd_M_hyperpartitions = 1; /* TODO: enable hyperpartitions */
   res.upd_M_hyperpartitions = 1;
   res.bwd_N_hyperpartitions = 1;
   res.upd_N_hyperpartitions = 1;
@@ -1131,7 +1131,7 @@ void my_smax_bwd_exec( my_smax_bwd_config cfg, float* delin_act_ptr, const float
 }
 
 void init_weights( my_fc_fwd_config cfg, float* wt_ptr, size_t size) {
-  if (cfg.fwd_M_hyperpartitions != 1) { //TODO: enable hyperpartitions
+  if (cfg.fwd_M_hyperpartitions != 1) { /* TODO: enable hyperpartitions */
     /* Spread out weights in a blocked fasion since we partition the MODEL dimenstion */
     init_buffer_block_numa(wt_ptr, size);
   } else {
@@ -1141,7 +1141,7 @@ void init_weights( my_fc_fwd_config cfg, float* wt_ptr, size_t size) {
 }
 
 void init_dweights( my_fc_bwd_config cfg, float* dwt_ptr, size_t size) {
-  if (cfg.upd_N_hyperpartitions != 1) { //TODO: enable hyperpartitions
+  if (cfg.upd_N_hyperpartitions != 1) { /* TODO: enable hyperpartitions */
     /* Spread out weights  */
     init_buffer_block_numa(dwt_ptr, size);
   } else {
@@ -1151,7 +1151,7 @@ void init_dweights( my_fc_bwd_config cfg, float* dwt_ptr, size_t size) {
 }
 
 void init_acts( my_fc_fwd_config cfg, float* act_ptr, size_t size) {
-  if (cfg.fwd_N_hyperpartitions != 1) { //TODO: enable hyperpartitions
+  if (cfg.fwd_N_hyperpartitions != 1) { /* TODO: enable hyperpartitions */
     /* Spread out weights  */
     init_buffer_block_numa(act_ptr, size);
   } else {
@@ -1161,7 +1161,7 @@ void init_acts( my_fc_fwd_config cfg, float* act_ptr, size_t size) {
 }
 
 void init_delacts( my_fc_bwd_config cfg, float* delact_ptr, size_t size) {
-  if (cfg.bwd_N_hyperpartitions != 1) { //TODO: enable hyperpartitions
+  if (cfg.bwd_N_hyperpartitions != 1) { /* TODO: enable hyperpartitions */
     /* Spread out weights  */
     init_buffer_block_numa(delact_ptr, size);
   } else {
