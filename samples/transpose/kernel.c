@@ -241,11 +241,11 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
-  #ifdef COMPARE_TO_A_FP64_ASSEMBLY_CODE
+# ifdef COMPARE_TO_A_FP64_ASSEMBLY_CODE
      cptr = (const unsigned char*)dkernel.p;
-  #else
+# else
      cptr = (const unsigned char*)skernel.p;
-  #endif
+# endif
   cptr2 = (unsigned char *) &myro_;
   i = 0;
   nbest = 0;
