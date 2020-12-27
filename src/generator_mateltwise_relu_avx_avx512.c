@@ -97,15 +97,13 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
       i_gp_reg_mapping->gp_reg_out,
       0 );
 
-  if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_RELU_BITMASK) > 0 ) {
-    libxsmm_x86_instruction_alu_mem( io_generated_code,
-        i_micro_kernel_config->alu_mov_instruction,
-        i_gp_reg_mapping->gp_reg_param_struct,
-        LIBXSMM_X86_GP_REG_UNDEF, 0,
-        8,
-        i_gp_reg_mapping->gp_reg_relumask,
-        0 );
-  }
+  libxsmm_x86_instruction_alu_mem( io_generated_code,
+      i_micro_kernel_config->alu_mov_instruction,
+      i_gp_reg_mapping->gp_reg_param_struct,
+      LIBXSMM_X86_GP_REG_UNDEF, 0,
+      8,
+      i_gp_reg_mapping->gp_reg_relumask,
+      0 );
 
   if (m_trips > max_nm_unrolling) {
     n_unroll_factor = 1;
@@ -256,7 +254,7 @@ void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*         
                 i_gp_reg_mapping->gp_reg_relumask,
                 LIBXSMM_X86_GP_REG_UNDEF,
                 0,
-                (im * 32 + in * i_mateltwise_desc->ldo)/8,
+                (im * 32 + in * i_mateltwise_desc->ldi)/8,
                 cur_mask_reg );
           } else {
             libxsmm_x86_instruction_vec_move( io_generated_code,
