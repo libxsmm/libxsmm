@@ -2110,7 +2110,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
 
   /* optimized shuffle network for SIMD aligned sizes */
-  #if 1
+#if 1
   if ( (i_mateltwise_desc->m % 2 == 0) && (i_mateltwise_desc->n % 2 == 0) ) {
     if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) {
       /* codepath optimized for SPR */
@@ -2126,7 +2126,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
                                                                                   i_mask_reg_5, i_micro_kernel_config, i_mateltwise_desc );
     }
   }
-  #else
+#else
   if ( (i_mateltwise_desc->m % 16 == 0) && (i_mateltwise_desc->n % 16 == 0) ) {
     unsigned int l_ldi = i_mateltwise_desc->ldi*2;
     unsigned int l_ldo = i_mateltwise_desc->ldo*2;
@@ -2308,10 +2308,16 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
     libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
                                                 i_gp_reg_n_loop, i_mateltwise_desc->n );
   }
-  #endif
+#endif
   else {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
+    if ( i_mateltwise_desc->m % 2 != 0 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+      return;
+    }
+    if ( i_mateltwise_desc->n % 2 != 0 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+      return;
+    }
   }
 }
 
