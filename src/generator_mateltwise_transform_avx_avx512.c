@@ -322,6 +322,7 @@ void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generat
   unsigned int l_i = 0;
   unsigned int l_q = 0;
   unsigned int l_stride_offset = i_ways * i_ld;
+  unsigned int tmp_dst = ( i_vec_reg_dst_start + i_ways ) % 32;
 
   /* supports only up to 32 registers */
   if ( i_ways > 32 - is_16bit_ld ) {
@@ -334,8 +335,6 @@ void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generat
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
-
-  unsigned int tmp_dst = ( i_vec_reg_dst_start + i_ways ) % 32;
 
   for ( l_i = 0 ; l_i < i_ways ; ++l_i ) {
     unsigned int l_dst = l_i + i_vec_reg_dst_start;
@@ -899,14 +898,12 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
                                                                                  const unsigned int                      i_gp_reg_m_loop,
                                                                                  const unsigned int                      i_gp_reg_n_loop,
                                                                                  const unsigned int                      i_gp_reg_mask,
-                                                                                 const unsigned int                      i_gp_reg_mask_2,
                                                                                  const unsigned int                      i_mask_reg_0,
                                                                                  const unsigned int                      i_mask_reg_1,
                                                                                  const unsigned int                      i_mask_reg_2,
                                                                                  const unsigned int                      i_mask_reg_3,
                                                                                  const unsigned int                      i_mask_reg_4,
                                                                                  const unsigned int                      i_mask_reg_5,
-                                                                                 const unsigned int                      i_mask_reg_6,
                                                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned long long l_mask = 0;
@@ -1141,13 +1138,13 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
     libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out,
                                                                             i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask, i_gp_reg_mask_2,
                                                                             i_mask_reg_0, i_mask_reg_1, i_mask_reg_2, i_mask_reg_3, i_mask_reg_4,
-                                                                            i_mask_reg_5, i_mask_reg_6,i_micro_kernel_config, i_mateltwise_desc );
+                                                                            i_mask_reg_5, i_mask_reg_6, i_micro_kernel_config, i_mateltwise_desc );
   } else {
     /* codepath optimized for CLX */
     libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out,
-                                                                                i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask, i_gp_reg_mask_2,
+                                                                                i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask,
                                                                                 i_mask_reg_0, i_mask_reg_1, i_mask_reg_2, i_mask_reg_3, i_mask_reg_4,
-                                                                                i_mask_reg_5, i_mask_reg_6,i_micro_kernel_config, i_mateltwise_desc );
+                                                                                i_mask_reg_5, i_micro_kernel_config, i_mateltwise_desc );
   }
 #else
     libxsmm_generator_transform_norm_to_normt_mbit_scalar_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out,
@@ -1869,14 +1866,12 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel(
                                                                                  const unsigned int                      i_gp_reg_m_loop,
                                                                                  const unsigned int                      i_gp_reg_n_loop,
                                                                                  const unsigned int                      i_gp_reg_mask,
-                                                                                 const unsigned int                      i_gp_reg_mask_2,
                                                                                  const unsigned int                      i_mask_reg_0,
                                                                                  const unsigned int                      i_mask_reg_1,
                                                                                  const unsigned int                      i_mask_reg_2,
                                                                                  const unsigned int                      i_mask_reg_3,
                                                                                  const unsigned int                      i_mask_reg_4,
                                                                                  const unsigned int                      i_mask_reg_5,
-                                                                                 const unsigned int                      i_mask_reg_6,
                                                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned int l_ldi = i_mateltwise_desc->ldi*2;
@@ -2122,13 +2117,13 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
       libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_spr_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out,
                                                                               i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask, i_gp_reg_mask_2,
                                                                               i_mask_reg_0, i_mask_reg_1, i_mask_reg_2, i_mask_reg_3, i_mask_reg_4,
-                                                                              i_mask_reg_5, i_mask_reg_6,i_micro_kernel_config, i_mateltwise_desc );
+                                                                              i_mask_reg_5, i_mask_reg_6, i_micro_kernel_config, i_mateltwise_desc );
     } else {
       /* codepath optimized for CLX */
       libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out,
-                                                                                  i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask, i_gp_reg_mask_2,
+                                                                                  i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask,
                                                                                   i_mask_reg_0, i_mask_reg_1, i_mask_reg_2, i_mask_reg_3, i_mask_reg_4,
-                                                                                  i_mask_reg_5, i_mask_reg_6,i_micro_kernel_config, i_mateltwise_desc );
+                                                                                  i_mask_reg_5, i_micro_kernel_config, i_mateltwise_desc );
     }
   }
   #else
