@@ -1676,7 +1676,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
   unsigned int l_ldo = i_mateltwise_desc->ldo*2;
 
   /* optimized shuffle network for SIMD aligned sizes */
-  #if 1
+#if 1
   /* codepath optimized for SPR */
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) && (i_mateltwise_desc->m % 2 == 0) && (i_mateltwise_desc->n % 2 == 0) ) {
     /* byte shuffle operand */
@@ -2094,7 +2094,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
     }
   }
 
-  #else
+#else
   if ( (i_mateltwise_desc->m % 16 == 0) && (i_mateltwise_desc->n % 16 == 0) ) {
     /* byte shuffle operand */
     unsigned int  l_shuffle_cntl[16] = { 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a, 0x05040100, 0x07060302, 0x0d0c0908, 0x0f0e0b0a,
@@ -2190,7 +2190,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
     libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
                                                 i_gp_reg_m_loop, i_mateltwise_desc->m );
   }
-  #endif
+#endif
   else if ( (i_mateltwise_desc->m % 2 == 0) && (i_mateltwise_desc->n % 2 == 0) ) {
     /* input mask, scalar */
     unsigned long long l_mask = 0x1;
