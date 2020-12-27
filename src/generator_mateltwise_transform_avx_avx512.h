@@ -94,7 +94,8 @@ void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generat
                                                                  const unsigned int      i_ld_instr,
                                                                  const unsigned int      i_ways,
                                                                  const unsigned int      i_mask_reg[4],
-                                                                 const unsigned int      i_m );
+                                                                 const unsigned int      i_n,
+                                                                 const unsigned int      is_16bit_ld );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_full_store_avx512( libxsmm_generated_code* io_generated_code,
