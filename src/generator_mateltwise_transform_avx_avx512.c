@@ -1877,10 +1877,10 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_microkernel( libxsmm
         /* restore store mask */
         libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
 
-        /* storing m_8rem registers */
+        /* storing m_8rem>>2 registers */
         libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                             i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                            i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, l_m_8rem );
+                                                            i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, l_m_8rem>>2 );
       }
     }
   }
