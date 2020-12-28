@@ -9,6 +9,7 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
+#include "generator_common_x86.h"
 #include "generator_mateltwise_relu_avx_avx512.h"
 #include "generator_mateltwise_avx_avx512.h"
 #include "generator_x86_instructions.h"
