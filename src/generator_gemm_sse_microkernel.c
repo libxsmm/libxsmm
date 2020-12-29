@@ -218,30 +218,50 @@ void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            
     /* load column vectors of A and multiply with all broadcasted row entries of B */
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-                                          i_micro_kernel_config->instruction_set,
-                                          i_micro_kernel_config->a_vmove_instruction,
-                                          i_gp_reg_mapping->gp_reg_a,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
-                                          i_micro_kernel_config->vector_name,
-                                          i_n_blocking, 0, 1, 0 );
+        if ( (l_m < (l_m_blocking-1)) || (l_n == 0) ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+                                            i_micro_kernel_config->instruction_set,
+                                            i_micro_kernel_config->a_vmove_instruction,
+                                            i_gp_reg_mapping->gp_reg_a,
+                                            LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                            (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
+                                            i_micro_kernel_config->vector_name,
+                                            i_n_blocking, 0, 1, 0 );
+        }
 
-        /* issue mul+add */
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                 i_micro_kernel_config->instruction_set,
-                                                 i_micro_kernel_config->vmul_instruction,
-                                                 i_micro_kernel_config->vector_name,
-                                                 l_n,
-                                                 i_n_blocking,
-                                                 LIBXSMM_X86_VEC_REG_UNDEF );
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                 i_micro_kernel_config->instruction_set,
-                                                 i_micro_kernel_config->vadd_instruction,
-                                                 i_micro_kernel_config->vector_name,
-                                                 i_n_blocking,
-                                                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-                                                 LIBXSMM_X86_VEC_REG_UNDEF );
+        if ( l_m < (l_m_blocking-1) ) {
+          /* issue mul+add */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                   i_micro_kernel_config->instruction_set,
+                                                   i_micro_kernel_config->vmul_instruction,
+                                                   i_micro_kernel_config->vector_name,
+                                                   l_n,
+                                                   i_n_blocking,
+                                                   LIBXSMM_X86_VEC_REG_UNDEF );
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                   i_micro_kernel_config->instruction_set,
+                                                   i_micro_kernel_config->vadd_instruction,
+                                                   i_micro_kernel_config->vector_name,
+                                                   i_n_blocking,
+                                                   l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
+                                                   LIBXSMM_X86_VEC_REG_UNDEF );
+        } else {
+          /* issue mul+add */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                   i_micro_kernel_config->instruction_set,
+                                                   i_micro_kernel_config->vmul_instruction,
+                                                   i_micro_kernel_config->vector_name,
+                                                   i_n_blocking,
+                                                   l_n,
+                                                   LIBXSMM_X86_VEC_REG_UNDEF );
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                   i_micro_kernel_config->instruction_set,
+                                                   i_micro_kernel_config->vadd_instruction,
+                                                   i_micro_kernel_config->vector_name,
+                                                   l_n,
+                                                   l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
+                                                   LIBXSMM_X86_VEC_REG_UNDEF );
+        }
       }
     }
     /* increae a pointer */
