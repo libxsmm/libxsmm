@@ -255,8 +255,8 @@ typedef struct my_fc_bwd_config {
   libxsmm_meltwfunction_transform       vnni_to_vnniT_kernel;
   libxsmm_meltwfunction_transform       norm_to_normT_kernel;
   libxsmm_meltwfunction_transform       norm_to_vnni_kernel;
-  libxsmm_meltwfunction_transform       upd_norm_to_vnni_kernel;}
-  my_fc_bwd_config;
+  libxsmm_meltwfunction_transform       upd_norm_to_vnni_kernel;
+} my_fc_bwd_config;
 
 my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
                                  libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
@@ -304,6 +304,13 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.fwd_row_teams = 14;
     res.fwd_M_hyperpartitions = 1;
     res.fwd_N_hyperpartitions = 4;
+  } else if (threads == 1) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 1;
+    res.fwd_row_teams = 1;
+    res.fwd_M_hyperpartitions = 1;
+    res.fwd_N_hyperpartitions = 1;
   } else {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 0;
@@ -473,6 +480,21 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.upd_row_teams = 14;
     res.upd_M_hyperpartitions = 1;
     res.upd_N_hyperpartitions = 4;
+    res.ifm_subtasks = 1;
+    res.ofm_subtasks = 1;
+  } else if (threads == 1) {
+    res.bwd_bf = 1;
+    res.bwd_2d_blocking = 1;
+    res.bwd_col_teams = 1;
+    res.bwd_row_teams = 1;
+    res.bwd_M_hyperpartitions = 1;
+    res.bwd_N_hyperpartitions = 1;
+    res.upd_bf = 1;
+    res.upd_2d_blocking = 1;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.upd_M_hyperpartitions = 1;
+    res.upd_N_hyperpartitions = 1;
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
   } else {
@@ -860,11 +882,6 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
         }
       }
     } else {
-      if ( (cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS ) {
-        copy_params.in_ptr  = &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,cfg.bk);
-        copy_params.out_ptr = fp32_bias_scratch;
-        cfg.fwd_copy_bf16fp32_kernel(&copy_params);
-      }
       for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
         mb1  = mb1ofm1%nBlocksMB;
         ofm1 = mb1ofm1/nBlocksMB;
@@ -1254,7 +1271,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
           ifm2 = ((ifm1ofm1 % Cck_work) % Cc_work) % ifm_subtasks;
           cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), _tmp, &blocks);
           trans_param.in_ptr  = _tmp;
-          trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+          trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
           cfg.upd_norm_to_vnni_kernel(&trans_param);
         }
       } else {

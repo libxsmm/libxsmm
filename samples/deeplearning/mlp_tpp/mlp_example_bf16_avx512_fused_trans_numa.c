@@ -235,22 +235,17 @@ typedef struct my_fc_fwd_config {
   libxsmm_blasint fwd_N_hyperpartitions;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
-  libxsmm_bsmmfunction fwd_config_kernel;
-  libxsmm_bsmmfunction tilerelease_kernel;
   libxsmm_bsmmfunction_reducebatch_strd gemm_fwd;
-  libxsmm_bsmmfunction_reducebatch_strd gemm_fwd2;
+  libxsmm_bmmfunction_reducebatch_strd gemm_fwd2;
   libxsmm_bmmfunction_reducebatch_strd gemm_fwd3;
-  libxsmm_bmmfunction_reducebatch_strd_meltwfused gemm_fwd4;
-  libxsmm_bmmfunction_reducebatch_strd_meltwfused gemm_fwd5;
-  libxsmm_bmmfunction_reducebatch_strd_meltwfused gemm_fwd6;
-  libxsmm_bmmfunction_reducebatch_strd_meltwfused gemm_fwd7;
-  libxsmm_bmmfunction_reducebatch_strd_meltwfused gemm_fwd8;
   libxsmm_meltwfunction_cvtfp32bf16     fwd_cvtfp32bf16_kernel;
   libxsmm_meltwfunction_cvtfp32bf16_act fwd_cvtfp32bf16_relu_kernel;
   libxsmm_meltwfunction_act_cvtfp32bf16 fwd_sigmoid_cvtfp32bf16_kernel;
   libxsmm_meltwfunction_copy            fwd_zero_kernel;
+  libxsmm_meltwfunction_relu            fwd_relu_kernel;
   libxsmm_meltwfunction_copy            fwd_copy_bf16fp32_kernel;
   libxsmm_meltwfunction_copy            fwd_colbcast_bf16fp32_copy_kernel;
+  libxsmm_meltwfunction_copy            fwd_colbcast_bf16bf16_copy_kernel;
 #ifdef FUSE_ACT_TRANS_FWD
   libxsmm_meltwfunction_transform       norm_to_normT_kernel;
 #endif
@@ -292,20 +287,13 @@ typedef struct my_fc_bwd_config {
   size_t          scratch_size;
   size_t  doutput_scratch_mark;
   libxsmm_barrier* barrier;
-  libxsmm_bsmmfunction bwd_config_kernel;
-  libxsmm_bsmmfunction upd_config_kernel;
-  libxsmm_bsmmfunction tilerelease_kernel;
   libxsmm_bsmmfunction_reducebatch_strd gemm_bwd;
-  libxsmm_bsmmfunction_reducebatch_strd gemm_bwd2;
   libxsmm_bmmfunction_reducebatch_strd gemm_bwd3;
-  libxsmm_bmmfunction_reducebatch_strd_meltwfused gemm_bwd5;
 #ifdef FUSE_DACT_TRANS_BWD
-  libxsmm_bmmfunction_reducebatch_strd_meltwfused gemm_bwd4;
   libxsmm_meltwfunction_transform       bwd_fused_norm_to_vnni_kernel;
 #endif
   libxsmm_meltwfunction_relu            bwd_fused_relu_kernel;
   libxsmm_bsmmfunction_reducebatch_strd gemm_upd;
-  libxsmm_bsmmfunction_reducebatch_strd gemm_upd2;
   libxsmm_bmmfunction_reducebatch_strd gemm_upd3;
   libxsmm_meltwfunction_cvtfp32bf16     bwd_cvtfp32bf16_kernel;
   libxsmm_meltwfunction_cvtfp32bf16     upd_cvtfp32bf16_kernel;
@@ -316,6 +304,7 @@ typedef struct my_fc_bwd_config {
   libxsmm_meltwfunction_transform       vnni_to_vnniT_kernel;
   libxsmm_meltwfunction_transform       norm_to_normT_kernel;
   libxsmm_meltwfunction_transform       norm_to_vnni_kernel;
+  libxsmm_meltwfunction_transform       upd_norm_to_vnni_kernel;
   float           lr;
 } my_fc_bwd_config;
 
@@ -432,17 +421,12 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
   unroll_hint = (res.C/res.bc)/res.fwd_bf;
 
-  res.fwd_config_kernel = libxsmm_bsmmdispatch(res.bk, res.bn, res.bc, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
-  if ( res.fwd_config_kernel == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP fwd_config_kernel failed. Bailing...!\n");
-    exit(-1);
-  }
   res.gemm_fwd = libxsmm_bsmmdispatch_reducebatch_strd_unroll(res.bk, res.bn, res.bc, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
   if ( res.gemm_fwd == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd failed. Bailing...!\n");
     exit(-1);
   }
-  res.gemm_fwd2 = libxsmm_bsmmdispatch_reducebatch_strd_unroll(res.bk, res.bn, res.bc, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
+  res.gemm_fwd2 = libxsmm_bmmdispatch_reducebatch_strd_unroll(res.bk, res.bn, res.bc, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
   if ( res.gemm_fwd2 == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd2 failed. Bailing...!\n");
     exit(-1);
@@ -450,36 +434,6 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.gemm_fwd3 = libxsmm_bmmdispatch_reducebatch_strd_unroll(res.bk, res.bn, res.bc, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
   if ( res.gemm_fwd3 == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd3 failed. Bailing...!\n");
-    exit(-1);
-  }
-  fusion_flags = LIBXSMM_MELTW_FLAG_COLBIAS_OVERWRITE_C;
-  res.gemm_fwd4 = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(res.bk, res.bn, res.bc, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_COLBIAS_ACT, LIBXSMM_DATATYPE_F32, fusion_flags, 0, 0, 0, 0);
-  if ( res.gemm_fwd4 == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd4 failed. Bailing...!\n");
-    exit(-1);
-  }
-  fusion_flags = LIBXSMM_MELTW_FLAG_ACT_RELU_OVERWRITE_C;
-  res.gemm_fwd5 = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(res.bk, res.bn, res.bc, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_COLBIAS_ACT, LIBXSMM_DATATYPE_F32, fusion_flags, 0, 0, 0, 0);
-  if ( res.gemm_fwd5 == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd5 failed. Bailing...!\n");
-    exit(-1);
-  }
-  fusion_flags = LIBXSMM_MELTW_FLAG_ACT_SIGM_OVERWRITE_C;
-  res.gemm_fwd6 = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(res.bk, res.bn, res.bc, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_COLBIAS_ACT, LIBXSMM_DATATYPE_F32, fusion_flags, 0, 0, 0, 0);
-  if ( res.gemm_fwd6 == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd6 failed. Bailing...!\n");
-    exit(-1);
-  }
-  fusion_flags = LIBXSMM_MELTW_FLAG_COLBIAS_ACT_RELU_OVERWRITE_C;
-  res.gemm_fwd7 = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(res.bk, res.bn, res.bc, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_COLBIAS_ACT, LIBXSMM_DATATYPE_F32, fusion_flags, 0, 0, 0, 0);
-  if ( res.gemm_fwd7 == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd7 failed. Bailing...!\n");
-    exit(-1);
-  }
-  fusion_flags = LIBXSMM_MELTW_FLAG_COLBIAS_ACT_SIGM_OVERWRITE_C;
-  res.gemm_fwd8 = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(res.bk, res.bn, res.bc, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_COLBIAS_ACT, LIBXSMM_DATATYPE_F32, fusion_flags, 0, 0, 0, 0);
-  if ( res.gemm_fwd8 == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd8 failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -499,12 +453,6 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     fprintf( stderr, "JIT for TPP fwd_sigmoid_cvtfp32bf16_kernel failed. Bailing...!\n");
     exit(-1);
   }
-  res.tilerelease_kernel = libxsmm_bsmmdispatch(res.bk, res.bk, res.bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
-  if ( res.tilerelease_kernel == NULL ) {
-    fprintf( stderr, "JIT for TPP tilerelease_kernel failed. Bailing...!\n");
-    exit(-1);
-  }
-
 
   res.fwd_zero_kernel = libxsmm_dispatch_meltw_copy(bn*bk, 1, &ld_zero, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
   if ( res.fwd_zero_kernel == NULL ) {
@@ -521,6 +469,18 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.fwd_copy_bf16fp32_kernel = libxsmm_dispatch_meltw_copy(K, 1, &ld_upconvert, &ld_upconvert, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_NONE);
   if ( res.fwd_copy_bf16fp32_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP fwd_copy_bf16fp32_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  res.fwd_colbcast_bf16bf16_copy_kernel = libxsmm_dispatch_meltw_copy(bk, bn, &ldc, &ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_COLBCAST);
+  if ( res.fwd_colbcast_bf16bf16_copy_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP fwd_colbcast_bf16bf16_copy_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  res.fwd_relu_kernel  = libxsmm_dispatch_meltw_relu(res.bc, res.bn, &ldb, &ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_FWD_BITMASK, 0);
+  if ( res.fwd_relu_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP fwd_relu_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -703,19 +663,10 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     fprintf( stderr, "JIT for BRGEMM TPP gemm_bwd failed. Bailing...!\n");
     exit(-1);
   }
-  res.gemm_bwd2 = libxsmm_bsmmdispatch_reducebatch_strd_unroll(res.bc, res.bn, res.bk, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bk*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &ldb, &lda, &ldb, &alpha, &zerobeta, &l_flags, NULL);
-  if ( res.gemm_bwd2 == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_bwd2 failed. Bailing...!\n");
-    exit(-1);
-  }
+
   res.gemm_bwd3 = libxsmm_bmmdispatch_reducebatch_strd_unroll(res.bc, res.bn, res.bk, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bk*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &ldb, &lda, &ldb, &alpha, &zerobeta, &l_flags, NULL);
   if ( res.gemm_bwd3 == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_bwd3 failed. Bailing...!\n");
-    exit(-1);
-  }
-  res.bwd_config_kernel = libxsmm_bsmmdispatch(res.bc, res.bn, res.bk, &ldb, &lda, &ldb, NULL, &beta, &l_tc_flags, NULL);
-  if ( res.bwd_config_kernel == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP bwd_config_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -747,19 +698,6 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
 #ifdef FUSE_DACT_TRANS_BWD
-  if ((fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) {
-    bwd_fused_op = LIBXSMM_MELTW_OPERATION_ACT_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER;
-    fusion_flags_bwd = LIBXSMM_MELTW_FLAG_ACT_RELU_BWD_OVERWRITE_C;
-  } else {
-    bwd_fused_op = LIBXSMM_MELTW_OPERATION_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER;
-    fusion_flags_bwd = LIBXSMM_MELTW_FLAG_FUSE_NONE;
-  }
-  res.gemm_bwd4 = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(res.bc, res.bn, res.bk, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bk*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &ldb, &lda, &ldb, &alpha, &zerobeta, &l_flags, NULL, bwd_fused_op, LIBXSMM_DATATYPE_BF16, fusion_flags_bwd, 0, 0, 0, 0);
-  if ( res.gemm_bwd4 == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_bwd4 failed. Bailing...!\n");
-    exit(-1);
-  }
-
   trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI;
   res.bwd_fused_norm_to_vnni_kernel = libxsmm_dispatch_meltw_transform(bc, bn, &ldb, &ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
   if ( res.bwd_fused_norm_to_vnni_kernel == NULL ) {
@@ -767,13 +705,6 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     exit(-1);
   }
 #else
-  bwd_fused_op = LIBXSMM_MELTW_OPERATION_COLBIAS_ACT;
-  fusion_flags_bwd = LIBXSMM_MELTW_FLAG_ACT_RELU_BWD_OVERWRITE_C;
-  res.gemm_bwd5 = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(res.bc, res.bn, res.bk, res.bk*res.bc*sizeof(libxsmm_bfloat16), res.bk*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &ldb, &lda, &ldb, &alpha, &zerobeta, &l_flags, NULL, bwd_fused_op, LIBXSMM_DATATYPE_BF16, fusion_flags_bwd, 0, 0, 0, 0);
-  if ( res.gemm_bwd5 == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_bwd5 failed. Bailing...!\n");
-    exit(-1);
-  }
 #ifdef PRIVATE_DACT_TRANS
   if (((fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) && (res.upd_2d_blocking == 1)) {
     res.fuse_relu_bwd = 1;
@@ -801,26 +732,10 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     fprintf( stderr, "JIT for BRGEMM TPP gemm_upd failed. Bailing...!\n");
     exit(-1);
   }
-  res.gemm_upd2 = libxsmm_bsmmdispatch_reducebatch_strd_unroll(updM, updN, res.bn, res.bk*res.bn*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
-  if ( res.gemm_upd2 == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_upd2 failed. Bailing...!\n");
-    exit(-1);
-  }
-  l_flags = l_flags | LIBXSMM_GEMM_FLAG_VNNI_C;
+
   res.gemm_upd3 = libxsmm_bmmdispatch_reducebatch_strd_unroll(updM, updN, res.bn, res.bk*res.bn*sizeof(libxsmm_bfloat16), res.bc*res.bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL);
   if ( res.gemm_upd3 == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_upd3 failed. Bailing...!\n");
-    exit(-1);
-  }
-  res.upd_config_kernel = libxsmm_bsmmdispatch(updM, updN, res.bn, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
-  if ( res.upd_config_kernel == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP upd_config_kernel failed. Bailing...!\n");
-    exit(-1);
-  }
-
-  res.tilerelease_kernel = libxsmm_bsmmdispatch(res.bk, res.bk, res.bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
-  if ( res.tilerelease_kernel == NULL ) {
-    fprintf( stderr, "JIT for TPP tilerelease_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -848,6 +763,13 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.norm_to_vnni_kernel = libxsmm_dispatch_meltw_transform(bk, bn, &lda, &lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
   if ( res.norm_to_vnni_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP norm_to_vnni_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI;
+  res.upd_norm_to_vnni_kernel = libxsmm_dispatch_meltw_transform(bk, bc, &lda, &lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  if ( res.upd_norm_to_vnni_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP upd_norm_to_vnni_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -1023,6 +945,11 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
   libxsmm_meltw_cvtfp32bf16_param       eltwise_params;
   libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise;
   libxsmm_meltw_copy_param              copy_params;
+  libxsmm_meltw_relu_param              relu_params;
+   libxsmm_meltwfunction_relu           relu_kernel = cfg.fwd_relu_kernel;
+  libxsmm_bmmfunction_reducebatch_strd  gemm_kernel = ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) ? cfg.gemm_fwd2 : cfg.gemm_fwd3;
+
+
 #ifdef FUSE_ACT_TRANS_FWD
   LIBXSMM_VLA_DECL(4, libxsmm_bfloat16, tr_output,  tr_out_act_ptr, nBlocksMB, cfg.bk, cfg.bn);
   libxsmm_meltw_transform_param trans_param;
@@ -1030,16 +957,6 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
 
   unsigned long long  blocks = nBlocksIFm;
   libxsmm_blasint CB_BLOCKS = nBlocksIFm, BF = 1;
-
-  if (((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) && ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU )) {
-    bf16_batchreduce_kernel_zerobeta_fused_eltwise = cfg.gemm_fwd7;
-  } else if ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) {
-    bf16_batchreduce_kernel_zerobeta_fused_eltwise = cfg.gemm_fwd4;
-  } else if ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) {
-    bf16_batchreduce_kernel_zerobeta_fused_eltwise = cfg.gemm_fwd5;
-  } else {
-    bf16_batchreduce_kernel_zerobeta_fused_eltwise = NULL;
-  }
 
   BF = cfg.fwd_bf;
   CB_BLOCKS = nBlocksIFm/BF;
@@ -1067,8 +984,6 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
-
-  cfg.fwd_config_kernel(NULL, NULL, NULL);
 
   if (use_2d_blocking == 1) {
     if (BF > 1) {
@@ -1113,27 +1028,23 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
         }
       }
     } else {
-      if ( (cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS ) {
-        copy_params.in_ptr  = &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,cfg.bk);
-        copy_params.out_ptr = fp32_bias_scratch;
-        cfg.fwd_copy_bf16fp32_kernel(&copy_params);
-      }
       for (ofm1 = my_M_start; ofm1 < my_M_end; ++ofm1) {
         for (mb1 = my_N_start; mb1 < my_N_end; ++mb1) {
-          if ( ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) || ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU )) {
-            if ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) {
-              gemm_eltwise_params.bias_ptr  = (float*) fp32_bias_scratch + ofm1 * cfg.bk;
-            }
-            if ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) {
-              gemm_eltwise_params.out_ptr   = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk/32);
-            }
-            bf16_batchreduce_kernel_zerobeta_fused_eltwise( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
-              &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, cfg.bn, cfg.bc),
-              &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
-          } else {
-            cfg.gemm_fwd3( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
+          if ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) {
+            copy_params.in_ptr  = &LIBXSMM_VLA_ACCESS(2, bias, ofm1, 0,cfg.bk);
+            copy_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk);
+            cfg.fwd_colbcast_bf16bf16_copy_kernel(&copy_params);
+          }
+
+          gemm_kernel( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
               &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, cfg.bn, cfg.bc),
               &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks);
+
+          if ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) {
+            relu_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+            relu_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+            relu_params.mask_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk/32);
+            relu_kernel(&relu_params);
           }
 #ifdef FUSE_ACT_TRANS_FWD
           if (perform_output_transpose > 0) {
@@ -1188,28 +1099,24 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
         }
       }
     } else {
-      if ( (cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS ) {
-        copy_params.in_ptr  = &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,cfg.bk);
-        copy_params.out_ptr = fp32_bias_scratch;
-        cfg.fwd_copy_bf16fp32_kernel(&copy_params);
-      }
       for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
         mb1  = mb1ofm1%nBlocksMB;
         ofm1 = mb1ofm1/nBlocksMB;
-        if ( ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) || ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU )) {
-          if ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) {
-            gemm_eltwise_params.bias_ptr  = (float*) fp32_bias_scratch + ofm1 * cfg.bk;
-          }
-          if ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) {
-            gemm_eltwise_params.out_ptr   = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk/32);
-          }
-          bf16_batchreduce_kernel_zerobeta_fused_eltwise( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
-            &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, cfg.bn, cfg.bc),
-            &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
-        } else {
-          cfg.gemm_fwd3( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
+        if ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) {
+          copy_params.in_ptr  = &LIBXSMM_VLA_ACCESS(2, bias, ofm1, 0,cfg.bk);
+          copy_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk);
+          cfg.fwd_colbcast_bf16bf16_copy_kernel(&copy_params);
+        }
+
+        gemm_kernel( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb),
             &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, cfg.bn, cfg.bc),
             &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks);
+
+        if ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) {
+          relu_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+          relu_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
+          relu_params.mask_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk/32);
+          relu_kernel(&relu_params);
         }
 #ifdef FUSE_ACT_TRANS_FWD
         if (perform_output_transpose > 0) {
@@ -1222,7 +1129,6 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
     }
   }
 
-  cfg.tilerelease_kernel(NULL, NULL, NULL);
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
@@ -1366,7 +1272,6 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bf
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
-  cfg.bwd_config_kernel(NULL, NULL, NULL);
 
 #ifdef FUSE_DACT_TRANS_BWD
 #else
@@ -1575,31 +1480,39 @@ if (cfg.upd_2d_blocking == 0) {
 #endif
           for (mb1 = my_N_start; mb1 < my_N_end; ++mb1) {
 #ifdef FUSE_DACT_TRANS_BWD
-            if (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) {
-              eltwise_params_bwd.relu_bitmask_bwd = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ifm1, 0, 0, nBlocksIFm, cfg.bn, cfg.bc/32);
-            }
-            eltwise_params_bwd.out_ptr = &LIBXSMM_VLA_ACCESS(5, tr_dinput, ifm1,  mb1, 0, 0, 0, nBlocksMB, bn_lp, bc, lpb);
-            cfg.gemm_bwd4( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
+            cfg.gemm_bwd3( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
                 &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
-                &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks, &eltwise_params_bwd);
+                &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+
+            if (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) {
+              relu_params.in_ptr   = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              relu_params.out_ptr  = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              relu_params.mask_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ifm1, 0, 0, nBlocksIFm, cfg.bn, cfg.bc/32);
+              cfg.bwd_fused_relu_kernel(&relu_params);
+            }
+            trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+            trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, tr_dinput, ifm1,  mb1, 0, 0, 0, nBlocksMB, bn_lp, bc, lpb);
+            cfg.bwd_fused_norm_to_vnni_kernel(&trans_param);
 #else
 #ifdef PRIVATE_WT_TRANS
+            cfg.gemm_bwd3( &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, 0, 0, 0, 0, bk_lp, bc, lpb),
+                &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
+                &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
             if (cfg.fuse_relu_bwd > 0) {
-              eltwise_params_bwd.relu_bitmask_bwd = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ifm1, 0, 0, nBlocksIFm, cfg.bn, cfg.bc/32);
-              cfg.gemm_bwd5( &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, 0, 0, 0, 0, bk_lp, bc, lpb),
-                  &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
-                  &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks, &eltwise_params_bwd);
-            } else {
-              cfg.gemm_bwd3( &LIBXSMM_VLA_ACCESS(4, tmp_filter_tr, 0, 0, 0, 0, bk_lp, bc, lpb),
-                  &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
-                  &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+              relu_params.in_ptr   = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              relu_params.out_ptr  = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              relu_params.mask_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ifm1, 0, 0, nBlocksIFm, cfg.bn, cfg.bc/32);
+              cfg.bwd_fused_relu_kernel(&relu_params);
             }
 #else
             if (cfg.fuse_relu_bwd > 0) {
-              eltwise_params_bwd.relu_bitmask_bwd = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ifm1, 0, 0, nBlocksIFm, cfg.bn, cfg.bc/32);
-              cfg.gemm_bwd5( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
+              cfg.gemm_bwd3( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
                   &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
-                  &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks, &eltwise_params_bwd);
+                  &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+              relu_params.in_ptr   = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              relu_params.out_ptr  = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              relu_params.mask_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ifm1, 0, 0, nBlocksIFm, cfg.bn, cfg.bc/32);
+              cfg.bwd_fused_relu_kernel(&relu_params);
             } else {
               cfg.gemm_bwd3( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
                   &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
@@ -1649,13 +1562,19 @@ if (cfg.upd_2d_blocking == 0) {
           mb1  = mb1ifm1%nBlocksMB;
           ifm1 = mb1ifm1/nBlocksMB;
 #ifdef FUSE_DACT_TRANS_BWD
-          if (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) {
-            eltwise_params_bwd.relu_bitmask_bwd = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ifm1, 0, 0, nBlocksIFm, cfg.bn, cfg.bc/32);
-          }
-          eltwise_params_bwd.out_ptr = &LIBXSMM_VLA_ACCESS(5, tr_dinput, ifm1,  mb1, 0, 0, 0, nBlocksMB, bn_lp, bc, lpb);
-          cfg.gemm_bwd4( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
+          cfg.gemm_bwd3( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
               &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
-              &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks, &eltwise_params_bwd);
+              &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
+
+          if (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) {
+            relu_params.in_ptr   = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+            relu_params.out_ptr  = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+            relu_params.mask_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ifm1, 0, 0, nBlocksIFm, cfg.bn, cfg.bc/32);
+            cfg.bwd_fused_relu_kernel(&relu_params);
+          }
+          trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+          trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, tr_dinput, ifm1,  mb1, 0, 0, 0, nBlocksMB, bn_lp, bc, lpb);
+          cfg.bwd_fused_norm_to_vnni_kernel(&trans_param);
 #else
           cfg.gemm_bwd3( &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, 0, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb),
               &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
@@ -1742,6 +1661,8 @@ if (cfg.upd_2d_blocking == 0) {
 
     LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,  input_tr,    (libxsmm_bfloat16*)tr_inp_ptr, nBlocksMB, bc, bn);
     LIBXSMM_VLA_DECL(4,       float, dfilter_f32,  (float*)dfilter_f32_ptr, nBlocksIFm, bc, bk);
+    libxsmm_bfloat16 _tmp[bc*bk];
+
 #ifdef FUSE_SGD_IN_BWD
 #ifndef BYPASS_SGD
     LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dfilter_block,  (libxsmm_bfloat16*)dfilter_scratch, bk);
@@ -1863,16 +1784,22 @@ if (cfg.upd_2d_blocking == 0) {
               }
             }
 #ifdef PRIVATE_DACT_TRANS
-            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_N_start, 0, 0, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_N_start, 0, 0, 0, nBlocksMB, bc, bn), _tmp, &blocks);
 #else
-            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_N_start, 0, 0, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_N_start, 0, 0, 0, nBlocksMB, bc, bn), _tmp, &blocks);
 #endif
+            trans_param.in_ptr  = _tmp;
+            trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+            cfg.upd_norm_to_vnni_kernel(&trans_param);
 #else
 #ifdef PRIVATE_DACT_TRANS
-            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), _tmp, &blocks);
 #else
-            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+            cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), _tmp, &blocks);
 #endif
+            trans_param.in_ptr  = _tmp;
+            trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+            cfg.upd_norm_to_vnni_kernel(&trans_param);
 #endif
 #ifdef FUSE_SGD_IN_BWD
 #ifndef BYPASS_SGD
@@ -1965,7 +1892,11 @@ if (cfg.upd_2d_blocking == 0) {
           ofm2 = (ifm1ofm1 % Cck_work) / Cc_work;
           ifm1 = ((ifm1ofm1 % Cck_work) % Cc_work) / ifm_subtasks;
           ifm2 = ((ifm1ofm1 % Cck_work) % Cc_work) % ifm_subtasks;
-          cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+          cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), _tmp, &blocks);
+          trans_param.in_ptr  = _tmp;
+          trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
+          cfg.upd_norm_to_vnni_kernel(&trans_param);
+
 #ifdef FUSE_SGD_IN_BWD
 #ifndef BYPASS_SGD
           {
@@ -2022,7 +1953,6 @@ if (cfg.upd_2d_blocking == 0) {
     }
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
-  cfg.tilerelease_kernel(NULL, NULL, NULL);
 }
 
 #ifdef FUSE_WT_TRANS_SGD
