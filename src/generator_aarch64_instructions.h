@@ -274,7 +274,7 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*           io_generated_code,
                                                   const unsigned int                i_vmove_instr,
                                                   const unsigned char               i_gp_reg_addr,
-                                                  const char                        i_offset,
+                                                  const short                       i_offset,
                                                   const unsigned char               i_vec_reg_0,
                                                   const unsigned char               i_vec_reg_1,
                                                   const libxsmm_aarch64_asimd_width i_asimdwidth );
