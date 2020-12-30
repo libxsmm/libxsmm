@@ -119,7 +119,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
   libxsmm_generator_gemm_init_micro_kernel_config_aarch64( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc );
 
   /* open asm */
-  libxsmm_aarch64_instruction_open_stream( io_generated_code );
+  libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xf );
 
   /* m loop */
   libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_mloop, i_xgemm_desc->m );
@@ -186,7 +186,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
   libxsmm_generator_loop_footer_aarch64( io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_mloop, 1 );
 
   /* close asm */
-  libxsmm_aarch64_instruction_close_stream( io_generated_code );
+  libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xf );
 }
 
 LIBXSMM_API_INTERN

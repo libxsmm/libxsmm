@@ -13,53 +13,145 @@
 #include "generator_aarch64_instructions.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code ) {
+void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code,
+                                              const unsigned short    i_callee_save_bitmask ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);
   }
-  /* save lower 64bit of v8-v15 on stack */
+
+  /* allocate callee save space on the stack */
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
                                                  LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP,
-                                                 64, 0 );
-  libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 48,
-                                               LIBXSMM_AARCH64_ASIMD_REG_V8, LIBXSMM_AARCH64_ASIMD_REG_V9,
-                                               LIBXSMM_AARCH64_ASIMD_WIDTH_D );
-  libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 32,
-                                               LIBXSMM_AARCH64_ASIMD_REG_V10, LIBXSMM_AARCH64_ASIMD_REG_V11,
-                                               LIBXSMM_AARCH64_ASIMD_WIDTH_D );
-  libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 16,
-                                               LIBXSMM_AARCH64_ASIMD_REG_V12, LIBXSMM_AARCH64_ASIMD_REG_V13,
-                                               LIBXSMM_AARCH64_ASIMD_WIDTH_D );
-  libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 0,
-                                               LIBXSMM_AARCH64_ASIMD_REG_V14, LIBXSMM_AARCH64_ASIMD_REG_V15,
-                                               LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+                                                 192, 0 );
+
+  /* save lower 64bit of v8-v15 to stack */
+  if ( ( i_callee_save_bitmask & 0x1 ) == 0x1 ) {
+    libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 176,
+                                                 LIBXSMM_AARCH64_ASIMD_REG_V8, LIBXSMM_AARCH64_ASIMD_REG_V9,
+                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  }
+  if ( ( i_callee_save_bitmask & 0x2 ) == 0x2 ) {
+    libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 160,
+                                                 LIBXSMM_AARCH64_ASIMD_REG_V10, LIBXSMM_AARCH64_ASIMD_REG_V11,
+                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  }
+  if ( ( i_callee_save_bitmask & 0x4 ) == 0x4 ) {
+    libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 144,
+                                                 LIBXSMM_AARCH64_ASIMD_REG_V12, LIBXSMM_AARCH64_ASIMD_REG_V13,
+                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  }
+  if ( ( i_callee_save_bitmask & 0x8 ) == 0x8 ) {
+    libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 128,
+                                                 LIBXSMM_AARCH64_ASIMD_REG_V14, LIBXSMM_AARCH64_ASIMD_REG_V15,
+                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  }
+
+  /* save x16-x30 to stack */
+  if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 112,
+                                               LIBXSMM_AARCH64_GP_REG_X16, LIBXSMM_AARCH64_GP_REG_X17 );
+  }
+  if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  96,
+                                               LIBXSMM_AARCH64_GP_REG_X18, LIBXSMM_AARCH64_GP_REG_X19 );
+  }
+  if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  80,
+                                               LIBXSMM_AARCH64_GP_REG_X20, LIBXSMM_AARCH64_GP_REG_X21 );
+  }
+  if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  64,
+                                               LIBXSMM_AARCH64_GP_REG_X22, LIBXSMM_AARCH64_GP_REG_X23 );
+  }
+  if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  48,
+                                               LIBXSMM_AARCH64_GP_REG_X24, LIBXSMM_AARCH64_GP_REG_X25 );
+  }
+  if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  32,
+                                               LIBXSMM_AARCH64_GP_REG_X26, LIBXSMM_AARCH64_GP_REG_X27 );
+  }
+  if ( ( i_callee_save_bitmask & 0x400 ) == 0x400 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  16,
+                                               LIBXSMM_AARCH64_GP_REG_X28, LIBXSMM_AARCH64_GP_REG_X29 );
+  }
+  if ( ( i_callee_save_bitmask & 0x800 ) == 0x800 ) {
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 0,
+                                          LIBXSMM_AARCH64_GP_REG_X30 );
+  }
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code ) {
+void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
+                                               const unsigned short    i_callee_save_bitmask ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);
   }
 
-  /* restore lower 64bit of v8-v15 from stack */
-  libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 48,
-                                               LIBXSMM_AARCH64_ASIMD_REG_V8, LIBXSMM_AARCH64_ASIMD_REG_V9,
-                                               LIBXSMM_AARCH64_ASIMD_WIDTH_D );
-  libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 32,
-                                               LIBXSMM_AARCH64_ASIMD_REG_V10, LIBXSMM_AARCH64_ASIMD_REG_V11,
-                                               LIBXSMM_AARCH64_ASIMD_WIDTH_D );
-  libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 16,
-                                               LIBXSMM_AARCH64_ASIMD_REG_V12, LIBXSMM_AARCH64_ASIMD_REG_V13,
-                                               LIBXSMM_AARCH64_ASIMD_WIDTH_D );
-  libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 0,
-                                               LIBXSMM_AARCH64_ASIMD_REG_V14, LIBXSMM_AARCH64_ASIMD_REG_V15,
-                                               LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  /* restor lower 64bit of v8-v15 from stack */
+  if ( ( i_callee_save_bitmask & 0x1 ) == 0x1 ) {
+    libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 176,
+                                                 LIBXSMM_AARCH64_ASIMD_REG_V8, LIBXSMM_AARCH64_ASIMD_REG_V9,
+                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  }
+  if ( ( i_callee_save_bitmask & 0x2 ) == 0x2 ) {
+    libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 160,
+                                                 LIBXSMM_AARCH64_ASIMD_REG_V10, LIBXSMM_AARCH64_ASIMD_REG_V11,
+                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  }
+  if ( ( i_callee_save_bitmask & 0x4 ) == 0x4 ) {
+    libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 144,
+                                                 LIBXSMM_AARCH64_ASIMD_REG_V12, LIBXSMM_AARCH64_ASIMD_REG_V13,
+                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  }
+  if ( ( i_callee_save_bitmask & 0x8 ) == 0x8 ) {
+    libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 128,
+                                                 LIBXSMM_AARCH64_ASIMD_REG_V14, LIBXSMM_AARCH64_ASIMD_REG_V15,
+                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  }
+
+  /* restor x16-x30 from stack */
+  if ( ( i_callee_save_bitmask & 0x10 ) == 0x10 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 112,
+                                               LIBXSMM_AARCH64_GP_REG_X16, LIBXSMM_AARCH64_GP_REG_X17 );
+  }
+  if ( ( i_callee_save_bitmask & 0x20 ) == 0x20 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  96,
+                                               LIBXSMM_AARCH64_GP_REG_X18, LIBXSMM_AARCH64_GP_REG_X19 );
+  }
+  if ( ( i_callee_save_bitmask & 0x40 ) == 0x40 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  80,
+                                               LIBXSMM_AARCH64_GP_REG_X20, LIBXSMM_AARCH64_GP_REG_X21 );
+  }
+  if ( ( i_callee_save_bitmask & 0x80 ) == 0x80 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  64,
+                                               LIBXSMM_AARCH64_GP_REG_X22, LIBXSMM_AARCH64_GP_REG_X23 );
+  }
+  if ( ( i_callee_save_bitmask & 0x100 ) == 0x100 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  48,
+                                               LIBXSMM_AARCH64_GP_REG_X24, LIBXSMM_AARCH64_GP_REG_X25 );
+  }
+  if ( ( i_callee_save_bitmask & 0x200 ) == 0x200 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  32,
+                                               LIBXSMM_AARCH64_GP_REG_X26, LIBXSMM_AARCH64_GP_REG_X27 );
+  }
+  if ( ( i_callee_save_bitmask & 0x400 ) == 0x400 ) {
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP,  16,
+                                               LIBXSMM_AARCH64_GP_REG_X28, LIBXSMM_AARCH64_GP_REG_X29 );
+  }
+  if ( ( i_callee_save_bitmask & 0x800 ) == 0x800 ) {
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 0,
+                                          LIBXSMM_AARCH64_GP_REG_X30 );
+  }
+
+  /* deallocate calle save space on stack */
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                  LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP,
-                                                 64, 0 );
+                                                 192, 0 );
 
+  /* generate return instruction */
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;

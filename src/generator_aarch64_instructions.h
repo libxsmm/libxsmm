@@ -223,17 +223,21 @@ typedef enum libxsmm_aarch64_asimd_tupletype {
  * Opens the inline assembly section / jit stream
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_callee_save_bitmask lower 4 bits control d8-d15 in tuples, bits 4-11 control x16-x30 in tuples, e.g. 0xf saves d8-d15
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code );
+void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code,
+                                              const unsigned short    i_callee_save_bitmask );
 
 /**
  * Closes the inline assembly section / jit stream
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_callee_save_bitmask lower 4 bits control d8-d15 in tuples, bits 4-11 control x16-x30 in tuples, e.g. 0xf saves d8-d15
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code );
+void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
+                                               const unsigned short    i_callee_save_bitmask );
 
 /**
  * Generates ldr, str, etc. instructions
