@@ -50,9 +50,6 @@ elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "aarch64" = "$(${UNAME} -m)
   export NS=1
   export NC=$(${GREP} "Features" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
   export NT=$NC
-  echo $NS
-  echo $NC
-  echo $NT
 fi
 if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
   export HT=$((NT/(NC)))
