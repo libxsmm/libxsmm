@@ -65,7 +65,7 @@ void libxsmm_generator_packed_gemm_ac_rm_aarch64( libxsmm_generated_code*       
   }
 
   /* open asm */
-  libxsmm_aarch64_instruction_open_stream( io_generated_code );
+  libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xf );
 
   /* m loop */
   libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_mloop, i_xgemm_desc->m );
@@ -137,7 +137,7 @@ void libxsmm_generator_packed_gemm_ac_rm_aarch64( libxsmm_generated_code*       
   libxsmm_generator_loop_footer_aarch64( io_generated_code, &l_loop_label_tracker, l_gp_reg_mapping.gp_reg_mloop, 1 );
 
   /* close asm */
-  libxsmm_aarch64_instruction_close_stream( io_generated_code );
+  libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xf );
 }
 
 

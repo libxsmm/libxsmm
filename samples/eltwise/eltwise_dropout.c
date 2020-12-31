@@ -1097,7 +1097,7 @@ void test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   libxsmm_meltw_dropout_param dropout_param;
   libxsmm_meltw_dropout_flags dropout_flags;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ldi/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_bf16_f32_bwd: ldi needs to be equal to or bigger than M\n");

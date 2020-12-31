@@ -557,9 +557,9 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_i
   unsigned int l_m_blocking = 0;
 
   if ( ( i_arch <= LIBXSMM_X86_SSE42 )           && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    l_m_blocking = 12;
+    l_m_blocking = 16;
   } else if ( ( i_arch <= LIBXSMM_X86_SSE42 )    && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    l_m_blocking = 6;
+    l_m_blocking = 8;
   } else if ( ( i_arch == LIBXSMM_X86_AVX )     && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     l_m_blocking = 24;
   } else if ( ( i_arch == LIBXSMM_X86_AVX )     && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
@@ -665,6 +665,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_updat
       l_m_blocking = 4;
     } else if (i_current_m_blocking == 12) {
       l_m_blocking = 8;
+    } else if (i_current_m_blocking == 16) {
+      l_m_blocking = 12;
     } else {
       /* we are done with m_blocking */
     }
@@ -676,6 +678,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_updat
       l_m_blocking = 2;
     } else if (i_current_m_blocking == 6) {
       l_m_blocking = 4;
+    } else if (i_current_m_blocking == 8) {
+      l_m_blocking = 6;
     } else {
       /* we are done with m_blocking */
     }

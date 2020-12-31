@@ -200,9 +200,12 @@ typedef enum libxsmm_meltw_null_flags {
 } libxsmm_meltw_null_flags;
 
 typedef enum libxsmm_meltw_relu_flags {
-  LIBXSMM_MELTW_FLAG_RELU_NONE      = 0,
-  LIBXSMM_MELTW_FLAG_RELU_FWD       = 1,
-  LIBXSMM_MELTW_FLAG_RELU_BWD       = 2
+  LIBXSMM_MELTW_FLAG_RELU_NONE    = 0,
+  LIBXSMM_MELTW_FLAG_RELU_FWD     = 1,
+  LIBXSMM_MELTW_FLAG_RELU_BWD     = 2,
+  LIBXSMM_MELTW_FLAG_RELU_BITMASK = 4,
+  LIBXSMM_MELTW_FLAG_RELU_FWD_BITMASK = LIBXSMM_MELTW_FLAG_RELU_FWD | LIBXSMM_MELTW_FLAG_RELU_BITMASK,
+  LIBXSMM_MELTW_FLAG_RELU_BWD_BITMASK = LIBXSMM_MELTW_FLAG_RELU_BWD | LIBXSMM_MELTW_FLAG_RELU_BITMASK
 } libxsmm_meltw_relu_flags;
 
 typedef enum libxsmm_meltw_copy_flags {
