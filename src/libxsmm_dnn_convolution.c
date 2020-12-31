@@ -167,18 +167,18 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_pixels_gemm( libxsmm_dn
 LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_block_H( libxsmm_dnn_layer* handle ) {
   int result = 14;
 
-  if (handle->target_archid < LIBXSMM_X86_AVX512_SPR) {
+  if (handle->target_archid == LIBXSMM_X86_AVX512_SPR ) {
+    /* Spatial dimension block tuning for SPR */
+    if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
+      result = 4;
+    }
+  } else {
     /* Block H only for large images  */
     if (handle->ofh >= 28) {
       result = 4;
     }
     if (handle->ofh == 28 && handle->desc.R == 3 ) {
       result = 14;
-    }
-  } else {
-    /* Spatial dimension block tuning for SPR */
-    if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
-      result = 4;
     }
   }
   /* Make sure it is divisible bu the ofh_rb factor in the kernel */
