@@ -1339,7 +1339,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 }
 
 
-std::tuple<at::Tensor, at::Tensor> relu_forward_bf16(at::Tensor& input){
+at::Tensor relu_forward_bf16(at::Tensor& input){
 
     // RECORD_FUNCTION("ReLU_forward_bf16", std::vector<c10::IValue>({input}));           // For recording time
 
@@ -1349,33 +1349,33 @@ std::tuple<at::Tensor, at::Tensor> relu_forward_bf16(at::Tensor& input){
 
     libxsmm_bfloat16* input_a = (libxsmm_bfloat16*) input.data_ptr<at::BFloat16>();
 
-    at::Tensor relubitmask;
-    relubitmask = at::empty({N_t, C_t, W_t/16}, torch::TensorOptions().dtype(torch::kInt16));
-    unsigned short* relubitmask_a = (unsigned short*) relubitmask.data_ptr<short>();
+    // at::Tensor relubitmask;
+    // relubitmask = at::empty({N_t, C_t, W_t/16}, torch::TensorOptions().dtype(torch::kInt16));
+    // unsigned short* relubitmask_a = (unsigned short*) relubitmask.data_ptr<short>();
 
 #ifndef USE_TPP
     // auto Y = input.new_empty({N_t,C_t,W_t});        // New tensor for output
     // libxsmm_bfloat16* Y_a = (libxsmm_bfloat16*) Y.data_ptr<at::BFloat16>();
-    // #pragma omp parallel for
-    // for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width loop
-    //     if(input_a[w] >= 32768)                         // sign bit indicates if value is negative
-    //         Y_a[w] = 0;
-    //     else
-    //         Y_a[w] = input_a[w];
-    // }
-
     #pragma omp parallel for
-    for(unsigned long w = 0; w < N_t*C_t*W_t; w +=32){  // width loop
-        __mmask32 lcl_relumask;
-        __m512i vout;
-        vout = _mm512_load_epi64(&input_a[w]);
-        lcl_relumask = _mm512_cmp_epi16_mask (_mm512_setzero_epi32(), vout, _MM_CMPINT_LT);
-        LIBXSMM_INTRINSICS_MM512_STORE_MASK32( &relubitmask_a[w/16], lcl_relumask );
-        for (int i=0; i < 32; i++){
-            if(input_a[w + i] >= 32768)                 // sign bit indicates if value is negative
-                input_a[w + i] = 0;
-        }
+    for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width loop
+        if(input_a[w] >= 32768)                         // sign bit indicates if value is negative
+            input_a[w] = 0;
+        // else
+        //     Y_a[w] = input_a[w];
     }
+
+    // #pragma omp parallel for
+    // for(unsigned long w = 0; w < N_t*C_t*W_t; w +=32){  // width loop
+    //     __mmask32 lcl_relumask;
+    //     __m512i vout;
+    //     vout = _mm512_load_epi64(&input_a[w]);
+    //     lcl_relumask = _mm512_cmp_epi16_mask (_mm512_setzero_epi32(), vout, _MM_CMPINT_LT);
+    //     LIBXSMM_INTRINSICS_MM512_STORE_MASK32( &relubitmask_a[w/16], lcl_relumask );
+    //     for (int i=0; i < 32; i++){
+    //         if(input_a[w + i] >= 32768)                 // sign bit indicates if value is negative
+    //             input_a[w + i] = 0;
+    //     }
+    // }
 
 #else
 
@@ -1393,17 +1393,17 @@ std::tuple<at::Tensor, at::Tensor> relu_forward_bf16(at::Tensor& input){
         libxsmm_meltw_relu_param relu_params;
         relu_params.in_ptr   = &input_a[n*C_t*W_t];
         relu_params.out_ptr  = &input_a[n*C_t*W_t];
-        relu_params.mask_ptr = &relubitmask_a[n*C_t*W_t/16];
+        //relu_params.mask_ptr = &relubitmask_a[n*C_t*W_t/16];
+        relu_params.mask_ptr = NULL;
         relu_fwd_kernel(&relu_params);
     }
 
 #endif
 
-    // return Y;
-    return {input, relubitmask};
+    return input;
 }
 
-at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& relubitmask){
+at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& output){
 
     // RECORD_FUNCTION("ReLU_backward_bf16", std::vector<c10::IValue>({grad, output}));        // For recording time
 
@@ -1411,31 +1411,31 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& relubitmask){
     int64_t C_t = grad.size(1);                    // Channel
     int64_t W_t = grad.size(2);                    // input width
 
-    unsigned short* relubitmask_a = (unsigned short*) relubitmask.data_ptr<short>();
+    unsigned short* output_a = (unsigned short*) output.data_ptr<at::BFloat16>();
     libxsmm_bfloat16* grad_a = (libxsmm_bfloat16*) grad.data_ptr<at::BFloat16>();
 
 #ifndef USE_TPP
     // auto d_input = output.new_empty({N_t,C_t,W_t});        // New tensor for input grad
     // libxsmm_bfloat16* d_input_a = (libxsmm_bfloat16*) d_input.data_ptr<at::BFloat16>();
-    // #pragma omp parallel for
-    // for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width blocking loop
+    #pragma omp parallel for
+    for(unsigned long w = 0; w < N_t*C_t*W_t; w++) {    // width blocking loop
     // //    if(output_a[w] == 0 || output_a[w] == 32768)
-    //     if(output_a[w] == 0)                            // If output array value was zero
-    //         d_input_a[w] = 0;
+        if(output_a[w] == 0)                            // If output array value was zero
+            grad_a[w] = 0;
     //     else
     //         d_input_a[w] = grad_a[w];
-    // }
-
-    #pragma omp parallel for
-    for(unsigned long w = 0; w < N_t*C_t*W_t; w += 16) {    // width blocking loop
-        // std::bitset<16> mask(relubitmask_a[w/16]);
-        for (int i=0; i < 16; i++){
-            if (((relubitmask_a[w/16] >> i) & 1) == 0){
-            // if(!mask[i]){
-                grad_a[w + i] = 0;
-            }
-        }
     }
+
+    // #pragma omp parallel for
+    // for(unsigned long w = 0; w < N_t*C_t*W_t; w += 16) {    // width blocking loop
+        // std::bitset<16> mask(relubitmask_a[w/16]);
+    //    for (int i=0; i < 16; i++){
+    //        if (((relubitmask_a[w/16] >> i) & 1) == 0){
+    //         // if(!mask[i]){
+    //             grad_a[w + i] = 0;
+    //         }
+    //     }
+    // }
 
 
 #else
@@ -1454,7 +1454,8 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& relubitmask){
         libxsmm_meltw_relu_param relu_params;
         relu_params.in_ptr   = &grad_a[n*C_t*W_t];
         relu_params.out_ptr  = &grad_a[n*C_t*W_t];
-        relu_params.mask_ptr = &relubitmask_a[n*C_t*W_t/16];
+        //relu_params.mask_ptr = &relubitmask_a[n*C_t*W_t/16];
+        relu_params.mask_ptr = &output_a[n*C_t*W_t];
         relu_bwd_kernel(&relu_params);
     }
 
