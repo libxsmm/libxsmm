@@ -77,7 +77,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64( libxsmm_generated_code
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* open asm */
-  libxsmm_aarch64_instruction_open_stream( io_generated_code );
+  libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xf );
 
   /* loop over blocks of packing */
   if ( (l_simd_packed_iters_full > 1) /*|| (l_simd_packed_remainder > 0 && l_simd_packed_iters_full > 0 )*/ ) {
@@ -140,7 +140,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64( libxsmm_generated_code
 #endif
 
   /* close asm */
-  libxsmm_aarch64_instruction_close_stream( io_generated_code );
+  libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xf );
 }
 
 LIBXSMM_API_INTERN

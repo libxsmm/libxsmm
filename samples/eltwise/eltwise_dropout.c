@@ -18,13 +18,15 @@
 #include <libxsmm_intrinsics_x86.h>
 #endif
 
+#define LIBXSMM_ALIGNDOWN(N, A) ((N) & ~((A)-1))
+
 #ifdef __AVX512BW__
 void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
   unsigned int i;
   float pn = 1 - p;
   __m512 vp = _mm512_set1_ps(pn);
   __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < M - 15; i+=16) {
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
     __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
     __m512 vin = _mm512_loadu_ps(in+i);
     __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
@@ -49,7 +51,7 @@ void dropout_fwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bf
   float pn = 1 - p;
   __m512 vp = _mm512_set1_ps(pn);
   __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < M - 15; i+=16) {
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
     __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
     __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
     __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
@@ -74,7 +76,7 @@ void dropout_fwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out,
   float pn = 1 - p;
   __m512 vp = _mm512_set1_ps(pn);
   __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < M - 15; i+=16) {
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
     __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
     __m512 vin = _mm512_loadu_ps(in+i);
     __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
@@ -99,7 +101,7 @@ void dropout_fwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out,
   float pn = 1 - p;
   __m512 vp = _mm512_set1_ps(pn);
   __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < M - 15; i+=16) {
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
     __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
     __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
     __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
@@ -123,7 +125,7 @@ void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned sh
   unsigned int i = 0;
   float pn = 1 - p;
   __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < M - 15; i+=16) {
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
     __m512 vin = _mm512_loadu_ps(in+i);
     __mmask16 dmsk = dropout_mask[i/16];
     __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
@@ -143,7 +145,7 @@ void dropout_bwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bf
   unsigned int i = 0;
   float pn = 1 - p;
   __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < M - 15; i+=16) {
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
     __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
     __mmask16 dmsk = dropout_mask[i/16];
     __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
@@ -163,7 +165,7 @@ void dropout_bwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out,
   unsigned int i = 0;
   float pn = 1 - p;
   __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < M - 15; i+=16) {
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
     __m512 vin = _mm512_loadu_ps(in+i);
     __mmask16 dmsk = dropout_mask[i/16];
     __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
@@ -183,7 +185,7 @@ void dropout_bwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out,
   unsigned int i = 0;
   float pn = 1 - p;
   __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < M - 15; i+=16) {
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
     __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
     __mmask16 dmsk = dropout_mask[i/16];
     __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
@@ -1097,7 +1099,7 @@ void test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   libxsmm_meltw_dropout_param dropout_param;
   libxsmm_meltw_dropout_flags dropout_flags;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ldi/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_bf16_f32_bwd: ldi needs to be equal to or bigger than M\n");
