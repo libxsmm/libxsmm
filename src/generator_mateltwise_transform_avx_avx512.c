@@ -685,7 +685,7 @@ void libxsmm_generator_transform_copy_avx512_microkernel( libxsmm_generated_code
                                                           const unsigned int                      i_bsize ) {
 
   if ( (i_m * i_micro_kernel_config->datatype_size_in % 64 != 0 ) ||
-       (i_n * i_micro_kernel_config->datatype_size_in % 64 != 0 ) ) {
+       (i_n  % i_bsize != 0 ) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
   }
