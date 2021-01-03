@@ -4881,7 +4881,7 @@ LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary(
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
-    in_type, compute_type, out_type, 0, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo, 0, 0,
+    in_type, compute_type, out_type, LIBXSMM_DATATYPE_UNSUPPORTED, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo, 0, 0,
     (unsigned short)flags, (unsigned char)type, LIBXSMM_MELTW_OPERATION_UNARY);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
