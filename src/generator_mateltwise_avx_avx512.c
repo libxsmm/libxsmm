@@ -13,6 +13,7 @@
 #include "generator_mateltwise_transform_avx_avx512.h"
 #include "generator_mateltwise_relu_avx_avx512.h"
 #include "generator_mateltwise_dropout_avx_avx512.h"
+#include "generator_mateltwise_unary_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
@@ -5686,6 +5687,8 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
     libxsmm_generator_transform_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
   } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_DROPOUT ) {
     libxsmm_generator_dropout_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
+    libxsmm_generator_unary_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
   } else  {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
