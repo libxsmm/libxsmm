@@ -12,7 +12,7 @@ import sphinx_rtd_theme
 import os
 
 project = 'LIBXSMM'
-copyright = '2009-2020, Intel Corporation.'
+copyright = '2009-2021, Intel Corporation.'
 author = 'Intel Corporation'
 user = os.environ.get('USER')
 
