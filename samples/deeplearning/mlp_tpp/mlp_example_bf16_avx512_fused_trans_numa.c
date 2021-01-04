@@ -643,8 +643,8 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.bwd_N_hyperpartitions = 2;
     res.upd_bf = 1;
     res.upd_2d_blocking = 1;
-    res.upd_col_teams = 8;
-    res.upd_row_teams = 3;
+    res.upd_col_teams = 3;
+    res.upd_row_teams = 8;
     res.upd_M_hyperpartitions = 1;
     res.upd_N_hyperpartitions = 2;
     res.ifm_subtasks = 1;
@@ -658,8 +658,8 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.bwd_N_hyperpartitions = 4;
     res.upd_bf = 1;
     res.upd_2d_blocking = 1;
-    res.upd_col_teams = 8;
-    res.upd_row_teams = 3;
+    res.upd_col_teams = 3;
+    res.upd_row_teams = 8;
     res.upd_M_hyperpartitions = 1;
     res.upd_N_hyperpartitions = 4;
     res.ifm_subtasks = 1;
