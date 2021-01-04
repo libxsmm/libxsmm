@@ -1,7 +1,7 @@
 
 This package contains the optimized kernels for the 1D dilated convolutional layer. 
 The C++ implementation has code for both FP32 and BF16 formats.
-Run this code on AVX-512 enabled CPUs. Ex. - Cascade Lake or Cooper lake.
+You can run this code on AVX-512 enabled CPUs. Ex. - Cascade Lake or Cooper lake.
 
 --------------- Install instructions -------------------------
 
@@ -38,10 +38,10 @@ The example checks the accuracy of the results and calculates the computation ti
 - Similarly, apply the nonlinearity (Ex. ReLU) separately.  
 
 
-To run code in BFloat16, set enable_BF16 flag to True. BFloat16 code runs only when both the number of 
-filters and input channels to the layer are even number.
-Ex. -  Filters = 16, Channels = 16, enable_BF16 = True  ------ BF16 run
-If either number of filters or channels is odd number then code runs in FP32 format. 
+To run code in BFloat16, set enable_BF16 flag to True. BFloat16 code runs only when the parameters of 
+Input width, number of filters and input channels to the layer are even number.
+Ex. -  Filters = 16, Channels = 16, Input width = 60000, enable_BF16 = True  ------ BF16 run
+If any of the previous parameter is odd number then code runs in FP32 format. 
 
 
 Keep batch size as multiple of ununtilized cores (Ex. - 28, 56, 84, 128 .... on a 28 core cascade lake)

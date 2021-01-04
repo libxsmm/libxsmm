@@ -480,7 +480,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
 #endif
 
-    int short_width = ((XS_TILE_DBACKWARD + (WW_t-1)*dial)/XS_TILE_DBACKWARD + 1)*XS_TILE_DBACKWARD;    // Width of buffer
+    int short_width = ((XS_TILE_DBACKWARD + (WW_t-1)*dial)/XS_TILE_DBACKWARD + 1)*XS_TILE_DBACKWARD;    // Width of buffer   (512)
 
     auto grad_shortvnni_tensor = grad.new_empty({N_t,F_t,short_width});                                 // Buffer for storing VNNI transform
     libxsmm_bfloat16* grad_a_shortvnni = (libxsmm_bfloat16*) grad_shortvnni_tensor.data_ptr<at::BFloat16>();
@@ -488,6 +488,11 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     /* Dispatch brGEMM kernels for the normal case and the edge case*/
     libxsmm_bmmfunction_reducebatch_strd bmmshortkernel = libxsmm_bmmdispatch_reducebatch_strd(XS_TILE_DBACKWARD, C_t, F_t, 2*dial*sizeof(libxsmm_bfloat16), C_t*F_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
     libxsmm_bmmfunction_reducebatch_strd bmmshortkernel2 = libxsmm_bmmdispatch_reducebatch_strd(Win_t - tile_multiple, C_t, F_t, 2*dial*sizeof(libxsmm_bfloat16), C_t*F_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
+
+    if ( bmmshortkernel == NULL || bmmshortkernel2 == NULL) {
+        fprintf( stderr, "JIT for bmm kernel failed. Bailing...!\n");
+        exit(-1);
+    }
 
 #ifdef USE_TPP                                  // When using TPP kernel for initialization
     /* Also JIT eltwise TPPs... */
@@ -505,8 +510,8 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
     /* use jited VNNI */
     libxsmm_blasint ldi_1 = W_t;
-    libxsmm_blasint ldi_2 = ldb_shortpad;
-    libxsmm_blasint ldo = short_width;
+    libxsmm_blasint ldi_2 = ldb_shortpad;                   // (1792)
+    libxsmm_blasint ldo = short_width;                      // (512)
 
     libxsmm_meltw_transform_flags trans_vnni_flags;
     if ( F_t % 2 == 1 ) {
@@ -517,6 +522,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
     tpp_m1 = (XS_TILE_DBACKWARD + dial*(WW_t-1));
     tpp_m2 = (XS_TILE_DBACKWARD + dial*(WW_t-1));
+
     libxsmm_meltwfunction_transform trans_shortvnni_kernel_1 = libxsmm_dispatch_meltw_transform(tpp_m1, F_t, &ldi_1, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_vnni_flags);
     libxsmm_meltwfunction_transform trans_shortvnni_kernel_2 = libxsmm_dispatch_meltw_transform(tpp_m2, F_t, &ldi_2, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_vnni_flags);
     if ( trans_shortvnni_kernel_1 == NULL | trans_shortvnni_kernel_2 == NULL) {
@@ -678,6 +684,11 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     /* Dispatch brGEMM kernels for the normal case and the edge case*/
     libxsmm_bsmmfunction bsmmkernel5 = libxsmm_bsmmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
     libxsmm_bsmmfunction bsmmkernel6 = libxsmm_bsmmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
+
+    if ( bsmmkernel5 == NULL | bsmmkernel6 == NULL) {
+        fprintf( stderr, "JIT for bsmm kernel. Bailing...!\n");
+        exit(-1);
+    }
 
     #pragma omp parallel for reduction(+: flip_d_weight_a[:F_t*C_t*WW_t])
     for(int n = 0; n < N_t; n++) {

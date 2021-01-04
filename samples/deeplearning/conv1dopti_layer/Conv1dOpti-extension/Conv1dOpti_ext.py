@@ -97,8 +97,7 @@ class Conv1dOptiFunction(Function):
     @staticmethod
     def forward(ctx, input, weight, dilation, enable_BF16):
         input = input.contiguous()
-
-        if (weight.size(0)%2 == 1 or weight.size(1)%2 == 1 or enable_BF16==False):            # Run the FP32 version
+        if (enable_BF16==False):            # Run the FP32 version
             weight = weight.contiguous()
             result = Conv1dOpti_cpp.forward(input, \
                                         weight, \
@@ -122,7 +121,7 @@ class Conv1dOptiFunction(Function):
         inp= r[0]
         weight = r[1]
 
-        if (weight.size(0)%2 == 1 or weight.size(1)%2 == 1 or enable_BF16==False):                # Run the FP32 version
+        if (enable_BF16==False):                # Run the FP32 version
             d_input, d_weight = Conv1dOpti_cpp.backward(grad.contiguous(), \
                                                     inp, \
                                                     weight, \
@@ -158,8 +157,13 @@ class Conv1dOpti(_ConvNd):
 
 
     def forward(self, input):
+        # Conditions to enable BF16 compute. Width should be sufficiently greater than padding amount
+        # and Input width, filters and channels should all be even numbers
+        self.enable_BF16 = (self.enable_BF16) and \
+                            (input.size(2) >= (2*(self.weight.size(2) - 1)*self.dilation[0] + 96 - 1)) and \
+                            (input.size(2)%2 == 0) and (self.weight.size(0)%2 == 0) and (self.weight.size(1)%2 == 0)
 
-        if (self.weight.size(0)%2 == 1 or self.weight.size(1)%2 == 1 or self.enable_BF16==False):          # Convert to run the FP32 version
+        if (self.enable_BF16==False):          # Convert to run the FP32 version
             if input.dtype != torch.float32:
                 input = input.to(torch.float32)
         else:                                                                   # Convert to run the BF16 version

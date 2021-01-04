@@ -11,11 +11,11 @@ from Conv1dOpti_ext import Conv1dOpti, ReLU_bf16                    # Import Lay
 """
 Set parameters here for testing the convolutional layer. By default layer run in single-precsion (FP32) format
 
-To run code in BFloat16 set enable_BF16 flag to True. BFloat16 run only when both the number of
-filters and input channels to the layer are even number.
+To run code in BFloat16 set enable_BF16 flag to True. BFloat16 code runs only when parameters of
+Input width, number of filters and input channels to the layer are even number.
 Ex. -  Filters = 16, Channels = 16, enable_BF16 = True  ------ BF16 run
 
-If either number of filters or channels is an odd number than code runs in FP32 format.
+If any of the previous parameters is an odd number than code runs in FP32 format.
 
 
 Keep batch size as multiple of CPU (Ex. - 28, 56, 84, 128 .... on a 28 core cascade lake) for optimal
