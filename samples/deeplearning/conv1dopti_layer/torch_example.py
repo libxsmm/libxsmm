@@ -13,7 +13,7 @@ Set parameters here for testing the convolutional layer. By default layer run in
 
 To run code in BFloat16 set enable_BF16 flag to True. BFloat16 code runs only when parameters of
 Input width, number of filters and input channels to the layer are even number.
-Ex. -  Filters = 16, Channels = 16, enable_BF16 = True  ------ BF16 run
+Ex. -  Input_width = 60000, Filters = 16, Channels = 16, enable_BF16 = True  ------ BF16 run
 
 If any of the previous parameters is an odd number than code runs in FP32 format.
 
@@ -92,7 +92,7 @@ class Net1(nn.Module):                      # First network containing inbuilt P
     def forward(self, x):
         x = self.padding_layer(x)           # Explicit padding
         x = self.conv1(x)
-        #x = F.relu(x)                       # If applying relu
+        # x = F.relu(x)                       # If applying relu
         return x
 
 
@@ -106,7 +106,7 @@ class Net2(nn.Module):                      # Second network containing our opti
     def forward(self, x):
         x = self.padding_layer(x)           # Explicit padding needed for our optimzed convolutional layer
         x = self.conv2(x)
-        #x = ReLU_bf16.apply(x)              # If applying BF16 relu
+        # x = ReLU_bf16.apply(x)              # If applying BF16 relu
         return x
 
 
