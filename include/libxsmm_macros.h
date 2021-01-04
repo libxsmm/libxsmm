@@ -54,11 +54,15 @@
     (defined(_M_IX86)))
 # define LIBXSMM_PLATFORM_X86
 #endif
+#if !defined(LIBXSMM_PLATFORM_AARCH64) && \
+    defined(__aarch64__)
+# define LIBXSMM_PLATFORM_AARCH64
+#endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if defined(LIBXSMM_PLATFORM_X86)
+# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
-#   error Intel Architecture or compatible CPU required!
+#   error x86_64 or aarch64 or compatible CPU required!
 # endif
 #endif
 #if !defined(LIBXSMM_BITS)
