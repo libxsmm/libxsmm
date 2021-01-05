@@ -12,7 +12,7 @@
 #include <libxsmm_generator.h>
 #include <libxsmm_memory.h>
 
-#if defined(LIBXSMM_PLATFORM_SUPPORTED)
+#if defined(LIBXSMM_PLATFORM_X86)
 /* XGETBV: receive results (EAX, EDX) for eXtended Control Register (XCR). */
 /* CPUID, receive results (EAX, EBX, ECX, EDX) for requested FUNCTION/SUBFN. */
 #if defined(_MSC_VER) /*defined(_WIN32) && !defined(__GNUC__)*/
@@ -59,7 +59,7 @@
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
-#if !defined(LIBXSMM_PLATFORM_SUPPORTED)
+#if !defined(LIBXSMM_PLATFORM_X86)
   if (NULL != info) LIBXSMM_MEMZERO127(info);
 #else
   unsigned int eax, ebx, ecx, edx;
@@ -212,10 +212,11 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
 
 LIBXSMM_API int libxsmm_cpuid(void)
 {
-#if defined(__aarch64__)
+#if defined(LIBXSMM_PLATFORM_AARCH64)
   /* @TODO add AARCH64 feature check */
   return LIBXSMM_AARCH64_V81;
-#else
+#endif
+#if defined(LIBXSMM_PLATFORM_X86)
   return libxsmm_cpuid_x86(NULL/*info*/);
 #endif
 }

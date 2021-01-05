@@ -747,8 +747,8 @@ endif
 endif
 endif
 
-# Select code path (if not selected otherwise)
-CPUFLAGS := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
+# Select x86 code path (if not selected otherwise)
+CPUFLAGS_X86 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
   elif [ "Darwin" = "$(UNAME)" ]; then \
     sysctl -a machdep.cpu.features \
@@ -759,28 +759,28 @@ CPUFLAGS := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
   fi))
 SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX
-  ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
-    ifeq (2,$(words $(filter avx512pf avx512er,$(CPUFLAGS)))) # KNL
+  ifeq (1,$(words $(filter avx512f,$(CPUFLAGS_X86))))
+    ifeq (2,$(words $(filter avx512pf avx512er,$(CPUFLAGS_X86)))) # KNL
       AVX ?= 3
       MIC ?= 1
     else
       AVX ?= 2
     endif
-  else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
-    ifeq (1,$(words $(filter fma,$(CPUFLAGS))))
+  else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS_X86))))
+    ifeq (1,$(words $(filter fma,$(CPUFLAGS_X86))))
       AVX ?= 2
     else
       AVX ?= 1
     endif
   endif
 else ifeq (1,$(SSE)) # discover SSE
-  ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
+  ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS_X86))))
     SSE := 4
-  else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
+  else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS_X86))))
     SSE := 3
-  else ifneq (0,$(words $(filter sse2 ,$(CPUFLAGS))))
+  else ifneq (0,$(words $(filter sse2 ,$(CPUFLAGS_X86))))
     SSE := 2
-  else ifneq (,$(CPUFLAGS))
+  else ifneq (,$(CPUFLAGS_X86))
     SSE := 0
   endif
 else ifneq (0,$(KNC))
@@ -788,6 +788,19 @@ else ifneq (0,$(KNC))
 endif
 AVX ?= 0
 MIC ?= 0
+
+# Select aarch64 code path
+CPUFLAGS_AARCH64 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
+    grep -m1 Features /proc/cpuinfo | cut -d: -f2-; \
+    fi))
+ASIMD ?= 1
+ifeq (1,$(ASIMD)) # discover ASIMD
+  ifeq (1,$(words $(filter asimd,$(CPUFLAGS_AARCH64))))
+    ASIMD := 1
+  else ifneq (,$(CPUFLAGS_X86))
+    ASIMD := 0
+  endif
+endif
 
 ifneq (0,$(INTEL))
   SUITE := Intel Compiler
