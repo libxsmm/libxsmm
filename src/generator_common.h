@@ -846,10 +846,13 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vmove_instruction_in;
   unsigned int vmove_instruction_out;
   unsigned int alu_add_instruction;
+  unsigned int alu_sub_instruction;
   unsigned int alu_cmp_instruction;
   unsigned int alu_jmp_instruction;
   unsigned int alu_mov_instruction;
   unsigned int vxor_instruction;
+  unsigned int reserved_zmms;
+  unsigned int reserved_mask_regs;
   char vector_name;
 } libxsmm_mateltwise_kernel_config;
 

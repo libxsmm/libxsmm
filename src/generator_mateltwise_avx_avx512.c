@@ -254,6 +254,7 @@ void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_g
       return;
     }
     io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
+    io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
     io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
     io_micro_kernel_config->alu_jmp_instruction = LIBXSMM_X86_INSTR_JL;
     io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
