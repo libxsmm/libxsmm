@@ -853,6 +853,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vxor_instruction;
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
+  unsigned int use_fp32bf16_cvt_replacement;
+  unsigned int dcvt_mask_aux0;
+  unsigned int dcvt_mask_aux1;
+  unsigned int dcvt_zmm_aux0;
+  unsigned int dcvt_zmm_aux1;
   char vector_name;
 } libxsmm_mateltwise_kernel_config;
 
