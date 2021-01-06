@@ -1237,11 +1237,23 @@ ifneq (0,$(INTEL))
       FMFLAGS += -J
     endif
   endif
+  # avoid turning OpenMP limits into an error (-Werror)
+  ifneq (,$(WERROR_CFLAG))
+  ifeq (0,$(ICX))
+    CXXFLAGS += -qoverride_limits
+    CFLAGS += -qoverride_limits
+    ifeq (,$(strip $(GFC)))
+    ifneq (,$(strip $(FC)))
+      FCFLAGS += -qoverride_limits
+    endif
+    endif
+  endif
+  endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     ifeq (0,$(ICX))
-      #CXXFLAGS += -qoverride_limits #-fp-model fast=2
-      #CFLAGS += -qoverride_limits #-fp-model fast=2
+      #CXXFLAGS += -fp-model fast=2
+      #CFLAGS += -fp-model fast=2
       CXXFLAGS += -fno-alias
       CFLAGS += -fno-alias
     endif
@@ -1249,7 +1261,7 @@ ifneq (0,$(INTEL))
     CFLAGS += -ansi-alias
     ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
-      #FCFLAGS += -qoverride_limits #-fp-model fast=2
+      #FCFLAGS += -fp-model fast=2
       ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION_NUM)))"))
         FCFLAGS += -align array64byte
       endif

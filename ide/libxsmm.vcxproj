@@ -61,9 +61,13 @@
     <ClInclude Include="..\src\generator_gemm_amx_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_amx_microkernel_emu.h" />
     <ClInclude Include="..\src\generator_gemm_common_aarch64.h" />
+    <ClInclude Include="..\src\generator_gemm_sse_avx_avx2_avx512.h" />
+    <ClInclude Include="..\src\generator_gemm_sse_microkernel.h" />
     <ClInclude Include="..\src\generator_mateltwise_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_dropout_avx_avx512.h" />
+    <ClInclude Include="..\src\generator_mateltwise_relu_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_avx_avx512.h" />
+    <ClInclude Include="..\src\generator_mateltwise_unary_avx_avx512.h" />
     <ClInclude Include="..\src\generator_packed_aux.h" />
     <ClInclude Include="..\src\generator_packed_gemmnn.h" />
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_aarch64.h" />
@@ -96,8 +100,6 @@
     <ClInclude Include="..\src\generator_gemm_avx_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_common.h" />
     <ClInclude Include="..\src\generator_gemm_noarch.h" />
-    <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2_avx512.h" />
-    <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h" />
     <ClInclude Include="..\src\generator_matcopy_avx_avx512.h" />
     <ClInclude Include="..\src\generator_spgemm_csc_asparse.h" />
     <ClInclude Include="..\src\generator_spgemm_csc_bsparse.h" />
@@ -149,9 +151,12 @@
     <ClCompile Include="..\src\generator_gemm_amx_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_amx_microkernel_emu.c" />
     <ClCompile Include="..\src\generator_gemm_common_aarch64.c" />
+    <ClCompile Include="..\src\generator_gemm_sse_avx_avx2_avx512.c" />
+    <ClCompile Include="..\src\generator_gemm_sse_microkernel.c" />
     <ClCompile Include="..\src\generator_mateltwise.c" />
     <ClCompile Include="..\src\generator_mateltwise_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_dropout_avx_avx512.c" />
+    <ClCompile Include="..\src\generator_mateltwise_relu_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_avx_avx512.c" />
     <ClCompile Include="..\src\generator_gemm.c" />
     <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c" />
@@ -159,10 +164,9 @@
     <ClCompile Include="..\src\generator_gemm_avx_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_common.c" />
     <ClCompile Include="..\src\generator_gemm_noarch.c" />
-    <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2_avx512.c" />
-    <ClCompile Include="..\src\generator_gemm_sse3_microkernel.c" />
     <ClCompile Include="..\src\generator_matcopy.c" />
     <ClCompile Include="..\src\generator_matcopy_avx_avx512.c" />
+    <ClCompile Include="..\src\generator_mateltwise_unary_avx_avx512.c" />
     <ClCompile Include="..\src\generator_packed.c" />
     <ClCompile Include="..\src\generator_packed_gemm_ac_rm.c" />
     <ClCompile Include="..\src\generator_packed_gemm_ac_rm_aarch64.c" />
