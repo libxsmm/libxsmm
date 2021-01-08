@@ -116,7 +116,6 @@ void adjust_in_microkernel_addr_gp_reg( libxsmm_generated_code*                 
   }
 }
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_configure_avx512_vlens(const libxsmm_meltw_descriptor* i_mateltwise_desc, libxsmm_mateltwise_kernel_config* i_micro_kernel_config) {
   /* First, determine the vlen compute based on the operation */
@@ -211,7 +210,7 @@ void libxsmm_generator_configure_loop_order(const libxsmm_meltw_descriptor* i_ma
 }
 
 LIBXSMM_API_INTERN
-void load_2D_reg_block( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
@@ -247,7 +246,7 @@ void load_2D_reg_block( libxsmm_generated_code*                 io_generated_cod
 }
 
 LIBXSMM_API_INTERN
-void store_2D_reg_block( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
@@ -292,7 +291,7 @@ void store_2D_reg_block( libxsmm_generated_code*                 io_generated_co
 }
 
 LIBXSMM_API_INTERN
-void compute_2D_reg_block( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_compute_unary_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
@@ -396,37 +395,28 @@ void compute_2D_reg_block( libxsmm_generated_code*                 io_generated_
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_2D_microkernel( libxsmm_generated_code*                 io_generated_code,
-                                                 libxsmm_loop_label_tracker*             io_loop_label_tracker,
-                                                 libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
+void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                 unsigned int                            i_tmp_reg,
                                                  unsigned int                            i_m,
-                                                 unsigned int                            i_n) {
+                                                 unsigned int*                           i_use_m_input_masking,
+                                                 unsigned int*                           i_mask_reg_in,
+                                                 unsigned int*                           i_use_m_output_masking,
+                                                 unsigned int*                           i_mask_reg_out) {
 
-  unsigned int use_m_input_masking, use_m_output_masking, m_trips, m_unroll_factor, m_assm_trips, n_trips, n_unroll_factor, n_assm_trips,  max_nm_unrolling = 32, mask_in_count, mask_out_count;
-  unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
-  unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
-  unsigned int out_loop_trips, inner_loop_trips, out_loop_reg, inner_loop_reg, out_loop_bound, inner_loop_bound, out_unroll_factor, inner_unroll_factor, i_out, i_inner;
-  unsigned int mask_reg_in, mask_reg_out;
-  unsigned int use_replacement_fp32bf16_downncvt = 0;
+  unsigned int mask_in_count, mask_out_count, mask_reg_in, mask_reg_out, use_m_input_masking, use_m_output_masking;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
   unsigned int i_vlen_out = i_micro_kernel_config->vlen_out;
-  unsigned int i_vlen_comp = i_micro_kernel_config->vlen_comp;
-  unsigned int i_loop_order =  i_micro_kernel_config->loop_order;
-  unsigned int loop_type;
+  unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
 
-  /* Calculate M/N trips and unroll factors */
   use_m_input_masking   = (i_m % i_vlen_in == 0 ) ? 0 : 1;
   use_m_output_masking  = (i_m % i_vlen_out == 0 ) ? 0 : 1;
-  m_trips               = (i_m + i_vlen_in - 1) / i_vlen_in;
-  n_trips               = i_n;
 
-  /* Setup read/write masks if need be */
   if (use_m_input_masking == 1) {
     mask_in_count = i_vlen_in - i_m % i_vlen_in;
     mask_reg_in   = reserved_mask_regs;
-    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R11, mask_reg_in, mask_in_count, LIBXSMM_GETENUM_INP(i_mateltwise_desc->datatype));
+    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_in, mask_in_count, LIBXSMM_GETENUM_INP(i_mateltwise_desc->datatype));
     reserved_mask_regs++;
   }
 
@@ -436,15 +426,53 @@ void libxsmm_generator_2D_microkernel( libxsmm_generated_code*                 i
     } else {
       mask_out_count = i_vlen_out - i_m % i_vlen_out;
       mask_reg_out   = reserved_mask_regs;
-      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_R11, mask_reg_out, mask_out_count, LIBXSMM_GETENUM_OUT(i_mateltwise_desc->datatype));
+      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_out, mask_out_count, LIBXSMM_GETENUM_OUT(i_mateltwise_desc->datatype));
       reserved_mask_regs++;
     }
   }
-  i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
 
-  /* Configure microkernel loops  */
+  i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
+  *i_mask_reg_in = mask_reg_in;
+  *i_use_m_input_masking = use_m_input_masking;
+  *i_mask_reg_out = mask_reg_out;
+  *i_use_m_output_masking = use_m_output_masking;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_configure_microkernel_loops( libxsmm_generated_code*                        io_generated_code,
+                                                 libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
+                                                 libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
+                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                 unsigned int                            i_m,
+                                                 unsigned int                            i_n,
+                                                 unsigned int                            i_use_m_input_masking,
+                                                 unsigned int*                           i_m_trips,
+                                                 unsigned int*                           i_n_trips,
+                                                 unsigned int*                           i_m_unroll_factor,
+                                                 unsigned int*                           i_n_unroll_factor,
+                                                 unsigned int*                           i_m_assm_trips,
+                                                 unsigned int*                           i_n_assm_trips,
+                                                 unsigned int*                           i_out_loop_trips,
+                                                 unsigned int*                           i_inner_loop_trips,
+                                                 unsigned int*                           i_out_loop_bound,
+                                                 unsigned int*                           i_inner_loop_bound,
+                                                 unsigned int*                           i_out_loop_reg,
+                                                 unsigned int*                           i_inner_loop_reg,
+                                                 unsigned int*                           i_out_unroll_factor,
+                                                 unsigned int*                           i_inner_unroll_factor) {
+
+  unsigned int m_trips, n_trips, m_unroll_factor, n_unroll_factor, m_assm_trips, n_assm_trips, out_loop_trips, inner_loop_trips, out_loop_bound, inner_loop_bound, out_loop_reg, inner_loop_reg, out_unroll_factor, inner_unroll_factor;
+  unsigned int max_nm_unrolling = 32;
+  unsigned int i_loop_order = i_micro_kernel_config->loop_order;
+  unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+  unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
+
+  m_trips               = (i_m + i_vlen_in - 1) / i_vlen_in;
+  n_trips               = i_n;
+
   max_nm_unrolling  = max_nm_unrolling - reserved_zmms;
-  if (use_m_input_masking == 1) {
+
+  if (i_use_m_input_masking == 1) {
     m_unroll_factor = m_trips;
   } else {
     m_unroll_factor = LIBXSMM_MIN(m_trips,16);
@@ -480,6 +508,51 @@ void libxsmm_generator_2D_microkernel( libxsmm_generated_code*                 i
   inner_loop_reg      = (i_loop_order == MN_LOOP_ORDER) ? i_gp_reg_mapping->gp_reg_n_loop : i_gp_reg_mapping->gp_reg_m_loop;
   inner_unroll_factor = (i_loop_order == MN_LOOP_ORDER) ? n_unroll_factor : m_unroll_factor;
 
+  *i_m_trips = m_trips;
+  *i_n_trips = n_trips;
+  *i_m_unroll_factor = m_unroll_factor;
+  *i_n_unroll_factor = n_unroll_factor;
+  *i_m_assm_trips = m_assm_trips;
+  *i_n_assm_trips = n_assm_trips;
+  *i_out_loop_trips = out_loop_trips;
+  *i_inner_loop_trips = inner_loop_trips;
+  *i_out_loop_bound = out_loop_bound;
+  *i_inner_loop_bound = inner_loop_bound;
+  *i_out_loop_reg = out_loop_reg;
+  *i_inner_loop_reg = inner_loop_reg;
+  *i_out_unroll_factor = out_unroll_factor;
+  *i_inner_unroll_factor = inner_unroll_factor;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                 libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                 libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
+                                                 libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
+                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                 unsigned int                            i_m,
+                                                 unsigned int                            i_n) {
+
+  unsigned int use_m_input_masking, use_m_output_masking, m_trips, m_unroll_factor, m_assm_trips, n_trips, n_unroll_factor, n_assm_trips, mask_in_count, mask_out_count;
+  unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+  unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+  unsigned int out_loop_trips, inner_loop_trips, out_loop_reg, inner_loop_reg, out_loop_bound, inner_loop_bound, out_unroll_factor, inner_unroll_factor, i_out, i_inner;
+  unsigned int mask_reg_in, mask_reg_out;
+  unsigned int use_replacement_fp32bf16_downncvt = 0;
+  unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
+  unsigned int i_vlen_out = i_micro_kernel_config->vlen_out;
+  unsigned int i_vlen_comp = i_micro_kernel_config->vlen_comp;
+  unsigned int i_loop_order = i_micro_kernel_config->loop_order;
+  unsigned int loop_type;
+
+  /* Configure microkernel masks */
+  libxsmm_setup_input_output_masks( io_generated_code, i_micro_kernel_config, i_mateltwise_desc,
+      LIBXSMM_X86_GP_REG_R11, i_m, &use_m_input_masking, &mask_reg_in, &use_m_output_masking, &mask_reg_out);
+
+  /* Configure microkernel loops */
+  libxsmm_configure_microkernel_loops( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, i_m, i_n, use_m_input_masking,
+    &m_trips, &n_trips, &m_unroll_factor, &n_unroll_factor, &m_assm_trips, &n_assm_trips,
+    &out_loop_trips, &inner_loop_trips, &out_loop_bound, &inner_loop_bound, &out_loop_reg, &inner_loop_reg, &out_unroll_factor, &inner_unroll_factor );
 
   if (out_loop_trips > 1) {
     libxsmm_generator_generic_loop_header(io_generated_code, io_loop_label_tracker, out_loop_reg, 0);
@@ -490,43 +563,16 @@ void libxsmm_generator_2D_microkernel( libxsmm_generated_code*                 i
   }
 
   /* Load block of registers */
-  load_2D_reg_block(io_generated_code,
-      io_loop_label_tracker,
-      i_gp_reg_mapping,
-      i_micro_kernel_config,
-      i_mateltwise_desc,
-      i_vlen_in,
-      reserved_zmms,
-      m_unroll_factor,
-      n_unroll_factor,
-      use_m_input_masking,
-      mask_reg_in);
+  libxsmm_load_2d_reg_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
+      i_vlen_in, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in);
 
   /* Compute on registers */
-  compute_2D_reg_block(io_generated_code,
-      io_loop_label_tracker,
-      i_gp_reg_mapping,
-      i_micro_kernel_config,
-      i_mateltwise_desc,
-      i_vlen_in,
-      reserved_zmms,
-      m_unroll_factor,
-      n_unroll_factor,
-      use_m_input_masking,
-      mask_reg_in);
+  libxsmm_compute_unary_2d_reg_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
+      i_vlen_in, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in);
 
   /* Store block of registers */
-  store_2D_reg_block(io_generated_code,
-      io_loop_label_tracker,
-      i_gp_reg_mapping,
-      i_micro_kernel_config,
-      i_mateltwise_desc,
-      i_vlen_out,
-      reserved_zmms,
-      m_unroll_factor,
-      n_unroll_factor,
-      use_m_output_masking,
-      mask_reg_out);
+  libxsmm_store_2d_reg_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
+      i_vlen_out, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_output_masking, mask_reg_out);
 
   if (inner_loop_trips > 1) {
     /* Advance input/output pointers */
@@ -700,7 +746,7 @@ void libxsmm_generator_unary_avx512_microkernel( libxsmm_generated_code*        
       n_microkernel = (loop_order == NM_LOOP_ORDER) ? out_block : inner_block;
       m_microkernel = (loop_order == MN_LOOP_ORDER) ? out_block : inner_block;
 
-      libxsmm_generator_2D_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, m_microkernel, n_microkernel);
+      libxsmm_generator_unary_2d_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, m_microkernel, n_microkernel);
 
       inner_ind += inner_block;
 
