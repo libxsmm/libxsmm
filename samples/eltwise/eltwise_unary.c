@@ -599,7 +599,7 @@ int main( int argc, char* argv[] ) {
   if ( op == 1 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");
     test_unary_copy_f32_f32( M, N, ldi, ldo );
-  } if ( op == 1 && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
+  } else if ( op == 1 && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing BF16 BF16 copy\n");
     test_unary_copy_bf16_bf16( M, N, ldi, ldo );
   } else if ( op == 1 && dtype_in == 4 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
