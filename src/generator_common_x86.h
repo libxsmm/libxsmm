@@ -18,14 +18,14 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_generic_loop_header( libxsmm_generated_code*             io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const unsigned int                 i_loop_reg,
-    const unsigned int                 i_loop_init_val);
+    const unsigned int                 i_loop_init_val,
+    const unsigned int                 i_loop_step);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_generic_loop_footer( libxsmm_generated_code*             io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const unsigned int                 i_loop_reg,
-    const unsigned int                 i_loop_bound,
-    const unsigned int                 i_loop_step);
+    const unsigned int                 i_loop_bound);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_xoshiro128pp_avx512( libxsmm_generated_code* io_generated_code,

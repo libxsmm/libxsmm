@@ -525,7 +525,44 @@ void libxsmm_configure_microkernel_loops( libxsmm_generated_code*               
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*                       io_generated_code,
+                                                 libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
+                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                 unsigned int                            i_gp_reg_tmp) {
+  /* initialize some values */
+  i_micro_kernel_config->reserved_zmms = 0;
+  i_micro_kernel_config->reserved_mask_regs = 1;
+  i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
+
+  /* if we need FP32->BF16 downconverts and we don't have native instruction, then prepare stack */
+  if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
+       LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX)) {
+    i_micro_kernel_config->use_fp32bf16_cvt_replacement = 1;
+    libxsmm_generator_vcvtneps2bf16_avx512_prep_stack( io_generated_code, i_gp_reg_tmp );
+    i_micro_kernel_config->dcvt_mask_aux0 = i_micro_kernel_config->reserved_mask_regs;
+    i_micro_kernel_config->dcvt_mask_aux1 = i_micro_kernel_config->reserved_mask_regs + 1;
+    i_micro_kernel_config->reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs + 2;
+    i_micro_kernel_config->dcvt_zmm_aux0 = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->dcvt_zmm_aux1 = i_micro_kernel_config->reserved_zmms + 1;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
+  }
+
+  if ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV)) {
+    i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+
+    /* Set zero register needed for relu  */
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg );
+
+    if ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) == 0) ) {
+      i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
+      i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*                     io_generated_code,
                                                  libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
@@ -555,11 +592,11 @@ void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*            
     &out_loop_trips, &inner_loop_trips, &out_loop_bound, &inner_loop_bound, &out_loop_reg, &inner_loop_reg, &out_unroll_factor, &inner_unroll_factor );
 
   if (out_loop_trips > 1) {
-    libxsmm_generator_generic_loop_header(io_generated_code, io_loop_label_tracker, out_loop_reg, 0);
+    libxsmm_generator_generic_loop_header(io_generated_code, io_loop_label_tracker, out_loop_reg, 0, out_unroll_factor);
   }
 
   if (inner_loop_trips > 1) {
-    libxsmm_generator_generic_loop_header(io_generated_code, io_loop_label_tracker, inner_loop_reg, 0);
+    libxsmm_generator_generic_loop_header(io_generated_code, io_loop_label_tracker, inner_loop_reg, 0, inner_unroll_factor);
   }
 
   /* Load block of registers */
@@ -589,7 +626,7 @@ void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*            
           i_gp_reg_mapping->gp_reg_relumask, i_micro_kernel_config->alu_add_instruction, inner_unroll_factor, loop_type);
     }
 
-    libxsmm_generator_generic_loop_footer(io_generated_code, io_loop_label_tracker, inner_loop_reg, inner_loop_bound, inner_unroll_factor);
+    libxsmm_generator_generic_loop_footer(io_generated_code, io_loop_label_tracker, inner_loop_reg, inner_loop_bound);
 
     /* Reset input/output pointers  */
     adjust_in_microkernel_addr_gp_reg( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
@@ -620,7 +657,7 @@ void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*            
           i_gp_reg_mapping->gp_reg_relumask, i_micro_kernel_config->alu_add_instruction, out_unroll_factor, loop_type);
     }
 
-    libxsmm_generator_generic_loop_footer(io_generated_code, io_loop_label_tracker, out_loop_reg, out_loop_bound, out_unroll_factor);
+    libxsmm_generator_generic_loop_footer(io_generated_code, io_loop_label_tracker, out_loop_reg, out_loop_bound);
 
     /* Reset input/output pointers  */
     adjust_in_microkernel_addr_gp_reg( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
@@ -691,49 +728,23 @@ void libxsmm_generator_unary_avx512_microkernel( libxsmm_generated_code*        
       i_gp_reg_mapping->gp_reg_out,
       0 );
 
-  libxsmm_x86_instruction_alu_mem( io_generated_code,
-      i_micro_kernel_config->alu_mov_instruction,
-      i_gp_reg_mapping->gp_reg_param_struct,
-      LIBXSMM_X86_GP_REG_UNDEF, 0,
-      8,
-      i_gp_reg_mapping->gp_reg_relumask,
-      0 );
+  if ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV)) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+        i_micro_kernel_config->alu_mov_instruction,
+        i_gp_reg_mapping->gp_reg_param_struct,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        8,
+        i_gp_reg_mapping->gp_reg_relumask,
+        0 );
+  }
 
   /* Configure M and N blocking factors */
   libxsmm_generator_configure_M_N_blocking(i_mateltwise_desc->m, i_mateltwise_desc->n, i_micro_kernel_config->vlen_in, &m_blocking, &n_blocking);
   libxsmm_generator_configure_loop_order(i_mateltwise_desc, &loop_order, &m_blocking, &n_blocking, &out_blocking, &inner_blocking, &out_bound, &inner_bound);
   i_micro_kernel_config->loop_order = loop_order;
 
-  /* TODO: Based on kernel type reserve zmms and mask registers  */
-  i_micro_kernel_config->reserved_zmms = 0;
-  i_micro_kernel_config->reserved_mask_regs = 1;
-  i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
-
-  /* if we need FP32->BF16 downconverts and we don't have native instruction, then prepare stack */
-  if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
-       LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX)) {
-    i_micro_kernel_config->use_fp32bf16_cvt_replacement = 1;
-    libxsmm_generator_vcvtneps2bf16_avx512_prep_stack( io_generated_code, i_gp_reg_tmp );
-    i_micro_kernel_config->dcvt_mask_aux0 = i_micro_kernel_config->reserved_mask_regs;
-    i_micro_kernel_config->dcvt_mask_aux1 = i_micro_kernel_config->reserved_mask_regs + 1;
-    i_micro_kernel_config->reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs + 2;
-    i_micro_kernel_config->dcvt_zmm_aux0 = i_micro_kernel_config->reserved_zmms;
-    i_micro_kernel_config->dcvt_zmm_aux1 = i_micro_kernel_config->reserved_zmms + 1;
-    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
-  }
-
-  if ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV)) {
-    i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms;
-    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
-
-    /* Set zero register needed for relu  */
-    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg );
-
-    if ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) == 0) ) {
-      i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
-      i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
-    }
-  }
+  /* Based on kernel type reserve zmms and mask registers  */
+  libxsmm_configure_kernel_vregs_masks( io_generated_code, i_micro_kernel_config, i_mateltwise_desc, i_gp_reg_tmp);
 
   out_ind = 0;
   while ( out_ind != out_bound ) {

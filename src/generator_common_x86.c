@@ -18,18 +18,18 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_generic_loop_header( libxsmm_generated_code*             io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const unsigned int                 i_loop_reg,
-    const unsigned int                 i_loop_init_val) {
+    const unsigned int                 i_loop_init_val,
+    const unsigned int                 i_loop_step ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_loop_reg, i_loop_init_val );
   libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_loop_reg, i_loop_step);
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_generic_loop_footer( libxsmm_generated_code*             io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const unsigned int                 i_loop_reg,
-    const unsigned int                 i_loop_bound,
-    const unsigned int                 i_loop_step) {
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_loop_reg, i_loop_step);
+    const unsigned int                 i_loop_bound) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_loop_reg, i_loop_bound );
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JL, io_loop_label_tracker );
 }
