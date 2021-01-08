@@ -858,6 +858,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int dcvt_mask_aux1;
   unsigned int dcvt_zmm_aux0;
   unsigned int dcvt_zmm_aux1;
+  unsigned int tmp_vreg;
+  unsigned int zero_vreg;
   char vector_name;
 } libxsmm_mateltwise_kernel_config;
 
