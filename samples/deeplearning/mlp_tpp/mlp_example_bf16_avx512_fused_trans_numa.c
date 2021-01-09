@@ -43,6 +43,9 @@
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), (__m256i)_mm512_cvtneps_pbh((B)))
 
+#define MLP_TPP_FWD_PARALLEL_PARAMS 6
+#define MLP_TPP_BWD_PARALLEL_PARAMS 14
+
 static int threads_per_numa = 0;
 
 LIBXSMM_INLINE void my_init_buf(float* buf, size_t size, int initPos, int initOne)
@@ -362,6 +365,8 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint ldc_trans = bn;
 #endif
 
+  const char* par_env = getenv( "LIBXSMM_MLP_TPP_FWD_PARALLEL" );
+
   /* setting up some handle values */
   res.N = N;
   res.C = C;
@@ -373,56 +378,22 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.fuse_type = fuse_type;
 
   /* setup parallelization strategy */
-  res.fwd_M_hyperpartitions = 1;
-  res.fwd_N_hyperpartitions = 1;
-  if (threads == 16) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 2;
-    res.fwd_row_teams = 8;
-  } else if (threads == 14) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 2;
-    res.fwd_row_teams = 7;
-  } else if (threads == 56) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 14;
-    res.fwd_M_hyperpartitions = 1;
-    res.fwd_N_hyperpartitions = 4;
-  } else if (threads == 1) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 1;
-    res.fwd_M_hyperpartitions = 1;
-    res.fwd_N_hyperpartitions = 1;
-  } else if (threads == 24) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 24;
-  } else if (threads == 48) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 24;
-    res.fwd_M_hyperpartitions = 1;
-    res.fwd_N_hyperpartitions = 2;
-  } else if (threads == 96) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 24;
-    res.fwd_M_hyperpartitions = 1;
-    res.fwd_N_hyperpartitions = 4;
-  } else {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 0;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 1;
+  if ( NULL == par_env ) {
+    printf( "Please set LIBXSMM_MLP_TPP_FWD_PARALLEL env!\n");
+    exit(-1);
+  }
+
+  /* Read parallelization values */
+  if ( MLP_TPP_FWD_PARALLEL_PARAMS != sscanf(par_env, "%i %i %i %i %i %i", &res.fwd_bf, &res.fwd_2d_blocking,
+                                             &res.fwd_col_teams, &res.fwd_row_teams,
+                                             &res.fwd_M_hyperpartitions, &res.fwd_N_hyperpartitions) ) {
+    printf( "LIBXSMM_MLP_TPP_FWD_PARALLEL env should contain %d values!\n", MLP_TPP_FWD_PARALLEL_PARAMS );
+    exit(-1);
+  }
+
+  if ( (threads != res.fwd_col_teams * res.fwd_M_hyperpartitions * res.fwd_row_teams * res.fwd_N_hyperpartitions) ) {
+    printf("Bad parallelization strategy for FWD pass\n");
+    exit(-1);
   }
 
 #if 0
@@ -552,6 +523,8 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_meltw_flags fusion_flags_bwd;
   libxsmm_meltw_operation bwd_fused_op;
 
+  const char* par_env = getenv( "LIBXSMM_MLP_TPP_BWD_PARALLEL" );
+
   /* setting up some handle values */
   res.N = N;
   res.C = C;
@@ -567,114 +540,29 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 #endif
 
   /* setup parallelization strategy */
-  res.bwd_M_hyperpartitions = 1;
-  res.upd_M_hyperpartitions = 1;
-  res.bwd_N_hyperpartitions = 1;
-  res.upd_N_hyperpartitions = 1;
-  if (threads == 16) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 8;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 2;
-    res.upd_row_teams = 8;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 14) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 7;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 2;
-    res.upd_row_teams = 7;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 56) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 1;
-    res.bwd_row_teams = 14;
-    res.bwd_M_hyperpartitions = 1;
-    res.bwd_N_hyperpartitions = 4;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 1;
-    res.upd_row_teams = 14;
-    res.upd_M_hyperpartitions = 1;
-    res.upd_N_hyperpartitions = 4;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 1) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 1;
-    res.bwd_row_teams = 1;
-    res.bwd_M_hyperpartitions = 1;
-    res.bwd_N_hyperpartitions = 1;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 1;
-    res.upd_row_teams = 1;
-    res.upd_M_hyperpartitions = 1;
-    res.upd_N_hyperpartitions = 1;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 24) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 12;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 8;
-    res.upd_row_teams = 3;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 48) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 12;
-    res.bwd_M_hyperpartitions = 1;
-    res.bwd_N_hyperpartitions = 2;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 3;
-    res.upd_row_teams = 8;
-    res.upd_M_hyperpartitions = 1;
-    res.upd_N_hyperpartitions = 2;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 96) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 12;
-    res.bwd_M_hyperpartitions = 1;
-    res.bwd_N_hyperpartitions = 4;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 3;
-    res.upd_row_teams = 8;
-    res.upd_M_hyperpartitions = 1;
-    res.upd_N_hyperpartitions = 4;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 0;
-    res.bwd_col_teams = 1;
-    res.bwd_row_teams = 1;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 0;
-    res.upd_col_teams = 1;
-    res.upd_row_teams = 1;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
+  if ( NULL == par_env ) {
+    printf( "Please set LIBXSMM_MLP_TPP_BWD_PARALLEL env!\n");
+    exit(-1);
+  }
+
+  /* Read parallelization values */
+  if ( MLP_TPP_BWD_PARALLEL_PARAMS != sscanf(par_env, "%i %i %i %i %i %i %i %i %i %i %i %i %i %i",
+                                             &res.bwd_bf, &res.bwd_2d_blocking, &res.bwd_col_teams, &res.bwd_row_teams,
+                                             &res.bwd_M_hyperpartitions, &res.bwd_N_hyperpartitions,
+                                             &res.upd_bf, &res.upd_2d_blocking, &res.upd_col_teams, &res.upd_row_teams,
+                                             &res.upd_M_hyperpartitions, &res.upd_N_hyperpartitions,
+                                             &res.ifm_subtasks, &res.ofm_subtasks) ) {
+    printf( "LIBXSMM_MLP_TPP_BWD_PARALLEL env should contain %d values!\n", MLP_TPP_BWD_PARALLEL_PARAMS );
+    exit(-1);
+  }
+
+  if ( (threads != res.bwd_col_teams * res.bwd_M_hyperpartitions * res.bwd_row_teams * res.bwd_N_hyperpartitions) ) {
+    printf("Bad parallelization strategy for BWD pass\n");
+    exit(-1);
+  }
+  if ( (threads != res.upd_col_teams * res.upd_M_hyperpartitions * res.upd_row_teams * res.upd_N_hyperpartitions) ) {
+    printf("Bad parallelization strategy for UPD pass\n");
+    exit(-1);
   }
 
   bbk = (res.upd_2d_blocking == 1) ? bk : bk/res.ofm_subtasks;
