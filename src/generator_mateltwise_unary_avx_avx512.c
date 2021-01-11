@@ -375,7 +375,6 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
       unsigned int l_vcmp_instr = ( l_bf16_compute > 0 ) ? LIBXSMM_X86_INSTR_VPCMPW : LIBXSMM_X86_INSTR_VCMPPS;
       unsigned int l_vblend_instr = ( l_bf16_compute > 0 ) ? LIBXSMM_X86_INSTR_VPBLENDMW : LIBXSMM_X86_INSTR_VPBLENDMD;
       unsigned int l_mask_ld_instr = ( l_bf16_compute > 0  ) ? LIBXSMM_X86_INSTR_KMOVD_LD : LIBXSMM_X86_INSTR_KMOVW_LD;
-      unsigned int l_mask_st_instr = ( l_bf16_compute > 0  ) ? LIBXSMM_X86_INSTR_KMOVD_ST : LIBXSMM_X86_INSTR_KMOVW_ST;
       unsigned int l_vlen = ( l_bf16_compute > 0 ) ? 32 : 16;
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
 
@@ -467,7 +466,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
                                                  unsigned int*                           i_use_m_output_masking,
                                                  unsigned int*                           i_mask_reg_out) {
 
-  unsigned int mask_in_count, mask_out_count, mask_reg_in, mask_reg_out, use_m_input_masking, use_m_output_masking;
+  unsigned int mask_in_count, mask_out_count, mask_reg_in = 0, mask_reg_out = 0, use_m_input_masking, use_m_output_masking;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
   unsigned int i_vlen_out = i_micro_kernel_config->vlen_out;
   unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
@@ -632,16 +631,12 @@ void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*            
                                                  unsigned int                            i_m,
                                                  unsigned int                            i_n) {
 
-  unsigned int use_m_input_masking, use_m_output_masking, m_trips, m_unroll_factor, m_assm_trips, n_trips, n_unroll_factor, n_assm_trips, mask_in_count, mask_out_count;
+  unsigned int use_m_input_masking, use_m_output_masking, m_trips, m_unroll_factor, m_assm_trips, n_trips, n_unroll_factor, n_assm_trips;
   unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
-  unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
-  unsigned int out_loop_trips, inner_loop_trips, out_loop_reg, inner_loop_reg, out_loop_bound, inner_loop_bound, out_unroll_factor, inner_unroll_factor, i_out, i_inner;
+  unsigned int out_loop_trips, inner_loop_trips, out_loop_reg, inner_loop_reg, out_loop_bound, inner_loop_bound, out_unroll_factor, inner_unroll_factor;
   unsigned int mask_reg_in, mask_reg_out;
-  unsigned int use_replacement_fp32bf16_downncvt = 0;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
   unsigned int i_vlen_out = i_micro_kernel_config->vlen_out;
-  unsigned int i_vlen_comp = i_micro_kernel_config->vlen_comp;
-  unsigned int i_loop_order = i_micro_kernel_config->loop_order;
   unsigned int loop_type;
 
   /* Configure microkernel masks */
@@ -743,8 +738,8 @@ void libxsmm_generator_unary_avx512_microkernel( libxsmm_generated_code*        
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
-  unsigned int loop_order, m_blocking, out_blocking, out_bound, out_block, n_blocking, inner_blocking, inner_block, inner_bound, n_microkernel, m_microkernel;
-  unsigned int vlen_in, vlen_out, vlen_comp, out_ind, inner_ind, reset_regs, loop_type;
+  unsigned int loop_order, m_blocking, out_blocking, out_bound, out_block = 0, n_blocking, inner_blocking, inner_block, inner_bound, n_microkernel = 0, m_microkernel = 0;
+  unsigned int out_ind, inner_ind, reset_regs, loop_type;
   unsigned int i_gp_reg_tmp = LIBXSMM_X86_GP_REG_R11;
 
   /* Some rudimentary checking of M, N and LDs*/
