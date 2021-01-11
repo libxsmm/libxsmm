@@ -488,8 +488,8 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
       } else {
         if (!((use_m_masking == 1) && (im == m_trips-1) && (m % 32 <= 16))) {
           /* RNE convert reg_0 and reg_1 */
-          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z', reg_0, reg_0, 0, 1, 6, 7 );
-          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z', reg_1, reg_1, 0, 1, 6, 7 );
+          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack_nocompact( io_generated_code, 'z', reg_0, reg_0, 0, 1, 6, 7 );
+          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack_nocompact( io_generated_code, 'z', reg_1, reg_1, 0, 1, 6, 7 );
           /* Properly interleave reg_0 and reg_1 into reg_0  */
           libxsmm_x86_instruction_vec_compute_3reg(io_generated_code,
               LIBXSMM_X86_INSTR_VPERMT2W,
@@ -500,18 +500,6 @@ void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*  
         } else {
           /* RNE convert reg_0 */
           libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z', reg_0, reg_0, 0, 1, 6, 7 );
-          /* shift FP32 by 16bit to right */
-          libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-              LIBXSMM_X86_INSTR_VPSRAD_I,
-              i_micro_kernel_config->vector_name,
-              reg_0,
-              reg_0,
-              16);
-          /* store 16 bit values into lower portion of reg_0 */
-          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-              LIBXSMM_X86_INSTR_VPMOVDW,
-              i_micro_kernel_config->vector_name,
-              reg_0, reg_0 );
         }
       }
 

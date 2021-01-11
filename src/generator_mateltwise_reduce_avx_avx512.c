@@ -2732,18 +2732,6 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
               im + vecout_offset, im + vecout_offset);
         } else {
           libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z', im + vecout_offset, im + vecout_offset, 30, 31, 6, 7 );
-          /* shift FP32 by 16bit to right */
-          libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-              LIBXSMM_X86_INSTR_VPSRAD_I,
-              i_micro_kernel_config->vector_name,
-              im + vecout_offset,
-              im + vecout_offset,
-              16);
-          /* store 16 bit values into lower portion of reg_0 */
-          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-              LIBXSMM_X86_INSTR_VPMOVDW,
-              i_micro_kernel_config->vector_name,
-              im + vecout_offset, im + vecout_offset );
         }
       }
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -3101,18 +3089,6 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
               im + vecout_offset, im + vecout_offset );
         } else {
           libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z', im + vecout_offset, im + vecout_offset, 30, 31, 6, 7 );
-          /* shift FP32 by 16bit to right */
-          libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-              LIBXSMM_X86_INSTR_VPSRAD_I,
-              i_micro_kernel_config->vector_name,
-              im + vecout_offset,
-              im + vecout_offset,
-              16);
-          /* store 16 bit values into lower portion of reg_0 */
-          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-              LIBXSMM_X86_INSTR_VPMOVDW,
-              i_micro_kernel_config->vector_name,
-              im + vecout_offset, im + vecout_offset );
         }
       }
       libxsmm_x86_instruction_vec_move( io_generated_code,
