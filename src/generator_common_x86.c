@@ -15,6 +15,59 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_inout,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2) {
+
+  if (i_vec_tmp1 > 15 || i_vec_tmp2 > 15 ) {
+    /* This should not happen  */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                           'z',
+                                           i_vec_inout, i_vec_inout, i_vec_tmp1, 0x4e );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           'z',
+                                           i_vec_inout, i_vec_tmp1, i_vec_inout );
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VSHUFF64X2,
+                                           'z',
+                                           i_vec_inout, i_vec_inout, i_vec_tmp1, 0xb1 );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           'z',
+                                           i_vec_inout, i_vec_tmp1, i_vec_tmp2 );
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VSHUFPS,
+                                           'y',
+                                           i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x4e );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           'y',
+                                           i_vec_tmp2, i_vec_tmp1, i_vec_tmp2 );
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VSHUFPS,
+                                           'y',
+                                           i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x1 );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           'z',
+                                           i_vec_tmp2, i_vec_tmp1, i_vec_inout );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_generic_loop_header( libxsmm_generated_code*             io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const unsigned int                 i_loop_reg,
@@ -262,5 +315,59 @@ void libxsmm_generator_vcvtneps2bf16_avx512( libxsmm_generated_code* io_generate
 
   libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, io_gp_reg );
 }
+
+LIBXSMM_API_INTERN
+int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var stack_var ) {
+  /* The stack at exit of setup looks like this:
+   *
+   *      Return address                            <-- RBP+8
+   *      Entry/saved RBP                           <-- RBP
+   *      Input ptr                                 <-- RBP-8
+   *      Output ptr                                <-- RBP-16
+   *      Mask ptr                                  <-- RBP-24
+   *      Scratch ptr in stack (to be filled)       <-- RBP-32
+   *
+   * */
+
+  switch ( stack_var ) {
+    case LIBXSMM_MELTW_STACK_VAR_INP_PTR:
+      return -8;
+    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR:
+      return -16;
+    case LIBXSMM_MELTW_STACK_VAR_MASK_PTR:
+      return -24;
+    case LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR:
+      return -32;
+    default:
+      return 0;
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_getval_stack_var( libxsmm_generated_code*              io_generated_code,
+                                                libxsmm_meltw_stack_var            stack_var,
+                                                unsigned int                        i_gp_reg ) {
+  int offset = libxsmm_generator_meltw_get_rbp_relative_offset(stack_var);
+  /* make sure we requested a legal stack var */
+  if (offset == 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, offset, i_gp_reg, 0 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_setval_stack_var( libxsmm_generated_code*              io_generated_code,
+                                                libxsmm_meltw_stack_var            stack_var,
+                                                unsigned int                        i_gp_reg ) {
+  int offset = libxsmm_generator_meltw_get_rbp_relative_offset(stack_var);
+  /* make sure we requested to set  a legal stack var */
+  if (offset >= 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, offset, i_gp_reg, 1 );
+}
+
 
 

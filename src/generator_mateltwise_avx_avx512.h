@@ -55,13 +55,6 @@ void libxsmm_generator_mateltwise_footer_n_dyn_loop( libxsmm_generated_code*    
                                               const unsigned int                            i_gp_reg_n_bound );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                        io_generated_code,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const unsigned int                             i_vec_inout,
-    const unsigned int                             i_vec_tmp1,
-    const unsigned int                             i_vec_tmp2);
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code*            io_generated_code,
     const unsigned int                       i_gp_reg_tmp,
     const unsigned int                       i_mask_reg,

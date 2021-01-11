@@ -910,7 +910,16 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
   unsigned int block_size;
 } libxsmm_blocking_info_t;
 
-/* Auxiliary stach variable enumeration in GEMM */
+/* Auxiliary stack variable enumeration for kernels */
+typedef enum libxsmm_meltw_stack_var {
+  LIBXSMM_MELTW_STACK_VAR_NONE            =  0,
+  LIBXSMM_MELTW_STACK_VAR_INP_PTR         =  1,
+  LIBXSMM_MELTW_STACK_VAR_OUT_PTR         =  2,
+  LIBXSMM_MELTW_STACK_VAR_MASK_PTR        =  3,
+  LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR     =  4
+} libxsmm_meltw_stack_var;
+
+/* Auxiliary stack variable enumeration in GEMM */
 typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_NONE               =  0,
   LIBXSMM_GEMM_STACK_VAR_PFA_PTR            =  1,

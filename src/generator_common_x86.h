@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_COMMON_X86_H
@@ -26,6 +26,12 @@ void libxsmm_generator_generic_loop_footer( libxsmm_generated_code*             
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const unsigned int                 i_loop_reg,
     const unsigned int                 i_loop_bound);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_inout,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_xoshiro128pp_avx512( libxsmm_generated_code* io_generated_code,
