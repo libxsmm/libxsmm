@@ -336,6 +336,7 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
   unsigned int im, in, cur_vreg;
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_mask_reg);
+  LIBXSMM_UNUSED(i_vlen);
 
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
@@ -373,6 +374,7 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
                                                  unsigned int                            i_mask_last_m_chunk,
                                                  unsigned int                            i_mask_reg) {
   unsigned int im, in, cur_vreg;
+  LIBXSMM_UNUSED(i_vlen);
 
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
@@ -538,6 +540,8 @@ void libxsmm_configure_microkernel_loops( libxsmm_generated_code*               
   unsigned int i_loop_order = i_micro_kernel_config->loop_order;
   unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
+  LIBXSMM_UNUSED(io_generated_code);
+  LIBXSMM_UNUSED(i_mateltwise_desc);
 
   m_trips               = (i_m + i_vlen_in - 1) / i_vlen_in;
   n_trips               = i_n;
