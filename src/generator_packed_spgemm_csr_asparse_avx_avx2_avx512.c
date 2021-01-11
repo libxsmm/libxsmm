@@ -129,6 +129,9 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
 
   /* close packed loop */
   if ( (l_simd_packed_iters_full > 1) || (l_simd_packed_remainder > 0 && l_simd_packed_iters_full > 0 ) ) {
+    /* restore n_loop counter */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_nloop, 0 );
+
     /* restore a, b, b_prefetch, c pointers */
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_c );
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b_prefetch );

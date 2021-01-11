@@ -59,8 +59,9 @@ int main(void)
     if (0.0000004 < LIBXSMM_ABS(diff.linf_abs - 0.9300000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.5600000)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
-    if (2 != diff.m) result = EXIT_FAILURE;
-    if (2 != diff.n) result = EXIT_FAILURE;
+    if (2 != diff.m || 2 != diff.n) result = EXIT_FAILURE;
+    if (a[3*diff.n+diff.m] != diff.v_ref) result = EXIT_FAILURE;
+    if (b[3*diff.n+diff.m] != diff.v_tst) result = EXIT_FAILURE;
   }
 
   result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), 1/*m*/, 3/*n*/,
@@ -85,8 +86,9 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.linf_abs - 2.0000000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.2222222)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
-    if (0 != diff.m) result = EXIT_FAILURE;
-    if (2 != diff.n) result = EXIT_FAILURE;
+    if (0 != diff.m || 2 != diff.n) result = EXIT_FAILURE;
+    if (x[3*diff.n+diff.m] != diff.v_ref) result = EXIT_FAILURE;
+    if (y[3*diff.n+diff.m] != diff.v_tst) result = EXIT_FAILURE;
   }
 
   result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
@@ -111,8 +113,9 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.linf_abs - 2.0000000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.2222222)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
-    if (2 != diff.m) result = EXIT_FAILURE;
-    if (0 != diff.n) result = EXIT_FAILURE;
+    if (2 != diff.m || 0 != diff.n) result = EXIT_FAILURE;
+    if (x[3*diff.n+diff.m] != diff.v_ref) result = EXIT_FAILURE;
+    if (y[3*diff.n+diff.m] != diff.v_tst) result = EXIT_FAILURE;
   }
 
   return result;

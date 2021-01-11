@@ -43,6 +43,9 @@
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), (__m256i)_mm512_cvtneps_pbh((B)))
 
+#define MLP_TPP_FWD_PARALLEL_PARAMS 6
+#define MLP_TPP_BWD_PARALLEL_PARAMS 14
+
 static int threads_per_numa = 0;
 
 LIBXSMM_INLINE void my_init_buf(float* buf, size_t size, int initPos, int initOne)
@@ -362,6 +365,8 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint ldc_trans = bn;
 #endif
 
+  const char* par_env = getenv( "LIBXSMM_MLP_TPP_FWD_PARALLEL" );
+
   /* setting up some handle values */
   res.N = N;
   res.C = C;
@@ -372,65 +377,42 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.threads = threads;
   res.fuse_type = fuse_type;
 
-  /* setup parallelization strategy */
-  res.fwd_M_hyperpartitions = 1;
-  res.fwd_N_hyperpartitions = 1;
-  if (threads == 16) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 2;
-    res.fwd_row_teams = 8;
-  } else if (threads == 14) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 2;
-    res.fwd_row_teams = 7;
-  } else if (threads == 56) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 14;
-    res.fwd_M_hyperpartitions = 1;
-    res.fwd_N_hyperpartitions = 4;
-  } else if (threads == 1) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 1;
-    res.fwd_M_hyperpartitions = 1;
-    res.fwd_N_hyperpartitions = 1;
-  } else if (threads == 24) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 24;
-  } else if (threads == 48) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 24;
-    res.fwd_M_hyperpartitions = 1;
-    res.fwd_N_hyperpartitions = 2;
-  } else if (threads == 96) {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 1;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 24;
-    res.fwd_M_hyperpartitions = 1;
-    res.fwd_N_hyperpartitions = 4;
-  } else {
-    res.fwd_bf = 1;
-    res.fwd_2d_blocking = 0;
-    res.fwd_col_teams = 1;
-    res.fwd_row_teams = 1;
+  /*
+   * Setting up parallelization strategy is done via env. variable LIBXSMM_MLP_TPP_FWD_PARALLEL.
+   *  It should be set to a string containing 6 integers in the following order:
+   *
+   *   fwd_bf, fwd_2d_blocking, fwd_col_teams, fwd_row_teams, fwd_M_hyperpartitions, fwd_N_hyperpartitions.
+   *
+   * Examples of possible values for some configurations of threads and NUMA domains are as follows:
+   *
+   *  OMP_NUM_THREADS=16 THREADS_PER_NUMA=16: LIBXSMM_MLP_TPP_FWD_PARALLEL="1 1 2 8 1 1"
+   *  OMP_NUM_THREADS=14 THREADS_PER_NUMA=14: LIBXSMM_MLP_TPP_FWD_PARALLEL="1 1 2 7 1 1"
+   *  OMP_NUM_THREADS=56 THREADS_PER_NUMA=14: LIBXSMM_MLP_TPP_FWD_PARALLEL="1 1 2 7 1 4"
+   *  OMP_NUM_THREADS=24 THREADS_PER_NUMA=24: LIBXSMM_MLP_TPP_FWD_PARALLEL="1 1 1 24 1 1"
+   *  OMP_NUM_THREADS=48 THREADS_PER_NUMA=24: LIBXSMM_MLP_TPP_FWD_PARALLEL="1 1 1 24 1 2"
+   *  OMP_NUM_THREADS=96 THREADS_PER_NUMA=24: LIBXSMM_MLP_TPP_FWD_PARALLEL="1 1 1 24 1 4"
+   *
+   * IMPORTANT: #threads should be equal to the product fwd_col_teams * fwd_row_teams * fwd_M_hyperpartitions * fwd_N_hyperpartitions!
+   *
+   */
+
+  if ( NULL == par_env ) {
+    printf( "Please set LIBXSMM_MLP_TPP_FWD_PARALLEL env!\n");
+    exit(-1);
   }
 
-#if 0
-  res.fwd_bf = atoi(getenv("FWD_BF"));
-  res.fwd_2d_blocking = atoi(getenv("FWD_2D_BLOCKING"));
-  res.fwd_col_teams = atoi(getenv("FWD_COL_TEAMS"));
-  res.fwd_row_teams = atoi(getenv("FWD_ROW_TEAMS"));
-#endif
+  /* Read parallelization values */
+  if ( MLP_TPP_FWD_PARALLEL_PARAMS != sscanf(par_env, "%i %i %i %i %i %i", &res.fwd_bf, &res.fwd_2d_blocking,
+                                             &res.fwd_col_teams, &res.fwd_row_teams,
+                                             &res.fwd_M_hyperpartitions, &res.fwd_N_hyperpartitions) ) {
+    printf( "LIBXSMM_MLP_TPP_FWD_PARALLEL env should contain %d values!\n", MLP_TPP_FWD_PARALLEL_PARAMS );
+    exit(-1);
+  }
+
+  if ( (threads != res.fwd_col_teams * res.fwd_M_hyperpartitions * res.fwd_row_teams * res.fwd_N_hyperpartitions) ) {
+    printf("Bad parallelization strategy for FWD pass\n");
+    exit(-1);
+  }
 
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
@@ -552,6 +534,8 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_meltw_flags fusion_flags_bwd;
   libxsmm_meltw_operation bwd_fused_op;
 
+  const char* par_env = getenv( "LIBXSMM_MLP_TPP_BWD_PARALLEL" );
+
   /* setting up some handle values */
   res.N = N;
   res.C = C;
@@ -566,132 +550,55 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.lr = lr;
 #endif
 
-  /* setup parallelization strategy */
-  res.bwd_M_hyperpartitions = 1;
-  res.upd_M_hyperpartitions = 1;
-  res.bwd_N_hyperpartitions = 1;
-  res.upd_N_hyperpartitions = 1;
-  if (threads == 16) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 8;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 2;
-    res.upd_row_teams = 8;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 14) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 7;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 2;
-    res.upd_row_teams = 7;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 56) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 1;
-    res.bwd_row_teams = 14;
-    res.bwd_M_hyperpartitions = 1;
-    res.bwd_N_hyperpartitions = 4;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 1;
-    res.upd_row_teams = 14;
-    res.upd_M_hyperpartitions = 1;
-    res.upd_N_hyperpartitions = 4;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 1) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 1;
-    res.bwd_row_teams = 1;
-    res.bwd_M_hyperpartitions = 1;
-    res.bwd_N_hyperpartitions = 1;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 1;
-    res.upd_row_teams = 1;
-    res.upd_M_hyperpartitions = 1;
-    res.upd_N_hyperpartitions = 1;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 24) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 12;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 8;
-    res.upd_row_teams = 3;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 48) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 12;
-    res.bwd_M_hyperpartitions = 1;
-    res.bwd_N_hyperpartitions = 2;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 3;
-    res.upd_row_teams = 8;
-    res.upd_M_hyperpartitions = 1;
-    res.upd_N_hyperpartitions = 2;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else if (threads == 96) {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 1;
-    res.bwd_col_teams = 2;
-    res.bwd_row_teams = 12;
-    res.bwd_M_hyperpartitions = 1;
-    res.bwd_N_hyperpartitions = 4;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 1;
-    res.upd_col_teams = 3;
-    res.upd_row_teams = 8;
-    res.upd_M_hyperpartitions = 1;
-    res.upd_N_hyperpartitions = 4;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
-  } else {
-    res.bwd_bf = 1;
-    res.bwd_2d_blocking = 0;
-    res.bwd_col_teams = 1;
-    res.bwd_row_teams = 1;
-    res.upd_bf = 1;
-    res.upd_2d_blocking = 0;
-    res.upd_col_teams = 1;
-    res.upd_row_teams = 1;
-    res.ifm_subtasks = 1;
-    res.ofm_subtasks = 1;
+  /*
+   * Setting up parallelization strategy is done via env. variable LIBXSMM_MLP_TPP_BWD_PARALLEL.
+   *  It should be set to a string containing 14 integers in the following order:
+   *
+   *   bwd_bf, bwd_2d_blocking, bwd_col_teams, bwd_row_teams, bwd_M_hyperpartitions, bwd_N_hyperpartitions,
+   *   upd_bf, upd_2d_blocking, upd_col_teams, upd_row_teams, upd_M_hyperpartitions, upd_N_hyperpartitions,
+   *   ifm_subtasks, ofm_subtasks.
+   *
+   * Examples of possible values for some configurations of threads and NUMA domains are as follows:
+   *
+   *  OMP_NUM_THREADS=16 THREADS_PER_NUMA=16: LIBXSMM_MLP_TPP_BWD_PARALLEL="1 1 2 8 1 1 1 1 2 8 1 1 1 1"
+   *  OMP_NUM_THREADS=14 THREADS_PER_NUMA=14: LIBXSMM_MLP_TPP_BWD_PARALLEL="1 1 2 7 1 1 1 1 2 7 1 1 1 1"
+   *  OMP_NUM_THREADS=56 THREADS_PER_NUMA=14: LIBXSMM_MLP_TPP_BWD_PARALLEL="1 1 2 7 1 4 1 1 2 7 1 4 1 1"
+   *  OMP_NUM_THREADS=24 THREADS_PER_NUMA=24: LIBXSMM_MLP_TPP_BWD_PARALLEL="1 1 2 12 1 1 1 1 8 3 1 1 1 1"
+   *  OMP_NUM_THREADS=48 THREADS_PER_NUMA=24: LIBXSMM_MLP_TPP_BWD_PARALLEL="1 1 2 12 1 2 1 1 3 8 1 2 1 1"
+   *  OMP_NUM_THREADS=96 THREADS_PER_NUMA=24: LIBXSMM_MLP_TPP_BWD_PARALLEL="1 1 2 12 1 4 1 1 3 8 1 4 1 1"
+   *
+   * IMPORTANT: #threads should be equal to the product bwd_col_teams * bwd_row_teams * bwd_M_hyperpartitions * bwd_N_hyperpartitions,
+   *            and also to the product upd_col_teams * upd_row_teams * upd_M_hyperpartitions * upd_N_hyperpartitions.
+   *
+   */
+
+  if ( NULL == par_env ) {
+    printf( "Please set LIBXSMM_MLP_TPP_BWD_PARALLEL env!\n");
+    exit(-1);
+  }
+
+  /* Read parallelization values */
+  if ( MLP_TPP_BWD_PARALLEL_PARAMS != sscanf(par_env, "%i %i %i %i %i %i %i %i %i %i %i %i %i %i",
+                                             &res.bwd_bf, &res.bwd_2d_blocking, &res.bwd_col_teams, &res.bwd_row_teams,
+                                             &res.bwd_M_hyperpartitions, &res.bwd_N_hyperpartitions,
+                                             &res.upd_bf, &res.upd_2d_blocking, &res.upd_col_teams, &res.upd_row_teams,
+                                             &res.upd_M_hyperpartitions, &res.upd_N_hyperpartitions,
+                                             &res.ifm_subtasks, &res.ofm_subtasks) ) {
+    printf( "LIBXSMM_MLP_TPP_BWD_PARALLEL env should contain %d values!\n", MLP_TPP_BWD_PARALLEL_PARAMS );
+    exit(-1);
+  }
+
+  if ( (threads != res.bwd_col_teams * res.bwd_M_hyperpartitions * res.bwd_row_teams * res.bwd_N_hyperpartitions) ) {
+    printf("Bad parallelization strategy for BWD pass\n");
+    exit(-1);
+  }
+  if ( (threads != res.upd_col_teams * res.upd_M_hyperpartitions * res.upd_row_teams * res.upd_N_hyperpartitions) ) {
+    printf("Bad parallelization strategy for UPD pass\n");
+    exit(-1);
   }
 
   bbk = (res.upd_2d_blocking == 1) ? bk : bk/res.ofm_subtasks;
   bbc = (res.upd_2d_blocking == 1) ? bc : bc/res.ifm_subtasks;
-
-#if 0
-  res.bwd_bf = atoi(getenv("BWD_BF"));
-  res.bwd_2d_blocking = atoi(getenv("BWD_2D_BLOCKING"));
-  res.bwd_col_teams = atoi(getenv("BWD_COL_TEAMS"));
-  res.bwd_row_teams = atoi(getenv("BWD_ROW_TEAMS"));
-  res.upd_bf = atoi(getenv("UPD_BF"));
-  res.upd_2d_blocking = atoi(getenv("UPD_2D_BLOCKING"));
-  res.upd_col_teams = atoi(getenv("UPD_COL_TEAMS"));
-  res.upd_row_teams = atoi(getenv("UPD_ROW_TEAMS"));
-  res.ifm_subtasks = atoi(getenv("IFM_SUBTASKS"));
-  res.ofm_subtasks = atoi(getenv("OFM_SUBTASKS"));
-#endif
 
 #ifdef PRIVATE_WT_TRANS
   if (res.bwd_2d_blocking != 1) {

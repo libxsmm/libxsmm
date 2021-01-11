@@ -180,8 +180,9 @@
           !> Statistics: sum/l1, min., max., arith. avg., and variance.
           REAL(C_DOUBLE) l1_tst, min_tst, max_tst, avg_tst, var_tst
           !> Location (m, n) of largest difference (linf_abs).
-          INTEGER(LIBXSMM_BLASINT_KIND) m
-          INTEGER(LIBXSMM_BLASINT_KIND) n
+          !> Values (v_ref, v_tst) and location (m, n) of largest linf_abs.
+          REAL(C_DOUBLE) v_ref, v_tst
+          INTEGER(LIBXSMM_BLASINT_KIND) m, n
         END TYPE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
