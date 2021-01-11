@@ -23,6 +23,59 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var stack_var ) {
+  /* The stack at exit of setup looks like this:
+   *
+   *      Return address                            <-- RBP+8
+   *      Entry/saved RBP                           <-- RBP
+   *      Input ptr                                 <-- RBP-8
+   *      Output ptr                                <-- RBP-16
+   *      Mask ptr                                  <-- RBP-24
+   *      Scratch ptr in stack (to be filled)       <-- RBP-32
+   *
+   * */
+
+  switch ( stack_var ) {
+    case LIBXSMM_MELTW_STACK_VAR_INP_PTR:
+      return -8;
+    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR:
+      return -16;
+    case LIBXSMM_MELTW_STACK_VAR_MASK_PTR:
+      return -24;
+    case LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR:
+      return -32;
+    default:
+      return 0;
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_getval_stack_var( libxsmm_generated_code*              io_generated_code,
+                                                libxsmm_meltw_stack_var            stack_var,
+                                                unsigned int                        i_gp_reg ) {
+  int offset = libxsmm_generator_meltw_get_rbp_relative_offset(stack_var);
+  /* make sure we requested a legal stack var */
+  if (offset == 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, offset, i_gp_reg, 0 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_setval_stack_var( libxsmm_generated_code*              io_generated_code,
+                                                libxsmm_meltw_stack_var            stack_var,
+                                                unsigned int                        i_gp_reg ) {
+  int offset = libxsmm_generator_meltw_get_rbp_relative_offset(stack_var);
+  /* make sure we requested to set  a legal stack var */
+  if (offset >= 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, offset, i_gp_reg, 1 );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_header_m_loop( libxsmm_generated_code*                io_generated_code,
                                               libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                               const libxsmm_mateltwise_kernel_config*   i_kernel_config,
