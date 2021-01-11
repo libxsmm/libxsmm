@@ -16,7 +16,7 @@
 
 #define COPY_OP 0
 #define X2_OP 2
-#define SQRT_OP 3
+#define XOR_OP 3
 
 void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, float *out, unsigned int op) {
   libxsmm_blasint i, j;
@@ -27,6 +27,9 @@ void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
       }
       if (op == X2_OP) {
         out[(j*ldo) + i] = in[(j*ldi) + i] *  in[(j*ldi) + i];
+      }
+      if (op == XOR_OP) {
+        out[(j*ldo) + i] = 0;
       }
     }
   }
@@ -47,6 +50,9 @@ void unary_op_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         if (op == X2_OP) {
           res = bf16_hp.f * bf16_hp.f;
         }
+        if (op == XOR_OP) {
+          res = 0;
+        }
         libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
       }
     }
@@ -64,6 +70,9 @@ void unary_op_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == X2_OP) {
         res = in[(j*ldi) + i] * in[(j*ldi) + i];
+      }
+      if (op == XOR_OP) {
+        res = 0;
       }
       libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
     }
@@ -84,6 +93,9 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == X2_OP) {
         res = bf16_hp.f * bf16_hp.f;
+      }
+      if (op == XOR_OP) {
+        res = 0;
       }
       out[(j*ldo) + i] = res;
     }
@@ -107,6 +119,10 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   if ( op == X2_OP ) {
     sprintf(opname, "x2");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
+  }
+  if ( op == XOR_OP ) {
+    sprintf(opname, "xor");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
   }
 
   if ( M > ldi ) {
@@ -203,6 +219,11 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     sprintf(opname, "x2");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
   }
+  if ( op == XOR_OP ) {
+    sprintf(opname, "xor");
+    compute_dtype = LIBXSMM_DATATYPE_BF16;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
+  }
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_bf16_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -297,6 +318,10 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     sprintf(opname, "x2");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
   }
+  if ( op == XOR_OP ) {
+    sprintf(opname, "xor");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
+  }
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -387,6 +412,10 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   if ( op == X2_OP ) {
     sprintf(opname, "x2");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
+  }
+  if ( op == XOR_OP ) {
+    sprintf(opname, "xor");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
   }
 
   if ( M > ldi ) {
@@ -497,8 +526,11 @@ int main( int argc, char* argv[] ) {
   if ( op == X2_OP ) {
     sprintf(opname, "x2");
   }
+  if ( op == XOR_OP ) {
+    sprintf(opname, "xor");
+  }
 
-  valid_op = ( op == COPY_OP || op == X2_OP || op == SQRT_OP) ? 1 : 0;
+  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP) ? 1 : 0;
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");
@@ -515,7 +547,7 @@ int main( int argc, char* argv[] ) {
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 %s\n", opname);
     test_unary_op_f32_f32( M, N, ldi, ldo, op);
-  } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && dtype_comp == 4 ) {
+  } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || (dtype_comp == 2 && op == XOR_OP)) ) {
     printf("Testing BF16 BF16 %s\n", opname);
     test_unary_op_bf16_bf16( M, N, ldi, ldo, op);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {

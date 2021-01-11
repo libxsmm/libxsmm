@@ -223,6 +223,9 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
   unsigned int im, in, cur_vreg;
   char vname = (i_vlen * i_micro_kernel_config->datatype_size_in == 64) ? 'z' : 'y';
 
+  /* In this case we don't have to load any data  */
+  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR) return;
+
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
@@ -261,6 +264,10 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
+      /* In the XOR case we have a constnt vreg  */
+      if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR) {
+        cur_vreg = i_micro_kernel_config->zero_vreg;
+      }
 
       /* If compute is in F32 and output is BF16 (or input is F32 and output is BF16), then downconvert BF16 -> FP32 */
       if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
@@ -438,6 +445,10 @@ void libxsmm_compute_unary_2d_reg_block( libxsmm_generated_code*                
                                                  unsigned int                            i_n_blocking,
                                                  unsigned int                            i_mask_last_m_chunk,
                                                  unsigned int                            i_mask_reg) {
+
+  /* In this case we don't have to compute anything */
+  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR) return;
+
   switch (i_mateltwise_desc->param) {
     case LIBXSMM_MELTW_TYPE_UNARY_X2: {
       libxsmm_compute_unary_2d_reg_block_square( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
@@ -619,6 +630,12 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
       i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
     }
+  }
+
+  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR) {
+    i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg );
   }
 }
 
