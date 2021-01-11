@@ -15,6 +15,119 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_x,
+    const unsigned int                             i_vec_x2,
+    const unsigned int                             i_vec_nom,
+    const unsigned int                             i_vec_denom,
+    const unsigned int                             i_mask_hi,
+    const unsigned int                             i_mask_lo,
+    const unsigned int                             i_vec_c0,
+    const unsigned int                             i_vec_c1,
+    const unsigned int                             i_vec_c2,
+    const unsigned int                             i_vec_c3,
+    const unsigned int                             i_vec_c1_d,
+    const unsigned int                             i_vec_c2_d,
+    const unsigned int                             i_vec_c3_d,
+    const unsigned int                             i_vec_hi_bound,
+    const unsigned int                             i_vec_lo_bound,
+    const unsigned int                             i_vec_ones,
+    const unsigned int                             i_vec_neg_ones
+    ) {
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                        LIBXSMM_X86_INSTR_VMULPS,
+                                        'z',
+                                        i_vec_x, i_vec_x, i_vec_x2 );
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+                                                LIBXSMM_X86_INSTR_VCMPPS,
+                                                'z',
+                                                i_vec_hi_bound,
+                                                i_vec_x,
+                                                i_mask_hi,
+                                                17 );
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+                                                LIBXSMM_X86_INSTR_VCMPPS,
+                                                'z',
+                                                i_vec_lo_bound,
+                                                i_vec_x,
+                                                i_mask_lo,
+                                                30 );
+
+   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VMOVDQU64,
+                                       'z',
+                                       i_vec_x2, i_vec_nom );
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_c2, i_vec_c3, i_vec_nom );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_c1, i_vec_x2, i_vec_nom );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_c0, i_vec_x2, i_vec_nom );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                        LIBXSMM_X86_INSTR_VMULPS,
+                                        'z',
+                                        i_vec_nom, i_vec_x, i_vec_nom );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VADDPS,
+                                       'z',
+                                       i_vec_x2, i_vec_c3_d, i_vec_denom );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_c2_d, i_vec_x2, i_vec_denom );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_c1_d, i_vec_x2, i_vec_denom );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_c0, i_vec_x2, i_vec_denom );
+
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VRCP14PS,
+                                       'z',
+                                       i_vec_denom, i_vec_denom );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                        LIBXSMM_X86_INSTR_VMULPS,
+                                        'z',
+                                        i_vec_denom, i_vec_nom, i_vec_x );
+
+  libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
+                                                LIBXSMM_X86_INSTR_VBLENDMPS,
+                                                'z',
+                                                i_vec_x,
+                                                i_vec_ones,
+                                                i_vec_x,
+                                                i_mask_hi, 0 );
+
+  libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
+                                                LIBXSMM_X86_INSTR_VBLENDMPS,
+                                                'z',
+                                                i_vec_x,
+                                                i_vec_neg_ones,
+                                                i_vec_x,
+                                                i_mask_lo, 0 );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_inout,
     const unsigned int                             i_vec_tmp1,
