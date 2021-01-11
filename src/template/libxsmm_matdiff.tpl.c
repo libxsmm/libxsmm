@@ -40,6 +40,8 @@ for (i = 0; i < nn; ++i) {
       /* maximum absolute error and location */
       if (info->linf_abs < di) {
         info->linf_abs = di;
+        info->v_ref = ri;
+        info->v_tst = ti;
         info->m = j;
         info->n = i;
       }
@@ -95,7 +97,7 @@ for (i = 0; i < nn; ++i) {
     else { /* NaN */
       info->m = j;
       info->n = i;
-      result_nan = LIBXSMM_NOTNAN(ri) && inf > ra ? 1 : 2;
+      result_nan = ((LIBXSMM_NOTNAN(ri) && inf > ra) ? 1 : 2);
       break;
     }
   }
