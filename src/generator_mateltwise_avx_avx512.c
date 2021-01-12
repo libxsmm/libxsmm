@@ -91,6 +91,7 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) ||
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_COPY) ||
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) ||
+                                          (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ||
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE) ||
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TRANSFORM) ||
                                           ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_SCALE) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE) > 0)) ||
