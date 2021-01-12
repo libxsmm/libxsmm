@@ -369,7 +369,7 @@ typedef enum libxsmm_meltw_unary_type {
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
-  LIBXSMM_MELTW_FLAG_BINARY_NONE    = 0,
+  LIBXSMM_MELTW_FLAG_BINARY_NONE    = 0
 } libxsmm_meltw_binary_flags;
 
 typedef enum libxsmm_meltw_binary_type {
