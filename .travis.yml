@@ -184,4 +184,7 @@ script:
     ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ "" = "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+    ${TRAVIS_BUILD_DIR}/scripts/tool_normalize.sh
+
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ "" = "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
     make -e STATIC=0 DBG=1 && ${TRAVIS_BUILD_DIR}/scripts/tool_checkabi.sh
