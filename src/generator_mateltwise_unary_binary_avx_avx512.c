@@ -10,7 +10,7 @@
 ******************************************************************************/
 
 #include "generator_common_x86.h"
-#include "generator_mateltwise_unary_avx_avx512.h"
+#include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_mateltwise_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
@@ -296,7 +296,7 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_compute_unary_2d_reg_block_square( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_compute_unary_binary_2d_reg_block_square( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc,
@@ -323,7 +323,7 @@ void libxsmm_compute_unary_2d_reg_block_square( libxsmm_generated_code*         
 
 
 LIBXSMM_API_INTERN
-void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_compute_unary_binary_2d_reg_block_relu( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc,
@@ -363,7 +363,7 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_compute_unary_binary_2d_reg_block_relu_inv( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc,
@@ -437,7 +437,7 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_compute_unary_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_compute_unary_binary_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc,
@@ -453,15 +453,15 @@ void libxsmm_compute_unary_2d_reg_block( libxsmm_generated_code*                
 
   switch (i_mateltwise_desc->param) {
     case LIBXSMM_MELTW_TYPE_UNARY_X2: {
-      libxsmm_compute_unary_2d_reg_block_square( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
+      libxsmm_compute_unary_binary_2d_reg_block_square( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
           i_vlen, i_start_vreg, i_m_blocking, i_n_blocking, i_mask_last_m_chunk, i_mask_reg);
     } break;
     case LIBXSMM_MELTW_TYPE_UNARY_RELU: {
-      libxsmm_compute_unary_2d_reg_block_relu( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
+      libxsmm_compute_unary_binary_2d_reg_block_relu( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
           i_vlen, i_start_vreg, i_m_blocking, i_n_blocking, i_mask_last_m_chunk, i_mask_reg);
     } break;
     case LIBXSMM_MELTW_TYPE_UNARY_RELU_INV: {
-      libxsmm_compute_unary_2d_reg_block_relu_inv( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
+      libxsmm_compute_unary_binary_2d_reg_block_relu_inv( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
           i_vlen, i_start_vreg, i_m_blocking, i_n_blocking, i_mask_last_m_chunk, i_mask_reg);
     } break;
     default: /* Perform no compute */ ;
@@ -644,7 +644,7 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*                     io_generated_code,
+void libxsmm_generator_unary_binary_2d_microkernel( libxsmm_generated_code*                     io_generated_code,
                                                  libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
@@ -683,7 +683,7 @@ void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*            
       i_vlen_in, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in);
 
   /* Compute on registers */
-  libxsmm_compute_unary_2d_reg_block(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
+  libxsmm_compute_unary_binary_2d_reg_block(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
       i_vlen_in, reserved_zmms, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in);
 
   /* Store block of registers */
@@ -754,7 +754,7 @@ void libxsmm_generator_unary_2d_microkernel( libxsmm_generated_code*            
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_unary_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
@@ -837,7 +837,7 @@ void libxsmm_generator_unary_avx512_microkernel( libxsmm_generated_code*        
       n_microkernel = (loop_order == NM_LOOP_ORDER) ? out_block : inner_block;
       m_microkernel = (loop_order == MN_LOOP_ORDER) ? out_block : inner_block;
 
-      libxsmm_generator_unary_2d_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, m_microkernel, n_microkernel);
+      libxsmm_generator_unary_binary_2d_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, m_microkernel, n_microkernel);
 
       inner_ind += inner_block;
 

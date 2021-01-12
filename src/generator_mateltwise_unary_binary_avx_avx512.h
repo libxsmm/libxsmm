@@ -9,13 +9,13 @@
 /* Evanelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_MATELTWISE_UNARY_AVX_AVX512_H
-#define GENERATOR_MATELTWISE_UNARY_AVX_AVX512_H
+#ifndef GENERATOR_MATELTWISE_UNARY_BINARY_AVX_AVX512_H
+#define GENERATOR_MATELTWISE_UNARY_BINARY_AVX_AVX512_H
 
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_unary_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code*          io_generated_code,
                                                  libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
