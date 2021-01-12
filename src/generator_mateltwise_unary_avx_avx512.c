@@ -785,11 +785,11 @@ void libxsmm_generator_unary_avx512_microkernel( libxsmm_generated_code*        
   libxsmm_generator_configure_avx512_vlens(i_mateltwise_desc, i_micro_kernel_config);
 
   /* Configure the register mapping for this eltwise kernel */
-  i_gp_reg_mapping->gp_reg_in     = LIBXSMM_X86_GP_REG_RAX;
-  i_gp_reg_mapping->gp_reg_out    = LIBXSMM_X86_GP_REG_RBX;
-  i_gp_reg_mapping->gp_reg_m_loop = LIBXSMM_X86_GP_REG_RCX;
-  i_gp_reg_mapping->gp_reg_n_loop = LIBXSMM_X86_GP_REG_RSI;
-  i_gp_reg_mapping->gp_reg_relumask = LIBXSMM_X86_GP_REG_RDX;  /* this we might want to rename */
+  i_gp_reg_mapping->gp_reg_in     = LIBXSMM_X86_GP_REG_R8;
+  i_gp_reg_mapping->gp_reg_out    = LIBXSMM_X86_GP_REG_R9;
+  i_gp_reg_mapping->gp_reg_m_loop = LIBXSMM_X86_GP_REG_R10;
+  i_gp_reg_mapping->gp_reg_n_loop = LIBXSMM_X86_GP_REG_R11;
+  i_gp_reg_mapping->gp_reg_relumask = LIBXSMM_X86_GP_REG_RAX;  /* this we might want to rename */
 
   /* load the input pointer and output pointer */
   libxsmm_x86_instruction_alu_mem( io_generated_code,

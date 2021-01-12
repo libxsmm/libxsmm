@@ -864,6 +864,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vlen_out;
   unsigned int vlen_comp;
   unsigned int loop_order;
+  unsigned int skip_pushpops_callee_gp_reg;
+  unsigned int use_stack_vars;
   char vector_name;
 } libxsmm_mateltwise_kernel_config;
 

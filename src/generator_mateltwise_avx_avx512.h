@@ -25,6 +25,19 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_meltw_setval_stack_var( libxsmm_generated_code*              io_generated_code,
                                                 libxsmm_meltw_stack_var            stack_var,
                                                 unsigned int                        i_gp_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*            io_generated_code,
+                                              const libxsmm_meltw_descriptor*      i_mateltwise_desc,
+                                              libxsmm_mateltwise_gp_reg_mapping*   i_gp_reg_mapping,
+                                              libxsmm_mateltwise_kernel_config*    i_micro_kernel_config) ;
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_destroy_stack_frame( libxsmm_generated_code*            io_generated_code,
+    const libxsmm_meltw_descriptor*     i_mateltwise_desc,
+    const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config );
+
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_header_m_loop( libxsmm_generated_code*                   io_generated_code,
                                               libxsmm_loop_label_tracker*               io_loop_label_tracker,

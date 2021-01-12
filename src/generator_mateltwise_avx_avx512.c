@@ -32,8 +32,14 @@ int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var sta
    *      Output ptr                                <-- RBP-16
    *      Mask ptr                                  <-- RBP-24
    *      Scratch ptr in stack (to be filled)       <-- RBP-32
+   *      Placeholder for stack var                 <-- RBP-40
+   *      Placeholder for stack var                 <-- RBP-48
+   *      Placeholder for stack var                 <-- RBP-56
+   *      Placeholder for stack var                 <-- RBP-64
+   *      Placeholder for stack var                 <-- RBP-72
+   *      Placeholder for stack var                 <-- RBP-80
    *
-   * */
+   * * */
 
   switch ( stack_var ) {
     case LIBXSMM_MELTW_STACK_VAR_INP_PTR:
@@ -64,7 +70,7 @@ void libxsmm_generator_meltw_getval_stack_var( libxsmm_generated_code*          
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_meltw_setval_stack_var( libxsmm_generated_code*              io_generated_code,
-                                                libxsmm_meltw_stack_var            stack_var,
+                                                libxsmm_meltw_stack_var             stack_var,
                                                 unsigned int                        i_gp_reg ) {
   int offset = libxsmm_generator_meltw_get_rbp_relative_offset(stack_var);
   /* make sure we requested to set  a legal stack var */
@@ -73,6 +79,131 @@ void libxsmm_generator_meltw_setval_stack_var( libxsmm_generated_code*          
     return;
   }
   libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, offset, i_gp_reg, 1 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*            io_generated_code,
+                                              const libxsmm_meltw_descriptor*      i_mateltwise_desc,
+                                              libxsmm_mateltwise_gp_reg_mapping*   i_gp_reg_mapping,
+                                              libxsmm_mateltwise_kernel_config*    i_micro_kernel_config) {
+  unsigned int temp_reg                 = LIBXSMM_X86_GP_REG_R10;
+  unsigned int skip_pushpops_callee_gp_reg  = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX) ||
+                                          (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) ||
+                                          (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_COPY) ||
+                                          (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) ||
+                                          (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE) ||
+                                          (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TRANSFORM) ||
+                                          ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_SCALE) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE) > 0)) ||
+                                          ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT) > 0) )) ? 1 : 0;
+
+  /* TODO: Determine  if we want to save stuff to stack */
+  unsigned int save_args_to_stack = 0;
+  unsigned int allocate_scratch = 0;
+  unsigned int use_aux_stack_vars = 0;
+  unsigned int use_stack_vars = ((save_args_to_stack > 0) || (allocate_scratch > 0) || (use_aux_stack_vars > 0)) ? 1 : 0;
+
+  i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
+  i_micro_kernel_config->use_stack_vars              = use_stack_vars;
+
+  if (use_stack_vars > 0) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
+    libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 80 );
+  }
+
+  /* Exemplary usage of how to store args to stack if need be  */
+  if (save_args_to_stack > 0) {
+    if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_COPY) {
+      if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_COPY_ZERO) == 0) {
+        libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
+            i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, temp_reg, 0 );
+        libxsmm_generator_meltw_setval_stack_var( io_generated_code, LIBXSMM_MELTW_STACK_VAR_INP_PTR, temp_reg );
+      }
+      libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
+          i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, 8, temp_reg, 0 );
+      libxsmm_generator_meltw_setval_stack_var( io_generated_code, LIBXSMM_MELTW_STACK_VAR_OUT_PTR, temp_reg );
+    }
+  }
+
+  /* The stack now looks like this:
+   *
+   *      Return address                            <-- RBP+8
+   *      Entry/saved RBP                           <-- RBP
+   *      Input ptr (to be filled)                  <-- RBP-8
+   *      Output ptr (to be filled)                 <-- RBP-16
+   *      Mask ptr (to be filled)                   <-- RBP-24
+   *      Scratch ptr in stack (to be filled)       <-- RBP-32
+   *      Placeholder for stack var                 <-- RBP-40
+   *      Placeholder for stack var                 <-- RBP-48
+   *      Placeholder for stack var                 <-- RBP-56
+   *      Placeholder for stack var                 <-- RBP-64
+   *      Placeholder for stack var                 <-- RBP-72
+   *      Placeholder for stack var                 <-- RBP-80
+   *
+   * * */
+
+  if (allocate_scratch > 0) {
+    /* TODO: Scratch size is kernel-dependent  */
+    unsigned int scratch_size = 1024;
+
+    /* make scratch size multiple of 64b */
+    scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
+
+    /* Now align RSP to 64 byte boundary  */
+    libxsmm_x86_instruction_alu_imm_i64( io_generated_code, i_micro_kernel_config->alu_mov_instruction, temp_reg, 0xFFFFFFFFFFFFFFC0 );
+    libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, temp_reg, LIBXSMM_X86_GP_REG_RSP);
+
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
+    libxsmm_generator_meltw_setval_stack_var( io_generated_code, LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+  }
+
+  /* Now push to RSP the callee-save registers  */
+  if (skip_pushpops_callee_gp_reg == 0) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+  }
+
+  /* The stack at exit of setup looks like this:
+   *
+   *      Return address                            <-- RBP+8
+   *      Entry/saved RBP                           <-- RBP
+   *      Input ptr (to be filled)                  <-- RBP-8
+   *      Output ptr (to be filled)                 <-- RBP-16
+   *      Mask ptr (to be filled)                   <-- RBP-24
+   *      Scratch ptr in stack (to be filled)       <-- RBP-32
+   *      Placeholder for stack var                 <-- RBP-40
+   *      Placeholder for stack var                 <-- RBP-48
+   *      Placeholder for stack var                 <-- RBP-56
+   *      Placeholder for stack var                 <-- RBP-64
+   *      Placeholder for stack var                 <-- RBP-72
+   *      Placeholder for stack var                 <-- RBP-80
+   *      [ Potentianl  pad for 64b align ]
+   *      Scratch, 64b aligned                      <-- (RBP-32) contains this address
+   *      Callee-saved registers                    <-- RSP
+   *
+   * * */
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_destroy_stack_frame( libxsmm_generated_code*            io_generated_code,
+    const libxsmm_meltw_descriptor*     i_mateltwise_desc,
+    const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config ) {
+
+  if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
+  }
+
+  if (i_micro_kernel_config->use_stack_vars > 0) {
+    libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -275,13 +406,6 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   libxsmm_mateltwise_kernel_config  l_kernel_config;
   libxsmm_mateltwise_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker        l_loop_label_tracker;
-  unsigned int skip_pushpops = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX) ||
-                                (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) ||
-                                (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_COPY) ||
-                                (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE) ||
-                                (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TRANSFORM) ||
-                                ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_SCALE) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE) > 0)) ||
-                                ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT) > 0) )) ? 1 : 0;
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -304,7 +428,10 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
   libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, io_generated_code->arch, i_mateltwise_desc);
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_mateltwise( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, skip_pushpops );
+  libxsmm_x86_instruction_open_stream_mateltwise( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
+
+  /* Stack management for melt kernel */
+  libxsmm_generator_meltw_setup_stack_frame( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
   /* Depending on the elementwise function, dispatch the proper code JITer */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16)) {
@@ -370,7 +497,10 @@ void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*    
     return;
   }
 
+  /* Stack management formelt kernel */
+  libxsmm_generator_meltw_destroy_stack_frame(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
+
   /* close asm */
-  libxsmm_x86_instruction_close_stream_mateltwise( io_generated_code, skip_pushpops);
+  libxsmm_x86_instruction_close_stream_mateltwise( io_generated_code, 1);
 }
 
