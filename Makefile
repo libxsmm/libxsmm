@@ -461,15 +461,10 @@ else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 endif
 ifneq (,$(filter 0 1,$(INTRINSICS)))
 ifeq (0,$(COMPATIBLE))
-ifeq (0,$(AVX))
-	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
-else
-	$(info INTRINSICS=$(INTRINSICS) limits LIBXSMM to AVX$(AVX) (and beyond).)
-endif
 ifeq (0,$(INTEL))
-	$(info If adjusting INTRINSICS was necessary, reconsider an updated tool chain.)
+	$(info If adjusting INTRINSICS was necessary, consider updated GNU Binutils.)
 else # Intel Compiler
-	$(info Intel Compiler does not require adjusting INTRINSICS.)
+	$(info Intel Compiler does not usually require adjusting INTRINSICS.)
 endif
 	$(info --------------------------------------------------------------------------------)
 endif # COMPATIBLE
