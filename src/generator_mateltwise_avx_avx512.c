@@ -192,6 +192,7 @@ void libxsmm_generator_meltw_destroy_stack_frame( libxsmm_generated_code*       
     const libxsmm_meltw_descriptor*     i_mateltwise_desc,
     const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config ) {
 
+  LIBXSMM_UNUSED(i_mateltwise_desc);
   if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
