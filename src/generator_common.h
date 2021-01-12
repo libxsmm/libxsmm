@@ -852,6 +852,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int alu_jmp_instruction;
   unsigned int alu_mov_instruction;
   unsigned int vxor_instruction;
+
+  /* Auxiliary varialiables for vreg management  */
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
   unsigned int use_fp32bf16_cvt_replacement;
@@ -862,6 +864,25 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int tmp_vreg;
   unsigned int tmp_vreg2;
   unsigned int zero_vreg;
+  unsigned int vec_x2;
+  unsigned int vec_nom;
+  unsigned int vec_denom;
+  unsigned int vec_c0;
+  unsigned int vec_c1;
+  unsigned int vec_c2;
+  unsigned int vec_c3;
+  unsigned int vec_c1_d;
+  unsigned int vec_c2_d;
+  unsigned int vec_c3_d;
+  unsigned int vec_hi_bound;
+  unsigned int vec_lo_bound;
+  unsigned int vec_ones;
+  unsigned int vec_neg_ones;
+  unsigned int vec_halves;
+  unsigned int mask_hi;
+  unsigned int mask_lo;
+
+  /* Aux variables for kernel config  */
   unsigned int vlen_in;
   unsigned int vlen_out;
   unsigned int vlen_comp;

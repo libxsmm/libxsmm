@@ -305,7 +305,7 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_compute_unary_2d_reg_block_square( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc,
@@ -325,7 +325,48 @@ void libxsmm_compute_unary_2d_reg_block_square( libxsmm_generated_code*         
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, i_micro_kernel_config->vector_name, cur_vreg, cur_vreg, cur_vreg );
+      if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_X2) {
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, i_micro_kernel_config->vector_name, cur_vreg, cur_vreg, cur_vreg );
+      } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH) {
+        libxsmm_generator_tanh_ps_rational_78_avx512( io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_x2,
+            i_micro_kernel_config->vec_nom,
+            i_micro_kernel_config->vec_denom,
+            i_micro_kernel_config->mask_hi,
+            i_micro_kernel_config->mask_lo,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_c1_d,
+            i_micro_kernel_config->vec_c2_d,
+            i_micro_kernel_config->vec_c3_d,
+            i_micro_kernel_config->vec_hi_bound,
+            i_micro_kernel_config->vec_lo_bound,
+            i_micro_kernel_config->vec_ones,
+            i_micro_kernel_config->vec_neg_ones);
+      } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
+        libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_x2,
+            i_micro_kernel_config->vec_nom,
+            i_micro_kernel_config->vec_denom,
+            i_micro_kernel_config->mask_hi,
+            i_micro_kernel_config->mask_lo,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_c1_d,
+            i_micro_kernel_config->vec_c2_d,
+            i_micro_kernel_config->vec_c3_d,
+            i_micro_kernel_config->vec_hi_bound,
+            i_micro_kernel_config->vec_lo_bound,
+            i_micro_kernel_config->vec_ones,
+            i_micro_kernel_config->vec_neg_ones,
+            i_micro_kernel_config->vec_halves );
+      }
     }
   }
 }
@@ -551,8 +592,10 @@ void libxsmm_compute_unary_binary_2d_reg_block( libxsmm_generated_code*         
                                                  unsigned int                            i_mask_reg) {
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) {
     switch (i_mateltwise_desc->param) {
+      case LIBXSMM_MELTW_TYPE_UNARY_TANH:
+      case LIBXSMM_MELTW_TYPE_UNARY_SIGMOID:
       case LIBXSMM_MELTW_TYPE_UNARY_X2: {
-        libxsmm_compute_unary_2d_reg_block_square( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
+        libxsmm_compute_unary_2d_reg_block_op( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc,
             i_vlen, i_start_vreg, i_m_blocking, i_n_blocking, i_mask_last_m_chunk, i_mask_reg);
       } break;
       case LIBXSMM_MELTW_TYPE_UNARY_RELU: {
@@ -744,6 +787,88 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
       i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg );
+    }
+
+    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH) {
+      unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+     unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+      reserved_zmms += 14;
+      reserved_mask_regs += 2;
+
+      i_micro_kernel_config->mask_hi       = reserved_mask_regs - 1;
+      i_micro_kernel_config->mask_lo       = reserved_mask_regs - 2;
+      i_micro_kernel_config->vec_x2        = reserved_zmms - 1;
+      i_micro_kernel_config->vec_nom       = reserved_zmms - 2;
+      i_micro_kernel_config->vec_denom     = reserved_zmms - 3;
+      i_micro_kernel_config->vec_c0        = reserved_zmms - 4;
+      i_micro_kernel_config->vec_c1        = reserved_zmms - 5;
+      i_micro_kernel_config->vec_c2        = reserved_zmms - 6;
+      i_micro_kernel_config->vec_c3        = reserved_zmms - 7;
+      i_micro_kernel_config->vec_c1_d      = reserved_zmms - 8;
+      i_micro_kernel_config->vec_c2_d      = reserved_zmms - 9;
+      i_micro_kernel_config->vec_c3_d      = reserved_zmms - 10;
+      i_micro_kernel_config->vec_hi_bound  = reserved_zmms - 11;
+      i_micro_kernel_config->vec_lo_bound  = reserved_zmms - 12;
+      i_micro_kernel_config->vec_ones      = reserved_zmms - 13;
+      i_micro_kernel_config->vec_neg_ones  = reserved_zmms - 14;
+
+      libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx512( io_generated_code,
+          i_micro_kernel_config->vec_c0,
+          i_micro_kernel_config->vec_c1,
+          i_micro_kernel_config->vec_c2,
+          i_micro_kernel_config->vec_c3,
+          i_micro_kernel_config->vec_c1_d,
+          i_micro_kernel_config->vec_c2_d,
+          i_micro_kernel_config->vec_c3_d,
+          i_micro_kernel_config->vec_hi_bound,
+          i_micro_kernel_config->vec_lo_bound,
+          i_micro_kernel_config->vec_ones,
+          i_micro_kernel_config->vec_neg_ones );
+
+      i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
+      i_micro_kernel_config->reserved_zmms = reserved_zmms;
+    }
+
+    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
+      unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+      unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+      reserved_zmms += 15;
+      reserved_mask_regs += 2;
+
+      i_micro_kernel_config->mask_hi       = reserved_mask_regs - 1;
+      i_micro_kernel_config->mask_lo       = reserved_mask_regs - 2;
+      i_micro_kernel_config->vec_x2        = reserved_zmms - 1;
+      i_micro_kernel_config->vec_nom       = reserved_zmms - 2;
+      i_micro_kernel_config->vec_denom     = reserved_zmms - 3;
+      i_micro_kernel_config->vec_c0        = reserved_zmms - 4;
+      i_micro_kernel_config->vec_c1        = reserved_zmms - 5;
+      i_micro_kernel_config->vec_c2        = reserved_zmms - 6;
+      i_micro_kernel_config->vec_c3        = reserved_zmms - 7;
+      i_micro_kernel_config->vec_c1_d      = reserved_zmms - 8;
+      i_micro_kernel_config->vec_c2_d      = reserved_zmms - 9;
+      i_micro_kernel_config->vec_c3_d      = reserved_zmms - 10;
+      i_micro_kernel_config->vec_hi_bound  = reserved_zmms - 11;
+      i_micro_kernel_config->vec_lo_bound  = reserved_zmms - 12;
+      i_micro_kernel_config->vec_ones      = reserved_zmms - 13;
+      i_micro_kernel_config->vec_neg_ones  = reserved_zmms - 14;
+      i_micro_kernel_config->vec_halves    = reserved_zmms - 15;
+
+      libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx512( io_generated_code,
+          i_micro_kernel_config->vec_c0,
+          i_micro_kernel_config->vec_c1,
+          i_micro_kernel_config->vec_c2,
+          i_micro_kernel_config->vec_c3,
+          i_micro_kernel_config->vec_c1_d,
+          i_micro_kernel_config->vec_c2_d,
+          i_micro_kernel_config->vec_c3_d,
+          i_micro_kernel_config->vec_hi_bound,
+          i_micro_kernel_config->vec_lo_bound,
+          i_micro_kernel_config->vec_ones,
+          i_micro_kernel_config->vec_neg_ones,
+          i_micro_kernel_config->vec_halves );
+
+      i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
+      i_micro_kernel_config->reserved_zmms = reserved_zmms;
     }
   }
 

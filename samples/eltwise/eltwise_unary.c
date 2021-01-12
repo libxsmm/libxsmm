@@ -14,9 +14,38 @@
 #include <stdio.h>
 #include <math.h>
 
+#define EPS 1.19209290e-02F
+
 #define COPY_OP 0
 #define X2_OP 2
 #define XOR_OP 3
+#define TANH_OP 4
+#define SIGMOID_OP 5
+
+int unequal_fp32_vals(float a, float b) {
+  if (fabs(a-b) < EPS) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
+int unequal_bf16_vals(libxsmm_bfloat16 a, libxsmm_bfloat16 b) {
+  union libxsmm_bfloat16_hp bf16_hp, bf16_hp2;
+  bf16_hp.i[1] = a;
+  bf16_hp.i[0] = 0;
+  bf16_hp2.i[1] = b;
+  bf16_hp2.i[0] = 0;
+  if (fabs(bf16_hp.f - bf16_hp2.f) < EPS) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
+float fsigmoid(float x) {
+  return (tanhf(x/2.0) + 1.0)/2.0;
+}
 
 void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, float *out, unsigned int op) {
   libxsmm_blasint i, j;
@@ -30,6 +59,12 @@ void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
       }
       if (op == XOR_OP) {
         out[(j*ldo) + i] = 0;
+      }
+      if (op == TANH_OP) {
+        out[(j*ldo) + i] = tanhf(in[(j*ldi) + i]);
+      }
+      if (op == SIGMOID_OP) {
+        out[(j*ldo) + i] = fsigmoid(in[(j*ldi) + i]);
       }
     }
   }
@@ -53,6 +88,12 @@ void unary_op_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         if (op == XOR_OP) {
           res = 0;
         }
+        if (op == TANH_OP) {
+          res = tanhf(bf16_hp.f);
+        }
+        if (op == SIGMOID_OP) {
+          res = fsigmoid(bf16_hp.f);
+        }
         libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
       }
     }
@@ -73,6 +114,12 @@ void unary_op_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == XOR_OP) {
         res = 0;
+      }
+      if (op == TANH_OP) {
+        res = tanhf(in[(j*ldi) + i]);
+      }
+      if (op == SIGMOID_OP) {
+        res = fsigmoid(in[(j*ldi) + i]);
       }
       libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
     }
@@ -96,6 +143,12 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == XOR_OP) {
         res = 0;
+      }
+      if (op == TANH_OP) {
+        res = tanhf(bf16_hp.f);
+      }
+      if (op == SIGMOID_OP) {
+        res = fsigmoid(bf16_hp.f);
       }
       out[(j*ldo) + i] = res;
     }
@@ -123,6 +176,14 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   if ( op == XOR_OP ) {
     sprintf(opname, "xor");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
+  }
+  if ( op == TANH_OP ) {
+    sprintf(opname, "tanh");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
+  }
+  if ( op == SIGMOID_OP ) {
+    sprintf(opname, "sigmoid");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
   }
 
   if ( M > ldi ) {
@@ -177,7 +238,7 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   s = 0;
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+      if ( unequal_fp32_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j])  ) {
         printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
         s = 1;
       }
@@ -223,6 +284,14 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     sprintf(opname, "xor");
     compute_dtype = LIBXSMM_DATATYPE_BF16;
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
+  }
+  if ( op == TANH_OP ) {
+    sprintf(opname, "tanh");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
+  }
+  if ( op == SIGMOID_OP ) {
+    sprintf(opname, "sigmoid");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
   }
 
   if ( M > ldi ) {
@@ -278,7 +347,7 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   s = 0;
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+      if ( unequal_bf16_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j]) ) {
         printf("error at possition i=%i, j=%i, %f, %f\n", i, j, (float) out[(i*ldo)+j], (float) out_gold[(i*ldo)+j]);
         s = 1;
       }
@@ -322,7 +391,15 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     sprintf(opname, "xor");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
   }
+  if ( op == TANH_OP ) {
+    sprintf(opname, "tanh");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
+  }
 
+  if ( op == SIGMOID_OP ) {
+    sprintf(opname, "sigmoid");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
+  }
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
@@ -373,7 +450,7 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   s = 0;
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+      if ( unequal_bf16_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j]) ) {
         printf("error at possition i=%i, j=%i, %f, %f\n", i, j, (float)out[(i*ldo)+j], (float)out_gold[(i*ldo)+j]);
         s = 1;
       }
@@ -416,6 +493,14 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   if ( op == XOR_OP ) {
     sprintf(opname, "xor");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
+  }
+  if ( op == TANH_OP ) {
+    sprintf(opname, "tanh");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
+  }
+  if ( op == SIGMOID_OP ) {
+    sprintf(opname, "sigmoid");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
   }
 
   if ( M > ldi ) {
@@ -470,7 +555,7 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   s = 0;
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+      if ( unequal_fp32_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j])  ) {
         printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
         s = 1;
       }
@@ -529,8 +614,14 @@ int main( int argc, char* argv[] ) {
   if ( op == XOR_OP ) {
     sprintf(opname, "xor");
   }
+  if ( op == TANH_OP ) {
+    sprintf(opname, "tanh");
+  }
+  if ( op == SIGMOID_OP ) {
+    sprintf(opname, "sigmoid");
+  }
 
-  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP) ? 1 : 0;
+  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP) ? 1 : 0;
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");
