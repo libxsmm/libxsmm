@@ -457,8 +457,9 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
                                                  unsigned int                            i_mask_last_m_chunk,
                                                  unsigned int                            i_mask_reg) {
   unsigned int im, in, cur_vreg;
-  LIBXSMM_UNUSED(i_vlen);
   unsigned int binary_op_instr = 0;
+
+  LIBXSMM_UNUSED(i_vlen);
 
   switch (i_mateltwise_desc->param) {
     case LIBXSMM_MELTW_TYPE_BINARY_ADD: {
