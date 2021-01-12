@@ -335,27 +335,7 @@ ifeq (0,$(GNU))
       CC := icx
     endif
   endif
-  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" \
-                         | $(CC) $(call ctest,$(CC),$(ECFLAGS) $(EFLAGS)) -E -P - 2>/dev/null \
-                         | sed "/^[[:space:]]*$$/d" 2>/dev/null))
-    ifneq (,$(INTEL))
-      ICX := $(INTEL)
-    else
-      ICX := 1
-    endif
-  endif
 endif
-ifneq (,$(shell echo "__INTEL_COMPILER" \
-        | $(FC) $(call ftest,$(FC),$(EFCFLAGS) $(EFLAGS)) -E -P /dev/stdin 2>/dev/null \
-        | sed "/^[[:space:]]*$$/d;/^__INTEL_COMPILER$$/d" 2>/dev/null))
-  ifneq (,$(INTEL))
-    ICX := $(shell echo "$$(($(INTEL)+1))")
-  else
-    ICX := 1
-  endif
-  FIXFC ?= 0
-endif
-ICX ?= 0
 
 # adopt extra flags from C if not set individually
 ECXXFLAGS ?= $(ECFLAGS)
@@ -398,6 +378,19 @@ else
     COMPILER_VERSION_FLAG ?= -V 2>&1
   endif
 endif
+
+ifneq (,$(filter-out __INTEL_LLVM_COMPILER,$(shell echo "__INTEL_LLVM_COMPILER" \
+        | $(CC) $(call ctest,$(CC),$(ECFLAGS) $(EFLAGS)) -E -P - 2>/dev/null \
+        | sed "/^[[:space:]]*$$/d" 2>/dev/null)))
+  ICX := 1
+endif
+ifneq (,$(filter-out __INTEL_LLVM_COMPILER,$(shell echo "__INTEL_LLVM_COMPILER" \
+        | $(FC) $(call ftest,$(FC),$(EFCFLAGS) $(EFLAGS)) -E -P /dev/stdin 2>/dev/null \
+        | sed "/^[[:space:]]*$$/d" 2>/dev/null)))
+  ICX := $(if $(filter 1,$(ICX)),2,1)
+  FIXFC ?= 0
+endif
+ICX ?= 0
 
 # linker setup
 LD := $(CC)
