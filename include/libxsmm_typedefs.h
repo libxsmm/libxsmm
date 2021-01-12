@@ -193,7 +193,8 @@ typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER              = 19,
   LIBXSMM_MELTW_OPERATION_ACT_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER          = 20,
   LIBXSMM_MELTW_OPERATION_DROPOUT                                          = 21,
-  LIBXSMM_MELTW_OPERATION_UNARY                                            = 22
+  LIBXSMM_MELTW_OPERATION_UNARY                                            = 22,
+  LIBXSMM_MELTW_OPERATION_BINARY                                           = 23
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
@@ -366,6 +367,19 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_GELU        = 11,
   LIBXSMM_MELTW_TYPE_UNARY_GELU_INV    = 12
 } libxsmm_meltw_unary_type;
+
+typedef enum libxsmm_meltw_binary_flags {
+  LIBXSMM_MELTW_FLAG_BINARY_NONE    = 0,
+} libxsmm_meltw_binary_flags;
+
+typedef enum libxsmm_meltw_binary_type {
+  LIBXSMM_MELTW_TYPE_BINARY_NONE        =  0,
+  LIBXSMM_MELTW_TYPE_BINARY_ADD         =  1,
+  LIBXSMM_MELTW_TYPE_BINARY_MUL         =  2,
+  LIBXSMM_MELTW_TYPE_BINARY_SUB         =  3,
+  LIBXSMM_MELTW_TYPE_BINARY_DIV         =  4,
+  LIBXSMM_MELTW_TYPE_BINARY_MULADD      =  5
+} libxsmm_meltw_binary_type;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
   libxsmm_meltw_null_flags     elt_null;
@@ -789,6 +803,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_param {
   void* out_ptr;          /* output pointer */
 } libxsmm_meltw_unary_param;
 
+/** argument struct for matrix-eltwise: binary */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_param {
+  const void* in_ptr_0;     /* 1st input pointer */
+  const void* in_ptr_1;     /* 2nd input pointer */
+  void* out_ptr;            /* output pointer */
+} libxsmm_meltw_binary_param;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_gemm_param {
   const void* bias_ptr;        /* optional, col-bias pointer */
   void* out_ptr;               /* optional, pointer to output after eltwise (contains mask in case of ReLU); */
@@ -817,6 +838,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_act_c
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_transform)(const libxsmm_meltw_transform_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_dropout)(const libxsmm_meltw_dropout_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_unary)(const libxsmm_meltw_unary_param* in_struct);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_binary)(const libxsmm_meltw_binary_param* in_struct);
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   void (*xmeltw)(const void* in_struct);
@@ -831,6 +853,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   libxsmm_meltwfunction_transform meltw_transform;
   libxsmm_meltwfunction_dropout meltw_dropout;
   libxsmm_meltwfunction_unary meltw_unary;
+  libxsmm_meltwfunction_binary meltw_binary;
 } libxsmm_xmeltwfunction;
 
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
