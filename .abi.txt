@@ -105,6 +105,7 @@ libxsmm_dispatch_meltw_reduce_cols_idx
 libxsmm_dispatch_meltw_relu
 libxsmm_dispatch_meltw_scale
 libxsmm_dispatch_meltw_transform
+libxsmm_dispatch_meltw_unary
 libxsmm_dispatch_meltw_zero
 libxsmm_dispatch_pgemm
 libxsmm_dispatch_trans
