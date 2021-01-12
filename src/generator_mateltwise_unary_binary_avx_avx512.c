@@ -531,7 +531,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
         }
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg, cur_vreg );
       } else {
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, cur_vreg, i_micro_kernel_config->tmp_vreg, cur_vreg );
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, binary_op_instr, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, cur_vreg, cur_vreg );
       }
     }
   }
