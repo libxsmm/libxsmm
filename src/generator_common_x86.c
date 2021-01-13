@@ -93,7 +93,7 @@ void libxsmm_generator_gelu_ps_minimax3_avx512( libxsmm_generated_code*         
       i_vec_x,
       i_vec_thres,
       i_vec_xr,
-      0, 0, _MM_FROUND_NO_EXC, 2);
+      0, 0, 8, 2);
 
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
@@ -175,7 +175,7 @@ void libxsmm_generator_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*     
       i_vec_x,
       i_vec_thres,
       i_vec_xr,
-      0, 0, _MM_FROUND_NO_EXC, 2);
+      0, 0, 8, 2);
 
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
