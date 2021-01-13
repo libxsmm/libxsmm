@@ -327,7 +327,7 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
       if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_X2) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, i_micro_kernel_config->vector_name, cur_vreg, cur_vreg, cur_vreg );
-      } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH) {
+      } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ) {
         libxsmm_generator_tanh_ps_rational_78_avx512( io_generated_code,
             cur_vreg,
             i_micro_kernel_config->vec_x2,
@@ -346,7 +346,12 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
             i_micro_kernel_config->vec_lo_bound,
             i_micro_kernel_config->vec_ones,
             i_micro_kernel_config->vec_neg_ones);
-      } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
+
+        if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV) {
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+              LIBXSMM_X86_INSTR_VFNMSUB213PS, 'z', i_micro_kernel_config->vec_neg_ones, cur_vreg, cur_vreg );
+        }
+      } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV) {
         libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code,
             cur_vreg,
             i_micro_kernel_config->vec_x2,
@@ -366,6 +371,13 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
             i_micro_kernel_config->vec_ones,
             i_micro_kernel_config->vec_neg_ones,
             i_micro_kernel_config->vec_halves );
+
+        if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV) {
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+              LIBXSMM_X86_INSTR_VSUBPS, 'z', cur_vreg, i_micro_kernel_config->vec_ones, i_micro_kernel_config->vec_x2 );
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+              LIBXSMM_X86_INSTR_VMULPS, 'z', i_micro_kernel_config->vec_x2, cur_vreg, cur_vreg );
+        }
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU) {
         libxsmm_generator_gelu_ps_minimax3_avx512( io_generated_code,
             cur_vreg,
@@ -873,9 +885,9 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
       i_micro_kernel_config->reserved_zmms = reserved_zmms;
     }
 
-    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH) {
+    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV) {
       unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
-     unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+      unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
       reserved_zmms += 14;
       reserved_mask_regs += 2;
 
@@ -913,7 +925,7 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
       i_micro_kernel_config->reserved_zmms = reserved_zmms;
     }
 
-    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
+    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV) {
       unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
       unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
       reserved_zmms += 15;

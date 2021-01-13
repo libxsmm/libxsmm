@@ -52,6 +52,14 @@ float fsigmoid(float x) {
   return (tanhf(x/2.0) + 1.0)/2.0;
 }
 
+float fsigmoid_inv(float x) {
+  return fsigmoid(x) * (1.0-fsigmoid(x));
+}
+
+float tanh_inv(float x) {
+  return 1.0-tanhf(x)*tanhf(x);
+}
+
 float gelu(float x) {
   return (erf(x/sqrtf(2.0)) + 1.0)*0.5*x;
 }
@@ -84,6 +92,12 @@ void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
       }
       if (op == GELU_INV_OP) {
         out[(j*ldo) + i] = gelu_inv(in[(j*ldi) + i]);
+      }
+      if (op == TANH_INV_OP) {
+        out[(j*ldo) + i] = tanh_inv(in[(j*ldi) + i]);
+      }
+      if (op == SIGMOID_INV_OP) {
+        out[(j*ldo) + i] = fsigmoid_inv(in[(j*ldi) + i]);
       }
     }
   }
@@ -119,6 +133,12 @@ void unary_op_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         if (op == GELU_INV_OP) {
           res = gelu_inv(bf16_hp.f);
         }
+        if (op == TANH_INV_OP) {
+          res = tanh_inv(bf16_hp.f);
+        }
+        if (op == SIGMOID_INV_OP) {
+          res = fsigmoid_inv(bf16_hp.f);
+        }
         libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
       }
     }
@@ -151,6 +171,12 @@ void unary_op_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == GELU_INV_OP) {
         res = gelu_inv(in[(j*ldi) + i]);
+      }
+      if (op == TANH_INV_OP) {
+        res = tanh_inv(in[(j*ldi) + i]);
+      }
+      if (op == SIGMOID_INV_OP) {
+        res = fsigmoid_inv(in[(j*ldi) + i]);
       }
       libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
     }
@@ -186,6 +212,12 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == GELU_INV_OP) {
         res = gelu_inv(bf16_hp.f);
+      }
+      if (op == TANH_INV_OP) {
+        res = tanh_inv(bf16_hp.f);
+      }
+      if (op == SIGMOID_INV_OP) {
+        res = fsigmoid_inv(bf16_hp.f);
       }
       out[(j*ldo) + i] = res;
     }
@@ -229,6 +261,14 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   if ( op == GELU_INV_OP ) {
     sprintf(opname, "gelu_inv");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
+  }
+  if ( op == TANH_INV_OP ) {
+    sprintf(opname, "tanh_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
+  }
+  if ( op == SIGMOID_INV_OP ) {
+    sprintf(opname, "sigmoid_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
   }
 
   if ( M > ldi ) {
@@ -346,6 +386,14 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     sprintf(opname, "gelu_inv");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
   }
+  if ( op == TANH_INV_OP ) {
+    sprintf(opname, "tanh_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
+  }
+  if ( op == SIGMOID_INV_OP ) {
+    sprintf(opname, "sigmoid_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
+  }
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_bf16_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -460,6 +508,14 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     sprintf(opname, "gelu_inv");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
   }
+  if ( op == TANH_INV_OP ) {
+    sprintf(opname, "tanh_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
+  }
+  if ( op == SIGMOID_INV_OP ) {
+    sprintf(opname, "sigmoid_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
+  }
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -570,6 +626,14 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   if ( op == GELU_INV_OP ) {
     sprintf(opname, "gelu_inv");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
+  }
+  if ( op == TANH_INV_OP ) {
+    sprintf(opname, "tanh_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
+  }
+  if ( op == SIGMOID_INV_OP ) {
+    sprintf(opname, "sigmoid_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
   }
 
   if ( M > ldi ) {
@@ -695,8 +759,14 @@ int main( int argc, char* argv[] ) {
   if ( op == GELU_INV_OP ) {
     sprintf(opname, "gelu_inv");
   }
+  if ( op == TANH_INV_OP ) {
+    sprintf(opname, "tanh_inv");
+  }
+  if ( op == SIGMOID_INV_OP ) {
+    sprintf(opname, "sigmoid_inv");
+  }
 
-  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP || op == GELU_INV_OP) ? 1 : 0;
+  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP || op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP) ? 1 : 0;
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");
