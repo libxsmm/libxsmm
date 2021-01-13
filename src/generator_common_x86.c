@@ -26,12 +26,40 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx512( libxsmm_generated
     const unsigned int                             i_vec_c2 ) {
   unsigned int thres_array[16] = { 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff, 0x40879fff };
   unsigned int absmask_array[16] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
-  unsigned int scale_array[16] = { 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1 };
+  unsigned int scale_array[16] = { 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1, 0x406a0ea1};
   unsigned int shifter_array[16] = { 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000 };
   unsigned int half_array[16] = { 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000};
   unsigned int c0_array[16] = { 0x3ecc4231u, 0x3ecc541cu, 0x3ecd6c48u, 0x3ed174c3u, 0x3ed9bd5du, 0x3ee5acd5u, 0x3ef2aeddu, 0x3efd5384u, 0x3f016724u, 0x3f00f778u, 0x3efb389eu, 0x3ef0464du, 0x3ee3014fu, 0x3ed50a78u, 0x3ec779dbu, 0x3ebae363u };
   unsigned int c1_array[16] = { 0xb7c7fb58u, 0xbacb9740u, 0xbc3e4b3au, 0xbd0d292au, 0xbd8bc5d0u, 0xbdd9978fu, 0xbe0f92d3u, 0xbe27b66du, 0xbe328ce7u, 0xbe3125bfu, 0xbe26dc9du, 0xbe17a056u, 0xbe06bdebu, 0xbdecc593u, 0xbdcf57aau, 0xbdb5ea3au };
   unsigned int c2_array[16] = { 0xbd877b85u, 0xbd7d9780u, 0xbd4cb70eu, 0xbd08a1e9u, 0xbc808857u, 0xb9476fd2u, 0x3c36f765u, 0x3c924160u, 0x3ca7b1fcu, 0x3ca5732cu, 0x3c95af63u, 0x3c8079f7u, 0x3c55fa4fu, 0x3c2fa86bu, 0x3c0fbb00u, 0x3bec178cu };
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) thres_array, "thres_array", 'z', i_vec_thres);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) absmask_array, "absmask_array", 'z', i_vec_absmask);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) scale_array, "scale_array", 'z', i_vec_scale);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) shifter_array, "shifter_array", 'z', i_vec_shifter);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) half_array, "half_array", 'z', i_vec_half);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c0_array, "c0_array", 'z', i_vec_c0);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c1_array, "c1_array", 'z', i_vec_c1);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_array, "c2_array", 'z', i_vec_c2);
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_thres,
+    const unsigned int                             i_vec_absmask,
+    const unsigned int                             i_vec_scale,
+    const unsigned int                             i_vec_shifter,
+    const unsigned int                             i_vec_half,
+    const unsigned int                             i_vec_c0,
+    const unsigned int                             i_vec_c1,
+    const unsigned int                             i_vec_c2 ) {
+  unsigned int thres_array[16] = { 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff, 0x408f5fff };
+  unsigned int absmask_array[16] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
+  unsigned int scale_array[16] = { 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9, 0x405d67c9};
+  unsigned int shifter_array[16] = { 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000, 0x4b400000 };
+  unsigned int half_array[16] = { 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000, 0x3f000000};
+  unsigned int c0_array[16] = { 0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu, 0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu };
+  unsigned int c1_array[16] = { 0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u, 0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u };
+  unsigned int c2_array[16] = { 0xbe87047bu, 0xbe6eb875u, 0xbe2210c1u, 0xbd81727fu, 0x3cb9625cu, 0x3da2cbe8u, 0x3dd1d4d1u, 0x3dca0bd0u, 0x3da47dd0u, 0x3d6f1bd3u, 0x3d216381u, 0x3cd2618cu, 0x3c89f6e6u, 0x3c3ca672u, 0x3c08ed08u, 0x3bd26a14u };
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) thres_array, "thres_array", 'z', i_vec_thres);
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) absmask_array, "absmask_array", 'z', i_vec_absmask);
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) scale_array, "scale_array", 'z', i_vec_scale);
@@ -123,6 +151,88 @@ void libxsmm_generator_gelu_ps_minimax3_avx512( libxsmm_generated_code*         
                                        LIBXSMM_X86_INSTR_VMULPS,
                                        'z',
                                        i_vec_x, i_vec_C2, i_vec_x );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_x,
+    const unsigned int                             i_vec_xr,
+    const unsigned int                             i_vec_xa,
+    const unsigned int                             i_vec_index,
+    const unsigned int                             i_vec_C0,
+    const unsigned int                             i_vec_C1,
+    const unsigned int                             i_vec_C2,
+    const unsigned int                             i_vec_thres,
+    const unsigned int                             i_vec_absmask,
+    const unsigned int                             i_vec_scale,
+    const unsigned int                             i_vec_shifter,
+    const unsigned int                             i_vec_half,
+    const unsigned int                             i_vec_c0,
+    const unsigned int                             i_vec_c1,
+    const unsigned int                             i_vec_c2 ) {
+ libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+      LIBXSMM_X86_INSTR_VRANGEPS, 'z',
+      i_vec_x,
+      i_vec_thres,
+      i_vec_xr,
+      0, 0, _MM_FROUND_NO_EXC, 2);
+
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VPANDD,
+                                       'z',
+                                       i_vec_xr, i_vec_absmask, i_vec_xa );
+
+   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VMOVDQU64,
+                                       'z',
+                                       i_vec_xa, i_vec_index );
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_shifter, i_vec_scale, i_vec_index );
+
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+      LIBXSMM_X86_INSTR_VPERMD, 'z',
+      i_vec_c2,
+      i_vec_index,
+      i_vec_C2,
+      0, 0, 0, 0);
+
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+      LIBXSMM_X86_INSTR_VPERMD, 'z',
+      i_vec_c1,
+      i_vec_index,
+      i_vec_C1,
+      0, 0, 0, 0);
+
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+      LIBXSMM_X86_INSTR_VPERMD, 'z',
+      i_vec_c0,
+      i_vec_index,
+      i_vec_C0,
+      0, 0, 0, 0);
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_C1, i_vec_xa, i_vec_C2 );
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_C0, i_vec_xa, i_vec_C2 );
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'z',
+                                       i_vec_half, i_vec_xr, i_vec_C2 );
+
+   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VMOVDQU64,
+                                       'z',
+                                       i_vec_C2, i_vec_x );
 }
 
 LIBXSMM_API_INTERN

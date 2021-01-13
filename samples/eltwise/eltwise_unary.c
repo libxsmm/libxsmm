@@ -14,7 +14,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#define EPS 1.19209290e-02F
+#define PI 3.14159265358979323846
+#define EPS 1.19209290e-04F
 
 #define COPY_OP 0
 #define X2_OP 2
@@ -22,6 +23,9 @@
 #define TANH_OP 4
 #define SIGMOID_OP 5
 #define GELU_OP 6
+#define GELU_INV_OP 7
+#define TANH_INV_OP 8
+#define SIGMOID_INV_OP 9
 
 int unequal_fp32_vals(float a, float b) {
   if (fabs(a-b) < EPS) {
@@ -52,6 +56,10 @@ float gelu(float x) {
   return (erf(x/sqrtf(2.0)) + 1.0)*0.5*x;
 }
 
+float gelu_inv(float x) {
+  return (0.5 + 0.5 * erf(x/sqrtf(2.0)) + x/(sqrtf(2.0*PI))*exp(-0.5*x*x) );
+}
+
 void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, float *out, unsigned int op) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
@@ -73,6 +81,9 @@ void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
       }
       if (op == GELU_OP) {
         out[(j*ldo) + i] = gelu(in[(j*ldi) + i]);
+      }
+      if (op == GELU_INV_OP) {
+        out[(j*ldo) + i] = gelu_inv(in[(j*ldi) + i]);
       }
     }
   }
@@ -105,6 +116,9 @@ void unary_op_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         if (op == GELU_OP) {
           res = gelu(bf16_hp.f);
         }
+        if (op == GELU_INV_OP) {
+          res = gelu_inv(bf16_hp.f);
+        }
         libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
       }
     }
@@ -134,6 +148,9 @@ void unary_op_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == GELU_OP) {
         res = gelu(in[(j*ldi) + i]);
+      }
+      if (op == GELU_INV_OP) {
+        res = gelu_inv(in[(j*ldi) + i]);
       }
       libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
     }
@@ -166,6 +183,9 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == GELU_OP) {
         res = gelu(bf16_hp.f);
+      }
+      if (op == GELU_INV_OP) {
+        res = gelu_inv(bf16_hp.f);
       }
       out[(j*ldo) + i] = res;
     }
@@ -205,6 +225,10 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   if ( op == GELU_OP ) {
     sprintf(opname, "gelu");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
+  }
+  if ( op == GELU_INV_OP ) {
+    sprintf(opname, "gelu_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
   }
 
   if ( M > ldi ) {
@@ -318,6 +342,10 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     sprintf(opname, "gelu");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
   }
+  if ( op == GELU_INV_OP ) {
+    sprintf(opname, "gelu_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
+  }
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_bf16_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -428,6 +456,10 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     sprintf(opname, "gelu");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
   }
+  if ( op == GELU_INV_OP ) {
+    sprintf(opname, "gelu_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
+  }
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -534,6 +566,10 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   if ( op == GELU_OP ) {
     sprintf(opname, "gelu");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
+  }
+  if ( op == GELU_INV_OP ) {
+    sprintf(opname, "gelu_inv");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
   }
 
   if ( M > ldi ) {
@@ -656,8 +692,11 @@ int main( int argc, char* argv[] ) {
   if ( op == GELU_OP ) {
     sprintf(opname, "gelu");
   }
+  if ( op == GELU_INV_OP ) {
+    sprintf(opname, "gelu_inv");
+  }
 
-  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP) ? 1 : 0;
+  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP || op == GELU_INV_OP) ? 1 : 0;
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");

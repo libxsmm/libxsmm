@@ -57,6 +57,35 @@ void libxsmm_generator_gelu_ps_minimax3_avx512( libxsmm_generated_code*         
     const unsigned int                             i_vec_c2 );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_thres,
+    const unsigned int                             i_vec_absmask,
+    const unsigned int                             i_vec_scale,
+    const unsigned int                             i_vec_shifter,
+    const unsigned int                             i_vec_half,
+    const unsigned int                             i_vec_c0,
+    const unsigned int                             i_vec_c1,
+    const unsigned int                             i_vec_c2 );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_x,
+    const unsigned int                             i_vec_xr,
+    const unsigned int                             i_vec_xa,
+    const unsigned int                             i_vec_index,
+    const unsigned int                             i_vec_C0,
+    const unsigned int                             i_vec_C1,
+    const unsigned int                             i_vec_C2,
+    const unsigned int                             i_vec_thres,
+    const unsigned int                             i_vec_absmask,
+    const unsigned int                             i_vec_scale,
+    const unsigned int                             i_vec_shifter,
+    const unsigned int                             i_vec_half,
+    const unsigned int                             i_vec_c0,
+    const unsigned int                             i_vec_c1,
+    const unsigned int                             i_vec_c2 );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_c0,
     const unsigned int                             i_vec_c1,
