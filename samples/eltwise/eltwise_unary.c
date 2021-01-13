@@ -21,6 +21,7 @@
 #define XOR_OP 3
 #define TANH_OP 4
 #define SIGMOID_OP 5
+#define GELU_OP 6
 
 int unequal_fp32_vals(float a, float b) {
   if (fabs(a-b) < EPS) {
@@ -47,6 +48,10 @@ float fsigmoid(float x) {
   return (tanhf(x/2.0) + 1.0)/2.0;
 }
 
+float gelu(float x) {
+  return (erf(x/sqrtf(2.0)) + 1.0)*0.5*x;
+}
+
 void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, float *out, unsigned int op) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
@@ -65,6 +70,9 @@ void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
       }
       if (op == SIGMOID_OP) {
         out[(j*ldo) + i] = fsigmoid(in[(j*ldi) + i]);
+      }
+      if (op == GELU_OP) {
+        out[(j*ldo) + i] = gelu(in[(j*ldi) + i]);
       }
     }
   }
@@ -94,6 +102,9 @@ void unary_op_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         if (op == SIGMOID_OP) {
           res = fsigmoid(bf16_hp.f);
         }
+        if (op == GELU_OP) {
+          res = gelu(bf16_hp.f);
+        }
         libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
       }
     }
@@ -120,6 +131,9 @@ void unary_op_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == SIGMOID_OP) {
         res = fsigmoid(in[(j*ldi) + i]);
+      }
+      if (op == GELU_OP) {
+        res = gelu(in[(j*ldi) + i]);
       }
       libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
     }
@@ -149,6 +163,9 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == SIGMOID_OP) {
         res = fsigmoid(bf16_hp.f);
+      }
+      if (op == GELU_OP) {
+        res = gelu(bf16_hp.f);
       }
       out[(j*ldo) + i] = res;
     }
@@ -184,6 +201,10 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   if ( op == SIGMOID_OP ) {
     sprintf(opname, "sigmoid");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
+  }
+  if ( op == GELU_OP ) {
+    sprintf(opname, "gelu");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
   }
 
   if ( M > ldi ) {
@@ -293,6 +314,10 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     sprintf(opname, "sigmoid");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
   }
+  if ( op == GELU_OP ) {
+    sprintf(opname, "gelu");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
+  }
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_bf16_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -395,11 +420,15 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     sprintf(opname, "tanh");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
   }
-
   if ( op == SIGMOID_OP ) {
     sprintf(opname, "sigmoid");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
   }
+  if ( op == GELU_OP ) {
+    sprintf(opname, "gelu");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
+  }
+
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
@@ -501,6 +530,10 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   if ( op == SIGMOID_OP ) {
     sprintf(opname, "sigmoid");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
+  }
+  if ( op == GELU_OP ) {
+    sprintf(opname, "gelu");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
   }
 
   if ( M > ldi ) {
@@ -620,8 +653,11 @@ int main( int argc, char* argv[] ) {
   if ( op == SIGMOID_OP ) {
     sprintf(opname, "sigmoid");
   }
+  if ( op == GELU_OP ) {
+    sprintf(opname, "gelu");
+  }
 
-  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP) ? 1 : 0;
+  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP) ? 1 : 0;
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");
