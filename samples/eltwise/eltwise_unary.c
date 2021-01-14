@@ -28,6 +28,9 @@
 #define SIGMOID_INV_OP 9
 #define SQRT_OP 10
 #define NEGATE_OP 11
+#define INC_OP 12
+#define RCP_OP 13
+#define RCP_SQRT_OP 14
 
 int unequal_fp32_vals(float a, float b) {
   if (fabs(a-b) < EPS) {
@@ -105,6 +108,15 @@ float fp32_unary_compute(float in, unsigned int op) {
   if (op == SQRT_OP) {
     res = sqrtf(in);
   }
+  if (op == INC_OP) {
+    res = in + 1.0;
+  }
+  if (op == RCP_OP) {
+    res = 1.0/in;
+  }
+  if (op == RCP_SQRT_OP) {
+    res = 1.0/sqrtf(in);
+  }
   return res;
 }
 
@@ -141,6 +153,15 @@ void set_opname(unsigned int op, char *opname) {
   }
   if ( op == NEGATE_OP ) {
     sprintf(opname, "negate");
+  }
+  if (op == INC_OP) {
+    sprintf(opname, "inc");
+  }
+  if (op == RCP_OP) {
+    sprintf(opname, "reciprocal");
+  }
+  if (op == RCP_SQRT_OP) {
+    sprintf(opname, "reciprocal sqrt");
   }
 }
 
@@ -179,6 +200,15 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
   }
   if ( op == NEGATE_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
+  }
+  if (op == INC_OP) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_INC;
+  }
+  if (op == RCP_OP) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL;
+   }
+  if (op == RCP_SQRT_OP) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT;
   }
   *type = unary_type;
 }
@@ -619,7 +649,9 @@ int main( int argc, char* argv[] ) {
 
   set_opname(op, opname);
 
-  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP || op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP || op == SQRT_OP || op == NEGATE_OP) ? 1 : 0;
+  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP ||
+               op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP || op == SQRT_OP || op == NEGATE_OP ||
+               op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP) ? 1 : 0;
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");
