@@ -42,25 +42,71 @@ int unequal_bf16_vals(libxsmm_bfloat16 a, libxsmm_bfloat16 b) {
   }
 }
 
+float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
+  float res = out;
+
+  if ( op == ADD_OP) {
+    res = in0 + in1;
+  }
+  if ( op == SUB_OP) {
+    res = in0 - in1;
+  }
+  if ( op == MUL_OP) {
+    res = in0 * in1;
+  }
+  if ( op == DIV_OP) {
+    res = in0 / in1;
+  }
+  if ( op == MULADD_OP) {
+    res += in0 * in1;
+  }
+
+  return res;
+}
+
+void set_opname(unsigned int op, char *opname) {
+  if ( op == ADD_OP ) {
+    sprintf(opname, "add");
+  }
+  if ( op == SUB_OP ) {
+    sprintf(opname, "sub");
+  }
+  if ( op == MUL_OP ) {
+    sprintf(opname, "mul");
+  }
+  if ( op == DIV_OP ) {
+    sprintf(opname, "div");
+  }
+  if ( op == MULADD_OP ) {
+    sprintf(opname, "muladd");
+  }
+}
+
+void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
+  libxsmm_meltw_binary_type  binary_type;
+  if ( op == ADD_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_ADD;
+  }
+  if ( op == SUB_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_SUB;
+  }
+  if ( op == MUL_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MUL;
+  }
+  if ( op == DIV_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
+  }
+  if ( op == MULADD_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
+  }
+  *type = binary_type;
+}
+
 void binary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, float *in2, float *out, unsigned int op) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
-      if ( op == ADD_OP) {
-        out[(j*ldo) + i] = in[(j*ldi) + i] + in2[(j*ldi) + i];
-      }
-      if ( op == SUB_OP) {
-        out[(j*ldo) + i] = in[(j*ldi) + i] - in2[(j*ldi) + i];
-      }
-      if ( op == MUL_OP) {
-        out[(j*ldo) + i] = in[(j*ldi) + i] * in2[(j*ldi) + i];
-      }
-      if ( op == DIV_OP) {
-        out[(j*ldo) + i] = in[(j*ldi) + i] / in2[(j*ldi) + i];
-      }
-      if ( op == MULADD_OP) {
-        out[(j*ldo) + i] += in[(j*ldi) + i] * in2[(j*ldi) + i];
-      }
+      out[(j*ldo) + i] = fp32_binary_compute(in[(j*ldi) + i], in2[(j*ldi) + i], out[(j*ldo) + i], op);
     }
   }
 }
@@ -78,23 +124,7 @@ void binary_op_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
       bf16_hp3.i[1] = out[(j*ldo) + i];
       bf16_hp3.i[0] = 0;
       res = bf16_hp3.f;
-
-      if ( op == ADD_OP) {
-        res =  bf16_hp.f + bf16_hp2.f;
-      }
-      if ( op == SUB_OP) {
-        res = bf16_hp.f - bf16_hp2.f;
-      }
-      if ( op == MUL_OP) {
-        res = bf16_hp.f * bf16_hp2.f;
-      }
-      if ( op == DIV_OP) {
-        res = bf16_hp.f / bf16_hp2.f;
-      }
-      if ( op == MULADD_OP) {
-        res += bf16_hp.f * bf16_hp2.f;
-      }
-
+      res = fp32_binary_compute(bf16_hp.f, bf16_hp2.f, res, op);
       libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
     }
   }
@@ -109,23 +139,7 @@ void binary_op_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       bf16_hp.i[1] = out[(j*ldo) + i];
       bf16_hp.i[0] = 0;
       res = bf16_hp.f;
-
-      if ( op == ADD_OP) {
-        res = in[(j*ldi) + i] + in2[(j*ldi) + i];
-      }
-      if ( op == SUB_OP) {
-        res = in[(j*ldi) + i] - in2[(j*ldi) + i];
-      }
-      if ( op == MUL_OP) {
-        res = in[(j*ldi) + i] * in2[(j*ldi) + i];
-      }
-      if ( op == DIV_OP) {
-        res = in[(j*ldi) + i] / in2[(j*ldi) + i];
-      }
-      if ( op == MULADD_OP) {
-        res += in[(j*ldi) + i] * in2[(j*ldi) + i];
-      }
-
+      res = fp32_binary_compute(in[(j*ldi) + i], in2[(j*ldi) + i], res, op);
       libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
     }
   }
@@ -140,22 +154,7 @@ void binary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       bf16_hp.i[0] = 0;
       bf16_hp2.i[1] = in2[(j*ldi) + i];
       bf16_hp2.i[0] = 0;
-
-      if ( op == ADD_OP) {
-        out[(j*ldo) + i] =  bf16_hp.f + bf16_hp2.f;
-      }
-      if ( op == SUB_OP) {
-        out[(j*ldo) + i] = bf16_hp.f - bf16_hp2.f;
-      }
-      if ( op == MUL_OP) {
-        out[(j*ldo) + i] = bf16_hp.f * bf16_hp2.f;
-      }
-      if ( op == DIV_OP) {
-        out[(j*ldo) + i] = bf16_hp.f / bf16_hp2.f;
-      }
-      if ( op == MULADD_OP) {
-        out[(j*ldo) + i] += bf16_hp.f * bf16_hp2.f;
-      }
+      out[(j*ldo) + i] = fp32_binary_compute(bf16_hp.f, bf16_hp2.f, out[(j*ldo) + i], op);
     }
   }
 }
@@ -170,26 +169,8 @@ void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
 
-  if ( op == ADD_OP ) {
-    sprintf(opname, "add");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-  }
-  if ( op == SUB_OP ) {
-    sprintf(opname, "sub");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_SUB;
-  }
-  if ( op == MUL_OP ) {
-    sprintf(opname, "mul");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MUL;
-  }
-  if ( op == DIV_OP ) {
-    sprintf(opname, "div");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
-  }
-  if ( op == MULADD_OP ) {
-    sprintf(opname, "muladd");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
-  }
+  set_opname(op, opname);
+  set_binarytype(op, &binary_type);
 
   if ( M > ldi ) {
     fprintf( stderr, "test_binary_%s_f32_f32: ldi needs to be equal to or bigger than M\n", opname);
@@ -283,26 +264,8 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
 
-  if ( op == ADD_OP ) {
-    sprintf(opname, "add");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-  }
-  if ( op == SUB_OP ) {
-    sprintf(opname, "sub");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_SUB;
-  }
-  if ( op == MUL_OP ) {
-    sprintf(opname, "mul");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MUL;
-  }
-  if ( op == DIV_OP ) {
-    sprintf(opname, "div");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
-  }
-  if ( op == MULADD_OP ) {
-    sprintf(opname, "muladd");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
-  }
+  set_opname(op, opname);
+  set_binarytype(op, &binary_type);
 
   if ( M > ldi ) {
     fprintf( stderr, "test_binary_%s_bf16_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -399,26 +362,8 @@ void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
 
-  if ( op == ADD_OP ) {
-    sprintf(opname, "add");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-  }
-  if ( op == SUB_OP ) {
-    sprintf(opname, "sub");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_SUB;
-  }
-  if ( op == MUL_OP ) {
-    sprintf(opname, "mul");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MUL;
-  }
-  if ( op == DIV_OP ) {
-    sprintf(opname, "div");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
-  }
-  if ( op == MULADD_OP ) {
-    sprintf(opname, "muladd");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
-  }
+  set_opname(op, opname);
+  set_binarytype(op, &binary_type);
 
   if ( M > ldi ) {
     fprintf( stderr, "test_binary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -510,26 +455,8 @@ void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
 
-  if ( op == ADD_OP ) {
-    sprintf(opname, "add");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-  }
-  if ( op == SUB_OP ) {
-    sprintf(opname, "sub");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_SUB;
-  }
-  if ( op == MUL_OP ) {
-    sprintf(opname, "mul");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MUL;
-  }
-  if ( op == DIV_OP ) {
-    sprintf(opname, "div");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
-  }
-  if ( op == MULADD_OP ) {
-    sprintf(opname, "muladd");
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
-  }
+  set_opname(op, opname);
+  set_binarytype(op, &binary_type);
 
   if ( M > ldi ) {
     fprintf( stderr, "test_binary_%s_bf16_f32: ldi needs to be equal to or bigger than M\n", opname);
@@ -643,21 +570,7 @@ int main( int argc, char* argv[] ) {
   ldi        = atoi(argv[8]);
   ldo        = atoi(argv[9]);
 
-  if ( op == ADD_OP ) {
-    sprintf(opname, "add");
-  }
-  if ( op == SUB_OP ) {
-    sprintf(opname, "sub");
-  }
-  if ( op == MUL_OP ) {
-    sprintf(opname, "mul");
-  }
-  if ( op == DIV_OP ) {
-    sprintf(opname, "div");
-  }
-  if ( op == MULADD_OP ) {
-    sprintf(opname, "muladd");
-  }
+  set_opname(op, opname);
 
   valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP ) ? 1 : 0;
 
