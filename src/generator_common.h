@@ -894,6 +894,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_scale;
   unsigned int vec_shifter;
 
+  /* Misc aux variables  */
+  unsigned int neg_signs_vreg;
+
   /* Aux variables for kernel config  */
   unsigned int vlen_in;
   unsigned int vlen_out;

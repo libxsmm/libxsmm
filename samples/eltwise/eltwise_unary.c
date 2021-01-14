@@ -27,6 +27,7 @@
 #define TANH_INV_OP 8
 #define SIGMOID_INV_OP 9
 #define SQRT_OP 10
+#define NEGATE_OP 11
 
 int unequal_fp32_vals(float a, float b) {
   if (fabs(a-b) < EPS) {
@@ -75,6 +76,9 @@ void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
     for ( i = 0; i < M; ++i ) {
       if ( op == COPY_OP) {
         out[(j*ldo) + i] = in[(j*ldi) + i];
+      }
+      if ( op == NEGATE_OP) {
+        out[(j*ldo) + i] = -1.0 * in[(j*ldi) + i];
       }
       if (op == X2_OP) {
         out[(j*ldo) + i] = in[(j*ldi) + i] *  in[(j*ldi) + i];
@@ -146,6 +150,9 @@ void unary_op_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         if (op == SQRT_OP) {
           res = sqrtf(bf16_hp.f);
         }
+        if (op == NEGATE_OP) {
+          res = -1.0 * bf16_hp.f;
+        }
         libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
       }
     }
@@ -187,6 +194,9 @@ void unary_op_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == SQRT_OP) {
         res = sqrtf(in[(j*ldi) + i]);
+      }
+      if (op == NEGATE_OP) {
+        res = -1.0 * in[(j*ldi) + i];
       }
       libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
     }
@@ -231,6 +241,9 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       }
       if (op == SQRT_OP) {
         res = sqrtf(bf16_hp.f);
+      }
+      if (op == NEGATE_OP) {
+        res = -1.0 * bf16_hp.f;
       }
       out[(j*ldo) + i] = res;
     }
@@ -286,6 +299,10 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   if ( op == SQRT_OP ) {
     sprintf(opname, "sqrt");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
+  }
+  if ( op == NEGATE_OP ) {
+    sprintf(opname, "negate");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
   }
 
   if ( M > ldi ) {
@@ -415,6 +432,10 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     sprintf(opname, "sqrt");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
   }
+  if ( op == NEGATE_OP ) {
+    sprintf(opname, "negate");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
+  }
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_bf16_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -541,6 +562,10 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     sprintf(opname, "sqrt");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
   }
+  if ( op == NEGATE_OP ) {
+    sprintf(opname, "negate");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
+  }
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -663,6 +688,10 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   if ( op == SQRT_OP ) {
     sprintf(opname, "sqrt");
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
+  }
+  if ( op == NEGATE_OP ) {
+    sprintf(opname, "negate");
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
   }
 
   if ( M > ldi ) {
@@ -797,8 +826,11 @@ int main( int argc, char* argv[] ) {
   if ( op == SQRT_OP ) {
     sprintf(opname, "sqrt");
   }
+  if ( op == NEGATE_OP ) {
+    sprintf(opname, "negate");
+  }
 
-  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP || op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP || op == SQRT_OP) ? 1 : 0;
+  valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP || op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP || op == SQRT_OP || op == NEGATE_OP) ? 1 : 0;
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");
