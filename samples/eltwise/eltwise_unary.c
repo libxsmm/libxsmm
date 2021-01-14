@@ -70,43 +70,124 @@ float gelu_inv(float x) {
   return (0.5 + 0.5 * erf(x/sqrtf(2.0)) + x/(sqrtf(2.0*PI))*exp(-0.5*x*x) );
 }
 
+float fp32_unary_compute(float in, unsigned int op) {
+  float res;
+  if ( op == COPY_OP) {
+    res = in;
+  }
+  if ( op == NEGATE_OP) {
+    res = -1.0 * in;
+  }
+  if (op == X2_OP) {
+    res = in * in;
+  }
+  if (op == XOR_OP) {
+    res = 0;
+  }
+  if (op == TANH_OP) {
+    res = tanhf(in);
+  }
+  if (op == SIGMOID_OP) {
+    res = fsigmoid(in);
+  }
+  if (op == GELU_OP) {
+    res = gelu(in);
+  }
+  if (op == GELU_INV_OP) {
+    res = gelu_inv(in);
+  }
+  if (op == TANH_INV_OP) {
+    res = tanh_inv(in);
+  }
+  if (op == SIGMOID_INV_OP) {
+    res = fsigmoid_inv(in);
+  }
+  if (op == SQRT_OP) {
+    res = sqrtf(in);
+  }
+  return res;
+}
+
+void set_opname(unsigned int op, char *opname) {
+  if ( op == COPY_OP ) {
+    sprintf(opname, "copy");
+  }
+  if ( op == X2_OP ) {
+    sprintf(opname, "x2");
+  }
+  if ( op == XOR_OP ) {
+    sprintf(opname, "xor");
+  }
+  if ( op == TANH_OP ) {
+    sprintf(opname, "tanh");
+  }
+  if ( op == SIGMOID_OP ) {
+    sprintf(opname, "sigmoid");
+  }
+  if ( op == GELU_OP ) {
+    sprintf(opname, "gelu");
+  }
+  if ( op == GELU_INV_OP ) {
+    sprintf(opname, "gelu_inv");
+  }
+  if ( op == TANH_INV_OP ) {
+    sprintf(opname, "tanh_inv");
+  }
+  if ( op == SIGMOID_INV_OP ) {
+    sprintf(opname, "sigmoid_inv");
+  }
+  if ( op == SQRT_OP ) {
+    sprintf(opname, "sqrt");
+  }
+  if ( op == NEGATE_OP ) {
+    sprintf(opname, "negate");
+  }
+}
+
+void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
+  libxsmm_meltw_unary_type  unary_type;
+
+  if ( op == COPY_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_IDENTITY;
+  }
+  if ( op == X2_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
+  }
+  if ( op == XOR_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
+  }
+  if ( op == TANH_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
+  }
+  if ( op == SIGMOID_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
+  }
+  if ( op == GELU_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
+  }
+  if ( op == GELU_INV_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
+  }
+  if ( op == TANH_INV_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
+  }
+  if ( op == SIGMOID_INV_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
+  }
+  if ( op == SQRT_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
+  }
+  if ( op == NEGATE_OP ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
+  }
+  *type = unary_type;
+}
+
 void unary_op_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, float *out, unsigned int op) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
-      if ( op == COPY_OP) {
-        out[(j*ldo) + i] = in[(j*ldi) + i];
-      }
-      if ( op == NEGATE_OP) {
-        out[(j*ldo) + i] = -1.0 * in[(j*ldi) + i];
-      }
-      if (op == X2_OP) {
-        out[(j*ldo) + i] = in[(j*ldi) + i] *  in[(j*ldi) + i];
-      }
-      if (op == XOR_OP) {
-        out[(j*ldo) + i] = 0;
-      }
-      if (op == TANH_OP) {
-        out[(j*ldo) + i] = tanhf(in[(j*ldi) + i]);
-      }
-      if (op == SIGMOID_OP) {
-        out[(j*ldo) + i] = fsigmoid(in[(j*ldi) + i]);
-      }
-      if (op == GELU_OP) {
-        out[(j*ldo) + i] = gelu(in[(j*ldi) + i]);
-      }
-      if (op == GELU_INV_OP) {
-        out[(j*ldo) + i] = gelu_inv(in[(j*ldi) + i]);
-      }
-      if (op == TANH_INV_OP) {
-        out[(j*ldo) + i] = tanh_inv(in[(j*ldi) + i]);
-      }
-      if (op == SIGMOID_INV_OP) {
-        out[(j*ldo) + i] = fsigmoid_inv(in[(j*ldi) + i]);
-      }
-      if (op == SQRT_OP) {
-        out[(j*ldo) + i] = sqrtf(in[(j*ldi) + i]);
-      }
+      out[(j*ldo) + i] = fp32_unary_compute(in[(j*ldi) + i], op);
     }
   }
 }
@@ -123,36 +204,7 @@ void unary_op_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       if (op == COPY_OP) {
         out[(j*ldo) + i] = in[(j*ldi) + i];
       } else {
-        if (op == X2_OP) {
-          res = bf16_hp.f * bf16_hp.f;
-        }
-        if (op == XOR_OP) {
-          res = 0;
-        }
-        if (op == TANH_OP) {
-          res = tanhf(bf16_hp.f);
-        }
-        if (op == SIGMOID_OP) {
-          res = fsigmoid(bf16_hp.f);
-        }
-        if (op == GELU_OP) {
-          res = gelu(bf16_hp.f);
-        }
-        if (op == GELU_INV_OP) {
-          res = gelu_inv(bf16_hp.f);
-        }
-        if (op == TANH_INV_OP) {
-          res = tanh_inv(bf16_hp.f);
-        }
-        if (op == SIGMOID_INV_OP) {
-          res = fsigmoid_inv(bf16_hp.f);
-        }
-        if (op == SQRT_OP) {
-          res = sqrtf(bf16_hp.f);
-        }
-        if (op == NEGATE_OP) {
-          res = -1.0 * bf16_hp.f;
-        }
+        res = fp32_unary_compute(bf16_hp.f, op);
         libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
       }
     }
@@ -164,40 +216,7 @@ void unary_op_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
       float res;
-
-      if (op == COPY_OP) {
-        res = in[(j*ldi) + i];
-      }
-      if (op == X2_OP) {
-        res = in[(j*ldi) + i] * in[(j*ldi) + i];
-      }
-      if (op == XOR_OP) {
-        res = 0;
-      }
-      if (op == TANH_OP) {
-        res = tanhf(in[(j*ldi) + i]);
-      }
-      if (op == SIGMOID_OP) {
-        res = fsigmoid(in[(j*ldi) + i]);
-      }
-      if (op == GELU_OP) {
-        res = gelu(in[(j*ldi) + i]);
-      }
-      if (op == GELU_INV_OP) {
-        res = gelu_inv(in[(j*ldi) + i]);
-      }
-      if (op == TANH_INV_OP) {
-        res = tanh_inv(in[(j*ldi) + i]);
-      }
-      if (op == SIGMOID_INV_OP) {
-        res = fsigmoid_inv(in[(j*ldi) + i]);
-      }
-      if (op == SQRT_OP) {
-        res = sqrtf(in[(j*ldi) + i]);
-      }
-      if (op == NEGATE_OP) {
-        res = -1.0 * in[(j*ldi) + i];
-      }
+      res = fp32_unary_compute(in[(j*ldi) + i], op);
       libxsmm_rne_convert_fp32_bf16( &res, &out[(j*ldo) + i], 1 );
     }
   }
@@ -208,44 +227,9 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
       union libxsmm_bfloat16_hp bf16_hp;
-      float res;
       bf16_hp.i[1] = in[(j*ldi) + i];
       bf16_hp.i[0] = 0;
-
-      if (op == COPY_OP) {
-        res = bf16_hp.f;
-      }
-      if (op == X2_OP) {
-        res = bf16_hp.f * bf16_hp.f;
-      }
-      if (op == XOR_OP) {
-        res = 0;
-      }
-      if (op == TANH_OP) {
-        res = tanhf(bf16_hp.f);
-      }
-      if (op == SIGMOID_OP) {
-        res = fsigmoid(bf16_hp.f);
-      }
-      if (op == GELU_OP) {
-        res = gelu(bf16_hp.f);
-      }
-      if (op == GELU_INV_OP) {
-        res = gelu_inv(bf16_hp.f);
-      }
-      if (op == TANH_INV_OP) {
-        res = tanh_inv(bf16_hp.f);
-      }
-      if (op == SIGMOID_INV_OP) {
-        res = fsigmoid_inv(bf16_hp.f);
-      }
-      if (op == SQRT_OP) {
-        res = sqrtf(bf16_hp.f);
-      }
-      if (op == NEGATE_OP) {
-        res = -1.0 * bf16_hp.f;
-      }
-      out[(j*ldo) + i] = res;
+      out[(j*ldo) + i] = fp32_unary_compute(bf16_hp.f, op);
     }
   }
 }
@@ -260,52 +244,10 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltw_unary_type  unary_type;
   char opname[256];
 
-  if ( op == COPY_OP ) {
-    sprintf(opname, "copy");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_IDENTITY;
-  }
-  if ( op == X2_OP ) {
-    sprintf(opname, "x2");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
-  }
-  if ( op == XOR_OP ) {
-    sprintf(opname, "xor");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
-  }
-  if ( op == TANH_OP ) {
-    sprintf(opname, "tanh");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
-  }
-  if ( op == SIGMOID_OP ) {
-    sprintf(opname, "sigmoid");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
-  }
-  if ( op == GELU_OP ) {
-    sprintf(opname, "gelu");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
-  }
-  if ( op == GELU_INV_OP ) {
-    sprintf(opname, "gelu_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
-  }
-  if ( op == TANH_INV_OP ) {
-    sprintf(opname, "tanh_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
-  }
-  if ( op == SIGMOID_INV_OP ) {
-    sprintf(opname, "sigmoid_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
-  }
-  if ( op == SQRT_OP ) {
-    sprintf(opname, "sqrt");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
-  }
-  if ( op == NEGATE_OP ) {
-    sprintf(opname, "negate");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
-  }
+  set_opname(op, opname);
+  set_unarytype(op, &unary_type);
 
-  if ( M > ldi ) {
+    if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_f32_f32: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
   }
@@ -390,51 +332,14 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_dnn_datatype compute_dtype = LIBXSMM_DATATYPE_F32;
   char opname[256];
 
+  set_opname(op, opname);
+  set_unarytype(op, &unary_type);
+
   if ( op == COPY_OP ) {
-    sprintf(opname, "copy");
     compute_dtype = LIBXSMM_DATATYPE_BF16;
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_IDENTITY;
-  }
-  if ( op == X2_OP ) {
-    sprintf(opname, "x2");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
   }
   if ( op == XOR_OP ) {
-    sprintf(opname, "xor");
     compute_dtype = LIBXSMM_DATATYPE_BF16;
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
-  }
-  if ( op == TANH_OP ) {
-    sprintf(opname, "tanh");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
-  }
-  if ( op == SIGMOID_OP ) {
-    sprintf(opname, "sigmoid");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
-  }
-  if ( op == GELU_OP ) {
-    sprintf(opname, "gelu");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
-  }
-  if ( op == GELU_INV_OP ) {
-    sprintf(opname, "gelu_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
-  }
-  if ( op == TANH_INV_OP ) {
-    sprintf(opname, "tanh_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
-  }
-  if ( op == SIGMOID_INV_OP ) {
-    sprintf(opname, "sigmoid_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
-  }
-  if ( op == SQRT_OP ) {
-    sprintf(opname, "sqrt");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
-  }
-  if ( op == NEGATE_OP ) {
-    sprintf(opname, "negate");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
   }
 
   if ( M > ldi ) {
@@ -522,50 +427,8 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_meltw_unary_type  unary_type;
   char opname[256];
 
-  if ( op == COPY_OP ) {
-    sprintf(opname, "copy");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_IDENTITY;
-  }
-  if ( op == X2_OP ) {
-    sprintf(opname, "x2");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
-  }
-  if ( op == XOR_OP ) {
-    sprintf(opname, "xor");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
-  }
-  if ( op == TANH_OP ) {
-    sprintf(opname, "tanh");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
-  }
-  if ( op == SIGMOID_OP ) {
-    sprintf(opname, "sigmoid");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
-  }
-  if ( op == GELU_OP ) {
-    sprintf(opname, "gelu");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
-  }
-  if ( op == GELU_INV_OP ) {
-    sprintf(opname, "gelu_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
-  }
-  if ( op == TANH_INV_OP ) {
-    sprintf(opname, "tanh_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
-  }
-  if ( op == SIGMOID_INV_OP ) {
-    sprintf(opname, "sigmoid_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
-  }
-  if ( op == SQRT_OP ) {
-    sprintf(opname, "sqrt");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
-  }
-  if ( op == NEGATE_OP ) {
-    sprintf(opname, "negate");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
-  }
+  set_opname(op, opname);
+  set_unarytype(op, &unary_type);
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
@@ -649,50 +512,8 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_meltw_unary_type  unary_type;
   char opname[256];
 
-  if ( op == COPY_OP ) {
-    sprintf(opname, "copy");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_IDENTITY;
-  }
-  if ( op == X2_OP ) {
-    sprintf(opname, "x2");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
-  }
-  if ( op == XOR_OP ) {
-    sprintf(opname, "xor");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
-  }
-  if ( op == TANH_OP ) {
-    sprintf(opname, "tanh");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
-  }
-  if ( op == SIGMOID_OP ) {
-    sprintf(opname, "sigmoid");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
-  }
-  if ( op == GELU_OP ) {
-    sprintf(opname, "gelu");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
-  }
-  if ( op == GELU_INV_OP ) {
-    sprintf(opname, "gelu_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
-  }
-  if ( op == TANH_INV_OP ) {
-    sprintf(opname, "tanh_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
-  }
-  if ( op == SIGMOID_INV_OP ) {
-    sprintf(opname, "sigmoid_inv");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
-  }
-  if ( op == SQRT_OP ) {
-    sprintf(opname, "sqrt");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
-  }
-  if ( op == NEGATE_OP ) {
-    sprintf(opname, "negate");
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
-  }
+  set_opname(op, opname);
+  set_unarytype(op, &unary_type);
 
   if ( M > ldi ) {
     fprintf( stderr, "test_unary_%s_bf16_f32: ldi needs to be equal to or bigger than M\n", opname);
@@ -796,39 +617,7 @@ int main( int argc, char* argv[] ) {
   ldi        = atoi(argv[8]);
   ldo        = atoi(argv[9]);
 
-  if ( op == COPY_OP ) {
-    sprintf(opname, "copy");
-  }
-  if ( op == X2_OP ) {
-    sprintf(opname, "x2");
-  }
-  if ( op == XOR_OP ) {
-    sprintf(opname, "xor");
-  }
-  if ( op == TANH_OP ) {
-    sprintf(opname, "tanh");
-  }
-  if ( op == SIGMOID_OP ) {
-    sprintf(opname, "sigmoid");
-  }
-  if ( op == GELU_OP ) {
-    sprintf(opname, "gelu");
-  }
-  if ( op == GELU_INV_OP ) {
-    sprintf(opname, "gelu_inv");
-  }
-  if ( op == TANH_INV_OP ) {
-    sprintf(opname, "tanh_inv");
-  }
-  if ( op == SIGMOID_INV_OP ) {
-    sprintf(opname, "sigmoid_inv");
-  }
-  if ( op == SQRT_OP ) {
-    sprintf(opname, "sqrt");
-  }
-  if ( op == NEGATE_OP ) {
-    sprintf(opname, "negate");
-  }
+  set_opname(op, opname);
 
   valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP || op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP || op == SQRT_OP || op == NEGATE_OP) ? 1 : 0;
 
@@ -860,4 +649,6 @@ int main( int argc, char* argv[] ) {
     printf(" Error! Usage: %s [type] [bitmask: 0/1] [prec_in: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
+
+  return 0;
 }
