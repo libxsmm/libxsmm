@@ -733,6 +733,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
       unsigned int _im = (bcast_row == 1) ? 0 : im;
       unsigned int _in = (bcast_col == 1) ? 0 : in;
       unsigned int _i_mask_reg = (bcast_row == 1) ? 0 : i_mask_reg;
+      unsigned int in_offset;
 
       if (bcast_scalar == 1) {
         _im = 0;
@@ -740,6 +741,10 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
       }
 
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
+      in_offset = _in * i_mateltwise_desc->ldi;
+      if (bcast_row == 1) {
+        in_offset = _in;
+      }
 
       if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -747,7 +752,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
           vmove_instr_in2,
           i_gp_reg_mapping->gp_reg_in2,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (_im * l_vlen + _in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+          (_im * l_vlen + in_offset) * i_micro_kernel_config->datatype_size_in,
           'y',
           i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) ) ? _i_mask_reg : 0, 1, 0 );
 
@@ -758,7 +763,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
           vmove_instr_in2,
           i_gp_reg_mapping->gp_reg_in2,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (_im * l_vlen + _in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+          (_im * l_vlen + in_offset) * i_micro_kernel_config->datatype_size_in,
           i_micro_kernel_config->vector_name,
           i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) ) ? _i_mask_reg : 0, 1, 0 );
       }

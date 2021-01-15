@@ -14,6 +14,14 @@
 #include <stdio.h>
 #include <math.h>
 
+#define NO_BCAST 0
+#define ROW_BCAST_IN0 1
+#define COL_BCAST_IN0 2
+#define SCALAR_BCAST_IN0 3
+#define ROW_BCAST_IN1 4
+#define COL_BCAST_IN1 5
+#define SCALAR_BCAST_IN1 6
+
 #define ADD_OP 0
 #define SUB_OP 1
 #define MUL_OP 2
@@ -159,8 +167,8 @@ void binary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   }
 }
 
-void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op ) {
-  float *in, *in2;
+void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
+  float *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
   float *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
@@ -187,8 +195,10 @@ void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   in2        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  _in       = in;
+  _in2      = in2;
 
-  /* init in */
+   /* init in */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ldi; ++j ) {
       in[(i*ldi)+j] = (float)libxsmm_rng_f64();
@@ -198,6 +208,73 @@ void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ldi; ++j ) {
       in2[(i*ldi)+j] = (float)libxsmm_rng_f64();
+    }
+  }
+
+  if (use_bcast != NO_BCAST) {
+    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
+    in_vector2 =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
+    if (use_bcast == ROW_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[i*ldi];
+        }
+      }
+      for ( i = 0; i < N; ++i ) {
+        in_vector[i] = in[i*ldi];
+      }
+      _in = in_vector;
+    }
+    if (use_bcast == COL_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[j];
+        }
+      }
+      for ( j = 0; j < ldi; ++j ) {
+        in_vector[j] = in[j];
+      }
+      _in = in_vector;
+    }
+    if (use_bcast == SCALAR_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[0];
+        }
+      }
+     in_vector[0] = in[0];
+     _in = in_vector;
+    }
+    if (use_bcast == ROW_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[i*ldi];
+        }
+      }
+      for ( i = 0; i < N; ++i ) {
+        in_vector2[i] = in2[i*ldi];
+      }
+      _in2 = in_vector2;
+    }
+    if (use_bcast == COL_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[j];
+        }
+      }
+      for ( j = 0; j < ldi; ++j ) {
+        in_vector2[j] = in2[j];
+      }
+      _in2 = in_vector2;
+    }
+    if (use_bcast == SCALAR_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[0];
+        }
+      }
+     in_vector2[0] = in2[0];
+     _in2 = in_vector2;
     }
   }
 
@@ -215,10 +292,30 @@ void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   }
 
   /* use jited tranpose */
-  binary_param.in_ptr_0  = (void*)in;
-  binary_param.in_ptr_1  = (void*)in2;
+  binary_param.in_ptr_0  = (void*)_in;
+  binary_param.in_ptr_1  = (void*)_in2;
   binary_param.out_ptr = (void*)out;
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  if (use_bcast != NO_BCAST) {
+    if (use_bcast == ROW_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_0;
+    }
+    if (use_bcast == COL_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_0;
+    }
+    if (use_bcast == SCALAR_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_0;
+    }
+    if (use_bcast == ROW_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_1;
+    }
+    if (use_bcast == COL_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_1;
+    }
+    if (use_bcast == SCALAR_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_1;
+    }
+  }
 
   libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, binary_flags, binary_type);
   if ( binary_kernel == NULL ) {
@@ -252,10 +349,14 @@ void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_free( out );
   libxsmm_free( in );
   libxsmm_free( in2 );
+  if (use_bcast != NO_BCAST) {
+    libxsmm_free( in_vector );
+    libxsmm_free( in_vector2 );
+  }
 }
 
-void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op ) {
-  libxsmm_bfloat16 *in, *in2;
+void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
+  libxsmm_bfloat16 *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
@@ -275,6 +376,8 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     fprintf( stderr, "test_binary_%s_bf16_bf16: ldo needs to be equal to or bigger than N\n", opname);
     exit(-1);
   }
+  _in       = in;
+  _in2      = in2;
 
   libxsmm_rng_set_seed(1);
 
@@ -300,6 +403,73 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     }
   }
 
+  if (use_bcast != NO_BCAST) {
+    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
+    in_vector2 =  (float*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
+    if (use_bcast == ROW_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[i*ldi];
+        }
+      }
+      for ( i = 0; i < N; ++i ) {
+        in_vector[i] = in[i*ldi];
+      }
+      _in = in_vector;
+    }
+    if (use_bcast == COL_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[j];
+        }
+      }
+      for ( j = 0; j < ldi; ++j ) {
+        in_vector[j] = in[j];
+      }
+      _in = in_vector;
+    }
+    if (use_bcast == SCALAR_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[0];
+        }
+      }
+     in_vector[0] = in[0];
+     _in = in_vector;
+    }
+    if (use_bcast == ROW_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[i*ldi];
+        }
+      }
+      for ( i = 0; i < N; ++i ) {
+        in_vector2[i] = in2[i*ldi];
+      }
+      _in2 = in_vector2;
+    }
+    if (use_bcast == COL_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[j];
+        }
+      }
+      for ( j = 0; j < ldi; ++j ) {
+        in_vector2[j] = in2[j];
+      }
+      _in2 = in_vector2;
+    }
+    if (use_bcast == SCALAR_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[0];
+        }
+      }
+     in_vector2[0] = in2[0];
+     _in2 = in_vector2;
+    }
+  }
+
   /* init out */
   for ( i = 0; i < N*ldo; ++i ) {
     out[i] = 0;
@@ -314,10 +484,31 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   }
 
   /* use jited tranpose */
-  binary_param.in_ptr_0  = (void*)in;
-  binary_param.in_ptr_1  = (void*)in2;
+  binary_param.in_ptr_0  = (void*)_in;
+  binary_param.in_ptr_1  = (void*)_in2;
   binary_param.out_ptr = (void*)out;
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  if (use_bcast != NO_BCAST) {
+    if (use_bcast == ROW_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_0;
+    }
+    if (use_bcast == COL_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_0;
+    }
+    if (use_bcast == SCALAR_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_0;
+    }
+    if (use_bcast == ROW_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_1;
+    }
+    if (use_bcast == COL_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_1;
+    }
+    if (use_bcast == SCALAR_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_1;
+    }
+  }
+
   libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, binary_flags, binary_type);
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
@@ -350,10 +541,14 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_free( out );
   libxsmm_free( in );
   libxsmm_free( in2 );
+  if (use_bcast != NO_BCAST) {
+    libxsmm_free( in_vector );
+    libxsmm_free( in_vector2 );
+  }
 }
 
-void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op ) {
-  float *in, *in2;
+void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast) {
+  float *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
@@ -380,6 +575,8 @@ void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   in2        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
   out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  _in       = in;
+  _in2      = in2;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -391,6 +588,73 @@ void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ldi; ++j ) {
       in2[(i*ldi)+j] = (float)libxsmm_rng_f64();
+    }
+  }
+
+  if (use_bcast != NO_BCAST) {
+    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
+    in_vector2 =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
+    if (use_bcast == ROW_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[i*ldi];
+        }
+      }
+      for ( i = 0; i < N; ++i ) {
+        in_vector[i] = in[i*ldi];
+      }
+      _in = in_vector;
+    }
+    if (use_bcast == COL_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[j];
+        }
+      }
+      for ( j = 0; j < ldi; ++j ) {
+        in_vector[j] = in[j];
+      }
+      _in = in_vector;
+    }
+    if (use_bcast == SCALAR_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[0];
+        }
+      }
+     in_vector[0] = in[0];
+     _in = in_vector;
+    }
+    if (use_bcast == ROW_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[i*ldi];
+        }
+      }
+      for ( i = 0; i < N; ++i ) {
+        in_vector2[i] = in2[i*ldi];
+      }
+      _in2 = in_vector2;
+    }
+    if (use_bcast == COL_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[j];
+        }
+      }
+      for ( j = 0; j < ldi; ++j ) {
+        in_vector2[j] = in2[j];
+      }
+      _in2 = in_vector2;
+    }
+    if (use_bcast == SCALAR_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[0];
+        }
+      }
+     in_vector2[0] = in2[0];
+     _in2 = in_vector2;
     }
   }
 
@@ -407,10 +671,30 @@ void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     binary_op_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &in2[(i*ldi)], &out_gold[(i*ldo)], op );
   }
 
-  binary_param.in_ptr_0  = (void*)in;
-  binary_param.in_ptr_1  = (void*)in2;
+  binary_param.in_ptr_0  = (void*)_in;
+  binary_param.in_ptr_1  = (void*)_in2;
   binary_param.out_ptr = (void*)out;
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  if (use_bcast != NO_BCAST) {
+    if (use_bcast == ROW_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_0;
+    }
+    if (use_bcast == COL_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_0;
+    }
+    if (use_bcast == SCALAR_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_0;
+    }
+    if (use_bcast == ROW_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_1;
+    }
+    if (use_bcast == COL_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_1;
+    }
+    if (use_bcast == SCALAR_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_1;
+    }
+  }
   libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, binary_flags, binary_type);
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
@@ -443,10 +727,14 @@ void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_free( out );
   libxsmm_free( in );
   libxsmm_free( in2 );
+  if (use_bcast != NO_BCAST) {
+    libxsmm_free( in_vector );
+    libxsmm_free( in_vector2 );
+  }
 }
 
-void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op ) {
-  libxsmm_bfloat16 *in, *in2;
+void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
+  libxsmm_bfloat16 *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
   float *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
@@ -473,6 +761,8 @@ void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   in2        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  _in       = in;
+  _in2      = in2;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -491,6 +781,73 @@ void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     }
   }
 
+  if (use_bcast != NO_BCAST) {
+    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
+    in_vector2 =  (float*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
+    if (use_bcast == ROW_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[i*ldi];
+        }
+      }
+      for ( i = 0; i < N; ++i ) {
+        in_vector[i] = in[i*ldi];
+      }
+      _in = in_vector;
+    }
+    if (use_bcast == COL_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[j];
+        }
+      }
+      for ( j = 0; j < ldi; ++j ) {
+        in_vector[j] = in[j];
+      }
+      _in = in_vector;
+    }
+    if (use_bcast == SCALAR_BCAST_IN0) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in[(i*ldi)+j] = in[0];
+        }
+      }
+     in_vector[0] = in[0];
+     _in = in_vector;
+    }
+    if (use_bcast == ROW_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[i*ldi];
+        }
+      }
+      for ( i = 0; i < N; ++i ) {
+        in_vector2[i] = in2[i*ldi];
+      }
+      _in2 = in_vector2;
+    }
+    if (use_bcast == COL_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[j];
+        }
+      }
+      for ( j = 0; j < ldi; ++j ) {
+        in_vector2[j] = in2[j];
+      }
+      _in2 = in_vector2;
+    }
+    if (use_bcast == SCALAR_BCAST_IN1) {
+      for ( i = 0; i < N; ++i ) {
+        for ( j = 0; j < ldi; ++j ) {
+          in2[(i*ldi)+j] = in2[0];
+        }
+      }
+     in_vector2[0] = in2[0];
+     _in2 = in_vector2;
+    }
+  }
+
   /* init out */
   for ( i = 0; i < N*ldo; ++i ) {
     out[i] = 0;
@@ -504,10 +861,30 @@ void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     binary_op_bf16_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &in2[(i*ldi)], &out_gold[(i*ldo)], op );
   }
 
-  binary_param.in_ptr_0  = (void*)in;
-  binary_param.in_ptr_1  = (void*)in2;
+  binary_param.in_ptr_0  = (void*)_in;
+  binary_param.in_ptr_1  = (void*)_in2;
   binary_param.out_ptr = (void*)out;
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  if (use_bcast != NO_BCAST) {
+    if (use_bcast == ROW_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_0;
+    }
+    if (use_bcast == COL_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_0;
+    }
+    if (use_bcast == SCALAR_BCAST_IN0) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_0;
+    }
+    if (use_bcast == ROW_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_1;
+    }
+    if (use_bcast == COL_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_1;
+    }
+    if (use_bcast == SCALAR_BCAST_IN1) {
+      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_1;
+    }
+  }
   libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, binary_flags, binary_type);
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
@@ -540,6 +917,10 @@ void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_free( out );
   libxsmm_free( in );
   libxsmm_free( in2 );
+  if (use_bcast != NO_BCAST) {
+    libxsmm_free( in_vector );
+    libxsmm_free( in_vector2 );
+  }
 }
 
 int main( int argc, char* argv[] ) {
@@ -547,7 +928,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint dtype_out;
   libxsmm_blasint dtype_comp;
   unsigned char op;
-  libxsmm_blasint bitm;
+  libxsmm_blasint use_bcast;
   libxsmm_blasint M;
   libxsmm_blasint N;
   libxsmm_blasint ldi;
@@ -556,12 +937,12 @@ int main( int argc, char* argv[] ) {
   char opname[256];
 
   if ( argc != 10 ) {
-    printf(" Error! Usage: %s [type] [bitmask: 0/1] [prec_in: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
   op         = atoi(argv[1]);
-  bitm       = atoi(argv[2]);
+  use_bcast       = atoi(argv[2]);
   dtype_in   = atoi(argv[3]);
   dtype_comp = atoi(argv[4]);
   dtype_out  = atoi(argv[5]);
@@ -574,20 +955,41 @@ int main( int argc, char* argv[] ) {
 
   valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP ) ? 1 : 0;
 
+  if (use_bcast != NO_BCAST) {
+    if (use_bcast == ROW_BCAST_IN0) {
+      printf("Using row broadcast for the input0 row-vector ...\n");
+    }
+    if (use_bcast == COL_BCAST_IN0) {
+      printf("Using column broadcast for the input0 column-vector...\n");
+    }
+    if (use_bcast == SCALAR_BCAST_IN0) {
+      printf("Using scalar broadcast for the input0 value...\n");
+    }
+    if (use_bcast == ROW_BCAST_IN1) {
+      printf("Using row broadcast for the input1 row-vector ...\n");
+    }
+    if (use_bcast == COL_BCAST_IN1) {
+      printf("Using column broadcast for the input1 column-vector...\n");
+    }
+    if (use_bcast == SCALAR_BCAST_IN1) {
+      printf("Using scalar broadcast for the input1 value...\n");
+    }
+  }
+
   if ( valid_op > 0 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 %s\n", opname);
-    test_binary_op_f32_f32( M, N, ldi, ldo, op);
+    test_binary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing BF16 BF16 %s\n", opname);
-    test_binary_op_bf16_bf16( M, N, ldi, ldo, op);
+    test_binary_op_bf16_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing F32 BF16 %s\n", opname);
-    test_binary_op_f32_bf16( M, N, ldi, ldo, op);
+    test_binary_op_f32_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing BF16 F32 %s\n", opname);
-    test_binary_op_bf16_f32( M, N, ldi, ldo, op);
+    test_binary_op_bf16_f32( M, N, ldi, ldo, op, use_bcast);
   } else {
-    printf(" Error! Usage: %s [type] [bitmask: 0/1] [prec_in: 4/2] compute_prec: 4 [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6]] [prec_in: 4/2] compute_prec: 4 [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 }
