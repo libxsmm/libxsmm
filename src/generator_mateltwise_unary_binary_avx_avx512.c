@@ -393,15 +393,16 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
       /* In the XOR case we have a constnt vreg  */
       if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) {
         cur_vreg = i_micro_kernel_config->zero_vreg;
-      }
-      if (bcast_row == 1) {
-        cur_vreg = i_start_vreg + in * i_m_blocking;
-      }
-      if (bcast_scalar == 1) {
-        cur_vreg = i_start_vreg;
-      }
-      if (bcast_col == 1) {
-        cur_vreg = i_start_vreg + im;
+      } else {
+        if (bcast_row == 1) {
+          cur_vreg = i_start_vreg + in * i_m_blocking;
+        }
+        if (bcast_scalar == 1) {
+          cur_vreg = i_start_vreg;
+        }
+        if (bcast_col == 1) {
+          cur_vreg = i_start_vreg + im;
+        }
       }
 
       /* If compute is in F32 and output is BF16 (or input is F32 and output is BF16), then downconvert BF16 -> FP32 */
