@@ -129,9 +129,6 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
 
   /* close packed loop */
   if ( (l_simd_packed_iters_full > 1) || (l_simd_packed_remainder > 0 && l_simd_packed_iters_full > 0 ) ) {
-    /* restore n_loop counter */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_nloop, 0 );
-
     /* restore a, b, b_prefetch, c pointers */
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_c );
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b_prefetch );
@@ -234,6 +231,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_n_loop( libxsmm
   l_n_loop = ( l_n_remain == 0 ) ? (l_n_chunks * l_n_chunksize) : ((l_n_chunks-1) * l_n_chunksize);
 
   /* loop over blocks of n */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_nloop, 0 );
   libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_nloop, l_n_chunksize );
 
