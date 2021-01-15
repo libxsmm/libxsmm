@@ -376,8 +376,6 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     fprintf( stderr, "test_binary_%s_bf16_bf16: ldo needs to be equal to or bigger than N\n", opname);
     exit(-1);
   }
-  _in       = in;
-  _in2      = in2;
 
   libxsmm_rng_set_seed(1);
 
@@ -385,6 +383,8 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   in2       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
   out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  _in       = in;
+  _in2      = in2;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
