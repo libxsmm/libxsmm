@@ -480,6 +480,17 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
         /* TODO:rewrite once added missing instruction */
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,LIBXSMM_X86_INSTR_VRSQRT14PS, 'z', cur_vreg, LIBXSMM_X86_VEC_REG_UNDEF, cur_vreg, 0, 0, 0, 0);
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,LIBXSMM_X86_INSTR_VRCP14PS, 'z', cur_vreg, LIBXSMM_X86_VEC_REG_UNDEF, cur_vreg, 0, 0, 0, 0);
+      } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_EXP) {
+        libxsmm_generator_exp_ps_3dts_avx512( io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_y,
+            i_micro_kernel_config->vec_z,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_log2e);
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ) {
         libxsmm_generator_tanh_ps_rational_78_avx512( io_generated_code,
             cur_vreg,
@@ -818,6 +829,7 @@ void libxsmm_compute_unary_binary_2d_reg_block( libxsmm_generated_code*         
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) {
     switch (i_mateltwise_desc->param) {
       case LIBXSMM_MELTW_TYPE_UNARY_TANH:
+      case LIBXSMM_MELTW_TYPE_UNARY_EXP:
       case LIBXSMM_MELTW_TYPE_UNARY_SIGMOID:
       case LIBXSMM_MELTW_TYPE_UNARY_TANH_INV:
       case LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV:
@@ -1079,6 +1091,29 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
             i_micro_kernel_config->vec_c1,
             i_micro_kernel_config->vec_c2 );
       }
+
+      i_micro_kernel_config->reserved_zmms = reserved_zmms;
+    }
+
+    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_EXP) {
+      unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+      reserved_zmms += 8;
+      i_micro_kernel_config->vec_y          = reserved_zmms - 1;
+      i_micro_kernel_config->vec_z          = reserved_zmms - 2;
+      i_micro_kernel_config->vec_halves     = reserved_zmms - 3;
+      i_micro_kernel_config->vec_c0         = reserved_zmms - 4;
+      i_micro_kernel_config->vec_c1         = reserved_zmms - 5;
+      i_micro_kernel_config->vec_c2         = reserved_zmms - 6;
+      i_micro_kernel_config->vec_c3         = reserved_zmms - 7;
+      i_micro_kernel_config->vec_log2e      = reserved_zmms - 8;
+
+      libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx512( io_generated_code,
+          i_micro_kernel_config->vec_c0,
+          i_micro_kernel_config->vec_c1,
+          i_micro_kernel_config->vec_c2,
+          i_micro_kernel_config->vec_c3,
+          i_micro_kernel_config->vec_halves,
+          i_micro_kernel_config->vec_log2e );
 
       i_micro_kernel_config->reserved_zmms = reserved_zmms;
     }
