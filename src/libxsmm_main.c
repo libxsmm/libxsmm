@@ -483,7 +483,6 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
   const internal_statistic_type statistic_xxx = internal_statistic[precision][3/*XXX*/];
   int printed = 0;
   LIBXSMM_ASSERT(NULL != ostream && (0 <= precision && precision < 2));
-
   if (/* omit to print anything if it is superfluous */
     0 != statistic_sml.ntry || 0 != statistic_sml.njit || 0 != statistic_sml.nsta || 0 != statistic_sml.ncol ||
     0 != statistic_med.ntry || 0 != statistic_med.njit || 0 != statistic_med.nsta || 0 != statistic_med.ncol ||
@@ -540,7 +539,6 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
     }
     printed = 1;
   }
-
   return printed;
 }
 
@@ -2708,6 +2706,7 @@ LIBXSMM_API int libxsmm_get_meltwkernel_info(libxsmm_xmeltwfunction kernel, libx
   }
   return result;
 }
+
 
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
 {
