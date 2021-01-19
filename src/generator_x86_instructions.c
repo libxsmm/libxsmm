@@ -401,7 +401,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
                                                     const unsigned int      i_vec_instr,
                                                     const unsigned int      i_use_broadcast,
                                                     const unsigned int      i_gp_reg_base,
-                                                    const unsigned int      i_gp_reg_idx,
+                                                    const unsigned int      i_reg_idx,
                                                     const unsigned int      i_scale,
                                                     const int               i_displacement,
                                                     const char              i_vector_name,
@@ -457,8 +457,8 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   unsigned char l_disp8div_idx;
   /* compressed displacement */
   int l_comp_disp;
-  /* we need a local non-const i_gp_reg_idx copy */
-  unsigned int l_gp_reg_idx;
+  /* we need a local non-const i_reg_idx copy */
+  unsigned int l_reg_idx;
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
 
@@ -504,17 +504,17 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   }
 
   /* 1 C) determine if SIB addressing mode is needed */
-  if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
+  if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
     l_have_sib = 1;
-    l_gp_reg_idx = LIBXSMM_X86_GP_REG_RSP;
+    l_reg_idx = LIBXSMM_X86_GP_REG_RSP;
     l_scale = 0;
-  } else if ( i_gp_reg_idx < 16 ) {
+  } else if ( (i_reg_idx < 16) || ( (((i_vec_instr >> 24) & 0x2) == 0x2) && (i_reg_idx < 32) ) ) {
     l_have_sib = 1;
-    l_gp_reg_idx = i_gp_reg_idx;
+    l_reg_idx = i_reg_idx;
     l_scale = i_scale;
   } else {
     l_have_sib = 0;
-    l_gp_reg_idx = 0;
+    l_reg_idx = 0;
     l_scale = 0;
   }
 
@@ -543,7 +543,12 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   code[p0   ] |= (unsigned char) tbl_evex_RRp[i_vec_reg_number_dst];
   /* vvvv and V' */
   code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_src];
-  code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_src];
+  /* incase of gather scatter the V' field is used to extend the idx field for SIB to 32 registers */
+  if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
+    code[p2   ] |= (unsigned char)  tbl_evex_vp[l_reg_idx];
+  } else {
+    code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_src];
+  }
   /* VL: 128bit,256bit,512bit */
   code[p2   ] |= (unsigned char)tbl_vl[l_vl_idx];
   /* broadcast */
@@ -557,13 +562,13 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
     /* set B */
     code[p0   ] |= (unsigned char)(( i_gp_reg_base < 8 ) ? 0x20 : 0x00);
     /* set X */
-    code[p0   ] |= (unsigned char)(( l_gp_reg_idx  < 8 ) ? 0x40 : 0x00);
+    code[p0   ] |= (unsigned char)(( (l_reg_idx & 0x08) == 0x00 ) ? 0x40 : 0x00);
     /* set registers in modrm and SIB */
     code[modrm] = (unsigned char)(((unsigned char)(i_vec_reg_number_dst << 3)) & 0x38);
     code[modrm] |= (unsigned char)0x04; /* set SIB mode*/
     /* set SIB */
     code[sib  ]  = tbl_scale[l_scale];
-    code[sib  ] |= (unsigned char)(((unsigned char)(l_gp_reg_idx << 3)) & 0x38);
+    code[sib  ] |= (unsigned char)(((unsigned char)(l_reg_idx << 3)) & 0x38);
     code[sib  ] |= (unsigned char)(((unsigned char) i_gp_reg_base  )    & 0x07);
     /*adjust code head*/
     code_head += 7;
@@ -691,7 +696,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated_code,
                                             const unsigned int      i_vmove_instr,
                                             const unsigned int      i_gp_reg_base,
-                                            const unsigned int      i_gp_reg_idx,
+                                            const unsigned int      i_reg_idx,
                                             const unsigned int      i_scale,
                                             const int               i_displacement,
                                             const char              i_vector_name,
@@ -711,6 +716,14 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
 #endif
     case LIBXSMM_X86_INSTR_VMASKMOVPD_ST:
     case LIBXSMM_X86_INSTR_VMASKMOVPS_ST:
+    case LIBXSMM_X86_INSTR_VGATHERDPS_VEX:
+    case LIBXSMM_X86_INSTR_VGATHERDPD_VEX:
+    case LIBXSMM_X86_INSTR_VGATHERQPS_VEX:
+    case LIBXSMM_X86_INSTR_VGATHERQPD_VEX:
+    case LIBXSMM_X86_INSTR_VPGATHERDD_VEX:
+    case LIBXSMM_X86_INSTR_VPGATHERDQ_VEX:
+    case LIBXSMM_X86_INSTR_VPGATHERQD_VEX:
+    case LIBXSMM_X86_INSTR_VPGATHERQQ_VEX:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: unexpected instruction number: %u\n", i_vmove_instr);
@@ -719,7 +732,6 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
 
   /* select the code generator REX/VEX/EVEX */
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
-       (i_vmove_instr >= 16777216) &&
        (io_generated_code->code_type > 1) ) {
     /* check if we have enough code buffer space left */
     if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
@@ -740,10 +752,22 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
         break;
     }
 
+    /* ceck for gather */
+    if ( (((i_vmove_instr >> 24) & 0x2) == 0x2) ) {
+      if (i_reg_idx > 15) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: SIB addressing mode is required for instruction number: %u\n", i_vmove_instr);
+        exit(-1);
+      }
+      if ( (i_vec_reg_mask_0 == i_vec_reg_number_0) || (i_reg_idx == i_vec_reg_number_0) || (i_reg_idx == i_vec_reg_mask_0) ) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: same register names cannot be used multiple times: %u\n", i_vmove_instr);
+        exit(-1);
+      }
+    }
+
     /* invoke VEX encoder */
     libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
           l_vmove_instr, i_gp_reg_base,
-          i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+          i_reg_idx, i_scale, i_displacement, i_vector_name,
           i_vec_reg_mask_0, i_vec_reg_number_0 );
   } else if ( io_generated_code->code_type < 2 ) {
     /* add inline/assembly printing */
@@ -762,7 +786,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_instruction_set,
                                        const unsigned int      i_vmove_instr,
                                        const unsigned int      i_gp_reg_base,
-                                       const unsigned int      i_gp_reg_idx,
+                                       const unsigned int      i_reg_idx,
                                        const unsigned int      i_scale,
                                        const int               i_displacement,
                                        const char              i_vector_name,
@@ -839,6 +863,22 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     case LIBXSMM_X86_INSTR_VBROADCASTI64X2:
     case LIBXSMM_X86_INSTR_VBROADCASTI32X8:
     case LIBXSMM_X86_INSTR_VBROADCASTI64X4:
+    case LIBXSMM_X86_INSTR_VGATHERDPS:
+    case LIBXSMM_X86_INSTR_VGATHERDPD:
+    case LIBXSMM_X86_INSTR_VGATHERQPS:
+    case LIBXSMM_X86_INSTR_VGATHERQPD:
+    case LIBXSMM_X86_INSTR_VPGATHERDD:
+    case LIBXSMM_X86_INSTR_VPGATHERDQ:
+    case LIBXSMM_X86_INSTR_VPGATHERQD:
+    case LIBXSMM_X86_INSTR_VPGATHERQQ:
+    case LIBXSMM_X86_INSTR_VSCATTERDPS:
+    case LIBXSMM_X86_INSTR_VSCATTERDPD:
+    case LIBXSMM_X86_INSTR_VSCATTERQPS:
+    case LIBXSMM_X86_INSTR_VSCATTERQPD:
+    case LIBXSMM_X86_INSTR_VPSCATTERDD:
+    case LIBXSMM_X86_INSTR_VPSCATTERDQ:
+    case LIBXSMM_X86_INSTR_VPSCATTERQD:
+    case LIBXSMM_X86_INSTR_VPSCATTERQQ:
     case LIBXSMM_X86_INSTR_MOVAPD:
     case LIBXSMM_X86_INSTR_MOVUPD:
     case LIBXSMM_X86_INSTR_MOVAPS:
@@ -953,9 +993,21 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
       }
 
       if ( l_encoder == 2 ) {
+        /* ceck for gather/scatter */
+        if ( (((i_vmove_instr >> 24) & 0x2) == 0x2) ) {
+          if (i_reg_idx > 32) {
+            fprintf(stderr, "libxsmm_instruction_vec_move: SIB addressing mode is required for instruction number: %u\n", i_vmove_instr);
+            exit(-1);
+          }
+          if ( (i_use_zero_masking != 0) || (0 == i_mask_reg_number) ) {
+            fprintf(stderr, "libxsmm_instruction_vec_move: merge masking with a valid mask registers (>k0) is required for instrucion number: %u\n", i_vmove_instr);
+            exit(-1);
+          }
+        }
+
         libxsmm_x86_instruction_evex_compute_2reg_mem ( io_generated_code,
               l_vmove_instr, 0, i_gp_reg_base,
-              i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+              i_reg_idx, i_scale, i_displacement, i_vector_name,
               0, i_vec_reg_number_0, i_mask_reg_number, i_use_zero_masking );
       } else if ( l_encoder == 1 ) {
         /* we need to patch some instructions for VEX from the EVEX header */
@@ -969,7 +1021,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 
         libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
               l_vmove_instr, i_gp_reg_base,
-              i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+              i_reg_idx, i_scale, i_displacement, i_vector_name,
               0, i_vec_reg_number_0 );
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_vec_move: No REX encoder available!\n");
@@ -1053,7 +1105,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
         int l_vecval0 = i_vec_reg_number_0 % 8;
         int l_place1=i+2;
         int l_regbas0 = i_gp_reg_base % 8;
-        int l_regidx =  i_gp_reg_idx % 8;
+        int l_regidx =  i_reg_idx % 8;
         int l_gp8 = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
         if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0=1;
         if ( i_is_store ) l_fpadj++;
@@ -1062,7 +1114,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
             buf[i++]= (unsigned char)(l_insert_extra_byte);
             ++l_place1;
         }
-        if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
+        if (i_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
         {
             int l_sse_preamble2 = 64;
             if ( l_gp8 || (l_vecgrp0>=1) )
@@ -1077,7 +1129,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
             buf[i++] = (unsigned char)(0x00 + l_regbas0 + l_vecval0*8);
             if ( l_regbas0 == 4 ) buf[i++]=0x24;
         } else {
-          int l_ix8 = ((i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ? 1 : 0);
+          int l_ix8 = ((i_reg_idx > 7) && (i_reg_idx <= 15) ? 1 : 0);
           int l_sse_preamble2 = 64;
           if ( i_scale == 1 ) l_scaleadj = 0x00;
             else if ( i_scale == 2 ) l_scaleadj = 0x40;
@@ -2781,136 +2833,6 @@ void libxsmm_x86_instruction_vec_shuffle_sse_reg( libxsmm_generated_code* io_gen
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%u, %%%cmm%u, %%%cmm%u\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  }
-}
-
-
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_generated_code,
-                                                const unsigned int      i_instruction_set,
-                                                const unsigned int      i_vmove_instr,
-                                                const char              i_vector_name,
-                                                const unsigned int      i_gp_reg_base,
-                                                const unsigned int      i_vec_reg_idx,
-                                                const unsigned int      i_scale,
-                                                const int               i_displacement,
-                                                const unsigned int      i_vec_reg_number,
-                                                const unsigned int      i_mask_reg_number,
-                                                const unsigned int      i_is_gather ) {
-  /* @TODO add checks in debug mode */
-  if ( io_generated_code->code_type > 1 ) {
-    /* @TODO-GREG call encoding here */
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    /* int i = *loc; */
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    /* unsigned int l_maxsize = 1024; */
-    int l_sizereg = 0;
-    int l_instr_offset = 0;
-    int l_instr_offset2 = 0;
-    int l_forced_offset = 0;
-
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
-    }
-    switch ( i_vmove_instr ) {
-       case LIBXSMM_X86_INSTR_VGATHERDPS:
-          l_sizereg = 4;
-          l_instr_offset = 0;
-          l_instr_offset2 = 0;
-          break;
-       case LIBXSMM_X86_INSTR_VGATHERDPD:
-          l_sizereg = 8;
-          l_instr_offset = 0x80;
-          l_instr_offset2 = 0;
-          break;
-       case LIBXSMM_X86_INSTR_VGATHERQPS:
-          l_sizereg = 4;
-          l_instr_offset = 0;
-          l_instr_offset2 = 1;
-          break;
-       case LIBXSMM_X86_INSTR_VGATHERQPD:
-          l_sizereg = 8;
-          l_instr_offset = 0x80;
-          l_instr_offset2 = 1;
-          break;
-       default:
-          fprintf(stderr, "libxsmm_x86_instruction_vec_move_gathscat: Strange gather/scatter instruction:%u\n",i_vmove_instr);
-          exit(-1);
-    }
-    if ( i_vector_name != 'z' )
-    {
-       fprintf(stderr, "libxsmm_x86_instruction_vec_move_gathscat: encoder only implemented for zmm registers, but notice that i_vector_name=%c\n",i_vector_name);
-       exit(-1);
-    }
-    if ( i_is_gather == 0 )
-    {
-       fprintf(stderr, "libxsmm_x86_instruction_vec_move_gathscat: encoder not implemented for scatters yet\n");
-       exit(-1);
-    }
-
-    { /* open a new scope to avoid warning about mixed declaration and code (C89) */
-      int l_regbas0 = i_gp_reg_base % 8;
-      int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-      int l_vecval1 = i_vec_reg_number % 8;
-      int l_vecgrp1 = i_vec_reg_number / 8;
-      int l_oddgrp1 = ((l_vecgrp1 % 2)==1);
-      int l_2or3grp1 = (l_vecgrp1>=2);
-      int l_vecval0 = i_vec_reg_idx % 8;
-      int l_vecgrp0 = i_vec_reg_idx / 8;
-      int l_oddgrp0 = ((l_vecgrp0 % 2)==1);
-      int l_2or3grp0 = (l_vecgrp0>=2);
-      int l_sca=0;
-
-      if (i_scale==2) l_sca=0x40;
-      else if (i_scale==4) l_sca=0x80;
-      else if (i_scale==8) l_sca=0xc0;
-
-      buf[i++] = (unsigned char)(0x62);
-      buf[i++] = (unsigned char)(0xf2 - l_gp8 * 0x20 - l_oddgrp0 * 0x40 - l_oddgrp1 * 0x80 - l_2or3grp1 * 0x10);
-      buf[i++] = (unsigned char)(0x7d + l_instr_offset);
-      buf[i++] = (unsigned char)(0x48 - l_2or3grp0 * 0x08 + i_mask_reg_number);
-      buf[i++] = (unsigned char)(0x92 + l_instr_offset2);
-      buf[i++] = (unsigned char)(0x04 + l_vecval1 * 8);
-      buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_vecval0 * 8);
-      if ( (l_regbas0 == 5) && (i_displacement==0) )
-      {
-          l_forced_offset = 1;
-      }
-      i += internal_x86_instructions_add_offset( i-2, i, i_displacement, l_forced_offset, l_sizereg, buf );
-
-      io_generated_code->code_size = i;
-      /* *loc = i; */
-    }
-
-  } else {
-    char l_new_code[512];
-    int l_max_code_length = 511;
-    int l_code_length = 0;
-    char l_instr_name[16];
-    char l_gp_reg_base_name[4];
-
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
-    libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
-
-    if ( i_is_gather == 0 ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_vec_move_gathscat yet needs to be implemented for scatters!\n");
-      exit(-1);
-    } else {
-      if ( i_instruction_set >= LIBXSMM_X86_AVX512 ) {
-        if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%zmm%u,%u), %%%%zmm%u%%{%%%%k%u%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vec_reg_idx, i_scale, i_vec_reg_number, i_mask_reg_number);
-        } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%zmm%u,%u), %%zmm%u{%%k%u}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vec_reg_idx, i_scale, i_vec_reg_number, i_mask_reg_number );
-      }
-        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      } else {
-        fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_vec_move_gathscat yet needs to be implemented for non-AVX512F!\n");
-        exit(-1);
-      }
-    }
   }
 }
 

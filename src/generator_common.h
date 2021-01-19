@@ -56,7 +56,7 @@
  * 28 #operands (2 bits=0-3)
  * 27 Reversal load/store ordering. 0=regular, 1=reverse (open question: is one bit enough, or do I need a couple bits to show other orderings)
  * 26 Op code extension in ModRM Regfiles (extennsion is bits 20-22)
- * 25 unused - Gather instruction???
+ * 25 gather/scatter instructions with VSIB / enforce SIB addressing (valid only), e.g. AMX
  * 24 unused - free
  * 3rd byte:
  * ---------
@@ -156,6 +156,31 @@
 #define LIBXSMM_X86_INSTR_VMOVDQU16_ST     0xe087167f
 #define LIBXSMM_X86_INSTR_VMOVDQU32_ST     0xe006167f
 #define LIBXSMM_X86_INSTR_VMOVDQU64_ST     0xe086167f
+/* Gather/Scatter instructions */
+#define LIBXSMM_X86_INSTR_VGATHERDPS_VEX   0x72052092
+#define LIBXSMM_X86_INSTR_VGATHERDPD_VEX   0x72852092
+#define LIBXSMM_X86_INSTR_VGATHERQPS_VEX   0x72052093
+#define LIBXSMM_X86_INSTR_VGATHERQPD_VEX   0x72852093
+#define LIBXSMM_X86_INSTR_VPGATHERDD_VEX   0x72052090
+#define LIBXSMM_X86_INSTR_VPGATHERDQ_VEX   0x72852090
+#define LIBXSMM_X86_INSTR_VPGATHERQD_VEX   0x72052091
+#define LIBXSMM_X86_INSTR_VPGATHERQQ_VEX   0x72852091
+#define LIBXSMM_X86_INSTR_VGATHERDPS       0xe2052a92
+#define LIBXSMM_X86_INSTR_VGATHERDPD       0xe2852b92
+#define LIBXSMM_X86_INSTR_VGATHERQPS       0xe2052a93
+#define LIBXSMM_X86_INSTR_VGATHERQPD       0xe2852b93
+#define LIBXSMM_X86_INSTR_VPGATHERDD       0xe2052a90
+#define LIBXSMM_X86_INSTR_VPGATHERDQ       0xe2852b90
+#define LIBXSMM_X86_INSTR_VPGATHERQD       0xe2052a91
+#define LIBXSMM_X86_INSTR_VPGATHERQQ       0xe2852b91
+#define LIBXSMM_X86_INSTR_VSCATTERDPS      0xe2052aa2
+#define LIBXSMM_X86_INSTR_VSCATTERDPD      0xe2852ba2
+#define LIBXSMM_X86_INSTR_VSCATTERQPS      0xe2052aa3
+#define LIBXSMM_X86_INSTR_VSCATTERQPD      0xe2852ba3
+#define LIBXSMM_X86_INSTR_VPSCATTERDD      0xe2952aa0
+#define LIBXSMM_X86_INSTR_VPSCATTERDQ      0xe2852ba0
+#define LIBXSMM_X86_INSTR_VPSCATTERQD      0xe2052aa1
+#define LIBXSMM_X86_INSTR_VPSCATTERQQ      0xe2852ba1
 
 /* SSE */
 #define LIBXSMM_X86_INSTR_MOVAPD           10009
@@ -167,16 +192,6 @@
 #define LIBXSMM_X86_INSTR_MOVDDUP          10015
 #define LIBXSMM_X86_INSTR_SHUFPS           10016
 #define LIBXSMM_X86_INSTR_SHUFPD           10017
-
-/* Gather/Scatter instructions */
-#define LIBXSMM_X86_INSTR_VGATHERDPS       11000
-#define LIBXSMM_X86_INSTR_VGATHERDPD       11001
-#define LIBXSMM_X86_INSTR_VGATHERQPS       11002
-#define LIBXSMM_X86_INSTR_VGATHERQPD       11003
-#define LIBXSMM_X86_INSTR_VSCATTERDPS      11004
-#define LIBXSMM_X86_INSTR_VSCATTERDPD      11005
-#define LIBXSMM_X86_INSTR_VSCATTERQPS      11006
-#define LIBXSMM_X86_INSTR_VSCATTERQPD      11007
 
 /* Shuffle/Permute/Blend instructions */
 #define LIBXSMM_X86_INSTR_VSHUFPS          0x300c16c6
