@@ -93,20 +93,20 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_gener
                                                 const unsigned char     i_sae_cntl );
 
 /**
- * Generates vmaskmovps/vmaskmovpd with displacements for loads and stores.
+ * Generates vmaskmovps/vmaskmovpd/vgathers with displacements for loads and stores.
  * Only works with i_vector_name='Y'
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated_code,
-                                     const unsigned int      i_vmove_instr,
-                                     const unsigned int      i_gp_reg_base,
-                                     const unsigned int      i_gp_reg_idx,
-                                     const unsigned int      i_scale,
-                                     const int               i_displacement,
-                                     const char              i_vector_name,
-                                     const unsigned int      i_vec_reg_number_0,
-                                     const unsigned int      i_vec_reg_mask_0,
-                                     const unsigned int      i_is_store );
+                                            const unsigned int      i_vmove_instr,
+                                            const unsigned int      i_gp_reg_base,
+                                            const unsigned int      i_reg_idx,
+                                            const unsigned int      i_scale,
+                                            const int               i_displacement,
+                                            const char              i_vector_name,
+                                            const unsigned int      i_vec_reg_number_0,
+                                            const unsigned int      i_vec_reg_mask_0,
+                                            const unsigned int      i_is_store );
 
 /**
  * Generates vmovapd/vmovupd/vmovaps/vmovups/vmovsd/vmovss/vbroadcastsd/vbroastcastss/vmovddup instructions with displacements, explicit SIB addressing is not
@@ -128,7 +128,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_instruction_set,
                                        const unsigned int      i_vmove_instr,
                                        const unsigned int      i_gp_reg_base,
-                                       const unsigned int      i_gp_reg_idx,
+                                       const unsigned int      i_reg_idx,
                                        const unsigned int      i_scale,
                                        const int               i_displacement,
                                        const char              i_vector_name,

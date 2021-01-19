@@ -691,7 +691,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated_code,
                                             const unsigned int      i_vmove_instr,
                                             const unsigned int      i_gp_reg_base,
-                                            const unsigned int      i_gp_reg_idx,
+                                            const unsigned int      i_reg_idx,
                                             const unsigned int      i_scale,
                                             const int               i_displacement,
                                             const char              i_vector_name,
@@ -711,6 +711,14 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
 #endif
     case LIBXSMM_X86_INSTR_VMASKMOVPD_ST:
     case LIBXSMM_X86_INSTR_VMASKMOVPS_ST:
+    case LIBXSMM_X86_INSTR_VGATHERDPS_VEX:
+    case LIBXSMM_X86_INSTR_VGATHERDPD_VEX:
+    case LIBXSMM_X86_INSTR_VGATHERQPS_VEX:
+    case LIBXSMM_X86_INSTR_VGATHERQPD_VEX:
+    case LIBXSMM_X86_INSTR_VPGATHERDD_VEX:
+    case LIBXSMM_X86_INSTR_VPGATHERDQ_VEX:
+    case LIBXSMM_X86_INSTR_VPGATHERQD_VEX:
+    case LIBXSMM_X86_INSTR_VPGATHERQQ_VEX:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: unexpected instruction number: %u\n", i_vmove_instr);
@@ -719,7 +727,6 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
 
   /* select the code generator REX/VEX/EVEX */
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
-       (i_vmove_instr >= 16777216) &&
        (io_generated_code->code_type > 1) ) {
     /* check if we have enough code buffer space left */
     if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
@@ -740,10 +747,22 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
         break;
     }
 
+    /* ceck for gather */
+    if ( (((i_vmove_instr >> 24) & 0x2) == 0x2) ) {
+      if (i_reg_idx > 15) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: SIB addressing mode is required for instruction number: %u\n", i_vmove_instr);
+        exit(-1);
+      }
+      if ( (i_vec_reg_mask_0 == i_vec_reg_number_0) || (i_reg_idx == i_vec_reg_number_0) || (i_reg_idx == i_vec_reg_mask_0) ) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: same register names cannot be used multiple times: %u\n", i_vmove_instr);
+        exit(-1);
+      }
+    }
+
     /* invoke VEX encoder */
     libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
           l_vmove_instr, i_gp_reg_base,
-          i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+          i_reg_idx, i_scale, i_displacement, i_vector_name,
           i_vec_reg_mask_0, i_vec_reg_number_0 );
   } else if ( io_generated_code->code_type < 2 ) {
     /* add inline/assembly printing */
@@ -762,7 +781,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_instruction_set,
                                        const unsigned int      i_vmove_instr,
                                        const unsigned int      i_gp_reg_base,
-                                       const unsigned int      i_gp_reg_idx,
+                                       const unsigned int      i_reg_idx,
                                        const unsigned int      i_scale,
                                        const int               i_displacement,
                                        const char              i_vector_name,
@@ -955,7 +974,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
       if ( l_encoder == 2 ) {
         libxsmm_x86_instruction_evex_compute_2reg_mem ( io_generated_code,
               l_vmove_instr, 0, i_gp_reg_base,
-              i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+              i_reg_idx, i_scale, i_displacement, i_vector_name,
               0, i_vec_reg_number_0, i_mask_reg_number, i_use_zero_masking );
       } else if ( l_encoder == 1 ) {
         /* we need to patch some instructions for VEX from the EVEX header */
@@ -969,7 +988,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 
         libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
               l_vmove_instr, i_gp_reg_base,
-              i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+              i_reg_idx, i_scale, i_displacement, i_vector_name,
               0, i_vec_reg_number_0 );
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_vec_move: No REX encoder available!\n");
@@ -1053,7 +1072,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
         int l_vecval0 = i_vec_reg_number_0 % 8;
         int l_place1=i+2;
         int l_regbas0 = i_gp_reg_base % 8;
-        int l_regidx =  i_gp_reg_idx % 8;
+        int l_regidx =  i_reg_idx % 8;
         int l_gp8 = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
         if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0=1;
         if ( i_is_store ) l_fpadj++;
@@ -1062,7 +1081,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
             buf[i++]= (unsigned char)(l_insert_extra_byte);
             ++l_place1;
         }
-        if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
+        if (i_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
         {
             int l_sse_preamble2 = 64;
             if ( l_gp8 || (l_vecgrp0>=1) )
@@ -1077,7 +1096,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
             buf[i++] = (unsigned char)(0x00 + l_regbas0 + l_vecval0*8);
             if ( l_regbas0 == 4 ) buf[i++]=0x24;
         } else {
-          int l_ix8 = ((i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ? 1 : 0);
+          int l_ix8 = ((i_reg_idx > 7) && (i_reg_idx <= 15) ? 1 : 0);
           int l_sse_preamble2 = 64;
           if ( i_scale == 1 ) l_scaleadj = 0x00;
             else if ( i_scale == 2 ) l_scaleadj = 0x40;
