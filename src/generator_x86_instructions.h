@@ -72,7 +72,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
                                                     const unsigned int      i_vec_instr,
                                                     const unsigned int      i_use_broadcast,
                                                     const unsigned int      i_gp_reg_base,
-                                                    const unsigned int      i_gp_reg_idx,
+                                                    const unsigned int      i_reg_idx,
                                                     const unsigned int      i_scale,
                                                     const int               i_displacement,
                                                     const char              i_vector_name,

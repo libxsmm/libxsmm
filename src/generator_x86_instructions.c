@@ -401,7 +401,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
                                                     const unsigned int      i_vec_instr,
                                                     const unsigned int      i_use_broadcast,
                                                     const unsigned int      i_gp_reg_base,
-                                                    const unsigned int      i_gp_reg_idx,
+                                                    const unsigned int      i_reg_idx,
                                                     const unsigned int      i_scale,
                                                     const int               i_displacement,
                                                     const char              i_vector_name,
@@ -457,8 +457,8 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   unsigned char l_disp8div_idx;
   /* compressed displacement */
   int l_comp_disp;
-  /* we need a local non-const i_gp_reg_idx copy */
-  unsigned int l_gp_reg_idx;
+  /* we need a local non-const i_reg_idx copy */
+  unsigned int l_reg_idx;
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
 
@@ -504,17 +504,17 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   }
 
   /* 1 C) determine if SIB addressing mode is needed */
-  if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
+  if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
     l_have_sib = 1;
-    l_gp_reg_idx = LIBXSMM_X86_GP_REG_RSP;
+    l_reg_idx = LIBXSMM_X86_GP_REG_RSP;
     l_scale = 0;
-  } else if ( (i_gp_reg_idx < 16) || ( (((i_vec_instr >> 24) & 0x2) == 0x2) && (i_gp_reg_idx < 32) ) ) {
+  } else if ( (i_reg_idx < 16) || ( (((i_vec_instr >> 24) & 0x2) == 0x2) && (i_reg_idx < 32) ) ) {
     l_have_sib = 1;
-    l_gp_reg_idx = i_gp_reg_idx;
+    l_reg_idx = i_reg_idx;
     l_scale = i_scale;
   } else {
     l_have_sib = 0;
-    l_gp_reg_idx = 0;
+    l_reg_idx = 0;
     l_scale = 0;
   }
 
@@ -545,7 +545,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_src];
   /* incase of gather scatter the V' field is used to extend the idx field for SIB to 32 registers */
   if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
-    code[p2   ] |= (unsigned char)  tbl_evex_vp[l_gp_reg_idx];
+    code[p2   ] |= (unsigned char)  tbl_evex_vp[l_reg_idx];
   } else {
     code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_src];
   }
@@ -562,13 +562,13 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
     /* set B */
     code[p0   ] |= (unsigned char)(( i_gp_reg_base < 8 ) ? 0x20 : 0x00);
     /* set X */
-    code[p0   ] |= (unsigned char)(( (l_gp_reg_idx & 0x08) == 0x00 ) ? 0x40 : 0x00);
+    code[p0   ] |= (unsigned char)(( (l_reg_idx & 0x08) == 0x00 ) ? 0x40 : 0x00);
     /* set registers in modrm and SIB */
     code[modrm] = (unsigned char)(((unsigned char)(i_vec_reg_number_dst << 3)) & 0x38);
     code[modrm] |= (unsigned char)0x04; /* set SIB mode*/
     /* set SIB */
     code[sib  ]  = tbl_scale[l_scale];
-    code[sib  ] |= (unsigned char)(((unsigned char)(l_gp_reg_idx << 3)) & 0x38);
+    code[sib  ] |= (unsigned char)(((unsigned char)(l_reg_idx << 3)) & 0x38);
     code[sib  ] |= (unsigned char)(((unsigned char) i_gp_reg_base  )    & 0x07);
     /*adjust code head*/
     code_head += 7;
