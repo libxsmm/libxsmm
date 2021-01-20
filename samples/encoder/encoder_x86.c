@@ -80,6 +80,34 @@ void test_evex_load_store( char* test_name, libxsmm_generated_code* mycode, unsi
   dump_code_buffer( mycode, test_name );
 }
 
+void test_evex_gathscat( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned int is_gather ) {
+  unsigned int z;
+  unsigned int b;
+  unsigned int i;
+  unsigned int scale = 2;
+  int displ[3] = {0, 128, 2097152};
+  unsigned int d;
+  unsigned int k;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (b = 0; b < 16; ++b ) {
+    for (i = 0; i < 32; ++i ) {
+      for (z = 0; z < 32; ++z ) {
+        for ( d = 0; d < 3; ++d ) {
+          for ( k = 1; k < 8; ++k ) {
+            if ( (is_gather == 0) || ( i != z ) ) {
+              libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, i, scale, displ[d], 'z', z, k, 0, 0 );
+            }
+          }
+        }
+      }
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 void test_mask_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
   unsigned int b;
   unsigned int k;
@@ -349,7 +377,7 @@ void test_vex_load_store( char* test_name, libxsmm_generated_code* mycode, unsig
   dump_code_buffer( mycode, test_name );
 }
 
-void test_vex_mask_load_store( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+void test_vex_mask_load_store( char* test_name, libxsmm_generated_code* mycode, unsigned int is_gather, unsigned int instr ) {
   unsigned int y;
   unsigned int b;
   unsigned int i;
@@ -360,14 +388,16 @@ void test_vex_mask_load_store( char* test_name, libxsmm_generated_code* mycode, 
 
   reset_code_buffer( mycode, test_name );
 
-  for (b = 0; b < 16; ++b ) {
-    for ( d = 0; d < 3; ++d ) {
-      for (m = 0; m < 16; ++m ) {
-        for (y = 0; y < 16; ++y ) {
-          libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, m, 0 );
-        }
-        for (y = 0; y < 16; ++y ) {
-          libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, m, 1 );
+  if ( is_gather == 0 ) {
+    for (b = 0; b < 16; ++b ) {
+      for ( d = 0; d < 3; ++d ) {
+        for (m = 0; m < 16; ++m ) {
+          for (y = 0; y < 16; ++y ) {
+            libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, m, 0 );
+          }
+          for (y = 0; y < 16; ++y ) {
+            libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'y', y, m, 1 );
+          }
         }
       }
     }
@@ -377,10 +407,16 @@ void test_vex_mask_load_store( char* test_name, libxsmm_generated_code* mycode, 
       for ( d = 0; d < 3; ++d ) {
         for (m = 0; m < 16; ++m ) {
           for (y = 0; y < 16; ++y ) {
-            libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, i, scale, displ[d], 'y', y, m, 0 );
+            if ( (is_gather > 0) && ( (y == i) || (y == m) || (i == m) ) ) {
+              /* skip */
+            } else {
+              libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, i, scale, displ[d], 'y', y, m, 0 );
+            }
           }
-          for (y = 0; y < 16; ++y ) {
-            libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, i, scale, displ[d], 'y', y, m, 1 );
+          if ( is_gather == 0 ) {
+            for (y = 0; y < 16; ++y ) {
+              libxsmm_x86_instruction_vec_mask_move( mycode, instr, b, i, scale, displ[d], 'y', y, m, 1 );
+            }
           }
         }
       }
@@ -543,6 +579,22 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_load_store( "evex_mov_VBROADCASTI64X2", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI64X2, 1 );
   test_evex_load_store( "evex_mov_VBROADCASTI32X8", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI32X8, 1 );
   test_evex_load_store( "evex_mov_VBROADCASTI64X4", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI64X4, 1 );
+  test_evex_gathscat( "evex_gathscat_VGATHERDPS", &mycode, LIBXSMM_X86_INSTR_VGATHERDPS, 1 );
+  test_evex_gathscat( "evex_gathscat_VGATHERDPD", &mycode, LIBXSMM_X86_INSTR_VGATHERDPD, 1 );
+  test_evex_gathscat( "evex_gathscat_VGATHERQPS", &mycode, LIBXSMM_X86_INSTR_VGATHERQPS, 1 );
+  test_evex_gathscat( "evex_gathscat_VGATHERQPD", &mycode, LIBXSMM_X86_INSTR_VGATHERQPD, 1 );
+  test_evex_gathscat( "evex_gathscat_VPGATHERDD", &mycode, LIBXSMM_X86_INSTR_VPGATHERDD, 1 );
+  test_evex_gathscat( "evex_gathscat_VPGATHERDQ", &mycode, LIBXSMM_X86_INSTR_VPGATHERDQ, 1 );
+  test_evex_gathscat( "evex_gathscat_VPGATHERQD", &mycode, LIBXSMM_X86_INSTR_VPGATHERQD, 1 );
+  test_evex_gathscat( "evex_gathscat_VPGATHERQQ", &mycode, LIBXSMM_X86_INSTR_VPGATHERQQ, 1 );
+  test_evex_gathscat( "evex_gathscat_VSCATTERDPS", &mycode, LIBXSMM_X86_INSTR_VSCATTERDPS, 0 );
+  test_evex_gathscat( "evex_gathscat_VSCATTERDPD", &mycode, LIBXSMM_X86_INSTR_VSCATTERDPD, 0 );
+  test_evex_gathscat( "evex_gathscat_VSCATTERQPS", &mycode, LIBXSMM_X86_INSTR_VSCATTERQPS, 0 );
+  test_evex_gathscat( "evex_gathscat_VSCATTERQPD", &mycode, LIBXSMM_X86_INSTR_VSCATTERQPD, 0 );
+  test_evex_gathscat( "evex_gathscat_VPSCATTERDD", &mycode, LIBXSMM_X86_INSTR_VPSCATTERDD, 0 );
+  test_evex_gathscat( "evex_gathscat_VPSCATTERDQ", &mycode, LIBXSMM_X86_INSTR_VPSCATTERDQ, 0 );
+  test_evex_gathscat( "evex_gathscat_VPSCATTERQD", &mycode, LIBXSMM_X86_INSTR_VPSCATTERQD, 0 );
+  test_evex_gathscat( "evex_gathscat_VPSCATTERQQ", &mycode, LIBXSMM_X86_INSTR_VPSCATTERQQ, 0 );
 
   /* testing compute reg instructions */
   test_evex_compute_3reg_general( "evex_reg_VSHUFPS", &mycode, LIBXSMM_X86_INSTR_VSHUFPS, 0, 0x01, 32 );
@@ -1050,8 +1102,16 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_load_store( "vex_mov_VMOVNTPD", &mycode, LIBXSMM_X86_INSTR_VMOVNTPD, 2 );
   test_vex_load_store( "vex_mov_VMOVNTPS", &mycode, LIBXSMM_X86_INSTR_VMOVNTPS, 2 );
 
-  test_vex_mask_load_store( "vex_mov_VMASKMOVPD", &mycode, LIBXSMM_X86_INSTR_VMASKMOVPD );
-  test_vex_mask_load_store( "vex_mov_VMASKMOVPS", &mycode, LIBXSMM_X86_INSTR_VMASKMOVPS );
+  test_vex_mask_load_store( "vex_mov_VMASKMOVPD", &mycode, 0, LIBXSMM_X86_INSTR_VMASKMOVPD );
+  test_vex_mask_load_store( "vex_mov_VMASKMOVPS", &mycode, 0, LIBXSMM_X86_INSTR_VMASKMOVPS );
+  test_vex_mask_load_store( "vex_mov_VGATHERDPS_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VGATHERDPS_VEX );
+  test_vex_mask_load_store( "vex_mov_VGATHERDPD_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VGATHERDPD_VEX );
+  test_vex_mask_load_store( "vex_mov_VGATHERQPS_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VGATHERQPS_VEX );
+  test_vex_mask_load_store( "vex_mov_VGATHERQPD_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VGATHERQPD_VEX );
+  test_vex_mask_load_store( "vex_mov_VPGATHERDD_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VPGATHERDD_VEX );
+  test_vex_mask_load_store( "vex_mov_VPGATHERDQ_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VPGATHERDQ_VEX );
+  test_vex_mask_load_store( "vex_mov_VPGATHERQD_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VPGATHERQD_VEX );
+  test_vex_mask_load_store( "vex_mov_VPGATHERQQ_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VPGATHERQQ_VEX );
 
   /* test VEX/GP instructions */
   test_alu_reg( "alu_reg_ADDQ", &mycode, LIBXSMM_X86_INSTR_ADDQ );

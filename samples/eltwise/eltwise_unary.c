@@ -36,6 +36,7 @@
 #define INC_OP 12
 #define RCP_OP 13
 #define RCP_SQRT_OP 14
+#define EXP_OP 15
 
 int unequal_fp32_vals(float a, float b) {
   if (fabs(a-b) < EPS) {
@@ -122,6 +123,10 @@ float fp32_unary_compute(float in, unsigned int op) {
   if (op == RCP_SQRT_OP) {
     res = 1.0/sqrtf(in);
   }
+  if (op == EXP_OP) {
+    res = exp(in);
+  }
+
   return res;
 }
 
@@ -168,6 +173,9 @@ void set_opname(unsigned int op, char *opname) {
   if (op == RCP_SQRT_OP) {
     sprintf(opname, "reciprocal sqrt");
   }
+  if (op == EXP_OP) {
+    sprintf(opname, "exp");
+  }
 }
 
 void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
@@ -211,7 +219,10 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
   }
   if (op == RCP_OP) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL;
-   }
+  }
+  if (op == EXP_OP) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_EXP;
+  }
   if (op == RCP_SQRT_OP) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT;
   }
@@ -847,7 +858,7 @@ int main( int argc, char* argv[] ) {
 
   valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP ||
                op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP || op == SQRT_OP || op == NEGATE_OP ||
-               op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP) ? 1 : 0;
+               op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP || op == EXP_OP) ? 1 : 0;
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {

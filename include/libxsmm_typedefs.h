@@ -372,7 +372,8 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_NEGATE      = 13,
   LIBXSMM_MELTW_TYPE_UNARY_INC         = 14,
   LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL  = 15,
-  LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT  = 16
+  LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT  = 16,
+  LIBXSMM_MELTW_TYPE_UNARY_EXP         = 17
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {

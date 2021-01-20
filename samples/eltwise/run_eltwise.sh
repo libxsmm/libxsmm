@@ -174,6 +174,60 @@ elif [ "scale" = "${KERNEL}" ]; then
       done
     done
   fi
+elif [ "unary" = "${KERNEL}" ]; then
+  if [[ $# == 11  || ( $# == 10 && $6 == 1 ) ]]; then
+    M=$2
+    N=$3
+    LD_IN=$4
+    LD_OUT=$5
+    OP=$6
+    PREC_IN=$7
+    if [ ${OP} != 0 ] ; then
+      PREC_COMP=$8
+      PREC_OUT=$9
+      BCAST_IN=$10
+      ${NUMACTL} ./eltwise_unary ${OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT}  ${M} ${N} ${LD_IN} ${LD_OUT}
+    else
+      PREC_OUT=$8
+      BITM=$9
+      ${NUMACTL} ./eltwise_unary_relu ${OP} ${BITM} ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LD_IN} ${LD_OUT}
+    fi
+  else
+    for M in 11 16 19 32 34 64 69 2589; do
+      for N in 27 32 45 64 712 ; do
+        LD_LIST=( ${M} $(( M + 7 )) )
+        for LD_IN in "${LD_LIST[@]}" ; do
+          LD_OUT=${LD_IN}
+          for OP in 0 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+            for PREC_IN in 2 4; do
+              for PREC_COMP in 4; do
+                for PREC_OUT in 2 4; do
+                  for BCAST_IN in 0 1 2 3; do
+                    ${NUMACTL} ./eltwise_unary ${OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT}  ${M} ${N} ${LD_IN} ${LD_OUT}
+                  done
+                done
+              done
+            done
+          done
+        done
+      done
+    done
+    for M in 11 16 19 32 34 64 69 2589; do
+      for N in 27 32 45 64 712 ; do
+        LD_IN=${M}
+        LD_OUT=${LD_IN}
+        for OP in 'F' 'B'; do
+          for PREC_IN in 2 4; do
+            for PREC_OUT in 2 4; do
+              for BITM in 0; do
+                ${NUMACTL} ./eltwise_unary_relu ${OP} ${BITM} ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LD_IN} ${LD_OUT}
+              done
+            done
+          done
+        done
+      done
+    done
+  fi
 fi
 
 
