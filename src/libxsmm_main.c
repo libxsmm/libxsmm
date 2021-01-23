@@ -286,9 +286,9 @@ LIBXSMM_APIVAR_PRIVATE_DEF(LIBXSMM_TLS_TYPE libxsmm_tlskey);
 #endif
 
 /* aux struct for matrix equations */
-LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_matrix_eqn* libxsmm_matrix_eqns[256]);
-LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_blasint libxsmm_matrix_eqns_init = 0);
-LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_blasint libxsmm_matrix_eqns_count = 255);
+LIBXSMM_APIVAR_DEFINE(libxsmm_matrix_eqn* libxsmm_matrix_eqns[256]);
+LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_init);
+LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_count);
 
 LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size)
 {
