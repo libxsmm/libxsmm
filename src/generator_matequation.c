@@ -10,7 +10,7 @@
 ******************************************************************************/
 #include <libxsmm_generator.h>
 #include "generator_common.h"
-#include "generator_mateltwise_avx_avx512.h"
+#include "generator_matequation_avx_avx512.h"
 
 LIBXSMM_API
 void libxsmm_generator_matequation_kernel( libxsmm_generated_code*         io_generated_code,
