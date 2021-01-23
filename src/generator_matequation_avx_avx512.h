@@ -10,7 +10,7 @@
 ******************************************************************************/
 
 #ifndef GENERATOR_MATEQUATION_AVX_AVX512_H
-#define GENERATOR_MATEQUAITON_AVX_AVX512_H
+#define GENERATOR_MATEQUATION_AVX_AVX512_H
 
 #include "generator_common.h"
 
