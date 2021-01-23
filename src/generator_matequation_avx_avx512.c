@@ -17,5 +17,9 @@
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc) {
+  LIBXSMM_UNUSED( io_generated_code );
+  LIBXSMM_UNUSED( i_mateqn_desc );
+
+  printf("Inside matequation generator\n");
 }
 

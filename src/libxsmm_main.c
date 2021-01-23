@@ -5085,6 +5085,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
 #if 0
   printf("\n\n");
 #endif
+  libxsmm_matrix_eqns[idx]->is_optimized = 1;
 }
 
 
@@ -5289,6 +5290,24 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx ) {
 }
 
 
+LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_ready_for_jit( libxsmm_blasint idx ) {
+  if ( libxsmm_matrix_eqns[idx] == NULL ) {
+    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    return 1;
+  }
+  if ( libxsmm_matrix_eqns[idx]->is_constructed == 0 ) {
+    fprintf( stderr, "the requested equation is not finalized, yet!\n" );
+    return 2;
+  }
+  if ( libxsmm_matrix_eqns[idx]->is_optimized == 0 ) {
+    fprintf( stderr, "the requested equation is not optimized, yet!\n" );
+    return 2;
+  }
+
+  return 0;
+}
+
+
 LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create() {
   libxsmm_blasint ret = libxsmm_matrix_eqns_count;
   libxsmm_matrix_eqn_elem* node;
@@ -5346,7 +5365,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, con
   info.arg.ld = ld;
   info.arg.in_pos = in_pos;
   info.arg.offs_in_pos = offs_in_pos;
-  info.arg.dtype;
+  info.arg.dtype = dtype;
   libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_ARG, info );
 #if 0
   printf("added arg node: %lld %i %i %i %i %i %i\n", libxsmm_matrix_eqns[idx]->eqn_cur, M, N, ld, in_pos, offs_in_pos, dtype );
@@ -5452,12 +5471,18 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const 
   if (NULL != descriptor) {
     unsigned int hash;
     libxsmm_descriptor wrap;
+
+    /* check if equation is ready for JIT */
+    if ( libxsmm_matrix_eqn_is_ready_for_jit( descriptor->eqn_idx) == 0 ) {
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
+      LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
-    LIBXSMM_ASSIGN127(&wrap.meqn.desc, descriptor);
-    wrap.kind = LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MEQN);
-    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xmateqn;
+      LIBXSMM_ASSIGN127(&wrap.meqn.desc, descriptor);
+      wrap.kind = LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MEQN);
+      result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xmateqn;
+    } else {
+      result = NULL;
+    }
   }
   else {
     result = NULL;

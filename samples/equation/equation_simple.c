@@ -17,6 +17,7 @@
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint my_eqn0, my_eqn1;
+  libxsmm_matrix_eqn_function func0, func1;
 
   my_eqn0 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_DIV, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
@@ -29,9 +30,9 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_EXP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, 32, 32, 32, 2, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, 32, 32, 32, 3, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_opt_exec_plan( my_eqn0 );
   libxsmm_matrix_eqn_tree_print( my_eqn0 );
   libxsmm_matrix_eqn_rpn_print( my_eqn0 );
+  func0 = libxsmm_dispatch_matrix_eqn( 32, 32, NULL, LIBXSMM_DATATYPE_F32, my_eqn0 );
 
   my_eqn1 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_DIV, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
@@ -55,9 +56,9 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_arg( my_eqn1, 32, 32, 32, 8, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn1, 32, 32, 32, 9, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn1, 32, 32, 32, 10, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_opt_exec_plan( my_eqn1 );
   libxsmm_matrix_eqn_tree_print( my_eqn1 );
   libxsmm_matrix_eqn_rpn_print( my_eqn1 );
+  func1 = libxsmm_dispatch_matrix_eqn( 32, 32, NULL, LIBXSMM_DATATYPE_F32, my_eqn1 );
 
   return 0;
 }
