@@ -59,6 +59,8 @@
 #include "../src/generator_mateltwise_scale_avx_avx512.c"
 #include "../src/generator_mateltwise_transform_avx_avx512.c"
 #include "../src/generator_mateltwise_unary_binary_avx_avx512.c"
+#include "../src/generator_matequation.c"
+#include "../src/generator_matequation_avx_avx512.c"
 #include "../src/generator_packed.c"
 #include "../src/generator_packed_gemm_ac_rm.c"
 #include "../src/generator_packed_gemm_ac_rm_aarch64.c"

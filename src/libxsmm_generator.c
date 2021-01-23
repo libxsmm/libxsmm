@@ -441,6 +441,26 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   return result.ptr;
 }
 
+
+LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_datatype out_type, libxsmm_blasint m, libxsmm_blasint n,
+  libxsmm_blasint ldo, unsigned int eqn_idx)
+{
+  union {
+    libxsmm_meqn_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  LIBXSMM_DESCRIPTOR_CLEAR(blob);
+  result.blob = blob;
+  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM( LIBXSMM_DATATYPE_UNSUPPORTED, out_type);
+  result.ptr->eqn_idx = eqn_idx;
+  result.ptr->ldo = ldo;
+  result.ptr->m = m;
+  result.ptr->n = n;
+  return result.ptr;
+}
+
+
 LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
   const void* alpha, char transa, char diag, char side, char uplo, int layout)
