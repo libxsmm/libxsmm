@@ -31,8 +31,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   int i, j, a_nnz;
 
   /* some checks... */
-  assert(N % 16 == 0);
-  assert(N >= 16);
+  assert(N % 8 == 0);
+  assert(N >= 8);
   assert(LIBXSMM_FEQ(beta, 1.0) || LIBXSMM_FEQ(beta, 0.0));
   assert(K <= lda);
   assert(N <= ldc);
@@ -119,7 +119,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
   /* attempt to JIT dense kernel as sparse_reg failed */
   } else {
-    new_handle->N_chunksize = 16;
+    new_handle->N_chunksize = 8;
     new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
     /* copy A over */
     new_handle->a_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), 64);
