@@ -309,7 +309,8 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
         if (NULL != in) { /* mcopy */
           kernel.meltw_copy = libxsmm_dispatch_meltw_copy(
             (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
-            &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
+            &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
+            LIBXSMM_MELTW_FLAG_COPY_NONE);
         }
         else { /* mzero */
           kernel.meltw_zero = libxsmm_dispatch_meltw_zero(
@@ -545,7 +546,6 @@ LIBXSMM_API void libxsmm_itrans_internal(char* inout, void* scratch, unsigned in
           if (NULL != mat)
 # endif
           libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ldi, ldo, kernel);
-
         }
       }
 #endif

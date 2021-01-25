@@ -34,11 +34,11 @@
 #endif
 /* 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy */
 #if !defined(LIBXSMM_XCOPY_JIT)
-# if (defined(_WIN32) || defined(__CYGWIN__))
+# if defined(LIBXSMM_XCOPY_MELTW)
+#   define LIBXSMM_XCOPY_JIT 3
+# elif (defined(_WIN32) || defined(__CYGWIN__))
 /* only enable matcopy code generation (workaround issue with taking GP registers correctly) */
 #   define LIBXSMM_XCOPY_JIT 0
-# elif defined(LIBXSMM_XCOPY_MELTW)
-#   define LIBXSMM_XCOPY_JIT 3
 # else
 #   define LIBXSMM_XCOPY_JIT 1
 # endif
