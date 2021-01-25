@@ -34,8 +34,10 @@
     <ClInclude Include="..\include\libxsmm_dnn_fullyconnected.h" />
     <ClInclude Include="..\include\libxsmm_dnn_fusedbatchnorm.h" />
     <ClInclude Include="..\include\libxsmm_dnn_fusedgroupnorm.h" />
+    <ClInclude Include="..\include\libxsmm_dnn_optimizer.h" />
     <ClInclude Include="..\include\libxsmm_dnn_pooling.h" />
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h" />
+    <ClInclude Include="..\include\libxsmm_dnn_softmaxloss.h" />
     <ClInclude Include="..\include\libxsmm_dnn_tensor.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_fsspmdm.h" />
