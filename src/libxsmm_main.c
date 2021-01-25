@@ -290,6 +290,7 @@ LIBXSMM_APIVAR_DEFINE(libxsmm_matrix_eqn* libxsmm_matrix_eqns[256]);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_init);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_count);
 
+
 LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size)
 {
   void* result;
@@ -4938,6 +4939,7 @@ LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(
 }
 
 
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn_elem* cur_node );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn_elem* cur_node ) {
   /* check if we are at an argument leaf, then we assign register score 0 */
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
@@ -4983,6 +4985,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
 }
 
 
+LIBXSMM_API_INTERN libxsmm_blasint reserve_tmp_storage(libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool);
 LIBXSMM_API_INTERN libxsmm_blasint reserve_tmp_storage(libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool) {
   libxsmm_blasint i;
   if ( tmp_storage_pool != NULL ) {
@@ -4997,6 +5000,7 @@ LIBXSMM_API_INTERN libxsmm_blasint reserve_tmp_storage(libxsmm_blasint n_max_tmp
 }
 
 
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool ) {
   /* check if we are at an argument leaf, then we assign register score 0 */
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
@@ -5047,6 +5051,8 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
   }
 }
 
+
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) {
   libxsmm_blasint global_timestamp = 0;
   libxsmm_blasint max_reg_score = 0;
@@ -5090,6 +5096,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
 }
 
 
+LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqn_elem* cur_node, libxsmm_matrix_eqn_node_type type, libxsmm_matrix_eqn_info info );
 LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqn_elem* cur_node, libxsmm_matrix_eqn_node_type type, libxsmm_matrix_eqn_info info ) {
   if ( type == LIBXSMM_MATRIX_EQN_NODE_NONE ) {
     /* shouldn't happen */
@@ -5154,6 +5161,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
 }
 
 
+LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_trv_head( libxsmm_matrix_eqn_elem* cur_node );
 LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_trv_head( libxsmm_matrix_eqn_elem* cur_node ) {
   /* check if we are at an argument leaf, then we move up */
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
@@ -5190,6 +5198,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_trv_head( libxsmm
 }
 
 
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_print( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint indent );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_print( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint indent ) {
   libxsmm_blasint i;
   libxsmm_blasint tree_print_indent = 4;
@@ -5237,6 +5246,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_print( libxsmm_matrix_eqn_elem* c
 }
 
 
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_rpn_print( libxsmm_matrix_eqn_elem* cur_node );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_rpn_print( libxsmm_matrix_eqn_elem* cur_node ) {
   /* check if we are at an argument leaf, then we move up */
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
@@ -5269,6 +5279,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_rpn_print( libxsmm_matrix_eqn_ele
 }
 
 
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx ) {
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist!\n" );
@@ -5293,6 +5304,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx ) {
 }
 
 
+LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_ready_for_jit( libxsmm_blasint idx );
 LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_ready_for_jit( libxsmm_blasint idx ) {
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist!\n" );
