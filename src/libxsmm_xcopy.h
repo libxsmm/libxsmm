@@ -94,12 +94,22 @@
 #define LIBXSMM_TCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
   const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((size_t)(INDEX_J) * (LDI) + (INDEX_I))); \
         TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDO) + (INDEX_J)))
+
 /* call JIT-kernel (transpose) */
-#define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-  const unsigned int libxsmm_tcopy_call_uldi_ = (unsigned int)(LDI); \
-  const unsigned int libxsmm_tcopy_call_uldo_ = (unsigned int)(LDO); \
-  (KERNEL).xtrans(SRC, &libxsmm_tcopy_call_uldi_, DST, &libxsmm_tcopy_call_uldo_); \
-}
+#if defined(LIBXSMM_XCOPY_MELTW)
+# define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+    libxsmm_meltw_transform_param libxsmm_tcopy_call_args_; \
+    libxsmm_tcopy_call_args_.in_ptr = (SRC); \
+    libxsmm_tcopy_call_args_.out_ptr = (DST); \
+    (KERNEL).meltw_trans(&libxsmm_tcopy_call_args_); \
+  }
+#else
+# define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+    const unsigned int libxsmm_tcopy_call_uldi_ = (unsigned int)(LDI); \
+    const unsigned int libxsmm_tcopy_call_uldo_ = (unsigned int)(LDO); \
+    (KERNEL).xtrans(SRC, &libxsmm_tcopy_call_uldi_, DST, &libxsmm_tcopy_call_uldo_); \
+  }
+#endif
 
 #define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
   libxsmm_blasint libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
@@ -254,6 +264,7 @@
   LIBXSMM_CONCATENATE(XKERNEL,_TILES)(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1)
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
+  libxsmm_meltwfunction_transform meltw_trans;
   libxsmm_meltwfunction_copy meltw_copy;
   libxsmm_meltwfunction_zero meltw_zero;
   libxsmm_xmcopyfunction xmcopy;
