@@ -656,12 +656,23 @@ endif
 endif
 
 WCHECK ?= 0
-ifneq (0,$(WCHECK))
-  WCHECK_CFLAG := $(call ctest,$(CC),-Wcheck)
-endif
 ifneq (0,$(WERROR))
   WERROR_CFLAG := $(call ctest,$(CC),-Werror)
   WERROR_FCFLAG := $(call ftest,$(FC),-Werror)
+endif
+ifneq (0,$(WCHECK))
+  WCHECK_CFLAG := $(call ctest,$(CC),-Wcheck $(WERROR_CFLAG))
+endif
+
+ifeq (0,$(ICX))
+ifneq (0,$(INTEL))
+  NOLIMITS_CFLAG := $(call ctest,$(CC),-qoverride-limits $(WERROR_CFLAG))
+  ifeq (,$(strip $(GFC)))
+  ifneq (,$(strip $(FC)))
+    NOLIMITS_FCFLAG := $(call ftest,$(FC),-qoverride-limits $(WERROR_FCFLAG))
+  endif
+  endif
+endif
 endif
 
 ifeq (Windows_NT,$(UNAME))
@@ -1236,15 +1247,9 @@ ifneq (0,$(INTEL))
   endif
   # avoid turning OpenMP limits into an error (-Werror)
   ifneq (,$(WERROR_CFLAG))
-  ifeq (0,$(ICX))
-    CXXFLAGS += -qoverride_limits
-    CFLAGS += -qoverride_limits
-    ifeq (,$(strip $(GFC)))
-    ifneq (,$(strip $(FC)))
-      FCFLAGS += -qoverride_limits
-    endif
-    endif
-  endif
+    FCFLAGS += $(NOLIMITS_FCFLAG)
+    CXXFLAGS += $(NOLIMITS_CFLAG)
+    CFLAGS += $(NOLIMITS_CFLAG)
   endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
