@@ -58,11 +58,13 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
               &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
               LIBXSMM_MELTW_FLAG_COPY_NONE);
           }
+#     if 0 /* TODO: LIBXSMM_MELTW_OPERATION_ZERO does not seem to be implemented */
           else { /* mzero */
             kernel.meltw_zero = libxsmm_dispatch_meltw_zero(
               (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
               &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
           }
+#     endif
 #   else
           const libxsmm_mcopy_descriptor* desc;
           libxsmm_descriptor_blob blob;
