@@ -644,9 +644,9 @@ void libxsmm_generator_transform_two_8x8_32bit_norm_to_normt_avx512( libxsmm_gen
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( libxsmm_generated_code* io_generated_code,
-                                                                     const char              i_vector_name,
-                                                                     const unsigned int      i_vec_reg_srcdst_start,
-                                                                     const unsigned int      i_vec_reg_tmp_start )
+                                                                      const char              i_vector_name,
+                                                                      const unsigned int      i_vec_reg_srcdst_start,
+                                                                      const unsigned int      i_vec_reg_tmp_start )
 {
   if ( (i_vec_reg_srcdst_start + 4 < i_vec_reg_tmp_start) || (i_vec_reg_tmp_start + 4 < i_vec_reg_srcdst_start) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
