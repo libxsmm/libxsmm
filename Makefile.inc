@@ -1162,12 +1162,13 @@ ifneq (0,$(INTEL))
     endif
     FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   endif
+  CPEDANTIC += $(WCHECK_CFLAG) -diag-disable 177,981,1419,1572,2547,10382
   ifeq (0,$(ICX))
-    CPEDANTIC += $(WCHECK_CFLAG)
-  else ifneq (1,$(ICX))
-    CPEDANTIC += -diag-disable 593,1599,2415
+    CPEDANTIC += -diag-disable 593,1599,2415,2591
+    ifeq (0,$(WCHECK))
+      CPEDANTIC += -diag-disable 2259
+    endif
   endif
-  CPEDANTIC += -diag-disable 177,981,1419,1572,2547,10382
   CWARNEXTRA := -Wremarks
   ifeq (1,$(PEDANTIC))
     ifeq (,$(filter-out 0,$(FORCE_CXX)))
@@ -1179,10 +1180,8 @@ ifneq (0,$(INTEL))
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
       FCFLAGS += $(FFORM_FLAG)
     endif
-    ifeq (0,$(ICX))
-      CXXFLAGS += $(WCHECK_CFLAG)
-      CFLAGS += $(WCHECK_CFLAG)
-    endif
+    CXXFLAGS += $(WCHECK_CFLAG)
+    CFLAGS += $(WCHECK_CFLAG)
   else ifneq (0,$(PEDANTIC))
     ifneq (,$(filter 0 1,$(ICX)))
     ifeq (,$(filter-out 0,$(FORCE_CXX)))
