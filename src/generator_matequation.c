@@ -19,7 +19,7 @@ void libxsmm_generator_matequation_kernel( libxsmm_generated_code*         io_ge
   if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE  ) {
     libxsmm_generator_matequation_avx_avx512_kernel( io_generated_code, i_mateqn_desc );
    } else {
-    /* TODO fix this errori and support for more architectures */
+    /* TODO fix this error and support for more architectures */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
