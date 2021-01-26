@@ -34,6 +34,10 @@
 # include <unistd.h>
 # include <fcntl.h>
 #endif
+#if defined(__APPLE__)
+# include <libkern/OSCacheControl.h>
+# include <pthread.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -2224,6 +2228,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       LIBXSMM_MALLOC_FLAG_RWX, &extra, sizeof(extra));
     if (EXIT_SUCCESS == result) { /* check for success */
       LIBXSMM_ASSERT(NULL != code_buffer);
+#if defined(__APPLE__) && defined(__arm64__)
+      pthread_jit_write_protect_np( false );
+#endif
       /* copy temporary buffer into the prepared executable buffer */
 # if defined(NDEBUG)
       { int i; /* precondition: jit_buffer == generated_code.generated_code */
@@ -2232,15 +2239,23 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # else
       memcpy(code_buffer, generated_code.generated_code, generated_code.code_size);
 # endif
+#if defined(__APPLE__) && defined(__arm64__)
+      pthread_jit_write_protect_np( true );
+      sys_icache_invalidate( code_buffer, generated_code.code_size );
+#else
       /* attribute/protect buffer and revoke unnecessary flags */
       result = libxsmm_malloc_attrib((void**)code_buffer_result, LIBXSMM_MALLOC_FLAG_X, jit_name);
       if (EXIT_SUCCESS == result) { /* check for success */
         code->ptr = code_buffer; /* commit buffer */
         LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
+#if defined(__aarch64__)
+        __builtin___clear_cache( code_buffer, code_buffer+generated_code.code_size );
+#endif
       }
       else { /* release buffer */
         libxsmm_xfree(code_buffer, 0/*no check*/);
       }
+#endif
     }
   }
   else if (request->kind == LIBXSMM_BUILD_KIND_USER && NULL != request->descriptor.ptr) { /* user-data */

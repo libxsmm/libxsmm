@@ -808,7 +808,7 @@ ASIMD ?= 1
 ifeq (1,$(ASIMD)) # discover ASIMD
   ifeq (1,$(words $(filter asimd,$(CPUFLAGS_AARCH64))))
     ASIMD := 1
-  elif (1,$(words $(filter 1,$(CPUFLAGS_AARCH64))))
+  else ifneq (0,$(words $(filter 1,$(CPUFLAGS_AARCH64))))
     ASIMD := 1
   else ifneq (,$(CPUFLAGS_X86))
     ASIMD := 0

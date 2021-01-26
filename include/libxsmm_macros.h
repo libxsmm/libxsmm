@@ -55,7 +55,7 @@
 # define LIBXSMM_PLATFORM_X86
 #endif
 #if !defined(LIBXSMM_PLATFORM_AARCH64) && \
-    defined(__aarch64__)
+    (defined(__aarch64__) || defined(__arm64__))
 # define LIBXSMM_PLATFORM_AARCH64
 #endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
