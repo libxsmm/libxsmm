@@ -671,6 +671,12 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*       io_generated_code,
                                                       int                           skip_pop);
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_open_stream_matequation( libxsmm_generated_code*                  io_generated_code,
+                                                     const unsigned int                        i_gp_struct_params );
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_close_stream_matequation( libxsmm_generated_code*       io_generated_code );
+
 /**
  * @TODO: clean-up
  * Opens the inline assembly section / jit stream for transposes, this is hacked and should be cleaned up

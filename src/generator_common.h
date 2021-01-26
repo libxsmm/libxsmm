@@ -927,6 +927,36 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   char vector_name;
 } libxsmm_mateltwise_kernel_config;
 
+/* structure for storing the current gp reg mapping for matequation */
+LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_gp_reg_mapping_struct {
+  unsigned int                      gp_reg_param_struct;
+  libxsmm_mateltwise_gp_reg_mapping gp_reg_mapping_eltwise;
+  libxsmm_gp_reg_mapping            gp_reg_mapping_gemm;
+} libxsmm_matequation_gp_reg_mapping;
+
+/* matequation kernel configuration */
+LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
+  unsigned int instruction_set;
+  unsigned int vector_reg_count;
+  unsigned int vector_length_in;
+  unsigned int vector_length_out;
+  unsigned int datatype_size_in;
+  unsigned int datatype_size_out;
+  unsigned int vmove_instruction_in;
+  unsigned int vmove_instruction_out;
+  unsigned int alu_add_instruction;
+  unsigned int alu_sub_instruction;
+  unsigned int alu_cmp_instruction;
+  unsigned int alu_jmp_instruction;
+  unsigned int alu_mov_instruction;
+  unsigned int vxor_instruction;
+  unsigned int skip_pushpops_callee_gp_reg;
+  char vector_name;
+  unsigned int                      tmp_size;
+  libxsmm_mateltwise_kernel_config  meltw_kernel_config;
+  libxsmm_micro_kernel_config       gemm_kernel_config;
+} libxsmm_matequation_kernel_config;
+
 /* structure for storing the current gp reg mapping for transpose */
 LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
@@ -978,6 +1008,14 @@ typedef enum libxsmm_meltw_stack_var {
   LIBXSMM_MELTW_STACK_VAR_MASK_PTR        =  3,
   LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR     =  4
 } libxsmm_meltw_stack_var;
+
+typedef enum libxsmm_meqn_stack_var {
+  LIBXSMM_MEQN_STACK_VAR_NONE                           =  0,
+  LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR                    =  1,
+  LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR0 =  2,
+  LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR1 =  3,
+  LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR2 =  4
+} libxsmm_meqn_stack_var;
 
 /* Auxiliary stack variable enumeration in GEMM */
 typedef enum libxsmm_gemm_stack_var {

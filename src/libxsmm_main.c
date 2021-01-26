@@ -4938,6 +4938,9 @@ LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(
   return result.meltw_binary;
 }
 
+LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( unsigned int eqn_idx ) {
+  return libxsmm_matrix_eqns[eqn_idx];
+}
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn_elem* cur_node );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn_elem* cur_node ) {
@@ -4945,6 +4948,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     if ( (cur_node->le == NULL) && (cur_node->ri == NULL) ) {
       cur_node->reg_score = 0;
+      cur_node->max_tmp_size = cur_node->info.arg.ld * cur_node->info.arg.n;
     }
     else {
       printf("ERROR: Arg cannot have left or right child!\n");
@@ -4955,6 +4959,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
  *           * 2) if the left child is NOT an arg, we just propagate the register score from it (no additional tmp storage is needed) */
     if ( cur_node->le != NULL ) {
       libxsmm_matrix_eqn_assign_reg_scores( cur_node->le );
+      cur_node->max_tmp_size = cur_node->le->max_tmp_size;
       if ( cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
         cur_node->reg_score = 1;
       } else {
@@ -4971,6 +4976,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
     if ( (cur_node->le != NULL) && (cur_node->ri != NULL) ) {
       libxsmm_matrix_eqn_assign_reg_scores( cur_node->le );
       libxsmm_matrix_eqn_assign_reg_scores( cur_node->ri );
+      cur_node->max_tmp_size = LIBXSMM_MAX(cur_node->le->max_tmp_size, cur_node->ri->max_tmp_size);
       if (cur_node->le->reg_score == cur_node->ri->reg_score) {
         cur_node->reg_score = cur_node->le->reg_score + 1;
       } else {
@@ -5014,9 +5020,17 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
  *      * 1) The child is an arg, so we have to reserve a tmp storage
  *           * 2) The child is NOT an arg, so we just reuse the tmp storage of the child */
     if ( cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
-      cur_node->tmp_id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      cur_node->tmp.m  = cur_node->le->info.arg.m;
+      cur_node->tmp.n  = cur_node->le->info.arg.n;
+      cur_node->tmp.ld  = cur_node->le->info.arg.ld;
+      cur_node->tmp.dtype  = cur_node->le->info.arg.dtype;
     } else {
-      cur_node->tmp_id = cur_node->le->tmp_id;
+      cur_node->tmp.id = cur_node->le->tmp.id;
+      cur_node->tmp.m  = cur_node->le->tmp.m;
+      cur_node->tmp.n  = cur_node->le->tmp.n;
+      cur_node->tmp.ld  = cur_node->le->tmp.ld;
+      cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     /* First we visit the child tree with the maximum register score */
@@ -5035,15 +5049,31 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
  *           * 2) Both child are NOT arg, so we reuse the tmp storage of either one for our output and we make the other tmp storage available
  *                * 3) One child IS arg and the other child is NOT an arg, so we just reuse the tmp storage of the non-arg child */
     if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
-      cur_node->tmp_id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      cur_node->tmp.m  = cur_node->le->info.arg.m;
+      cur_node->tmp.n  = cur_node->le->info.arg.n;
+      cur_node->tmp.ld  = cur_node->le->info.arg.ld;
+      cur_node->tmp.dtype  = cur_node->le->info.arg.dtype;
     } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
-      cur_node->tmp_id = cur_node->le->tmp_id;
-      tmp_storage_pool[cur_node->ri->tmp_id] = 0;
+      cur_node->tmp.id = cur_node->le->tmp.id;
+      cur_node->tmp.m  = cur_node->le->tmp.m;
+      cur_node->tmp.n  = cur_node->le->tmp.n;
+      cur_node->tmp.ld  = cur_node->le->tmp.ld;
+      cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
+      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
     } else {
       if (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
-        cur_node->tmp_id = cur_node->le->tmp_id;
+        cur_node->tmp.id = cur_node->le->tmp.id;
+        cur_node->tmp.m  = cur_node->le->tmp.m;
+        cur_node->tmp.n  = cur_node->le->tmp.n;
+        cur_node->tmp.ld  = cur_node->le->tmp.ld;
+        cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
       } else {
-        cur_node->tmp_id = cur_node->ri->tmp_id;
+        cur_node->tmp.id = cur_node->ri->tmp.id;
+        cur_node->tmp.m  = cur_node->ri->tmp.m;
+        cur_node->tmp.n  = cur_node->ri->tmp.n;
+        cur_node->tmp.ld  = cur_node->ri->tmp.ld;
+        cur_node->tmp.dtype  = cur_node->ri->tmp.dtype;
       }
     }
   } else {
@@ -5225,7 +5255,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_print( libxsmm_matrix_eqn_elem* c
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
     /* we have to push more in this branch */
     if ( cur_node->le != NULL ) {
-      printf("UNARY: %i %i (timestamp = %i, tmp = %i)\n", (int)cur_node->info.u_op.type, (int)cur_node->info.u_op.flags, cur_node->visit_timestamp, cur_node->tmp_id );
+      printf("UNARY: %i %i (timestamp = %i, tmp = %i)\n", (int)cur_node->info.u_op.type, (int)cur_node->info.u_op.flags, cur_node->visit_timestamp, cur_node->tmp.id );
       libxsmm_matrix_eqn_trv_print( cur_node->le, indent+tree_print_indent );
     /* we have reached the root, as we are unary, there is no right branch */
     } else if ( (cur_node->ri != NULL) ) {
@@ -5234,7 +5264,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_print( libxsmm_matrix_eqn_elem* c
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     /* we have to push more in this branch */
     if ( (cur_node->le != NULL) && (cur_node->ri != NULL) ) {
-      printf("BINARY: %i %i (timestamp = %i, tmp = %i)\n", (int)cur_node->info.b_op.type, (int)cur_node->info.b_op.flags, cur_node->visit_timestamp, cur_node->tmp_id );
+      printf("BINARY: %i %i (timestamp = %i, tmp = %i)\n", (int)cur_node->info.b_op.type, (int)cur_node->info.b_op.flags, cur_node->visit_timestamp, cur_node->tmp.id );
       libxsmm_matrix_eqn_trv_print( cur_node->le, indent+tree_print_indent );
       libxsmm_matrix_eqn_trv_print( cur_node->ri, indent+tree_print_indent );
     } else {

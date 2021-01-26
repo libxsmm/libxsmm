@@ -908,6 +908,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
   libxsmm_datatype dtype;
 } libxsmm_matrix_eqn_arg;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_tmp_info {
+  libxsmm_blasint  m;
+  libxsmm_blasint  n;
+  libxsmm_blasint  ld;
+  libxsmm_blasint  id;
+  libxsmm_datatype dtype;
+} libxsmm_matrix_eqn_tmp_info;
+
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_info {
   libxsmm_matrix_eqn_unary_op   u_op;
   libxsmm_matrix_eqn_binary_op  b_op;
@@ -923,7 +931,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
   libxsmm_matrix_eqn_info         info;
   libxsmm_blasint                reg_score;
   libxsmm_blasint                visit_timestamp;
-  libxsmm_blasint                tmp_id;
+  libxsmm_matrix_eqn_tmp_info    tmp;
+  libxsmm_blasint                max_tmp_size;
 } libxsmm_matrix_eqn_elem;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn {
@@ -1169,6 +1178,9 @@ LIBXSMM_APIVAR_PRIVATE(double libxsmm_timer_scale);
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
 /** Counts the maximum number of thread that have been active. */
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
+
+/* Helper functions for matrix equation handling */
+LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( unsigned int eqn_idx );
 
 #if (0 != LIBXSMM_SYNC)
 LIBXSMM_APIVAR_PRIVATE(LIBXSMM_TLS_TYPE libxsmm_tlskey);
