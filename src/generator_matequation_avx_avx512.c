@@ -472,7 +472,7 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int i;
   unsigned int adjust_val = 0;
-  unsigned int output_tsize = 4 /*FIXME :libxsmm_typesize(i_mateqn_desc->datatype)*/;
+  unsigned int output_tsize = libxsmm_typesize(LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype));
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
 
@@ -603,7 +603,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
   if (use_m_input_masking == 1) {
     mask_in_count = i_vlen_in - i_m % i_vlen_in;
     mask_reg_in   = reserved_mask_regs;
-    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_in, mask_in_count, LIBXSMM_DATATYPE_F32);
+    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_in, mask_in_count, i_micro_kernel_config->arg_info[0].dtype);
     reserved_mask_regs++;
   }
 
@@ -613,7 +613,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
     } else {
       mask_out_count = i_vlen_out - i_m % i_vlen_out;
       mask_reg_out   = reserved_mask_regs;
-      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_out, mask_out_count, LIBXSMM_DATATYPE_F32);
+      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_out, mask_out_count, LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype));
       reserved_mask_regs++;
     }
   }
@@ -698,7 +698,7 @@ void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*       
           i_micro_kernel_config->vmove_instruction_out,
           i_gp_reg_mapping->gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (im * i_vlen + in * i_meqn_desc->ldo) * 4/* FIXME:  libxsmm_typesize(i_meqn_desc->datatype)*/,
+          (im * i_vlen + in * i_meqn_desc->ldo) * libxsmm_typesize(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
           'z',
           cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 0, 1 );
     }
@@ -1022,7 +1022,8 @@ void libxsmm_generator_matequation_configure_M_N_blocking( libxsmm_matrix_eqn *i
     }
   }
 
-  /* For now not any additional blocking in N */
+  /* FIXME: When we dont have nice N values AND we have more register unrolling oportunities, apply n blocking...
+   * For now not any additional blocking in N */
   *n_blocking = n;
 }
 
