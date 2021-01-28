@@ -863,7 +863,8 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
                                                  const libxsmm_meqn_descriptor*          i_meqn_desc,
                                                  libxsmm_matrix_eqn                      *i_eqn,
                                                  unsigned int                            i_m,
-                                                 unsigned int                            i_n ) {
+                                                 unsigned int                            i_n,
+                                                 unsigned int                            skip_n_loop_reg_cleanup ) {
 
   unsigned int use_m_input_masking, use_m_output_masking, m_trips, m_unroll_factor, m_assm_trips, n_trips, n_unroll_factor, n_assm_trips;
   unsigned int mask_reg_in, mask_reg_out;
@@ -962,7 +963,9 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
   if (n_assm_trips > 1) {
     libxsmm_generator_mateqn_adjust_args_addr(io_generated_code, i_meqn_desc, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->alu_add_instruction, n_unroll_factor, N_ADJUSTMENT, i_micro_kernel_config->arg_info);
     libxsmm_generator_generic_loop_footer(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n_trips);
-    libxsmm_generator_mateqn_adjust_args_addr(io_generated_code, i_meqn_desc, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->alu_sub_instruction, n_unroll_factor * n_assm_trips, N_ADJUSTMENT, i_micro_kernel_config->arg_info);
+    if (skip_n_loop_reg_cleanup == 0) {
+      libxsmm_generator_mateqn_adjust_args_addr(io_generated_code, i_meqn_desc, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->alu_sub_instruction, n_unroll_factor * n_assm_trips, N_ADJUSTMENT, i_micro_kernel_config->arg_info);
+    }
   }
 }
 
@@ -1013,7 +1016,6 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
   unsigned int eqn_idx = i_mateqn_desc->eqn_idx;
   unsigned int arg_id = 0;
   libxsmm_matrix_eqn *eqn = libxsmm_matrix_eqn_get_equation( eqn_idx );
-  unsigned int temp_reg;
   unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
@@ -1038,8 +1040,6 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
   l_gp_reg_mapping.temp_reg2   = LIBXSMM_X86_GP_REG_R11;
   l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_n_loop = LIBXSMM_X86_GP_REG_R13;
-
-  temp_reg = l_gp_reg_mapping.temp_reg;
 
   /* Open asm */
   libxsmm_x86_instruction_open_stream_matequation( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct);
@@ -1082,7 +1082,8 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
     n_microkernel = (cur_n < n_blocking) ? n_blocking : i_mateqn_desc->n - cur_n;
     while (cur_m != i_mateqn_desc->m) {
       m_microkernel = (cur_m < m_blocking) ? m_blocking : i_mateqn_desc->m - cur_m;
-      libxsmm_generator_mateqn_2d_microkernel(io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateqn_desc, eqn, m_microkernel, n_microkernel);
+      unsigned int skip_n_loop_reg_cleanup = ((cur_n + n_microkernel == i_mateqn_desc->n) && (cur_m + m_microkernel == i_mateqn_desc->m)) ? 1 : 0 ;
+      libxsmm_generator_mateqn_2d_microkernel(io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateqn_desc, eqn, m_microkernel, n_microkernel, skip_n_loop_reg_cleanup);
       cur_m += m_microkernel;
       if (cur_m != i_mateqn_desc->m) {
         adjusted_aux_vars = 1;

@@ -135,8 +135,6 @@ int main( int argc, char* argv[] ) {
     printf("FAILURE output of eqn 0\n");
   }
 
-  return 0;
-
   my_eqn1 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_DIV, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
