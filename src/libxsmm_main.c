@@ -5027,10 +5027,12 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     /* Do not increase the timestamp, this node is just an arg so it's not part of the execution */
     cur_node->visit_timestamp = -1;
+    cur_node->n_args = 1;
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
     libxsmm_matrix_eqn_create_exec_plan( cur_node->le, global_timestamp, n_max_tmp, tmp_storage_pool );
     cur_node->visit_timestamp = *global_timestamp;
     *global_timestamp = *global_timestamp + 1;
+    cur_node->n_args = cur_node->le->n_args;
     /* When assigning the tmp output storage, we have two cases in the unary:
  *      * 1) The child is an arg, so we have to reserve a tmp storage
  *           * 2) The child is NOT an arg, so we just reuse the tmp storage of the child */
@@ -5058,7 +5060,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
     }
     cur_node->visit_timestamp = *global_timestamp;
     *global_timestamp = *global_timestamp + 1;
-
+    cur_node->n_args = cur_node->le->n_args + cur_node->ri->n_args;
     /* When assigning the tmp output storage, we have three cases in the binary:
  *      * 1) Both children are arg, so we have to reserve a tmp storage
  *           * 2) Both child are NOT arg, so we reuse the tmp storage of either one for our output and we make the other tmp storage available

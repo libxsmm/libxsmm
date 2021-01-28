@@ -13,6 +13,7 @@
 
 #include <libxsmm_generator.h>
 #include <libxsmm_cpuid.h>
+#include "libxsmm_main.h"
 
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
@@ -930,6 +931,19 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
 /* structure for storing the current gp reg mapping for matequation */
 LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_gp_reg_mapping_struct {
   unsigned int                      gp_reg_param_struct;
+  unsigned int gp_reg_in;
+  unsigned int gp_reg_in2;
+  unsigned int gp_reg_in_pf;
+  unsigned int gp_reg_ldi;
+  unsigned int gp_reg_out;
+  unsigned int gp_reg_ldo;
+  unsigned int gp_reg_relumask;
+  unsigned int gp_reg_m_loop;
+  unsigned int gp_reg_n_loop;
+  unsigned int gp_reg_n;
+
+  unsigned int temp_reg;
+  unsigned int temp_reg2;
   libxsmm_mateltwise_gp_reg_mapping gp_reg_mapping_eltwise;
   libxsmm_gp_reg_mapping            gp_reg_mapping_gemm;
 } libxsmm_matequation_gp_reg_mapping;
@@ -951,8 +965,17 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int alu_mov_instruction;
   unsigned int vxor_instruction;
   unsigned int skip_pushpops_callee_gp_reg;
+  unsigned int n_args;
+  unsigned int vlen_in;
+  unsigned int vlen_comp;
+  unsigned int vlen_out;
   char vector_name;
+  unsigned int                      n_tmp_reg_blocks;
   unsigned int                      tmp_size;
+  libxsmm_matrix_eqn_arg            *arg_info;
+  unsigned int                      reserved_zmms;
+  unsigned int                      reserved_mask_regs;
+  unsigned int                      register_block_size;
   libxsmm_mateltwise_kernel_config  meltw_kernel_config;
   libxsmm_micro_kernel_config       gemm_kernel_config;
 } libxsmm_matequation_kernel_config;

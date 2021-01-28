@@ -929,10 +929,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
   struct libxsmm_matrix_eqn_elem* up;
   libxsmm_matrix_eqn_node_type    type;
   libxsmm_matrix_eqn_info         info;
-  libxsmm_blasint                reg_score;
-  libxsmm_blasint                visit_timestamp;
-  libxsmm_matrix_eqn_tmp_info    tmp;
-  libxsmm_blasint                max_tmp_size;
+  libxsmm_blasint                 reg_score;
+  libxsmm_blasint                 visit_timestamp;
+  libxsmm_matrix_eqn_tmp_info     tmp;
+  libxsmm_blasint                 max_tmp_size;
+  libxsmm_blasint                 n_args;
 } libxsmm_matrix_eqn_elem;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn {

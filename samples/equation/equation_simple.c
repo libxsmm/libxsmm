@@ -62,12 +62,12 @@ int main( int argc, char* argv[] ) {
   arg_array[2] = arg2;
   arg_array[3] = arg3;
 
+#if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       out[(i*ld)+j] = ((float) (arg0[(i*ld)+j] + tanhf(arg1[(i*ld)+j]))) / ((float) ( gelu((float)exp(arg2[(i*ld)+j])) + arg3[(i*ld)+j]));
     }
   }
-
 
   my_eqn0 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_DIV, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
@@ -87,6 +87,32 @@ int main( int argc, char* argv[] ) {
   eqn_param.in_ptrs = (const void**)arg_array;
   eqn_param.out_ptr = eqn_out;
   func0(&eqn_param);
+#else
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      out[(i*ld)+j] = ((float) (arg0[(i*ld)+j] + arg1[(i*ld)+j]*arg1[(i*ld)+j])) / ((float) ( ((float)arg2[(i*ld)+j]*arg2[(i*ld)+j])*((float)arg2[(i*ld)+j]*arg2[(i*ld)+j]) + arg3[(i*ld)+j]));
+    }
+  }
+
+  my_eqn0 = libxsmm_matrix_eqn_create();
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_DIV, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 32, 32, 32, 0, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_X2, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 32, 32, 32, 1, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_X2, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_X2, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 32, 32, 32, 2, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 32, 32, 32, 3, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_tree_print( my_eqn0 );
+  libxsmm_matrix_eqn_rpn_print( my_eqn0 );
+  func0 = libxsmm_dispatch_matrix_eqn( 32, 32, NULL, LIBXSMM_DATATYPE_F32, my_eqn0 );
+
+  eqn_param.in_ptrs = (const void**)arg_array;
+  eqn_param.out_ptr = eqn_out;
+  func0(&eqn_param);
+#endif
 
   /* compare result */
   s = 0;
@@ -108,6 +134,8 @@ int main( int argc, char* argv[] ) {
   } else {
     printf("FAILURE output of eqn 0\n");
   }
+
+  return 0;
 
   my_eqn1 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_DIV, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
