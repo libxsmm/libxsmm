@@ -1210,7 +1210,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           else {
             libxsmm_timer_scale = 0;
             internal_timer_start = s0;
-#if !defined(NDEBUG)
+#if defined(_DEBUG)
             libxsmm_se = 1;
 #endif
           }

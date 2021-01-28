@@ -11,6 +11,9 @@
 #include <libxsmm_intrinsics_x86.h>
 #include <libxsmm_generator.h>
 #include <libxsmm_memory.h>
+#if !defined(_WIN32)
+# include <sys/mman.h>
+#endif
 
 #if defined(LIBXSMM_PLATFORM_X86)
 /* XGETBV: receive results (EAX, EDX) for eXtended Control Register (XCR). */
@@ -82,6 +85,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
           fclose(selinux);
         }
       }
+# elif defined(MAP_JIT)
+      libxsmm_se = 1;
 # endif
       LIBXSMM_CPUID_X86(1, 0/*ecx*/, eax, ebx, ecx, edx);
       if (LIBXSMM_CPUID_CHECK(ecx, 0x00000001)) { /* SSE3(0x00000001) */
