@@ -1028,6 +1028,26 @@ void libxsmm_generator_matequation_configure_M_N_blocking( libxsmm_matrix_eqn *i
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_configure_equation_avx512_vlens(libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_matrix_eqn *eqn)  {
+  /* First, determine the vlen compute based on the min. compute of the equation */
+  int tree_max_comp_tsize = eqn->eqn_root->tree_max_comp_tsize;
+  if (tree_max_comp_tsize == 1) {
+    i_micro_kernel_config->vlen_comp = 64;
+  } else if (tree_max_comp_tsize == 2) {
+    i_micro_kernel_config->vlen_comp = 32;
+  } else if (tree_max_comp_tsize == 4) {
+    i_micro_kernel_config->vlen_comp = 16;
+  } else if (tree_max_comp_tsize == 8) {
+    i_micro_kernel_config->vlen_comp = 8;
+  }
+
+  /* The vlen_in and vlen_out are aligned with the vlen compute */
+  i_micro_kernel_config->vlen_in = i_micro_kernel_config->vlen_comp;
+  i_micro_kernel_config->vlen_out = i_micro_kernel_config->vlen_comp;
+
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc) {
   libxsmm_matequation_gp_reg_mapping  l_gp_reg_mapping;
@@ -1087,10 +1107,7 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
   /* Setup output reg */
   libxsmm_x86_instruction_alu_mem( io_generated_code, l_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, 8, l_gp_reg_mapping.gp_reg_out, 0 );
 
-  /* FIXME: Configure vlens... */
-  l_kernel_config.vlen_in = 16;
-  l_kernel_config.vlen_comp = 16;
-  l_kernel_config.vlen_out = 16;
+  libxsmm_generator_configure_equation_avx512_vlens(&l_kernel_config, eqn);
 
   /* FIXME: Assign reserved zmms by parsing the equation */
   l_kernel_config.reserved_zmms = 0;

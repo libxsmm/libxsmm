@@ -934,6 +934,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
   libxsmm_matrix_eqn_tmp_info     tmp;
   libxsmm_blasint                 max_tmp_size;
   libxsmm_blasint                 n_args;
+  libxsmm_blasint                 tree_max_comp_tsize;
 } libxsmm_matrix_eqn_elem;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn {

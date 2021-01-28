@@ -5042,12 +5042,14 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       cur_node->tmp.n  = cur_node->le->info.arg.n;
       cur_node->tmp.ld  = cur_node->le->info.arg.ld;
       cur_node->tmp.dtype  = cur_node->le->info.arg.dtype;
+      cur_node->tree_max_comp_tsize = libxsmm_typesize( cur_node->info.u_op.dtype );
     } else {
       cur_node->tmp.id = cur_node->le->tmp.id;
       cur_node->tmp.m  = cur_node->le->tmp.m;
       cur_node->tmp.n  = cur_node->le->tmp.n;
       cur_node->tmp.ld  = cur_node->le->tmp.ld;
       cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
+      cur_node->tree_max_comp_tsize = LIBXSMM_MAX( libxsmm_typesize(cur_node->info.u_op.dtype), cur_node->le->tree_max_comp_tsize );
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     /* First we visit the child tree with the maximum register score */
@@ -5071,6 +5073,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       cur_node->tmp.n  = cur_node->le->info.arg.n;
       cur_node->tmp.ld  = cur_node->le->info.arg.ld;
       cur_node->tmp.dtype  = cur_node->le->info.arg.dtype;
+      cur_node->tree_max_comp_tsize = libxsmm_typesize( cur_node->info.b_op.dtype );
     } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
       cur_node->tmp.id = cur_node->le->tmp.id;
       cur_node->tmp.m  = cur_node->le->tmp.m;
@@ -5078,6 +5081,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       cur_node->tmp.ld  = cur_node->le->tmp.ld;
       cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
       tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+      cur_node->tree_max_comp_tsize = LIBXSMM_MAX( cur_node->ri->tree_max_comp_tsize, cur_node->le->tree_max_comp_tsize );
     } else {
       if (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
         cur_node->tmp.id = cur_node->le->tmp.id;
@@ -5085,12 +5089,14 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
         cur_node->tmp.n  = cur_node->le->tmp.n;
         cur_node->tmp.ld  = cur_node->le->tmp.ld;
         cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
+        cur_node->tree_max_comp_tsize = LIBXSMM_MAX( libxsmm_typesize(cur_node->info.b_op.dtype), cur_node->le->tree_max_comp_tsize );
       } else {
         cur_node->tmp.id = cur_node->ri->tmp.id;
         cur_node->tmp.m  = cur_node->ri->tmp.m;
         cur_node->tmp.n  = cur_node->ri->tmp.n;
         cur_node->tmp.ld  = cur_node->ri->tmp.ld;
         cur_node->tmp.dtype  = cur_node->ri->tmp.dtype;
+        cur_node->tree_max_comp_tsize = LIBXSMM_MAX( libxsmm_typesize(cur_node->info.b_op.dtype), cur_node->ri->tree_max_comp_tsize );
       }
     }
   } else {
