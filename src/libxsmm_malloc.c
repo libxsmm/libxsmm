@@ -1973,6 +1973,13 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
             }
 # endif
           }
+          /* upgrade to SE-mode and retry lower entry-points */
+          if (MAP_FAILED == buffer && 0 == libxsmm_se) {
+            libxsmm_se = 1; entrypoint = 0;
+            INTERNAL_XMALLOC(0, entrypoint, "JITDUMPDIR", "", map32, mflags, alloc_size, buffer, &reloc); /* 1st try */
+            INTERNAL_XMALLOC(1, entrypoint, "TMPDIR", "/tmp", map32, mflags, alloc_size, buffer, &reloc); /* 2nd try */
+            INTERNAL_XMALLOC(2, entrypoint, "HOME", "", map32, mflags, alloc_size, buffer, &reloc); /* 3rd try */
+          }
         }
         if (MAP_FAILED != buffer && NULL != buffer) {
           flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
