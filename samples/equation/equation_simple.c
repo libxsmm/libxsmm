@@ -31,13 +31,22 @@ float gelu(float x) {
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint my_eqn0, my_eqn1;
-  libxsmm_matrix_eqn_function func0, func1;
-  libxsmm_blasint i, j, s;
+  libxsmm_matrix_eqn_function func0; /*, func1;*/
+  libxsmm_blasint i, j, s, it;
   libxsmm_matrix_eqn_param eqn_param;
+  unsigned long long l_start, l_end;
+  double l_total = 0, l_total2 = 0;
 
   int M = 64;
   int N = 64;
   int ld = 64;
+  int iters = 100;
+
+  if ( argc > 1 ) M = atoi(argv[1]);
+  if ( argc > 2 ) N = atoi(argv[2]);
+  if ( argc > 3 ) ld = atoi(argv[3]);
+  if ( argc > 4 ) iters = atoi(argv[4]);
+
   float *arg0 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
   float *arg1 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
   float *arg2 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
@@ -97,17 +106,17 @@ int main( int argc, char* argv[] ) {
   my_eqn0 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 64, 64, 64, 0, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 64, 64, 64, 1, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 64, 64, 64, 2, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 64, 64, 64, 3, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 2, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 3, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_tree_print( my_eqn0 );
   libxsmm_matrix_eqn_rpn_print( my_eqn0 );
-  func0 = libxsmm_dispatch_matrix_eqn( 64, 64, NULL, LIBXSMM_DATATYPE_F32, my_eqn0 );
+  func0 = libxsmm_dispatch_matrix_eqn( M, N, &ld, LIBXSMM_DATATYPE_F32, my_eqn0 );
 
   eqn_param.in_ptrs = (const void**)arg_array;
   eqn_param.out_ptr = eqn_out;
@@ -135,6 +144,38 @@ int main( int argc, char* argv[] ) {
     printf("FAILURE output of eqn 0\n");
   }
 
+  /* Now benchmarking the equations */
+
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      out[(i*ld)+j] = ((float) (arg0[(i*ld)+j] + (1.0+arg1[(i*ld)+j]))) * ((float) ( tanhf((float)(1.0/arg2[(i*ld)+j])) + arg3[(i*ld)+j]));
+    }
+  }
+
+  l_start = libxsmm_timer_tick();
+  for (it = 0; it < iters; it++) {
+    for ( i = 0; i < N; ++i ) {
+      for ( j = 0; j < M; ++j ) {
+        out[(i*ld)+j] = ((float) (arg0[(i*ld)+j] + (1.0+arg1[(i*ld)+j]))) * ((float) ( tanhf((float)(1.0/arg2[(i*ld)+j])) + arg3[(i*ld)+j]));
+      }
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+
+  l_start = libxsmm_timer_tick();
+  func0(&eqn_param);
+  for (it = 0; it < iters; it++) {
+    func0(&eqn_param);
+  }
+  l_end = libxsmm_timer_tick();
+  l_total2 = libxsmm_timer_duration(l_start, l_end);
+  printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
+
+  printf("Speedup is %.5g\n", l_total/l_total2);
+
+#if 0
   my_eqn1 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_DIV, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
@@ -160,6 +201,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_tree_print( my_eqn1 );
   libxsmm_matrix_eqn_rpn_print( my_eqn1 );
   func1 = libxsmm_dispatch_matrix_eqn( 64, 64, NULL, LIBXSMM_DATATYPE_F32, my_eqn1 );
+#endif
 
   return 0;
 }
