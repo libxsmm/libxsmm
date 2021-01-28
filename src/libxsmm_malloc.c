@@ -60,7 +60,7 @@
 LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_THROW;
 LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
 #endif
-#if !defined(LIBXSMM_MALLOC_FALLBACK)
+#if !defined(LIBXSMM_MALLOC_FINAL)
 # define LIBXSMM_MALLOC_FINAL 3
 #endif
 #if defined(LIBXSMM_VTUNE)
@@ -303,27 +303,25 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 
 #if !defined(WIN32)
 # if defined(MAP_32BIT)
-#   define IF_INTERNAL_XMALLOC_MAP32(ENV, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR) \
-    if (0 != (MAP_32BIT & (MFLAGS))) { \
+#   define INTERNAL_XMALLOC_MAP32(ENV, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR) \
+    if (MAP_FAILED == (BUFFER) && 0 != (MAP_32BIT & (MFLAGS))) { \
       (BUFFER) = internal_xmalloc_xmap(ENV, SIZE, (MFLAGS) & ~MAP_32BIT, REPTR); \
-    } \
-    if (MAP_FAILED != (BUFFER)) (MAPSTATE) = 0; else
+      if (MAP_FAILED != (BUFFER)) (MAPSTATE) = 0; \
+    }
 # else
-#   define IF_INTERNAL_XMALLOC_MAP32(ENV, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR)
+#   define INTERNAL_XMALLOC_MAP32(ENV, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR)
 # endif
 
-# define INTERNAL_XMALLOC(I, FALLBACK, ENVVAR, ENVDEF, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR) \
-  if (/*0 == (I) ||*/ (I) == (FALLBACK)) { \
+# define INTERNAL_XMALLOC(I, ENTRYPOINT, ENVVAR, ENVDEF, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR) \
+  if ((ENTRYPOINT) <= (I) && (MAP_FAILED == (BUFFER) || NULL == (BUFFER))) { \
     static const char* internal_xmalloc_env_ = NULL; \
     if (NULL == internal_xmalloc_env_) { \
       internal_xmalloc_env_ = getenv(ENVVAR); \
       if (NULL == internal_xmalloc_env_) internal_xmalloc_env_ = ENVDEF; \
     } \
     (BUFFER) = internal_xmalloc_xmap(internal_xmalloc_env_, SIZE, MFLAGS, REPTR); \
-    if (MAP_FAILED == (BUFFER)) { \
-      IF_INTERNAL_XMALLOC_MAP32(internal_xmalloc_env_, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR) \
-        /*if ((I) == (FALLBACK))*/ (FALLBACK) = (I) + 1; \
-    } \
+    INTERNAL_XMALLOC_MAP32(internal_xmalloc_env_, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR); \
+    if (MAP_FAILED != (BUFFER)) (ENTRYPOINT) = (I); \
   }
 
 # define INTERNAL_XMALLOC_WATERMARK(NAME, WATERMARK, LIMIT, SIZE) { \
@@ -1934,50 +1932,46 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
 # endif
         }
         else { /* executable buffer requested */
-          static /*LIBXSMM_TLS*/ int fallback = -1; /* fall-back allocation method */
+          static /*LIBXSMM_TLS*/ int entrypoint = -1; /* fall-back allocation method */
 # if defined(MAP_HUGETLB) && defined(LIBXSMM_MALLOC_HUGE_PAGES)
           LIBXSMM_ASSERT(0 == (MAP_HUGETLB & mflags));
 # endif
 # if defined(MAP_LOCKED) && defined(LIBXSMM_MALLOC_LOCK_PAGES)
           LIBXSMM_ASSERT(0 == (MAP_LOCKED & mflags));
 # endif
-          if (0 > (int)LIBXSMM_ATOMIC_LOAD(&fallback, LIBXSMM_ATOMIC_RELAXED)) {
+          if (0 > (int)LIBXSMM_ATOMIC_LOAD(&entrypoint, LIBXSMM_ATOMIC_RELAXED)) {
             const char *const env = getenv("LIBXSMM_SE");
-            LIBXSMM_ATOMIC_STORE(&fallback, NULL == env
+            LIBXSMM_ATOMIC_STORE(&entrypoint, NULL == env
               /* libxsmm_se decides */
               ? (0 == libxsmm_se ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK)
               /* user's choice takes precedence */
               : ('0' != *env ? LIBXSMM_MALLOC_FALLBACK : LIBXSMM_MALLOC_FINAL),
               LIBXSMM_ATOMIC_SEQ_CST);
-            LIBXSMM_ASSERT(0 <= fallback);
+            LIBXSMM_ASSERT(0 <= entrypoint);
           }
-          INTERNAL_XMALLOC(0, fallback, "TMPDIR", "/tmp", map32, mflags, alloc_size, buffer, &reloc); /* 1st try */
-          if (1 <= fallback) { /* continue with fall-back */
-            INTERNAL_XMALLOC(1, fallback, "JITDUMPDIR", "", map32, mflags, alloc_size, buffer, &reloc); /* 2nd try */
-            if (2 <= fallback) { /* continue with fall-back */
-              INTERNAL_XMALLOC(2, fallback, "HOME", "", map32, mflags, alloc_size, buffer, &reloc); /* 3rd try */
-              if (3 <= fallback) { /* continue with fall-back */
-                if (3 == fallback) { /* 4th try */
-                  buffer = mmap(reloc, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
+          INTERNAL_XMALLOC(0, entrypoint, "JITDUMPDIR", "", map32, mflags, alloc_size, buffer, &reloc); /* 1st try */
+          INTERNAL_XMALLOC(1, entrypoint, "TMPDIR", "/tmp", map32, mflags, alloc_size, buffer, &reloc); /* 2nd try */
+          INTERNAL_XMALLOC(2, entrypoint, "HOME", "", map32, mflags, alloc_size, buffer, &reloc); /* 3rd try */
+          if (3 >= entrypoint && (MAP_FAILED == buffer || NULL == buffer)) { /* 4th try */
+            buffer = mmap(reloc, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
 # if defined(MAP_32BIT)
-                    MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (0 == map32 ? (mflags & ~MAP_32BIT) : mflags),
+              MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (0 == map32 ? (mflags & ~MAP_32BIT) : mflags),
 # else
-                    MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | mflags,
+              MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | mflags,
 # endif
-                    -1, 0/*offset*/);
-                  if (MAP_FAILED == buffer) {
-                    fallback = 4;
+              -1, 0/*offset*/);
+            if (MAP_FAILED != buffer) entrypoint = 3;
 # if defined(MAP_32BIT)
-                    map32 = 0;
-# endif
-                  }
-                }
-                if (4 == fallback && MAP_FAILED != buffer) { /* final */
-                  LIBXSMM_ASSERT(fallback == LIBXSMM_MALLOC_FINAL + 1);
-                  buffer = MAP_FAILED; /* trigger final fall-back */
-                }
+            else if (0 != (MAP_32BIT & mflags) && 0 != map32) {
+              buffer = mmap(reloc, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
+                MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (mflags & ~MAP_32BIT),
+                - 1, 0/*offset*/);
+              if (MAP_FAILED != buffer) {
+                entrypoint = 3;
+                map32 = 0;
               }
             }
+# endif
           }
         }
         if (MAP_FAILED != buffer && NULL != buffer) {
