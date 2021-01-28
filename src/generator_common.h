@@ -970,6 +970,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int vlen_comp;
   unsigned int vlen_out;
   char vector_name;
+  unsigned int                      n_avail_gpr;
+  unsigned int                      gpr_pool[16];
   unsigned int                      n_tmp_reg_blocks;
   unsigned int                      tmp_size;
   libxsmm_matrix_eqn_arg            *arg_info;
