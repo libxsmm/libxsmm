@@ -978,6 +978,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      reserved_zmms;
   unsigned int                      reserved_mask_regs;
   unsigned int                      register_block_size;
+  unsigned int                      unary_ops_pool[64];
+  unsigned int                      binary_ops_pool[64];
   libxsmm_mateltwise_kernel_config  meltw_kernel_config;
   libxsmm_micro_kernel_config       gemm_kernel_config;
 } libxsmm_matequation_kernel_config;

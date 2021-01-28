@@ -19,6 +19,8 @@
 
 #define M_ADJUSTMENT 0
 #define N_ADJUSTMENT 1
+#define UNARY_OP_POOL 0
+#define BINARY_OP_POOL 1
 
 LIBXSMM_API_INTERN
 unsigned int get_start_of_register_block(libxsmm_matequation_kernel_config *i_micro_kernel_config, unsigned int i_reg_block_id) {
@@ -1044,7 +1046,103 @@ void libxsmm_generator_configure_equation_avx512_vlens(libxsmm_matequation_kerne
   /* The vlen_in and vlen_out are aligned with the vlen compute */
   i_micro_kernel_config->vlen_in = i_micro_kernel_config->vlen_comp;
   i_micro_kernel_config->vlen_out = i_micro_kernel_config->vlen_comp;
+}
 
+LIBXSMM_API_INTERN
+unsigned int unary_op_req_zmms(libxsmm_meltw_unary_type u_type) {
+  unsigned int result = 0;
+
+  switch (u_type) {
+    case LIBXSMM_MELTW_TYPE_UNARY_XOR: {
+      result = 1;
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_NEGATE: {
+      result = 1;
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_INC: {
+      result = 1;
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_GELU: {
+      result = 14;
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_GELU_INV: {
+      result = 14;
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_EXP: {
+      result = 8;
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_TANH: {
+      result = 14;
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_TANH_INV: {
+      result = 14;
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_SIGMOID: {
+      result = 15;
+    } break;
+    case LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV: {
+      result = 15;
+    } break;
+    default:;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+unsigned int binary_op_req_zmms(libxsmm_meltw_binary_type b_type) {
+  unsigned int result = 0;
+  return result;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_adjust_required_zmms(libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_meltw_unary_type u_type, libxsmm_meltw_binary_type b_type, unsigned int pool_id ) {
+  unsigned int n_req_zmms = 0;
+  if (pool_id == UNARY_OP_POOL) {
+    if (i_micro_kernel_config->unary_ops_pool[u_type] == 0) {
+      n_req_zmms = unary_op_req_zmms(u_type);
+      i_micro_kernel_config->reserved_zmms += n_req_zmms;
+      i_micro_kernel_config->unary_ops_pool[u_type] = 1;
+    }
+  } else if (pool_id == BINARY_OP_POOL) {
+    if (i_micro_kernel_config->binary_ops_pool[b_type] == 0) {
+      n_req_zmms = binary_op_req_zmms(b_type);
+      i_micro_kernel_config->reserved_zmms += n_req_zmms;
+      i_micro_kernel_config->binary_ops_pool[b_type] = 1;
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_mark_reserved_zmms( libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_matrix_eqn_elem *cur_node ) {
+  if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
+    libxsmm_adjust_required_zmms(i_micro_kernel_config, cur_node->info.u_op.type, LIBXSMM_MELTW_FLAG_BINARY_NONE, UNARY_OP_POOL);
+    libxsmm_mark_reserved_zmms(i_micro_kernel_config, cur_node->le);
+  } else if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
+    libxsmm_adjust_required_zmms(i_micro_kernel_config, LIBXSMM_MELTW_TYPE_UNARY_NONE, cur_node->info.b_op.type, BINARY_OP_POOL);
+    libxsmm_mark_reserved_zmms(i_micro_kernel_config, cur_node->le);
+    libxsmm_mark_reserved_zmms(i_micro_kernel_config, cur_node->ri);
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_generated_code,  libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_matrix_eqn *eqn ) {
+  unsigned int i = 0;
+  libxsmm_mateltwise_kernel_config *meltw_config;
+
+  libxsmm_mark_reserved_zmms(i_micro_kernel_config, eqn->eqn_root);
+  i_micro_kernel_config->meltw_kernel_config.reserved_zmms = 0;
+  i_micro_kernel_config->meltw_kernel_config.reserved_mask_regs = 1;
+  meltw_config = (libxsmm_mateltwise_kernel_config*) &(i_micro_kernel_config->meltw_kernel_config);
+
+  /* TODO: some diagnostic if we need excessive number of required zmms for the equation and bail out */
+  for (i = 0 ; i < 64; i++) {
+    if (i_micro_kernel_config->unary_ops_pool[i] > 0) {
+      libxsmm_configure_unary_kernel_vregs_masks( io_generated_code, meltw_config, i, 0 );
+    }
+  }
+
+  i_micro_kernel_config->reserved_zmms = meltw_config->reserved_zmms;
+  i_micro_kernel_config->reserved_mask_regs = meltw_config->reserved_mask_regs;
 }
 
 LIBXSMM_API_INTERN
@@ -1109,9 +1207,8 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
 
   libxsmm_generator_configure_equation_avx512_vlens(&l_kernel_config, eqn);
 
-  /* FIXME: Assign reserved zmms by parsing the equation */
-  l_kernel_config.reserved_zmms = 0;
-  l_kernel_config.reserved_mask_regs = 1;
+  /* Assign reserved zmms by parsing the equation */
+  libxsmm_configure_reserved_zmms_and_masks(io_generated_code, &l_kernel_config, eqn );
 
   /* Configure M and N blocking factors */
   libxsmm_generator_matequation_configure_M_N_blocking(eqn, i_mateqn_desc->m, i_mateqn_desc->n, l_kernel_config.vlen_in, &m_blocking, &n_blocking);
