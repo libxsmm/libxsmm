@@ -652,6 +652,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
   libxsmm_matrix_eqn_arg  *arg_info = i_micro_kernel_config->arg_info;
   unsigned int i_start_vreg = get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   unsigned int input_reg = 0;
+  char vname = (libxsmm_typesize(arg_info[i_arg_id].dtype) * i_vlen == 64) ? 'z' : 'y';
 
   if (i_arg_id < i_micro_kernel_config->n_avail_gpr) {
     input_reg = i_micro_kernel_config->gpr_pool[i_arg_id];
@@ -676,8 +677,12 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
           input_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           (im * i_vlen + in * arg_info[i_arg_id].ld) * libxsmm_typesize(arg_info[i_arg_id].dtype),
-          'z',
+          vname,
           cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 1, 0 );
+
+      if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
+        libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+      }
     }
   }
 }
