@@ -116,7 +116,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 3, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_tree_print( my_eqn0 );
   libxsmm_matrix_eqn_rpn_print( my_eqn0 );
-  func0 = libxsmm_dispatch_matrix_eqn( M, N, &ld, LIBXSMM_DATATYPE_F32, my_eqn0 );
+  func0 = libxsmm_dispatch_matrix_eqn( M, N, &ld, LIBXSMM_DATATYPE_BF16, my_eqn0 );
 
   eqn_param.in_ptrs = (const void**)arg_array;
   eqn_param.out_ptr = eqn_out;

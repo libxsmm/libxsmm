@@ -970,6 +970,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int vlen_comp;
   unsigned int vlen_out;
   char vector_name;
+  unsigned int                      cvt_result_to_bf16;
+  unsigned int                      use_fp32bf16_cvt_replacement;
+  unsigned int                      dcvt_mask_aux0;
+  unsigned int                      dcvt_mask_aux1;
+  unsigned int                      dcvt_zmm_aux0;
+  unsigned int                      dcvt_zmm_aux1;
   unsigned int                      n_avail_gpr;
   unsigned int                      gpr_pool[16];
   unsigned int                      n_tmp_reg_blocks;
