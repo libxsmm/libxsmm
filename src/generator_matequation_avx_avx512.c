@@ -266,15 +266,15 @@ libxsmm_matrix_eqn_elem* find_op_at_timestamp(libxsmm_matrix_eqn_elem* cur_node,
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_create_unary_descriptor( libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc) {
+void libxsmm_generator_matequation_create_unary_descriptor( libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype out_precision) {
   libxsmm_descriptor_blob blob;
-  *desc = libxsmm_meltw_descriptor_init2(&blob, cur_op->tmp.dtype, cur_op->info.u_op.dtype, cur_op->tmp.dtype, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
+  *desc = libxsmm_meltw_descriptor_init2(&blob, cur_op->tmp.dtype, cur_op->info.u_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_create_binary_descriptor( libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc) {
+void libxsmm_generator_matequation_create_binary_descriptor( libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype out_precision) {
   libxsmm_descriptor_blob blob;
-  *desc = libxsmm_meltw_descriptor_init2(&blob, cur_op->tmp.dtype, cur_op->info.b_op.dtype, cur_op->tmp.dtype, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.b_op.flags, cur_op->info.b_op.type, LIBXSMM_MELTW_OPERATION_BINARY);
+  *desc = libxsmm_meltw_descriptor_init2(&blob, cur_op->tmp.dtype, cur_op->info.b_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.b_op.flags, cur_op->info.b_op.type, LIBXSMM_MELTW_OPERATION_BINARY);
 }
 
 LIBXSMM_API_INTERN
@@ -379,6 +379,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
   /* Iterate over the equation tree based on the optimal traversal order and call the proper JITer */
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
     libxsmm_matrix_eqn_elem *cur_op = find_op_at_timestamp(eqn->eqn_root, timestamp);
+    libxsmm_datatype out_precision = (timestamp == last_timestamp) ? LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
     if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
       /* Prepare struct param */
       libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, &l_kernel_config, &l_gp_reg_mapping, cur_op->le,
@@ -386,7 +387,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       libxsmm_generator_matequation_set_output_in_stack_param_struct( io_generated_code, &l_kernel_config, &l_gp_reg_mapping, cur_op,
           temp_reg, (timestamp == last_timestamp) );
       /* Prepare descriptor  */
-      libxsmm_generator_matequation_create_unary_descriptor( cur_op, &meltw_desc);
+      libxsmm_generator_matequation_create_unary_descriptor( cur_op, &meltw_desc, out_precision);
     } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
       libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, &l_kernel_config, &l_gp_reg_mapping, cur_op->le,
           temp_reg, 0);
@@ -394,7 +395,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
           temp_reg, 1);
       libxsmm_generator_matequation_set_output_in_stack_param_struct( io_generated_code, &l_kernel_config, &l_gp_reg_mapping, cur_op,
           temp_reg, (timestamp == last_timestamp) );
-      libxsmm_generator_matequation_create_binary_descriptor( cur_op, &meltw_desc);
+      libxsmm_generator_matequation_create_binary_descriptor( cur_op, &meltw_desc, out_precision);
     } else {
       /* This should not happen */
     }
@@ -1300,7 +1301,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc) {
   /* TODO: add logic to select code generation strategy of matrix equation  */
-#if 0
+#if 1
   libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, i_mateqn_desc);
 #else
   libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, i_mateqn_desc);
