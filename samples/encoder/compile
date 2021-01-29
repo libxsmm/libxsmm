@@ -1,7 +1,8 @@
+#! /bin/bash
+
 rm -rf xed
 rm -rf libxed*.a
 rm -rf mbuild
-rm -rf objs/convert_int_to_name-c.o objs/encoder_x86_decode_with_xed_test-c.o
 git clone https://github.com/intelxed/xed.git xed
 git clone https://github.com/intelxed/mbuild.git mbuild
 cd xed
@@ -9,7 +10,7 @@ cd xed
 mv kits/xed-install-base* kits/xed-install-base
 cp -pr kits/xed-install-base/lib/libxed*.a ..
 cd ..
-icc -DNDEBUG -DLIBXSMM_OPENMP_SIMD  -I. -I../../include -I../../src -fPIC -g -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003 -O2 -qno-offload -fno-alias -ansi-alias -fopenmp -qopenmp-simd -funroll-loops -fdata-sections -ffunction-sections -fvisibility=hidden -pthread -msse4.2 -c convert_int_to_name.c -o obj/convert_int_to_name-c.o
+icc -DNDEBUG -DLIBXSMM_OPENMP_SIMD -DXED_DECODE_TESTING -I. -I../../include -I../../src -I./xed/kits/xed-install-base/include -I./xed/kits/xed-install-base/examples -fPIC -g -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003 -O2 -qno-offload -fno-alias -ansi-alias -fopenmp -qopenmp-simd -funroll-loops -fdata-sections -ffunction-sections -fvisibility=hidden -pthread -msse4.2 -c encoder_x86_xedaux.c -o obj/encoder_x86_xedaux-c.o
 icc -DNDEBUG -DLIBXSMM_OPENMP_SIMD -DXED_DECODE_TESTING -I. -I../../include -I../../src -I./xed/kits/xed-install-base/include -I./xed/kits/xed-install-base/examples -fPIC -g -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003 -O2 -qno-offload -fno-alias -ansi-alias -fopenmp -qopenmp-simd -funroll-loops -fdata-sections -ffunction-sections -fvisibility=hidden -pthread -msse4.2 -c encoder_x86.c -o obj/encoder_x86_decode_with_xed_test-c.o
 
-icc -dynamic -o encoder_x86_decode_with_xed_test obj/encoder_x86_decode_with_xed_test-c.o obj/convert_int_to_name-c.o -Wl,--as-needed -L../../lib/ ../../lib/libxsmmext.a ./libxed.a -Wl,--no-as-needed -L../../lib/ ../../lib/libxsmm.a -Wl,--as-needed -L../../lib/ ../../lib/libxsmmnoblas.a -Wl,--no-as-needed -Wl,--gc-sections -Wl,-z,relro,-z,now -Wl,--export-dynamic -fopenmp -diag-disable 1879,3415,10006,10010,10411 -Wl,--as-needed -lrt -ldl -lstdc++ -lpthread -Wl,--no-as-needed
+icc -dynamic -o encoder_x86_decode_with_xed_test obj/encoder_x86_decode_with_xed_test-c.o obj/encoder_x86_xedaux-c.o -Wl,--as-needed -L../../lib/ ../../lib/libxsmmext.a ./libxed.a -Wl,--no-as-needed -L../../lib/ ../../lib/libxsmm.a -Wl,--as-needed -L../../lib/ ../../lib/libxsmmnoblas.a -Wl,--no-as-needed -Wl,--gc-sections -Wl,-z,relro,-z,now -Wl,--export-dynamic -fopenmp -diag-disable 1879,3415,10006,10010,10411 -Wl,--as-needed -lrt -ldl -lstdc++ -lpthread -Wl,--no-as-needed

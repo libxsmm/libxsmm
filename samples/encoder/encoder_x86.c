@@ -21,356 +21,6 @@
 #include "xed-examples-util.h"
 #endif
 
-#ifdef XED_DECODE_TESTING
-void xed_initialization ( xed_decoded_inst_t *xedd_ptr )
-{
-  xed_state_t dstate;
-  xed_uint_t bytes = 0;
-  xed_decoded_inst_t xedd = *xedd_ptr;
-  unsigned char itext[XED_MAX_INSTRUCTION_BYTES];
-  xed_bool_t already_set_mode = 0;
-  xed_chip_enum_t chip = XED_CHIP_INVALID;
-  char const* decode_text=0;
-  unsigned int len;
-  xed_error_enum_t xed_error;
-  unsigned int mpx_mode=0;
-  unsigned int cet_mode=0;
-  int iii, first;
-
-  xed_tables_init();
-  xed_set_verbosity( 99 );
-  xed_state_zero(&dstate);
-  dstate.mmode=XED_MACHINE_MODE_LONG_64;
-  dstate.stack_addr_width=XED_ADDRESS_WIDTH_32b;
-  xed_decoded_inst_zero_set_mode( xedd_ptr, &dstate);
-  xed_decoded_inst_set_input_chip( xedd_ptr, chip);
-  xed3_operand_set_mpxmode( xedd_ptr, mpx_mode);
-  xed3_operand_set_cet( xedd_ptr, cet_mode);
-}
-#endif
-
-#ifdef XED_DECODE_TESTING
-void convert_xed_enums_to_libxsmm ( xed_reg_enum_t xreg, unsigned int *i_xsmm )
-{
-   if ( xreg == XED_REG_RAX ) *i_xsmm = LIBXSMM_X86_GP_REG_RAX;
-   if ( xreg == XED_REG_RCX ) *i_xsmm = LIBXSMM_X86_GP_REG_RCX;
-   if ( xreg == XED_REG_RDX ) *i_xsmm = LIBXSMM_X86_GP_REG_RDX;
-   if ( xreg == XED_REG_RBX ) *i_xsmm = LIBXSMM_X86_GP_REG_RBX;
-   if ( xreg == XED_REG_RSP ) *i_xsmm = LIBXSMM_X86_GP_REG_RSP;
-   if ( xreg == XED_REG_RBP ) *i_xsmm = LIBXSMM_X86_GP_REG_RBP;
-   if ( xreg == XED_REG_RSI ) *i_xsmm = LIBXSMM_X86_GP_REG_RSI;
-   if ( xreg == XED_REG_RDI ) *i_xsmm = LIBXSMM_X86_GP_REG_RDI;
-   if ( xreg == XED_REG_R8  ) *i_xsmm = LIBXSMM_X86_GP_REG_R8 ;
-   if ( xreg == XED_REG_R9  ) *i_xsmm = LIBXSMM_X86_GP_REG_R9 ;
-   if ( xreg == XED_REG_R10 ) *i_xsmm = LIBXSMM_X86_GP_REG_R10;
-   if ( xreg == XED_REG_R11 ) *i_xsmm = LIBXSMM_X86_GP_REG_R11;
-   if ( xreg == XED_REG_R12 ) *i_xsmm = LIBXSMM_X86_GP_REG_R12;
-   if ( xreg == XED_REG_R13 ) *i_xsmm = LIBXSMM_X86_GP_REG_R13;
-   if ( xreg == XED_REG_R14 ) *i_xsmm = LIBXSMM_X86_GP_REG_R14;
-   if ( xreg == XED_REG_R15 ) *i_xsmm = LIBXSMM_X86_GP_REG_R15;
-   if ( (xreg >= XED_REG_XMM0) && (xreg <= XED_REG_XMM31) ) *i_xsmm = xreg - XED_REG_XMM0;
-   if ( (xreg >= XED_REG_YMM0) && (xreg <= XED_REG_YMM31) ) *i_xsmm = xreg - XED_REG_YMM0;
-   if ( (xreg >= XED_REG_ZMM0) && (xreg <= XED_REG_ZMM31) ) *i_xsmm = xreg - XED_REG_ZMM0;
-
-}
-#endif
-
-#ifdef XED_DECODE_TESTING
-/* Returns -1 if xed can't decode */
-int  xed_decode_to_libxsmm_parameters ( unsigned char *buf,
-                                        unsigned int bytes,
-                                        xed_decoded_inst_t *xedd_ptr,
-                                        char *xed_instr_name,
-                                        unsigned int *i_gp_reg_base,
-                                        unsigned int *i_gp_reg_idx,
-                                        unsigned int *i_scale,
-                                        int *i_displacement,
-                                        char *i_vector_name,
-                                        unsigned int *i_vec_reg_number_0,
-                                        unsigned int *i_vec_reg_number_1,
-                                        unsigned int *i_vec_reg_number_2,
-                                        unsigned int *i_mask_reg_number,
-                                        unsigned int *i_use_zero_masking,
-                                        unsigned int *i_is_store,
-                                        unsigned short *i_imm8
-                                      )
-{
-  xed_state_t dstate;
-  xed_decoded_inst_t xedd = *xedd_ptr;
-#define BUFLEN 1000
-  char buffer[BUFLEN];
-  unsigned char itext[XED_MAX_INSTRUCTION_BYTES];
-  xed_bool_t already_set_mode = 0;
-  xed_chip_enum_t chip = XED_CHIP_INVALID;
-  char const* decode_text=0;
-  unsigned int len;
-  xed_error_enum_t xed_error;
-  unsigned int mpx_mode=0;
-  unsigned int cet_mode=0;
-  xed_syntax_enum_t syntax;
-  int i, ok, scale;
-  unsigned int isyntax;
-  xed_machine_mode_enum_t mmode;
-  xed_address_width_enum_t stack_addr_width;
-  xed_format_options_t format_options;
-  xed_reg_enum_t base,indx;
-  xed_decoded_inst_zero(&xedd);
-  xed_decoded_inst_set_mode(&xedd, XED_MACHINE_MODE_LONG_64, XED_ADDRESS_WIDTH_64b);
-  xed_decoded_inst_zero_set_mode(&xedd, &dstate);
-
-  // One time initialization
-  memset(&format_options,0, sizeof(format_options));
-  format_options.hex_address_before_symbolic_name=0;
-  format_options.xml_a=0;
-  format_options.omit_unit_scale=0;
-  format_options.no_sign_extend_signed_immediates=0;
-  mmode=XED_MACHINE_MODE_LONG_64;
-  stack_addr_width =XED_ADDRESS_WIDTH_64b;
-
-  xed_format_set_options ( format_options );
-  xed_decoded_inst_zero(&xedd);
-  xed_decoded_inst_set_mode(&xedd, mmode, stack_addr_width);
-
-  xed_error = xed_decode(&xedd,
-                         XED_REINTERPRET_CAST(const xed_uint8_t*,buf),
-                         bytes );
-
-  if ( xed_error != XED_ERROR_NONE ) return (-1);
-
-  strcpy ( xed_instr_name, xed_iclass_enum_t2str( xed_decoded_inst_get_iclass(&xedd)));
-  for ( i = 0 ; i < strlen(xed_instr_name); i++ ) {
-     if ( xed_instr_name[i] >= 'A' && xed_instr_name[i] <= 'Z' ) {
-        xed_instr_name[i]= xed_instr_name[i] + 'a' - 'A';
-     }
-  }
-
-  *i_gp_reg_base = LIBXSMM_X86_GP_REG_UNDEF;
-  *i_gp_reg_idx  = LIBXSMM_X86_GP_REG_UNDEF;
-  *i_scale = 0;
-  *i_displacement = 0;
-  *i_use_zero_masking = 0;
-  *i_mask_reg_number = 0;
-  *i_imm8 = LIBXSMM_X86_IMM_UNDEF;
-
-  base = xed_decoded_inst_get_base_reg(&xedd,0);
-  if ( base != XED_REG_INVALID ) {
-     convert_xed_enums_to_libxsmm ( base, i_gp_reg_base );
-
-     indx = xed_decoded_inst_get_index_reg(&xedd,0);
-     if ( (indx != XED_REG_INVALID) && (indx != XED_REG_RSP) ) {
-        convert_xed_enums_to_libxsmm ( indx, i_gp_reg_idx );
-        *i_scale = xed_decoded_inst_get_scale( &xedd, 0 );
-     }
-  }
-
-  /* Note: Displacements of 0 are NOT counted in XED as a displacement */
-  if (xed_operand_values_has_memory_displacement(&xedd))
-  {
-     xed_uint_t disp_bits =
-                xed_decoded_inst_get_memory_displacement_width( &xedd,0 );
-     if (disp_bits)
-     {
-        *i_displacement = xed_decoded_inst_get_memory_displacement ( &xedd, 0 );
-     }
-  }
-
-  unsigned noperands;
-  const xed_inst_t* xi = xed_decoded_inst_inst(&xedd);
-  xed_operand_t* op;
-  const xed_operand_t* op0 = xed_inst_operand(xi,0);
-  const xed_operand_t* op1 = xed_inst_operand(xi,1);
-  const xed_operand_t* op2 = xed_inst_operand(xi,2);
-  const xed_operand_t* op3 = xed_inst_operand(xi,3);
-  xed_operand_action_enum_t rw;
-  xed_operand_enum_t r, op_name;
-  xed_uint_t bits;
-
-  *i_vec_reg_number_0 = LIBXSMM_X86_VEC_REG_UNDEF;
-  *i_vec_reg_number_1 = LIBXSMM_X86_VEC_REG_UNDEF;
-  *i_vec_reg_number_2 = LIBXSMM_X86_VEC_REG_UNDEF;
-  *i_is_store = 0;
-  noperands = xed_inst_noperands(xi);
-  i = noperands-1;
-  while ( i >= 0 )
-  {
-    op = (xed_operand_t*) xed_inst_operand(xi,i);
-    op_name = xed_operand_name ( op );
-    r = xed_decoded_inst_get_reg ( &xedd, op_name );
-    if ( (i == 0) && (r == XED_REG_INVALID) ) *i_is_store = 1;
-    if ( op_name == XED_OPERAND_IMM0 ) {
-       char buf1[64];
-       const unsigned int no_leading_zeros=0;
-       xed_uint_t ibits;
-       const xed_bool_t lowercase = 1;
-       ibits = xed_decoded_inst_get_immediate_width_bits(&xedd);
-       if (xed_decoded_inst_get_immediate_is_signed(&xedd)) {
-          xed_uint_t rbits = ibits?ibits:8;
-          xed_int32_t x = xed_decoded_inst_get_signed_immediate(&xedd);
-          xed_uint64_t y = XED_STATIC_CAST(xed_uint64_t,
-                                           xed_sign_extend_arbitrary_to_64(
-                                                       (xed_uint64_t)x,
-                                                       ibits));
-          xed_itoa_hex_ul(buf1, y, rbits, no_leading_zeros, 64, lowercase);
-          *i_imm8 = y;
-       } else {
-          xed_uint64_t x =xed_decoded_inst_get_unsigned_immediate(&xedd);
-          xed_uint_t rbits = ibits?ibits:16;
-          xed_itoa_hex_ul(buf1, x, rbits, no_leading_zeros, 64, lowercase);
-          *i_imm8 = x;
-       }
-    }
-    if ( (r >= XED_REG_K0) && (r <= XED_REG_K7) ) {
-       r -= XED_REG_K0;
-       *i_mask_reg_number = (unsigned int) r;
-    }
-    if ( (r >= XED_REG_XMM0) && (r <= XED_REG_XMM31) ) {
-       r -= XED_REG_XMM0;
-       if ( *i_vec_reg_number_0 == LIBXSMM_X86_VEC_REG_UNDEF ) *i_vec_reg_number_0 = r;
-       else if ( *i_vec_reg_number_1 == LIBXSMM_X86_VEC_REG_UNDEF ) *i_vec_reg_number_1 = r;
-       else if ( *i_vec_reg_number_2 == LIBXSMM_X86_VEC_REG_UNDEF ) *i_vec_reg_number_2 = r;
-       *i_vector_name = 'x';
-    }
-    if ( (r >= XED_REG_YMM0) && (r <= XED_REG_YMM31) ) {
-       r -= XED_REG_YMM0;
-       if ( *i_vec_reg_number_0 == LIBXSMM_X86_VEC_REG_UNDEF ) *i_vec_reg_number_0 = r;
-       else if ( *i_vec_reg_number_1 == LIBXSMM_X86_VEC_REG_UNDEF ) *i_vec_reg_number_1 = r;
-       else if ( *i_vec_reg_number_2 == LIBXSMM_X86_VEC_REG_UNDEF ) *i_vec_reg_number_2 = r;
-       *i_vector_name = 'y';
-    }
-    if ( (r >= XED_REG_ZMM0) && (r <= XED_REG_ZMM31) ) {
-       r -= XED_REG_ZMM0;
-       if ( *i_vec_reg_number_0 == LIBXSMM_X86_VEC_REG_UNDEF ) *i_vec_reg_number_0 = r;
-       else if ( *i_vec_reg_number_1 == LIBXSMM_X86_VEC_REG_UNDEF ) *i_vec_reg_number_1 = r;
-       else if ( *i_vec_reg_number_2 == LIBXSMM_X86_VEC_REG_UNDEF ) *i_vec_reg_number_2 = r;
-       *i_vector_name = 'z';
-    }
-    --i;
-  }
-
-  return 1;
-}
-#endif
-
-#ifdef XED_DECODE_TESTING
-/* Note: UNDEF is treated as 0 */
-/* Note this returns 0 if all is well. >0 if there's a hard mismatch.
- * <0 if there's a soft mismatch. A soft mismatch is expecting i_vector_name='z' but it is 'x' instead. This is because libxsmm actually tolerates this kind of abuse. If you tell it i_vector_name='z' on a case that only works with xmm, libxsmm happily ignores your request. Is that a soft error or a hard one??? */
-int xed_decode_mismatches_against_libxsmm ( char *xed_instr_name,
-                                            char *instr_name,
-                                            int twoops,
-                                            int first,
-                                            unsigned int xsmm_base,
-                                            unsigned int xed_base,
-                                            unsigned int xsmm_idx,
-                                            unsigned int xed_idx,
-                                            unsigned int xsmm_scale,
-                                            unsigned int xed_scale,
-                                            int xsmm_disp,
-                                            int xed_disp,
-                                            char xsmm_vector_name,
-                                            char xed_vector_name,
-                                            unsigned int xsmm_vec0,
-                                            unsigned int xed_vec0,
-                                            unsigned int xsmm_vec1,
-                                            unsigned int xed_vec1,
-                                            unsigned int xsmm_vec2,
-                                            unsigned int xed_vec2,
-                                            unsigned int xsmm_mask0,
-                                            unsigned int xed_mask0,
-                                            unsigned int xsmm_zerom,
-                                            unsigned int xed_zerom,
-                                            unsigned int xsmm_store,
-                                            unsigned int xed_store,
-                                            unsigned short xsmm_imm8,
-                                            unsigned short xed_imm8 )
-{
-    int okay = 0;
-    unsigned int lenx = strlen(xed_instr_name);
-
-    if ( strncmp(instr_name,xed_instr_name,lenx) ) {
-       printf("Decode problem in the name mismatching. Looking for:%s Got:%s\n",instr_name,xed_instr_name);
-       return ( 1 );
-    }
-    if ( xsmm_base != xed_base ) {
-       printf("Decode base mismatch (exp=%d,got=%d) at byte %d\n",xsmm_base,xed_base,first);
-       return ( 2 );
-    }
-    if ( (xsmm_idx != xed_idx) && (xsmm_idx!=4) ) {
-       printf("Decode idx mismatch (exp=%d,got=%d) at byte %d\n",xsmm_idx,xed_idx,first);
-       return ( 3 );
-    }
-    if ( (xsmm_idx != LIBXSMM_X86_GP_REG_UNDEF) && (xsmm_idx != 4) && (xsmm_scale!=xed_scale) ) {
-       printf("Decode i_scale mismatch (exp=%d,got=%d) at byte %d\n",xsmm_scale,xed_scale,first);
-       return (4);
-    }
-    if ( xsmm_disp != xed_disp ) {
-       printf("Decode i_disp mismatch (exp=%d,got=%d) at byte %d\n",xsmm_disp,xed_disp,first);
-       return ( 5 ) ;
-    }
-    if ( xsmm_vector_name != xed_vector_name ) {
-       printf("Decode i_vector_name mismatch (exp=%c,got=%c) at byte %d\n",xsmm_vector_name,xed_vector_name,first);
-       return (  -6 ) ;
-    }
-    if ( xsmm_vec0 != xed_vec0 ) {
-       /* Count UNDEF as 0 */
-       okay = 0;
-       if ( (xsmm_vec0==LIBXSMM_X86_VEC_REG_UNDEF) && (xed_vec0 == 0) ) okay= 1;
-       if ( (xsmm_vec0==LIBXSMM_X86_VEC_REG_UNDEF) && (xsmm_vec1==LIBXSMM_X86_VEC_REG_UNDEF) && (xsmm_vec2==xed_vec0) && (xed_vec1==LIBXSMM_X86_VEC_REG_UNDEF) && (xed_vec2==LIBXSMM_X86_VEC_REG_UNDEF) ) okay = 1;
-       if ( okay == 0 ) {
-          printf("Decode i_vec_reg_number_0 mismatch (exp=%d,got=%d) at byte %d\n",xsmm_vec0,xed_vec0,first);
-          printf("xsmm_vec0=%d xsmm_vec1=%d xsmm_vec2=%d\n",xsmm_vec0,xsmm_vec1,xsmm_vec2);
-          printf("xed_vec0=%d xed_vec1=%d xed_vec2=%d\n",xed_vec0,xed_vec1,xed_vec2);
-          return ( 7 );
-       }
-    }
-    if ( xsmm_vec1 != xed_vec1 ) {
-       if ( twoops == 1 ) {
-          /* Don't mark something as wrong if it's UNDEF vs. 0 */
-          if ( (xsmm_vec1 == LIBXSMM_X86_VEC_REG_UNDEF) && (xed_vec1==0) ) {
-          } else {
-             /* If LIBXSMM passes in 0, UNDEF, x and XED gets 0, x, UNDEF-> this is ok */
-             if ( ((xsmm_vec1==LIBXSMM_X86_VEC_REG_UNDEF) || (xsmm_vec2==LIBXSMM_X86_VEC_REG_UNDEF)) && ( xsmm_vec1==xed_vec2 ) && (xsmm_vec2==xed_vec1) ) {
-             } else {
-                printf("Decode i_vec_reg_number_1 twoop mismatch (exp=%d,got=%d) at byte %d\n",xsmm_vec1,xed_vec1,first);
-                printf("xsmm_vec0=%d xsmm_vec1=%d xsmm_vec2=%d\n",xsmm_vec0,xsmm_vec1,xsmm_vec2);
-                printf("xed_vec0=%d xed_vec1=%d xed_vec2=%d\n",xed_vec0,xed_vec1,xed_vec2);
-                return ( 8 );
-             }
-          }
-       } else {
-          if ( (xsmm_vec1 == LIBXSMM_X86_VEC_REG_UNDEF) && (xed_vec1==0) ) {
-          } else {
-             printf("Decode i_vec_reg_number_1 3-op mismatch (exp=%d,got=%d) at byte %d\n",xsmm_vec1,xed_vec1,first);
-             return ( 9 );
-          }
-       }
-    }
-    if ( xsmm_vec2 != xed_vec2 ) {
-       okay = 0;
-       if ( (xsmm_vec2 == LIBXSMM_X86_VEC_REG_UNDEF) && (xed_vec2==0) ) okay= 1;
-       if ( ((xsmm_vec1==LIBXSMM_X86_VEC_REG_UNDEF) || (xsmm_vec2==LIBXSMM_X86_VEC_REG_UNDEF)) && ( xsmm_vec1==xed_vec2 ) && (xsmm_vec2==xed_vec1) ) okay= 1;
-       if ( (xsmm_vec0==LIBXSMM_X86_VEC_REG_UNDEF) && (xsmm_vec1==LIBXSMM_X86_VEC_REG_UNDEF) && (xsmm_vec2==xed_vec0) && (xed_vec1==LIBXSMM_X86_VEC_REG_UNDEF) && (xed_vec2==LIBXSMM_X86_VEC_REG_UNDEF) ) okay=1 ;
-       if ( okay == 0 ) {
-          printf("Decode i_vec_reg_number_2 mismatch (exp=%d,got=%d) at byte %d\n",xsmm_vec2,xed_vec2,first);
-          printf("xsmm_vec0=%d xsmm_vec1=%d xsmm_vec2=%d\n",xsmm_vec0,xsmm_vec1,xsmm_vec2);
-          printf("xed_vec0=%d xed_vec1=%d xed_vec2=%d\n",xed_vec0,xed_vec1,xed_vec2);
-          printf("twoops=%d\n",twoops);
-          return ( 9 );
-       }
-    }
-    if ( xsmm_store != xed_store ) {
-       printf("Decode i_is_store mismatch (exp=%d,got=%d) at byte %d\n",xsmm_store,xed_store,first);
-       return ( 10 );
-    }
-    if ( (xsmm_imm8 != xed_imm8) && (xed_imm8!=LIBXSMM_X86_IMM_UNDEF) ) {
-       printf("Decode imm8 mismatch (exp=%d,got=%d) at byte %d\n",xsmm_imm8, xed_imm8, first );
-       return ( 11 );
-    }
-
-    return 0;
-}
-#endif
-
 void reset_code_buffer( libxsmm_generated_code* mycode, char* test_name ) {
   printf("Reset code buffer for testing: %s\n", test_name );
   mycode->code_size = 0;
@@ -406,7 +56,7 @@ void test_evex_load_store( char* test_name, libxsmm_generated_code* mycode, unsi
   unsigned int d;
   int first;
 #ifdef XED_DECODE_TESTING
-  char instr_name[80], xed_instr_name[80];
+  char instr_name[80], xed_instr_name[80], xsmm_instr_name[80];
   unsigned char *buf = (unsigned char *) mycode->generated_code;
   int bytes, iii, iret;
   xed_state_t dstate;
@@ -430,9 +80,8 @@ void test_evex_load_store( char* test_name, libxsmm_generated_code* mycode, unsi
 
 #ifdef XED_DECODE_TESTING
   printf("Trying to convert instruction %d=%u=0x%4x\n",instr,instr,instr);
-  convert_int_to_name ( &instr_name, &instr );
-  printf("Got instruction name=%s\n",instr_name);
-
+  libxsmm_get_x86_instr_name ( instr, instr_name, 80 ); 
+  printf("Got instruction name=%s=0x%4x\n",instr_name,instr);
   xed_initialization( &xedd );
   printf("xed initialization done\n");
 #endif
@@ -459,7 +108,7 @@ void test_evex_load_store( char* test_name, libxsmm_generated_code* mycode, unsi
                                                     &i_is_store, &i_imm8 );
           if ( iret == -1 ) { printf("XED decoding failure at byte %d: b=%d d=%d z=%d\n",first,b,d,z); exit(-1); }
           iret = xed_decode_mismatches_against_libxsmm ( xed_instr_name, instr_name, 0, first, b, i_gp_reg_base, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_idx, 0, i_scale, displ[d], i_displacement, 'z', i_vector_name, z, i_vec_reg_number_0, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_reg_number_1, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_reg_number_2, 0, i_mask_reg_number, 0, i_use_zero_masking, 0, i_is_store, 0, i_imm8  );
-          if ( iret > 0 ) { printf("ERROR: Failed to decode1: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); dump_code_buffer( mycode, test_name ); return ; }
+          if ( iret > 0 ) { printf("ERROR: 0x%4x Failed to decode1: ",instr); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); dump_code_buffer( mycode, test_name ); return ; }
           if ( iret < 0 ) { printf("Warning1: Soft error mismatch. Fix this? Up to you: "); for ( iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); }
 #endif
         }
@@ -514,110 +163,100 @@ void test_evex_load_store( char* test_name, libxsmm_generated_code* mycode, unsi
   dump_code_buffer( mycode, test_name );
 }
 
-void test_mask_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
-  unsigned int b;
-  unsigned int k;
-
-  reset_code_buffer( mycode, test_name );
-
-  for (b = 0; b < 16; ++b ) {
-    for (k = 1; k < 8; ++k ) {
-      libxsmm_x86_instruction_mask_move( mycode, instr, b, k );
-    }
-  }
-
-  dump_code_buffer( mycode, test_name );
-}
-
-void test_mask_move_mem( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
-  unsigned int k;
-  unsigned int b;
-  unsigned int i;
-  unsigned int scale = 2;
-  int displ[3] = {0, 128, 2097152};
-  unsigned int d;
-
-  reset_code_buffer( mycode, test_name );
-
-  for (b = 0; b < 16; ++b ) {
-    for (k = 1; k < 8; ++k ) {
-      for ( d = 0; d < 3; ++d ) {
-        libxsmm_x86_instruction_mask_move_mem( mycode, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], k );
-      }
-    }
-  }
-  for (b = 0; b < 16; ++b ) {
-    for (i = 0; i < 16; ++i ) {
-      for (k = 1; k < 8; ++k ) {
-        for ( d = 0; d < 3; ++d ) {
-          libxsmm_x86_instruction_mask_move_mem( mycode, instr, b, i, scale, displ[d], k );
-        }
-      }
-    }
-  }
-
-  dump_code_buffer( mycode, test_name );
-}
-
 void test_evex_compute_3reg_general( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned int twoops, unsigned short imm8, unsigned int max_dst ) {
   unsigned int i;
   unsigned int m;
   unsigned int init_dst = ( max_dst == 32 ) ? 0 : 1;
+  int first;
+#ifdef XED_DECODE_TESTING
+  char instr_name[80], xed_instr_name[80];
+  unsigned char *buf = (unsigned char *) mycode->generated_code;
+  int bytes, iii, iret;
+  xed_state_t dstate;
+  xed_decoded_inst_t xedd;
+  unsigned char itext[XED_MAX_INSTRUCTION_BYTES];
+  xed_bool_t already_set_mode = 0;
+  xed_chip_enum_t chip = XED_CHIP_INVALID;
+  char const* decode_text=0;
+  unsigned int len;
+  xed_error_enum_t xed_error;
+  unsigned int mpx_mode=0, cet_mode=0;
+  unsigned int i_gp_reg_base, i_gp_reg_idx, i_scale, i_mask_reg_number;
+  unsigned int i_use_zero_masking, i_is_store, i_vec_reg_number_0;
+  unsigned int i_vec_reg_number_1, i_vec_reg_number_2;
+  unsigned short i_imm8;
+  int i_displacement;
+  char i_vector_name;
+#endif
 
   reset_code_buffer( mycode, test_name );
 
   for (i = 0; i < 32; ++i ) {
     for ( m = 0; m < 8; ++m ) {
+      first = mycode->code_size;
       if ( twoops ) {
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', i, LIBXSMM_X86_VEC_REG_UNDEF, 0, m, 0, 0, imm8 );
+#ifdef XED_DECODE_TESTING
+        bytes = mycode->code_size - first;
+        iret = xed_decode_to_libxsmm_parameters ( &buf[first], bytes, &xedd, xed_instr_name, &i_gp_reg_base, &i_gp_reg_idx, &i_scale, &i_displacement, &i_vector_name, &i_vec_reg_number_0, &i_vec_reg_number_1, &i_vec_reg_number_2, &i_mask_reg_number, &i_use_zero_masking, &i_is_store, &i_imm8 );
+        if ( iret == -1 ) { printf("XED decoding failure at byte %d: i=%d m=%d twoops=%d\n",first,i,m,twoops); exit(-1); }
+        iret = xed_decode_mismatches_against_libxsmm ( xed_instr_name, instr_name, twoops, first, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_base, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_idx, 0, i_scale, 0, i_displacement, 'z', i_vector_name, i, i_vec_reg_number_0, 0, i_vec_reg_number_1, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_reg_number_2, m, i_mask_reg_number, 0, i_use_zero_masking, 0, i_is_store, imm8, i_imm8 );
+/*      if ( iret == 0 ) { printf("Correctly decoded5: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); } */
+        if ( iret != 0 ) { printf("Failed to decode5: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); exit(-1); }
+#endif
       } else {
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', i, 0, 0, m, 0, 0, imm8 );
+#ifdef XED_DECODE_TESTING
+        bytes = mycode->code_size - first;
+        iret = xed_decode_to_libxsmm_parameters ( &buf[first], bytes, &xedd, xed_instr_name, &i_gp_reg_base, &i_gp_reg_idx, &i_scale, &i_displacement, &i_vector_name, &i_vec_reg_number_0, &i_vec_reg_number_1, &i_vec_reg_number_2, &i_mask_reg_number, &i_use_zero_masking, &i_is_store, &i_imm8 );
+        if ( iret == -1 ) { printf("XED decoding failure at byte %d: i=%d m=%d twoops=%d\n",first,i,m,twoops); exit(-1); }
+        iret = xed_decode_mismatches_against_libxsmm ( xed_instr_name, instr_name, twoops, first, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_base, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_idx, 0, i_scale, 0, i_displacement, 'z', i_vector_name, i, i_vec_reg_number_0, 0, i_vec_reg_number_1, 0, i_vec_reg_number_2, m, i_mask_reg_number, 0, i_use_zero_masking, 0, i_is_store, imm8, i_imm8 );
+        /* if ( iret == 0 ) { printf("Correctly decoded6: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); } */
+        if ( iret != 0 ) { printf("Failed to decode6: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); exit(-1); }
+#endif
       }
     }
   }
   if ( !twoops ) {
     for (i = 0; i < 32; ++i ) {
       for ( m = 0; m < 8; ++m ) {
+        first = mycode->code_size;
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', 0, i, 0, m, 0, 0, imm8 );
+#ifdef XED_DECODE_TESTING
+        bytes = mycode->code_size - first;
+        iret = xed_decode_to_libxsmm_parameters ( &buf[first], bytes, &xedd, xed_instr_name, &i_gp_reg_base, &i_gp_reg_idx, &i_scale, &i_displacement, &i_vector_name, &i_vec_reg_number_0, &i_vec_reg_number_1, &i_vec_reg_number_2, &i_mask_reg_number, &i_use_zero_masking, &i_is_store, &i_imm8 );
+        if ( iret == -1 ) { printf("XED decoding failure at byte %d: i=%d m=%d twoops=%d\n",first,i,m,twoops); exit(-1); }
+        iret = xed_decode_mismatches_against_libxsmm ( xed_instr_name, instr_name, twoops, first, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_base, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_idx, 0, i_scale, 0, i_displacement, 'z', i_vector_name, 0, i_vec_reg_number_0, i, i_vec_reg_number_1, 0, i_vec_reg_number_2, m, i_mask_reg_number, 0, i_use_zero_masking, 0, i_is_store, imm8, i_imm8 );
+/*      if ( iret == 0 ) { printf("Correctly decoded7: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); } */
+        if ( iret != 0 ) { printf("Failed to decode7: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); exit(-1); }
+#endif
       }
     }
   }
   for (i = init_dst; i < max_dst; ++i ) {
     for ( m = 0; m < 8; ++m ) {
+      first = mycode->code_size;
       if ( twoops ) {
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', 0, LIBXSMM_X86_VEC_REG_UNDEF, i, m, 0, 0, imm8 );
+#ifdef XED_DECODE_TESTING
+        bytes = mycode->code_size - first;
+        iret = xed_decode_to_libxsmm_parameters ( &buf[first], bytes, &xedd, xed_instr_name, &i_gp_reg_base, &i_gp_reg_idx, &i_scale, &i_displacement, &i_vector_name, &i_vec_reg_number_0, &i_vec_reg_number_1, &i_vec_reg_number_2, &i_mask_reg_number, &i_use_zero_masking, &i_is_store, &i_imm8 );
+        if ( iret == -1 ) { printf("XED decoding failure at byte %d: i=%d m=%d twoops=%d\n",first,i,m,twoops); exit(-1); }
+        iret = xed_decode_mismatches_against_libxsmm ( xed_instr_name, instr_name, twoops, first, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_base, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_idx, 0, i_scale, 0, i_displacement, 'z', i_vector_name, 0, i_vec_reg_number_0, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_reg_number_1, i, i_vec_reg_number_2, m, i_mask_reg_number, 0, i_use_zero_masking, 0, i_is_store, imm8, i_imm8 );
+/*      if ( iret == 0 ) { printf("Correctly decoded8: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); } */
+        if ( iret != 0 ) { printf("Failed to decode8: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); exit(-1); }
+#endif
       } else {
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( mycode, instr, 'z', 0, 0, i, m, 0, 0, imm8 );
+#ifdef XED_DECODE_TESTING
+        bytes = mycode->code_size - first;
+        iret = xed_decode_to_libxsmm_parameters ( &buf[first], bytes, &xedd, xed_instr_name, &i_gp_reg_base, &i_gp_reg_idx, &i_scale, &i_displacement, &i_vector_name, &i_vec_reg_number_0, &i_vec_reg_number_1, &i_vec_reg_number_2, &i_mask_reg_number, &i_use_zero_masking, &i_is_store, &i_imm8 );
+        if ( iret == -1 ) { printf("XED decoding failure at byte %d: i=%d m=%d twoops=%d\n",first,i,m,twoops); exit(-1); }
+        iret = xed_decode_mismatches_against_libxsmm ( xed_instr_name, instr_name, twoops, first, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_base, LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_idx, 0, i_scale, 0, i_displacement, 'z', i_vector_name, 0, i_vec_reg_number_0, 0, i_vec_reg_number_1, i, i_vec_reg_number_2, m, i_mask_reg_number, 0, i_use_zero_masking, 0, i_is_store, imm8, i_imm8 );
+/*      if ( iret == 0 ) { printf("Correctly decoded9: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); } */
+        if ( iret != 0 ) { printf("Failed to decode9: "); for (iii=first; iii<first+bytes;iii++) printf("%02x ",buf[iii]); printf("\n"); exit(-1); }
+#endif
       }
-    }
-  }
-
-  dump_code_buffer( mycode, test_name );
-}
-
-void test_mask_compute_reg( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned int twoops, unsigned short imm8 ) {
-  unsigned int i;
-  unsigned int m;
-
-  reset_code_buffer( mycode, test_name );
-
-  for (i = 0; i < 8; ++i ) {
-    if ( twoops ) {
-      libxsmm_x86_instruction_mask_compute_reg ( mycode, instr, i, LIBXSMM_X86_VEC_REG_UNDEF, 0, imm8 );
-    } else {
-      libxsmm_x86_instruction_mask_compute_reg ( mycode, instr, i, 0, 0, imm8 );
-    }
-  }
-  if ( !twoops ) {
-    for (i = 0; i < 8; ++i ) {
-      libxsmm_x86_instruction_mask_compute_reg ( mycode, instr, 0, i, 0, imm8 );
-    }
-  }
-  for (i = 0; i < 8; ++i ) {
-    if ( twoops ) {
-      libxsmm_x86_instruction_mask_compute_reg ( mycode, instr, 0, LIBXSMM_X86_VEC_REG_UNDEF, i, imm8 );
-    } else {
-      libxsmm_x86_instruction_mask_compute_reg ( mycode, instr, 0, 0, i, imm8 );
     }
   }
 
@@ -913,6 +552,13 @@ int main( /*int argc, char* argv[]*/ ) {
   mycode.generated_code = codebuffer;
   mycode.buffer_size = 8388608;
   mycode.arch = LIBXSMM_X86_AVX512_SPR;
+
+#if 1
+  /* quick test on just one instruction. In this case, VMOVSS: */
+  test_evex_load_store( "evex_mov_VMOVSS", &mycode, LIBXSMM_X86_INSTR_VMOVSS, 3 );
+  free( codebuffer );
+  return 0;
+#endif
 
   /* testing ld/st instructions */
   test_evex_load_store( "evex_mov_VMOVAPD", &mycode, LIBXSMM_X86_INSTR_VMOVAPD, 3 );
@@ -1383,71 +1029,6 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VCVTNE2PS2BF16", &mycode, LIBXSMM_X86_INSTR_VCVTNE2PS2BF16, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VMOVDQU64_LD", &mycode, LIBXSMM_X86_INSTR_VMOVDQU64_LD, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VMOVDQU64_ST", &mycode, LIBXSMM_X86_INSTR_VMOVDQU64_ST, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0 );
-
-  /* testing AVX512 masking */
-  test_mask_move( "mask_move_KMOVB_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVB_GPR_LD );
-  test_mask_move( "mask_move_KMOVW_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVW_GPR_LD );
-  test_mask_move( "mask_move_KMOVD_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVD_GPR_LD );
-  test_mask_move( "mask_move_KMOVQ_GPR_LD", &mycode, LIBXSMM_X86_INSTR_KMOVQ_GPR_LD );
-  test_mask_move( "mask_move_KMOVB_GPR_ST", &mycode, LIBXSMM_X86_INSTR_KMOVB_GPR_ST );
-  test_mask_move( "mask_move_KMOVW_GPR_ST", &mycode, LIBXSMM_X86_INSTR_KMOVW_GPR_ST );
-  test_mask_move( "mask_move_KMOVD_GPR_ST", &mycode, LIBXSMM_X86_INSTR_KMOVD_GPR_ST );
-  test_mask_move( "mask_move_KMOVQ_GPR_ST", &mycode, LIBXSMM_X86_INSTR_KMOVQ_GPR_ST );
-  test_mask_move_mem( "mask_move_KMOVB_LD", &mycode, LIBXSMM_X86_INSTR_KMOVB_LD );
-  test_mask_move_mem( "mask_move_KMOVW_LD", &mycode, LIBXSMM_X86_INSTR_KMOVW_LD );
-  test_mask_move_mem( "mask_move_KMOVD_LD", &mycode, LIBXSMM_X86_INSTR_KMOVD_LD );
-  test_mask_move_mem( "mask_move_KMOVQ_LD", &mycode, LIBXSMM_X86_INSTR_KMOVQ_LD );
-  test_mask_move_mem( "mask_move_KMOVB_ST", &mycode, LIBXSMM_X86_INSTR_KMOVB_ST );
-  test_mask_move_mem( "mask_move_KMOVW_ST", &mycode, LIBXSMM_X86_INSTR_KMOVW_ST );
-  test_mask_move_mem( "mask_move_KMOVD_ST", &mycode, LIBXSMM_X86_INSTR_KMOVD_ST );
-  test_mask_move_mem( "mask_move_KMOVQ_ST", &mycode, LIBXSMM_X86_INSTR_KMOVQ_ST );
-  test_mask_compute_reg( "mask_reg_KADDB", &mycode, LIBXSMM_X86_INSTR_KADDB, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KADDW", &mycode, LIBXSMM_X86_INSTR_KADDW, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KADDD", &mycode, LIBXSMM_X86_INSTR_KADDD, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KADDQ", &mycode, LIBXSMM_X86_INSTR_KADDQ, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KANDB", &mycode, LIBXSMM_X86_INSTR_KANDB, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KANDW", &mycode, LIBXSMM_X86_INSTR_KANDW, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KANDD", &mycode, LIBXSMM_X86_INSTR_KANDD, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KANDQ", &mycode, LIBXSMM_X86_INSTR_KANDQ, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KANDNB", &mycode, LIBXSMM_X86_INSTR_KANDNB, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KANDNW", &mycode, LIBXSMM_X86_INSTR_KANDNW, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KANDND", &mycode, LIBXSMM_X86_INSTR_KANDND, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KANDNQ", &mycode, LIBXSMM_X86_INSTR_KANDNQ, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KNOTB", &mycode, LIBXSMM_X86_INSTR_KNOTB, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KNOTW", &mycode, LIBXSMM_X86_INSTR_KNOTW, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KNOTD", &mycode, LIBXSMM_X86_INSTR_KNOTD, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KNOTQ", &mycode, LIBXSMM_X86_INSTR_KNOTQ, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KORB", &mycode, LIBXSMM_X86_INSTR_KORB, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KORW", &mycode, LIBXSMM_X86_INSTR_KORW, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KORD", &mycode, LIBXSMM_X86_INSTR_KORD, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KORQ", &mycode, LIBXSMM_X86_INSTR_KORQ, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KORTESTB", &mycode, LIBXSMM_X86_INSTR_KORTESTB, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KORTESTW", &mycode, LIBXSMM_X86_INSTR_KORTESTW, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KORTESTD", &mycode, LIBXSMM_X86_INSTR_KORTESTD, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KORTESTQ", &mycode, LIBXSMM_X86_INSTR_KORTESTQ, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KSHIFTLB", &mycode, LIBXSMM_X86_INSTR_KSHIFTLB, 1, 0x01 );
-  test_mask_compute_reg( "mask_reg_KSHIFTLW", &mycode, LIBXSMM_X86_INSTR_KSHIFTLW, 1, 0x01 );
-  test_mask_compute_reg( "mask_reg_KSHIFTLD", &mycode, LIBXSMM_X86_INSTR_KSHIFTLD, 1, 0x01 );
-  test_mask_compute_reg( "mask_reg_KSHIFTLQ", &mycode, LIBXSMM_X86_INSTR_KSHIFTLQ, 1, 0x01 );
-  test_mask_compute_reg( "mask_reg_KSHIFTRB", &mycode, LIBXSMM_X86_INSTR_KSHIFTRB, 1, 0x01 );
-  test_mask_compute_reg( "mask_reg_KSHIFTRW", &mycode, LIBXSMM_X86_INSTR_KSHIFTRW, 1, 0x01 );
-  test_mask_compute_reg( "mask_reg_KSHIFTRD", &mycode, LIBXSMM_X86_INSTR_KSHIFTRD, 1, 0x01 );
-  test_mask_compute_reg( "mask_reg_KSHIFTRQ", &mycode, LIBXSMM_X86_INSTR_KSHIFTRQ, 1, 0x01 );
-  test_mask_compute_reg( "mask_reg_KTESTB", &mycode, LIBXSMM_X86_INSTR_KTESTB, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KTESTW", &mycode, LIBXSMM_X86_INSTR_KTESTW, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KTESTD", &mycode, LIBXSMM_X86_INSTR_KTESTD, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KTESTQ", &mycode, LIBXSMM_X86_INSTR_KTESTQ, 1, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KUNPCKBW", &mycode, LIBXSMM_X86_INSTR_KUNPCKBW, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KUNPCKWD", &mycode, LIBXSMM_X86_INSTR_KUNPCKWD, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KUNPCKDQ", &mycode, LIBXSMM_X86_INSTR_KUNPCKDQ, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KXNORB", &mycode, LIBXSMM_X86_INSTR_KXNORB, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KXNORW", &mycode, LIBXSMM_X86_INSTR_KXNORW, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KXNORD", &mycode, LIBXSMM_X86_INSTR_KXNORD, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KXNORQ", &mycode, LIBXSMM_X86_INSTR_KXNORQ, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KXORB", &mycode, LIBXSMM_X86_INSTR_KXORB, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KXORW", &mycode, LIBXSMM_X86_INSTR_KXORW, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KXORD", &mycode, LIBXSMM_X86_INSTR_KXORD, 0, LIBXSMM_X86_IMM_UNDEF );
-  test_mask_compute_reg( "mask_reg_KXORQ", &mycode, LIBXSMM_X86_INSTR_KXORQ, 0, LIBXSMM_X86_IMM_UNDEF );
 
   /* testing prefetches */
   test_prefetch( "pf_CLDEMOTE", &mycode, LIBXSMM_X86_INSTR_CLDEMOTE );
