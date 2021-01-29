@@ -25,6 +25,13 @@ int unequal_fp32_vals(float a, float b) {
   }
 }
 
+float upconvert_bf16(libxsmm_bfloat16 x) {
+  union libxsmm_bfloat16_hp bf16_hp;
+  bf16_hp.i[1] = x;
+  bf16_hp.i[0] = 0;
+  return bf16_hp.f;
+}
+
 int unequal_bf16_vals(libxsmm_bfloat16 a, libxsmm_bfloat16 b) {
   union libxsmm_bfloat16_hp bf16_hp, bf16_hp2;
   bf16_hp.i[1] = a;
@@ -125,7 +132,9 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_param eqn_param;
   unsigned long long l_start, l_end;
   double l_total = 0, l_total2 = 0;
-
+  libxsmm_matdiff_info norms_out;
+  float *arg0, *arg1, *arg2, *arg3, *out, *eqn_out, *arg_array[4];
+  libxsmm_bfloat16 *bf16_arg0, *bf16_arg1, *bf16_arg2, *bf16_arg3, *bf16_out, *bf16_eqn_out, *bf16_arg_array[4];
   int M = 64;
   int N = 64;
   int ld = 64;
@@ -154,22 +163,23 @@ int main( int argc, char* argv[] ) {
     out_dt = LIBXSMM_DATATYPE_F32;
   }
 
-  float *arg0 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
-  float *arg1 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
-  float *arg2 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
-  float *arg3 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
-  float *out  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
-  float *eqn_out  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
-  float *arg_array[4];
+  arg0 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
+  arg1 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
+  arg2 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
+  arg3 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
+  out  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
+  eqn_out  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
 
-  libxsmm_bfloat16 *bf16_arg0 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
-  libxsmm_bfloat16 *bf16_arg1 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
-  libxsmm_bfloat16 *bf16_arg2 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
-  libxsmm_bfloat16 *bf16_arg3 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
-  libxsmm_bfloat16 *bf16_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
-  libxsmm_bfloat16 *bf16_eqn_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
-  libxsmm_bfloat16 *bf16_arg_array[4];
+  bf16_arg0 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
+  bf16_arg1 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
+  bf16_arg2 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
+  bf16_arg3 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
+  bf16_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
+  bf16_eqn_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
+  bf16_arg_array[4];
 
+  libxsmm_init();
+  libxsmm_matdiff_clear(&norms_out);
 
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ld; ++j ) {
@@ -179,7 +189,6 @@ int main( int argc, char* argv[] ) {
       arg3[(i*ld)+j] = (float)libxsmm_rng_f64();
       out[(i*ld)+j]  = (float)libxsmm_rng_f64();
       eqn_out[(i*ld)+j] = out[(i*ld)+j];
-
       libxsmm_rne_convert_fp32_bf16( &arg0[(i*ld)+j], &bf16_arg0[(i*ld)+j], 1 );
       libxsmm_rne_convert_fp32_bf16( &arg1[(i*ld)+j], &bf16_arg1[(i*ld)+j], 1 );
       libxsmm_rne_convert_fp32_bf16( &arg2[(i*ld)+j], &bf16_arg2[(i*ld)+j], 1 );
@@ -193,7 +202,6 @@ int main( int argc, char* argv[] ) {
   arg_array[1] = arg1;
   arg_array[2] = arg2;
   arg_array[3] = arg3;
-
 
   bf16_arg_array[0] = bf16_arg0;
   bf16_arg_array[1] = bf16_arg1;
@@ -272,12 +280,14 @@ int main( int argc, char* argv[] ) {
     for ( j = 0; j < M; ++j ) {
       if (out_dt == LIBXSMM_DATATYPE_F32) {
         if ( unequal_fp32_vals(out[(i*ld)+j], eqn_out[(i*ld)+j])  ) {
-          printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ld)+j], eqn_out[(i*ld)+j]);
+          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ld)+j], eqn_out[(i*ld)+j]);*/
           s = 1;
         }
       } else if (out_dt == LIBXSMM_DATATYPE_BF16) {
+        out[(i*ld)+j] = upconvert_bf16(bf16_out[(i*ld)+j]);
+        eqn_out[(i*ld)+j] = upconvert_bf16(bf16_eqn_out[(i*ld)+j]);
         if ( unequal_bf16_vals(bf16_out[(i*ld)+j], bf16_eqn_out[(i*ld)+j])  ) {
-          printf("error at possition i=%i, j=%i, %f, %f\n", i, j, (float)bf16_out[(i*ld)+j], (float)bf16_eqn_out[(i*ld)+j]);
+          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
           s = 1;
         }
       }
@@ -289,21 +299,37 @@ int main( int argc, char* argv[] ) {
     }
   }
 
-
   if (datatype_mode == 0) {
-    printf("Equation IN: F32, OUT: F32 ");
+    printf("Equation IN: F32, OUT: F32 \n");
   } else if (datatype_mode == 1) {
-    printf("Equation IN: BF16, OUT: BF16 ");
+    printf("Equation IN: BF16, OUT: BF16 \n");
   } else if (datatype_mode == 2) {
-    printf("Equation IN: F32, OUT: BF16 ");
+    printf("Equation IN: F32, OUT: BF16 \n");
   } else if (datatype_mode == 3) {
-    printf("Equation IN: BF16, OUT: F32 ");
+    printf("Equation IN: BF16, OUT: F32 \n");
   }
   if ( s == 0 ) {
-    printf("SUCCESS\n");
+    /*printf("SUCCESS\n");*/
   } else {
-    printf("FAILURE\n");
+    /*printf("FAILURE\n");*/
   }
+
+  /* compare */
+  printf("##########################################\n");
+  printf("#   Correctness  - Output                #\n");
+  printf("##########################################\n");
+#if 0
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ld_in*n, 1, sout_ref, sout, 0, 0);
+#else
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ld*N, 1, out, eqn_out, 0, 0);
+#endif
+  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+  printf("L1 test       : %.25g\n", norms_out.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   /* Now benchmarking the equations */
 

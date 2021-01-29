@@ -266,15 +266,15 @@ libxsmm_matrix_eqn_elem* find_op_at_timestamp(libxsmm_matrix_eqn_elem* cur_node,
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_create_unary_descriptor( libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype out_precision) {
+void libxsmm_generator_matequation_create_unary_descriptor( libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
   libxsmm_descriptor_blob blob;
-  *desc = libxsmm_meltw_descriptor_init2(&blob, cur_op->tmp.dtype, cur_op->info.u_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
+  *desc = libxsmm_meltw_descriptor_init2(&blob, in_precision, cur_op->info.u_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_create_binary_descriptor( libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype out_precision) {
+void libxsmm_generator_matequation_create_binary_descriptor( libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
   libxsmm_descriptor_blob blob;
-  *desc = libxsmm_meltw_descriptor_init2(&blob, cur_op->tmp.dtype, cur_op->info.b_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.b_op.flags, cur_op->info.b_op.type, LIBXSMM_MELTW_OPERATION_BINARY);
+  *desc = libxsmm_meltw_descriptor_init2(&blob, in_precision, cur_op->info.b_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.b_op.flags, cur_op->info.b_op.type, LIBXSMM_MELTW_OPERATION_BINARY);
 }
 
 LIBXSMM_API_INTERN
@@ -379,7 +379,48 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
   /* Iterate over the equation tree based on the optimal traversal order and call the proper JITer */
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
     libxsmm_matrix_eqn_elem *cur_op = find_op_at_timestamp(eqn->eqn_root, timestamp);
+#if 1
     libxsmm_datatype out_precision = (timestamp == last_timestamp) ? LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
+    libxsmm_datatype in_precision = cur_op->tmp.dtype;
+#else
+    /* FIXME: This approach that avoids intermediate converts needs extra tmps, because when input is BF16 and output is FP32 we can't reuse/overwrite the same tmp scratch... */
+    libxsmm_datatype out_precision = LIBXSMM_DATATYPE_F32;
+    libxsmm_datatype in_precision = LIBXSMM_DATATYPE_F32;
+
+    /* Find input precision of op */
+    if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
+      if (cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
+        in_precision = cur_op->le->info.arg.dtype;
+      } else {
+        in_precision = cur_op->le->tmp.dtype;
+      }
+    } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
+      if (cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
+        in_precision = cur_op->le->info.arg.dtype;
+      } else {
+        in_precision = cur_op->le->tmp.dtype;
+      }
+    }
+    /* Find sibling if applicable. If it is an Arg, set output precision to  that precision... */
+    if (timestamp == last_timestamp) {
+      out_precision = LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);
+    } else {
+      libxsmm_matrix_eqn_elem *parent = cur_op->up;
+      if (parent->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
+        libxsmm_matrix_eqn_elem *sibling = parent->ri;
+        if (sibling == cur_op) {
+          sibling = parent->le;
+        }
+        if (sibling->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
+          out_precision = sibling->info.arg.dtype;
+        }
+      }
+    }
+    /* Adjust the tmp precision in the tree  */
+    cur_op->tmp.dtype = out_precision;
+    printf("Node at timestamp %d has input precision %d and  output precision %d\n", timestamp, libxsmm_typesize(in_precision), libxsmm_typesize(out_precision));
+#endif
+
     if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
       /* Prepare struct param */
       libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, &l_kernel_config, &l_gp_reg_mapping, cur_op->le,
@@ -387,7 +428,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       libxsmm_generator_matequation_set_output_in_stack_param_struct( io_generated_code, &l_kernel_config, &l_gp_reg_mapping, cur_op,
           temp_reg, (timestamp == last_timestamp) );
       /* Prepare descriptor  */
-      libxsmm_generator_matequation_create_unary_descriptor( cur_op, &meltw_desc, out_precision);
+      libxsmm_generator_matequation_create_unary_descriptor( cur_op, &meltw_desc, in_precision, out_precision);
     } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
       libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, &l_kernel_config, &l_gp_reg_mapping, cur_op->le,
           temp_reg, 0);
@@ -395,7 +436,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
           temp_reg, 1);
       libxsmm_generator_matequation_set_output_in_stack_param_struct( io_generated_code, &l_kernel_config, &l_gp_reg_mapping, cur_op,
           temp_reg, (timestamp == last_timestamp) );
-      libxsmm_generator_matequation_create_binary_descriptor( cur_op, &meltw_desc, out_precision);
+      libxsmm_generator_matequation_create_binary_descriptor( cur_op, &meltw_desc, in_precision, out_precision);
     } else {
       /* This should not happen */
     }
