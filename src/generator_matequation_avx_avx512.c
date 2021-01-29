@@ -60,7 +60,7 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
    *      Param_struct_ptr1                         <-- RBP-16
    *      Param_struct_ptr0                         <-- RBP-24
    *      Scratch ptr in stack (to be filled)       <-- RBP-32
-   *      Placeholder for stack var                 <-- RBP-40
+   *      Address scratch ptrin stack (to be filled)<-- RBP-40
    *      Placeholder for stack var                 <-- RBP-48
    *      Placeholder for stack var                 <-- RBP-56
    *      Placeholder for stack var                 <-- RBP-64
@@ -78,6 +78,8 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
       return -8;
     case LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR:
       return -32;
+    case LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR:
+      return -40;
     default:
       return 0;
   }
@@ -119,6 +121,14 @@ void libxsmm_generator_meqn_getaddr_stack_tmp_i( libxsmm_generated_code*        
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( libxsmm_generated_code*            io_generated_code,
+                                                unsigned int                        i_tmp_offset_i,
+                                                unsigned int                        i_gp_reg ) {
+  libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, i_gp_reg );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg, i_tmp_offset_i);
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_meqn_setval_stack_var( libxsmm_generated_code*               io_generated_code,
                                                 libxsmm_meqn_stack_var              stack_var,
                                                 unsigned int                        i_gp_reg ) {
@@ -156,7 +166,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
    *      Param_struct_ptr1                         <-- RBP-16
    *      Param_struct_ptr0                         <-- RBP-24
    *      Scratch ptr in stack (to be filled)       <-- RBP-32
-   *      Placeholder for stack var                 <-- RBP-40
+   *      Address scratch ptrin stack (to be filled)<-- RBP-40
    *      Placeholder for stack var                 <-- RBP-48
    *      Placeholder for stack var                 <-- RBP-56
    *      Placeholder for stack var                 <-- RBP-64
@@ -167,27 +177,33 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
 
   if (allocate_scratch > 0) {
     unsigned int scratch_size = 0;
-    /* Strategy 0 is via tmp scratch in stack, Strategy 1 is via tmp register blocks */
-    if (i_strategy == 0) {
-      /*TODO: Now we allocate tmps with dsize float */
-      libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
-      unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
-      scratch_size = tmp_size * n_tmp;
-      i_micro_kernel_config->tmp_size = tmp_size;
-    } else {
-      unsigned int n_args = i_eqn->eqn_root->n_args;
-      i_micro_kernel_config->n_args = n_args;
-      scratch_size = n_args * 8;
-    }
-    /* make scratch size multiple of 64b */
-    scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
+    unsigned int addr_scratch_size = 0;
 
     /* Now align RSP to 64 byte boundary  */
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code, i_micro_kernel_config->alu_mov_instruction, temp_reg, 0xFFFFFFFFFFFFFFC0 );
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, temp_reg, LIBXSMM_X86_GP_REG_RSP);
 
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
-    libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+    /* Strategy 0 is via tmp scratch in stack, Strategy 1 is via tmp register blocks */
+    if (i_strategy == 0) {
+      /*TODO: Now we allocate tmps with dsize float */
+      libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
+      unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
+      printf("tmp_size is %d\n", tmp_size);
+      scratch_size = tmp_size * n_tmp;
+      i_micro_kernel_config->tmp_size = tmp_size;
+      /* make scratch size multiple of 64b */
+      scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
+      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+    } else if (i_strategy == 1){
+      unsigned int n_args = i_eqn->eqn_root->n_args;
+      i_micro_kernel_config->n_args = n_args;
+      addr_scratch_size = n_args * 8;
+      /* make scratch size multiple of 64b */
+      addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, addr_scratch_size );
+      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+    }
   }
 
   /* Now push to RSP the callee-save registers  */
@@ -206,20 +222,19 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
    *      Param_struct_ptr2                         <-- RBP-8
    *      Param_struct_ptr1                         <-- RBP-16
    *      Param_struct_ptr0                         <-- RBP-24
-   *      Scratch ptr in stack (to be filled)       <-- RBP-32
-   *      Placeholder for stack var                 <-- RBP-40
+   *      Scratch ptr in stack                      <-- RBP-32
+   *      Address scratch ptrin stack               <-- RBP-40
    *      Placeholder for stack var                 <-- RBP-48
    *      Placeholder for stack var                 <-- RBP-56
    *      Placeholder for stack var                 <-- RBP-64
    *      Placeholder for stack var                 <-- RBP-72
    *      Placeholder for stack var                 <-- RBP-80
    *      [ Potentianl  pad for 64b align ]
-   *      Scratch, 64b aligned                      <-- (RBP-32) contains this address
+   *      Scratch, 64b aligned                      <-- (RBP-32) or (RBP-40) contains this address
    *      Callee-saved registers                    <-- RSP
    *
    * * */
 }
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code*   io_generated_code,
@@ -301,6 +316,7 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
         temp_reg,
         0 );
   } else {
+    printf("Requesting for INPUT arg %d, TMP %d at offset %d\n", ptr_id, cur_node->tmp.id, cur_node->tmp.id * i_micro_kernel_config->tmp_size );
     libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, cur_node->tmp.id * i_micro_kernel_config->tmp_size, temp_reg);
   }
   if (ptr_id == 0) {
@@ -326,6 +342,7 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
         temp_reg,
         0 );
   } else {
+    printf("Requesting for OUTPUT TMP %d at offset %d\n", cur_node->tmp.id, cur_node->tmp.id * i_micro_kernel_config->tmp_size );
     libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, cur_node->tmp.id * i_micro_kernel_config->tmp_size, temp_reg);
   }
   libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR2, temp_reg );
@@ -482,7 +499,7 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
           cur_node->info.arg.in_pos*8,
           temp_reg,
           0 );
-      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, cur_pos * 8, temp_reg2);
+      libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, cur_pos * 8, temp_reg2);
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
           temp_reg2,
@@ -536,7 +553,7 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
     if ( i < i_micro_kernel_config->n_avail_gpr ) {
       libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, i_micro_kernel_config->gpr_pool[i], adjust_val);
     } else {
-      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, i * 8, temp_reg);
+      libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, i * 8, temp_reg);
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
           temp_reg,
@@ -644,7 +661,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
   unsigned int mask_in_count, mask_out_count, mask_reg_in = 0, mask_reg_out = 0, use_m_input_masking, use_m_output_masking;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
   unsigned int i_vlen_out = i_micro_kernel_config->vlen_out;
-  unsigned int reserved_mask_regs = 1;
+  unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
 
   use_m_input_masking   = (i_m % i_vlen_in == 0 ) ? 0 : 1;
   use_m_output_masking  = (i_m % i_vlen_out == 0 ) ? 0 : 1;
@@ -699,7 +716,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
   if (i_arg_id < i_micro_kernel_config->n_avail_gpr) {
     input_reg = i_micro_kernel_config->gpr_pool[i_arg_id];
   } else {
-    libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, i_arg_id * 8, temp_reg2);
+    libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, i_arg_id * 8, temp_reg2);
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
         temp_reg2,
