@@ -60,7 +60,7 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
       Arg2 = arg2[(i*ld)+j];
       Arg3 = arg3[(i*ld)+j];
 
-      out[(i*ld)+j]  = (Arg0 + (1.0 + Arg1)) * (tanhf(1.0/Arg2) + Arg3);
+      out[(i*ld)+j]  = (float) ((float)Arg0 + (float)((float)1.0 + Arg1)) * (float) ((float)((float)tanh((float)1.0/(float)Arg2)) + (float)Arg3);
     }
   }
 }
