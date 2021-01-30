@@ -880,9 +880,17 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
   use_m_output_masking  = (i_m % i_vlen_out == 0 ) ? 0 : 1;
 
   if (use_m_input_masking == 1) {
+    libxsmm_datatype fake_dt;
+    if (i_vlen_in == 64) {
+      fake_dt = LIBXSMM_DATATYPE_I8;
+    } else if(i_vlen_in == 32) {
+      fake_dt = LIBXSMM_DATATYPE_BF16;
+    } else {
+      fake_dt = LIBXSMM_DATATYPE_F32;
+    }
     mask_in_count = i_vlen_in - i_m % i_vlen_in;
     mask_reg_in   = reserved_mask_regs;
-    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_in, mask_in_count, LIBXSMM_GETENUM_INP(i_mateltwise_desc->datatype));
+    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_in, mask_in_count, fake_dt);
     reserved_mask_regs++;
   }
 
@@ -890,9 +898,17 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
     if (i_vlen_in == i_vlen_out) {
       mask_reg_out = mask_reg_in;
     } else {
+      libxsmm_datatype fake_dt;
+      if (i_vlen_out == 64) {
+        fake_dt = LIBXSMM_DATATYPE_I8;
+      } else if(i_vlen_out == 32) {
+        fake_dt = LIBXSMM_DATATYPE_BF16;
+      } else {
+        fake_dt = LIBXSMM_DATATYPE_F32;
+      }
       mask_out_count = i_vlen_out - i_m % i_vlen_out;
       mask_reg_out   = reserved_mask_regs;
-      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_out, mask_out_count, LIBXSMM_GETENUM_OUT(i_mateltwise_desc->datatype));
+      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_out, mask_out_count, fake_dt);
       reserved_mask_regs++;
     }
   }
@@ -1024,7 +1040,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
   }
 
   if (op == LIBXSMM_MELTW_TYPE_UNARY_INC) {
-    float ones_array[16] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, };
+    float ones_array[16] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     i_micro_kernel_config->vec_ones = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) ones_array, "ones_array", 'z', i_micro_kernel_config->vec_ones );
