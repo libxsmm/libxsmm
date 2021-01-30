@@ -1101,17 +1101,16 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_configure_M_N_blocking( libxsmm_matrix_eqn *i_eqn, unsigned int m, unsigned int n, unsigned int vlen, unsigned int *m_blocking, unsigned int *n_blocking) {
+void libxsmm_generator_matequation_configure_M_N_blocking(libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_matrix_eqn *i_eqn, unsigned int m, unsigned int n, unsigned int vlen, unsigned int *m_blocking, unsigned int *n_blocking) {
   /* The m blocking is done in chunks of vlen */
   unsigned int m_chunks = (m+vlen-1)/vlen;
   unsigned int m_chunk_remainder = 8;
   unsigned int m_range, m_block_size, foo1, foo2;
-  unsigned int reserved_zmms = 0;
+  unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
   unsigned int n_tmp_reg_blocks = i_eqn->eqn_root->reg_score + 1;
   unsigned int max_nm_unrolling = 32 - reserved_zmms;
 
   max_nm_unrolling = max_nm_unrolling / n_tmp_reg_blocks;
-
   if (m % vlen == 0) {
     /* If there is not remainder in M, then we block M in order to limit block size */
     if (m_chunks > 32) {
@@ -1348,7 +1347,7 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
   libxsmm_configure_reserved_zmms_and_masks(io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, eqn );
 
   /* Configure M and N blocking factors */
-  libxsmm_generator_matequation_configure_M_N_blocking(eqn, i_mateqn_desc->m, i_mateqn_desc->n, l_kernel_config.vlen_in, &m_blocking, &n_blocking);
+  libxsmm_generator_matequation_configure_M_N_blocking(&l_kernel_config, eqn, i_mateqn_desc->m, i_mateqn_desc->n, l_kernel_config.vlen_in, &m_blocking, &n_blocking);
 
   cur_n = 0;
   while (cur_n != i_mateqn_desc->n) {
