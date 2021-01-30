@@ -662,9 +662,17 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
   use_m_output_masking  = (i_m % i_vlen_out == 0 ) ? 0 : 1;
 
   if (use_m_input_masking == 1) {
+    libxsmm_datatype fake_dt;
+    if (i_vlen_in == 64) {
+      fake_dt = LIBXSMM_DATATYPE_I8;
+    } else if(i_vlen_in == 32) {
+      fake_dt = LIBXSMM_DATATYPE_BF16;
+    } else {
+      fake_dt = LIBXSMM_DATATYPE_F32;
+    }
     mask_in_count = i_vlen_in - i_m % i_vlen_in;
     mask_reg_in   = reserved_mask_regs;
-    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_in, mask_in_count, i_micro_kernel_config->arg_info[0].dtype);
+    libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_in, mask_in_count, fake_dt);
     reserved_mask_regs++;
   }
 
@@ -672,9 +680,17 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
     if (i_vlen_in == i_vlen_out) {
       mask_reg_out = mask_reg_in;
     } else {
+      libxsmm_datatype fake_dt;
+      if (i_vlen_out == 64) {
+        fake_dt = LIBXSMM_DATATYPE_I8;
+      } else if(i_vlen_out == 32) {
+        fake_dt = LIBXSMM_DATATYPE_BF16;
+      } else {
+        fake_dt = LIBXSMM_DATATYPE_F32;
+      }
       mask_out_count = i_vlen_out - i_m % i_vlen_out;
       mask_reg_out   = reserved_mask_regs;
-      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_out, mask_out_count, LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype));
+      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_out, mask_out_count, fake_dt);
       reserved_mask_regs++;
     }
   }
@@ -684,6 +700,23 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
   *i_use_m_input_masking = use_m_input_masking;
   *i_mask_reg_out = mask_reg_out;
   *i_use_m_output_masking = use_m_output_masking;
+}
+
+LIBXSMM_API_INTERN
+unsigned int vmove_instruction(libxsmm_datatype  dtype) {
+  if ( LIBXSMM_DATATYPE_F64 == dtype ) {
+    return  LIBXSMM_X86_INSTR_VMOVUPD;
+  } else if ( LIBXSMM_DATATYPE_F32 == dtype ) {
+    return LIBXSMM_X86_INSTR_VMOVUPS;
+  } else if ( LIBXSMM_DATATYPE_BF16 == dtype ) {
+    return LIBXSMM_X86_INSTR_VMOVDQU16;
+  } else if ( LIBXSMM_DATATYPE_F16 == dtype ) {
+    return LIBXSMM_X86_INSTR_VMOVDQU16;
+  } else if ( LIBXSMM_DATATYPE_I8 == dtype ) {
+    return LIBXSMM_X86_INSTR_VMOVDQU8;
+  } else {
+    return 0;
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -708,6 +741,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
   unsigned int input_reg = 0;
   char vname = (libxsmm_typesize(arg_info[i_arg_id].dtype) * i_vlen == 64) ? 'z' : 'y';
 
+
   if (i_arg_id < i_micro_kernel_config->n_avail_gpr) {
     input_reg = i_micro_kernel_config->gpr_pool[i_arg_id];
   } else {
@@ -727,7 +761,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
-          i_micro_kernel_config->vmove_instruction_in,
+          vmove_instruction(arg_info[i_arg_id].dtype),
           input_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           (im * i_vlen + in * arg_info[i_arg_id].ld) * libxsmm_typesize(arg_info[i_arg_id].dtype),
@@ -771,7 +805,7 @@ void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*       
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
-          i_micro_kernel_config->vmove_instruction_out,
+          vmove_instruction(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
           i_gp_reg_mapping->gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           (im * i_vlen + in * i_meqn_desc->ldo) * libxsmm_typesize(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
@@ -1354,7 +1388,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc) {
   /* TODO: add logic to select code generation strategy of matrix equation  */
-#if 1
+#if 0
   libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, i_mateqn_desc);
 #else
   libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, i_mateqn_desc);
