@@ -461,7 +461,7 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
+    in_vector =  (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
     if (use_bcast == ROW_BCAST) {
       for ( i = 0; i < N; ++i ) {
         for ( j = 0; j < ldi; ++j ) {
@@ -730,7 +730,7 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
+    in_vector =  (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
     if (use_bcast == ROW_BCAST) {
       for ( i = 0; i < N; ++i ) {
         for ( j = 0; j < ldi; ++j ) {
