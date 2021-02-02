@@ -1244,7 +1244,7 @@ void libxsmm_adjust_required_zmms(libxsmm_matequation_kernel_config* i_micro_ker
 LIBXSMM_API_INTERN
 void libxsmm_mark_reserved_zmms( libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_matrix_eqn_elem *cur_node ) {
   if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
-    libxsmm_adjust_required_zmms(i_micro_kernel_config, cur_node->info.u_op.type, LIBXSMM_MELTW_FLAG_BINARY_NONE, UNARY_OP_POOL);
+    libxsmm_adjust_required_zmms(i_micro_kernel_config, cur_node->info.u_op.type, LIBXSMM_MELTW_TYPE_BINARY_NONE, UNARY_OP_POOL);
     libxsmm_mark_reserved_zmms(i_micro_kernel_config, cur_node->le);
   } else if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
     libxsmm_adjust_required_zmms(i_micro_kernel_config, LIBXSMM_MELTW_TYPE_UNARY_NONE, cur_node->info.b_op.type, BINARY_OP_POOL);
