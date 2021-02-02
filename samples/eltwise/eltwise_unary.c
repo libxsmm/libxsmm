@@ -369,13 +369,13 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_ROW;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
     }
     if (use_bcast == COL_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_COL;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
     }
     if (use_bcast == SCALAR_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_SCALAR;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
@@ -513,13 +513,13 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_ROW;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
     }
     if (use_bcast == COL_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_COL;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
     }
     if (use_bcast == SCALAR_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_SCALAR;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
@@ -646,13 +646,13 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_ROW;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
     }
     if (use_bcast == COL_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_COL;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
     }
     if (use_bcast == SCALAR_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_SCALAR;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
@@ -781,13 +781,13 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_ROW;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
     }
     if (use_bcast == COL_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_COL;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
     }
     if (use_bcast == SCALAR_BCAST) {
-      unary_flags = LIBXSMM_MELTW_TYPE_UNARY_BCAST_SCALAR;
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);

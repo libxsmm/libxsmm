@@ -298,22 +298,22 @@ void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
     }
     if (use_bcast == COL_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
     }
     if (use_bcast == SCALAR_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
     }
     if (use_bcast == ROW_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1;
     }
     if (use_bcast == COL_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     }
   }
 
@@ -490,22 +490,22 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
     }
     if (use_bcast == COL_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
     }
     if (use_bcast == SCALAR_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
     }
     if (use_bcast == ROW_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1;
     }
     if (use_bcast == COL_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     }
   }
 
@@ -677,22 +677,22 @@ void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
     }
     if (use_bcast == COL_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
     }
     if (use_bcast == SCALAR_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
     }
     if (use_bcast == ROW_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1;
     }
     if (use_bcast == COL_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     }
   }
   libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, binary_flags, binary_type);
@@ -867,22 +867,22 @@ void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
     }
     if (use_bcast == COL_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
     }
     if (use_bcast == SCALAR_BCAST_IN0) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_0;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
     }
     if (use_bcast == ROW_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_ROW_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1;
     }
     if (use_bcast == COL_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_COL_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
-      binary_flags = LIBXSMM_MELTW_TYPE_BINARY_BCAST_SCALAR_IN_1;
+      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     }
   }
   libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, binary_flags, binary_type);
