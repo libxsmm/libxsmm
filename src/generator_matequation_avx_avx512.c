@@ -19,6 +19,7 @@
 
 #define JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS   0
 #define JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS  1
+#define JIT_STRATEGY_HYBRID 2
 #define M_ADJUSTMENT 0
 #define N_ADJUSTMENT 1
 #define UNARY_OP_POOL 0
@@ -63,7 +64,7 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
    *      Param_struct_ptr0                         <-- RBP-24
    *      Scratch ptr in stack (to be filled)       <-- RBP-32
    *      Address scratch ptrin stack (to be filled)<-- RBP-40
-   *      Placeholder for stack var                 <-- RBP-48
+   *      Saved equation output ptr                 <-- RBP-48
    *      Placeholder for stack var                 <-- RBP-56
    *      Placeholder for stack var                 <-- RBP-64
    *      Placeholder for stack var                 <-- RBP-72
@@ -82,6 +83,8 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
       return -32;
     case LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR:
       return -40;
+    case LIBXSMM_MEQN_STACK_VAR_OUT_PTR:
+      return -48;
     default:
       return 0;
   }
@@ -169,7 +172,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
    *      Param_struct_ptr0                         <-- RBP-24
    *      Scratch ptr in stack (to be filled)       <-- RBP-32
    *      Address scratch ptrin stack (to be filled)<-- RBP-40
-   *      Placeholder for stack var                 <-- RBP-48
+   *      Saved equation output ptr                 <-- RBP-48
    *      Placeholder for stack var                 <-- RBP-56
    *      Placeholder for stack var                 <-- RBP-64
    *      Placeholder for stack var                 <-- RBP-72
@@ -185,8 +188,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code, i_micro_kernel_config->alu_mov_instruction, temp_reg, 0xFFFFFFFFFFFFFFC0 );
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, temp_reg, LIBXSMM_X86_GP_REG_RSP);
 
-    /* Strategy 0 is via tmp scratch in stack, Strategy 1 is via tmp register blocks */
-    if (i_strategy == 0) {
+    if (i_strategy == JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS) {
       /*TODO: Now we allocate tmps with dsize float */
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
       unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
@@ -196,11 +198,27 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
       scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
-    } else if (i_strategy == 1){
+    } else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS){
       unsigned int n_args = i_eqn->eqn_root->n_args;
       i_micro_kernel_config->n_args = n_args;
       addr_scratch_size = n_args * 8;
+      /* make addr scratch size multiple of 64b */
+      addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, addr_scratch_size );
+      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+    } else if (i_strategy == JIT_STRATEGY_HYBRID) {
+      libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
+      unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
+      unsigned int n_args = i_eqn->eqn_root->n_args;
+      i_micro_kernel_config->tmp_size = tmp_size;
       /* make scratch size multiple of 64b */
+      scratch_size = tmp_size * n_tmp;
+      scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
+      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+      /* make addr scratch size multiple of 64b */
+      i_micro_kernel_config->n_args = n_args;
+      addr_scratch_size = n_args * 8;
       addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, addr_scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
@@ -216,6 +234,18 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
   }
 
+  /* Store the out ptr in stack  */
+  if (i_strategy == JIT_STRATEGY_HYBRID) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+        i_micro_kernel_config->alu_mov_instruction,
+        i_gp_reg_mapping->gp_reg_param_struct,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        8,
+        temp_reg,
+        0 );
+    libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg );
+  }
+
   /* The stack at exit of setup looks like this:
    *
    *      Return address                            <-- RBP+8
@@ -225,7 +255,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
    *      Param_struct_ptr0                         <-- RBP-24
    *      Scratch ptr in stack                      <-- RBP-32
    *      Address scratch ptrin stack               <-- RBP-40
-   *      Placeholder for stack var                 <-- RBP-48
+   *      Saved equation output ptr                 <-- RBP-48
    *      Placeholder for stack var                 <-- RBP-56
    *      Placeholder for stack var                 <-- RBP-64
    *      Placeholder for stack var                 <-- RBP-72
@@ -238,13 +268,10 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code*   io_generated_code,
-                                              libxsmm_matequation_kernel_config*                  i_micro_kernel_config ) {
-
-  if (i_micro_kernel_config->use_fp32bf16_cvt_replacement == 1) {
-    libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
-  }
-
+void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code*                   io_generated_code,
+                                              libxsmm_matequation_kernel_config*                  i_micro_kernel_config,
+                                              libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,
+                                              unsigned int                                        i_strategy  ) {
   if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
@@ -300,20 +327,24 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
     unsigned int                                        ptr_id ) {
 
   if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
-    libxsmm_x86_instruction_alu_mem( io_generated_code,
-        i_micro_kernel_config->alu_mov_instruction,
-        i_gp_reg_mapping->gp_reg_param_struct,
-        LIBXSMM_X86_GP_REG_UNDEF, 0,
-        0,
-        temp_reg,
-        0 );
-    libxsmm_x86_instruction_alu_mem( io_generated_code,
-        i_micro_kernel_config->alu_mov_instruction,
-        temp_reg,
-        LIBXSMM_X86_GP_REG_UNDEF, 0,
-        cur_node->info.arg.in_pos*8,
-        temp_reg,
-        0 );
+    if (cur_node->info.arg.in_pos >= 0) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+          i_micro_kernel_config->alu_mov_instruction,
+          i_gp_reg_mapping->gp_reg_param_struct,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          0,
+          temp_reg,
+          0 );
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+          i_micro_kernel_config->alu_mov_instruction,
+          temp_reg,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          cur_node->info.arg.in_pos*8,
+          temp_reg,
+          0 );
+    } else {
+      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, (-1-cur_node->info.arg.in_pos) * i_micro_kernel_config->tmp_size, temp_reg);
+    }
   } else {
     libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, cur_node->tmp.id * i_micro_kernel_config->tmp_size, temp_reg);
   }
@@ -433,8 +464,8 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
     } else {
       /* This should not happen */
     }
-      /* Configure the unary-binary microkernel */
-      libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, io_generated_code->arch, meltw_desc);
+    /* Configure the unary-binary microkernel */
+    libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, io_generated_code->arch, meltw_desc);
     /* Call unary-binary JITer */
     libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
   }
@@ -453,30 +484,46 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
   if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
     unsigned int cur_pos = *arg_id;
-    if (cur_pos < i_micro_kernel_config->n_avail_gpr) {
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          input_reg,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          cur_node->info.arg.in_pos*8,
-          i_micro_kernel_config->gpr_pool[cur_pos],
-          0 );
+    if (cur_node->info.arg.in_pos >= 0){
+      if (cur_pos < i_micro_kernel_config->n_avail_gpr) {
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            input_reg,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            cur_node->info.arg.in_pos*8,
+            i_micro_kernel_config->gpr_pool[cur_pos],
+            0 );
+      } else {
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            input_reg,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            cur_node->info.arg.in_pos*8,
+            temp_reg,
+            0 );
+        libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, cur_pos * 8, temp_reg2);
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            temp_reg2,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            0,
+            temp_reg,
+            1 );
+      }
     } else {
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          input_reg,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          cur_node->info.arg.in_pos*8,
-          temp_reg,
-          0 );
-      libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, cur_pos * 8, temp_reg2);
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          temp_reg2,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          0,
-          temp_reg,
-          1 );
+      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, (-cur_node->info.arg.in_pos-1) * i_micro_kernel_config->tmp_size, temp_reg);
+      if (cur_pos < i_micro_kernel_config->n_avail_gpr) {
+        libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, temp_reg, i_micro_kernel_config->gpr_pool[cur_pos]);
+      } else {
+        libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, cur_pos * 8, temp_reg2);
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            temp_reg2,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            0,
+            temp_reg,
+            1 );
+      }
     }
     arg_info[cur_pos] = cur_node->info.arg;
     *arg_id = cur_pos + 1;
@@ -1278,6 +1325,7 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
       0,
       LIBXSMM_X86_GP_REG_R15,
       0 );
+
   arg_info = (libxsmm_matrix_eqn_arg*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_matrix_eqn_arg));
   libxsmm_generator_copy_input_args(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, eqn->eqn_root, &arg_id, arg_info, LIBXSMM_X86_GP_REG_R15);
   i_micro_kernel_config->arg_info = arg_info;
@@ -1318,8 +1366,101 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
     }
   }
 
+  if (i_micro_kernel_config->use_fp32bf16_cvt_replacement == 1) {
+    libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+  }
   /* Free aux data structure */
   free(arg_info);
+}
+
+LIBXSMM_API_INTERN
+int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node) {
+  int result = 0;
+  if (node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
+    if ( node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_TANH ||
+         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ||
+         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID ||
+         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV ||
+         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_EXP ||
+         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU ||
+         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ) {
+      result = 1;
+    }
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+void enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size) {
+  jiting_queue[*queue_size] = eqn;
+  *queue_size = *queue_size + 1;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size ) {
+
+  libxsmm_matrix_eqn_elem *root = eqn->eqn_root;
+  unsigned int last_timestamp = eqn->eqn_root->visit_timestamp, timestamp = 0;
+
+  for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
+    libxsmm_matrix_eqn_elem *cur_node = find_op_at_timestamp(root, timestamp);
+    if ( (timestamp < last_timestamp) && (is_eqn_node_breaking_point(cur_node) > 0) ) {
+      libxsmm_matrix_eqn_elem *new_arg_node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
+      libxsmm_matrix_eqn      *new_eqn      = (libxsmm_matrix_eqn*) malloc( sizeof(libxsmm_matrix_eqn) );
+      union libxsmm_matrix_eqn_info info;
+      info.arg.m = cur_node->tmp.m;
+      info.arg.n = cur_node->tmp.n;
+      info.arg.ld = cur_node->tmp.ld;
+      info.arg.in_pos = -(cur_node->tmp.id + 1);
+      info.arg.dtype = cur_node->tmp.dtype;
+      new_arg_node->le = NULL;
+      new_arg_node->ri = NULL;
+      new_arg_node->up = cur_node->up;
+      new_arg_node->type = LIBXSMM_MATRIX_EQN_NODE_ARG;
+      new_arg_node->info = info;
+      if (cur_node->up->le == cur_node) {
+        cur_node->up->le = new_arg_node;
+      } else {
+        cur_node->up->ri = new_arg_node;
+      }
+      new_eqn->eqn_root = cur_node;
+      new_eqn->is_constructed = 1;
+      enqueue_equation(new_eqn, jiting_queue, queue_size);
+    }
+    if (timestamp == last_timestamp) {
+      enqueue_equation(eqn, jiting_queue, queue_size);
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *current_timestamp ) {
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    /* Do not increase the timestamp, this node is just an arg so it's not part of the execution */
+    cur_node->visit_timestamp = -1;
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+    cur_node->visit_timestamp = *current_timestamp;
+    *current_timestamp = *current_timestamp + 1;
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    if (cur_node->le->reg_score >= cur_node->ri->reg_score) {
+      libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+      libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
+    } else {
+      libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
+      libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+    }
+    cur_node->visit_timestamp = *current_timestamp;
+    *current_timestamp = *current_timestamp + 1;
+  } else {
+    /* shouldn't happen */
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_matequation_assign_timestamps(libxsmm_matrix_eqn *eqn) {
+  libxsmm_blasint timestamp = 0;
+  libxsmm_generator_assign_new_timestamp(eqn->eqn_root, &timestamp );
 }
 
 LIBXSMM_API_INTERN
@@ -1328,10 +1469,15 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_matequation_gp_reg_mapping  l_gp_reg_mapping;
   libxsmm_matequation_kernel_config   l_kernel_config;
   libxsmm_loop_label_tracker          l_loop_label_tracker;
-
   unsigned int eqn_idx = i_mateqn_desc->eqn_idx;
   libxsmm_matrix_eqn *eqn = libxsmm_matrix_eqn_get_equation( eqn_idx );
-  unsigned int strategy = atoi(getenv("STRATEGY"));
+  libxsmm_matrix_eqn **jiting_queue;
+  unsigned int queue_size = 0;
+  /* TODO: Use number of tree nodes as max size */
+  unsigned int max_queue_size = 256;
+  unsigned int strategy = JIT_STRATEGY_HYBRID;
+  unsigned int eqn_tree_id = 0;
+  unsigned int temp_reg = LIBXSMM_X86_GP_REG_R8;
 
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
@@ -1351,7 +1497,6 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
 #else /* match calling convention on Linux */
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RDI;
 #endif
-
   l_gp_reg_mapping.gp_reg_out = LIBXSMM_X86_GP_REG_RAX;
   l_gp_reg_mapping.temp_reg    = LIBXSMM_X86_GP_REG_RBX;
   l_gp_reg_mapping.temp_reg2   = LIBXSMM_X86_GP_REG_RCX;
@@ -1361,22 +1506,55 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   l_kernel_config.gpr_pool[0] = LIBXSMM_X86_GP_REG_RSI; l_kernel_config.gpr_pool[1] = LIBXSMM_X86_GP_REG_RDX; l_kernel_config.gpr_pool[2] = LIBXSMM_X86_GP_REG_R8; l_kernel_config.gpr_pool[3] = LIBXSMM_X86_GP_REG_R9;
   l_kernel_config.gpr_pool[4] = LIBXSMM_X86_GP_REG_R10; l_kernel_config.gpr_pool[5] = LIBXSMM_X86_GP_REG_R11; l_kernel_config.gpr_pool[6] = LIBXSMM_X86_GP_REG_R12; l_kernel_config.gpr_pool[7] = LIBXSMM_X86_GP_REG_R13; l_kernel_config.gpr_pool[8] = LIBXSMM_X86_GP_REG_R14;
 
+  jiting_queue = (libxsmm_matrix_eqn**) malloc(max_queue_size * sizeof(libxsmm_matrix_eqn*));
+  libxsmm_generator_decompose_equation_tree( eqn, jiting_queue, &queue_size );
+
   /* Open asm */
   libxsmm_x86_instruction_open_stream_matequation( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct);
 
   /* Setup the stack */
   libxsmm_generator_matequation_setup_stack_frame( io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, eqn, strategy);
 
+  for (eqn_tree_id = 0; eqn_tree_id < queue_size; eqn_tree_id++) {
+    libxsmm_matrix_eqn *cur_eqn = jiting_queue[eqn_tree_id];
+    if (eqn_tree_id == (queue_size - 1)) {
+      libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg);
+    } else {
+      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, temp_reg);
+    }
+
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+        l_kernel_config.alu_mov_instruction,
+        l_gp_reg_mapping.gp_reg_param_struct,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        8,
+        temp_reg,
+        1 );
+
+    /* Re assign visit_stamps to current equation tree  */
+    libxsmm_generator_matequation_assign_timestamps(cur_eqn);
+
+    if (is_eqn_node_breaking_point(cur_eqn->eqn_root) > 0) {
+      libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
+    } else {
+      libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
+    }
+  }
+
+#if 0
   if (strategy == JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS) {
     libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, eqn);
   } else {
     libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, eqn);
   }
+#endif
 
   /* Destroy stack frame */
-  libxsmm_generator_matequation_destroy_stack_frame(  io_generated_code,  &l_kernel_config );
+  libxsmm_generator_matequation_destroy_stack_frame(  io_generated_code,  &l_kernel_config, &l_gp_reg_mapping, strategy);
 
   /* Close asm */
   libxsmm_x86_instruction_close_stream_matequation( io_generated_code );
+
+  free(jiting_queue);
 }
 
