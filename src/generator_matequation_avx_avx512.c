@@ -1517,10 +1517,14 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
 
   for (eqn_tree_id = 0; eqn_tree_id < queue_size; eqn_tree_id++) {
     libxsmm_matrix_eqn *cur_eqn = jiting_queue[eqn_tree_id];
+    libxsmm_meqn_descriptor copy_mateqn_desc = *i_mateqn_desc;
+
+    /* Determine the output and precision of current equaiton tree to be JITed */
     if (eqn_tree_id == (queue_size - 1)) {
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg);
     } else {
       libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, temp_reg);
+      copy_mateqn_desc.datatype = cur_eqn->eqn_root->tmp.dtype;
     }
 
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -1535,9 +1539,9 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     libxsmm_generator_matequation_assign_timestamps(cur_eqn);
 
     if (is_eqn_node_breaking_point(cur_eqn->eqn_root) > 0) {
-      libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
+      libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
-      libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
+      libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     }
   }
 
