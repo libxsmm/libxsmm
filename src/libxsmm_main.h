@@ -882,6 +882,13 @@ LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_node_type {
   LIBXSMM_MATRIX_EQN_NODE_ARG     = 8
 } libxsmm_matrix_eqn_node_type;
 
+LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_bcast_type {
+  LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE   = 0,
+  LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW    = 1,
+  LIBXSMM_MATRIX_EQN_BCAST_TYPE_COLUMN = 2,
+  LIBXSMM_MATRIX_EQN_BCAST_RYPE_SCALAR = 4
+} libxsmm_matrix_eqn_bcast_type;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_unary_op {
   libxsmm_meltw_unary_type  type;
   libxsmm_meltw_unary_flags flags;
@@ -906,7 +913,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
   libxsmm_blasint  in_pos;
   libxsmm_blasint  offs_in_pos;
   libxsmm_datatype dtype;
-  libxsmm_blasint  bcast_type;
+  libxsmm_matrix_eqn_bcast_type  bcast_type;
 } libxsmm_matrix_eqn_arg;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_tmp_info {
@@ -915,7 +922,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
   libxsmm_blasint  ld;
   libxsmm_blasint  id;
   libxsmm_datatype dtype;
-  libxsmm_blasint  bcast_type;
+  libxsmm_matrix_eqn_bcast_type  bcast_type;
 } libxsmm_matrix_eqn_tmp_info;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_info {

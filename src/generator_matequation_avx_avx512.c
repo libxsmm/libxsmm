@@ -24,6 +24,8 @@
 #define N_ADJUSTMENT 1
 #define UNARY_OP_POOL 0
 #define BINARY_OP_POOL 1
+#define LEFT 0
+#define RIGHT 1
 
 LIBXSMM_API_INTERN
 unsigned int get_start_of_register_block(libxsmm_matequation_kernel_config *i_micro_kernel_config, unsigned int i_reg_block_id) {
@@ -1461,6 +1463,50 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_assign_timestamps(libxsmm_matrix_eqn *eqn) {
   libxsmm_blasint timestamp = 0;
   libxsmm_generator_assign_new_timestamp(eqn->eqn_root, &timestamp );
+}
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags flags) {
+  libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
+
+  return result;
+}
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side) {
+  libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
+  if (side == RIGHT) {
+
+  }
+  if (side == LEFT) {
+
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+void get_parent_bcast_info(libxsmm_matrix_eqn_elem* cur_node) {
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+      cur_node->info.arg.bcast_type = get_bcast_type_unary( cur_node->up->info.u_op.flags );
+    } else if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+      if ( cur_node->up->le == cur_node ) {
+        cur_node->info.arg.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, LEFT );
+      } else {
+        cur_node->info.arg.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, RIGHT );
+      }
+    }
+  } else {
+    if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+      cur_node->tmp.bcast_type = get_bcast_type_unary( cur_node->up->info.u_op.flags );
+    } else if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+      if ( cur_node->up->le == cur_node ) {
+        cur_node->tmp.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, LEFT );
+      } else {
+        cur_node->tmp.bcast_type= get_bcast_type_binary( cur_node->up->info.b_op.flags, RIGHT );
+      }
+    }
+  }
 }
 
 LIBXSMM_API_INTERN
