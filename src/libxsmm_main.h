@@ -670,6 +670,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_dnn_tensor* grad_bias;      /* grad bais tensor */
   libxsmm_dnn_tensor* relumask;       /* relumask */
   libxsmm_barrier* barrier;           /* barrier */
+  int target_archid;
+
   int ifmblock;
   int ofmblock;
   int blocksifm;
