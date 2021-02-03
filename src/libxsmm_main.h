@@ -885,8 +885,8 @@ LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_node_type {
 LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_bcast_type {
   LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE   = 0,
   LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW    = 1,
-  LIBXSMM_MATRIX_EQN_BCAST_TYPE_COLUMN = 2,
-  LIBXSMM_MATRIX_EQN_BCAST_RYPE_SCALAR = 4
+  LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL    = 2,
+  LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR = 4
 } libxsmm_matrix_eqn_bcast_type;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_unary_op {

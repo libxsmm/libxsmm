@@ -565,9 +565,15 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
   for (i = 0; i < n_args; i++) {
     unsigned int tsize = libxsmm_typesize(arg_info[i].dtype);
     if (i_adjust_type == M_ADJUSTMENT) {
-      adjust_val = i_adjust_amount * tsize;
+      if (arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE || arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL) {
+        adjust_val = i_adjust_amount * tsize;
+      }
     } else if (i_adjust_type == N_ADJUSTMENT) {
-      adjust_val = i_adjust_amount * arg_info[i].ld * tsize;
+      if (arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE) {
+        adjust_val = i_adjust_amount * arg_info[i].ld * tsize;
+      } else if (arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW) {
+        adjust_val = i_adjust_amount * tsize;
+      }
     }
     if ( i < i_micro_kernel_config->n_avail_gpr ) {
       libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, i_micro_kernel_config->gpr_pool[i], adjust_val);
@@ -744,6 +750,23 @@ unsigned int vmove_instruction(libxsmm_datatype  dtype) {
 }
 
 LIBXSMM_API_INTERN
+unsigned int vbcast_instruction(libxsmm_datatype  dtype) {
+  if ( LIBXSMM_DATATYPE_F64 == dtype ) {
+    return  LIBXSMM_X86_INSTR_VPBROADCASTQ;
+  } else if ( LIBXSMM_DATATYPE_F32 == dtype ) {
+    return LIBXSMM_X86_INSTR_VPBROADCASTD;
+  } else if ( LIBXSMM_DATATYPE_BF16 == dtype ) {
+    return LIBXSMM_X86_INSTR_VPBROADCASTW;
+  } else if ( LIBXSMM_DATATYPE_F16 == dtype ) {
+    return LIBXSMM_X86_INSTR_VPBROADCASTW;
+  } else if ( LIBXSMM_DATATYPE_I8 == dtype ) {
+    return LIBXSMM_X86_INSTR_VPBROADCASTB;
+  } else {
+    return 0;
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code*          io_generated_code,
                                                  libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
                                                  libxsmm_matequation_kernel_config*      i_micro_kernel_config,
@@ -780,7 +803,46 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
     input_reg = temp_reg;
   }
 
-  for (in = 0; in < i_n_blocking; in++) {
+  if (arg_info[i_arg_id].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE) {
+    for (in = 0; in < i_n_blocking; in++) {
+      for (im = 0; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            vmove_instruction(arg_info[i_arg_id].dtype),
+            input_reg,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (im * i_vlen + in * arg_info[i_arg_id].ld) * libxsmm_typesize(arg_info[i_arg_id].dtype),
+            vname,
+            cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 1, 0 );
+
+        if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
+          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+        }
+      }
+    }
+  } else if (arg_info[i_arg_id].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW) {
+    for (in = 0; in < i_n_blocking; in++) {
+      im = 0;
+      cur_vreg = i_start_vreg + in * i_m_blocking + im;
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          vbcast_instruction(arg_info[i_arg_id].dtype),
+          input_reg,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          in * libxsmm_typesize(arg_info[i_arg_id].dtype),
+          vname,
+          cur_vreg, 0, 1, 0 );
+      if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
+        libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+      }
+      for (im = 1; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64, 'z', i_start_vreg + in * i_m_blocking, cur_vreg );
+      }
+    }
+  } else if (arg_info[i_arg_id].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL) {
+    in = 0;
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -794,6 +856,35 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
 
       if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
         libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+      }
+    }
+    for (in = 1; in < i_n_blocking; in++) {
+      for (im = 0; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64, 'z', i_start_vreg + im, cur_vreg );
+      }
+    }
+  } else if (arg_info[i_arg_id].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR) {
+    im = 0;
+    in = 0;
+    cur_vreg = i_start_vreg + in * i_m_blocking + im;
+    libxsmm_x86_instruction_vec_move( io_generated_code,
+        i_micro_kernel_config->instruction_set,
+        vbcast_instruction(arg_info[i_arg_id].dtype),
+        input_reg,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        0,
+        vname,
+        cur_vreg, 0, 1, 0 );
+    if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
+      libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+    }
+    for (in = 0; in < i_n_blocking; in++) {
+      for (im = 0; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        if (cur_vreg != i_start_vreg) {
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64, 'z', i_start_vreg, cur_vreg );
+        }
       }
     }
   }
@@ -1305,74 +1396,87 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm_generated_code* io_generated_code,
-    const libxsmm_meqn_descriptor*          i_mateqn_desc,
-    libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
-    libxsmm_matequation_kernel_config*      i_micro_kernel_config,
-    libxsmm_loop_label_tracker*             io_loop_label_tracker,
-    libxsmm_matrix_eqn*                     eqn ) {
-  libxsmm_matrix_eqn_arg              *arg_info;
-  unsigned int arg_id = 0;
-  unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
-  if ( eqn == NULL ) {
-    fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
-    return;
+libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags flags) {
+  libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
+  if ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) {
+    result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
+  } else if ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0) {
+    result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL;
+  } else if ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0) {
+    result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR;
   }
+  return result;
+}
 
-  /* Iterate over the equation tree and copy the args ptrs in the auxiliary scratch */
-  libxsmm_x86_instruction_alu_mem( io_generated_code,
-      i_micro_kernel_config->alu_mov_instruction,
-      i_gp_reg_mapping->gp_reg_param_struct,
-      LIBXSMM_X86_GP_REG_UNDEF, 0,
-      0,
-      LIBXSMM_X86_GP_REG_R15,
-      0 );
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side) {
+  libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
+  if (side == RIGHT) {
+    if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR;
+    }
+  }
+  if (side == LEFT) {
+    if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR;
+    }
+  }
+  return result;
+}
 
-  arg_info = (libxsmm_matrix_eqn_arg*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_matrix_eqn_arg));
-  libxsmm_generator_copy_input_args(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, eqn->eqn_root, &arg_id, arg_info, LIBXSMM_X86_GP_REG_R15);
-  i_micro_kernel_config->arg_info = arg_info;
-
-  /* Setup output reg */
-  libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, 8, i_gp_reg_mapping->gp_reg_out, 0 );
-
-  /* Configure equation vlens  */
-  libxsmm_generator_configure_equation_avx512_vlens(i_micro_kernel_config, eqn);
-
-  /* Assign reserved zmms by parsing the equation */
-  libxsmm_configure_reserved_zmms_and_masks(io_generated_code, i_mateqn_desc, i_gp_reg_mapping, i_micro_kernel_config, eqn );
-
-  /* Configure M and N blocking factors */
-  libxsmm_generator_matequation_configure_M_N_blocking(i_micro_kernel_config, eqn, i_mateqn_desc->m, i_mateqn_desc->n, i_micro_kernel_config->vlen_in, &m_blocking, &n_blocking);
-
-  cur_n = 0;
-  while (cur_n != i_mateqn_desc->n) {
-    cur_m = 0;
-    adjusted_aux_vars = 0;
-    n_microkernel = (cur_n < n_blocking) ? n_blocking : i_mateqn_desc->n - cur_n;
-    while (cur_m != i_mateqn_desc->m) {
-      m_microkernel = (cur_m < m_blocking) ? m_blocking : i_mateqn_desc->m - cur_m;
-      unsigned int skip_n_loop_reg_cleanup = ((cur_n + n_microkernel == i_mateqn_desc->n) && (cur_m + m_microkernel == i_mateqn_desc->m)) ? 1 : 0 ;
-      libxsmm_generator_mateqn_2d_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateqn_desc, eqn, m_microkernel, n_microkernel, skip_n_loop_reg_cleanup);
-      cur_m += m_microkernel;
-      if (cur_m != i_mateqn_desc->m) {
-        adjusted_aux_vars = 1;
-        libxsmm_generator_mateqn_adjust_args_addr(io_generated_code, i_mateqn_desc, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->alu_add_instruction, m_microkernel, M_ADJUSTMENT, arg_info);
+LIBXSMM_API_INTERN
+void get_parent_bcast_info(libxsmm_matrix_eqn_elem* cur_node) {
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+      cur_node->info.arg.bcast_type = get_bcast_type_unary( cur_node->up->info.u_op.flags );
+    } else if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+      if ( cur_node->up->le == cur_node ) {
+        cur_node->info.arg.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, LEFT );
+      } else {
+        cur_node->info.arg.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, RIGHT );
       }
     }
-    if (adjusted_aux_vars == 1) {
-      libxsmm_generator_mateqn_adjust_args_addr(io_generated_code, i_mateqn_desc, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->alu_sub_instruction, m_microkernel, M_ADJUSTMENT, arg_info);
-    }
-    cur_n += n_microkernel;
-    if (cur_n != i_mateqn_desc->n) {
-      libxsmm_generator_mateqn_adjust_args_addr(io_generated_code, i_mateqn_desc, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->alu_add_instruction, n_microkernel, N_ADJUSTMENT,  arg_info);
+  } else {
+    if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+      cur_node->tmp.bcast_type = get_bcast_type_unary( cur_node->up->info.u_op.flags );
+    } else if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+      if ( cur_node->up->le == cur_node ) {
+        cur_node->tmp.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, LEFT );
+      } else {
+        cur_node->tmp.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, RIGHT );
+      }
     }
   }
+}
 
-  if (i_micro_kernel_config->use_fp32bf16_cvt_replacement == 1) {
-    libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+LIBXSMM_API_INTERN
+void assign_bcast_info(libxsmm_matrix_eqn_elem* cur_node) {
+  get_parent_bcast_info(cur_node);
+  if (cur_node->le != NULL) {
+    assign_bcast_info(cur_node->le);
   }
-  /* Free aux data structure */
-  free(arg_info);
+  if (cur_node->ri != NULL) {
+    assign_bcast_info(cur_node->ri);
+  }
+}
+
+LIBXSMM_API_INTERN
+void propagate_bcast_info( libxsmm_matrix_eqn *eqn ) {
+  libxsmm_matrix_eqn_elem* root = eqn->eqn_root;
+  if (root->le != NULL) {
+    assign_bcast_info(root->le);
+  }
+  if (root->ri != NULL) {
+    assign_bcast_info(root->ri);
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -1466,47 +1570,77 @@ void libxsmm_generator_matequation_assign_timestamps(libxsmm_matrix_eqn *eqn) {
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags flags) {
-  libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
-
-  return result;
-}
-
-LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side) {
-  libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
-  if (side == RIGHT) {
-
+void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm_generated_code* io_generated_code,
+    const libxsmm_meqn_descriptor*          i_mateqn_desc,
+    libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
+    libxsmm_matequation_kernel_config*      i_micro_kernel_config,
+    libxsmm_loop_label_tracker*             io_loop_label_tracker,
+    libxsmm_matrix_eqn*                     eqn ) {
+  libxsmm_matrix_eqn_arg              *arg_info;
+  unsigned int arg_id = 0;
+  unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
+  if ( eqn == NULL ) {
+    fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
+    return;
   }
-  if (side == LEFT) {
 
-  }
-  return result;
-}
+  /* Propagate bcast info in the tree */
+  propagate_bcast_info(eqn);
 
-LIBXSMM_API_INTERN
-void get_parent_bcast_info(libxsmm_matrix_eqn_elem* cur_node) {
-  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
-    if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
-      cur_node->info.arg.bcast_type = get_bcast_type_unary( cur_node->up->info.u_op.flags );
-    } else if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
-      if ( cur_node->up->le == cur_node ) {
-        cur_node->info.arg.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, LEFT );
-      } else {
-        cur_node->info.arg.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, RIGHT );
+  /* Iterate over the equation tree and copy the args ptrs in the auxiliary scratch */
+  libxsmm_x86_instruction_alu_mem( io_generated_code,
+      i_micro_kernel_config->alu_mov_instruction,
+      i_gp_reg_mapping->gp_reg_param_struct,
+      LIBXSMM_X86_GP_REG_UNDEF, 0,
+      0,
+      LIBXSMM_X86_GP_REG_R15,
+      0 );
+
+  arg_info = (libxsmm_matrix_eqn_arg*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_matrix_eqn_arg));
+  libxsmm_generator_copy_input_args(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, eqn->eqn_root, &arg_id, arg_info, LIBXSMM_X86_GP_REG_R15);
+  i_micro_kernel_config->arg_info = arg_info;
+
+  /* Setup output reg */
+  libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, 8, i_gp_reg_mapping->gp_reg_out, 0 );
+
+  /* Configure equation vlens  */
+  libxsmm_generator_configure_equation_avx512_vlens(i_micro_kernel_config, eqn);
+
+  /* Assign reserved zmms by parsing the equation */
+  libxsmm_configure_reserved_zmms_and_masks(io_generated_code, i_mateqn_desc, i_gp_reg_mapping, i_micro_kernel_config, eqn );
+
+  /* Configure M and N blocking factors */
+  libxsmm_generator_matequation_configure_M_N_blocking(i_micro_kernel_config, eqn, i_mateqn_desc->m, i_mateqn_desc->n, i_micro_kernel_config->vlen_in, &m_blocking, &n_blocking);
+
+  cur_n = 0;
+  while (cur_n != i_mateqn_desc->n) {
+    cur_m = 0;
+    adjusted_aux_vars = 0;
+    n_microkernel = (cur_n < n_blocking) ? n_blocking : i_mateqn_desc->n - cur_n;
+    while (cur_m != i_mateqn_desc->m) {
+      m_microkernel = (cur_m < m_blocking) ? m_blocking : i_mateqn_desc->m - cur_m;
+      unsigned int skip_n_loop_reg_cleanup = ((cur_n + n_microkernel == i_mateqn_desc->n) && (cur_m + m_microkernel == i_mateqn_desc->m)) ? 1 : 0 ;
+      libxsmm_generator_mateqn_2d_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateqn_desc, eqn, m_microkernel, n_microkernel, skip_n_loop_reg_cleanup);
+      cur_m += m_microkernel;
+      if (cur_m != i_mateqn_desc->m) {
+        adjusted_aux_vars = 1;
+        libxsmm_generator_mateqn_adjust_args_addr(io_generated_code, i_mateqn_desc, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->alu_add_instruction, m_microkernel, M_ADJUSTMENT, arg_info);
       }
     }
-  } else {
-    if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
-      cur_node->tmp.bcast_type = get_bcast_type_unary( cur_node->up->info.u_op.flags );
-    } else if ( cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
-      if ( cur_node->up->le == cur_node ) {
-        cur_node->tmp.bcast_type = get_bcast_type_binary( cur_node->up->info.b_op.flags, LEFT );
-      } else {
-        cur_node->tmp.bcast_type= get_bcast_type_binary( cur_node->up->info.b_op.flags, RIGHT );
-      }
+    if (adjusted_aux_vars == 1) {
+      libxsmm_generator_mateqn_adjust_args_addr(io_generated_code, i_mateqn_desc, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->alu_sub_instruction, m_microkernel, M_ADJUSTMENT, arg_info);
+    }
+    cur_n += n_microkernel;
+    if (cur_n != i_mateqn_desc->n) {
+      libxsmm_generator_mateqn_adjust_args_addr(io_generated_code, i_mateqn_desc, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->alu_add_instruction, n_microkernel, N_ADJUSTMENT,  arg_info);
     }
   }
+
+  if (i_micro_kernel_config->use_fp32bf16_cvt_replacement == 1) {
+    libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+  }
+  /* Free aux data structure */
+  free(arg_info);
 }
 
 LIBXSMM_API_INTERN

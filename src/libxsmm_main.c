@@ -5037,6 +5037,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
  *      * 1) The child is an arg, so we have to reserve a tmp storage
  *           * 2) The child is NOT an arg, so we just reuse the tmp storage of the child */
     if ( cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+      cur_node->le->up = cur_node;
       cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
       cur_node->tmp.m  = cur_node->le->info.arg.m;
       cur_node->tmp.n  = cur_node->le->info.arg.n;
@@ -5068,6 +5069,8 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
  *           * 2) Both child are NOT arg, so we reuse the tmp storage of either one for our output and we make the other tmp storage available
  *                * 3) One child IS arg and the other child is NOT an arg, so we just reuse the tmp storage of the non-arg child */
     if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+      cur_node->le->up = cur_node;
+      cur_node->ri->up = cur_node;
       cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
       cur_node->tmp.m  = cur_node->le->info.arg.m;
       cur_node->tmp.n  = cur_node->le->info.arg.n;
@@ -5084,6 +5087,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       cur_node->tree_max_comp_tsize = LIBXSMM_MAX( cur_node->ri->tree_max_comp_tsize, cur_node->le->tree_max_comp_tsize );
     } else {
       if (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
+        cur_node->ri->up = cur_node;
         cur_node->tmp.id = cur_node->le->tmp.id;
         cur_node->tmp.m  = cur_node->le->tmp.m;
         cur_node->tmp.n  = cur_node->le->tmp.n;
@@ -5091,6 +5095,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
         cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
         cur_node->tree_max_comp_tsize = LIBXSMM_MAX( libxsmm_typesize(cur_node->info.b_op.dtype), cur_node->le->tree_max_comp_tsize );
       } else {
+        cur_node->le->up = cur_node;
         cur_node->tmp.id = cur_node->ri->tmp.id;
         cur_node->tmp.m  = cur_node->ri->tmp.m;
         cur_node->tmp.n  = cur_node->ri->tmp.n;
