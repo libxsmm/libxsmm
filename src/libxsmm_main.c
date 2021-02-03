@@ -621,7 +621,7 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 
 
 /* Caution: cannot be used multiple times in a single expression! */
-LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
+LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base)
 {
   const int len = (NULL != scale ? ((int)strlen(scale)) : 0);
   const int m = LIBXSMM_INTRINSICS_BITSCANBWD64(nbytes) / base, n = LIBXSMM_MIN(m, len);
@@ -700,7 +700,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
       }
-      if (0 != libxsmm_format_size(number_format_buffer, sizeof(number_format_buffer),
+      if (0 != libxsmm_format_value(number_format_buffer, sizeof(number_format_buffer),
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
         sizeof(internal_cache_type) * (LIBXSMM_NTHREADS_MAX) +
 #endif
@@ -708,7 +708,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         "KM", "B", 10))
       {
         fprintf(stderr, "Registry and code: %s", number_format_buffer);
-        if (0 != libxsmm_format_size(number_format_buffer, sizeof(number_format_buffer), internal_registry_nbytes, "KM", "B", 10)) {
+        if (0 != libxsmm_format_value(number_format_buffer, sizeof(number_format_buffer), internal_registry_nbytes, "KM", "B", 10)) {
           fprintf(stderr, " + %s", number_format_buffer);
         }
         if (0 != high_verbosity) {
@@ -740,7 +740,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       }
       if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info)) {
         if (0 != scratch_info.size &&
-          0 != libxsmm_format_size(number_format_buffer, sizeof(number_format_buffer), scratch_info.size, "KM", "B", 10))
+          0 != libxsmm_format_value(number_format_buffer, sizeof(number_format_buffer), scratch_info.size, "KM", "B", 10))
         {
           fprintf(stderr, "Scratch: %s", number_format_buffer);
           if (0 != high_verbosity) {
@@ -751,7 +751,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
           }
         }
         if (0 != scratch_info.internal && 0 != high_verbosity &&
-          libxsmm_format_size(number_format_buffer, sizeof(number_format_buffer), scratch_info.internal, "KM", "B", 10))
+          libxsmm_format_value(number_format_buffer, sizeof(number_format_buffer), scratch_info.internal, "KM", "B", 10))
         {
           fprintf(stderr, "Private: %s\n", number_format_buffer);
         }
