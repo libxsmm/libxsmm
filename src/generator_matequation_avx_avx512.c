@@ -567,33 +567,39 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
     if (i_adjust_type == M_ADJUSTMENT) {
       if (arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE || arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL) {
         adjust_val = i_adjust_amount * tsize;
+      } else {
+        adjust_val = 0;
       }
     } else if (i_adjust_type == N_ADJUSTMENT) {
       if (arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE) {
         adjust_val = i_adjust_amount * arg_info[i].ld * tsize;
       } else if (arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW) {
         adjust_val = i_adjust_amount * tsize;
+      } else {
+        adjust_val = 0;
       }
     }
-    if ( i < i_micro_kernel_config->n_avail_gpr ) {
-      libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, i_micro_kernel_config->gpr_pool[i], adjust_val);
-    } else {
-      libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, i * 8, temp_reg);
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          temp_reg,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          0,
-          temp_reg2,
-          0 );
-      libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, temp_reg2, adjust_val);
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          temp_reg,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          0,
-          temp_reg2,
-          1 );
+    if (adjust_val != 0) {
+      if ( i < i_micro_kernel_config->n_avail_gpr ) {
+        libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, i_micro_kernel_config->gpr_pool[i], adjust_val);
+      } else {
+        libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, i * 8, temp_reg);
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            temp_reg,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            0,
+            temp_reg2,
+            0 );
+        libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, temp_reg2, adjust_val);
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            temp_reg,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            0,
+            temp_reg2,
+            1 );
+      }
     }
   }
   /* Adjust output  */
