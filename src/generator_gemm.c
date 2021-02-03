@@ -23,6 +23,12 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   /* apply the alignment override */
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
+  int l_emu_amx = 0;
+  const char *const l_env_emu_amx = getenv("EMULATE_AMX");
+  if ( 0 == l_env_emu_amx ) {
+  } else {
+    l_emu_amx = atoi(l_env_emu_amx);
+  }
 
   /* determining vector length depending on architecture and precision */
   if ( io_generated_code->arch <= LIBXSMM_TARGET_ARCH_GENERIC ) {
@@ -150,18 +156,17 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         (( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&
          ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
          ( l_xgemm_desc_mod.m % 32 == 0 ) && ( l_xgemm_desc_mod.k % 16 == 0 ))) {
-      int emu_amx = 0;
-      const char *const env_emu_amx = getenv("EMULATE_AMX");
-      if ( 0 == env_emu_amx ) {
-      } else {
-        emu_amx = atoi(env_emu_amx);
-      }
-      if (emu_amx == 0) {
+      if (l_emu_amx == 0) {
         libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_xgemm_desc_mod );
       } else {
+        /* let's recheck CPU to even emulation AVX512_BF16 */
+        io_generated_code->arch = libxsmm_cpuid();
         libxsmm_generator_gemm_amx_kernel_emu( io_generated_code, &l_xgemm_desc_mod );
       }
     } else {
+      if (l_emu_amx != 0) {
+        io_generated_code->arch = libxsmm_cpuid();
+      }
       libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( io_generated_code, &l_xgemm_desc_mod );
     }
   } else if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 ) {
