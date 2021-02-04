@@ -113,7 +113,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
     libxsmm_matrix_eqn_elem *cur_op = find_op_at_timestamp(eqn->eqn_root, timestamp);
 #if 1
-    libxsmm_datatype out_precision = (timestamp == last_timestamp) ? LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
+    libxsmm_datatype out_precision = (timestamp == last_timestamp) ? (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
     libxsmm_datatype in_precision = cur_op->tmp.dtype;
 #else
     /* FIXME: This approach that avoids intermediate converts needs extra tmps, because when input is BF16 and output is FP32 we can't reuse/overwrite the same tmp scratch... */

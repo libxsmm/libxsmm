@@ -108,13 +108,13 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int i;
   unsigned int adjust_val = 0;
-  unsigned int output_tsize = libxsmm_typesize(LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype));
+  unsigned int output_tsize = LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype));
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
 
   /* Adjust input args */
   for (i = 0; i < n_args; i++) {
-    unsigned int tsize = libxsmm_typesize(arg_info[i].dtype);
+    unsigned int tsize = LIBXSMM_TYPESIZE(arg_info[i].dtype);
     if (i_adjust_type == M_ADJUSTMENT) {
       if (arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE || arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL) {
         adjust_val = i_adjust_amount * tsize;
@@ -239,11 +239,11 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
                                                  unsigned int*                           i_mask_reg_in,
                                                  unsigned int*                           i_use_m_output_masking,
                                                  unsigned int*                           i_mask_reg_out) {
-
   unsigned int mask_in_count, mask_out_count, mask_reg_in = 0, mask_reg_out = 0, use_m_input_masking, use_m_output_masking;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
   unsigned int i_vlen_out = i_micro_kernel_config->vlen_out;
   unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+  LIBXSMM_UNUSED(i_meqn_desc);
 
   use_m_input_masking   = (i_m % i_vlen_in == 0 ) ? 0 : 1;
   use_m_output_masking  = (i_m % i_vlen_out == 0 ) ? 0 : 1;
@@ -343,8 +343,8 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
   libxsmm_matrix_eqn_arg  *arg_info = i_micro_kernel_config->arg_info;
   unsigned int i_start_vreg = get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   unsigned int input_reg = 0;
-  char vname = (libxsmm_typesize(arg_info[i_arg_id].dtype) * i_vlen == 64) ? 'z' : 'y';
-
+  char vname = (LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype) * i_vlen == 64) ? 'z' : 'y';
+  LIBXSMM_UNUSED(i_meqn_desc);
 
   if (i_arg_id < i_micro_kernel_config->n_avail_gpr) {
     input_reg = i_micro_kernel_config->gpr_pool[i_arg_id];
@@ -369,7 +369,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
             vmove_instruction(arg_info[i_arg_id].dtype),
             input_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (im * i_vlen + in * arg_info[i_arg_id].ld) * libxsmm_typesize(arg_info[i_arg_id].dtype),
+            (im * i_vlen + in * arg_info[i_arg_id].ld) * LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype),
             vname,
             cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 1, 0 );
 
@@ -387,7 +387,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
           vbcast_instruction(arg_info[i_arg_id].dtype),
           input_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          in * libxsmm_typesize(arg_info[i_arg_id].dtype),
+          in * LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype),
           vname,
           cur_vreg, 0, 1, 0 );
       if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
@@ -407,7 +407,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
           vmove_instruction(arg_info[i_arg_id].dtype),
           input_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (im * i_vlen + in * arg_info[i_arg_id].ld) * libxsmm_typesize(arg_info[i_arg_id].dtype),
+          (im * i_vlen + in * arg_info[i_arg_id].ld) * LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype),
           vname,
           cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 1, 0 );
 
@@ -480,7 +480,7 @@ void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*       
           vmove_instruction(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
           i_gp_reg_mapping->gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (im * i_vlen + in * i_meqn_desc->ldo) * libxsmm_typesize(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
+          (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
           (i_micro_kernel_config->cvt_result_to_bf16 == 1) ? 'y' : 'z',
           cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 0, 1 );
     }
@@ -869,6 +869,7 @@ unsigned int unary_op_req_zmms(libxsmm_meltw_unary_type u_type) {
 LIBXSMM_API_INTERN
 unsigned int binary_op_req_zmms(libxsmm_meltw_binary_type b_type) {
   unsigned int result = 0;
+  LIBXSMM_UNUSED(b_type);
   return result;
 }
 

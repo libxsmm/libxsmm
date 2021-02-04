@@ -147,6 +147,12 @@ LIBXSMM_API_INTERN
 unsigned int binary_op_req_zmms(libxsmm_meltw_binary_type b_type);
 
 LIBXSMM_API_INTERN
+void libxsmm_adjust_required_zmms(libxsmm_matequation_kernel_config* i_micro_kernel_config,
+    libxsmm_meltw_unary_type u_type,
+    libxsmm_meltw_binary_type b_type,
+    unsigned int pool_id );
+
+LIBXSMM_API_INTERN
 void libxsmm_mark_reserved_zmms( libxsmm_matequation_kernel_config* i_micro_kernel_config, libxsmm_matrix_eqn_elem *cur_node );
 
 LIBXSMM_API_INTERN
