@@ -477,7 +477,7 @@ void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*       
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
-          vmove_instruction(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
+          vmove_instruction((libxsmm_datatype)LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
           i_gp_reg_mapping->gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
@@ -1085,8 +1085,8 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
     adjusted_aux_vars = 0;
     n_microkernel = (cur_n < n_blocking) ? n_blocking : i_mateqn_desc->n - cur_n;
     while (cur_m != i_mateqn_desc->m) {
-      m_microkernel = (cur_m < m_blocking) ? m_blocking : i_mateqn_desc->m - cur_m;
       unsigned int skip_n_loop_reg_cleanup = ((cur_n + n_microkernel == i_mateqn_desc->n) && (cur_m + m_microkernel == i_mateqn_desc->m)) ? 1 : 0 ;
+      m_microkernel = (cur_m < m_blocking) ? m_blocking : i_mateqn_desc->m - cur_m;
       libxsmm_generator_mateqn_2d_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateqn_desc, eqn, m_microkernel, n_microkernel, skip_n_loop_reg_cleanup);
       cur_m += m_microkernel;
       if (cur_m != i_mateqn_desc->m) {

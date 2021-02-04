@@ -145,6 +145,8 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
   unsigned int skip_pushpops_callee_gp_reg  = 0;
   unsigned int allocate_scratch = 1;
 
+  LIBXSMM_UNUSED(i_mateqn_desc);
+
   i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
@@ -259,6 +261,8 @@ void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code* 
                                               libxsmm_matequation_kernel_config*                  i_micro_kernel_config,
                                               libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,
                                               unsigned int                                        i_strategy  ) {
+  LIBXSMM_UNUSED(i_gp_reg_mapping);
+  LIBXSMM_UNUSED(i_strategy);
   if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
