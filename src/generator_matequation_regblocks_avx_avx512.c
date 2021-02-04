@@ -1085,8 +1085,8 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
     adjusted_aux_vars = 0;
     n_microkernel = (cur_n < n_blocking) ? n_blocking : i_mateqn_desc->n - cur_n;
     while (cur_m != i_mateqn_desc->m) {
-      m_microkernel = (cur_m < m_blocking) ? m_blocking : i_mateqn_desc->m - cur_m;
       unsigned int skip_n_loop_reg_cleanup = ((cur_n + n_microkernel == i_mateqn_desc->n) && (cur_m + m_microkernel == i_mateqn_desc->m)) ? 1 : 0 ;
+      m_microkernel = (cur_m < m_blocking) ? m_blocking : i_mateqn_desc->m - cur_m;
       libxsmm_generator_mateqn_2d_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateqn_desc, eqn, m_microkernel, n_microkernel, skip_n_loop_reg_cleanup);
       cur_m += m_microkernel;
       if (cur_m != i_mateqn_desc->m) {
