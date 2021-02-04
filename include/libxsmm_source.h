@@ -136,6 +136,7 @@
 #include "../src/libxsmm_main.c"
 #include "../src/libxsmm_malloc.c"
 #include "../src/libxsmm_math.c"
+#include "../src/libxsmm_matrixeqn.c"
 #include "../src/libxsmm_memory.c"
 #include "../src/libxsmm_mhd.c"
 #include "../src/libxsmm_perf.c"

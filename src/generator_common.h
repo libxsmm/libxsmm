@@ -14,6 +14,7 @@
 #include <libxsmm_generator.h>
 #include <libxsmm_cpuid.h>
 #include "libxsmm_main.h"
+#include "libxsmm_matrixeqn.h"
 
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
