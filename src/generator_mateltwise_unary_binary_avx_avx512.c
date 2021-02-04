@@ -875,6 +875,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
   unsigned int i_vlen_out = i_micro_kernel_config->vlen_out;
   unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+  LIBXSMM_UNUSED(i_mateltwise_desc);
 
   use_m_input_masking   = (i_m % i_vlen_in == 0 ) ? 0 : 1;
   use_m_output_masking  = (i_m % i_vlen_out == 0 ) ? 0 : 1;
