@@ -15,6 +15,12 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*                 io_generated_code,
+                                                 libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
+                                                 unsigned int                            op,
+                                                 unsigned int                            flags );
+
+LIBXSMM_API_INTERN
 void adjust_after_microkernel_addr_gp_reg( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,

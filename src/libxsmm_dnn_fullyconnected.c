@@ -31,6 +31,11 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       memset(handle, 0, sizeof(*handle));
       /* let's make the description persistent */
       handle->desc = fullyconnected_desc;
+      handle->target_archid = libxsmm_target_archid;
+      if ( (handle->target_archid == LIBXSMM_X86_AVX512_SPR) && ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && ((handle->desc.C % 16 != 0) || (handle->desc.K % 16 != 0)) ) {
+        handle->target_archid = LIBXSMM_X86_AVX512_CPX;
+      }
+
       /* @TODO perhaps we need a better switch here */
       if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) ) {
         handle->bk = handle->desc.bk;
@@ -659,7 +664,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
 
       /* If in SPR, generate tilerelease kernel */
-      if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) {
+      if (handle->target_archid >= LIBXSMM_X86_AVX512_SPR) {
         int l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
         handle->tilerelease_kernel = libxsmm_bsmmdispatch(handle->bk, handle->bk, handle->bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
       }
@@ -724,7 +729,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
           libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
 
-          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+          if (handle->target_archid == LIBXSMM_X86_AVX512_SPR) {
             libxsmm_meltw_flags fusion_flags;
             int l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
             int l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
@@ -779,7 +784,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
             handle->gemm_bwd.xgemm.bsmrs = libxsmm_bsmmdispatch_reducebatch_strd(handle->bc, handle->bn, _bk, _bk*handle->bc*sizeof(libxsmm_bfloat16), _bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &_bk, &ldb, &alpha, &beta, NULL, NULL);
             handle->gemm_bwd2.xgemm.bmrs = libxsmm_bmmdispatch_reducebatch_strd(handle->bc, handle->bn, _bk, _bk*handle->bc*sizeof(libxsmm_bfloat16), _bk*handle->bn*sizeof(libxsmm_bfloat16), &ldb, &_bk, &ldb, &alpha, &zerobeta, NULL, NULL);
           } else {
-            if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+            if (handle->target_archid == LIBXSMM_X86_AVX512_SPR) {
               int l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
               int l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
               libxsmm_blasint unroll_hint = (handle->desc.K/handle->bk)/handle->bwd_bf;
@@ -798,7 +803,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           lda = (libxsmm_blasint)handle->bk;
           ldb = (libxsmm_blasint)handle->bn;
           ldc = (libxsmm_blasint)handle->bk;
-          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+          if (handle->target_archid == LIBXSMM_X86_AVX512_SPR) {
             int l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
             int l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
             libxsmm_blasint unroll_hint = (handle->desc.N/handle->bn)/handle->upd_bf;
