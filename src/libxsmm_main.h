@@ -1193,7 +1193,7 @@ LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
 
 /* Helper functions for matrix equation handling */
-LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( unsigned int eqn_idx );
+LIBXSMM_API libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( unsigned int eqn_idx );
 
 #if (0 != LIBXSMM_SYNC)
 LIBXSMM_APIVAR_PRIVATE(LIBXSMM_TLS_TYPE libxsmm_tlskey);

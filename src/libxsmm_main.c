@@ -4665,7 +4665,7 @@ LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(
   return result.meltw_binary;
 }
 
-LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( unsigned int eqn_idx ) {
+LIBXSMM_API libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( unsigned int eqn_idx ) {
   return libxsmm_matrix_eqns[eqn_idx];
 }
 
