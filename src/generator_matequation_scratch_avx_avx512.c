@@ -94,7 +94,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
     libxsmm_matrix_eqn*                     eqn ) {
 
   libxsmm_descriptor_blob   blob;
-  libxsmm_meltw_descriptor  *meltw_desc;
+  libxsmm_meltw_descriptor  *meltw_desc = NULL;
   unsigned int timestamp = 0;
   unsigned int last_timestamp;
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R8;
