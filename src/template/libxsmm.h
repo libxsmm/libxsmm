@@ -508,7 +508,9 @@ LIBXSMM_API void libxsmm_matrix_eqn_rpn_print( const libxsmm_blasint idx );
 LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const libxsmm_meqn_descriptor* descriptor );
 LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldo, const libxsmm_datatype out_type, const unsigned int eqn_idx );
 
-/** Code generation routine for transposes using a descriptor */
+LIBXSMM_API libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( unsigned int eqn_idx );
+
+  /** Code generation routine for transposes using a descriptor */
 LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor);
 
 /** Code generation routine for GEMM/packed using a descriptor */
