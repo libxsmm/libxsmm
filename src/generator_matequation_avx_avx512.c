@@ -360,6 +360,43 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_peel_breaking_points( libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size, libxsmm_matrix_eqn **new_jiting_queue, unsigned int *new_queue_size) {
+  unsigned int i = 0;
+  unsigned int n_trees = *queue_size;
+
+  for (i = 0; i < n_trees; i++) {
+    libxsmm_matrix_eqn      *cur_eqn = jiting_queue[i];
+    libxsmm_matrix_eqn_elem *cur_root = cur_eqn->eqn_root;
+    if (is_eqn_node_breaking_point(cur_root) > 0) {
+      if (cur_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
+        if (cur_root->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
+          libxsmm_matrix_eqn_elem *new_arg_node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
+          libxsmm_matrix_eqn      *new_eqn      = (libxsmm_matrix_eqn*) malloc( sizeof(libxsmm_matrix_eqn) );
+          union libxsmm_matrix_eqn_info info;
+          info.arg.m = cur_root->le->tmp.m;
+          info.arg.n = cur_root->le->tmp.n;
+          info.arg.ld = cur_root->le->tmp.ld;
+          info.arg.in_pos = -(cur_root->le->tmp.id + 1);
+          info.arg.dtype = cur_root->le->tmp.dtype;
+          new_arg_node->le = NULL;
+          new_arg_node->ri = NULL;
+          new_arg_node->up = cur_root->up;
+          new_arg_node->type = LIBXSMM_MATRIX_EQN_NODE_ARG;
+          new_arg_node->info = info;
+          new_eqn->eqn_root = cur_root->le;
+          cur_root->le = new_arg_node;
+          new_eqn->is_constructed = 1;
+          enqueue_equation(new_eqn, new_jiting_queue, new_queue_size);
+          enqueue_equation(cur_eqn, new_jiting_queue, new_queue_size);
+        }
+      }
+    } else {
+      enqueue_equation(cur_eqn, new_jiting_queue, new_queue_size);
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *current_timestamp ) {
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     /* Do not increase the timestamp, this node is just an arg so it's not part of the execution */
@@ -397,8 +434,8 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_loop_label_tracker          l_loop_label_tracker;
   unsigned int eqn_idx = i_mateqn_desc->eqn_idx;
   libxsmm_matrix_eqn *eqn = libxsmm_matrix_eqn_get_equation( eqn_idx );
-  libxsmm_matrix_eqn **jiting_queue;
-  unsigned int queue_size = 0;
+  libxsmm_matrix_eqn **jiting_queue, **final_jiting_queue;
+  unsigned int queue_size = 0, final_queue_size = 0;
   /* TODO: Use number of tree nodes as max size */
   unsigned int max_queue_size = 256;
   unsigned int strategy = JIT_STRATEGY_HYBRID;
@@ -433,7 +470,10 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   l_kernel_config.gpr_pool[4] = LIBXSMM_X86_GP_REG_R10; l_kernel_config.gpr_pool[5] = LIBXSMM_X86_GP_REG_R11; l_kernel_config.gpr_pool[6] = LIBXSMM_X86_GP_REG_R12; l_kernel_config.gpr_pool[7] = LIBXSMM_X86_GP_REG_R13; l_kernel_config.gpr_pool[8] = LIBXSMM_X86_GP_REG_R14;
 
   jiting_queue = (libxsmm_matrix_eqn**) malloc(max_queue_size * sizeof(libxsmm_matrix_eqn*));
+  final_jiting_queue = (libxsmm_matrix_eqn**) malloc(max_queue_size * sizeof(libxsmm_matrix_eqn*));
+
   libxsmm_generator_decompose_equation_tree( eqn, jiting_queue, &queue_size );
+  libxsmm_generator_peel_breaking_points( jiting_queue, &queue_size, final_jiting_queue, &final_queue_size);
 
   /* Open asm */
   libxsmm_x86_instruction_open_stream_matequation( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct);
@@ -441,12 +481,12 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   /* Setup the stack */
   libxsmm_generator_matequation_setup_stack_frame( io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, eqn, strategy);
 
-  for (eqn_tree_id = 0; eqn_tree_id < queue_size; eqn_tree_id++) {
-    libxsmm_matrix_eqn *cur_eqn = jiting_queue[eqn_tree_id];
+  for (eqn_tree_id = 0; eqn_tree_id < final_queue_size; eqn_tree_id++) {
+    libxsmm_matrix_eqn *cur_eqn = final_jiting_queue[eqn_tree_id];
     libxsmm_meqn_descriptor copy_mateqn_desc = *i_mateqn_desc;
 
     /* Determine the output and precision of current equaiton tree to be JITed */
-    if (eqn_tree_id == (queue_size - 1)) {
+    if (eqn_tree_id == (final_queue_size - 1)) {
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg);
     } else {
       libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, temp_reg);
