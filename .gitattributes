@@ -2,7 +2,7 @@
 .theme export-ignore
 .vscode export-ignore
 .github export-ignore
-.abi.txt export-ignore
+fpm.toml export-ignore
 .codefile export-ignore
 .gitconfig export-ignore
 .gitignore export-ignore
@@ -15,10 +15,12 @@ documentation/*.pptx export-ignore
 documentation/*.pptm export-ignore
 documentation/*.docx export-ignore
 scripts/tool_scan.sh export-ignore
+scripts/tool_debugci.sh export-ignore
 scripts/tool_checkabi.sh export-ignore
 scripts/tool_gitprune.sh export-ignore
 scripts/tool_normalize.sh export-ignore
 scripts/tool_changelog.sh export-ignore
+scripts/tool_gitauthors.sh export-ignore
 scripts/tool_gitaddforks.sh export-ignore
 scripts/tool_envrestore.sh export-ignore
 samples/xgemm/kernel_test* export-ignore

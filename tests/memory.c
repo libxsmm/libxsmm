@@ -19,6 +19,13 @@ int main(/*int argc, char* argv[]*/)
   char *const data = (char*)malloc((size_t)isize * size);
   libxsmm_blasint i, j, k, s;
 
+  if (NULL != libxsmm_stristr("ends with b", "Begins with b")) return EXIT_FAILURE;
+  if (NULL == libxsmm_stristr("in between of", "BeTwEEn")) return EXIT_FAILURE;
+  if (NULL == libxsmm_stristr("spr", "SPR")) return EXIT_FAILURE;
+  if (NULL != libxsmm_stristr(NULL, "bb")) return EXIT_FAILURE;
+  if (NULL != libxsmm_stristr("aa", NULL)) return EXIT_FAILURE;
+  if (NULL != libxsmm_stristr(NULL, NULL)) return EXIT_FAILURE;
+
   if (NULL == data) return EXIT_FAILURE;
   libxsmm_rng_seq(data, isize * size);
 

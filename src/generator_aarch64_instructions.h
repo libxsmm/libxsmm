@@ -162,6 +162,9 @@
 #define LIBXSMM_AARCH64_INSTR_GP_MOVN            0x12800000
 #define LIBXSMM_AARCH64_INSTR_GP_CBNZ            0x35000000
 #define LIBXSMM_AARCH64_INSTR_GP_CBZ             0x34000000
+/* define GP meta instructions which will to sequenes of aarch64 instructions */
+#define LIBXSMM_AARCH64_INSTR_GP_META_ADD        0x00001000
+#define LIBXSMM_AARCH64_INSTR_GP_META_SUB        0x00001001
 
 /* define ASIMD LD/ST instructions */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R        0x3c604803
@@ -220,17 +223,21 @@ typedef enum libxsmm_aarch64_asimd_tupletype {
  * Opens the inline assembly section / jit stream
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_callee_save_bitmask lower 4 bits control d8-d15 in tuples, bits 4-11 control x16-x30 in tuples, e.g. 0xf saves d8-d15
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code );
+void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generated_code,
+                                              const unsigned short    i_callee_save_bitmask );
 
 /**
  * Closes the inline assembly section / jit stream
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_callee_save_bitmask lower 4 bits control d8-d15 in tuples, bits 4-11 control x16-x30 in tuples, e.g. 0xf saves d8-d15
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code );
+void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
+                                               const unsigned short    i_callee_save_bitmask );
 
 /**
  * Generates ldr, str, etc. instructions
@@ -267,7 +274,7 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*           io_generated_code,
                                                   const unsigned int                i_vmove_instr,
                                                   const unsigned char               i_gp_reg_addr,
-                                                  const char                        i_offset,
+                                                  const short                       i_offset,
                                                   const unsigned char               i_vec_reg_0,
                                                   const unsigned char               i_vec_reg_1,
                                                   const libxsmm_aarch64_asimd_width i_asimdwidth );
@@ -352,9 +359,9 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
  * @param i_imm64 the 64bit immediate operand
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_alu_set_i64( libxsmm_generated_code*  io_generated_code,
-                                              const unsigned int       i_gp_reg_dst,
-                                              const unsigned long long i_imm64 );
+void libxsmm_aarch64_instruction_alu_set_imm64( libxsmm_generated_code*  io_generated_code,
+                                                const unsigned int       i_gp_reg_dst,
+                                                const unsigned long long i_imm64 );
 
 
 /**
@@ -410,6 +417,24 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
                                                           const unsigned char             i_gp_reg_dst,
                                                           const unsigned char             i_imm6,
                                                           const libxsmm_aarch64_shiftmode i_shift_dir );
+
+/**
+ * Generates an optimal sequence of adding up to a 64bit imm to a GPR
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_alu_instr actual alu gpr instruction
+ * @param i_gp_reg_src soruce register
+ * @param i_gp_reg_dst destination register
+ * @param i_gp_reg_tmp temp register which may be used
+ * @param i_imm64 the 64 bit immediate
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_alu_compute_imm64( libxsmm_generated_code*         io_generated_code,
+                                                    const unsigned int              i_alu_meta_instr,
+                                                    const unsigned char             i_gp_reg_src,
+                                                    const unsigned char             i_gp_reg_tmp,
+                                                    const unsigned char             i_gp_reg_dst,
+                                                    const unsigned long long        i_imm64 );
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack

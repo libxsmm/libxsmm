@@ -45,7 +45,9 @@
 #endif
 
 /** MKL_DIRECT_CALL requires to include the MKL interface. */
-#if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
+#if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL) || \
+    (defined(__MKL) && !defined(LIBXSMM_BUILD) && \
+    (!defined(__BLAS) || (0 != __BLAS))))
 # if (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
 #   error "Inconsistent ILP64 configuration detected!"
 # endif
@@ -57,8 +59,8 @@
 #   include <mkl.h>
 # endif
 #endif
-/** INTEL_MKL_VERSION is needed later to fix some NOTHROW issue. */
-#if defined(__MKL) && !defined(INTEL_MKL_VERSION) && defined(NOTHROW)
+/** __INTEL_MKL__ is needed later to fix some NOTHROW issue. */
+#if defined(__MKL) && !defined(__INTEL_MKL__) && defined(NOTHROW)
 # if defined(LIBXSMM_OFFLOAD_BUILD)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #   include <mkl_version.h>
@@ -66,6 +68,11 @@
 # else
 #   include <mkl_version.h>
 # endif
+#endif
+
+/** Unfortunately calculation of INTEL_MKL_VERSION is not stable over time. */
+#if defined(__INTEL_MKL__) && defined(__INTEL_MKL_MINOR__) && defined(__INTEL_MKL_UPDATE__)
+# define LIBXSMM_MKL_VERSION3 LIBXSMM_VERSION3(__INTEL_MKL__, __INTEL_MKL_MINOR__, __INTEL_MKL_UPDATE__)
 #endif
 
 /** Automatically select a prefetch-strategy (libxsmm_get_gemm_xprefetch, etc.). */
@@ -180,7 +187,7 @@
 # define LIBXSMM_BLAS_NOTHROW LIBXSMM_NOEXCEPT
 #endif
 #define LIBXSMM_BLAS_NOEXCEPT(KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_NOEXCEPT_, KIND)
-#if defined(INTEL_MKL_VERSION) && (20200002 <= INTEL_MKL_VERSION)
+#if defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(2020, 0, 2) <= LIBXSMM_MKL_VERSION3)
 # define LIBXSMM_BLAS_NOEXCEPT_gemm_batch LIBXSMM_BLAS_NOTHROW
 #else
 # define LIBXSMM_BLAS_NOEXCEPT_gemm_batch

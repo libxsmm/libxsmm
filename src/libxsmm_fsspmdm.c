@@ -19,6 +19,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   const double alpha, const double beta, libxsmm_blasint c_is_nt,
   const double* a_dense)
 {
+  double one = 1.0;
   double* a_csr_values = 0;
   unsigned int* a_csr_rowptr = 0;
   unsigned int* a_csr_colidx = 0;
@@ -30,9 +31,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   int i, j, a_nnz;
 
   /* some checks... */
-  assert(N % 16 == 0);
-  assert(N >= 16);
-  assert(LIBXSMM_FEQ(alpha, 1.0));
+  assert(N % 8 == 0);
+  assert(N >= 8);
   assert(LIBXSMM_FEQ(beta, 1.0) || LIBXSMM_FEQ(beta, 0.0));
   assert(K <= lda);
   assert(N <= ldc);
@@ -80,7 +80,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       a_csr_rowptr[i] = n;
       for (j = 0; j < K; j++) {
         if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0)) {
-          a_csr_values[n] = a_dense[(i*lda) + j];
+          a_csr_values[n] = alpha*a_dense[(i*lda) + j];
           a_csr_colidx[n] = j;
           n++;
         }
@@ -92,7 +92,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     new_handle->N_chunksize = 8;
 
     xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, new_handle->N_chunksize, K,
-      0, ldb, ldc, alpha, beta, flags, prefetch);
+      0, ldb, ldc, one, beta, flags, prefetch);
 
     if (0 != xgemm_desc) {
       new_handle->kernel = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
@@ -119,13 +119,13 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
   /* attempt to JIT dense kernel as sparse_reg failed */
   } else {
-    new_handle->N_chunksize = 16;
-    new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
+    new_handle->N_chunksize = 8;
+    new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
     /* copy A over */
     new_handle->a_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), 64);
     for ( i = 0; i < M; ++i ) {
       for ( j = 0; j < K; ++j ) {
-        new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];
+        new_handle->a_dense[(i*K)+j] = alpha*a_dense[(i*lda)+j];
       }
     }
   }
@@ -145,6 +145,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   const float alpha, const float beta, libxsmm_blasint c_is_nt,
   const float* a_dense)
 {
+  float one = 1.0f;
   float* a_csr_values = 0;
   unsigned int* a_csr_rowptr = 0;
   unsigned int* a_csr_colidx = 0;
@@ -158,7 +159,6 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   /* some checks... */
   assert(N % 16 == 0);
   assert(N >= 16);
-  assert(LIBXSMM_FEQ(alpha, 1.0f));
   assert(LIBXSMM_FEQ(beta, 1.0f) || LIBXSMM_FEQ(beta, 0.0f));
   assert(K <= lda);
   assert(N <= ldc);
@@ -206,7 +206,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       a_csr_rowptr[i] = n;
       for (j = 0; j < K; j++) {
         if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0f)) {
-          a_csr_values[n] = a_dense[(i*lda) + j];
+          a_csr_values[n] = alpha*a_dense[(i*lda) + j];
           a_csr_colidx[n] = j;
           n++;
         }
@@ -218,7 +218,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     new_handle->N_chunksize = 16;
 
     xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, new_handle->N_chunksize, K,
-      0, ldb, ldc, alpha, beta, flags, prefetch);
+      0, ldb, ldc, one, beta, flags, prefetch);
 
     if (0 != xgemm_desc) {
       new_handle->kernel = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
@@ -244,12 +244,12 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   /* attempt to JIT dense kernel as sparse_reg failed */
   } else {
     new_handle->N_chunksize = 16;
-    new_handle->kernel = libxsmm_smmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
+    new_handle->kernel = libxsmm_smmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
     /* copy A over */
     new_handle->a_dense = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(float), 64);
     for ( i = 0; i < M; ++i ) {
       for ( j = 0; j < K; ++j ) {
-        new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];
+        new_handle->a_dense[(i*K)+j] = alpha*a_dense[(i*lda)+j];
       }
     }
   }

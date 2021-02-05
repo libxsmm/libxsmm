@@ -95,6 +95,12 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   libxsmm_blasint ldo, libxsmm_blasint ldi, libxsmm_blasint ldx, libxsmm_blasint ldy,
   unsigned short flags, unsigned char param, unsigned char operation);
 
+/** Initialize matrix equation as used by low-level routines */
+LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_datatype type, libxsmm_blasint m, libxsmm_blasint n,
+  libxsmm_blasint ldo, unsigned int eqn_idx);
+
+
 /** Initialize packed trsm descriptor as used by low-level routines. */
 LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
@@ -252,6 +258,10 @@ void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*            io_gen
 LIBXSMM_API
 void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*            io_generated_code,
                                           const libxsmm_meltw_descriptor*    i_mateltw_desc );
+
+LIBXSMM_API
+void libxsmm_generator_matequation_kernel( libxsmm_generated_code*        io_generated_code,
+                                           const libxsmm_meqn_descriptor* i_mateqn_desc );
 
 LIBXSMM_API
 void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_generated_code,

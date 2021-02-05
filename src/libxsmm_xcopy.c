@@ -309,13 +309,16 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
         if (NULL != in) { /* mcopy */
           kernel.meltw_copy = libxsmm_dispatch_meltw_copy(
             (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
-            &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
+            &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
+            LIBXSMM_MELTW_FLAG_COPY_NONE);
         }
+#   if 0 /* TODO: LIBXSMM_MELTW_OPERATION_ZERO does not seem to be implemented */
         else { /* mzero */
           kernel.meltw_zero = libxsmm_dispatch_meltw_zero(
             (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
             &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
         }
+#   endif
 # else
         libxsmm_descriptor_blob blob;
         kernel.xmcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&blob,
@@ -545,7 +548,6 @@ LIBXSMM_API void libxsmm_itrans_internal(char* inout, void* scratch, unsigned in
           if (NULL != mat)
 # endif
           libxsmm_itrans_scratch_jit(mat, scratch, typesize, m, n, ldi, ldo, kernel);
-
         }
       }
 #endif
@@ -662,9 +664,26 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
         /* avoid outgrown transpose kernel upfront */
         && (m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))
       {
+# if defined(LIBXSMM_XCOPY_MELTW)
+        switch (typesize) {
+          case 8: kernel.meltw_trans = libxsmm_dispatch_meltw_transform(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT);
+            break;
+          case 4: kernel.meltw_trans = libxsmm_dispatch_meltw_transform(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT);
+            break;
+          case 2: kernel.meltw_trans = libxsmm_dispatch_meltw_transform(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT);
+            break;
+          case 1: kernel.meltw_trans = libxsmm_dispatch_meltw_transform(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT);
+            break;
+        }
+# else
         libxsmm_descriptor_blob blob;
         kernel.xtrans = libxsmm_dispatch_trans(libxsmm_trans_descriptor_init(&blob,
           typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo));
+# endif
       }
 #endif
     }

@@ -54,11 +54,15 @@
     (defined(_M_IX86)))
 # define LIBXSMM_PLATFORM_X86
 #endif
+#if !defined(LIBXSMM_PLATFORM_AARCH64) && \
+    (defined(__aarch64__) || defined(__arm64__))
+# define LIBXSMM_PLATFORM_AARCH64
+#endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if defined(LIBXSMM_PLATFORM_X86)
+# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
-#   error Intel Architecture or compatible CPU required!
+#   error x86_64 or aarch64 or compatible CPU required!
 # endif
 #endif
 #if !defined(LIBXSMM_BITS)
@@ -95,7 +99,7 @@
 /** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
 #define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
 #define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
-#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) (int) \
+#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) \
   (((0x7F & (MAJOR)) << 24) | ((0x1F & (MINOR)) << 19) | ((0x1F & (UPDATE)) << 14) | (0x3FFF & (PATCH)))
 #define LIBXSMM_VERSION41(VERSION) (((VERSION) >> 24))
 #define LIBXSMM_VERSION42(VERSION) (((VERSION) >> 19) & 0x1F)

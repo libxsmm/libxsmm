@@ -188,8 +188,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
 
     if (i_micro_kernel_config->fused_sigmoid == 1) {
       if (tile1 >= 0) {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                               LIBXSMM_X86_INSTR_VMULPS,
                                               i_micro_kernel_config->vector_name,
                                               reg_0, i_micro_kernel_config->vec_halves, reg_0 );
@@ -200,14 +199,12 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
           i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
           i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones, i_micro_kernel_config->vec_neg_ones);
 
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                               LIBXSMM_X86_INSTR_VADDPS,
                                               i_micro_kernel_config->vector_name,
                                               reg_0, i_micro_kernel_config->vec_ones, reg_0 );
 
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                               LIBXSMM_X86_INSTR_VMULPS,
                                               i_micro_kernel_config->vector_name,
                                               reg_0, i_micro_kernel_config->vec_halves, reg_0 );
@@ -222,8 +219,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
           i_micro_kernel_config->vector_name,
           reg_1, 0, 1, 0 );
 
-      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                            i_micro_kernel_config->instruction_set,
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                             LIBXSMM_X86_INSTR_VMULPS,
                                             i_micro_kernel_config->vector_name,
                                             reg_1, i_micro_kernel_config->vec_halves, reg_1 );
@@ -234,24 +230,19 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
         i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
         i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones, i_micro_kernel_config->vec_neg_ones);
 
-      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                            i_micro_kernel_config->instruction_set,
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                             LIBXSMM_X86_INSTR_VADDPS,
                                             i_micro_kernel_config->vector_name,
                                             reg_1, i_micro_kernel_config->vec_ones, reg_1 );
 
-      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                            i_micro_kernel_config->instruction_set,
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                             LIBXSMM_X86_INSTR_VMULPS,
                                             i_micro_kernel_config->vector_name,
                                             reg_1, i_micro_kernel_config->vec_halves, reg_1 );
 
       if (i_micro_kernel_config->emulate_cvt2bf16fp32 == 0) {
-        libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-                i_micro_kernel_config->instruction_set,
-                LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
-                i_micro_kernel_config->vector_name,
-                reg_1, reg_0, reg_0, 0);
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
+                                                  i_micro_kernel_config->vector_name, reg_1, reg_0, reg_0 );
       } else {
         libxsmm_x86_instruction_vec_compute_convert_emu( io_generated_code,
                 i_micro_kernel_config->instruction_set,
@@ -302,44 +293,39 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
     if (fuse_relu == 1) {
       current_mask_reg = reserved_mask_regs + (col % (8-reserved_mask_regs));
 
-      libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
-          i_micro_kernel_config->instruction_set,
+      libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
           LIBXSMM_X86_INSTR_VPCMPW,
           i_micro_kernel_config->vector_name,
           i_micro_kernel_config->zero_reg,
           reg_0,
-          reg_0,
-          6, current_mask_reg, 0 );
+          current_mask_reg, 6 );
 
       /* Store relu mask */
       if ( overwrite_C == 1 ) {
-        unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD: LIBXSMM_X86_INSTR_KMOVW;
+        unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD_ST: LIBXSMM_X86_INSTR_KMOVW_ST;
         libxsmm_x86_instruction_mask_move_mem( io_generated_code,
             mask_mov_instr,
             gp_reg_relu,
             LIBXSMM_X86_GP_REG_UNDEF,
             0,
             ((in_offset+col) * i_xgemm_desc->ldc + im_offset)/8,
-            current_mask_reg,
-            1 );
+            current_mask_reg );
       }
 
       /* Blend output result with zero reg based on relu mask */
-      libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
-          i_micro_kernel_config->instruction_set,
+      libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
           LIBXSMM_X86_INSTR_VPBLENDMW,
           i_micro_kernel_config->vector_name,
           reg_0,
           i_micro_kernel_config->zero_reg,
           reg_0,
-          LIBXSMM_X86_IMM_UNDEF,
           current_mask_reg,
           0 );
     }
 
     if (fuse_relu_bwd == 1) {
       /* Load relu mask  */
-      unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD: LIBXSMM_X86_INSTR_KMOVW;
+      unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD_LD: LIBXSMM_X86_INSTR_KMOVW_LD;
       current_mask_reg = reserved_mask_regs + (col % (8-reserved_mask_regs));
       libxsmm_x86_instruction_mask_move_mem( io_generated_code,
           mask_mov_instr,
@@ -347,18 +333,15 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
           LIBXSMM_X86_GP_REG_UNDEF,
           0,
           ((in_offset+col) * i_xgemm_desc->ldc + im_offset)/8,
-          current_mask_reg,
-          0 );
+          current_mask_reg );
 
       /* Blend output result with zero reg based on relu mask */
-      libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
-          i_micro_kernel_config->instruction_set,
+      libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
           LIBXSMM_X86_INSTR_VPBLENDMW,
           i_micro_kernel_config->vector_name,
           reg_0,
           i_micro_kernel_config->zero_reg,
           reg_0,
-          LIBXSMM_X86_IMM_UNDEF,
           current_mask_reg,
           0 );
     }
@@ -384,14 +367,12 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
         }
         copy_prev_reg_0 = (prev_reg_0 + 16 < 32) ? prev_reg_0 + 16 : 31;
 
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
             LIBXSMM_X86_INSTR_VMOVDQU64,
             i_micro_kernel_config->vector_name,
             prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF, copy_prev_reg_0 );
 
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code,
             LIBXSMM_X86_INSTR_VPERMT2W,
             i_micro_kernel_config->vector_name,
             reg_0,
@@ -407,8 +388,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
             i_micro_kernel_config->vector_name,
             copy_prev_reg_0, 0, 1, 1 );
 
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-            i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code,
             LIBXSMM_X86_INSTR_VPERMT2W,
             i_micro_kernel_config->vector_name,
             reg_0,
@@ -454,14 +434,12 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
           }
           copy_prev_reg_0 = (prev_reg_0 + n_cols < 32) ? prev_reg_0 + n_cols : 31;
 
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VMOVDQU64,
               i_micro_kernel_config->vector_name,
               prev_reg_0, LIBXSMM_X86_VEC_REG_UNDEF, copy_prev_reg_0 );
 
-          libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg(io_generated_code,
               LIBXSMM_X86_INSTR_VPERMT2W,
               i_micro_kernel_config->vector_name,
               reg_0,
@@ -477,8 +455,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
               i_micro_kernel_config->vector_name,
               copy_prev_reg_0, 0, 1, 1 );
 
-          libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg(io_generated_code,
               LIBXSMM_X86_INSTR_VPERMT2W,
               i_micro_kernel_config->vector_name,
               reg_0,
@@ -586,13 +563,8 @@ void single_tilestore_emu( libxsmm_generated_code*            io_generated_code,
                 i_micro_kernel_config->vector_name,
                 reg_0, 0, 1, 0 );
 
-            libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
-                i_micro_kernel_config->instruction_set,
-                LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
-                i_micro_kernel_config->vector_name,
-                reg_0, LIBXSMM_X86_VEC_REG_UNDEF,
-                reg_0,
-                0);
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
+                                                      i_micro_kernel_config->vector_name, reg_0, reg_0 );
 
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
@@ -640,8 +612,7 @@ void single_tilestore_emu( libxsmm_generated_code*            io_generated_code,
                                                        reg_0, i_micro_kernel_config);
             }
 
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                     i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                      LIBXSMM_X86_INSTR_VPERMW,
                                                      i_micro_kernel_config->vector_name,
                                                      reg_0,

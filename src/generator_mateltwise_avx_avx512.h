@@ -15,6 +15,30 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var stack_var );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_getval_stack_var( libxsmm_generated_code*              io_generated_code,
+                                                libxsmm_meltw_stack_var            stack_var,
+                                                unsigned int                        i_gp_reg );
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_setval_stack_var( libxsmm_generated_code*              io_generated_code,
+                                                libxsmm_meltw_stack_var            stack_var,
+                                                unsigned int                        i_gp_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*            io_generated_code,
+                                              const libxsmm_meltw_descriptor*      i_mateltwise_desc,
+                                              libxsmm_mateltwise_gp_reg_mapping*   i_gp_reg_mapping,
+                                              libxsmm_mateltwise_kernel_config*    i_micro_kernel_config) ;
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_meltw_destroy_stack_frame( libxsmm_generated_code*            io_generated_code,
+    const libxsmm_meltw_descriptor*     i_mateltwise_desc,
+    const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_header_m_loop( libxsmm_generated_code*                   io_generated_code,
                                               libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                               const libxsmm_mateltwise_kernel_config*      i_kernel_config,
@@ -55,13 +79,6 @@ void libxsmm_generator_mateltwise_footer_n_dyn_loop( libxsmm_generated_code*    
                                               const unsigned int                            i_gp_reg_n_bound );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                        io_generated_code,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const unsigned int                             i_vec_inout,
-    const unsigned int                             i_vec_tmp1,
-    const unsigned int                             i_vec_tmp2);
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code*            io_generated_code,
     const unsigned int                       i_gp_reg_tmp,
     const unsigned int                       i_mask_reg,
@@ -73,102 +90,6 @@ void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_g
     libxsmm_mateltwise_kernel_config*    io_micro_kernel_config,
     const unsigned int              i_arch,
     const libxsmm_meltw_descriptor* i_mateltwise_desc);
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const unsigned int                             i_vec_x,
-    const unsigned int                             i_vec_x2,
-    const unsigned int                             i_vec_nom,
-    const unsigned int                             i_vec_denom,
-    const unsigned int                             i_mask_hi,
-    const unsigned int                             i_mask_lo,
-    const unsigned int                             i_vec_c0,
-    const unsigned int                             i_vec_c1,
-    const unsigned int                             i_vec_c2,
-    const unsigned int                             i_vec_c3,
-    const unsigned int                             i_vec_c1_d,
-    const unsigned int                             i_vec_c2_d,
-    const unsigned int                             i_vec_c3_d,
-    const unsigned int                             i_vec_hi_bound,
-    const unsigned int                             i_vec_lo_bound,
-    const unsigned int                             i_vec_ones,
-    const unsigned int                             i_vec_neg_ones);
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_cvtfp32bf16_avx512_replacement_sequence( libxsmm_generated_code*                        io_generated_code,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const unsigned int                             i_vec_reg );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_cvtfp32bf16_vnni_format_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_cvtfp32bf16_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_scale_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_copy_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_relu_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_avx_avx512_kernel( libxsmm_generated_code*             io_generated_code,

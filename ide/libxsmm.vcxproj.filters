@@ -117,34 +117,13 @@
     <ClInclude Include="..\src\generator_gemm_noarch.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_matcopy_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_aux.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_trsm_dmacros.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_spgemm_csc_asparse.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_spgemm_csc_bsparse.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_spgemm_csc_bsparse_soa.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_spgemm_csc_reader.h">
@@ -154,12 +133,6 @@
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_spgemm_csr_asparse_reg.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_spgemm_csr_asparse_soa.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_spgemm_csr_bsparse_soa.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_spgemm_csr_reader.h">
@@ -204,18 +177,6 @@
     <ClInclude Include="..\src\libxsmm_dnn_rnncell_forward.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_packed_trmm_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_gemm_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_gemmnn.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_getrf_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_spmdm_begin.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -233,12 +194,6 @@
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_diff.h">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h">
-      <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_memory.h">
       <Filter>include</Filter>
@@ -266,9 +221,6 @@
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_fusedgroupnorm_forward.h">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_spgemm_csc_csparse_soa.h">
-      <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_fullyconnected_backward_weight_update.h">
       <Filter>src</Filter>
@@ -308,6 +260,120 @@
     </ClInclude>
     <ClInclude Include="..\src\generator_gemm_amx_microkernel_emu.h">
       <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_trmm_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_trsm_dmacros.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_ac_rm_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_bc_rm_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemmnn.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_getrf_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csc_csparse.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csc_csparse_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csr_asparse.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csr_asparse_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csr_asparse_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_common_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_common_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_aux.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_dropout_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_common_x86.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_sse_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_sse_microkernel.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_relu_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_unary_binary_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_copy_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_cvtfp32bf16_act_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_scale_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_reduce_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_matequation_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_optimizer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_softmaxloss.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -473,19 +539,10 @@
     <ClCompile Include="..\src\generator_gemm_noarch.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_sse3_microkernel.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_matcopy.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_matcopy_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_spgemm.c">
@@ -497,9 +554,6 @@
     <ClCompile Include="..\src\generator_spgemm_csc_bsparse.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_spgemm_csc_bsparse_soa.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_spgemm_csc_reader.c">
       <Filter>src\generator</Filter>
     </ClCompile>
@@ -507,12 +561,6 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_spgemm_csr_asparse_soa.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_spgemm_csr_bsparse_soa.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c">
@@ -590,15 +638,6 @@
     <ClCompile Include="..\src\libxsmm_dnn_rnncell_forward.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_packed_trmm_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_packed_gemm_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_packed_getrf_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
@@ -616,9 +655,6 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_packed.c">
-      <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c">
       <Filter>src\template</Filter>
@@ -655,12 +691,6 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_gru_bwdupd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.c">
-      <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_memory.c">
       <Filter>src</Filter>
@@ -791,9 +821,6 @@
     <ClCompile Include="..\src\libxsmm_dnn_fusedgroupnorm_forward.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_spgemm_csc_csparse_soa.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_bwdupd_custom_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
@@ -915,6 +942,117 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_amx_microkernel_emu.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csr_bsparse_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csr_bsparse_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_trmm_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_ac_rm.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_ac_rm_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_bc_rm.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_bc_rm_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_getrf_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csc_bsparse.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csc_bsparse_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csc_bsparse_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csc_csparse.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csc_csparse_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csr_asparse.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csr_asparse_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csr_asparse_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_spgemm_csr_bsparse.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_common_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_common_aarch64.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_dropout_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_common_x86.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_sse_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_sse_microkernel.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_relu_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_unary_binary_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_copy_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_cvtfp32bf16_act_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_reduce_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_scale_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_matequation.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_matequation_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>

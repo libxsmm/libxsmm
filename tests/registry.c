@@ -36,35 +36,38 @@ int main(/*int argc, char* argv[]*/)
 #endif
   if (EXIT_SUCCESS == result) { /* test for some expected failure */
     result = (NULL == libxsmm_xregister(key, /*too large*/LIBXSMM_DESCRIPTOR_MAXSIZE + 1,
-      strlen(value[0]) + 1, value[0]) ? EXIT_SUCCESS : EXIT_FAILURE);
+      strlen(value[0]) + 1, value[0], NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   if (EXIT_SUCCESS == result) { /* test for some expected failure */
     result = (NULL == libxsmm_xregister(NULL, 16, /* invalid combination */
-      strlen(value[0]) + 1, value[0]) ? EXIT_SUCCESS : EXIT_FAILURE);
+      strlen(value[0]) + 1, value[0], NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   if (EXIT_SUCCESS == result) { /* test for some expected failure */
     result = (NULL == libxsmm_xregister(NULL, 0, /* invalid combination */
-      strlen(value[0]) + 1, value[0]) ? EXIT_SUCCESS : EXIT_FAILURE);
+      strlen(value[0]) + 1, value[0], NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   if (EXIT_SUCCESS == result) { /* test for some expected failure */
-    result = (NULL == libxsmm_xregister(key, key_size, 0, NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
+    result = (NULL == libxsmm_xregister(key, key_size,
+      0, NULL, NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
 #if (0 != LIBXSMM_JIT) /* registry service only with JIT */
   if (EXIT_SUCCESS == result) { /* same key but (larger) payload; initialized later */
-    result = (NULL != libxsmm_xregister(key, key_size, strlen(value[0]) + 1, NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
+    result = (NULL != libxsmm_xregister(key, key_size,
+      strlen(value[0]) + 1, NULL, NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   if (EXIT_SUCCESS == result) { /* re-register same key with larger payload */
     result = (NULL == libxsmm_xregister(key, key_size,
-      strlen(value[3]) + 1, value[0]) ? EXIT_SUCCESS : EXIT_FAILURE);
+      strlen(value[3]) + 1, value[0], NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   if (EXIT_SUCCESS == result) { /* release registered value */
     libxsmm_xrelease(key, key_size);
   }
   for (i = 0; i < n && EXIT_SUCCESS == result; ++i) {
-    result = (NULL != libxsmm_xregister(key + i, key_size, strlen(value[i]) + 1, value[i]) ? EXIT_SUCCESS : EXIT_FAILURE);
+    result = (NULL != libxsmm_xregister(key + i, key_size,
+      strlen(value[i]) + 1, value[i], NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
   for (i = 0; i < n && EXIT_SUCCESS == result; ++i) {
-    const char *const v = (char*)libxsmm_xdispatch(key + i, key_size);
+    const char *const v = (char*)libxsmm_xdispatch(key + i, key_size, NULL);
     libxsmm_kernel_info info;
     result = libxsmm_get_kernel_info(v, &info);
     if (EXIT_SUCCESS == result) {

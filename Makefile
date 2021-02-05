@@ -344,7 +344,7 @@ SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c libxsmm_dnn_softmaxloss.c \
           libxsmm_dnn_softmaxloss_forward.c libxsmm_dnn_softmaxloss_backward.c libxsmm_dnn_optimizer.c libxsmm_dnn_optimizer_sgd.c )
 SRCFILES_GEN_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
-          libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c)
+          libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
 
 SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 OBJFILES_GEN_GEMM_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
@@ -461,15 +461,10 @@ else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 endif
 ifneq (,$(filter 0 1,$(INTRINSICS)))
 ifeq (0,$(COMPATIBLE))
-ifeq (0,$(AVX))
-	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
-else
-	$(info INTRINSICS=$(INTRINSICS) limits LIBXSMM to AVX$(AVX) (and beyond).)
-endif
 ifeq (0,$(INTEL))
-	$(info If adjusting INTRINSICS was necessary, reconsider an updated tool chain.)
+	$(info If adjusting INTRINSICS was necessary, consider updated GNU Binutils.)
 else # Intel Compiler
-	$(info Intel Compiler does not require adjusting INTRINSICS.)
+	$(info Intel Compiler does not usually require adjusting INTRINSICS.)
 endif
 	$(info --------------------------------------------------------------------------------)
 endif # COMPATIBLE
@@ -747,7 +742,7 @@ endif
 define DEFINE_COMPILE_RULE
 $(1): $(2) $(3) $(dir $(1))/.make
 	@rm -f $(1)
-	-$(CC) $(4) -c $(2) -o $(1)
+	-$(CC) $(4) $(WERROR_CFLAG) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
 		echo "--------------------------------------------------------------"; \
 		echo "In case of assembler error, perhaps GNU Binutils are outdated."; \
@@ -810,20 +805,6 @@ $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(DFLAGS) $(IFLAGS) $(TGT_FLAGS) $(CFLAGS))))
-
-.PHONY: compile_mic
-ifneq (0,$(MIC))
-ifneq (0,$(MPSS))
-compile_mic:
-$(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) -mmic -c $< -o $@
-endif
-endif
-
-.PHONY: compile_hst
-compile_hst:
-$(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: module_mic
 ifneq (0,$(MIC))
@@ -1343,9 +1324,22 @@ $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 		-e 'N;/^\n$$/d;P;D' \
 		> $@
 
+$(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/hfp/libxsmm/Compatibility.md"
+	@echo >> $@
+
+$(DOCDIR)/libxsmm_valid.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/hfp/libxsmm/Validation.md"
+	@echo >> $@
+
+$(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/hfp/libxsmm/Q&A.md"
+	@echo >> $@
+
 $(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md \
 $(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dl.md $(ROOTDIR)/documentation/libxsmm_aux.md \
-$(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md
+$(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md \
+$(ROOTDIR)/documentation/libxsmm_compat.md $(ROOTDIR)/documentation/libxsmm_valid.md $(ROOTDIR)/documentation/libxsmm_qna.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1364,9 +1358,11 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		iconv -t utf-8 libxsmm_be.md && echo && \
 		echo "# Appendix" && \
 		echo "## Compatibility" && \
-		wget -T $(TIMEOUT) -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Compatibility.md 2>/dev/null && echo && \
+		sed "s/^\(##*\) /#\1 /" libxsmm_compat.md | iconv -t utf-8 && \
 		echo "## Validation" && \
-		wget -T $(TIMEOUT) -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Validation.md 2>/dev/null; ) \
+		sed "s/^\(##*\) /#\1 /" libxsmm_valid.md | iconv -t utf-8 && \
+		echo "## Q&A" && \
+		sed "s/^\(##*\) /#\1 /" libxsmm_qna.md | iconv -t utf-8; ) \
 	| sed \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
@@ -1803,12 +1799,12 @@ deb:
 		echo "Architecture: amd64" >> control; \
 		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >> control; \
 		echo "Description: Matrix operations and deep learning primitives" >> control; \
-		wget -T $(TIMEOUT) -qO- https://api.github.com/repos/hfp/libxsmm \
+		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/hfp/libxsmm" \
 		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
 		| fold -s -w 79 | sed -e 's/^/ /' -e 's/[[:space:]][[:space:]]*$$//' >> control; \
 		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
-		wget -T $(TIMEOUT) -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
+		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE}" \
 		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
 		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
 		| sed -n 's/^\* \(..*\)/\* \1/p' \

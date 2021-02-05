@@ -123,9 +123,12 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
  * Registered data is released at program termination but can be also released
  * if needed (libxsmm_xrelease), .e.g., for larger value for the same key.
  */
-LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init);
+LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
+  size_t value_size, const void* value_init, unsigned int* key_hash);
 /** Query user-defined value from LIBXSMM's code registry. */
-LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
+LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size,
+  /** Optionally returns the hashed key. */
+  unsigned int* key_hash);
 /** Remove key-value pair from code registry and release memory. */
 LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size);
 
@@ -491,6 +494,19 @@ LIBXSMM_API libxsmm_meltwfunction_reduce_cols_idx libxsmm_dispatch_meltw_reduce_
 LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opreduce_vecs_idx(libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype idx_type, libxsmm_meltw_opreduce_vecs_flags flags);
 LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_scal_flags flags, unsigned char);
 LIBXSMM_API libxsmm_meltwfunction_transform libxsmm_dispatch_meltw_transform(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_transform_flags flags);
+LIBXSMM_API libxsmm_meltwfunction_dropout libxsmm_dispatch_meltw_dropout(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_dropout_flags flags);
+LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype comp_type, libxsmm_meltw_unary_flags flags, libxsmm_meltw_unary_type type);
+LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype comp_type, libxsmm_meltw_binary_flags flags, libxsmm_meltw_binary_type type);
+
+/** matrix equation interface */
+LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create();
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_blasint in_pos, const libxsmm_blasint offs_in_pos, const libxsmm_datatype dtype );
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype );
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype );
+LIBXSMM_API void libxsmm_matrix_eqn_tree_print( const libxsmm_blasint idx );
+LIBXSMM_API void libxsmm_matrix_eqn_rpn_print( const libxsmm_blasint idx );
+LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const libxsmm_meqn_descriptor* descriptor );
+LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldo, const libxsmm_datatype out_type, const unsigned int eqn_idx );
 
 /** Code generation routine for transposes using a descriptor */
 LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor);

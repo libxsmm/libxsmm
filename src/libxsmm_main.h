@@ -191,6 +191,7 @@
   START libxsmm_gemm_descriptor MODIFIER gemm; \
   START libxsmm_mcopy_descriptor MODIFIER mcopy; \
   START libxsmm_meltw_descriptor MODIFIER meltw; \
+  START libxsmm_meqn_descriptor MODIFIER meqn; \
   START libxsmm_trans_descriptor MODIFIER trans; \
   START libxsmm_pgemm_descriptor MODIFIER pgemm; \
   START libxsmm_getrf_descriptor MODIFIER getrf; \
@@ -348,6 +349,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wimm, or void-function */
   libxsmm_xmcopyfunction xmatcopy;
   libxsmm_xmeltwfunction xmateltw;
+  libxsmm_matrix_eqn_function xmateqn;
   libxsmm_xtransfunction xtrans;
   libxsmm_pgemm_xfunction xpgemm;
   libxsmm_getrf_xfunction xgetrf;
@@ -668,6 +670,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_dnn_tensor* grad_bias;      /* grad bais tensor */
   libxsmm_dnn_tensor* relumask;       /* relumask */
   libxsmm_barrier* barrier;           /* barrier */
+  int target_archid;
+
   int ifmblock;
   int ofmblock;
   int blocksifm;
@@ -862,10 +866,21 @@ struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
   libxsmm_smmfunction kernel;
 };
 
+/** Packed structure storing the mateltw argument description. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meqn_descriptor {
+  /** LDx, M, and N. */
+  unsigned int m, n, ldo;
+  /** Size of data element. */
+  unsigned char datatype;
+  /** Set of flags */
+  unsigned int eqn_idx;
+};
+
 typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_GEMM       = LIBXSMM_KERNEL_KIND_MATMUL,
   LIBXSMM_BUILD_KIND_MCOPY      = LIBXSMM_KERNEL_KIND_MCOPY,
   LIBXSMM_BUILD_KIND_MELTW      = LIBXSMM_KERNEL_KIND_MELTW,
+  LIBXSMM_BUILD_KIND_MEQN       = LIBXSMM_KERNEL_KIND_MEQN,
   LIBXSMM_BUILD_KIND_TRANS      = LIBXSMM_KERNEL_KIND_TRANS,
   LIBXSMM_BUILD_KIND_PGEMM      = LIBXSMM_KERNEL_KIND_PGEMM,
   LIBXSMM_BUILD_KIND_GETRF      = LIBXSMM_KERNEL_KIND_GETRF,
@@ -1023,10 +1038,10 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, in
 LIBXSMM_API void libxsmm_xfree(const void* memory, int check);
 
 /**
- * Format for instance an amount of Bytes like libxsmm_format_size(result, sizeof(result), nbytes, "KMGT", "B", 10).
+ * Format for instance an amount of Bytes like libxsmm_format_value(result, sizeof(result), nbytes, "KMGT", "B", 10).
  * The value returned is in requested/determined unit so that the user can decide about printing the buffer.
  */
-LIBXSMM_API_INTERN size_t libxsmm_format_size(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
+LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
 
 /** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);

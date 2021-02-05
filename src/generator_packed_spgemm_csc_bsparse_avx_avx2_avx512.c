@@ -142,6 +142,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
   /* m loop */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_mloop, 0 );
   libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_mloop, 1 );
 
@@ -432,14 +433,13 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_avx_avx2_avx512_kloop( libxsmm_
         for ( l_n = 0; l_n < i_n_limit - i_n_processed; l_n++ ) {
           /* issue a qmadd */
           if ( l_column_active[l_n] == 2 ) {
-            libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
-                                                      i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
                                                       LIBXSMM_X86_INSTR_V4FMADDPS,
+                                                      i_micro_kernel_config->vector_name,
                                                       i_gp_reg_mapping->gp_reg_b,
                                                       LIBXSMM_X86_GP_REG_UNDEF,
                                                       0,
-                                                      l_nnz_idx[l_n][0] * i_micro_kernel_config->datatype_size,
-                                                      i_micro_kernel_config->vector_name,
+                                                      l_nnz_idx[l_n][0] * i_micro_kernel_config->datatype_size, 0,
                                                       l_max_reg_block,
                                                       (l_n*i_packed_blocking) + l_p );
           } else if ( l_column_active[l_n] == 1 ) {

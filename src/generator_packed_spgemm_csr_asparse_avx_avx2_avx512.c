@@ -231,6 +231,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_n_loop( libxsmm
   l_n_loop = ( l_n_remain == 0 ) ? (l_n_chunks * l_n_chunksize) : ((l_n_chunks-1) * l_n_chunksize);
 
   /* loop over blocks of n */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_nloop, 0 );
   libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_nloop, l_n_chunksize );
 

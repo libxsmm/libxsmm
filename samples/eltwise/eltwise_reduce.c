@@ -54,14 +54,18 @@ int main(int argc, char* argv[])
   libxsmm_meltwfunction_reduce_cols_idx kernel2;
   libxsmm_meltw_reduce_param params;
   libxsmm_meltw_reduce_cols_idx_param params2;
-  libxsmm_matdiff_info norms_elts, norms_elts_squared;
+  libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;
   unsigned long long l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
+
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
 
   libxsmm_init();
 
   libxsmm_matdiff_clear(&norms_elts);
   libxsmm_matdiff_clear(&norms_elts_squared);
+  libxsmm_matdiff_clear(&diff);
 
   if ( argc > 1 ) m = atoi(argv[1]);
   if ( argc > 2 ) n = atoi(argv[2]);
@@ -217,29 +221,36 @@ int main(int argc, char* argv[])
   } else {
     printf("#   Correctness - Eltwise reduce colsidx #\n");
   }
-  printf("##########################################\n");
-  libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts, result_reduce_elts, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
-  printf("L1 test       : %.25g\n", norms_elts.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+
+  if (reduce_elts > 0) {
+    printf("##########################################\n");
+    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts, result_reduce_elts, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
+    printf("L1 test       : %.25g\n", norms_elts.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_elts);
+  }
 
   /* compare */
-  if (n_cols_idx == 0) {
-    printf("##########################################\n");
-    printf("#   Correctness - Eltwise-square reduce  #\n");
-    printf("##########################################\n");
-    libxsmm_matdiff(&norms_elts_squared, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts_squared, result_reduce_elts_squared, 0, 0);
-    printf("L1 reference  : %.25g\n", norms_elts_squared.l1_ref);
-    printf("L1 test       : %.25g\n", norms_elts_squared.l1_tst);
-    printf("L2 abs.error  : %.24f\n", norms_elts_squared.l2_abs);
-    printf("L2 rel.error  : %.24f\n", norms_elts_squared.l2_rel);
-    printf("Linf abs.error: %.24f\n", norms_elts_squared.linf_abs);
-    printf("Linf rel.error: %.24f\n", norms_elts_squared.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_elts_squared.normf_rel);
+  if (reduce_elts_squared > 0) {
+    if (n_cols_idx == 0) {
+      printf("##########################################\n");
+      printf("#   Correctness - Eltwise-square reduce  #\n");
+      printf("##########################################\n");
+      libxsmm_matdiff(&norms_elts_squared, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts_squared, result_reduce_elts_squared, 0, 0);
+      printf("L1 reference  : %.25g\n", norms_elts_squared.l1_ref);
+      printf("L1 test       : %.25g\n", norms_elts_squared.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_elts_squared.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_elts_squared.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_elts_squared.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_elts_squared.linf_rel);
+      printf("Check-norm    : %.24f\n\n", norms_elts_squared.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_elts_squared);
+    }
   }
 
   l_start = libxsmm_timer_tick();
@@ -304,6 +315,15 @@ int main(int argc, char* argv[])
   free(result_reduce_elts_squared);
   free(ref_result_reduce_elts);
   free(ref_result_reduce_elts_squared);
+
+  {
+    const char *const env_check_scale = getenv("CHECK_SCALE");
+    const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
+    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
+      fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+      exit(EXIT_FAILURE);
+    }
+  }
 
   return EXIT_SUCCESS;
 }

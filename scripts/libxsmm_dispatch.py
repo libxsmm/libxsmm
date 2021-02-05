@@ -44,7 +44,7 @@ if __name__ == "__main__":
             print(" */")
             print("#if (0 != LIBXSMM_JIT) && !defined(__MIC__)")
             print(
-                "if (LIBXSMM_X86_SSE3 > libxsmm_target_archid "
+                "if (LIBXSMM_X86_GENERIC > libxsmm_target_archid "
                 "/* JIT code gen. is not available */"
             )
             print(

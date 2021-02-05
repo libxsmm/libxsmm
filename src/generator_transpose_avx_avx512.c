@@ -312,108 +312,108 @@ LIBXSMM_API_INLINE void gen_one_trans(
       {
         io_generated_code->code_size = i;
         /* vunpcklpd %ymm2, %ymm1, %ymm5 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPD, 'y', 2, 1, 5);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPD, 'y', 2, 1, 5);
         /* vunpcklpd %ymm4, %ymm3, %ymm6 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPD, 'y', 4, 3, 6);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPD, 'y', 4, 3, 6);
         /* vunpckhpd %ymm2, %ymm1, %ymm7 */
-        if (m > 1) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPD, 'y', 2, 1, 7);
+        if (m > 1) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPD, 'y', 2, 1, 7);
         /* vunpckhpd %ymm4, %ymm3, %ymm7 */
-        if (m > 1) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPD, 'y', 4, 3, 8);
-        if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 6, 5, 1, 32);
-        if (m>1) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 8, 7, 2, 32);
-        if (m>2) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 6, 5, 3, 49);
-        if (m>3) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 8, 7, 4, 49);
+        if (m > 1) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPD, 'y', 4, 3, 8);
+        if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 6, 5, 1, 32);
+        if (m>1) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 8, 7, 2, 32);
+        if (m>2) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 6, 5, 3, 49);
+        if (m>3) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 8, 7, 4, 49);
         i = io_generated_code->code_size;
       }
       else {
         /* single precision: */
         io_generated_code->code_size = i;
         /* vunpcklps %ymm2, %ymm1, %ymm9 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPS, 'y', 2, 1, 9);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPS, 'y', 2, 1, 9);
         /* vunpckhps %ymm2, %ymm1, %ymm1 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPS, 'y', 2, 1, 1);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPS, 'y', 2, 1, 1);
         /* vunpcklps %ymm4, %ymm3, %ymm10 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPS, 'y', 4, 3, 10);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPS, 'y', 4, 3, 10);
         /* vunpckhps %ymm4, %ymm3, %ymm2 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPS, 'y', 4, 3, 2);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPS, 'y', 4, 3, 2);
         /* vunpcklps %ymm6, %ymm5, %ymm11 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPS, 'y', 6, 5, 11);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPS, 'y', 6, 5, 11);
         /* vunpckhps %ymm6, %ymm5, %ymm3 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPS, 'y', 6, 5, 3);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPS, 'y', 6, 5, 3);
         /* vunpcklps %ymm8, %ymm7, %ymm12 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPS, 'y', 8, 7, 12);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPS, 'y', 8, 7, 12);
         /* vunpckhps %ymm8, %ymm7, %ymm4 */
-        libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPS, 'y', 8, 7, 4);
-        if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 10, 9, 5, 68);
-        if (m>1) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 10, 9, 6, 238);
-        if (m>2) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 2, 1, 7, 68);
-        if (m>3) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 2, 1, 8, 238);
-        if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 12, 11, 9, 68);
-        if (m>1) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 12, 11, 10, 238);
-        if (m>2) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 4, 3, 11, 68);
-        if (m>3) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 4, 3, 12, 238);
-        if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 9, 5, 1, 32);
-        if (m>1) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 10, 6, 2, 32);
-        if (m>2) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 11, 7, 3, 32);
-        if (m>3) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 12, 8, 4, 32);
-        if (m>4) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 9, 5, 5, 49);
-        if (m>5) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 10, 6, 6, 49);
-        if (m>6) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 11, 7, 7, 49);
-        if (m>7) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 12, 8, 8, 49);
+        libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPS, 'y', 8, 7, 4);
+        if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 10, 9, 5, 68);
+        if (m>1) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 10, 9, 6, 238);
+        if (m>2) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 2, 1, 7, 68);
+        if (m>3) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 2, 1, 8, 238);
+        if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 12, 11, 9, 68);
+        if (m>1) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 12, 11, 10, 238);
+        if (m>2) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 4, 3, 11, 68);
+        if (m>3) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFPS, 'y', 4, 3, 12, 238);
+        if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 9, 5, 1, 32);
+        if (m>1) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 10, 6, 2, 32);
+        if (m>2) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 11, 7, 3, 32);
+        if (m>3) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 12, 8, 4, 32);
+        if (m>4) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 9, 5, 5, 49);
+        if (m>5) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 10, 6, 6, 49);
+        if (m>6) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 11, 7, 7, 49);
+        if (m>7) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPERM2F128, 'y', 12, 8, 8, 49);
         i = io_generated_code->code_size;
       }
     }
     else { /* avx512 */
       /* vshuff64x2 $0xEE, %zmm3 , %zmm1 , %zmm9  */
       io_generated_code->code_size = i;
-      if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 9, 0xEE);
+      if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 9, 0xEE);
       /* vshuff64x2 $0x44, %zmm3 , %zmm1 , %zmm1  */
-      if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 1, 0x44);
+      if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 1, 0x44);
       /* vshuff64x2 $0xEE, %zmm4 , %zmm2 , %zmm10 */
-      if (m>2) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 4, 2, 10, 0xEE);
+      if (m>2) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 4, 2, 10, 0xEE);
       /* vshuff64x2 $0x44, %zmm4 , %zmm2 , %zmm2  */
-      if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 4, 2, 2, 0x44);
+      if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 4, 2, 2, 0x44);
       /* vshuff64x2 $0xEE, %zmm7 , %zmm5 , %zmm11 */
-      if (m>4) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 7, 5, 11, 0xEE);
+      if (m>4) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 7, 5, 11, 0xEE);
       /* vshuff64x2 $0x44, %zmm7 , %zmm5 , %zmm3  */
-      if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 7, 5, 3, 0x44);
+      if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 7, 5, 3, 0x44);
       /* vshuff64x2 $0xEE, %zmm8 , %zmm6 , %zmm12 */
-      if (m>4) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 8, 6, 12, 0xEE);
+      if (m>4) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 8, 6, 12, 0xEE);
       /* vshuff64x2 $0x44, %zmm8 , %zmm6 , %zmm4  */
-      if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 8, 6, 4, 0x44);
+      if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 8, 6, 4, 0x44);
       /* vshuff64x2 $0xDD, %zmm3 , %zmm1 , %zmm6  */
-      if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 6, 0xDD);
+      if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 6, 0xDD);
       /* vshuff64x2 $0x88, %zmm3 , %zmm1 , %zmm5  */
-      if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 5, 0x88);
+      if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 5, 0x88);
       /* vshuff64x2 $0xDD, %zmm11, %zmm9 , %zmm8  */
-      if (m>6) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 11, 9, 8, 0xDD);
+      if (m>6) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 11, 9, 8, 0xDD);
       /* vshuff64x2 $0x88, %zmm11, %zmm9 , %zmm7  */
-      if (m>4) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 11, 9, 7, 0x88);
+      if (m>4) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 11, 9, 7, 0x88);
       /* vshuff64x2 $0x88, %zmm12, %zmm10, %zmm11 */
-      if (m>4) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 12, 10, 11, 0x88);
+      if (m>4) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 12, 10, 11, 0x88);
       /* vshuff64x2 $0xDD, %zmm12, %zmm10, %zmm12 */
-      if (m>6) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 12, 10, 12, 0xDD);
+      if (m>6) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 12, 10, 12, 0xDD);
       /* vshuff64x2 $0xDD, %zmm4 , %zmm2 , %zmm10 */
-      if (m>2) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 4, 2, 10, 0xDD);
+      if (m>2) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 4, 2, 10, 0xDD);
       /* vshuff64x2 $0x88, %zmm4 , %zmm2 , %zmm9  */
-      if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 4, 2, 9, 0x88);
+      if (m>0) libxsmm_x86_instruction_vec_compute_3reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 4, 2, 9, 0x88);
 
       /* vunpcklpd  %zmm9 , %zmm5, %zmm1 */
-      if (m>0) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPD, 'z', 9, 5, 1);
+      if (m>0) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPD, 'z', 9, 5, 1);
       /* vunpckhpd  %zmm9 , %zmm5, %zmm2 */
-      if (m>1) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPD, 'z', 9, 5, 2);
+      if (m>1) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPD, 'z', 9, 5, 2);
       /* vunpcklpd  %zmm10, %zmm6, %zmm3 */
-      if (m>2) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPD, 'z', 10, 6, 3);
+      if (m>2) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPD, 'z', 10, 6, 3);
       /* vunpckhpd  %zmm10, %zmm6, %zmm4 */
-      if (m>3) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPD, 'z', 10, 6, 4);
+      if (m>3) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPD, 'z', 10, 6, 4);
       /* vunpcklpd  %zmm11, %zmm7, %zmm5 */
-      if (m>4) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPD, 'z', 11, 7, 5);
+      if (m>4) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPD, 'z', 11, 7, 5);
       /* vunpckhpd  %zmm11, %zmm7, %zmm6 */
-      if (m>5) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPD, 'z', 11, 7, 6);
+      if (m>5) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPD, 'z', 11, 7, 6);
       /* vunpcklpd  %zmm12, %zmm8, %zmm7 */
-      if (m>6) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKLPD, 'z', 12, 8, 7);
+      if (m>6) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKLPD, 'z', 12, 8, 7);
       /* vunpckhpd  %zmm12, %zmm8, %zmm8 */
-      if (m>7) libxsmm_x86_instruction_vec_compute_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VUNPCKHPD, 'z', 12, 8, 8);
+      if (m>7) libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VUNPCKHPD, 'z', 12, 8, 8);
       i = io_generated_code->code_size;
     }
 
@@ -713,7 +713,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            io_generated_code->code_size = i;
            libxsmm_x86_instruction_alu_imm ( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, 8, imask );
            /* kmovw %r8d, %k1: */
-           libxsmm_x86_instruction_mask_move ( io_generated_code, LIBXSMM_X86_INSTR_KMOVW, 8, 1, 0 );
+           libxsmm_x86_instruction_mask_move ( io_generated_code, LIBXSMM_X86_INSTR_KMOVW_GPR_LD, 8, 1 );
            i = io_generated_code->code_size;
         }
         if ( n0 > 0 )
@@ -730,7 +730,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            io_generated_code->code_size = i;
            libxsmm_x86_instruction_alu_imm ( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, 8, imask );
            /* kmovw %r8d, %k2: */
-           libxsmm_x86_instruction_mask_move ( io_generated_code, LIBXSMM_X86_INSTR_KMOVW, 8, 2, 0 );
+           libxsmm_x86_instruction_mask_move ( io_generated_code, LIBXSMM_X86_INSTR_KMOVW_GPR_LD, 8, 2 );
            i = io_generated_code->code_size;
         }
      }
