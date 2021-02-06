@@ -11,7 +11,7 @@
 ###############################################################################
 set -o pipefail
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 BASENAME=$(command -v basename)
 MKDIR=$(command -v mkdir)
 CHMOD=$(command -v chmod)

@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 DEPDIR=${HERE}/../../..
 
 TMPF=$(${DEPDIR}/.mktmp.sh /tmp/.libxsmm_XXXXXX.out)

@@ -41,7 +41,7 @@ cat << EOM
 #endif
 EOM
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 
 if [ "" = "$1" ]; then
   DSTDIR=${SRCDIR}
@@ -53,7 +53,7 @@ fi
 export LC_ALL=C
 
 # good-enough pattern to match a main function, and to exclude this translation unit
-for FILE in $(cd "${HERE}/${SRCDIR}" && ${GREP} -L "main[[:space:]]*(.*)" *.c); do
+for FILE in $(cd "${HERE}/${SRCDIR}" && ${GREP} -L "main[[:space:]]*(.*)" ./*.c); do
   BASENAME=$(basename "${FILE}")
   echo "#include \"${DSTDIR}/${BASENAME}\""
 done

@@ -17,7 +17,7 @@ SED=$(command -v sed)
 TR=$(command -v tr)
 
 if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}" ]; then
-  HERE=$(cd "$(dirname "$0")"; pwd -P)
+  HERE=$(cd "$(dirname "$0")" && pwd -P)
   if [ "$1" ]; then
     STATEFILE=$1/.state
     ${MKDIR} -p "$1"
