@@ -12,7 +12,7 @@
 
 SED=$(command -v sed)
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 VARIANT=Cached
 LIMIT=31
 

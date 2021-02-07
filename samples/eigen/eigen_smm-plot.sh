@@ -21,7 +21,7 @@ RM=$(command -v rm)
 
 VARIANT="LIBXSMM streamed (A,B)"
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 FILE=${HERE}/eigen_smm-cp2k.txt
 
 PERF=$(${GREP} -A2 "${VARIANT}" ${FILE} \

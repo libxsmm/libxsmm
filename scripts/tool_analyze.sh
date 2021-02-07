@@ -19,7 +19,7 @@ CC=$(command -v clang)
 if [ "" != "${MAKE}" ] && [ "" != "${CXX}" ] && [ "" != "${CC}" ] && \
    [ "" != "${GREP}" ] && [ "" != "${SORT}" ];
 then
-  HERE=$(cd "$(dirname "$0")"; pwd -P)
+  HERE=$(cd "$(dirname "$0")" && pwd -P)
   cd "${HERE}/.."
   ARG=$*
   if [ "" = "${ARG}" ]; then

@@ -11,7 +11,7 @@
 
 #include "generator_common_x86.h"
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
-#include "generator_mateltwise_avx_avx512.h"
+#include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"

@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 GIT_DIR=${HERE}/../.git
 LOCKFILE=${GIT_DIR}/.commit
 HOOKS="post-commit pre-commit prepare-commit-msg"

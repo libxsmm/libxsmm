@@ -21,7 +21,7 @@ if [ "" != "$1" ]; then
   shift
 fi
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 FILE=${HERE}/cp2k-perf.txt
 
 GREP=$(command -v grep)
