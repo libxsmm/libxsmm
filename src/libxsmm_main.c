@@ -2388,8 +2388,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #if (0 == LIBXSMM_JIT)
         LIBXSMM_UNUSED(user_size);
 #else
-        if (LIBXSMM_X86_AVX <= libxsmm_target_archid || /* check if JIT is supported (CPUID) */
-           (LIBXSMM_X86_GENERIC <= libxsmm_target_archid && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind)) ||
+        if (LIBXSMM_X86_GENERIC <= libxsmm_target_archid || /* check if JIT is supported (CPUID) */
            (LIBXSMM_KERNEL_KIND_USER == LIBXSMM_DESCRIPTOR_KIND(desc->kind)))
         {
           LIBXSMM_ASSERT(0 != mode || NULL == flux_entry.ptr_const/*code version does not exist*/);

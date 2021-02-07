@@ -9,7 +9,7 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "generator_matequation_avx_avx512.h"
-#include "generator_mateltwise_avx_avx512.h"
+#include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
@@ -174,7 +174,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       /* This should not happen */
     }
     /* Configure the unary-binary microkernel */
-    libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, io_generated_code->arch, meltw_desc);
+    libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc);
     /* Call unary-binary JITer */
     libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
   }
