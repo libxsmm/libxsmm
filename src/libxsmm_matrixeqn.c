@@ -19,7 +19,6 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( libxsmm_
   return libxsmm_matrix_eqns[eqn_idx];
 }
 
-LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn_elem* cur_node );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn_elem* cur_node ) {
   /* check if we are at an argument leaf, then we assign register score 0 */
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
@@ -68,7 +67,6 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
 }
 
 
-LIBXSMM_API_INTERN libxsmm_blasint reserve_tmp_storage(libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool);
 LIBXSMM_API_INTERN libxsmm_blasint reserve_tmp_storage(libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool) {
   libxsmm_blasint i;
   if ( tmp_storage_pool != NULL ) {
@@ -83,7 +81,6 @@ LIBXSMM_API_INTERN libxsmm_blasint reserve_tmp_storage(libxsmm_blasint n_max_tmp
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool ) {
   /* check if we are at an argument leaf, then we assign register score 0 */
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
