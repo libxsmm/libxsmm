@@ -9,7 +9,7 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "generator_gemm_amx_microkernel.h"
-#include "generator_mateltwise_transform_avx_avx512.h"
+#include "generator_mateltwise_transform_avx512.h"
 #include "generator_x86_instructions.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

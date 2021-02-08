@@ -11,7 +11,7 @@
 ###############################################################################
 set -o pipefail
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 BASENAME=$(command -v basename)
 MKDIR=$(command -v mkdir)
 CHMOD=$(command -v chmod)
@@ -396,7 +396,7 @@ then
       RESULT=$?
 
       # exit the loop in case of an error
-      if [ "0" != "${RESULT}" ]; then
+      if [ "0" != "${RESULT}" ] && [ "1" != "${LIMITHARD}" ]; then
         if [ "${TOUCHFILE}" ]; then
           ${RM} -f "${TOUCHFILE}"
           TOUCHFILE=""
@@ -448,4 +448,3 @@ then
 
   exit ${RESULT}
 fi
-
