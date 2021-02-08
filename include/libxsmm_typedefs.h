@@ -395,7 +395,8 @@ typedef enum libxsmm_meltw_binary_type {
   LIBXSMM_MELTW_TYPE_BINARY_MUL         =  2,
   LIBXSMM_MELTW_TYPE_BINARY_SUB         =  3,
   LIBXSMM_MELTW_TYPE_BINARY_DIV         =  4,
-  LIBXSMM_MELTW_TYPE_BINARY_MULADD      =  5
+  LIBXSMM_MELTW_TYPE_BINARY_MULADD      =  5,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL      =  6
 } libxsmm_meltw_binary_type;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
