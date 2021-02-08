@@ -396,7 +396,7 @@ then
       RESULT=$?
 
       # exit the loop in case of an error
-      if [ "0" != "${RESULT}" ]; then
+      if [ "0" != "${RESULT}" ] && [ "1" != "${LIMITHARD}" ]; then
         if [ "${TOUCHFILE}" ]; then
           ${RM} -f "${TOUCHFILE}"
           TOUCHFILE=""
@@ -448,4 +448,3 @@ then
 
   exit ${RESULT}
 fi
-

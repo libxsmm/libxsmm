@@ -188,3 +188,14 @@ script:
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ "" = "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
     make -e STATIC=0 DBG=1 && ${TRAVIS_BUILD_DIR}/scripts/tool_checkabi.sh
+
+  - if [ "" = "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+    if [ "" = "${COVERITY_SCAN_BINDIR}" ] || [ "" = "${COVERITY_SCAN_USER}" ] || [ "" = "${COVERITY_SCAN_TOKEN}" ]; then
+      echo "Please setup COVERITY_SCAN_BINDIR, COVERITY_SCAN_USER, and COVERITY_SCAN_TOKEN.";
+      exit 1;
+    fi;
+    ${COVERITY_SCAN_BINDIR}/cov-build --dir cov-int make -e ${MAKEJ} && tar cvfz cov-int.tgz cov-int &&
+    curl https://scan.coverity.com/builds?project=hfp-libxsmm
+      --form token=${COVERITY_SCAN_TOKEN} --form email=${COVERITY_SCAN_USER}
+      --form file=@cov-int.tgz --form version="$(git describe --tags)"
+      --form description="$(date -I): $(git log -1 --pretty=oneline | cut -d' ' -f2-)"
