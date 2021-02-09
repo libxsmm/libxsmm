@@ -175,7 +175,7 @@ void libxsmm_configure_mateqn_microkernel_loops( libxsmm_matequation_kernel_conf
                                                  unsigned int*                           i_m_assm_trips,
                                                  unsigned int*                           i_n_assm_trips) {
 
-  unsigned int m_trips, n_trips, m_unroll_factor = 32, n_unroll_factor = 32, m_assm_trips, n_assm_trips;
+  unsigned int m_trips, n_trips, m_unroll_factor = 32, n_unroll_factor = 32, m_assm_trips = 1, n_assm_trips = 1;
   unsigned int max_nm_unrolling = 32;
   unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
@@ -220,6 +220,14 @@ void libxsmm_configure_mateqn_microkernel_loops( libxsmm_matequation_kernel_conf
     while (n_trips % n_unroll_factor != 0) {
       n_unroll_factor--;
     }
+  }
+
+  if (m_unroll_factor < 1) {
+    m_unroll_factor = 1;
+  }
+
+  if (n_unroll_factor < 1) {
+    n_unroll_factor = 1;
   }
 
   m_assm_trips = m_trips/m_unroll_factor;
