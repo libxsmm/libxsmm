@@ -205,8 +205,10 @@ void libxsmm_configure_mateqn_microkernel_loops( libxsmm_matequation_kernel_conf
     m_unroll_factor = max_nm_unrolling;
   }
 
-  while (m_trips % m_unroll_factor != 0) {
-    m_unroll_factor--;
+  if (m_unroll_factor > 0) {
+    while (m_trips % m_unroll_factor != 0) {
+      m_unroll_factor--;
+    }
   }
 
   n_unroll_factor = n_trips;
@@ -214,8 +216,10 @@ void libxsmm_configure_mateqn_microkernel_loops( libxsmm_matequation_kernel_conf
     n_unroll_factor--;
   }
 
-  while (n_trips % n_unroll_factor != 0) {
-    n_unroll_factor--;
+  if (n_unroll_factor > 0) {
+    while (n_trips % n_unroll_factor != 0) {
+      n_unroll_factor--;
+    }
   }
 
   m_assm_trips = m_trips/m_unroll_factor;
