@@ -237,16 +237,10 @@
     <ClInclude Include="..\src\template\libxsmm_version.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_mateltwise_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_gemm_amx_microkernel.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_gemm_amx.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_mateltwise_transform_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_gemm_aarch64.h">
@@ -374,6 +368,27 @@
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_dnn_softmaxloss.h">
       <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_matequation_regblocks_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_matequation_scratch_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_sse_avx_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_transform_avx.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_transform_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_transform_sse.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_matrixeqn.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -866,9 +881,6 @@
     <ClCompile Include="..\src\generator_mateltwise.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_mateltwise_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_gemm_amx_microkernel.c">
       <Filter>src\generator</Filter>
     </ClCompile>
@@ -928,9 +940,6 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c">
       <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_mateltwise_transform_avx_avx512.c">
-      <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_aarch64.c">
       <Filter>src\generator</Filter>
@@ -1055,6 +1064,27 @@
     <ClCompile Include="..\src\generator_matequation_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\generator_matequation_regblocks_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_matequation_scratch_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_sse_avx_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_transform_avx.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_transform_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_transform_sse.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_matrixeqn.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\scripts\libxsmm_specialized.py">
@@ -1091,26 +1121,23 @@
     <None Include="..\scripts\tool_analyze.sh">
       <Filter>scripts</Filter>
     </None>
-    <None Include="..\scripts\tool_normalize.sh">
-      <Filter>scripts</Filter>
-    </None>
     <None Include="..\.flock.sh" />
     <None Include="..\scripts\tool_test.sh">
       <Filter>scripts</Filter>
     </None>
     <None Include="..\.test-rnn.yml" />
     <None Include="..\.test-dnn.yml" />
-    <None Include="..\scripts\tool_checkabi.sh">
-      <Filter>scripts</Filter>
-    </None>
-    <None Include="..\scripts\tool_changelog.sh">
-      <Filter>scripts</Filter>
-    </None>
     <None Include="..\scripts\tool_cpuinfo.sh">
       <Filter>scripts</Filter>
     </None>
     <None Include="..\src\template\libxsmm.f">
       <Filter>include</Filter>
+    </None>
+    <None Include="..\scripts\libxsmm_version.sh">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\tool_getenvars.sh">
+      <Filter>scripts</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
