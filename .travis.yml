@@ -195,7 +195,7 @@ script:
       exit 1;
     fi;
     ${COVERITY_SCAN_BINDIR}/cov-build --dir cov-int make -e ${MAKEJ} && tar cvfz cov-int.tgz cov-int &&
-    curl https://scan.coverity.com/builds?project=hfp-libxsmm
+    curl https://scan.coverity.com/builds?project=hfp-libxsmm --output /dev/null
       --form token=${COVERITY_SCAN_TOKEN} --form email=${COVERITY_SCAN_USER}
       --form file=@cov-int.tgz --form version="$(git describe --tags)"
       --form description="$(date -I): $(git log -1 --pretty=oneline | cut -d' ' -f2-)"
