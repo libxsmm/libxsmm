@@ -1551,6 +1551,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
   /* In this case we load only partial number of columns  */
   n_cols_load = n % 16;
+  im = 0;
   /* Special case when we reduce as single column  */
   if (n == 1) {
     unsigned int reg_sum = 2, reg_sum_squared = 3;
