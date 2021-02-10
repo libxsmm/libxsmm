@@ -525,7 +525,7 @@ void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_g
     io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
     io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_XORPD;
     io_micro_kernel_config->vector_name = 'x';
- 
+
   } else {
      /* That should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );

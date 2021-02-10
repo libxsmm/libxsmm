@@ -42,7 +42,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, i, j, jj, k, iters = 10000, n_cols_idx = 0;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, i, j, jj, k, iters = 10000, n_cols_idx = 0, reduce_op = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
 #ifdef FP16_REDUCE_COLSIDX
@@ -73,8 +73,9 @@ int main(int argc, char* argv[])
   if ( argc > 4 ) reduce_elts = atoi(argv[4]);
   if ( argc > 5 ) reduce_elts_squared = atoi(argv[5]);
   if ( argc > 6 ) reduce_rows = atoi(argv[6]);
-  if ( argc > 7 ) iters = atoi(argv[7]);
-  if ( argc > 8 ) n_cols_idx = atoi(argv[8]);
+  if ( argc > 7 ) reduce_op = atoi(argv[7]);
+  if ( argc > 8 ) iters = atoi(argv[8]);
+  if ( argc > 9 ) n_cols_idx = atoi(argv[9]);
 
 #if 0
   libxsmm_meltw_opreduce_vecs_flags opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT;
@@ -124,49 +125,77 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  /* Calculate reference results...  */
-  if (reduce_rows == 1) {
-    for (j = 0; j < n; j++) {
-      ref_result_reduce_elts[j] = 0;
-      ref_result_reduce_elts_squared[j] = 0;
-      for (i = 0; i < m; i++) {
-        ref_result_reduce_elts[j] += sinp[j*ld_in + i];
-        ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+  if (reduce_op == 0) {
+    /* Calculate reference results...  */
+    if (reduce_rows == 1) {
+      for (j = 0; j < n; j++) {
+        ref_result_reduce_elts[j] = 0;
+        ref_result_reduce_elts_squared[j] = 0;
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[j] += sinp[j*ld_in + i];
+          ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+        }
+      }
+    } else {
+      if (n_cols_idx == 0) {
+        /* In this case we reduce columns */
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[i] = 0;
+          ref_result_reduce_elts_squared[i] = 0;
+          for (j = 0; j < n; j++) {
+            ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+            ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+          }
+        }
+      } else {
+        /* In this case we reduce columns */
+        for (j = 0; j < n_cols_idx; j++) {
+          cols_ind_array[j] = rand() % n;
+        }
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[i] = 0;
+          result_reduce_elts[i] = 0;
+          for (jj = 0; jj < n_cols_idx; jj++) {
+            j = cols_ind_array[jj];
+            ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+          }
+        }
       }
     }
   } else {
-    if (n_cols_idx == 0) {
-      /* In this case we reduce columns */
-      for (i = 0; i < m; i++) {
-        ref_result_reduce_elts[i] = 0;
-        ref_result_reduce_elts_squared[i] = 0;
-        for (j = 0; j < n; j++) {
-          ref_result_reduce_elts[i] += sinp[j*ld_in + i];
-          ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+    if (reduce_rows == 1) {
+      for (j = 0; j < n; j++) {
+        ref_result_reduce_elts[j] = sinp[j*ld_in];
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[j] = LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
         }
       }
     } else {
       /* In this case we reduce columns */
-      for (j = 0; j < n_cols_idx; j++) {
-        cols_ind_array[j] = rand() % n;
-      }
       for (i = 0; i < m; i++) {
-        ref_result_reduce_elts[i] = 0;
-        result_reduce_elts[i] = 0;
-        for (jj = 0; jj < n_cols_idx; jj++) {
-          j = cols_ind_array[jj];
-          ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+        ref_result_reduce_elts[i] = sinp[i];
+        for (j = 0; j < n; j++) {
+          ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
         }
       }
     }
   }
 
   /* Generate JITED kernel */
-  if (reduce_rows == 1) {
-    jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
+  if (reduce_op == 0) {
+    if (reduce_rows == 1) {
+      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
+    } else {
+      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_COLS;
+    }
   } else {
-    jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_COLS;
+    if (reduce_rows == 1) {
+      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX | LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
+    } else {
+      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX | LIBXSMM_MELTW_FLAG_REDUCE_COLS;
+    }
   }
+
   if (reduce_elts == 1) {
     jit_flags |=  LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
   }
@@ -256,36 +285,57 @@ int main(int argc, char* argv[])
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
-    if (reduce_rows == 1) {
-      for (j = 0; j < n; j++) {
-        ref_result_reduce_elts[j] = 0;
-        ref_result_reduce_elts_squared[j] = 0;
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[j] += sinp[j*ld_in + i];
-          ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+    if (reduce_op == 0) {
+
+      if (reduce_rows == 1) {
+        for (j = 0; j < n; j++) {
+          ref_result_reduce_elts[j] = 0;
+          ref_result_reduce_elts_squared[j] = 0;
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[j] += sinp[j*ld_in + i];
+            ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+          }
+        }
+      } else {
+        if (n_cols_idx == 0) {
+          /* In this case we reduce columns */
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = 0;
+            ref_result_reduce_elts_squared[i] = 0;
+            for (j = 0; j < n; j++) {
+              ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+              ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+            }
+          }
+        } else {
+          /* In this case we reduce columns */
+          for (j = 0; j < n_cols_idx; j++) {
+            cols_ind_array[j] = rand() % n_cols_idx;
+          }
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[i] = 0;
+            for (jj = 0; jj < n_cols_idx; jj++) {
+              j = cols_ind_array[jj];
+              ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+            }
+          }
         }
       }
+
     } else {
-      if (n_cols_idx == 0) {
-        /* In this case we reduce columns */
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = 0;
-          ref_result_reduce_elts_squared[i] = 0;
-          for (j = 0; j < n; j++) {
-            ref_result_reduce_elts[i] += sinp[j*ld_in + i];
-            ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+      if (reduce_rows == 1) {
+        for (j = 0; j < n; j++) {
+          ref_result_reduce_elts[j] = sinp[j*ld_in];
+          for (i = 0; i < m; i++) {
+            ref_result_reduce_elts[j] = LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
           }
         }
       } else {
         /* In this case we reduce columns */
-        for (j = 0; j < n_cols_idx; j++) {
-          cols_ind_array[j] = rand() % n_cols_idx;
-        }
         for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = 0;
-          for (jj = 0; jj < n_cols_idx; jj++) {
-            j = cols_ind_array[jj];
-            ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+          ref_result_reduce_elts[i] = sinp[i];
+          for (j = 0; j < n; j++) {
+            ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
           }
         }
       }

@@ -177,7 +177,8 @@ void libxsmm_generator_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*   
     const unsigned int                             i_vec_halves );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                        io_generated_code,
+void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   instr,
     const unsigned int                             i_vec_inout,
     const unsigned int                             i_vec_tmp1,
     const unsigned int                             i_vec_tmp2);

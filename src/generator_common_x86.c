@@ -509,7 +509,8 @@ void libxsmm_generator_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*   
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                        io_generated_code,
+void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   instr,
     const unsigned int                             i_vec_inout,
     const unsigned int                             i_vec_tmp1,
     const unsigned int                             i_vec_tmp2) {
@@ -526,7 +527,7 @@ void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                   
                                            i_vec_inout, i_vec_inout, i_vec_tmp1, 0x4e );
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           instr,
                                            'z',
                                            i_vec_inout, i_vec_tmp1, i_vec_inout );
 
@@ -536,7 +537,7 @@ void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                   
                                            i_vec_inout, i_vec_inout, i_vec_tmp1, 0xb1 );
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           instr,
                                            'z',
                                            i_vec_inout, i_vec_tmp1, i_vec_tmp2 );
 
@@ -546,7 +547,7 @@ void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                   
                                            i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x4e );
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           instr,
                                            'y',
                                            i_vec_tmp2, i_vec_tmp1, i_vec_tmp2 );
 
@@ -556,7 +557,7 @@ void libxsmm_generator_haddps_avx512( libxsmm_generated_code*                   
                                            i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x1 );
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                           LIBXSMM_X86_INSTR_VADDPS,
+                                           instr,
                                            'z',
                                            i_vec_tmp2, i_vec_tmp1, i_vec_inout );
 }
