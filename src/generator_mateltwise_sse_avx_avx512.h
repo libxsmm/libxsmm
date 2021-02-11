@@ -91,6 +91,9 @@ void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_g
                                                                        const libxsmm_meltw_descriptor*   i_mateltwise_desc);
 
 LIBXSMM_API_INTERN
+int is_unary_opcode_reduce_kernel (unsigned int opcode);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*         io_generated_code,
                                                          const libxsmm_meltw_descriptor* i_mateltw_desc );
 
