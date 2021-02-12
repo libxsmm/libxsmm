@@ -4659,6 +4659,21 @@ LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(
 }
 
 
+LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary(
+  libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
+  libxsmm_datatype in_type, libxsmm_datatype compute_type, libxsmm_datatype out_type, libxsmm_meltw_ternary_flags flags, libxsmm_meltw_ternary_type type)
+{
+  libxsmm_descriptor_blob blob;
+  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
+    in_type, compute_type, out_type, LIBXSMM_DATATYPE_UNSUPPORTED, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo, 0, 0,
+    (unsigned short)flags, (unsigned char)type, LIBXSMM_MELTW_OPERATION_TERNARY);
+
+  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
+
+  return result.meltw_ternary;
+}
+
+
 LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const libxsmm_meqn_descriptor* descriptor ) {
   libxsmm_matrix_eqn_function result;
   LIBXSMM_INIT /* verbosity */
