@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/equation_simple
+XFILES := $(OUTDIR)/equation_simple   $(OUTDIR)/equation_softmax
 .PHONY: all
 all: $(XFILES)
 
@@ -46,6 +46,9 @@ compile: $(OBJECTS)
 
 $(OUTDIR)/equation_simple: $(OUTDIR)/.make $(BLDDIR)/equation_simple-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/equation_softmax: $(OUTDIR)/.make $(BLDDIR)/equation_softmax-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/equation_softmax-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

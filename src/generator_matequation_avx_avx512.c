@@ -330,13 +330,41 @@ void enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue
 }
 
 LIBXSMM_API_INTERN
+int is_unary_with_bcast(libxsmm_meltw_unary_flags flags) {
+  int result = 0;
+  if ( ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0) ) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int is_binary_with_bcast(libxsmm_meltw_binary_flags flags) {
+  int result = 0;
+  if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1) > 0) ) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size ) {
   libxsmm_matrix_eqn_elem *root = eqn->eqn_root;
   unsigned int last_timestamp = eqn->eqn_root->visit_timestamp, timestamp = 0;
 
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
     libxsmm_matrix_eqn_elem *cur_node = find_op_at_timestamp(root, timestamp);
-    if ( (timestamp < last_timestamp) && ((is_eqn_node_breaking_point(cur_node) > 0) || (is_eqn_node_breaking_point(cur_node->up) > 0)) ) {
+    if ( (timestamp < last_timestamp) && ((is_eqn_node_breaking_point(cur_node) > 0) || (is_eqn_node_breaking_point(cur_node->up) > 0) ||
+                                           ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_with_bcast(cur_node->up->info.u_op.flags) > 0)) ||
+                                           ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (is_binary_with_bcast(cur_node->up->info.b_op.flags) > 0))) ) {
+
       libxsmm_matrix_eqn_elem       *new_arg_node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
       libxsmm_matrix_eqn            *new_eqn      = (libxsmm_matrix_eqn*) malloc( sizeof(libxsmm_matrix_eqn) );
       union libxsmm_matrix_eqn_info info;
@@ -345,12 +373,29 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
       info.arg.ld = cur_node->tmp.ld;
       info.arg.in_pos = -(cur_node->tmp.id + 1);
       info.arg.dtype = cur_node->tmp.dtype;
+
+      /* If it is reduce kernel, have to resize tmp size of parent node and new arg info */
+      if ( (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 )) {
+        if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
+          cur_node->up->tmp.m = cur_node->tmp.n;
+          cur_node->up->tmp.n = 1;
+          cur_node->up->tmp.ld = cur_node->tmp.n;
+          info.arg.m = cur_node->tmp.n;
+          info.arg.n = 1;
+          info.arg.ld = cur_node->tmp.n;
+        } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
+          cur_node->up->tmp.n = 1;
+          info.arg.n = 1;
+        }
+      }
+
       new_arg_node->le = NULL;
       new_arg_node->ri = NULL;
       new_arg_node->up = cur_node->up;
       new_arg_node->type = LIBXSMM_MATRIX_EQN_NODE_ARG;
       new_arg_node->info = info;
       new_arg_node->reg_score = 0;
+
       if (cur_node->up->le == cur_node) {
         cur_node->up->le = new_arg_node;
       } else {
@@ -375,6 +420,17 @@ void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, l
     libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
     cur_node->visit_timestamp = *current_timestamp;
     *current_timestamp = *current_timestamp + 1;
+
+    /* If it is reduce kernel, have to resize tmp size of parent node */
+    if ( is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 ) {
+      if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
+        cur_node->up->tmp.m = cur_node->tmp.n;
+        cur_node->up->tmp.n = 1;
+        cur_node->up->tmp.ld = cur_node->tmp.n;
+      } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
+        cur_node->up->tmp.n = 1;
+      }
+    }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     if (cur_node->le->reg_score >= cur_node->ri->reg_score) {
       libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
@@ -502,6 +558,12 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     } else {
       /* For these nodes use strategy via regblocks  */
       /* Re-optimize current tree  */
+      copy_mateqn_desc.m = cur_eqn->eqn_root->tmp.m;
+      copy_mateqn_desc.n = cur_eqn->eqn_root->tmp.n;
+      if (eqn_tree_id < queue_size - 1) {
+        copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.ld;
+      }
+
       libxsmm_generator_reoptimize_eqn(cur_eqn);
       memset(&(l_kernel_config.meltw_kernel_config), 0, sizeof(libxsmm_mateltwise_kernel_config));
 #if 0
