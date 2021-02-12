@@ -638,9 +638,9 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint i
     return 2;
   }
 
-  info.b_op.type  = type;
-  info.b_op.flags = flags;
-  info.b_op.dtype = dtype;
+  info.t_op.type  = type;
+  info.t_op.flags = flags;
+  info.t_op.dtype = dtype;
   libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_TERNARY, info );
 #if 0
   printf("added ternary node: %lld %i %i %i\n", libxsmm_matrix_eqns[idx]->eqn_cur, type, flags, dtype );
