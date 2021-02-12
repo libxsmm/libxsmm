@@ -225,6 +225,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
 
     node->le = NULL;
     node->ri = NULL;
+    node->r2 = NULL;
     node->up = cur_node;
     node->type = type;
     node->info = info;
@@ -244,6 +245,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
 
     node->le = NULL;
     node->ri = NULL;
+    node->r2 = NULL;
     node->up = cur_node;
     node->type = type;
     node->info = info;
@@ -260,10 +262,35 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
     }
 
     return node;
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    libxsmm_matrix_eqn_elem *node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
+
+    node->le = NULL;
+    node->ri = NULL;
+    node->r2 = NULL;
+    node->up = cur_node;
+    node->type = type;
+    node->info = info;
+
+    if ( cur_node->le == NULL ) {
+      cur_node->le = node;
+    } else if ( cur_node->ri == NULL ) {
+      cur_node->ri = node;
+    } else if ( cur_node->r2 == NULL ) {
+      cur_node->r2 = node;
+    } else {
+      /* shouldn't happen */
+      fprintf( stderr, "this is not a leaf node, so we cannot add a node!\n");
+      free( node );
+      node = NULL;
+    }
+
+    return node;
   /* we converting the root */
   } else if ( (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_NONE) && (type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
     cur_node->le = NULL;
     cur_node->ri = NULL;
+    cur_node->r2 = NULL;
     cur_node->up = NULL;
     cur_node->type = type;
     cur_node->info = info;
@@ -307,7 +334,22 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_trv_head( libxsmm
     } else {
       return libxsmm_matrix_eqn_trv_head( cur_node->up );
     }
-  } else {
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    /* we have to push more in this branch */
+    if ( cur_node->le == NULL ) {
+      return cur_node;
+    } else if ( cur_node->ri == NULL ) {
+      return cur_node;
+    } else if ( cur_node->r2 == NULL ) {
+      return cur_node;
+    /* we have reached the root, as we are unary, there is no right branch */
+    } else if ( cur_node->up == NULL ) {
+      return cur_node;
+    /* we have to find another node */
+    } else {
+      return libxsmm_matrix_eqn_trv_head( cur_node->up );
+    }
+   } else {
     /* should not happen */
   }
 
@@ -357,6 +399,16 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_print( libxsmm_matrix_eqn_elem* c
     } else {
       printf("ERROR: Binary needs left and right child!\n");
     }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    /* we have to push more in this branch */
+    if ( (cur_node->le != NULL) && (cur_node->ri != NULL) && (cur_node->r2 != NULL) ) {
+      printf("BINARY: %i %i (timestamp = %i, tmp = %i)\n", (int)cur_node->info.t_op.type, (int)cur_node->info.t_op.flags, cur_node->visit_timestamp, cur_node->tmp.id );
+      libxsmm_matrix_eqn_trv_print( cur_node->le, indent+tree_print_indent );
+      libxsmm_matrix_eqn_trv_print( cur_node->ri, indent+tree_print_indent );
+      libxsmm_matrix_eqn_trv_print( cur_node->r2, indent+tree_print_indent );
+    } else {
+      printf("ERROR: Ternary needs left, right and right2 child!\n");
+    }
   } else {
     /* shouldn't happen */
   }
@@ -390,6 +442,16 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_rpn_print( libxsmm_matrix_eqn_ele
     } else {
       printf("ERROR: Binary needs left and right child!\n");
     }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    /* we have to push more in this branch */
+    if ( (cur_node->le != NULL) && (cur_node->ri != NULL) && (cur_node->r2 != NULL) ) {
+      libxsmm_matrix_eqn_trv_rpn_print( cur_node->le );
+      libxsmm_matrix_eqn_trv_rpn_print( cur_node->ri );
+      libxsmm_matrix_eqn_trv_rpn_print( cur_node->r2 );
+      printf("TERNARY-%i ", (int)cur_node->info.b_op.type );
+    } else {
+      printf("ERROR: Ternary needs left, right and right2 child!\n");
+    }
   } else {
     /* shouldn't happen */
   }
@@ -413,8 +475,9 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx ) {
 
   /* let's see if we need seal the equation */
   if ( (libxsmm_matrix_eqns[idx]->eqn_cur == libxsmm_matrix_eqns[idx]->eqn_root) &&
-       ( ((libxsmm_matrix_eqns[idx]->eqn_cur->type == LIBXSMM_MATRIX_EQN_NODE_UNARY)  && (libxsmm_matrix_eqns[idx]->eqn_cur->le != NULL)) ||
-         ((libxsmm_matrix_eqns[idx]->eqn_cur->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_matrix_eqns[idx]->eqn_cur->ri != NULL))    ) ) {
+       ( ((libxsmm_matrix_eqns[idx]->eqn_cur->type == LIBXSMM_MATRIX_EQN_NODE_UNARY)   && (libxsmm_matrix_eqns[idx]->eqn_cur->le != NULL)) ||
+         ((libxsmm_matrix_eqns[idx]->eqn_cur->type == LIBXSMM_MATRIX_EQN_NODE_BINARY)  && (libxsmm_matrix_eqns[idx]->eqn_cur->ri != NULL)) ||
+         ((libxsmm_matrix_eqns[idx]->eqn_cur->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (libxsmm_matrix_eqns[idx]->eqn_cur->r2 != NULL))    ) ) {
     libxsmm_matrix_eqns[idx]->is_constructed = 1;
     libxsmm_matrix_eqn_opt_exec_plan( idx );
   }
@@ -562,6 +625,32 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint id
   return 0;
 }
 
+
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint idx, const libxsmm_meltw_ternary_type type, const libxsmm_meltw_ternary_flags flags, const libxsmm_datatype dtype ) {
+  union libxsmm_matrix_eqn_info info;
+
+  if ( libxsmm_matrix_eqns[idx] == NULL ) {
+    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    return 1;
+  }
+  if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
+    fprintf( stderr, "the requested equation is already finalized!\n" );
+    return 2;
+  }
+
+  info.t_op.type  = type;
+  info.t_op.flags = flags;
+  info.t_op.dtype = dtype;
+  libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_TERNARY, info );
+#if 0
+  printf("added ternary node: %lld %i %i %i\n", libxsmm_matrix_eqns[idx]->eqn_cur, type, flags, dtype );
+#endif
+
+  /* move to the next head position in the tree */
+  libxsmm_matrix_eqn_mov_head( idx );
+
+  return 0;
+}
 
 LIBXSMM_API void libxsmm_matrix_eqn_tree_print( const libxsmm_blasint idx ) {
   if ( libxsmm_matrix_eqns[idx] == NULL ) {

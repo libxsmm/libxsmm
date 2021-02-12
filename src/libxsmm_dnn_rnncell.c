@@ -83,7 +83,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     }
 
     /* If in SPR, generate tilerelease kernel */
-    if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) {
+    if ((libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) && (libxsmm_target_archid <= LIBXSMM_X86_ALLFEAT)) {
       int l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
       handle->tilerelease_kernel = libxsmm_bsmmdispatch(handle->bk, handle->bk, handle->bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
     }
@@ -104,7 +104,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
       int kernel_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
       int stride_a, stride_b;
 
-      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+      if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (libxsmm_target_archid <= LIBXSMM_X86_ALLFEAT)) {
         kernel_flags = ((handle->bk % 32 == 0) && (handle->bc % 32 == 0) && (handle->bn % 32 == 0)) ? LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG : 0;
         kernel_flags = kernel_flags | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
         tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
@@ -140,7 +140,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
         stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
         stride_b = bk * bn * libxsmm_dnn_typesize(handle->desc.datatype_in);
         handle->fwd_kernelb = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &bk, &bk, NULL, NULL, &kernel_flags, NULL );
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+        if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (libxsmm_target_archid <= LIBXSMM_X86_ALLFEAT)) {
           handle->fwd_tileconfig = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL );
         }
 
@@ -159,7 +159,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
         stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
         stride_b = bn * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
         handle->bwdupd_kerneld = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &bk, &bk, NULL, NULL, &kernel_flags, NULL);
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+        if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (libxsmm_target_archid <= LIBXSMM_X86_ALLFEAT)) {
           handle->bwdupd_tileconfig = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL);
         }
       } else {
@@ -173,7 +173,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
         stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
         stride_b = bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
         handle->fwd_kernelb = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL );
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+        if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (libxsmm_target_archid <= LIBXSMM_X86_ALLFEAT)) {
           handle->fwd_tileconfig = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL );
         }
 
@@ -192,7 +192,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
         stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
         stride_b = bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
         handle->bwdupd_kerneld = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL);
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) {
+        if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_SPR) && (libxsmm_target_archid <= LIBXSMM_X86_ALLFEAT)) {
           handle->bwdupd_tileconfig = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, &tc_flags, NULL);
         }
       }

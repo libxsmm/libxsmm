@@ -84,6 +84,8 @@ void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, l
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_assign_timestamps(libxsmm_matrix_eqn *eqn);
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_reoptimize_eqn(libxsmm_matrix_eqn *eqn);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
