@@ -457,8 +457,8 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
       l_disp8div = tbl_disp8div[l_disp8div_idx];
     } else {
       /* Bit 11 not set: now we need Spaghetti code */
-      if ( i_vector_name != 'z' ) {
-        if ( (i_vector_name == 'x') && (i_vec_instr == 0x20871612) ) {
+      if ( i_vector_name != LIBXSMM_X86_SIMD_NAME_ZMM ) {
+        if ( (i_vector_name == LIBXSMM_X86_SIMD_NAME_XMM) && (i_vec_instr == 0x20871612) ) {
           /* VMOVDDUP is a special case: eventually FORCE VEX encoding */
           l_disp8div_idx = (unsigned char)(l_disp8div_idx - 3);
         } else {
