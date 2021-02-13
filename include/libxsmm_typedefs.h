@@ -329,6 +329,8 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM                      = 1024,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX                      = 2048,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN                      = 4096,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC                    = 8192,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC           = 16384,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_NONE_REDOP_SUM              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_NONE | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL_REDOP_SUM               = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL  | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_NONE_REDOP_MAX              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_NONE | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX,
@@ -809,6 +811,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs
   const void* in_vec;        /* input vector pointer */
   void* out_vec;             /* output pointer */
   const void* scale_vals;    /* scale values of indexed vectors after ops */
+  const void* indices2;       /* index array pointer */
+  const void* in_matrix2;     /* input matrix pointer */
 } libxsmm_meltw_opreduce_vecs_idx_param;
 
 /** argument struct for matrix-eltwise: scale */
