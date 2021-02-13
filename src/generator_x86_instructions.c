@@ -693,7 +693,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
   /* select the code generator REX/VEX/EVEX */
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
        (io_generated_code->code_type > 1) ) {
-    libxsmm_x86_simd_name l_simd_name;
+    libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
     /* check if we have enough code buffer space left */
     if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
@@ -967,7 +967,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
       }
 
       if ( l_encoder == 2 ) {
-        libxsmm_x86_simd_name l_simd_name;
+        libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
         /* ceck for gather/scatter */
         if ( (((i_vmove_instr >> 24) & 0x2) == 0x2) ) {
           if (i_reg_idx > 32) {
@@ -1001,7 +1001,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
               i_reg_idx, i_scale, i_displacement, l_simd_name,
               0, i_vec_reg_number_0, i_mask_reg_number, i_use_zero_masking );
       } else if ( l_encoder == 1 ) {
-        libxsmm_x86_simd_name l_simd_name;
+        libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
         /* we need to patch some instructions for VEX from the EVEX header */
         switch (l_vmove_instr) {
           case LIBXSMM_X86_INSTR_VBROADCASTSD:
@@ -1527,7 +1527,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
 
     /* encode main instruction */
     if ( l_encoder == 2 ) {
-      libxsmm_x86_simd_name l_simd_name;
+      libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
 
       /* set simd name */
       switch(i_vector_name) {
@@ -1548,7 +1548,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
       libxsmm_x86_instruction_evex_compute_3reg( io_generated_code, i_vec_instr, l_simd_name,
             l_reg_number_src0, l_reg_number_src1, l_reg_number_dst, i_mask_reg_number, i_mask_cntl, i_sae_cntl );
     } else if ( l_encoder == 1 ) {
-      libxsmm_x86_simd_name l_simd_name;
+      libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
 
       /* set simd name */
       switch(i_vector_name) {
@@ -1987,7 +1987,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
 
     /* encode main instruction */
     if ( l_encoder == 2 ) {
-      libxsmm_x86_simd_name l_simd_name;
+      libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
 
       /* set simd name */
       switch(i_vector_name) {
@@ -2009,7 +2009,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
             i_use_broadcast, i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, l_simd_name,
             l_reg_number_src1, l_reg_number_dst, i_mask_reg_number, i_mask_rnd_exp_cntl );
     } else if ( l_encoder == 1 ) {
-      libxsmm_x86_simd_name l_simd_name;
+      libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
 
       /* set simd name */
       switch(i_vector_name) {
