@@ -226,7 +226,7 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     i
   /* control variable if we need to encode in SIB mode */
   unsigned char l_have_sib = 0;
   /* index for VL look-ups, zmm is converted to ymm */
-  unsigned int l_vl_idx = LIBXSMM_MAX( (unsigned int)i_vector_name, 0x1 );
+  unsigned int l_vl_idx = LIBXSMM_MIN( (unsigned int)i_vector_name, 0x1 );
   /* when having RBP/R13 as base register, we need a SIB byte, even without idx GPR */
   unsigned char l_forced_zdisp8 = 0;
   /* we need a local non-const i_gp_reg_idx copy */
@@ -345,7 +345,7 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code*     io_ge
                                       0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00 };
   unsigned char tbl_vl[2]          = {0x00, 0x04};
   /* index for VL look-ups, zmm is converted to ymm */
-  unsigned int l_vl_idx = LIBXSMM_MAX( (unsigned int)i_vector_name, 0x1 );
+  unsigned int l_vl_idx = LIBXSMM_MIN( (unsigned int)i_vector_name, 0x1 );
 
   /* encoding */
   /* A): writing an insturction template into the byte stream */
