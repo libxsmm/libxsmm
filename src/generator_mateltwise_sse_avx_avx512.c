@@ -533,6 +533,52 @@ void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_g
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_create_reduce_desc_from_unary_desc(libxsmm_descriptor_blob *blob, const libxsmm_meltw_descriptor *in_desc, libxsmm_meltw_descriptor **out_desc) {
+
+  unsigned short reduce_flags = 0;
+
+  if ((in_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
+      (in_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (in_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD;
+  } else if (in_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX;
+  }
+
+  if ((in_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
+      (in_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
+      (in_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
+  }
+
+  if ((in_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (in_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
+  }
+
+  if ((in_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_COLS;
+  } else {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
+  }
+
+  *out_desc = libxsmm_meltw_descriptor_init(blob, (libxsmm_datatype)LIBXSMM_GETENUM_INP(in_desc->datatype), (libxsmm_datatype)LIBXSMM_GETENUM_OUT(in_desc->datatype),
+      in_desc->m, in_desc->n, in_desc->ldi, in_desc->ldo, (unsigned short)reduce_flags, 0, LIBXSMM_MELTW_OPERATION_REDUCE);
+}
+
+LIBXSMM_API_INTERN
+int is_unary_opcode_reduce_kernel (unsigned int opcode) {
+  int result = 0;
+  if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
+      (opcode== LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*         io_generated_code,
                                                          const libxsmm_meltw_descriptor* i_mateltwise_desc ) {
   libxsmm_mateltwise_kernel_config  l_kernel_config;
@@ -618,7 +664,22 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
     } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_DROPOUT ) {
       libxsmm_generator_dropout_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
     } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
-      libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+      if (is_unary_opcode_reduce_kernel(i_mateltwise_desc->param) > 0) {
+        libxsmm_descriptor_blob   blob;
+        libxsmm_meltw_descriptor  *meltw_reduce_desc = NULL;
+        libxsmm_generator_create_reduce_desc_from_unary_desc( &blob, i_mateltwise_desc, &meltw_reduce_desc);
+        if ((meltw_reduce_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ROWS) > 0) {
+          libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, meltw_reduce_desc );
+        } else if ((meltw_reduce_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_COLS) > 0) {
+          libxsmm_generator_reduce_cols_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, meltw_reduce_desc );
+        } else {
+          /* This should not happen  */
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+          return;
+        }
+      } else {
+        libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+      }
     } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
       libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
     } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY ) {
