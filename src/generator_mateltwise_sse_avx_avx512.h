@@ -97,5 +97,8 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*         io_generated_code,
                                                          const libxsmm_meltw_descriptor* i_mateltw_desc );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_create_reduce_desc_from_unary_desc(libxsmm_descriptor_blob *blob, const libxsmm_meltw_descriptor *in_desc, libxsmm_meltw_descriptor **out_desc);
+
 #endif /* GENERATOR_MATELTWISE_SSE_AVX_AVX512_H */
 

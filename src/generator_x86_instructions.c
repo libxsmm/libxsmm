@@ -197,15 +197,15 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_generated_code,
-                                                   const unsigned int      i_vec_instr,
-                                                   const unsigned int      i_gp_reg_base,
-                                                   const unsigned int      i_gp_reg_idx,
-                                                   const unsigned int      i_scale,
-                                                   const int               i_displacement,
-                                                   const char              i_vector_name,
-                                                   const unsigned int      i_vec_reg_number_src,
-                                                   const unsigned int      i_vec_reg_number_dst )
+void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     io_generated_code,
+                                                   const unsigned int          i_vec_instr,
+                                                   const unsigned int          i_gp_reg_base,
+                                                   const unsigned int          i_gp_reg_idx,
+                                                   const unsigned int          i_scale,
+                                                   const int                   i_displacement,
+                                                   const libxsmm_x86_simd_name i_vector_name,
+                                                   const unsigned int          i_vec_reg_number_src,
+                                                   const unsigned int          i_vec_reg_number_dst )
 {
   unsigned int code_head = io_generated_code->code_size;
   unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
@@ -225,8 +225,8 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_ge
   unsigned char tbl_vl[2]          = {0x00, 0x04};
   /* control variable if we need to encode in SIB mode */
   unsigned char l_have_sib = 0;
-  /* index for VL look-ups */
-  unsigned int l_vl_idx;
+  /* index for VL look-ups, zmm is converted to ymm */
+  unsigned int l_vl_idx = LIBXSMM_MIN( (unsigned int)i_vector_name, 0x1 );
   /* when having RBP/R13 as base register, we need a SIB byte, even without idx GPR */
   unsigned char l_forced_zdisp8 = 0;
   /* we need a local non-const i_gp_reg_idx copy */
@@ -236,16 +236,7 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_ge
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
-  /* 1 A) determinig VL only valid values for i_vector_name are 'x'-128bit, 'y'-256bit, 'z'-512bit */
-  l_vl_idx = i_vector_name - 'x';
-#if 0
-  if ( l_vl_dix < 0 || l_vl_dix > 1 ) {
-    fprintf(stderr, "It seems an out-of-bound vector length was specified: %c\n", i_vector_name);
-    exit(-1);
-  }
-#endif
-
-  /* 1 B) determine if SIB addressing mode is needed */
+  /* 1 A) determine if SIB addressing mode is needed */
   if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
     l_have_sib = 1;
     l_gp_reg_idx = LIBXSMM_X86_GP_REG_RSP;
@@ -260,7 +251,7 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_ge
     l_scale = 0;
   }
 
-  /* 1 D) determing if a force zero displacement is needed */
+  /* 1 B) determing if a force zero displacement is needed */
   if ( ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RBP) || (i_gp_reg_base == LIBXSMM_X86_GP_REG_R13) ) && (i_displacement == 0) ) {
     l_forced_zdisp8 = 1;
   } else {
@@ -332,12 +323,12 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code* io_ge
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_vec_instr,
-                                               const char              i_vector_name,
-                                               const unsigned int      i_vec_reg_number_0,
-                                               const unsigned int      i_vec_reg_number_1,
-                                               const unsigned int      i_vec_reg_number_2 )
+void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code*     io_generated_code,
+                                               const unsigned int          i_vec_instr,
+                                               const libxsmm_x86_simd_name i_vector_name,
+                                               const unsigned int          i_vec_reg_number_0,
+                                               const unsigned int          i_vec_reg_number_1,
+                                               const unsigned int          i_vec_reg_number_2 )
 {
   unsigned int code_head = io_generated_code->code_size;
   unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
@@ -353,22 +344,11 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_genera
   unsigned char tbl_vex_vvvv[16]   = {0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
                                       0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00 };
   unsigned char tbl_vl[2]          = {0x00, 0x04};
-  /* index for VL look-ups */
-  unsigned int l_vl_idx;
+  /* index for VL look-ups, zmm is converted to ymm */
+  unsigned int l_vl_idx = LIBXSMM_MIN( (unsigned int)i_vector_name, 0x1 );
 
-  /* 1st phase: let's compute some static information before starting the
-     encoding process */
-  /* 1 A) determinig VL only valid values for i_vector_name are 'x'-128bit, 'y'-256bit */
-  l_vl_idx = i_vector_name - 'x';
-#if 0
-  if ( l_vl_dix < 0 || l_vl_dix > 1 ) {
-    fprintf(stderr, "It seems an out-of-bound vector length was specified: %c\n", i_vector_name);
-    exit(-1);
-  }
-#endif
-
-  /* 2nd phase: encoding */
-  /* 2 A): writing an insturction template into the byte stream */
+  /* encoding */
+  /* A): writing an insturction template into the byte stream */
   /* const VEX prefix */
   code[vexp ] = 0xc4;
   /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
@@ -378,7 +358,7 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_genera
   /* we are just copying over the OP-code */
   code[op   ] = (unsigned char) i_vec_instr;
 
-  /* 2 B) filling the missing prefix bits based on table look ups */
+  /* B) filling the missing prefix bits based on table look ups */
   /* R */
   code[p0   ] |= (unsigned char)(( i_vec_reg_number_2 < 8 ) ? 0x80 : 0x00);
   /* B is used and X is unused */
@@ -388,7 +368,7 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_genera
   /* VL: 128bit,256bit */
   code[p1   ] |= (unsigned char)tbl_vl[l_vl_idx];
 
-  /* 2 C) setting modrm, we are in reg-only addressing mode */
+  /* C) setting modrm, we are in reg-only addressing mode */
   code[modrm]  = (unsigned char)0xc0;
   code[modrm] |= (unsigned char)(((unsigned char)(i_vec_reg_number_2 << 3)) & 0x38);
   code[modrm] |= (unsigned char)(((unsigned char) i_vec_reg_number_0)       & 0x07);
@@ -397,18 +377,18 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code* io_genera
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_generated_code,
-                                                    const unsigned int      i_vec_instr,
-                                                    const unsigned int      i_use_broadcast,
-                                                    const unsigned int      i_gp_reg_base,
-                                                    const unsigned int      i_reg_idx,
-                                                    const unsigned int      i_scale,
-                                                    const int               i_displacement,
-                                                    const char              i_vector_name,
-                                                    const unsigned int      i_vec_reg_number_src,
-                                                    const unsigned int      i_vec_reg_number_dst,
-                                                    const unsigned int      i_mask_reg_number,
-                                                    const unsigned int      i_use_zero_masking )
+void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     io_generated_code,
+                                                    const unsigned int          i_vec_instr,
+                                                    const unsigned int          i_use_broadcast,
+                                                    const unsigned int          i_gp_reg_base,
+                                                    const unsigned int          i_reg_idx,
+                                                    const unsigned int          i_scale,
+                                                    const int                   i_displacement,
+                                                    const libxsmm_x86_simd_name i_vector_name,
+                                                    const unsigned int          i_vec_reg_number_src,
+                                                    const unsigned int          i_vec_reg_number_dst,
+                                                    const unsigned int          i_mask_reg_number,
+                                                    const unsigned int          i_use_zero_masking )
 {
   unsigned int code_head = io_generated_code->code_size;
   unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
@@ -446,7 +426,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
   /* control variable if we need to encode in SIB mode */
   unsigned char l_have_sib = 0;
   /* index for VL look-ups */
-  unsigned int l_vl_idx;
+  unsigned int l_vl_idx = (unsigned int)i_vector_name;
   /* W-bit */
   unsigned char l_wbit;
   /* displacement 8 divider */
@@ -464,16 +444,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
-  /* 1 A) determinig VL only valid values for i_vector_name are 'x'-128bit, 'y'-256bit, 'z'-512bit */
-  l_vl_idx = i_vector_name - 'x';
-#if 0
-  if ( l_vl_dix < 0 || l_vl_dix > 2 ) {
-    fprintf(stderr, "It seems an out-of-bound vector length was specified: %c\n", i_vector_name);
-    exit(-1);
-  }
-#endif
-
-  /* 1 B) handling EVEX compressed displacement */
+  /* 1 A) handling EVEX compressed displacement */
   if ( i_use_broadcast ) {
     l_wbit     = (unsigned char)((i_vec_instr >> 23) & 1);
     l_disp8div = tbl_disp8divbcst[ l_wbit ];
@@ -486,8 +457,8 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
       l_disp8div = tbl_disp8div[l_disp8div_idx];
     } else {
       /* Bit 11 not set: now we need Spaghetti code */
-      if ( i_vector_name != 'z' ) {
-        if ( (i_vector_name == 'x') && (i_vec_instr == 0x20871612) ) {
+      if ( i_vector_name != LIBXSMM_X86_SIMD_NAME_ZMM ) {
+        if ( (i_vector_name == LIBXSMM_X86_SIMD_NAME_XMM) && (i_vec_instr == 0x20871612) ) {
           /* VMOVDDUP is a special case: eventually FORCE VEX encoding */
           l_disp8div_idx = (unsigned char)(l_disp8div_idx - 3);
         } else {
@@ -503,7 +474,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
     }
   }
 
-  /* 1 C) determine if SIB addressing mode is needed */
+  /* 1 B) determine if SIB addressing mode is needed */
   if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
     l_have_sib = 1;
     l_reg_idx = LIBXSMM_X86_GP_REG_RSP;
@@ -518,7 +489,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
     l_scale = 0;
   }
 
-  /* 1 D) determing if a force zero displacement is needed */
+  /* 1 C) determing if a force zero displacement is needed */
   if ( ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RBP) || (i_gp_reg_base == LIBXSMM_X86_GP_REG_R13) ) && (i_displacement == 0) ) {
     l_forced_zdisp8 = 1;
   } else {
@@ -603,15 +574,15 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code* io_g
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_generated_code,
-                                                const unsigned int      i_vec_instr,
-                                                const char              i_vector_name,
-                                                const unsigned int      i_vec_reg_number_0,
-                                                const unsigned int      i_vec_reg_number_1,
-                                                const unsigned int      i_vec_reg_number_2,
-                                                const unsigned int      i_mask_reg_number,
-                                                const unsigned int      i_use_zero_masking,
-                                                const unsigned char     i_sae_cntl )
+void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_generated_code,
+                                                const unsigned int          i_vec_instr,
+                                                const libxsmm_x86_simd_name i_vector_name,
+                                                const unsigned int          i_vec_reg_number_0,
+                                                const unsigned int          i_vec_reg_number_1,
+                                                const unsigned int          i_vec_reg_number_2,
+                                                const unsigned int          i_mask_reg_number,
+                                                const unsigned int          i_use_zero_masking,
+                                                const unsigned char         i_sae_cntl )
 {
   unsigned int code_head = io_generated_code->code_size;
   unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
@@ -643,21 +614,10 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_gener
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
   unsigned char tbl_vl[3]         = {0x00, 0x20, 0x40};
   /* index for VL look-ups */
-  unsigned int l_vl_idx;
+  unsigned int l_vl_idx = (unsigned int)i_vector_name;
 
-  /* 1st phase: let's compute some static information before starting the
-     encoding process */
-  /* 1 A) determinig VL only valid values for i_vector_name are 'x'-128bit, 'y'-256bit, 'z'-512bit */
-  l_vl_idx = i_vector_name - 'x';
-#if 0
-  if ( l_vl_dix < 0 || l_vl_dix > 2 ) {
-    fprintf(stderr, "It seems an out-of-bound vector length was specified: %c\n", i_vector_name);
-    exit(-1);
-  }
-#endif
-
-  /* 2nd phase: encoding */
-  /* 2 A): writing an insturction template into the byte stream */
+  /* encoding */
+  /* A): writing an insturction template into the byte stream */
   /* const EVEX prefix */
   code[evexp] = 0x62;
   /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
@@ -669,7 +629,7 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_gener
   /* we are just copying over the OP-code */
   code[op   ] = (unsigned char) i_vec_instr;
 
-  /* 2 B) filling the missing prefix bits based on table look ups */
+  /* B) filling the missing prefix bits based on table look ups */
   /* R and R' */
   code[p0   ] |= (unsigned char)tbl_evex_RRp[i_vec_reg_number_2];
   /* B and X */
@@ -684,7 +644,7 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code* io_gener
   /* enable SAE/RC */
   code[p2   ] |= (unsigned char)((i_sae_cntl == 0) ? 0x00 : 0x10);
 
-  /* 2 C) setting modrm, we are in reg-only addressing mode */
+  /* C) setting modrm, we are in reg-only addressing mode */
   code[modrm]  = (unsigned char)0xc0;
   code[modrm] |= (unsigned char)(((unsigned char)(i_vec_reg_number_2 << 3)) & 0x38);
   code[modrm] |= (unsigned char)(((unsigned char) i_vec_reg_number_0)       & 0x07);
@@ -733,6 +693,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
   /* select the code generator REX/VEX/EVEX */
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
        (io_generated_code->code_type > 1) ) {
+    libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
     /* check if we have enough code buffer space left */
     if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
@@ -764,10 +725,23 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
       }
     }
 
+    /* set simd name */
+    switch(i_vector_name) {
+      case 'x':
+        l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+        break;
+      case 'y':
+        l_simd_name = LIBXSMM_X86_SIMD_NAME_YMM;
+        break;
+      default:
+        fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: unsupported vlen: %c\n", i_vector_name);
+        break;
+    }
+
     /* invoke VEX encoder */
     libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
           l_vmove_instr, i_gp_reg_base,
-          i_reg_idx, i_scale, i_displacement, i_vector_name,
+          i_reg_idx, i_scale, i_displacement, l_simd_name,
           i_vec_reg_mask_0, i_vec_reg_number_0 );
   } else if ( io_generated_code->code_type < 2 ) {
     /* add inline/assembly printing */
@@ -993,6 +967,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
       }
 
       if ( l_encoder == 2 ) {
+        libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
         /* ceck for gather/scatter */
         if ( (((i_vmove_instr >> 24) & 0x2) == 0x2) ) {
           if (i_reg_idx > 32) {
@@ -1005,11 +980,28 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           }
         }
 
+        /* set simd name */
+        switch(i_vector_name) {
+          case 'x':
+            l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+            break;
+          case 'y':
+            l_simd_name = LIBXSMM_X86_SIMD_NAME_YMM;
+            break;
+          case 'z':
+            l_simd_name = LIBXSMM_X86_SIMD_NAME_ZMM;
+            break;
+          default:
+            fprintf(stderr, "libxsmm_x86_instruction_vec_move: unsupported vlen: %c\n", i_vector_name);
+            break;
+        }
+
         libxsmm_x86_instruction_evex_compute_2reg_mem ( io_generated_code,
               l_vmove_instr, 0, i_gp_reg_base,
-              i_reg_idx, i_scale, i_displacement, i_vector_name,
+              i_reg_idx, i_scale, i_displacement, l_simd_name,
               0, i_vec_reg_number_0, i_mask_reg_number, i_use_zero_masking );
       } else if ( l_encoder == 1 ) {
+        libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
         /* we need to patch some instructions for VEX from the EVEX header */
         switch (l_vmove_instr) {
           case LIBXSMM_X86_INSTR_VBROADCASTSD:
@@ -1019,9 +1011,22 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
             break;
         }
 
+        /* set simd name */
+        switch(i_vector_name) {
+          case 'x':
+            l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+            break;
+          case 'y':
+            l_simd_name = LIBXSMM_X86_SIMD_NAME_YMM;
+            break;
+          default:
+            fprintf(stderr, "libxsmm_x86_instruction_vec_move: unsupported vlen: %c\n", i_vector_name);
+            break;
+        }
+
         libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
               l_vmove_instr, i_gp_reg_base,
-              i_reg_idx, i_scale, i_displacement, i_vector_name,
+              i_reg_idx, i_scale, i_displacement, l_simd_name,
               0, i_vec_reg_number_0 );
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_vec_move: No REX encoder available!\n");
@@ -1522,10 +1527,43 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
 
     /* encode main instruction */
     if ( l_encoder == 2 ) {
-      libxsmm_x86_instruction_evex_compute_3reg( io_generated_code, i_vec_instr, i_vector_name,
+      libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+
+      /* set simd name */
+      switch(i_vector_name) {
+        case 'x':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+          break;
+        case 'y':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_YMM;
+          break;
+        case 'z':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_ZMM;
+          break;
+        default:
+          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unsupported vlen: %c\n", i_vector_name);
+          break;
+      }
+
+      libxsmm_x86_instruction_evex_compute_3reg( io_generated_code, i_vec_instr, l_simd_name,
             l_reg_number_src0, l_reg_number_src1, l_reg_number_dst, i_mask_reg_number, i_mask_cntl, i_sae_cntl );
     } else if ( l_encoder == 1 ) {
-      libxsmm_x86_instruction_vex_compute_3reg( io_generated_code, i_vec_instr, i_vector_name,
+      libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+
+      /* set simd name */
+      switch(i_vector_name) {
+        case 'x':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+          break;
+        case 'y':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_YMM;
+          break;
+        default:
+          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unsupported vlen: %c\n", i_vector_name);
+          break;
+      }
+
+      libxsmm_x86_instruction_vex_compute_3reg( io_generated_code, i_vec_instr, l_simd_name,
             l_reg_number_src0, l_reg_number_src1, l_reg_number_dst );
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: No REX encoder available!\n");
@@ -1934,7 +1972,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
         l_reg_number_src1 = l_reg_number_dst;
         l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a op-code modrm/reg extended instruction (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a op-code modrm/reg extended instruction (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
     }
@@ -1949,12 +1987,45 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
 
     /* encode main instruction */
     if ( l_encoder == 2 ) {
+      libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+
+      /* set simd name */
+      switch(i_vector_name) {
+        case 'x':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+          break;
+        case 'y':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_YMM;
+          break;
+        case 'z':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_ZMM;
+          break;
+        default:
+          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unsupported vlen: %c\n", i_vector_name);
+          break;
+      }
+
       libxsmm_x86_instruction_evex_compute_2reg_mem( io_generated_code, i_vec_instr,
-            i_use_broadcast, i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+            i_use_broadcast, i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, l_simd_name,
             l_reg_number_src1, l_reg_number_dst, i_mask_reg_number, i_mask_rnd_exp_cntl );
     } else if ( l_encoder == 1 ) {
+      libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+
+      /* set simd name */
+      switch(i_vector_name) {
+        case 'x':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+          break;
+        case 'y':
+          l_simd_name = LIBXSMM_X86_SIMD_NAME_YMM;
+          break;
+        default:
+          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unsupported vlen: %c\n", i_vector_name);
+          break;
+      }
+
       libxsmm_x86_instruction_vex_compute_2reg_mem( io_generated_code, i_vec_instr,
-            i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_vector_name,
+            i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, l_simd_name,
             l_reg_number_src1, l_reg_number_dst );
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: No REX encoder available!\n");
@@ -3641,7 +3712,7 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
 
   if ( io_generated_code->code_type > 1 ) {
     /* get L bit override */
-    const char l_vname = ( (i_mask_instr & 0x300) == 0x300) ? 'y' : 'x';
+    const libxsmm_x86_simd_name l_vname = ( (i_mask_instr & 0x300) == 0x300) ? LIBXSMM_X86_SIMD_NAME_YMM : LIBXSMM_X86_SIMD_NAME_XMM;
     unsigned int l_src;
     unsigned int l_dst;
 
@@ -3727,7 +3798,7 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
 
   if ( io_generated_code->code_type > 1 ) {
     /* get L bit override */
-    const char l_vname = ( (i_mask_instr & 0x300) == 0x300) ? 'y' : 'x';
+    const libxsmm_x86_simd_name l_vname = ( (i_mask_instr & 0x300) == 0x300) ? LIBXSMM_X86_SIMD_NAME_YMM : LIBXSMM_X86_SIMD_NAME_XMM;
 
     libxsmm_x86_instruction_vex_compute_2reg_mem( io_generated_code, i_mask_instr,
             i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, l_vname,
@@ -3846,7 +3917,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
 
   if ( io_generated_code->code_type > 1 ) {
     /* get L bit override */
-    const char l_vname = ( (i_mask_instr & 0x300) == 0x300) ? 'y' : 'x';
+    const libxsmm_x86_simd_name l_vname = ( (i_mask_instr & 0x300) == 0x300) ? LIBXSMM_X86_SIMD_NAME_YMM : LIBXSMM_X86_SIMD_NAME_XMM;
     unsigned int l_src1;
 
     /* check that we have an UNDEF for 2 src operands */
@@ -4185,12 +4256,12 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
     /* invoke VEX encoder */
     if ( i_tmove_instr == LIBXSMM_X86_INSTR_TILEZERO ) {
       libxsmm_x86_instruction_vex_compute_3reg ( io_generated_code,
-            i_tmove_instr, 'x', 0, 0, i_tile_reg_number );
+            i_tmove_instr, LIBXSMM_X86_SIMD_NAME_XMM, 0, 0, i_tile_reg_number );
     } else {
       if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
         libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
               i_tmove_instr, i_gp_reg_base, i_gp_reg_idx, i_scale,
-              i_displacement, 'x', 0, i_tile_reg_number );
+              i_displacement, LIBXSMM_X86_SIMD_NAME_XMM, 0, i_tile_reg_number );
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_tile_move: instruction %u requires SIB addressing\n", i_tmove_instr);
         exit(-1);
@@ -4297,7 +4368,7 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
 
     /* invoke VEX encoder */
     if ( ((i_tcompute_instr >> 28) & 0x3) == 3 ) {
-      libxsmm_x86_instruction_vex_compute_3reg ( io_generated_code, i_tcompute_instr, 'x',
+      libxsmm_x86_instruction_vex_compute_3reg ( io_generated_code, i_tcompute_instr, LIBXSMM_X86_SIMD_NAME_XMM,
             i_tile_src_reg_number_1, i_tile_src_reg_number_0, i_tile_dst_reg_number );
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_tile_compute: every insturction needs to have 3 operands\n");

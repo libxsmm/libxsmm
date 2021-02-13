@@ -16,6 +16,7 @@
 #include "libxsmm_main.h"
 #include "generator_common_x86.h"
 #include "generator_matequation_scratch_avx_avx512.h"
+#include "generator_mateltwise_reduce_avx_avx512.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
@@ -218,9 +219,9 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
       /* Call proper JITer */
       if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_kernel(meltw_desc->param) > 0)) {
-        libxsmm_descriptor_blob   blob;
+        libxsmm_descriptor_blob   _blob;
         libxsmm_meltw_descriptor  *meltw_reduce_desc = NULL;
-        libxsmm_generator_create_reduce_desc_from_unary_desc( &blob, meltw_desc, &meltw_reduce_desc);
+        libxsmm_generator_create_reduce_desc_from_unary_desc( &_blob, meltw_desc, &meltw_reduce_desc);
         if ((meltw_reduce_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ROWS) > 0) {
           libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_reduce_desc );
         } else if ((meltw_reduce_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_COLS) > 0) {

@@ -562,7 +562,7 @@ void libxsmm_generator_create_reduce_desc_from_unary_desc(libxsmm_descriptor_blo
     reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
   }
 
-  *out_desc = libxsmm_meltw_descriptor_init(blob, LIBXSMM_GETENUM_INP(in_desc->datatype), LIBXSMM_GETENUM_OUT(in_desc->datatype),
+  *out_desc = libxsmm_meltw_descriptor_init(blob, (libxsmm_datatype)LIBXSMM_GETENUM_INP(in_desc->datatype), (libxsmm_datatype)LIBXSMM_GETENUM_OUT(in_desc->datatype),
       in_desc->m, in_desc->n, in_desc->ldi, in_desc->ldo, (unsigned short)reduce_flags, 0, LIBXSMM_MELTW_OPERATION_REDUCE);
 }
 
