@@ -106,6 +106,7 @@ after_failure:
 before_script:
   - source .env/travis.env
 
+# avoid any dashes at the begin of a line within a test section
 script:
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) &&
@@ -195,7 +196,7 @@ script:
       exit 1;
     fi;
     rm -rf cov-int && ${COVERITY_SCAN_BINDIR}/cov-build --dir cov-int make -e ${MAKEJ} && tar cvfz cov-int.tgz cov-int &&
-    curl "https://scan.coverity.com/builds?project=hfp-libxsmm" --output .cov-int.txt
-      --form token="${COVERITY_SCAN_TOKEN}" --form email="${COVERITY_SCAN_USER}"
-      --form file=@cov-int.tgz --form version="$(git describe --tags)"
-      --form description="$(date -I): $(git log -1 --pretty=oneline | cut -d' ' -f2-)"
+    curl https://scan.coverity.com/builds?project=hfp-libxsmm --form
+      token=${COVERITY_SCAN_TOKEN} --form email=${COVERITY_SCAN_USER} --form
+      file=@cov-int.tgz --form version="$(git describe --tags)" --form
+      description="$(date -I): $(git log -1 --pretty=oneline | cut -d' ' -f2-)"
