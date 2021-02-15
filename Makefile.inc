@@ -187,10 +187,6 @@ ifneq (0,$(call qnum,$(PLATFORM))) # NaN
   DFLAGS += -DLIBXSMM_PLATFORM_FORCE
 endif
 
-# Intrinsics support level (0: None, 1: Static, 2: Dynamic)
-# 1003<=INTRINSICS<1999: CPUID (see libxsmm_cpuid.h)
-INTRINSICS ?= 2
-
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
   MPSS ?= 1
@@ -1777,6 +1773,17 @@ endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
   TARGET ?= $(CTARGET)
+endif
+
+# Intrinsics support level (0: None, 1: Static, 2: Dynamic)
+# 1003<=INTRINSICS<1999: CPUID (see libxsmm_cpuid.h)
+# For example, LIBXSMM_X86_AVX2=1006
+ifneq (0,$(INTEL))
+  INTRINSICS ?= 2
+ifneq (0,$(CLANG))
+  INTRINSICS ?= 2
+else
+  INTRINSICS ?= 1006
 endif
 
 ifneq (0,$(INTRINSICS))
