@@ -1692,12 +1692,13 @@ LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const v
   int result;
   if (NULL != name && '\0' != *name && NULL != data && 0 != size) {
     FILE* data_file = fopen(name, "rb");
-    int diff = 0;
+    int diff = 0, result_close;
     if (NULL == data_file) { /* file does not exist */
       data_file = fopen(name, "wb");
       if (NULL != data_file) { /* dump data into a file */
-        if (size != fwrite(data, 1, size, data_file)) result = EXIT_FAILURE;;
-        result = fclose(data_file);
+        result = ((size == fwrite(data, 1, size, data_file)) ? EXIT_SUCCESS : EXIT_FAILURE);
+        result_close = fclose(data_file);
+        if (EXIT_SUCCESS == result) result = result_close;
       }
       else result = EXIT_FAILURE;
     }
@@ -1723,10 +1724,11 @@ LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const v
       fprintf(stderr, "LIBXSMM ERROR: %s is not a unique filename!\n", name);
       data_file = fopen(name, "wb");
       if (NULL != data_file) { /* dump data into a file */
-        LIBXSMM_EXPECT(size, fwrite(data, 1, size, data_file));
-        LIBXSMM_EXPECT(EXIT_SUCCESS, fclose(data_file));
+        if (size != fwrite(data, 1, size, data_file)) result = EXIT_FAILURE;
+        result_close = fclose(data_file);
+        if (EXIT_SUCCESS == result) result = result_close;
       }
-      result = EXIT_FAILURE;
+      if (EXIT_SUCCESS == result) result = EXIT_FAILURE;
     }
   }
   else {

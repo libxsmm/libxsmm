@@ -1213,7 +1213,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->loop_order = libxsmm_dnn_convolution_setup_loop_order_fwd(handle);
   handle->blocksifm_blocking = libxsmm_dnn_convolution_setup_blocksifm_blocking(handle);
   handle->block_fwd_ofm = libxsmm_dnn_convolution_setup_block_fwd_OFM(handle);
-  handle->block_fwd_ifm = libxsmm_dnn_convolution_setup_block_fwd_IFM(handle);;
+  handle->block_fwd_ifm = libxsmm_dnn_convolution_setup_block_fwd_IFM(handle);
   handle->avoid_fmas_in_rim = libxsmm_dnn_convolution_setup_avoid_rim_fmas_fwd(handle);
   handle->use_ofm_parallelization = libxsmm_dnn_convolution_setup_use_ofm_parallelization(handle);
   handle->shuffle_filter_accesses = libxsmm_dnn_convolution_setup_shuffle_filter_accesses(handle);

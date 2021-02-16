@@ -601,7 +601,7 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
         libxsmm_itrans_scratch(inout, buffer, typesize, m, n, ldi, ldo);
       }
       else {
-        void* buffer;
+        void* buffer = NULL;
         LIBXSMM_INIT
         if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, scratchsize, 0/*auto-align*/,
           LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,

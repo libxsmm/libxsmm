@@ -287,6 +287,7 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
 {
   int result;
+#if defined(LIBXSMM_PLATFORM_X86)
   if (LIBXSMM_X86_AVX512 <= id) {
     result = 16;
   }
@@ -296,9 +297,11 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   else if (LIBXSMM_X86_SSE42 <= id) {
     result = 4;
   }
-  else if (LIBXSMM_AARCH64_V81 == id) {
+#elif defined(LIBXSMM_PLATFORM_AARCH64)
+  if (LIBXSMM_AARCH64_V81 == id) {
     result = 4;
   }
+#endif
   else { /* scalar */
     result = 1;
   }
