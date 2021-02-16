@@ -15,17 +15,6 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_Xway_unpack_network_avx512( libxsmm_generated_code* io_generated_code,
-                                                             const char              i_vector_name,
-                                                             const unsigned char     i_in_idx[16],
-                                                             const unsigned int      i_vec_reg_src_start,
-                                                             const unsigned int      i_vec_reg_dst_start,
-                                                             const unsigned int      i_out_offset,
-                                                             const unsigned int      i_even_instr,
-                                                             const unsigned int      i_odd_instr,
-                                                             const unsigned int      i_ways );
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_shuffle_network_avx512( libxsmm_generated_code* io_generated_code,
                                                               const char              i_vector_name,
                                                               const unsigned char     i_in_idx[16],
@@ -72,15 +61,6 @@ void libxsmm_generator_transform_Xway_permute_network_avx512( libxsmm_generated_
                                                               const unsigned int      i_ways );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_Xway_full_load_avx512( libxsmm_generated_code* io_generated_code,
-                                                        const char              i_vector_name,
-                                                        const unsigned int      i_gp_reg_in,
-                                                        const unsigned int      i_vec_reg_dst_start,
-                                                        const unsigned int      i_ld,
-                                                        const unsigned int      i_ld_instr,
-                                                        const unsigned int      i_ways );
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_half_load_blend_avx512( libxsmm_generated_code* io_generated_code,
                                                               const char              i_vector_name,
                                                               const unsigned int      i_gp_reg_in,
@@ -104,16 +84,6 @@ void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generat
                                                                  const unsigned int      i_mask_reg[4],
                                                                  const unsigned int      i_n,
                                                                  const unsigned int      is_16bit_ld );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_transform_Xway_full_store_avx512( libxsmm_generated_code* io_generated_code,
-                                                         const char              i_vector_name,
-                                                         const unsigned int      i_gp_reg_out,
-                                                         const unsigned int      i_vec_reg_src_start,
-                                                         const unsigned int      i_ld,
-                                                         const unsigned int      i_st_instr,
-                                                         const unsigned int      i_mask_reg,
-                                                         const unsigned int      i_ways );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_32way_half_store_avx512( libxsmm_generated_code* io_generated_code,

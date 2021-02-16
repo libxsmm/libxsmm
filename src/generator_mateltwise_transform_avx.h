@@ -15,6 +15,17 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_08way_permute128_network_avx( libxsmm_generated_code* io_generated_code,
+                                                               const char              i_vector_name,
+                                                               const unsigned int      i_vec_reg_src_start,
+                                                               const unsigned char     i_in_idx[8],
+                                                               const unsigned int      i_sec_op_offset,
+                                                               const unsigned int      i_vec_reg_dst_start,
+                                                               const unsigned int      i_perm_instr,
+                                                               const unsigned char     i_perm_imm[8] );
+
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_mbit_scalar_avx_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                             libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                             const unsigned int                      i_gp_reg_in,

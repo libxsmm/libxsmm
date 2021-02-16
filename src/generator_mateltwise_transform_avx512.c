@@ -10,6 +10,7 @@
 ******************************************************************************/
 
 #include "generator_mateltwise_sse_avx_avx512.h"
+#include "generator_mateltwise_transform_common_x86.h"
 #include "generator_mateltwise_transform_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
@@ -17,40 +18,6 @@
 
 #define USE_OPTIMIZED_AVX512_TRANSPOSE 1
 #define COPY_UPPER_BOUND 0
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_transform_Xway_unpack_network_avx512( libxsmm_generated_code* io_generated_code,
-                                                             const char              i_vector_name,
-                                                             const unsigned char     i_in_idx[16],
-                                                             const unsigned int      i_vec_reg_src_start,
-                                                             const unsigned int      i_vec_reg_dst_start,
-                                                             const unsigned int      i_out_offset,
-                                                             const unsigned int      i_even_instr,
-                                                             const unsigned int      i_odd_instr,
-                                                             const unsigned int      i_ways ) {
-  unsigned int l_i = 0;
-
-  if ( (i_ways != 2) && (i_ways !=4) && (i_ways != 8) && (i_ways != 16) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-  }
-
-  if ( (i_vec_reg_src_start % i_ways != 0) ||
-       (i_vec_reg_dst_start % i_ways != 0)    ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-  }
-
-  for ( l_i = 0 ; l_i < i_ways ; ++l_i ) {
-    unsigned int l_shuffle_instr = ( l_i % 2 == 0 ) ? i_even_instr : i_odd_instr;
-    unsigned int in1 = i_in_idx[l_i] + i_vec_reg_src_start;
-    unsigned int in0 = in1           + i_out_offset;
-    unsigned int dst = l_i           + i_vec_reg_dst_start;
-
-    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, l_shuffle_instr, i_vector_name,
-                                                            in0, in1, dst, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
-  }
-}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_shuffle_network_avx512( libxsmm_generated_code* io_generated_code,
@@ -244,35 +211,6 @@ void libxsmm_generator_transform_Xway_permute_network_avx512( libxsmm_generated_
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_Xway_full_load_avx512( libxsmm_generated_code* io_generated_code,
-                                                        const char              i_vector_name,
-                                                        const unsigned int      i_gp_reg_in,
-                                                        const unsigned int      i_vec_reg_dst_start,
-                                                        const unsigned int      i_ld,
-                                                        const unsigned int      i_ld_instr,
-                                                        const unsigned int      i_ways ) {
-  unsigned int l_i = 0;
-
-  if ( (i_ways != 8) && (i_ways != 16) && (i_ways != 32) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-  }
-
-  if ( i_vec_reg_dst_start % i_ways != 0 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-  }
-
-  for ( l_i = 0 ; l_i < i_ways ; ++l_i ) {
-    unsigned int l_dst = l_i + i_vec_reg_dst_start;
-
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
-                                      i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
-                                      i_vector_name, l_dst, 0, 1, 0 );
-  }
-}
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_half_load_blend_avx512( libxsmm_generated_code* io_generated_code,
                                                               const char              i_vector_name,
                                                               const unsigned int      i_gp_reg_in,
@@ -364,26 +302,6 @@ void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generat
                                             i_vector_name, l_dst, i_mask_reg[l_q], 0, 0 );
       }
     }
-  }
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_transform_Xway_full_store_avx512( libxsmm_generated_code* io_generated_code,
-                                                         const char              i_vector_name,
-                                                         const unsigned int      i_gp_reg_out,
-                                                         const unsigned int      i_vec_reg_src_start,
-                                                         const unsigned int      i_ld,
-                                                         const unsigned int      i_st_instr,
-                                                         const unsigned int      i_mask_reg,
-                                                         const unsigned int      i_ways ) {
-  unsigned int l_i = 0;
-
-  for ( l_i = 0 ; l_i < i_ways ; ++l_i ) {
-    unsigned int l_src = l_i + i_vec_reg_src_start;
-
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_st_instr,
-                                      i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
-                                      i_vector_name, l_src, i_mask_reg, 0, 1 );
   }
 }
 
@@ -564,7 +482,7 @@ void libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( libxsmm
       unsigned char l_in_idx[16] = { 0x0, 0x0, 0x1, 0x1, 0x4, 0x4, 0x5, 0x5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
       unsigned int  l_src_start = 0;
       unsigned int  l_dst_start = 8;
-      libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                               l_in_idx, l_src_start, l_dst_start, 2,
                                                               LIBXSMM_X86_INSTR_VPUNPCKLQDQ, LIBXSMM_X86_INSTR_VPUNPCKHQDQ, 8 );
     }
@@ -574,7 +492,7 @@ void libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( libxsmm
                                                                  8, LIBXSMM_X86_INSTR_VPERMT2Q );
 
     /* storing 8 registers */
-    libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+    libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                         i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
                                                         i_micro_kernel_config->vmove_instruction_out, 0, 8 );
 
@@ -620,7 +538,7 @@ void libxsmm_generator_transform_two_8x8_32bit_norm_to_normt_avx512( libxsmm_gen
   /* first shuffle stage */
   {
     unsigned char l_in_idx[8] = { 0x0, 0x0, 0x2, 0x2, 0x4, 0x4, 0x6, 0x6};
-    libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_vector_name,
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
                                                             l_in_idx, i_vec_reg_srcdst_start, i_vec_reg_tmp_start, 1,
                                                             LIBXSMM_X86_INSTR_VPUNPCKLDQ, LIBXSMM_X86_INSTR_VPUNPCKHDQ, 8 );
   }
@@ -628,7 +546,7 @@ void libxsmm_generator_transform_two_8x8_32bit_norm_to_normt_avx512( libxsmm_gen
   /* second shuffle stage */
   {
     unsigned char l_in_idx[8] = { 0x0, 0x0, 0x1, 0x1, 0x4, 0x4, 0x5, 0x5};
-    libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_vector_name,
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
                                                             l_in_idx, i_vec_reg_tmp_start, i_vec_reg_srcdst_start, 2,
                                                             LIBXSMM_X86_INSTR_VPUNPCKLQDQ, LIBXSMM_X86_INSTR_VPUNPCKHQDQ, 8 );
   }
@@ -657,7 +575,7 @@ void libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( libxsmm_ge
   /* first shuffle stage */
   {
     unsigned char l_in_idx[4] = { 0x0, 0x0, 0x2, 0x2};
-    libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_vector_name,
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
                                                             l_in_idx, i_vec_reg_srcdst_start, i_vec_reg_tmp_start, 1,
                                                             LIBXSMM_X86_INSTR_VPUNPCKLDQ, LIBXSMM_X86_INSTR_VPUNPCKHDQ, 4 );
   }
@@ -665,7 +583,7 @@ void libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( libxsmm_ge
   /* second shuffle stage */
   {
     unsigned char l_in_idx[4] = { 0x0, 0x0, 0x1, 0x1};
-    libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_vector_name,
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
                                                             l_in_idx, i_vec_reg_tmp_start, i_vec_reg_srcdst_start, 2,
                                                             LIBXSMM_X86_INSTR_VPUNPCKLQDQ, LIBXSMM_X86_INSTR_VPUNPCKHQDQ, 4 );
   }
@@ -704,12 +622,12 @@ void libxsmm_generator_transform_copy_avx512_microkernel( libxsmm_generated_code
                                    i_gp_reg_n_loop, i_bsize );
 
   /* load i_bsize registers full row */
-  libxsmm_generator_transform_Xway_full_load_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+  libxsmm_generator_transform_Xway_full_load_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                      i_gp_reg_in, 0, i_ldi * i_micro_kernel_config->datatype_size_in,
                                                      i_micro_kernel_config->vmove_instruction_in, i_bsize );
 
   /* store i_bsize registers */
-  libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+  libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                       i_gp_reg_out, 0, i_ldo * i_micro_kernel_config->datatype_size_out,
                                                       i_micro_kernel_config->vmove_instruction_out, 0, i_bsize );
 
@@ -843,7 +761,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( lib
       libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 4 );
 
       /* storing 4 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, 4 );
 
@@ -875,7 +793,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( lib
       libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 4 );
 
       /* storing 4 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, 4 );
 
@@ -924,7 +842,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( lib
       libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 4 );
 
       /* storing l_m_4rem registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, l_m_4rem );
 
@@ -956,7 +874,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( lib
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
 
       /* storing l_m_4rem registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, l_m_4rem );
     }
@@ -1067,7 +985,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
       libxsmm_generator_transform_two_8x8_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8, i_mask_reg_1, i_mask_reg_2);
 
       /* storing 8 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, 8 );
 
@@ -1096,7 +1014,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
       libxsmm_generator_transform_two_8x8_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8, i_mask_reg_1, i_mask_reg_2);
 
       /* storing 8 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_5, 8 );
     }
@@ -1143,7 +1061,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
       libxsmm_generator_transform_two_8x8_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8, i_mask_reg_1, i_mask_reg_2);
 
       /* storing l_m_8rem registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, l_m_8rem );
       /* advance output pointer */
@@ -1171,7 +1089,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
       libxsmm_generator_transform_two_8x8_32bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8, i_mask_reg_1, i_mask_reg_2);
 
       /* storing l_m_8rem registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_5, l_m_8rem );
     }
@@ -1244,7 +1162,7 @@ void libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( libxsmm_ge
     /* first shuffle stage */
     {
       unsigned char l_in_idx[8] = { 0x0, 0x0, 0x2, 0x2, 0x4, 0x4, 0x6, 0x6};
-      libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_vector_name,
+      libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
                                                               l_in_idx, i_vec_reg_src_start, i_vec_reg_dst_start, 1,
                                                               LIBXSMM_X86_INSTR_VPUNPCKLWD, LIBXSMM_X86_INSTR_VPUNPCKHWD, 8 );
     }
@@ -1252,7 +1170,7 @@ void libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( libxsmm_ge
     /* second shuffle stage */
     {
       unsigned char l_in_idx[8] = { 0x0, 0x0, 0x1, 0x1, 0x4, 0x4, 0x5, 0x5};
-      libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_vector_name,
+      libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
                                                               l_in_idx, i_vec_reg_dst_start, i_vec_reg_src_start, 2,
                                                               LIBXSMM_X86_INSTR_VPUNPCKLDQ, LIBXSMM_X86_INSTR_VPUNPCKHDQ, 8 );
     }
@@ -1260,7 +1178,7 @@ void libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( libxsmm_ge
     /* third shuffle stage */
     {
       unsigned char l_in_idx[8] = { 0x0, 0x0, 0x1, 0x1, 0x2, 0x2, 0x3, 0x3};
-      libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_vector_name,
+      libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
                                                               l_in_idx, i_vec_reg_src_start, i_vec_reg_dst_start, 4,
                                                               LIBXSMM_X86_INSTR_VPUNPCKLQDQ, LIBXSMM_X86_INSTR_VPUNPCKHQDQ, 8 );
     }
@@ -1378,7 +1296,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
 
       /* storing 8 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, 8 );
 
@@ -1408,7 +1326,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
 
       /* storing 8 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, 8 );
 
@@ -1457,7 +1375,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 8 );
 
       /* storing l_m_8rem registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, l_m_8rem );
 
@@ -1484,7 +1402,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
 
       /* storing m_8rem registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, l_m_8rem );
     }
@@ -1560,7 +1478,7 @@ void libxsmm_generator_transform_two_8x8_16bit_vnni_to_vnnit_avx512( libxsmm_gen
   /* second shuffle stage */
   {
     unsigned char l_in_idx[16] = { 0x0, 0x0, 0x2, 0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-    libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_vector_name,
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
                                                             l_in_idx, i_vec_reg_tmp_start, i_vec_reg_srcdst_start, 1,
                                                             LIBXSMM_X86_INSTR_VPUNPCKLQDQ, LIBXSMM_X86_INSTR_VPUNPCKHQDQ, 4 );
   }
@@ -1597,7 +1515,7 @@ void libxsmm_generator_transform_four_4x4_16bit_vnni_to_vnnit_avx512( libxsmm_ge
   /* second shuffle stage */
   {
     unsigned char l_in_idx[16] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-    libxsmm_generator_transform_Xway_unpack_network_avx512( io_generated_code, i_vector_name,
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
                                                             l_in_idx, i_vec_reg_tmp_start, i_vec_reg_srcdst_start, 1,
                                                             LIBXSMM_X86_INSTR_VPUNPCKLQDQ, LIBXSMM_X86_INSTR_VPUNPCKHQDQ, 2 );
   }
@@ -1713,7 +1631,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_spr_microkernel( lib
       libxsmm_generator_transform_four_4x4_16bit_vnni_to_vnnit_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 2, l_shuffle_op);
 
       /* storing 2 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, 2 );
       /* advance output pointer */
@@ -1744,7 +1662,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_spr_microkernel( lib
       libxsmm_generator_transform_four_4x4_16bit_vnni_to_vnnit_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 2, l_shuffle_op);
 
       /* storing 2 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, 2 );
       /* restore quarter load masks */
@@ -1788,7 +1706,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_spr_microkernel( lib
       libxsmm_generator_transform_four_4x4_16bit_vnni_to_vnnit_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 2, l_shuffle_op);
 
       /* storing l_m_8rem>>2 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, l_m_8rem>>2 );
 
@@ -1820,7 +1738,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_spr_microkernel( lib
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
 
       /* storing m_8rem registers>>2 */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, l_m_8rem>>2 );
     }
@@ -1939,7 +1857,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel(
       libxsmm_generator_transform_two_8x8_16bit_vnni_to_vnnit_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 4, l_shuffle_op, i_mask_reg_1, i_mask_reg_2);
 
       /* storing 4 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, 4 );
 
@@ -1968,7 +1886,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel(
       libxsmm_generator_transform_two_8x8_16bit_vnni_to_vnnit_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 4, l_shuffle_op, i_mask_reg_1, i_mask_reg_2);
 
       /* storing 4 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_5, 4 );
     }
@@ -2015,7 +1933,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel(
       libxsmm_generator_transform_two_8x8_16bit_vnni_to_vnnit_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 4, l_shuffle_op, i_mask_reg_1, i_mask_reg_2);
 
       /* storing l_m_16rem>>2 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, 0, l_m_16rem>>2 );
 
@@ -2046,7 +1964,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel(
       libxsmm_generator_transform_two_8x8_16bit_vnni_to_vnnit_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 4, l_shuffle_op, i_mask_reg_1, i_mask_reg_2);
 
       /* storing l_m_16rem>>2 registers */
-      libxsmm_generator_transform_Xway_full_store_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                           i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
                                                           i_micro_kernel_config->vmove_instruction_out, i_mask_reg_5, l_m_16rem>>2 );
     }
