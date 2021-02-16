@@ -74,6 +74,7 @@
     <ClInclude Include="..\src\generator_mateltwise_sse_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_avx.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_avx512.h" />
+    <ClInclude Include="..\src\generator_mateltwise_transform_common_x86.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_sse.h" />
     <ClInclude Include="..\src\generator_mateltwise_unary_binary_avx_avx512.h" />
     <ClInclude Include="..\src\generator_matequation_avx_avx512.h" />
@@ -183,6 +184,7 @@
     <ClCompile Include="..\src\generator_mateltwise_sse_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_avx.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_avx512.c" />
+    <ClCompile Include="..\src\generator_mateltwise_transform_common_x86.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_sse.c" />
     <ClCompile Include="..\src\generator_mateltwise_unary_binary_avx_avx512.c" />
     <ClCompile Include="..\src\generator_matequation.c" />

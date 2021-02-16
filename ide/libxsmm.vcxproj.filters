@@ -390,6 +390,9 @@
     <ClInclude Include="..\src\libxsmm_matrixeqn.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_transform_common_x86.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -1084,6 +1087,9 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_matrixeqn.c">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_transform_common_x86.c">
+      <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
