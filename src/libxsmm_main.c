@@ -1715,7 +1715,7 @@ LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const v
       result = fclose(data_file);
     }
     else {
-      result = EXIT_SUCCESS;
+      result = fclose(data_file);
     }
     if (EXIT_SUCCESS == result && NULL != title && '\0' != *title) {
       fprintf(stderr, "%s(ptr:file) %p : %s\n", title, data, name);
