@@ -1629,7 +1629,6 @@ LIBXSMM_API_INLINE void* internal_xmalloc_xmap(const char* dir, size_t size, int
   int i = 0;
   LIBXSMM_ASSERT(NULL != rx && MAP_FAILED != *rx);
   if (NULL != dir && '\0' != *dir) {
-    /* coverity[string_size_sink_vararg_parm_call] */
     i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/" LIBXSMM_MALLOC_XMAP_TEMPLATE, dir);
   }
   if (0 <= i && i < (int)sizeof(filename)) {
@@ -1953,6 +1952,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
           }
           INTERNAL_XMALLOC(0, entrypoint, "JITDUMPDIR", "", map32, mflags, alloc_size, buffer, &reloc); /* 1st try */
           INTERNAL_XMALLOC(1, entrypoint, "TMPDIR", "/tmp", map32, mflags, alloc_size, buffer, &reloc); /* 2nd try */
+          /* coverity[string_size] */
           INTERNAL_XMALLOC(2, entrypoint, "HOME", "", map32, mflags, alloc_size, buffer, &reloc); /* 3rd try */
           if (3 >= entrypoint && (MAP_FAILED == buffer || NULL == buffer)) { /* 4th try */
             buffer = mmap(reloc, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
