@@ -1780,7 +1780,7 @@ endif
 # For example, LIBXSMM_X86_AVX2=1006
 ifneq (0,$(INTEL))
   INTRINSICS ?= 2
-ifneq (0,$(CLANG))
+else ifneq (0,$(CLANG))
   INTRINSICS ?= 2
 else
   INTRINSICS ?= 1006
