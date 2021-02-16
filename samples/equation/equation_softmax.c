@@ -342,7 +342,7 @@ int main( int argc, char* argv[] ) {
     pcl_softmax_fwd(S1, S2, S3, inp, out);
     tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
   } else if (datatype_mode == 1) {
-    int ldo = S3;
+    libxsmm_blasint tmp_ld = S3;
     ld = S2*S3;
     my_eqn0 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_EXP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
@@ -353,7 +353,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, S2*S3, 0, 0, in_dt );
 
     libxsmm_matrix_eqn_tree_print( my_eqn0 );
-    func0 = libxsmm_dispatch_matrix_eqn( S3, S1, &ldo, LIBXSMM_DATATYPE_F32, my_eqn0 );
+    func0 = libxsmm_dispatch_matrix_eqn( S3, S1, &tmp_ld, LIBXSMM_DATATYPE_F32, my_eqn0 );
 
     my_eqn1 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );

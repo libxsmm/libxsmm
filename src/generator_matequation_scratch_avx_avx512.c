@@ -120,7 +120,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
   /* Iterate over the equation tree based on the optimal traversal order and call the proper JITer */
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
     libxsmm_matrix_eqn_elem *cur_op = find_op_at_timestamp(eqn->eqn_root, timestamp);
-#if 1
+#if 0
     libxsmm_datatype out_precision = (timestamp == last_timestamp) ? (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
     libxsmm_datatype in_precision = cur_op->tmp.dtype;
 #else
@@ -146,20 +146,10 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
     if (timestamp == last_timestamp) {
       out_precision = LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);
     } else {
-      libxsmm_matrix_eqn_elem *parent = cur_op->up;
-      if (parent->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
-        libxsmm_matrix_eqn_elem *sibling = parent->ri;
-        if (sibling == cur_op) {
-          sibling = parent->le;
-        }
-        if (sibling->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
-          out_precision = sibling->info.arg.dtype;
-        }
-      }
+      out_precision = cur_op->tmp.dtype;
     }
     /* Adjust the tmp precision in the tree  */
-    cur_op->tmp.dtype = out_precision;
-    printf("Node at timestamp %d has input precision %d and  output precision %d\n", timestamp, libxsmm_typesize(in_precision), libxsmm_typesize(out_precision));
+    /* printf("Node at timestamp %d has input precision %d and  output precision %d\n", timestamp, libxsmm_typesize(in_precision), libxsmm_typesize(out_precision)); */
 #endif
 
     if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)) {

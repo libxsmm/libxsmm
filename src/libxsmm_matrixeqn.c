@@ -19,23 +19,25 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( libxsmm_
   return libxsmm_matrix_eqns[eqn_idx];
 }
 
-LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_meltw_unary_type type);
-LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_meltw_unary_type type) {
+LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_matrix_eqn_elem* cur_node);
+LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_matrix_eqn_elem* cur_node) {
   libxsmm_blasint result = 1;
-  if (type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ||
-      type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD ||
-      type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD ||
-      type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD ||
-      type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX ) {
+  if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY) {
+    result = 0;
+  }
+  if ((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
     result = 0;
   }
   return result;
 }
 
-LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_binary_input(libxsmm_meltw_binary_type type);
-LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_binary_input(libxsmm_meltw_binary_type type) {
+LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_binary_input(libxsmm_matrix_eqn_elem* cur_node);
+LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_binary_input(libxsmm_matrix_eqn_elem* cur_node) {
   libxsmm_blasint result = 1;
-  if (type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+  if (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+    result = 0;
+  }
+  if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
     result = 0;
   }
   return result;
@@ -113,7 +115,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
       if ( cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
         cur_node->reg_score = 1;
       } else {
-        if (can_overwrite_unary_input(cur_node->info.u_op.type) > 0) {
+        if (can_overwrite_unary_input(cur_node) > 0) {
           cur_node->reg_score = cur_node->le->reg_score;
         } else {
           cur_node->reg_score = LIBXSMM_MAX(2, cur_node->le->reg_score);
@@ -132,7 +134,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
       if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
         cur_node->reg_score = 1;
       } else {
-        if (can_overwrite_binary_input(cur_node->info.b_op.type) > 0) {
+        if (can_overwrite_binary_input(cur_node) > 0) {
         /* If the node is binary type we have two cases:
          * 1) If the left/right subtrees have the same register score, we have to increase it by one (i.e. we have to first compute one of the subtrees and keep the result in a tmp storage and then compute the other subtree, so we would need an extra tmp storage)
          * 2) If the left/right subtrees DO NOT have the same register score, then we assign  the maximum of the register scores (i.e. we would compute first the subtree with the maximum score and then the tree with the smallest score, thus no extra tmp storage is required) */
@@ -179,6 +181,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
     cur_node->visit_timestamp = -1;
     cur_node->n_args = 1;
     cur_node->max_tmp_size = cur_node->info.arg.ld * cur_node->info.arg.n;
+    cur_node->tmp.dtype  = cur_node->info.arg.dtype;
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
     libxsmm_matrix_eqn_create_exec_plan( cur_node->le, global_timestamp, n_max_tmp, tmp_storage_pool );
     cur_node->visit_timestamp = *global_timestamp;
@@ -194,10 +197,10 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       cur_node->tmp.m  = cur_node->le->info.arg.m;
       cur_node->tmp.n  = cur_node->le->info.arg.n;
       cur_node->tmp.ld  = cur_node->le->info.arg.ld;
-      cur_node->tmp.dtype  = cur_node->le->info.arg.dtype;
+      cur_node->tmp.dtype  = cur_node->info.u_op.dtype;
       cur_node->tree_max_comp_tsize = LIBXSMM_TYPESIZE( cur_node->info.u_op.dtype );
     } else {
-      if (can_overwrite_unary_input(cur_node->info.u_op.type) > 0) {
+      if (can_overwrite_unary_input(cur_node) > 0) {
         cur_node->tmp.id = cur_node->le->tmp.id;
       } else {
         cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
@@ -206,7 +209,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       cur_node->tmp.m  = cur_node->le->tmp.m;
       cur_node->tmp.n  = cur_node->le->tmp.n;
       cur_node->tmp.ld  = cur_node->le->tmp.ld;
-      cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
+      cur_node->tmp.dtype  = cur_node->info.u_op.dtype;
       cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE(cur_node->info.u_op.dtype), cur_node->le->tree_max_comp_tsize );
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
@@ -253,10 +256,10 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       } else {
         cur_node->tmp.n  = cur_node->le->info.arg.n;
       }
-      cur_node->tmp.dtype  = cur_node->le->info.arg.dtype;
+      cur_node->tmp.dtype  = cur_node->info.b_op.dtype;
       cur_node->tree_max_comp_tsize = LIBXSMM_TYPESIZE( cur_node->info.b_op.dtype );
     } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
-      if (can_overwrite_binary_input(cur_node->info.b_op.type) > 0) {
+      if (can_overwrite_binary_input(cur_node) > 0) {
         cur_node->tmp.id = cur_node->le->tmp.id;
         tmp_storage_pool[cur_node->ri->tmp.id] = 0;
       } else {
@@ -271,11 +274,11 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       } else {
         cur_node->tmp.n  = cur_node->le->tmp.n;
       }
-      cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
+      cur_node->tmp.dtype  = cur_node->info.b_op.dtype;
       cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.b_op.dtype ), LIBXSMM_MAX( cur_node->ri->tree_max_comp_tsize, cur_node->le->tree_max_comp_tsize ));
     } else {
       if (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
-        if (can_overwrite_binary_input(cur_node->info.b_op.type) > 0) {
+        if (can_overwrite_binary_input(cur_node) > 0) {
           cur_node->tmp.id = cur_node->le->tmp.id;
         } else {
           cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
@@ -288,10 +291,10 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
         } else {
           cur_node->tmp.n  = cur_node->le->tmp.n;
         }
-        cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
+        cur_node->tmp.dtype  = cur_node->info.b_op.dtype;
         cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE(cur_node->info.b_op.dtype), cur_node->le->tree_max_comp_tsize );
       } else {
-        if (can_overwrite_binary_input(cur_node->info.b_op.type) > 0) {
+        if (can_overwrite_binary_input(cur_node) > 0) {
           cur_node->tmp.id = cur_node->ri->tmp.id;
         } else {
           cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
@@ -305,7 +308,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
           cur_node->tmp.m  = cur_node->ri->tmp.m;
           cur_node->tmp.ld  = cur_node->ri->tmp.ld;
         }
-        cur_node->tmp.dtype  = cur_node->ri->tmp.dtype;
+        cur_node->tmp.dtype  = cur_node->info.b_op.dtype;
         cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE(cur_node->info.b_op.dtype), cur_node->ri->tree_max_comp_tsize );
       }
     }
