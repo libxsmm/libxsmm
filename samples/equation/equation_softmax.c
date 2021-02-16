@@ -246,14 +246,10 @@ inline void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
   eqn_param.in_ptrs = (const void**)arg_array;
   for (s2 = 0; s2 < S2; s2++) {
     float tmp[S1][S3];
-    libxsmm_meltw_unary_param unary_param;
-    unary_param.in_ptr  = (void*)&LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
-    unary_param.out_ptr = (void*)&tmp[0][0];
-    copy_kernel_in(&unary_param);
-    arg_array[0] = (void*) &tmp[0][0];
+    arg_array[0] = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     eqn_param.out_ptr = &tmp[0][0];
     func0(&eqn_param);
-    arg_array[0] = (void*) &tmp[0][0];
+    arg_array[0] = &tmp[0][0];
     eqn_param.out_ptr = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
     func1(&eqn_param);
   }
@@ -348,15 +344,13 @@ int main( int argc, char* argv[] ) {
   } else if (datatype_mode == 1) {
     int ldo = S3;
     ld = S2*S3;
-    copy_kernel_in = libxsmm_dispatch_meltw_unary(S3, S1, &ld, &ldo, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
-
     my_eqn0 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_EXP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
     libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, S3, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, S2*S3, 0, 0, in_dt );
     libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
     libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, S3, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, S2*S3, 0, 0, in_dt );
 
     libxsmm_matrix_eqn_tree_print( my_eqn0 );
     func0 = libxsmm_dispatch_matrix_eqn( S3, S1, &ldo, LIBXSMM_DATATYPE_F32, my_eqn0 );
