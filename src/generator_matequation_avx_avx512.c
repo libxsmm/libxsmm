@@ -455,11 +455,11 @@ void libxsmm_generator_matequation_assign_timestamps(libxsmm_matrix_eqn *eqn) {
 LIBXSMM_API_INTERN
 void libxsmm_generator_reoptimize_eqn(libxsmm_matrix_eqn *eqn) {
   libxsmm_blasint max_reg_score = 0, global_timestamp = 0, i = 0;
-  libxsmm_blasint *tmp_storage_pool = NULL, out_tmp_id = 0;
+  libxsmm_blasint *tmp_storage_pool = NULL/*, out_tmp_id = 0*/;
   libxsmm_matrix_eqn_assign_reg_scores( eqn->eqn_root );
   max_reg_score = eqn->eqn_root->reg_score;
   tmp_storage_pool = (libxsmm_blasint*) malloc(max_reg_score * sizeof(libxsmm_blasint));
-  out_tmp_id = eqn->eqn_root->tmp.id;
+  /*out_tmp_id = eqn->eqn_root->tmp.id;*/
   if (tmp_storage_pool == NULL) {
     fprintf( stderr, "Tmp storage allocation array failed...\n" );
     return;
@@ -469,7 +469,7 @@ void libxsmm_generator_reoptimize_eqn(libxsmm_matrix_eqn *eqn) {
     }
   }
   libxsmm_matrix_eqn_create_exec_plan( eqn->eqn_root, &global_timestamp, max_reg_score, tmp_storage_pool );
-  eqn->eqn_root->tmp.id = out_tmp_id;
+  /*eqn->eqn_root->tmp.id = out_tmp_id;*/
 }
 
 

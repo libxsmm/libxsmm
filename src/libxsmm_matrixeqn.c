@@ -19,44 +19,135 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( libxsmm_
   return libxsmm_matrix_eqns[eqn_idx];
 }
 
+LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_meltw_unary_type type);
+LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_meltw_unary_type type) {
+  libxsmm_blasint result = 1;
+  if (type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ||
+      type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD ||
+      type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD ||
+      type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD ||
+      type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX ) {
+    result = 0;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_binary_input(libxsmm_meltw_binary_type type);
+LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_binary_input(libxsmm_meltw_binary_type type) {
+  libxsmm_blasint result = 1;
+  if (type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+    result = 0;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_dbg_print( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint indent );
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_dbg_print( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint indent ) {
+  libxsmm_blasint i;
+  libxsmm_blasint tree_print_indent = 4;
+
+  for ( i = 0; i < indent; ++i ) {
+    if ( i < indent - tree_print_indent ) {
+      printf(" ");
+    } else {
+      if ( i % tree_print_indent == 0 ) {
+        printf("|");
+      } else {
+        printf("-");
+      }
+    }
+  }
+
+  /* check if we are at an argument leaf, then we move up */
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    libxsmm_blasint argid = cur_node->info.arg.in_pos;
+    if ( (cur_node->le == NULL) && (cur_node->ri == NULL) ) {
+      if (argid >= 0) {
+        printf("ARG: M=%i, N=%i, LD=%i, arg_id=%i, dtype=%i\n", cur_node->info.arg.m, cur_node->info.arg.n, cur_node->info.arg.ld, cur_node->info.arg.in_pos, LIBXSMM_TYPESIZE(cur_node->info.arg.dtype) );
+      } else {
+        printf("ARG: M=%i, N=%i, LD=%i, arg_id is scratch=%i, dtype=%i\n", cur_node->info.arg.m, cur_node->info.arg.n, cur_node->info.arg.ld, -1-argid, LIBXSMM_TYPESIZE(cur_node->info.arg.dtype) );
+      }
+    } else {
+      printf("ERROR: Arg cannot have left or right child!\n");
+    }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    /* we have to push more in this branch */
+    if ( cur_node->le != NULL ) {
+      printf("UNARY: type=%i, flags=%i, timestamp=%i, out_tmp_id=%i, out_dtype=%i\n", (int)cur_node->info.u_op.type, (int)cur_node->info.u_op.flags, cur_node->visit_timestamp, cur_node->tmp.id, LIBXSMM_TYPESIZE(cur_node->tmp.dtype));
+      libxsmm_matrix_eqn_trv_dbg_print( cur_node->le, indent+tree_print_indent );
+    /* we have reached the root, as we are unary, there is no right branch */
+    } else if ( (cur_node->ri != NULL) ) {
+      printf("ERROR: Unary cannot have right childs!\n");
+    }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    /* we have to push more in this branch */
+    if ( (cur_node->le != NULL) && (cur_node->ri != NULL) ) {
+      printf("BINARY: type=%i, flags=%i, timestamp=%i, out_tmp_id=%i, out_dtype=%i\n", (int)cur_node->info.b_op.type, (int)cur_node->info.b_op.flags, cur_node->visit_timestamp, cur_node->tmp.id, LIBXSMM_TYPESIZE(cur_node->tmp.dtype));
+      libxsmm_matrix_eqn_trv_dbg_print( cur_node->le, indent+tree_print_indent );
+      libxsmm_matrix_eqn_trv_dbg_print( cur_node->ri, indent+tree_print_indent );
+    } else {
+      printf("ERROR: Binary needs left and right child!\n");
+    }
+  } else {
+    /* shouldn't happen */
+  }
+}
+
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn_elem* cur_node ) {
   /* check if we are at an argument leaf, then we assign register score 0 */
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     if ( (cur_node->le == NULL) && (cur_node->ri == NULL) ) {
       cur_node->reg_score = 0;
-      cur_node->max_tmp_size = cur_node->info.arg.ld * cur_node->info.arg.n;
     }
     else {
       printf("ERROR: Arg cannot have left or right child!\n");
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
-    /* If the node is unary type we have two cases:
- *  *      * 1) If the left child is an arg, we just set the score to 1 (we do not overwrite the input)
- *   *           * 2) if the left child is NOT an arg, we just propagate the register score from it (no additional tmp storage is needed) */
+    /* If the node is unary type we have the following cases:
+     * 1) If the left child is an arg, we just set the score to 1 (we do not overwrite the input)
+     * 2) if the left child is NOT an arg AND we can overwrite the tmp, we just propagate the register score from it (no additional tmp storage is needed)
+     * 3) if the left child is NOT an arg AND we CAN NOT overwrite the tmp, we should make the register score at least 2
+     * */
     if ( cur_node->le != NULL ) {
       libxsmm_matrix_eqn_assign_reg_scores( cur_node->le );
-      cur_node->max_tmp_size = cur_node->le->max_tmp_size;
       if ( cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
         cur_node->reg_score = 1;
       } else {
-        cur_node->reg_score = cur_node->le->reg_score;
+        if (can_overwrite_unary_input(cur_node->info.u_op.type) > 0) {
+          cur_node->reg_score = cur_node->le->reg_score;
+        } else {
+          cur_node->reg_score = LIBXSMM_MAX(2, cur_node->le->reg_score);
+        }
       }
     /* we have reached the root, as we are unary, there is no right branch */
     } else if ( (cur_node->ri != NULL) ) {
       printf("ERROR: Unary cannot have right childs!\n");
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
-    /* If the node is binary type we have two cases:
- *  *      * 1) If the left/right subtrees have the same register score, we have to increase it by one (i.e. we have to first compute one of the subtrees and keep the result in a tmp storage and then compute the other subtree, so we would need an extra tmp storage)
- *   *           * 2) If the left/right subtrees DO NOT have the same register score, then we assign  the maximum of the register scores (i.e. we would compute first the subtree with the maximum score and then the tree with the smallest score, thus no extra tmp storage is required) */
     if ( (cur_node->le != NULL) && (cur_node->ri != NULL) ) {
       libxsmm_matrix_eqn_assign_reg_scores( cur_node->le );
       libxsmm_matrix_eqn_assign_reg_scores( cur_node->ri );
-      cur_node->max_tmp_size = LIBXSMM_MAX(cur_node->le->max_tmp_size, cur_node->ri->max_tmp_size);
-      if (cur_node->le->reg_score == cur_node->ri->reg_score) {
-        cur_node->reg_score = cur_node->le->reg_score + 1;
+
+      /* If left and right are args, we just need 1 tmp */
+      if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+        cur_node->reg_score = 1;
       } else {
-        cur_node->reg_score = LIBXSMM_MAX(cur_node->le->reg_score, cur_node->ri->reg_score);
+        if (can_overwrite_binary_input(cur_node->info.b_op.type) > 0) {
+        /* If the node is binary type we have two cases:
+         * 1) If the left/right subtrees have the same register score, we have to increase it by one (i.e. we have to first compute one of the subtrees and keep the result in a tmp storage and then compute the other subtree, so we would need an extra tmp storage)
+         * 2) If the left/right subtrees DO NOT have the same register score, then we assign  the maximum of the register scores (i.e. we would compute first the subtree with the maximum score and then the tree with the smallest score, thus no extra tmp storage is required) */
+          if (cur_node->le->reg_score == cur_node->ri->reg_score) {
+            cur_node->reg_score = cur_node->le->reg_score + 1;
+          } else {
+            cur_node->reg_score = LIBXSMM_MAX(cur_node->le->reg_score, cur_node->ri->reg_score);
+          }
+        } else {
+          if (cur_node->le->reg_score == cur_node->ri->reg_score) {
+            cur_node->reg_score = LIBXSMM_MAX(3, cur_node->le->reg_score + 1);
+          } else {
+            cur_node->reg_score = LIBXSMM_MAX(3, LIBXSMM_MAX(cur_node->le->reg_score, cur_node->ri->reg_score));
+          }
+        }
       }
     } else {
       printf("ERROR: Binary needs left and right child!\n");
@@ -87,16 +178,18 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
     /* Do not increase the timestamp, this node is just an arg so it's not part of the execution */
     cur_node->visit_timestamp = -1;
     cur_node->n_args = 1;
+    cur_node->max_tmp_size = cur_node->info.arg.ld * cur_node->info.arg.n;
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
     libxsmm_matrix_eqn_create_exec_plan( cur_node->le, global_timestamp, n_max_tmp, tmp_storage_pool );
     cur_node->visit_timestamp = *global_timestamp;
     *global_timestamp = *global_timestamp + 1;
     cur_node->n_args = cur_node->le->n_args;
+    cur_node->max_tmp_size = cur_node->le->max_tmp_size;
+
     /* When assigning the tmp output storage, we have two cases in the unary:
- *  *      * 1) The child is an arg, so we have to reserve a tmp storage
- *   *           * 2) The child is NOT an arg, so we just reuse the tmp storage of the child */
+     * 1) The child is an arg, so we have to reserve a tmp storage
+     * 2) The child is NOT an arg, so we just reuse the tmp storage of the child */
     if ( cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
-      cur_node->le->up = cur_node;
       cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
       cur_node->tmp.m  = cur_node->le->info.arg.m;
       cur_node->tmp.n  = cur_node->le->info.arg.n;
@@ -104,7 +197,12 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       cur_node->tmp.dtype  = cur_node->le->info.arg.dtype;
       cur_node->tree_max_comp_tsize = LIBXSMM_TYPESIZE( cur_node->info.u_op.dtype );
     } else {
-      cur_node->tmp.id = cur_node->le->tmp.id;
+      if (can_overwrite_unary_input(cur_node->info.u_op.type) > 0) {
+        cur_node->tmp.id = cur_node->le->tmp.id;
+      } else {
+        cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+        tmp_storage_pool[cur_node->le->tmp.id] = 0;
+      }
       cur_node->tmp.m  = cur_node->le->tmp.m;
       cur_node->tmp.n  = cur_node->le->tmp.n;
       cur_node->tmp.ld  = cur_node->le->tmp.ld;
@@ -123,42 +221,90 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
     cur_node->visit_timestamp = *global_timestamp;
     *global_timestamp = *global_timestamp + 1;
     cur_node->n_args = cur_node->le->n_args + cur_node->ri->n_args;
+    cur_node->max_tmp_size = LIBXSMM_MAX(cur_node->le->max_tmp_size, cur_node->ri->max_tmp_size);
+
+    /* Max tmp size has to be adjusted if it is a MATMUL op  */
+    if (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+      libxsmm_blasint matmul_out_size = 0;
+      if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+        matmul_out_size = cur_node->le->info.arg.ld * cur_node->ri->info.arg.n;
+      } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+        matmul_out_size = cur_node->le->tmp.ld * cur_node->ri->tmp.n;
+      } else {
+        if (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
+          matmul_out_size = cur_node->le->tmp.ld * cur_node->ri->info.arg.n;
+        } else {
+          matmul_out_size = cur_node->le->info.arg.ld * cur_node->ri->tmp.n;
+        }
+      }
+      cur_node->max_tmp_size = LIBXSMM_MAX(matmul_out_size, cur_node->max_tmp_size);
+    }
+
     /* When assigning the tmp output storage, we have three cases in the binary:
- *  *      * 1) Both children are arg, so we have to reserve a tmp storage
- *   *           * 2) Both child are NOT arg, so we reuse the tmp storage of either one for our output and we make the other tmp storage available
- *    *                * 3) One child IS arg and the other child is NOT an arg, so we just reuse the tmp storage of the non-arg child */
+     * 1) Both children are arg, so we have to reserve a tmp storage
+     * 2) Both child are NOT arg, so we reuse the tmp storage of either one for our output and we make the other tmp storage available
+     * 3) One child IS arg and the other child is NOT an arg, so we just reuse the tmp storage of the non-arg child */
     if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
-      cur_node->le->up = cur_node;
-      cur_node->ri->up = cur_node;
       cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
       cur_node->tmp.m  = cur_node->le->info.arg.m;
-      cur_node->tmp.n  = cur_node->le->info.arg.n;
       cur_node->tmp.ld  = cur_node->le->info.arg.ld;
+      if (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+        cur_node->tmp.n  = cur_node->ri->info.arg.n;
+      } else {
+        cur_node->tmp.n  = cur_node->le->info.arg.n;
+      }
       cur_node->tmp.dtype  = cur_node->le->info.arg.dtype;
       cur_node->tree_max_comp_tsize = LIBXSMM_TYPESIZE( cur_node->info.b_op.dtype );
     } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
-      cur_node->tmp.id = cur_node->le->tmp.id;
+      if (can_overwrite_binary_input(cur_node->info.b_op.type) > 0) {
+        cur_node->tmp.id = cur_node->le->tmp.id;
+        tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+      } else {
+        cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+        tmp_storage_pool[cur_node->le->tmp.id] = 0;
+        tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+      }
       cur_node->tmp.m  = cur_node->le->tmp.m;
-      cur_node->tmp.n  = cur_node->le->tmp.n;
       cur_node->tmp.ld  = cur_node->le->tmp.ld;
+      if (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+        cur_node->tmp.n  = cur_node->ri->tmp.n;
+      } else {
+        cur_node->tmp.n  = cur_node->le->tmp.n;
+      }
       cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
-      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
-      cur_node->tree_max_comp_tsize = LIBXSMM_MAX( cur_node->ri->tree_max_comp_tsize, cur_node->le->tree_max_comp_tsize );
+      cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.b_op.dtype ), LIBXSMM_MAX( cur_node->ri->tree_max_comp_tsize, cur_node->le->tree_max_comp_tsize ));
     } else {
       if (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
-        cur_node->ri->up = cur_node;
-        cur_node->tmp.id = cur_node->le->tmp.id;
+        if (can_overwrite_binary_input(cur_node->info.b_op.type) > 0) {
+          cur_node->tmp.id = cur_node->le->tmp.id;
+        } else {
+          cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+          tmp_storage_pool[cur_node->le->tmp.id] = 0;
+        }
         cur_node->tmp.m  = cur_node->le->tmp.m;
-        cur_node->tmp.n  = cur_node->le->tmp.n;
         cur_node->tmp.ld  = cur_node->le->tmp.ld;
+        if (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+          cur_node->tmp.n  = cur_node->ri->info.arg.n;
+        } else {
+          cur_node->tmp.n  = cur_node->le->tmp.n;
+        }
         cur_node->tmp.dtype  = cur_node->le->tmp.dtype;
         cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE(cur_node->info.b_op.dtype), cur_node->le->tree_max_comp_tsize );
       } else {
-        cur_node->le->up = cur_node;
-        cur_node->tmp.id = cur_node->ri->tmp.id;
-        cur_node->tmp.m  = cur_node->ri->tmp.m;
+        if (can_overwrite_binary_input(cur_node->info.b_op.type) > 0) {
+          cur_node->tmp.id = cur_node->ri->tmp.id;
+        } else {
+          cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+          tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+        }
         cur_node->tmp.n  = cur_node->ri->tmp.n;
-        cur_node->tmp.ld  = cur_node->ri->tmp.ld;
+        if (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+          cur_node->tmp.m  = cur_node->le->info.arg.m;
+          cur_node->tmp.ld  = cur_node->le->info.arg.ld;
+        } else {
+          cur_node->tmp.m  = cur_node->ri->tmp.m;
+          cur_node->tmp.ld  = cur_node->ri->tmp.ld;
+        }
         cur_node->tmp.dtype  = cur_node->ri->tmp.dtype;
         cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE(cur_node->info.b_op.dtype), cur_node->ri->tree_max_comp_tsize );
       }
