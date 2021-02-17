@@ -159,6 +159,35 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
   }
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *current_timestamp ) {
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    /* Do not increase the timestamp, this node is just an arg so it's not part of the execution */
+    cur_node->visit_timestamp = -1;
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+    cur_node->visit_timestamp = *current_timestamp;
+    *current_timestamp = *current_timestamp + 1;
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    if (cur_node->le->reg_score >= cur_node->ri->reg_score) {
+      libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+      libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
+    } else {
+      libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
+      libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+    }
+    cur_node->visit_timestamp = *current_timestamp;
+    *current_timestamp = *current_timestamp + 1;
+  } else {
+    /* shouldn't happen */
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_matequation_assign_timestamps(libxsmm_matrix_eqn *eqn) {
+  libxsmm_blasint timestamp = 0;
+  libxsmm_generator_assign_new_timestamp(eqn->eqn_root, &timestamp );
+}
 
 LIBXSMM_API_INTERN libxsmm_blasint reserve_tmp_storage(libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool) {
   libxsmm_blasint i;
@@ -303,6 +332,42 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
   }
 }
 
+LIBXSMM_API_INTERN
+int is_unary_opcode_reduce_kernel (unsigned int opcode) {
+  int result = 0;
+  if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
+      (opcode== LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_elem* cur_node ) {
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    /* Do nothing */
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    /* First visit left child tree  */
+    libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
+    /* If it is reduce kernel, have to resize tmp size of parent node */
+    if ( (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 )) {
+      if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
+        cur_node->up->tmp.m = cur_node->tmp.n;
+        cur_node->up->tmp.n = 1;
+        cur_node->up->tmp.ld = cur_node->tmp.n;
+      } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
+        cur_node->up->tmp.n = 1;
+      }
+    }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
+    libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
+  } else {
+    /* shouldn't happen */
+  }
+}
+
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) {
   libxsmm_blasint global_timestamp = 0;
@@ -334,6 +399,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
   printf("Optimal number of intermediate tmp storage is %d\n", max_reg_score);
 #endif
   libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqns[idx]->eqn_root, &global_timestamp, max_reg_score, tmp_storage_pool );
+  libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqns[idx]->eqn_root );
 #if 0
   printf("Created optimal exexution plan...\n");
 #endif
@@ -346,6 +412,27 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
   libxsmm_matrix_eqns[idx]->is_optimized = 1;
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_reoptimize_eqn(libxsmm_matrix_eqn *eqn) {
+  libxsmm_blasint max_reg_score = 0, global_timestamp = 0, i = 0;
+  libxsmm_blasint *tmp_storage_pool = NULL;
+  libxsmm_matrix_eqn_assign_reg_scores( eqn->eqn_root );
+  max_reg_score = eqn->eqn_root->reg_score;
+  tmp_storage_pool = (libxsmm_blasint*) malloc(max_reg_score * sizeof(libxsmm_blasint));
+  if (tmp_storage_pool == NULL) {
+    fprintf( stderr, "Tmp storage allocation array failed...\n" );
+    return;
+  } else {
+    for (i = 0; i < max_reg_score; i++) {
+      tmp_storage_pool[i] = 0;
+    }
+  }
+  libxsmm_matrix_eqn_create_exec_plan( eqn->eqn_root, &global_timestamp, max_reg_score, tmp_storage_pool );
+  libxsmm_matrix_eqn_adjust_tmp_sizes( eqn->eqn_root );
+  if (tmp_storage_pool != NULL) {
+    free(tmp_storage_pool);
+  }
+}
 
 LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqn_elem* cur_node, libxsmm_matrix_eqn_node_type type, libxsmm_matrix_eqn_info info );
 LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqn_elem* cur_node, libxsmm_matrix_eqn_node_type type, libxsmm_matrix_eqn_info info ) {
