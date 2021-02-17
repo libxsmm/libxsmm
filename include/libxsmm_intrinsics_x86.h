@@ -97,6 +97,9 @@
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_PLATFORM_X86)
+# define LIBXSMM_INTRINSICS_NONE
+#endif
 #if /*no intrinsics: tested with 17.x and 18.x*/(defined(__PGI) && \
     LIBXSMM_VERSION2(19, 0) > LIBXSMM_VERSION2(__PGIC__, __PGIC_MINOR__)) \
  || /*legacy*/(defined(_CRAYC) && !defined(__GNUC__))
