@@ -386,7 +386,7 @@ int main( int argc, char* argv[] ) {
   unsigned long long l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
-  float *inp, *out, *eqn_out, *arg_array[1], *gout;
+  float *inp, *out, *eqn_out, *arg_array[1], *gout, *cache_fl, sum = 0.0;
   libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_eqn_out, *bf16_arg_array[1];
   int S1 = 64;
   int S2 = 64;
@@ -416,6 +416,7 @@ int main( int argc, char* argv[] ) {
   out = (float*) libxsmm_aligned_malloc( sizeof(float)*S1*S2*S3,   2097152);
   gout = (float*) libxsmm_aligned_malloc( sizeof(float)*S1*S2*S3,   2097152);
   eqn_out  = (float*) libxsmm_aligned_malloc( sizeof(float)*S1*S2*S3,   2097152);
+  cache_fl  = (float*) libxsmm_aligned_malloc( sizeof(float)*1024*1024,   2097152);
 
   bf16_inp = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
   bf16_out = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
@@ -433,6 +434,9 @@ int main( int argc, char* argv[] ) {
     libxsmm_rne_convert_fp32_bf16( &inp[i], &bf16_inp[i], 1 );
     libxsmm_rne_convert_fp32_bf16( &out[i], &bf16_out[i], 1 );
     libxsmm_rne_convert_fp32_bf16( &eqn_out[i], &bf16_eqn_out[i], 1 );
+  }
+  for (i = 0; i < 1024 * 1024; i++ ) {
+    cache_fl[i] = (float)libxsmm_rng_f64();
   }
 
   arg_array[0] = inp;
@@ -491,22 +495,10 @@ int main( int argc, char* argv[] ) {
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if (datatype_mode == 0) {
-    tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
-    for (it = 0; it < iters; it++) {
-      tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
+    for (i = 0; i < 1024 * 1024; i++ ) {
+      sum += cache_fl[i];
     }
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
-      tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP softmax time  = %.5g\n", ((double)(l_total2)));
-
     vectorized_softmax_fwd(S1, S2, S3, inp, out);
-    for (it = 0; it < iters; it++) {
-      vectorized_softmax_fwd(S1, S2, S3, inp, out);
-    }
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
       vectorized_softmax_fwd(S1, S2, S3, inp, out);
@@ -514,24 +506,23 @@ int main( int argc, char* argv[] ) {
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
     printf("Intrinsics softmax time  = %.5g\n", ((double)(l_total)));
+    for (i = 0; i < 1024 * 1024; i++ ) {
+      sum += cache_fl[i] + (float)l_total;
+    }
+    tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
+    l_start = libxsmm_timer_tick();
+    for (it = 0; it < iters; it++) {
+      tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total2 = libxsmm_timer_duration(l_start, l_end);
+    printf("TPP softmax time  = %.5g\n", ((double)(l_total2)));
     printf("Speedup is %.5g\n", l_total/l_total2);
   } else if (datatype_mode == 1) {
-    tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
-    for (it = 0; it < iters; it++) {
-      tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
+    for (i = 0; i < 1024 * 1024; i++ ) {
+      sum += cache_fl[i];
     }
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
-      tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP softmax time  = %.5g\n", ((double)(l_total2)));
-
     vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out);
-    for (it = 0; it < iters; it++) {
-      vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out);
-    }
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
       vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out);
@@ -539,6 +530,17 @@ int main( int argc, char* argv[] ) {
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
     printf("Intrinsics softmax time  = %.5g\n", ((double)(l_total)));
+    for (i = 0; i < 1024 * 1024; i++ ) {
+      sum += cache_fl[i] + (float)l_total;
+    }
+    tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
+    l_start = libxsmm_timer_tick();
+    for (it = 0; it < iters; it++) {
+      tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total2 = libxsmm_timer_duration(l_start, l_end);
+    printf("TPP softmax time  = %.5g\n", ((double)(l_total2)));
     printf("Speedup is %.5g\n", l_total/l_total2);
   }
 
@@ -588,22 +590,10 @@ int main( int argc, char* argv[] ) {
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if (datatype_mode == 0) {
-    tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
-    for (it = 0; it < iters; it++) {
-      tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
+    for (i = 0; i < 1024 * 1024; i++ ) {
+      sum += cache_fl[i];
     }
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
-      tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP softmax time  = %.5g\n", ((double)(l_total2)));
-
     vectorized_softmax_bwd(S1, S2, S3, out, inp, gout);
-    for (it = 0; it < iters; it++) {
-      vectorized_softmax_bwd(S1, S2, S3, out, inp, gout);
-    }
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
       vectorized_softmax_bwd(S1, S2, S3, out, inp, gout);
@@ -611,24 +601,23 @@ int main( int argc, char* argv[] ) {
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
     printf("Intrinsics softmax time  = %.5g\n", ((double)(l_total)));
+    for (i = 0; i < 1024 * 1024; i++ ) {
+      sum += cache_fl[i] + (float)l_total;
+    }
+    tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
+    l_start = libxsmm_timer_tick();
+    for (it = 0; it < iters; it++) {
+      tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total2 = libxsmm_timer_duration(l_start, l_end);
+    printf("TPP softmax time  = %.5g\n", ((double)(l_total2)));
     printf("Speedup is %.5g\n", l_total/l_total2);
   } else if (datatype_mode == 1) {
-    tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
-    for (it = 0; it < iters; it++) {
-      tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
+    for (i = 0; i < 1024 * 1024; i++ ) {
+      sum += cache_fl[i];
     }
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
-      tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP softmax time  = %.5g\n", ((double)(l_total2)));
-
     vectorized_softmax_bwd_bf16(S1, S2, S3, out, inp, bf16_out);
-    for (it = 0; it < iters; it++) {
-      vectorized_softmax_bwd_bf16(S1, S2, S3, out, inp, bf16_out);
-    }
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
       vectorized_softmax_bwd_bf16(S1, S2, S3, out, inp, bf16_out);
@@ -636,8 +625,20 @@ int main( int argc, char* argv[] ) {
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
     printf("Intrinsics softmax time  = %.5g\n", ((double)(l_total)));
+    for (i = 0; i < 1024 * 1024; i++ ) {
+      sum += cache_fl[i] + (float)l_total;
+    }
+    tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
+    l_start = libxsmm_timer_tick();
+    for (it = 0; it < iters; it++) {
+      tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total2 = libxsmm_timer_duration(l_start, l_end);
+    printf("TPP softmax time  = %.5g\n", ((double)(l_total2)));
     printf("Speedup is %.5g\n", l_total/l_total2);
   }
+  printf("Running sum is %.5f\n", sum);
   libxsmm_free(inp);
   libxsmm_free(out);
   libxsmm_free(gout);
@@ -645,6 +646,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(bf16_inp);
   libxsmm_free(bf16_out);
   libxsmm_free(bf16_eqn_out);
+  libxsmm_free(cache_fl);
 
   return 0;
 }
