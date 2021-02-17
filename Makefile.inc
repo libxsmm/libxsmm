@@ -63,12 +63,14 @@ ifeq (,$(HOSTNAME))
   HOSTNAME := $(shell hostname 2>/dev/null)
 endif
 ifeq (Windows_NT,$(OS))
+  MNAME ?= $(if $(filter AMD64,$(PROCESSOR_ARCHITECTURE)),x86_64,$(PROCESSOR_ARCHITECTURE))
   UNAME ?= Windows_NT
   # Cygwin/MinGW based
   DLIBEXT ?= dll
   SLIBEXT ?= lib
 else
-  UNAME ?= $(shell uname)
+  MNAME ?= $(shell uname -m 2>/dev/null)
+  UNAME ?= $(shell uname 2>/dev/null)
   ifneq (Darwin,$(UNAME))
     ENVBIN ?= $(call which,env)
   endif
@@ -1782,22 +1784,22 @@ ifneq (0,$(INTEL))
   INTRINSICS ?= 2
 else ifneq (0,$(CLANG))
   INTRINSICS ?= 2
-else
-  INTRINSICS ?= 1006
 endif
-
-ifneq (0,$(INTRINSICS))
-  ifeq (1,$(INTRINSICS))
-    ifeq (0,$(INTEL))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    else ifneq (,$(CTARGET))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+ifeq (x86_64,$(MNAME))
+  INTRINSICS ?= 1006
+  ifneq (0,$(INTRINSICS))
+    ifeq (1,$(INTRINSICS))
+      ifeq (0,$(INTEL))
+        DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+      else ifneq (,$(CTARGET))
+        DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+      endif
+    else ifneq (2,$(INTRINSICS))
+      DFLAGS += -DLIBXSMM_TARGET_ARCH=$(INTRINSICS)
     endif
-  else ifneq (2,$(INTRINSICS))
-    DFLAGS += -DLIBXSMM_TARGET_ARCH=$(INTRINSICS)
+  else
+    DFLAGS += -DLIBXSMM_INTRINSICS_NONE
   endif
-else # disabled
-  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
 endif
 
 ifeq (0,$(SYM))
