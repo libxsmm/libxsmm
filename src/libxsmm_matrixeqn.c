@@ -183,12 +183,12 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_unary_tmp(libxsmm
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_binary_tmp(libxsmm_matrix_eqn_elem* cur_node);
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_binary_tmp(libxsmm_matrix_eqn_elem* cur_node) {
-  cur_node->tmp.m  = cur_node->le->info.arg.m;
-  cur_node->tmp.ld  = cur_node->le->info.arg.ld;
+  cur_node->tmp.m  = cur_node->le->tmp.m;
+  cur_node->tmp.ld  = cur_node->le->tmp.ld;
   if (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
-    cur_node->tmp.n  = cur_node->ri->info.arg.n;
+    cur_node->tmp.n  = cur_node->ri->tmp.n;
   } else {
-    cur_node->tmp.n  = cur_node->le->info.arg.n;
+    cur_node->tmp.n  = cur_node->le->tmp.n;
   }
   cur_node->tmp.dtype  = cur_node->info.b_op.dtype;
 }
