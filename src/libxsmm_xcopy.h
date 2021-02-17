@@ -33,15 +33,19 @@
 # define LIBXSMM_XCOPY_MELTW
 #endif
 /* 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy */
-#if !defined(LIBXSMM_XCOPY_JIT)
-# if defined(LIBXSMM_XCOPY_MELTW)
-#   define LIBXSMM_XCOPY_JIT 3
-# elif (defined(_WIN32) || defined(__CYGWIN__))
+#if defined(LIBXSMM_PLATFORM_X86)
+# if !defined(LIBXSMM_XCOPY_JIT)
+#   if defined(LIBXSMM_XCOPY_MELTW)
+#     define LIBXSMM_XCOPY_JIT 3
+#   elif (defined(_WIN32) || defined(__CYGWIN__))
 /* only enable matcopy code generation (workaround issue with taking GP registers correctly) */
-#   define LIBXSMM_XCOPY_JIT 0
-# else
-#   define LIBXSMM_XCOPY_JIT 1
+#     define LIBXSMM_XCOPY_JIT 0
+#   else
+#     define LIBXSMM_XCOPY_JIT 1
+#   endif
 # endif
+#else
+# define LIBXSMM_XCOPY_JIT 0
 #endif
 
 /* kernel uses consecutive stores */
