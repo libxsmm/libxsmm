@@ -144,7 +144,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
     }
     /* Find sibling if applicable. If it is an Arg, set output precision to  that precision... */
     if (timestamp == last_timestamp) {
-      out_precision = LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);
+      out_precision = (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);
     } else {
       out_precision = cur_op->tmp.dtype;
     }
