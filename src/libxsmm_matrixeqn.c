@@ -154,6 +154,25 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
     } else {
       printf("ERROR: Binary needs left and right child!\n");
     }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    if ( (cur_node->le != NULL) && (cur_node->ri != NULL) && (cur_node->r2 != NULL) ) {
+      int use_r2_as_output = 0;
+      libxsmm_matrix_eqn_assign_reg_scores( cur_node->le );
+      libxsmm_matrix_eqn_assign_reg_scores( cur_node->ri );
+      libxsmm_matrix_eqn_assign_reg_scores( cur_node->r2 );
+      /* If all children re args, we just need 1 tmp */
+      if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+        cur_node->reg_score = 1;
+      } else {
+        if (use_r2_as_output > 0) {
+          cur_node->reg_score = LIBXSMM_MAX(3, LIBXSMM_MAX(LIBXSMM_MAX(cur_node->le->reg_score, cur_node->ri->reg_score), cur_node->r2->reg_score));
+        } else {
+          cur_node->reg_score = LIBXSMM_MAX(4, LIBXSMM_MAX(LIBXSMM_MAX(cur_node->le->reg_score, cur_node->ri->reg_score), cur_node->r2->reg_score));
+        }
+      }
+    } else {
+      printf("ERROR: Ternary needs all three children!\n");
+    }
   } else {
     /* shouldn't happen */
   }
@@ -178,6 +197,35 @@ void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, l
     }
     cur_node->visit_timestamp = *current_timestamp;
     *current_timestamp = *current_timestamp + 1;
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    if ((cur_node->le->reg_score >= cur_node->ri->reg_score) && (cur_node->le->reg_score >= cur_node->r2->reg_score) ) {
+      libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+      if ( cur_node->ri->reg_score >= cur_node->r2->reg_score ) {
+        libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
+        libxsmm_generator_assign_new_timestamp( cur_node->r2, current_timestamp );
+      } else {
+        libxsmm_generator_assign_new_timestamp( cur_node->r2, current_timestamp );
+        libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
+      }
+    } else if ((cur_node->ri->reg_score >= cur_node->le->reg_score) && (cur_node->ri->reg_score >= cur_node->r2->reg_score) ) {
+      libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
+      if ( cur_node->le->reg_score >= cur_node->r2->reg_score ) {
+        libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+        libxsmm_generator_assign_new_timestamp( cur_node->r2, current_timestamp );
+      } else {
+        libxsmm_generator_assign_new_timestamp( cur_node->r2, current_timestamp );
+        libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+      }
+    } else {
+      libxsmm_generator_assign_new_timestamp( cur_node->r2, current_timestamp );
+      if ( cur_node->le->reg_score >= cur_node->ri->reg_score ) {
+        libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+        libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
+      } else {
+        libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
+        libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
+      }
+    }
   } else {
     /* shouldn't happen */
   }
@@ -310,6 +358,90 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_binary_node(libxsmm_m
   libxsmm_matrix_eqn_exec_plan_configure_binary_tmp( cur_node );
 }
 
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool);
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool) {
+  /* Assign timestamp and propagate info for n_args/max_tmp_size  */
+  int use_r2_as_output = 0;
+  cur_node->visit_timestamp = *global_timestamp;
+  *global_timestamp = *global_timestamp + 1;
+  cur_node->n_args = cur_node->le->n_args + cur_node->ri->n_args + cur_node->r2->n_args;
+  cur_node->max_tmp_size = LIBXSMM_MAX( LIBXSMM_MAX(cur_node->le->max_tmp_size, cur_node->ri->max_tmp_size), cur_node->r2->max_tmp_size);
+  if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+    cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+    cur_node->tree_max_comp_tsize = LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype );
+  } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+    if (use_r2_as_output > 0 ) {
+      cur_node->tmp.id = cur_node->r2->tmp.id;
+      tmp_storage_pool[cur_node->le->tmp.id] = 0;
+      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+    } else {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->le->tmp.id] = 0;
+      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+      tmp_storage_pool[cur_node->r2->tmp.id] = 0;
+    }
+    cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( cur_node->r2->tree_max_comp_tsize, LIBXSMM_MAX( cur_node->ri->tree_max_comp_tsize, cur_node->le->tree_max_comp_tsize )));
+  } else if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+    if (use_r2_as_output > 0 ) {
+      cur_node->tmp.id = cur_node->r2->tmp.id;
+      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+    } else {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+      tmp_storage_pool[cur_node->r2->tmp.id] = 0;
+    }
+    cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( cur_node->r2->tree_max_comp_tsize, LIBXSMM_MAX( cur_node->ri->tree_max_comp_tsize, 1 )));
+  } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+    if (use_r2_as_output > 0 ) {
+      cur_node->tmp.id = cur_node->r2->tmp.id;
+      tmp_storage_pool[cur_node->le->tmp.id] = 0;
+    } else {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->le->tmp.id] = 0;
+      tmp_storage_pool[cur_node->r2->tmp.id] = 0;
+    }
+    cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( cur_node->r2->tree_max_comp_tsize, LIBXSMM_MAX( 1, cur_node->le->tree_max_comp_tsize )));
+  } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+    if (use_r2_as_output > 0 ) {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->le->tmp.id] = 0;
+      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+    } else {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->le->tmp.id] = 0;
+      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+    }
+    cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( 1, LIBXSMM_MAX( cur_node->ri->tree_max_comp_tsize, cur_node->le->tree_max_comp_tsize )));
+  } else if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+    if (use_r2_as_output > 0 ) {
+      cur_node->tmp.id = cur_node->r2->tmp.id;
+    } else {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->r2->tmp.id] = 0;
+    }
+    cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( cur_node->r2->tree_max_comp_tsize, LIBXSMM_MAX( 1, 1 )));
+  } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+    if (use_r2_as_output > 0 ) {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->le->tmp.id] = 0;
+    } else {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->le->tmp.id] = 0;
+    }
+    cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( 1, LIBXSMM_MAX( 1, cur_node->le->tree_max_comp_tsize )));
+  } else if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
+    if (use_r2_as_output > 0 ) {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+    } else {
+      cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
+      tmp_storage_pool[cur_node->ri->tmp.id] = 0;
+    }
+    cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( 1, LIBXSMM_MAX( cur_node->ri->tree_max_comp_tsize, 1)));
+  }
+  libxsmm_matrix_eqn_exec_plan_configure_ternary_tmp( cur_node );
+}
+
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool ) {
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     libxsmm_matrix_eqn_exec_plan_visit_arg_node(cur_node);
@@ -327,8 +459,38 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       libxsmm_matrix_eqn_create_exec_plan( cur_node->le, global_timestamp, n_max_tmp, tmp_storage_pool );
     }
     libxsmm_matrix_eqn_exec_plan_visit_binary_node(cur_node, global_timestamp, n_max_tmp, tmp_storage_pool);
+  } else if( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    if ((cur_node->le->reg_score >= cur_node->ri->reg_score) && (cur_node->le->reg_score >= cur_node->r2->reg_score) ) {
+      libxsmm_matrix_eqn_create_exec_plan( cur_node->le, current_timestamp );
+      if ( cur_node->ri->reg_score >= cur_node->r2->reg_score ) {
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->ri, current_timestamp );
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->r2, current_timestamp );
+      } else {
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->r2, current_timestamp );
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->ri, current_timestamp );
+      }
+    } else if ((cur_node->ri->reg_score >= cur_node->le->reg_score) && (cur_node->ri->reg_score >= cur_node->r2->reg_score) ) {
+      libxsmm_matrix_eqn_create_exec_plan( cur_node->ri, current_timestamp );
+      if ( cur_node->le->reg_score >= cur_node->r2->reg_score ) {
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->le, current_timestamp );
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->r2, current_timestamp );
+      } else {
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->r2, current_timestamp );
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->le, current_timestamp );
+      }
+    } else {
+      libxsmm_matrix_eqn_create_exec_plan( cur_node->r2, current_timestamp );
+      if ( cur_node->le->reg_score >= cur_node->ri->reg_score ) {
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->le, current_timestamp );
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->ri, current_timestamp );
+      } else {
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->ri, current_timestamp );
+        libxsmm_matrix_eqn_create_exec_plan( cur_node->le, current_timestamp );
+      }
+    }
+    libxsmm_matrix_eqn_exec_plan_visit_ternary_node(cur_node, global_timestamp, n_max_tmp, tmp_storage_pool);
   } else {
-    /* shouldn't happen */
+    /* This should not happen  */
   }
 }
 
