@@ -13,87 +13,6 @@
 
 #include "libxsmm_cpuid.h"
 
-/** https://github.com/intel/Immintrin-debug */
-#if !defined(LIBXSMM_INTRINSICS_DEBUG) && 0
-# define LIBXSMM_INTRINSICS_DEBUG
-#endif
-#if defined(LIBXSMM_INTRINSICS_DEBUG)
-# include "immintrin_dbg.h"
-# define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
-# if !defined(_mm512_undefined_epi32)
-#   define _mm512_undefined_epi32() _mm512_set1_epi32(0)
-# endif
-# if !defined(_mm256_movemask_epi8)
-# define _mm256_movemask_epi8 mm256_movemask_epi8_dbg
-  LIBXSMM_API_INLINE int mm256_movemask_epi8_dbg(__m256i k) {
-    unsigned char mask[32], i; int result = 0;
-    _mm256_storeu_si256((__m256i*)mask, k);
-    for (i = 0; i < 32; ++i) result |= (mask[i] >> 7) << i;
-    return result;
-  }
-# endif
-# if !defined(_mm512_and_epi32)
-# define _mm512_and_epi32 mm512_and_epi32_dbg
-  LIBXSMM_API_INLINE __m512i mm512_and_epi32_dbg(__m512i a, __m512i b) {
-    uint32_t a16[16], b16[16]; signed char i;
-    _mm512_storeu_si512((__m512i*)a16, a);
-    _mm512_storeu_si512((__m512i*)b16, b);
-    for (i = 0; i < 16; ++i) a16[i] &= b16[i];
-    return _mm512_loadu_si512((const __m512i*)a16);
-  }
-# endif
-# if !defined(_mm512_or_epi32)
-# define _mm512_or_epi32 mm512_or_epi32_dbg
-  LIBXSMM_API_INLINE __m512i mm512_or_epi32_dbg(__m512i a, __m512i b) {
-    uint32_t a16[16], b16[16]; signed char i;
-    _mm512_storeu_si512((__m512i*)a16, a);
-    _mm512_storeu_si512((__m512i*)b16, b);
-    for (i = 0; i < 16; ++i) a16[i] |= b16[i];
-    return _mm512_loadu_si512((const __m512i*)a16);
-  }
-# endif
-# if !defined(_mm512_xor_epi32)
-# define _mm512_xor_epi32 mm512_xor_epi32_dbg
-  LIBXSMM_API_INLINE __m512i mm512_xor_epi32_dbg(__m512i a, __m512i b) {
-    uint32_t a16[16], b16[16]; signed char i;
-    _mm512_storeu_si512((__m512i*)a16, a);
-    _mm512_storeu_si512((__m512i*)b16, b);
-    for (i = 0; i < 16; ++i) a16[i] ^= b16[i];
-    return _mm512_loadu_si512((const __m512i*)a16);
-  }
-# endif
-# if !defined(_mm512_srli_epi32_dbg) /* GCC: avoid conflict w/ built-in */
-# undef _mm512_srli_epi32
-# define _mm512_srli_epi32 mm512_srli_epi32_dbg
-  LIBXSMM_API_INLINE __m512i mm512_srli_epi32_dbg(__m512i a, unsigned int imm8) {
-    uint32_t a16[16]; signed char i;
-    _mm512_storeu_si512((__m512i*)a16, a);
-    for (i = 0; i < 16; ++i) a16[i] >>= imm8;
-    return _mm512_loadu_si512((const __m512i*)a16);
-  }
-# endif
-# if !defined(_mm512_slli_epi32_dbg) /* GCC: avoid conflict w/ built-in */
-# undef _mm512_slli_epi32
-# define _mm512_slli_epi32 mm512_slli_epi32_dbg
-  LIBXSMM_API_INLINE __m512i mm512_slli_epi32_dbg(__m512i a, unsigned int imm8) {
-    uint32_t a16[16]; signed char i;
-    _mm512_storeu_si512((__m512i*)a16, a);
-    for (i = 0; i < 16; ++i) a16[i] <<= imm8;
-    return _mm512_loadu_si512((const __m512i*)a16);
-  }
-# endif
-# if !defined(_mm512_sub_ps)
-# define _mm512_sub_ps mm512_sub_ps_dbg
-  LIBXSMM_API_INLINE __m512 mm512_sub_ps_dbg(__m512 a, __m512 b) {
-    float a16[16], b16[16]; signed char i;
-    _mm512_storeu_ps((__m512*)a16, a);
-    _mm512_storeu_ps((__m512*)b16, b);
-    for (i = 0; i < 16; ++i) a16[i] -= b16[i];
-    return _mm512_loadu_ps((const __m512*)a16);
-  }
-# endif
-#endif
-
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
@@ -119,6 +38,12 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 
+/** https://github.com/intel/Immintrin-debug */
+#if !defined(LIBXSMM_INTRINSICS_DEBUG) && 0
+# define LIBXSMM_INTRINSICS_DEBUG
+/* workarounds removed after LIBXSMM 1.16.1-1.16.1-1268 */
+# include "immintrin_dbg.h"
+#endif
 #if defined(__MIC__) && !defined(LIBXSMM_INTRINSICS_NONE)
 # if !defined(LIBXSMM_STATIC_TARGET_ARCH)
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_TARGET_ARCH_GENERIC
@@ -937,7 +862,6 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 
   return output;
 }
-
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_EXP_PS_2DTS(__m512 in) {
   const __m512 log2_e   = _mm512_set1_ps(1.442695f);
