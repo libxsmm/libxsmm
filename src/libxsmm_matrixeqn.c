@@ -90,6 +90,16 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_dbg_print( libxsmm_matrix_eqn_ele
     } else {
       printf("ERROR: Binary needs left and right child!\n");
     }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    /* we have to push more in this branch */
+    if ( (cur_node->le != NULL) && (cur_node->ri != NULL) && (cur_node->r2 != NULL)) {
+      printf("TERNARY: type=%i, flags=%i, timestamp=%i, out_tmp_id=%i, out_dtype=%i\n", (int)cur_node->info.t_op.type, (int)cur_node->info.t_op.flags, cur_node->visit_timestamp, cur_node->tmp.id, LIBXSMM_TYPESIZE(cur_node->tmp.dtype));
+      libxsmm_matrix_eqn_trv_dbg_print( cur_node->le, indent+tree_print_indent );
+      libxsmm_matrix_eqn_trv_dbg_print( cur_node->ri, indent+tree_print_indent );
+      libxsmm_matrix_eqn_trv_dbg_print( cur_node->r2, indent+tree_print_indent );
+    } else {
+      printf("ERROR: Ternary needs three children!\n");
+    }
   } else {
     /* shouldn't happen */
   }
@@ -522,6 +532,10 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
+    libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
+    libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->r2);
   } else {
     /* shouldn't happen */
   }
