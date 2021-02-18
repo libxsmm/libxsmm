@@ -171,7 +171,11 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
 # define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
 #else
-# define LIBXSMM_ATTRIBUTE_COMMON
+# if defined(_WIN32)
+#   define LIBXSMM_ATTRIBUTE_COMMON LIBXSMM_ATTRIBUTE(selectany)
+# else
+#   define LIBXSMM_ATTRIBUTE_COMMON
+# endif
 # define LIBXSMM_ATTRIBUTE_MALLOC
 # define LIBXSMM_ATTRIBUTE_UNUSED
 # define LIBXSMM_ATTRIBUTE_USED
@@ -322,9 +326,9 @@
 #define LIBXSMM_APIVAR_ALIGNED(DECL, VISIBILITY) LIBXSMM_APIVAR(DECL, VISIBILITY, LIBXSMM_API_DEF)
 #endif
 
-/** Public visible variable declaration (without definition) located in header file. */
+/** Public variable declaration (without definition) located in header file. */
 #define LIBXSMM_APIVAR_PUBLIC(DECL) LIBXSMM_APIVAR(DECL, EXPORT, LIBXSMM_API_EXTERN)
-/** Public visible variable definition (complements declaration) located in source file. */
+/** Public variable definition (complements declaration) located in source file. */
 #define LIBXSMM_APIVAR_PUBLIC_DEF(DECL) LIBXSMM_APIVAR_ALIGNED(DECL, EXPORT)
 /** Private variable declaration (without definition) located in header file. */
 #define LIBXSMM_APIVAR_PRIVATE(DECL) LIBXSMM_APIVAR(DECL, INTERN, LIBXSMM_API_EXTERN)
