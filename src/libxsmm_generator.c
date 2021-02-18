@@ -15,12 +15,10 @@
 #endif
 
 
-#if defined(LIBXSMM_INTRINSICS_AVX512)
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state0[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state1[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
-#endif
 
 /* definition of corresponding variables */
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_ninit);
