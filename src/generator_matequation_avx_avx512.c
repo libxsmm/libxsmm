@@ -295,6 +295,18 @@ libxsmm_matrix_eqn_elem* find_op_at_timestamp(libxsmm_matrix_eqn_elem* cur_node,
         result = find_op_at_timestamp(cur_node->ri, timestamp);
       }
     }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    if (cur_node->visit_timestamp == timestamp) {
+      result = cur_node;
+    } else {
+      result = find_op_at_timestamp(cur_node->le, timestamp);
+      if (result == NULL) {
+        result = find_op_at_timestamp(cur_node->ri, timestamp);
+        if (result == NULL) {
+          result = find_op_at_timestamp(cur_node->r2, timestamp);
+        }
+      }
+    }
   }
   return result;
 }
@@ -317,6 +329,11 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node) {
   }
   if (node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
     if ( node->info.b_op.type  == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+      result = 1;
+    }
+  }
+  if (node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
+    if ( node->info.t_op.type  == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) {
       result = 1;
     }
   }
@@ -354,6 +371,23 @@ LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags) {
   return result;
 }
 
+LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags);
+LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags) {
+  int result = 0;
+  if ( ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_1) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_2) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2) > 0) ) {
+    result = 1;
+  }
+  return result;
+}
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size ) {
   libxsmm_matrix_eqn_elem *root = eqn->eqn_root;
@@ -363,7 +397,8 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
     libxsmm_matrix_eqn_elem *cur_node = find_op_at_timestamp(root, timestamp);
     if ( (timestamp < last_timestamp) && ((is_eqn_node_breaking_point(cur_node) > 0) || (is_eqn_node_breaking_point(cur_node->up) > 0) ||
                                            ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_with_bcast(cur_node->up->info.u_op.flags) > 0)) ||
-                                           ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (is_binary_with_bcast(cur_node->up->info.b_op.flags) > 0))) ) {
+                                           ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (is_binary_with_bcast(cur_node->up->info.b_op.flags) > 0)) ||
+                                           ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (is_ternary_with_bcast(cur_node->up->info.t_op.flags) > 0)))) {
 
       libxsmm_matrix_eqn_elem       *new_arg_node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
       libxsmm_matrix_eqn            *new_eqn      = (libxsmm_matrix_eqn*) malloc( sizeof(libxsmm_matrix_eqn) );
@@ -375,6 +410,7 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
       info.arg.dtype = cur_node->tmp.dtype;
       new_arg_node->le = NULL;
       new_arg_node->ri = NULL;
+      new_arg_node->r2 = NULL;
       new_arg_node->up = cur_node->up;
       new_arg_node->type = LIBXSMM_MATRIX_EQN_NODE_ARG;
       new_arg_node->info = info;
@@ -382,8 +418,10 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
 
       if (cur_node->up->le == cur_node) {
         cur_node->up->le = new_arg_node;
-      } else {
+      } else if (cur_node->up->ri == cur_node)  {
         cur_node->up->ri = new_arg_node;
+      } else {
+        cur_node->up->r2 = new_arg_node;
       }
       new_eqn->eqn_root = cur_node;
       new_eqn->is_constructed = 1;
