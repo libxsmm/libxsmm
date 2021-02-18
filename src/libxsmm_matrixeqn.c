@@ -282,9 +282,9 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_binary_tmp(libxsm
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_ternary_tmp(libxsmm_matrix_eqn_elem* cur_node);
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_ternary_tmp(libxsmm_matrix_eqn_elem* cur_node) {
-  cur_node->tmp.m  = cur_node->le->tmp.m;
-  cur_node->tmp.n  = cur_node->le->tmp.n;
-  cur_node->tmp.ld  = cur_node->le->tmp.ld;
+  cur_node->tmp.m  = cur_node->r2->tmp.m;
+  cur_node->tmp.n  = cur_node->r2->tmp.n;
+  cur_node->tmp.ld  = cur_node->r2->tmp.ld;
   if (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) {
     cur_node->tmp.m  = cur_node->r2->tmp.m;
     cur_node->tmp.n  = cur_node->r2->tmp.n;
@@ -520,7 +520,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
     /* First visit left child tree  */
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
     /* If it is reduce kernel, have to resize tmp size of parent node */
-    if ( (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 )) {
+    if (is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 ) {
       if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
         cur_node->up->tmp.m = cur_node->tmp.n;
         cur_node->up->tmp.n = 1;
@@ -530,12 +530,16 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
       }
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
-    libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
+    libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le);
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->r2);
+    /* FIXME: Add logic to adjust current node tmp size if we have bcast semantics... */
+    cur_node->tmp.m  = cur_node->r2->tmp.m;
+    cur_node->tmp.n  = cur_node->r2->tmp.n;
+    cur_node->tmp.ld  = cur_node->r2->tmp.ld;
   } else {
     /* shouldn't happen */
   }
@@ -796,7 +800,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_print( libxsmm_matrix_eqn_elem* c
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     /* we have to push more in this branch */
     if ( (cur_node->le != NULL) && (cur_node->ri != NULL) && (cur_node->r2 != NULL) ) {
-      printf("BINARY: %i %i (timestamp = %i, tmp = %i)\n", (int)cur_node->info.t_op.type, (int)cur_node->info.t_op.flags, cur_node->visit_timestamp, cur_node->tmp.id );
+      printf("TERNARY: %i %i (timestamp = %i, tmp = %i)\n", (int)cur_node->info.t_op.type, (int)cur_node->info.t_op.flags, cur_node->visit_timestamp, cur_node->tmp.id );
       libxsmm_matrix_eqn_trv_print( cur_node->le, indent+tree_print_indent );
       libxsmm_matrix_eqn_trv_print( cur_node->ri, indent+tree_print_indent );
       libxsmm_matrix_eqn_trv_print( cur_node->r2, indent+tree_print_indent );
@@ -842,7 +846,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_rpn_print( libxsmm_matrix_eqn_ele
       libxsmm_matrix_eqn_trv_rpn_print( cur_node->le );
       libxsmm_matrix_eqn_trv_rpn_print( cur_node->ri );
       libxsmm_matrix_eqn_trv_rpn_print( cur_node->r2 );
-      printf("TERNARY-%i ", (int)cur_node->info.b_op.type );
+      printf("TERNARY-%i ", (int)cur_node->info.t_op.type );
     } else {
       printf("ERROR: Ternary needs left, right and right2 child!\n");
     }

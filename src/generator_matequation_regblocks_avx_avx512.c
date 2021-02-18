@@ -230,7 +230,7 @@ void libxsmm_configure_mateqn_microkernel_loops( libxsmm_matequation_kernel_conf
   max_nm_unrolling = max_nm_unrolling / n_tmp_reg_blocks;
 
   if (max_nm_unrolling < 1) {
-    printf("Can't generate run this code variant, ran out of zmm registers...\n");
+    printf("Can't nenerate run this code variant, ran out of zmm registers...\n");
   }
   if ((max_nm_unrolling < m_trips) && (i_use_m_input_masking == 1)) {
     printf("Can't generate run this code variant, ran out of zmm registers and we want to mask M...\n");
@@ -727,10 +727,10 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block( libxsmm_generated
 
   switch (i_op_type) {
     case LIBXSMM_MELTW_TYPE_TERNARY_MULADD: {
-      ternary_op_instr = LIBXSMM_X86_INSTR_VFMADD231PS;
+      ternary_op_instr = LIBXSMM_X86_INSTR_VFMADD213PS;
     } break;
     case LIBXSMM_MELTW_TYPE_TERNARY_NMULADD: {
-      ternary_op_instr = LIBXSMM_X86_INSTR_VFNMADD231PS;
+      ternary_op_instr = LIBXSMM_X86_INSTR_VFNMADD213PS;
     } break;
     default:;
   }
