@@ -20,6 +20,7 @@
 #include "generator_mateltwise_scale_avx_avx512.h"
 #include "generator_mateltwise_copy_avx_avx512.h"
 #include "generator_mateltwise_cvtfp32bf16_act_avx_avx512.h"
+#include "libxsmm_matrixeqn.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
@@ -564,18 +565,6 @@ void libxsmm_generator_create_reduce_desc_from_unary_desc(libxsmm_descriptor_blo
 
   *out_desc = libxsmm_meltw_descriptor_init(blob, (libxsmm_datatype)LIBXSMM_GETENUM_INP(in_desc->datatype), (libxsmm_datatype)LIBXSMM_GETENUM_OUT(in_desc->datatype),
       in_desc->m, in_desc->n, in_desc->ldi, in_desc->ldo, (unsigned short)reduce_flags, 0, LIBXSMM_MELTW_OPERATION_REDUCE);
-}
-
-LIBXSMM_API_INTERN
-int is_unary_opcode_reduce_kernel (unsigned int opcode) {
-  int result = 0;
-  if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
-      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
-      (opcode== LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
-      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
-    result = 1;
-  }
-  return result;
 }
 
 LIBXSMM_API_INTERN

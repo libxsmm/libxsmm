@@ -373,22 +373,6 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
       info.arg.ld = cur_node->tmp.ld;
       info.arg.in_pos = -(cur_node->tmp.id + 1);
       info.arg.dtype = cur_node->tmp.dtype;
-
-      /* If it is reduce kernel, have to resize tmp size of parent node and new arg info */
-      if ( (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 )) {
-        if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
-          cur_node->up->tmp.m = cur_node->tmp.n;
-          cur_node->up->tmp.n = 1;
-          cur_node->up->tmp.ld = cur_node->tmp.n;
-          info.arg.m = cur_node->tmp.n;
-          info.arg.n = 1;
-          info.arg.ld = cur_node->tmp.n;
-        } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
-          cur_node->up->tmp.n = 1;
-          info.arg.n = 1;
-        }
-      }
-
       new_arg_node->le = NULL;
       new_arg_node->ri = NULL;
       new_arg_node->up = cur_node->up;
@@ -410,68 +394,6 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
     }
   }
 }
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *current_timestamp ) {
-  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
-    /* Do not increase the timestamp, this node is just an arg so it's not part of the execution */
-    cur_node->visit_timestamp = -1;
-  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
-    libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
-    cur_node->visit_timestamp = *current_timestamp;
-    *current_timestamp = *current_timestamp + 1;
-
-    /* If it is reduce kernel, have to resize tmp size of parent node */
-    if ( is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 ) {
-      if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
-        cur_node->up->tmp.m = cur_node->tmp.n;
-        cur_node->up->tmp.n = 1;
-        cur_node->up->tmp.ld = cur_node->tmp.n;
-      } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
-        cur_node->up->tmp.n = 1;
-      }
-    }
-  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
-    if (cur_node->le->reg_score >= cur_node->ri->reg_score) {
-      libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
-      libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
-    } else {
-      libxsmm_generator_assign_new_timestamp( cur_node->ri, current_timestamp );
-      libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
-    }
-    cur_node->visit_timestamp = *current_timestamp;
-    *current_timestamp = *current_timestamp + 1;
-  } else {
-    /* shouldn't happen */
-  }
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_assign_timestamps(libxsmm_matrix_eqn *eqn) {
-  libxsmm_blasint timestamp = 0;
-  libxsmm_generator_assign_new_timestamp(eqn->eqn_root, &timestamp );
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_reoptimize_eqn(libxsmm_matrix_eqn *eqn) {
-  libxsmm_blasint max_reg_score = 0, global_timestamp = 0, i = 0;
-  libxsmm_blasint *tmp_storage_pool = NULL, out_tmp_id = 0;
-  libxsmm_matrix_eqn_assign_reg_scores( eqn->eqn_root );
-  max_reg_score = eqn->eqn_root->reg_score;
-  tmp_storage_pool = (libxsmm_blasint*) malloc(max_reg_score * sizeof(libxsmm_blasint));
-  out_tmp_id = eqn->eqn_root->tmp.id;
-  if (tmp_storage_pool == NULL) {
-    fprintf( stderr, "Tmp storage allocation array failed...\n" );
-    return;
-  } else {
-    for (i = 0; i < max_reg_score; i++) {
-      tmp_storage_pool[i] = 0;
-    }
-  }
-  libxsmm_matrix_eqn_create_exec_plan( eqn->eqn_root, &global_timestamp, max_reg_score, tmp_storage_pool );
-  eqn->eqn_root->tmp.id = out_tmp_id;
-}
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
