@@ -129,19 +129,8 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
     libxsmm_datatype in_precision = LIBXSMM_DATATYPE_F32;
 
     /* Find input precision of op */
-    if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
-      if (cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
-        in_precision = cur_op->le->info.arg.dtype;
-      } else {
-        in_precision = cur_op->le->tmp.dtype;
-      }
-    } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
-      if (cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
-        in_precision = cur_op->le->info.arg.dtype;
-      } else {
-        in_precision = cur_op->le->tmp.dtype;
-      }
-    }
+    in_precision = cur_op->le->tmp.dtype;
+
     /* Find sibling if applicable. If it is an Arg, set output precision to  that precision... */
     if (timestamp == last_timestamp) {
       out_precision = (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);
@@ -152,7 +141,8 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
     /* printf("Node at timestamp %d has input precision %d and  output precision %d\n", timestamp, libxsmm_typesize(in_precision), libxsmm_typesize(out_precision)); */
 #endif
 
-    if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)) {
+    if (((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)) ||
+        ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL))) {
 #if 0
       libxsmm_blasint m = 0, n = 0, k = 0, lda = 0, ldb = 0, ldc = 0, alpha = 1, beta = 0, prefetch = 0, gemm_flags = LIBXSMM_FLAGS;
       m = cur_op->tmp.m;

@@ -166,7 +166,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     if ( (cur_node->le != NULL) && (cur_node->ri != NULL) && (cur_node->r2 != NULL) ) {
-      int use_r2_as_output = ((cur_node->cur_node->info.t_op.flags & LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT) > 0) ? 1 : 0;
+      int use_r2_as_output = ((cur_node->info.t_op.flags & LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT) > 0) ? 1 : 0;
       libxsmm_matrix_eqn_assign_reg_scores( cur_node->le );
       libxsmm_matrix_eqn_assign_reg_scores( cur_node->ri );
       libxsmm_matrix_eqn_assign_reg_scores( cur_node->r2 );
@@ -384,7 +384,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_binary_node(libxsmm_m
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool);
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool) {
   /* Assign timestamp and propagate info for n_args/max_tmp_size  */
-  int use_r2_as_output = ((cur_node->cur_node->info.t_op.flags & LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT) > 0) ? 1 : 0;
+  int use_r2_as_output = ((cur_node->info.t_op.flags & LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT) > 0) ? 1 : 0;
   cur_node->visit_timestamp = *global_timestamp;
   *global_timestamp = *global_timestamp + 1;
   cur_node->n_args = cur_node->le->n_args + cur_node->ri->n_args + cur_node->r2->n_args;
