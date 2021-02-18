@@ -23,6 +23,7 @@
 #define BINARY_OP_POOL 1
 #define LEFT 0
 #define RIGHT 1
+#define RIGHT2 2
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,

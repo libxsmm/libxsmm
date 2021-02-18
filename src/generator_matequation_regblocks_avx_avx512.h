@@ -111,7 +111,15 @@ void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block( libxsmm_generated_
                                                  unsigned int                            i_m_blocking,
                                                  unsigned int                            i_n_blocking );
 
-
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block( libxsmm_generated_code*    io_generated_code,
+                                                 libxsmm_matequation_kernel_config*      i_meqn_micro_kernel_config,
+                                                 libxsmm_meltw_ternary_type              i_op_type,
+                                                 unsigned int                            i_left_reg_block_id,
+                                                 unsigned int                            i_right_reg_block_id,
+                                                 unsigned int                            i_dst_reg_block_id,
+                                                 unsigned int                            i_m_blocking,
+                                                 unsigned int                            i_n_blocking );
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*                    io_generated_code,
                                                  libxsmm_loop_label_tracker*             io_loop_label_tracker,
@@ -167,6 +175,9 @@ libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags fla
 
 LIBXSMM_API_INTERN
 libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side);
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_meltw_ternary_flags flags, unsigned int side);
 
 LIBXSMM_API_INTERN
 void get_parent_bcast_info(libxsmm_matrix_eqn_elem* cur_node);

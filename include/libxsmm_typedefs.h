@@ -426,7 +426,8 @@ typedef enum libxsmm_meltw_ternary_type {
   LIBXSMM_MELTW_TYPE_TERNARY_NONE        =  0,
   LIBXSMM_MELTW_TYPE_TERNARY_MULADD      =  1,
   LIBXSMM_MELTW_TYPE_TERNARY_MATMUL      =  2,
-  LIBXSMM_MELTW_TYPE_TERNARY_BLEND       =  3
+  LIBXSMM_MELTW_TYPE_TERNARY_BLEND       =  3,
+  LIBXSMM_MELTW_TYPE_TERNARY_NMULADD     =  4
 } libxsmm_meltw_ternary_type;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
