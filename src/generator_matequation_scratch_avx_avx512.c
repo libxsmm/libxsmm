@@ -81,7 +81,7 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
           i_micro_kernel_config->alu_mov_instruction,
           temp_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          cur_node->info.arg.in_pos*8,
+          cur_node->info.arg.in_pos*16,
           temp_reg,
           0 );
     } else {

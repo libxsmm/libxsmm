@@ -308,15 +308,15 @@ inline void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout,
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
-  void  *arg_array[1];
-  eqn_param.in_ptrs = (const void**)arg_array;
+  libxsmm_matrix_arg  arg_array[1];
+  eqn_param.inputs = arg_array;
   for (s2 = 0; s2 < S2; s2++) {
     float tmp[S1][S3];
-    arg_array[0] = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
-    eqn_param.out_ptr = &tmp[0][0];
+    arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
+    eqn_param.output.primary = &tmp[0][0];
     func0(&eqn_param);
-    arg_array[0] = &tmp[0][0];
-    eqn_param.out_ptr = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
+    arg_array[0].primary = &tmp[0][0];
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
     func1(&eqn_param);
   }
 }
@@ -326,15 +326,15 @@ inline void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
-  void  *arg_array[1];
-  eqn_param.in_ptrs = (const void**)arg_array;
+  libxsmm_matrix_arg  arg_array[1];
+  eqn_param.inputs = arg_array;
   for (s2 = 0; s2 < S2; s2++) {
     float tmp[S1][S3];
-    arg_array[0] = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
-    eqn_param.out_ptr = &tmp[0][0];
+    arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
+    eqn_param.output.primary = &tmp[0][0];
     func0(&eqn_param);
-    arg_array[0] = &tmp[0][0];
-    eqn_param.out_ptr = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
+    arg_array[0].primary = &tmp[0][0];
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
     func1(&eqn_param);
   }
 }
@@ -345,16 +345,16 @@ inline void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
-  void  *arg_array[2];
-  eqn_param.in_ptrs = (const void**)arg_array;
+  libxsmm_matrix_arg arg_array[2];
+  eqn_param.inputs = arg_array;
   for (s2 = 0; s2 < S2; s2++) {
     float tmp[S1][S3];
-    arg_array[0] = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
-    arg_array[1] = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
-    eqn_param.out_ptr = &tmp[0][0];
+    arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
+    arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
+    eqn_param.output.primary = &tmp[0][0];
     func0(&eqn_param);
-    arg_array[0] = &tmp[0][0];
-    eqn_param.out_ptr = &LIBXSMM_VLA_ACCESS(3, ginp, 0, s2, 0, S2, S3);
+    arg_array[0].primary = &tmp[0][0];
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, ginp, 0, s2, 0, S2, S3);
     func1(&eqn_param);
   }
 }
@@ -365,16 +365,16 @@ inline void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, flo
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
-  void  *arg_array[2];
-  eqn_param.in_ptrs = (const void**)arg_array;
+  libxsmm_matrix_arg arg_array[2];
+  eqn_param.inputs = arg_array;
   for (s2 = 0; s2 < S2; s2++) {
     float tmp[S1][S3];
-    arg_array[0] = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
-    arg_array[1] = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
-    eqn_param.out_ptr = &tmp[0][0];
+    arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
+    arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
+    eqn_param.output.primary = &tmp[0][0];
     func0(&eqn_param);
-    arg_array[0] = &tmp[0][0];
-    eqn_param.out_ptr = &LIBXSMM_VLA_ACCESS(3, ginp, 0, s2, 0, S2, S3);
+    arg_array[0].primary = &tmp[0][0];
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, ginp, 0, s2, 0, S2, S3);
     func1(&eqn_param);
   }
 }
@@ -386,8 +386,8 @@ int main( int argc, char* argv[] ) {
   unsigned long long l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
-  float *inp, *out, *eqn_out, *arg_array[1], *gout, *cache_fl, sum = 0.0;
-  libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_eqn_out, *bf16_arg_array[1];
+  float *inp, *out, *eqn_out, *gout, *cache_fl, sum = 0.0;
+  libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_eqn_out;
   int S1 = 64;
   int S2 = 64;
   int S3 = 64;
@@ -438,9 +438,6 @@ int main( int argc, char* argv[] ) {
   for (i = 0; i < 1024 * 1024; i++ ) {
     cache_fl[i] = (float)libxsmm_rng_f64();
   }
-
-  arg_array[0] = inp;
-  bf16_arg_array[0] = bf16_inp;
 
   /* Create MatEq for fwd softmax */
   tmp_ld = S3;

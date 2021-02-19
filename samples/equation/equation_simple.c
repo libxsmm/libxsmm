@@ -133,8 +133,10 @@ int main( int argc, char* argv[] ) {
   unsigned long long l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
-  float *arg0, *arg1, *arg2, *arg3, *out, *eqn_out, *arg_array[4];
-  libxsmm_bfloat16 *bf16_arg0, *bf16_arg1, *bf16_arg2, *bf16_arg3, *bf16_out, *bf16_eqn_out, *bf16_arg_array[4];
+  float *arg0, *arg1, *arg2, *arg3, *out, *eqn_out;
+  libxsmm_matrix_arg arg_array[4];
+  libxsmm_bfloat16 *bf16_arg0, *bf16_arg1, *bf16_arg2, *bf16_arg3, *bf16_out, *bf16_eqn_out;
+  libxsmm_matrix_arg bf16_arg_array[4];
   int M = 64;
   int N = 64;
   int ld = 64;
@@ -197,15 +199,15 @@ int main( int argc, char* argv[] ) {
     }
   }
 
-  arg_array[0] = arg0;
-  arg_array[1] = arg1;
-  arg_array[2] = arg2;
-  arg_array[3] = arg3;
+  arg_array[0].primary = arg0;
+  arg_array[1].primary = arg1;
+  arg_array[2].primary = arg2;
+  arg_array[3].primary = arg3;
 
-  bf16_arg_array[0] = bf16_arg0;
-  bf16_arg_array[1] = bf16_arg1;
-  bf16_arg_array[2] = bf16_arg2;
-  bf16_arg_array[3] = bf16_arg3;
+  bf16_arg_array[0].primary = bf16_arg0;
+  bf16_arg_array[1].primary = bf16_arg1;
+  bf16_arg_array[2].primary = bf16_arg2;
+  bf16_arg_array[3].primary = bf16_arg3;
 
 
 #if 0
@@ -261,14 +263,14 @@ int main( int argc, char* argv[] ) {
   func0 = libxsmm_dispatch_matrix_eqn( M, N, &ld, out_dt, my_eqn0 );
 
   if ( in_dt == LIBXSMM_DATATYPE_F32 ) {
-    eqn_param.in_ptrs = (const void**)arg_array;
+    eqn_param.inputs = arg_array;
   } else {
-    eqn_param.in_ptrs = (const void**)bf16_arg_array;
+    eqn_param.inputs = bf16_arg_array;
   }
   if ( out_dt == LIBXSMM_DATATYPE_F32 ) {
-    eqn_param.out_ptr = eqn_out;
+    eqn_param.output.primary = eqn_out;
   } else {
-   eqn_param.out_ptr = bf16_eqn_out;
+   eqn_param.output.primary  = bf16_eqn_out;
   }
   func0(&eqn_param);
 #endif
