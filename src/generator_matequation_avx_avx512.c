@@ -416,6 +416,9 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
       new_arg_node->info = info;
       new_arg_node->reg_score = 0;
       new_arg_node->tmp.dtype = cur_node->tmp.dtype;
+      new_arg_node->tmp.m = cur_node->tmp.m;
+      new_arg_node->tmp.n = cur_node->tmp.n;
+      new_arg_node->tmp.ld = cur_node->tmp.ld;
 
       if (cur_node->up->le == cur_node) {
         cur_node->up->le = new_arg_node;

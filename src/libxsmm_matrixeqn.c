@@ -517,18 +517,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     /* Do nothing */
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
-    /* First visit left child tree  */
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
-    /* If it is reduce kernel, have to resize tmp size of parent node */
-    if (is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 ) {
-      if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
-        cur_node->up->tmp.m = cur_node->tmp.n;
-        cur_node->up->tmp.n = 1;
-        cur_node->up->tmp.ld = cur_node->tmp.n;
-      } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
-        cur_node->up->tmp.n = 1;
-      }
-    }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le);
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
@@ -536,12 +525,19 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->r2);
-    /* FIXME: Add logic to adjust current node tmp size if we have bcast semantics... */
-    cur_node->tmp.m  = cur_node->r2->tmp.m;
-    cur_node->tmp.n  = cur_node->r2->tmp.n;
-    cur_node->tmp.ld  = cur_node->r2->tmp.ld;
-  } else {
-    /* shouldn't happen */
+  }
+
+  /* If it is reduce kernel, have to resize out tmp */
+  if ( ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) && ( is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 )) {
+    if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
+      cur_node->tmp.m = cur_node->le->tmp.n;
+      cur_node->tmp.n = 1;
+      cur_node->tmp.ld = cur_node->le->tmp.n;
+    } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
+      cur_node->tmp.m = cur_node->le->tmp.m;
+      cur_node->tmp.n = 1;
+      cur_node->tmp.ld = cur_node->le->tmp.ld;
+    }
   }
 }
 

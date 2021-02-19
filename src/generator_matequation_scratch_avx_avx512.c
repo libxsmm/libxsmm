@@ -29,6 +29,38 @@ void libxsmm_generator_matequation_create_binary_descriptor(libxsmm_descriptor_b
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_matequation_create_reduce_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
+  unsigned short reduce_flags = 0;
+
+  if ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
+      (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD;
+  } else if (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX;
+  }
+
+  if ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
+      (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
+      (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
+  }
+
+  if ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
+  }
+
+  if ((cur_op->info.u_op.flags  & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_COLS;
+  } else {
+    reduce_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
+  }
+
+  *desc = libxsmm_meltw_descriptor_init(blob, in_precision, out_precision, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, (unsigned short)reduce_flags, 0, LIBXSMM_MELTW_OPERATION_REDUCE);
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_generated_code*   io_generated_code,
     libxsmm_matequation_kernel_config*                  i_micro_kernel_config,
     libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,
@@ -201,7 +233,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_kernel(meltw_desc->param) > 0)) {
         libxsmm_descriptor_blob   _blob;
         libxsmm_meltw_descriptor  *meltw_reduce_desc = NULL;
-        libxsmm_generator_create_reduce_desc_from_unary_desc( &_blob, meltw_desc, &meltw_reduce_desc);
+        libxsmm_generator_matequation_create_reduce_descriptor(&_blob, cur_op, &meltw_reduce_desc, in_precision, out_precision);
         if ((meltw_reduce_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_ROWS) > 0) {
           libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_reduce_desc );
         } else if ((meltw_reduce_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_COLS) > 0) {
