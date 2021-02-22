@@ -24,8 +24,7 @@
 #endif
 
 #if !defined(LIBXSMM_GEMM_NOJIT_TRANS) && \
-  /* TODO: fully support calling convention */ \
-  (defined(_WIN32) || defined(__CYGWIN__))
+   (!defined(LIBXSMM_XCOPY_JIT) || 0 == (LIBXSMM_XCOPY_JIT & 1))
 # define LIBXSMM_GEMM_NOJIT_TRANS
 #endif
 #if !defined(LIBXSMM_GEMM_KPARALLEL) && 0
