@@ -305,13 +305,13 @@ inline void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, f
 
 inline void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s1, s2, s3;
+  float tmp[S1][S3];
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
   libxsmm_matrix_arg  arg_array[1];
   eqn_param.inputs = arg_array;
   for (s2 = 0; s2 < S2; s2++) {
-    float tmp[S1][S3];
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     eqn_param.output.primary = &tmp[0][0];
     func0(&eqn_param);
@@ -323,13 +323,13 @@ inline void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout,
 
 inline void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s1, s2, s3;
+  float tmp[S1][S3];
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   libxsmm_matrix_arg  arg_array[1];
   eqn_param.inputs = arg_array;
   for (s2 = 0; s2 < S2; s2++) {
-    float tmp[S1][S3];
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     eqn_param.output.primary = &tmp[0][0];
     func0(&eqn_param);
@@ -339,8 +339,10 @@ inline void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
   }
 }
 
+#if 1
 inline void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s1, s2, s3;
+  float tmp[S1][S3];
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
@@ -348,7 +350,6 @@ inline void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
   libxsmm_matrix_arg arg_array[2];
   eqn_param.inputs = arg_array;
   for (s2 = 0; s2 < S2; s2++) {
-    float tmp[S1][S3];
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
     arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
     eqn_param.output.primary = &tmp[0][0];
@@ -361,6 +362,7 @@ inline void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
 
 inline void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgradout, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s1, s2, s3;
+  float tmp[S1][S3];
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
@@ -368,7 +370,6 @@ inline void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, flo
   libxsmm_matrix_arg arg_array[2];
   eqn_param.inputs = arg_array;
   for (s2 = 0; s2 < S2; s2++) {
-    float tmp[S1][S3];
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
     arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
     eqn_param.output.primary = &tmp[0][0];
@@ -378,6 +379,39 @@ inline void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, flo
     func1(&eqn_param);
   }
 }
+#else
+inline void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function funcfoo) {
+  int s1, s2, s3;
+  libxsmm_matrix_eqn_param eqn_param;
+  LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
+  LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
+  LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
+  libxsmm_matrix_arg arg_array[2];
+  eqn_param.inputs = arg_array;
+  for (s2 = 0; s2 < S2; s2++) {
+    arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
+    arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, ginp, 0, s2, 0, S2, S3);
+    func0(&eqn_param);
+  }
+}
+
+inline void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgradout, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function funcfoo) {
+  int s1, s2, s3;
+  libxsmm_matrix_eqn_param eqn_param;
+  LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
+  LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
+  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
+  libxsmm_matrix_arg arg_array[2];
+  eqn_param.inputs = arg_array;
+  for (s2 = 0; s2 < S2; s2++) {
+    arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
+    arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, ginp, 0, s2, 0, S2, S3);
+    func0(&eqn_param);
+  }
+}
+#endif
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3;
@@ -542,6 +576,7 @@ int main( int argc, char* argv[] ) {
   }
 
   /* Create MatEq for bwd softmax */
+#if 1
   tmp_ld = S3;
   ld = S2*S3;
 
@@ -570,6 +605,19 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 1, 0, in_dt );
   func3 = libxsmm_dispatch_matrix_eqn( S3, S1, &ld, LIBXSMM_DATATYPE_F32, my_eqn3 );
+#endif
+#else
+  ld = S2*S3;
+  my_eqn2 = libxsmm_matrix_eqn_create();
+  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn2, LIBXSMM_MELTW_TYPE_TERNARY_NMULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
+  func2 = libxsmm_dispatch_matrix_eqn( S3, S1, &ld, LIBXSMM_DATATYPE_F32, my_eqn2 );
 #endif
 
   if (datatype_mode == 0) {
