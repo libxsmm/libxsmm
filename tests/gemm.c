@@ -26,7 +26,7 @@
 #if !defined(GEMM)
 # define GEMM LIBXSMM_XGEMM_SYMBOL
 #endif
-#if !defined(GEMM2)
+#if !defined(GEMM2) && defined(LIBXSMM_PLATFORM_X86)
 # define GEMM2 LIBXSMM_YGEMM_SYMBOL
 #endif
 #if !defined(SMM)
@@ -55,13 +55,20 @@ int main(void)
   libxsmm_blasint ldc[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3, 1, 4, 8, 4096, 240,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9, 13, 5 };
   OTYPE alpha[]         = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,  1,  1,  1,  1,     1,   1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1,  1, 1 };
   OTYPE beta[]          = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0,    0,   1,     0,  0,  0,  0,  0,     1,   0,   0,   0,   0,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0,  1, 1 };
-#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
+#if defined(LIBXSMM_PLATFORM_X86) && (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
   char transa[] = "NNNTT";
 #else
   char transa[] = "NN";
 #endif
+#if defined(LIBXSMM_PLATFORM_X86)
   char transb[] = "NNTNT";
-  const int begin = 0, end = sizeof(m) / sizeof(*m), i0 = 0, i1 = sizeof(transa) - 1;
+  const int begin = 0;
+#else
+  char transb[] = "NN";
+  const int begin = 4;
+#endif
+  const int end = sizeof(m) / sizeof(*m);
+  const int i0 = 0, i1 = sizeof(transa) - 1;
   libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0, block = 1;
 #if defined(_DEBUG)
   libxsmm_matdiff_info diff;
