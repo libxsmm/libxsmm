@@ -37,9 +37,9 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
         if [ "${ENVSRCF}" ]; then
           VAL=$(echo "${DEF}" | ${SED} "s/declare -x ${ENV}=\(..*\)/\1/")
           if [ "$(echo "${ENV}" | ${SED} -n "/PATH$/p")" ]; then
-            echo "${ENV}=$(echo "${VAL}" | ${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/")" >>"${ENVSRCF}"
+            echo "declare -x ${ENV}=$(echo "${VAL}" | ${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/")" >>"${ENVSRCF}"
           else
-            echo "${ENV}=${VAL}" >>"${ENVSRCF}"
+            echo "declare -x ${ENV}=${VAL}" >>"${ENVSRCF}"
           fi
         fi
         eval "${DEF}"
