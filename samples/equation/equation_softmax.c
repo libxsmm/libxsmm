@@ -419,6 +419,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint i, it, ld, tmp_ld;
   unsigned long long l_start, l_end;
   double l_total = 0, l_total2 = 0;
+  double t_vec = 0, t_tpp = 0;
   libxsmm_matdiff_info norms_out;
   float *inp, *out, *eqn_out, *gout, *cache_fl, sum = 0.0;
   libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_eqn_out;
@@ -575,6 +576,9 @@ int main( int argc, char* argv[] ) {
     printf("Speedup is %.5g\n", l_total/l_total2);
   }
 
+  t_tpp = l_total2;
+  t_vec = l_total;
+
   /* Create MatEq for bwd softmax */
 #if 1
   tmp_ld = S3;
@@ -694,7 +698,15 @@ int main( int argc, char* argv[] ) {
     printf("TPP softmax time  = %.5g\n", ((double)(l_total2)));
     printf("Speedup is %.5g\n", l_total/l_total2);
   }
-  printf("Running sum is %.5f\n", sum);
+  /* printf("Running sum is %.5f\n", sum); */
+
+  t_tpp += l_total2;
+  t_vec += l_total;
+
+
+  printf("\n\n=================================\n");
+  printf("Total Speedup via TPP Matrix equation is %.5g\n", t_vec/t_tpp);
+  printf("=================================\n");
   libxsmm_free(inp);
   libxsmm_free(out);
   libxsmm_free(gout);
