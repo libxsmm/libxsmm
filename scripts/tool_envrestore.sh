@@ -24,7 +24,7 @@ then
   ENVFILE=$1
   if [ -e "${ENVFILE}" ]; then
     shift
-    ENVSRCF=$2
+    ENVSRCF=$1
     if [ "${ENVSRCF}" ]; then
       if [ -e "${ENVSRCF}" ]; then truncate -s0 "${ENVSRCF}"; fi
       shift
