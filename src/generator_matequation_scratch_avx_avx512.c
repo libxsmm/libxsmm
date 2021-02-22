@@ -81,7 +81,7 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
           i_micro_kernel_config->alu_mov_instruction,
           temp_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          cur_node->info.arg.in_pos*8,
+          cur_node->info.arg.in_pos*16,
           temp_reg,
           0 );
     } else {
@@ -225,7 +225,9 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
             temp_reg, (timestamp == last_timestamp) );
         libxsmm_generator_matequation_create_binary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision);
       } else {
-        /* This should not happen */
+        /* This should not happen  */
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+        return;
       }
       /* Configure the unary-binary microkernel */
       libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );

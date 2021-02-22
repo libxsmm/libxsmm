@@ -518,26 +518,35 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
     /* Do nothing */
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
+    /* If it is reduce kernel, have to resize out tmp */
+    if ( is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 ) {
+      if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
+        cur_node->tmp.m = cur_node->le->tmp.n;
+        cur_node->tmp.n = 1;
+        cur_node->tmp.ld = cur_node->le->tmp.n;
+      } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
+        cur_node->tmp.m = cur_node->le->tmp.m;
+        cur_node->tmp.n = 1;
+        cur_node->tmp.ld = cur_node->le->tmp.ld;
+      }
+    } else {
+      cur_node->tmp.m = cur_node->le->tmp.m;
+      cur_node->tmp.n = cur_node->le->tmp.n;
+      cur_node->tmp.ld = cur_node->le->tmp.ld;
+    }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le);
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
+    cur_node->tmp.m = LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m);
+    cur_node->tmp.n = LIBXSMM_MAX(cur_node->le->tmp.n, cur_node->ri->tmp.n);
+    cur_node->tmp.ld = LIBXSMM_MAX(cur_node->le->tmp.ld, cur_node->ri->tmp.ld);
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->r2);
-  }
-
-  /* If it is reduce kernel, have to resize out tmp */
-  if ( ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) && ( is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0 )) {
-    if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
-      cur_node->tmp.m = cur_node->le->tmp.n;
-      cur_node->tmp.n = 1;
-      cur_node->tmp.ld = cur_node->le->tmp.n;
-    } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
-      cur_node->tmp.m = cur_node->le->tmp.m;
-      cur_node->tmp.n = 1;
-      cur_node->tmp.ld = cur_node->le->tmp.ld;
-    }
+    cur_node->tmp.m = LIBXSMM_MAX(cur_node->r2->tmp.m, LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m));
+    cur_node->tmp.n = LIBXSMM_MAX(cur_node->r2->tmp.n, LIBXSMM_MAX(cur_node->le->tmp.n, cur_node->ri->tmp.n));
+    cur_node->tmp.ld = LIBXSMM_MAX( cur_node->r2->tmp.ld, LIBXSMM_MAX(cur_node->le->tmp.ld, cur_node->ri->tmp.ld));
   }
 }
 

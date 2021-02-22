@@ -739,6 +739,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedgroupnorm_
   libxsmm_dnn_fusedgroupnorm_fuse_op fuse_ops;      /* used ops into convolutions */
 } libxsmm_dnn_fusedgroupnorm_desc;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
+  void* primary;
+  void* secondary;
+} libxsmm_matrix_arg;
+
 /** argument struct for matrix-eltwise: copy */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_copy_param {
   const void* in_ptr;     /* input pointer */
@@ -796,6 +801,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_param 
   void* out_ptr_0;        /* output pointer */
   void* out_ptr_1;        /* output pointer */
 } libxsmm_meltw_reduce_param;
+
 
 /** argument struct for matrix-eltwise: reduce */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_cols_idx_param {
@@ -873,8 +879,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_param
 
 /** argument struct for matrix equation */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_param {
-  const void** in_ptrs;     /* input pointers */
-  void* out_ptr;            /* output pointer */
+  const libxsmm_matrix_arg* inputs;      /* array of input args */
+  libxsmm_matrix_arg        output;      /* output arg */
 } libxsmm_matrix_eqn_param;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_gemm_param {
