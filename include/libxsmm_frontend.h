@@ -283,7 +283,7 @@
 # define LIBXSMM_INIT if (2 > libxsmm_ninit) libxsmm_init();
 #endif
 
-/** Map to appropriate BLAS function (or fall-back). The mapping is used, e.g., inside of LIBXSMM_BLAS_XGEMM. */
+/** Map to appropriate BLAS function (or fallback). The mapping is used, e.g., inside of LIBXSMM_BLAS_XGEMM. */
 #define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
 #if (0 != LIBXSMM_BLAS) /* Helper macro to eventually (if defined) call libxsmm_init */
 # if defined(LIBXSMM_INIT_COMPLETED)
@@ -393,7 +393,7 @@
 #endif
 
 /**
- * Execute a specialized function, or use a fall-back code path depending on threshold (macro template).
+ * Execute a specialized function, or use a fallback code path depending on threshold (macro template).
  * LIBXSMM_XGEMM_FALLBACK0 or specialized function: below LIBXSMM_MAX_MNK
  * LIBXSMM_XGEMM_FALLBACK1: above LIBXSMM_MAX_MNK
  */
@@ -526,13 +526,13 @@ LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
 LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
   libxsmm_xmmfunction kernel, const void* a, const void* b, void* c);
 
-/** GEMM_BATCH: fall-back prototype functions served by any compliant LAPACK/BLAS. */
+/** GEMM_BATCH: fallback prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
-/** GEMM: fall-back prototype functions served by any compliant LAPACK/BLAS. */
+/** GEMM: fallback prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float,  gemm));
-/** GEMV: fall-back prototype functions served by any compliant LAPACK/BLAS. */
+/** GEMV: fallback prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float,  gemv));
 /** Helper function to consume arguments when called. */

@@ -39,7 +39,7 @@
  * and subsequently to list LIBXSMM as "broken" on
  * that platform.
  * Note: successful compilation on an unsupported
- * platform is desired, but only fall-back code is
+ * platform is desired, but only fallback code is
  * present at best.
  */
 #if !defined(LIBXSMM_PLATFORM_FORCE) && 0

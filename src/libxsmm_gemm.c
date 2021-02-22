@@ -899,7 +899,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       }
     }
     LIBXSMM_ASSERT(LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) || tm == tn);
-    /* check for non-conforming GEMM parameters (error), and conforming GEMM parameters (fast-path, fall-back) */
+    /* check for non-conforming GEMM parameters (error), and conforming GEMM parameters (fast-path, fallback) */
     if (0 == max_ntasks || 0 == tm || 0 == tn || 0 == tk || 0 != (um % tm) || 0 != (un % tn) || 0 != (uk % tk)) {
       return NULL;
     }
@@ -1274,13 +1274,13 @@ LIBXSMM_API void libxsmm_xgemm(libxsmm_gemm_precision iprec, libxsmm_gemm_precis
     libxsmm_gemm_task(handle, scratch, a, b, c, 0/*tid*/, 1/*ntasks*/);
     libxsmm_free(scratch);
   }
-  else { /* fall-back or error */
+  else { /* fallback or error */
     static int error_once = 0;
-    if (NULL == handle) { /* fall-back */
+    if (NULL == handle) { /* fallback */
       if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM WARNING: XGEMM fall-back code path triggered!\n");
+        fprintf(stderr, "LIBXSMM WARNING: XGEMM fallback code path triggered!\n");
       }
     }
     else if (0 != libxsmm_verbosity && /* library code is expected to be mute */
@@ -1667,7 +1667,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
           }
         }
       }
-      else { /* fall-back */
+      else { /* fallback */
         result = EXIT_FAILURE;
       }
     }
@@ -1686,7 +1686,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
     const uintptr_t vw = (LIBXSMM_X86_AVX512 <= libxsmm_target_archid ? 64 : 32);
     /* assume that all C-matrices are aligned eventually */
     if (0 == LIBXSMM_MOD2((uintptr_t)c, vw)
-#if 0 /* should fall-back in BE */
+#if 0 /* should fallback in BE */
       && LIBXSMM_X86_AVX <= libxsmm_target_archid
 #endif
       && 0 != index_stride)
@@ -1907,7 +1907,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_prec
         }
       }
     }
-    if (EXIT_SUCCESS != result) { /* quiet fall-back */
+    if (EXIT_SUCCESS != result) { /* quiet fallback */
       if (EXIT_SUCCESS == libxsmm_mmbatch_blas(iprec, oprec,
         transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
         index_base, index_stride, stride_a, stride_b, stride_c, batchsize))

@@ -316,7 +316,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         else {
           const int tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 0 < init ? 1 : -1, LIBXSMM_ATOMIC_RELAXED);
           abs_tid = LIBXSMM_ABS(tid) - 1;
-          /* use sign bit to flag enabled fall-back for symbol resolution */
+          /* use sign bit to flag enabled fallback for symbol resolution */
           info.tid = -abs_tid;
         }
         LIBXSMM_ASSERT(0 < abs_tid);
@@ -363,7 +363,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
               NULL != internal_trace_get_symbolname(stacktrace[symbol], info.buffer, 0, 0))
 #   endif
             {
-              /* disable fall-back allowing unresolved symbol names */
+              /* disable fallback allowing unresolved symbol names */
               info.tid = abs_tid; /* make unsigned */
 #   if defined(_WIN32) || defined(__CYGWIN__)
               fname = value->Name;
@@ -371,7 +371,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
               fname = info.buffer;
 #   endif
             }
-            if (NULL == fname && 0 > info.tid) { /* fall-back allowing unresolved symbol names */
+            if (NULL == fname && 0 > info.tid) { /* fallback allowing unresolved symbol names */
 #   if defined(__MINGW32__)
               sprintf(info.buffer, "%p", stacktrace[symbol]);
 #   else
@@ -432,7 +432,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                   LIBXSMM_ASSERT(abs_tid < LIBXSMM_NTHREADS_MAX);
                   internal_trace_symbols[abs_tid] = buffer;
 #   endif
-                  /* use sign bit to flag enabled fall-back for symbol resolution */
+                  /* use sign bit to flag enabled fallback for symbol resolution */
                   ivalue[1] = -abs_tid;
                   if (0 > filter || (abs_tid - 1) == filter) {
                     value = buffer + fdoff;
@@ -486,11 +486,11 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             if (symbol != next && symbol < n && filter_symbol != stacktrace[symbol] &&
               NULL != internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff))
             {
-              /* disable fall-back allowing unresolved symbol names */
+              /* disable fallback allowing unresolved symbol names */
               ivalue[1] = abs_tid; /* make unsigned */
               fname = value;
             }
-            if (NULL == fname && 0 > ivalue[1]) { /* fall-back to symbol address */
+            if (NULL == fname && 0 > ivalue[1]) { /* fallback to symbol address */
               sprintf(value, "0x%llx", (unsigned long long)stacktrace[symbol]);
               fname = value;
             }

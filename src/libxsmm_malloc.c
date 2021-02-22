@@ -849,7 +849,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
 # endif
             *memory = LIBXSMM_ALIGN(head - alloc_size, align_size);
           }
-          else { /* fall-back to local memory allocation */
+          else { /* fallback to local memory allocation */
             const size_t incsize = req_size - LIBXSMM_MIN(pool_size, req_size);
             pool->instance.incsize = LIBXSMM_MAX(pool->instance.incsize, incsize);
 # if (0 != LIBXSMM_SYNC) && defined(LIBXSMM_MALLOC_SCRATCH_JOIN)
@@ -914,7 +914,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
               LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
             }
           }
-          else { /* fall-back to local allocation */
+          else { /* fallback to local allocation */
             LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
             if (0 != libxsmm_verbosity /* library code is expected to be mute */
               && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -932,11 +932,11 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
           }
         }
       }
-      else { /* fall-back to local memory allocation */
+      else { /* fallback to local memory allocation */
         local_size = size;
       }
     }
-    else { /* fall-back to local memory allocation */
+    else { /* fallback to local memory allocation */
       local_size = size;
     }
     if (0 != local_size)
@@ -949,7 +949,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
         && /* library code is expected to be mute */0 != libxsmm_verbosity
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM ERROR: scratch memory fall-back failed!\n");
+        fprintf(stderr, "LIBXSMM ERROR: scratch memory fallback failed!\n");
         LIBXSMM_ASSERT(NULL == *memory);
       }
       if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != caller) {
@@ -1344,7 +1344,7 @@ LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
     }
 # endif /*defined(LIBXSMM_MALLOC_HOOK_IMALLOC)*/
   }
-  else { /* fall-back: potentially recursive */
+  else { /* fallback: potentially recursive */
 # if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD)))
     libxsmm_malloc_fn.memalign.ptr = __libc_memalign;
     libxsmm_malloc_fn.malloc.ptr = __libc_malloc;
@@ -1724,7 +1724,7 @@ LIBXSMM_API_INTERN void* internal_xmalloc(void** ptr, internal_malloc_info_type*
       result = internal_xrealloc(ptr, info, size, realloc, __real_free);
 #endif
     }
-    else { /* fall-back with regular allocation */
+    else { /* fallback with regular allocation */
       result = (NULL == context
         ? malloc_fn.function(size)
         : malloc_fn.ctx_form(size, context));
@@ -1838,7 +1838,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
         if (NULL != buffer) {
           flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select the corresponding deallocation */
         }
-        else if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* fall-back allocation */
+        else if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* fallback allocation */
           buffer = internal_xmalloc(memory, &info, alloc_size, context, malloc_fn, free_fn);
         }
 #else /* !defined(_WIN32) */
@@ -1933,7 +1933,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
 # endif
         }
         else { /* executable buffer requested */
-          static /*LIBXSMM_TLS*/ int entrypoint = -1; /* fall-back allocation method */
+          static /*LIBXSMM_TLS*/ int entrypoint = -1; /* fallback allocation method */
 # if defined(MAP_HUGETLB) && defined(LIBXSMM_MALLOC_HUGE_PAGES)
           LIBXSMM_ASSERT(0 == (MAP_HUGETLB & mflags));
 # endif
@@ -1987,7 +1987,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
           flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
         }
         else { /* allocation failed */
-          if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* ultimate fall-back */
+          if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* ultimate fallback */
             buffer = (NULL != malloc_fn.function
               ? (NULL == context ? malloc_fn.function(alloc_size) : malloc_fn.ctx_form(alloc_size, context))
               : (NULL));
@@ -2264,7 +2264,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 #endif
         }
 #if !defined(_WIN32)
-        else { /* malloc-based fall-back */
+        else { /* malloc-based fallback */
           int mprotect_result;
 # if !defined(LIBXSMM_MALLOC_CRC_OFF) && defined(LIBXSMM_VTUNE) /* check checksum */
 #   if defined(LIBXSMM_MALLOC_CRC_LIGHT)

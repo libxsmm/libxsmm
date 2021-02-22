@@ -123,7 +123,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
             0/*tid*/, 1/*nthreads*/, itypesize, otypesize, batchdesc->flags);
         }
       }
-      else { /* no fall-back */
+      else { /* no fallback */
         /* several reasons to arrive here: try-lock, unsuitable SMM, etc. */
         result = EXIT_FAILURE;
       }
@@ -734,13 +734,13 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 #endif /*defined(_OPENMP)*/
     libxsmm_free(scratch);
   }
-  else { /* fall-back or error */
+  else { /* fallback or error */
     static int error_once = 0;
-    if (NULL == handle) { /* fall-back */
+    if (NULL == handle) { /* fallback */
       if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM WARNING: XGEMM fall-back code path triggered!\n");
+        fprintf(stderr, "LIBXSMM WARNING: XGEMM fallback code path triggered!\n");
       }
     }
     else if (0 != libxsmm_verbosity && /* library code is expected to be mute */
@@ -955,7 +955,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           }
         }
       }
-      else { /* trigger fall-back */
+      else { /* trigger fallback */
         result = EXIT_FAILURE;
       }
       if (EXIT_SUCCESS != result) {
