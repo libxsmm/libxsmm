@@ -396,6 +396,8 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
     libxsmm_matrix_eqn_elem *cur_node = find_op_at_timestamp(root, timestamp);
     if ( (timestamp < last_timestamp) && ((is_eqn_node_breaking_point(cur_node) > 0) || (is_eqn_node_breaking_point(cur_node->up) > 0) ||
+                                           ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_to_scalar(cur_node->info.u_op.type) > 0)) ||
+                                           ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (is_binary_opcode_reduce_to_scalar(cur_node->info.b_op.type) > 0)) ||
                                            ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_with_bcast(cur_node->up->info.u_op.flags) > 0)) ||
                                            ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (is_binary_with_bcast(cur_node->up->info.b_op.flags) > 0)) ||
                                            ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (is_ternary_with_bcast(cur_node->up->info.t_op.flags) > 0)))) {
@@ -522,8 +524,14 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     } else {
       /* For these nodes use strategy via regblocks  */
       /* Re-optimize current tree  */
-      copy_mateqn_desc.m = cur_eqn->eqn_root->tmp.m;
-      copy_mateqn_desc.n = cur_eqn->eqn_root->tmp.n;
+      if (((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.u_op.type) > 0)) ||
+          ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (is_binary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.b_op.type) > 0))) {
+        copy_mateqn_desc.m = cur_eqn->eqn_root->le->tmp.m;
+        copy_mateqn_desc.n = cur_eqn->eqn_root->le->tmp.n;
+      } else {
+        copy_mateqn_desc.m = cur_eqn->eqn_root->tmp.m;
+        copy_mateqn_desc.n = cur_eqn->eqn_root->tmp.n;
+      }
       if (eqn_tree_id < queue_size - 1) {
         copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.ld;
       }

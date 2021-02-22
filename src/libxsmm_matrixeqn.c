@@ -513,6 +513,24 @@ int is_unary_opcode_reduce_kernel (unsigned int opcode) {
   return result;
 }
 
+LIBXSMM_API_INTERN
+int is_unary_opcode_reduce_to_scalar (unsigned int opcode) {
+  int result = 0;
+  if (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+int is_binary_opcode_reduce_to_scalar (unsigned int opcode) {
+  int result = 0;
+  if (opcode == LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD) {
+    result = 1;
+  }
+  return result;
+}
+
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_elem* cur_node ) {
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     /* Do nothing */
@@ -529,6 +547,10 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
         cur_node->tmp.n = 1;
         cur_node->tmp.ld = cur_node->le->tmp.ld;
       }
+    } else if ( is_unary_opcode_reduce_to_scalar(cur_node->info.u_op.type) > 0 ) {
+      cur_node->tmp.m = 1;
+      cur_node->tmp.n = 1;
+      cur_node->tmp.ld = 1;
     } else {
       cur_node->tmp.m = cur_node->le->tmp.m;
       cur_node->tmp.n = cur_node->le->tmp.n;
@@ -537,9 +559,15 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le);
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
-    cur_node->tmp.m = LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m);
-    cur_node->tmp.n = LIBXSMM_MAX(cur_node->le->tmp.n, cur_node->ri->tmp.n);
-    cur_node->tmp.ld = LIBXSMM_MAX(cur_node->le->tmp.ld, cur_node->ri->tmp.ld);
+    if ( is_binary_opcode_reduce_to_scalar(cur_node->info.b_op.type) > 0 ) {
+      cur_node->tmp.m = 1;
+      cur_node->tmp.n = 1;
+      cur_node->tmp.ld = 1;
+    } else {
+      cur_node->tmp.m = LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m);
+      cur_node->tmp.n = LIBXSMM_MAX(cur_node->le->tmp.n, cur_node->ri->tmp.n);
+      cur_node->tmp.ld = LIBXSMM_MAX(cur_node->le->tmp.ld, cur_node->ri->tmp.ld);
+    }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
