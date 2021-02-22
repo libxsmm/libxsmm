@@ -22,7 +22,7 @@ if [ "" != "${GREP}" ] && \
    [ "" != "${TR}" ] && \
    [ "" != "${WC}" ];
 then
-  if [ $(command -v lscpu) ]; then
+  if [ "$(command -v lscpu)" ]; then
     NS=$(lscpu | ${GREP} -m1 "Socket(s)" | ${TR} -d " " | ${CUT} -d: -f2)
     if [ "" = "${NS}" ]; then NS=1; fi
     NC=$((NS*$(lscpu | ${GREP} -m1 "Core(s) per socket" | ${TR} -d " " | ${CUT} -d: -f2)))
@@ -70,4 +70,3 @@ else
   >&2 echo "Error: missing prerequisites!"
   exit 1
 fi
-
