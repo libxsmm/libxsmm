@@ -516,7 +516,7 @@ int is_unary_opcode_reduce_kernel (unsigned int opcode) {
 LIBXSMM_API_INTERN
 int is_unary_opcode_reduce_to_scalar (unsigned int opcode) {
   int result = 0;
-  if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD)) {
+  if (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD) {
     result = 1;
   }
   return result;
@@ -525,7 +525,7 @@ int is_unary_opcode_reduce_to_scalar (unsigned int opcode) {
 LIBXSMM_API_INTERN
 int is_binary_opcode_reduce_to_scalar (unsigned int opcode) {
   int result = 0;
-  if ((opcode == LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD)) {
+  if (opcode == LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD) {
     result = 1;
   }
   return result;
