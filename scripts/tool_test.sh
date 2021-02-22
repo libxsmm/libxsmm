@@ -293,7 +293,7 @@ then
         ENVSTR=${ENV}
       fi
       # print some header if all tests are selected or in case of multi-tests
-      if [ "" = "$1" ] || [ "none" != "${PARTITION}" ] || [ "none" != "${ENV}" ]; then
+      if [[ "none" != "${CONFIG}" && ("" = "$1" || "none" != "${PARTITION}" || "none" != "${ENV}") ]]; then
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
           if [ "${ENVVAL}" ]; then
             echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG}/${ENVVAL})"
