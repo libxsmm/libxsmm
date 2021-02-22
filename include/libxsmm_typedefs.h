@@ -386,8 +386,7 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD   = 19,
   LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD = 20,
   LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX    = 21,
-  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD      = 22,
-  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD = 23
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD      = 22
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -407,7 +406,8 @@ typedef enum libxsmm_meltw_binary_type {
   LIBXSMM_MELTW_TYPE_BINARY_SUB         =  3,
   LIBXSMM_MELTW_TYPE_BINARY_DIV         =  4,
   LIBXSMM_MELTW_TYPE_BINARY_MULADD      =  5,
-  LIBXSMM_MELTW_TYPE_BINARY_MATMUL      =  6
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL      =  6,
+  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD = 7
 } libxsmm_meltw_binary_type;
 
 typedef enum libxsmm_meltw_ternary_flags {
