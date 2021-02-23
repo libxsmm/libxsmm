@@ -57,7 +57,7 @@ else
   export NS=1 NC=1 NT=1 HT=1
 fi
 if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "$(command -v numactl)" ]; then
-  export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
+  export NN=$(numactl -H | ${GREP} "available:" | ${CUT} -d' ' -f2)
 else
   export NN=${NS}
 fi

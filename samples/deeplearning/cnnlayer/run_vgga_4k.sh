@@ -60,7 +60,7 @@ if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ];
     NS=1 NC=1 NT=1 HT=1
   fi
   if [ "$(command -v numactl)" ]; then
-    NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
+    NN=$(numactl -H | ${GREP} "available:" | ${CUT} -d' ' -f2)
   else
     NN=${NS}
   fi
