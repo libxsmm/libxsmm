@@ -21,21 +21,21 @@ TR=$(command -v tr)
 RM=$(command -v rm)
 
 if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
-  if [ "" != "$1" ]    && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] && \
-     [ "" != "${TR}" ] && [ "" != "${GREP}" ]     && [ "" != "${SED}" ]  && \
-     [ "" != "${RM}" ];
+  if [ "$1" ]    && [ "${BASENAME}" ] && [ "${TOOL}" ] && \
+     [ "${TR}" ] && [ "${GREP}" ]     && [ "${SED}" ]  && \
+     [ "${RM}" ];
   then
     HERE=$(cd "$(dirname "$0")" && pwd -P)
     if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
       export TRAVIS_BUILD_DIR=${HERE}/..
     fi
-    if [ "" != "${TESTID}" ]; then
+    if [ "${TESTID}" ]; then
       ID=${TESTID}
     fi
     if [ "" = "${ID}" ]; then
       ID=${COVID}
     fi
-    if [ "" != "${ID}" ]; then
+    if [ "${ID}" ]; then
       RPTNAME=$(${BASENAME} $1)-${KIND}-${ID}
     else
       RPTNAME=$(${BASENAME} $1)-${KIND}
@@ -58,8 +58,8 @@ if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
         YFLT=$(echo "${TOOL_FILTER}" | ${TR} -s " " | ${TR} " " "|")
         MATCH=${FN}
 
-        if [ "" != "${XFLT}" ]; then MATCH=$(echo "${MATCH}" | ${GREP} -Ev ${XFLT}); fi
-        if [ "" = "${YFLT}" ]  || [ "" != "$(echo "${MATCH}" | ${GREP} -E  ${YFLT})" ]; then
+        if [ "${XFLT}" ]; then MATCH=$(echo "${MATCH}" | ${GREP} -Ev ${XFLT}); fi
+        if [ "" = "${YFLT}" ]  || [ "$(echo "${MATCH}" | ${GREP} -E  ${YFLT})" ]; then
           RESULT=${RESULT2}
         fi
       fi

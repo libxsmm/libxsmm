@@ -26,7 +26,7 @@ if [ ! -e ${KEYFILE} ]; then
 fi
 
 # check for any pending replacement which overlays local view of repository
-if [ "" != "$(git replace -l)" ]; then
+if [ "$(git replace -l)" ]; then
   >&2 echo "Error: found pending replacements!"
   >&2 echo "Run: \"git replace -l | xargs -i git replace -d {}\" to cleanup"
   >&2 echo "Run: \"git filter-branch -- --all\" to apply (not recommended!)"
@@ -59,7 +59,7 @@ for KEYWORD in $(cat ${KEYFILE}); do
       LF=true
     done
   done
-  if [ "" != "${LF}" ]; then
+  if [ "${LF}" ]; then
     echo; LF=""
   fi
 done

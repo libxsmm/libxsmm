@@ -66,8 +66,8 @@ if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ];
   fi
 fi
 
-CPUFLAGS=$(if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2-; fi)
-if [ "" != "${GREP}" ] && [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
+CPUFLAGS=$(if [ "${GREP}" ] && [ "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2- || true; fi)
+if [ "${GREP}" ] && [ "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
   if [ "0" != "$((0>NUMA))" ] && [ "0" != "$((NS<NN))" ]; then
     NUMACTL="numactl --preferred=${NS} ${TOOL_COMMAND}"
   elif [ "0" != "$((0<=NUMA && NUMA<NN))" ]; then
@@ -90,7 +90,7 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-if [ "" != "${DATE}" ]; then
+if [ "${DATE}" ]; then
   LOGFILE=$(basename $0 .sh)-$(${DATE} +%Y%m%d-%H%M%S).log
 else
   LOGFILE=$(basename $0 .sh).log
@@ -119,7 +119,7 @@ ${EXE} ${ITERS}  240  135 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} |
 ${EXE} ${ITERS}  240  135 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
 RESULT=$?
 
-if [ "0" = "${RESULT}" ] && [ "" != "${GREP}" ] && [ "" != "${PASTE}" ] && [ "" != "${BC}" ]; then
+if [ "0" = "${RESULT}" ] && [ "${GREP}" ] && [ "${PASTE}" ] && [ "${BC}" ]; then
   echo -n "GFLOPS: "
   echo "$(${GREP} "PERFDUMP" ${LOGFILE} | ${CUT} -d, -f16 | ${PASTE} -sd+ | ${BC})/13" | ${BC} -l
   echo -n "FPS:    "

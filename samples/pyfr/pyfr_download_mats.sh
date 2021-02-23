@@ -18,7 +18,7 @@ DATASET="p1 p2 p3 p4 p5 p6"
 KINDS="hex pri quad tet tri"
 FILES="m0-de m0-sp m132-de m132-sp m3-de m3-sp m460-de m460-sp m6-de m6-sp"
 
-if [ "" != "${MKDIR}" ] && [ "" != "${WGET}" ]; then
+if [ "${MKDIR}" ] && [ "${WGET}" ]; then
   ${MKDIR} -p ${HERE}/mats; cd ${HERE}/mats
   for DATA in ${DATASET}; do
     mkdir ${DATA}; cd ${DATA}

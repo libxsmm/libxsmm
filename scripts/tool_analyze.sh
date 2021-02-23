@@ -16,8 +16,8 @@ SORT=$(command -v sort)
 CXX=$(command -v clang++)
 CC=$(command -v clang)
 
-if [ "" != "${MAKE}" ] && [ "" != "${CXX}" ] && [ "" != "${CC}" ] && \
-   [ "" != "${GREP}" ] && [ "" != "${SORT}" ];
+if [ "${MAKE}" ] && [ "${CXX}" ] && [ "${CC}" ] && \
+   [ "${GREP}" ] && [ "${SORT}" ];
 then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   cd "${HERE}/.."

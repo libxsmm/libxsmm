@@ -13,7 +13,7 @@
 MKTEMP=$(command -v mktemp)
 MV=$(command -v mv)
 
-if [ "" != "${MKTEMP}" ] && [ "" != "${MV}" ]; then
+if [ "${MKTEMP}" ] && [ "${MV}" ]; then
   TEMPLATE=${1/XXXXXX/}.XXXXXX
   TMPFILE=$(${MKTEMP} ${TEMPLATE})
   EXTFILE=${TMPFILE: -6}

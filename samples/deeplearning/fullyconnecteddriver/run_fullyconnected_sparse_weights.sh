@@ -69,8 +69,8 @@ if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ];
   fi
 fi
 
-CPUFLAGS=$(if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2-; fi)
-if [ "" != "${GREP}" ] && [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
+CPUFLAGS=$(if [ "${GREP}" ] && [ "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2- || true; fi)
+if [ "${GREP}" ] && [ "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
   if [ "0" != "$((0>NUMA))" ] && [ "0" != "$((NS<NN))" ]; then
     NUMACTL="numactl --preferred=${NS} ${TOOL_COMMAND}"
   elif [ "0" != "$((0<=NUMA && NUMA<NN))" ]; then

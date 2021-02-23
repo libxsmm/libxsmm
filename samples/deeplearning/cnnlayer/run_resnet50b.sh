@@ -36,38 +36,38 @@ else
   PAD=$7
 fi
 
-if [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "x86_64" = "$(${UNAME} -m)" ]; then
-  if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
+if [ "${UNAME}" ] && [ "${CUT}" ] && [ "x86_64" = "$(${UNAME} -m)" ]; then
+  if [ "${GREP}" ] && [ "${CUT}" ] && [ "${SORT}" ] && [ "${WC}" ] && [ -e /proc/cpuinfo ]; then
     export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
     export NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
     export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
-  elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
+  elif [ "${UNAME}" ] && [ "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
     export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
     export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
     export NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
   fi
-elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "aarch64" = "$(${UNAME} -m)" ]; then
+elif [ "${UNAME}" ] && [ "${CUT}" ] && [ "aarch64" = "$(${UNAME} -m)" ]; then
   export NS=1
   export NC=$(${GREP} "Features" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
   export NT=$NC
 fi
-if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
+if [ "${NC}" ] && [ "${NT}" ]; then
   export HT=$((NT/(NC)))
 else
   export NS=1 NC=1 NT=1 HT=1
 fi
-if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "$(command -v numactl)" ]; then
+if [ "${GREP}" ] && [ "${CUT}" ] && [ "$(command -v numactl)" ]; then
   export NN=$(numactl -H | ${GREP} "available:" | ${CUT} -d' ' -f2)
 else
   export NN=${NS}
 fi
 
-if [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "x86_64" = "$(${UNAME} -m)" ]; then
-  CPUFLAGS=$(if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2-; fi)
+if [ "${UNAME}" ] && [ "${CUT}" ] && [ "x86_64" = "$(${UNAME} -m)" ]; then
+  CPUFLAGS=$(if [ "${GREP}" ] && [ "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2- || true; fi)
 else
   CPUFLAGS=
 fi
-if [ "" != "${GREP}" ] && [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
+if [ "${GREP}" ] && [ "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
   if [ "0" != "$((0>NUMA))" ] && [ "0" != "$((NS<NN))" ]; then
     NUMACTL="numactl --preferred=${NS} ${TOOL_COMMAND}"
   elif [ "0" != "$((0<=NUMA && NUMA<NN))" ]; then

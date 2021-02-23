@@ -16,7 +16,7 @@ CUT=$(command -v cut)
 
 VARIANT=Specialized
 
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   VARIANT=$1
   shift
 fi
@@ -39,7 +39,7 @@ echo "min=${MIN}"
 echo "max=${MAX}"
 
 BC=$(command -v bc)
-if [ "" != "${BC}" ]; then
+if [ "${BC}" ]; then
   AVG=$(echo "$(echo -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
 

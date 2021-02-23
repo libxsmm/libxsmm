@@ -98,11 +98,11 @@ fi
 if [[ $VLEN == "64" ]]
 then
   #on an AVX512 platform we can run natively
-  CPUFLAGS=$(if [ "" != "${GREP}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
-  if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512f)" ]; then
+  CPUFLAGS=$(if [ "${GREP}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
+  if [ "$(echo "${CPUFLAGS}" | ${GREP} -o avx512f)" ]; then
     SDE=
   fi
-  if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o asimd)" ]; then
+  if [ "$(echo "${CPUFLAGS}" | ${GREP} -o asimd)" ]; then
     SDE=
   fi
 else

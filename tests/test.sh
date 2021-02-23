@@ -29,7 +29,7 @@ if [ "" = "$*" ]; then
 else
   TESTS=$*
 fi
-if [ "" != "${TESTS}" ] && [ "" != "$(${GREP} 'BLAS=0' ${HERE}/../.state 2>/dev/null)" ]; then
+if [ "${TESTS}" ] && [ "$(${GREP} 'BLAS=0' ${HERE}/../.state 2>/dev/null)" ]; then
   TESTS=$(echo "${TESTS}" | ${GREP} -v "${TESTS_NEEDBLAS_GREP}")
 fi
 
@@ -40,9 +40,9 @@ if [ "Windows_NT" = "${OS}" ]; then
   LDD=$(command -v cygcheck)
   EXE=.exe
 else
-  if [ "" != "$(command -v ldd)" ]; then
+  if [ "$(command -v ldd)" ]; then
     LDD=ldd
-  elif [ "" != "$(command -v otool)" ]; then
+  elif [ "$(command -v otool)" ]; then
     LDD="otool -L"
   else
     LDD=echo
@@ -61,7 +61,7 @@ for TEST in ${TESTS}; do
   if [ "0" != "$(echo ${TESTS_DISABLED} | ${GREP} -q ${NAME}; echo $?)" ]; then
     cd ${HERE}
     ERROR=$({
-    if [ "" != "$(${LDD} ${HERE}/${NAME}${EXE} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
+    if [ "$(${LDD} ${HERE}/${NAME}${EXE} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
       ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
         DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
         KMP_AFFINITY=scatter,granularity=fine,1 \
