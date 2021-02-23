@@ -1491,6 +1491,8 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     if (0 == strcmp("0", arch)) {
 #if defined(LIBXSMM_PLATFORM_X86)
       target_archid = LIBXSMM_X86_GENERIC;
+#elif defined(LIBXSMM_PLATFORM_AARCH64)
+      target_archid = LIBXSMM_AARCH64_V81;
 #else
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 #endif
@@ -1499,7 +1501,6 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
-#endif
     else if (arch == libxsmm_stristr(arch, "spr") || arch == libxsmm_stristr(arch, "amx")) {
       target_archid = LIBXSMM_X86_AVX512_SPR;
     }
@@ -1541,14 +1542,18 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     {
       target_archid = LIBXSMM_X86_GENERIC;
     }
+#elif defined(LIBXSMM_PLATFORM_AARCH64)
     else if (arch == libxsmm_stristr(arch, "arm") || arch == libxsmm_stristr(arch, "arm64")
           || arch == libxsmm_stristr(arch, "aarch64"))
     {
       target_archid = LIBXSMM_AARCH64_V81;
     }
+#endif
     else if (arch == libxsmm_stristr(arch, "generic")) {
 #if defined(LIBXSMM_PLATFORM_X86)
       target_archid = LIBXSMM_X86_GENERIC;
+#elif defined(LIBXSMM_PLATFORM_AARCH64)
+      target_archid = LIBXSMM_AARCH64_V81;
 #else
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 #endif
