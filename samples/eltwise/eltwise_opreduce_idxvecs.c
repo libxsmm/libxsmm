@@ -167,9 +167,10 @@ int main(int argc, char* argv[])
   }
 
   if (op != OP_COPY) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC;
     if (use_implicit_idx > 0) {
       opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC;
+    } else {
+      opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC;
     }
   }
 
