@@ -166,9 +166,15 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
   }
 
-  opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC;
-  if (use_implicit_idx > 0) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC;
+  if (op != OP_COPY) {
+    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC;
+    if (use_implicit_idx > 0) {
+      opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC;
+    }
+  }
+
+  if ((op == OP_COPY) && (use_implicit_idx > 0)) {
+    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX;
   }
 
   if (use_bf16 == 0) {
@@ -203,9 +209,13 @@ int main(int argc, char* argv[])
   }
   shuffle_array(all_ns, n);
   for (i = 0; i < n_cols_idx; i++) {
-    cols_ind_array[i] = all_ns[i];
+    if ((op == OP_COPY) && (use_implicit_idx > 0)) {
+      cols_ind_array[i] = i;
+    } else {
+      cols_ind_array[i] = all_ns[i];
+    }
   }
-  if (use_implicit_idx > 0) {
+  if ((op != OP_COPY) && (use_implicit_idx > 0)) {
     for (i = 0; i < n_cols_idx; i++) {
       cols_ind_array2[i] = i;
     }
