@@ -1487,11 +1487,17 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
   if (NULL != arch && 0 != *arch) {
     const int jit = atoi(arch);
     if (0 == strcmp("0", arch)) {
+#if defined(LIBXSMM_PLATFORM_X86)
       target_archid = LIBXSMM_X86_GENERIC;
+#else
+      target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
+#endif
     }
+#if defined(LIBXSMM_PLATFORM_X86)
     else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
+#endif
     else if (arch == libxsmm_stristr(arch, "spr") || arch == libxsmm_stristr(arch, "amx")) {
       target_archid = LIBXSMM_X86_AVX512_SPR;
     }
@@ -1521,26 +1527,31 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
     else if (arch == libxsmm_stristr(arch, "wsm") || arch == libxsmm_stristr(arch, "nhm")
        || arch == libxsmm_stristr(arch, "sse4_2") || arch == libxsmm_stristr(arch, "sse4.2")
-       || arch == libxsmm_stristr(arch, "sse4"))
+       || arch == libxsmm_stristr(arch, "sse42")  || arch == libxsmm_stristr(arch, "sse4"))
     {
       target_archid = LIBXSMM_X86_SSE42;
     }
-    else if (arch == libxsmm_stristr(arch, "sse3"))
-    {
+    else if (arch == libxsmm_stristr(arch, "sse3")) {
       target_archid = LIBXSMM_X86_SSE3;
     }
-    else if (arch == libxsmm_stristr(arch, "x86") || arch == libxsmm_stristr(arch, "x64")
-          || arch == libxsmm_stristr(arch, "x86_64") || arch == libxsmm_stristr(arch, "sse2"))
+    else if (arch == libxsmm_stristr(arch, "x86") || arch == libxsmm_stristr(arch, "x86_64")
+          || arch == libxsmm_stristr(arch, "x64") || arch == libxsmm_stristr(arch, "sse2"))
     {
       target_archid = LIBXSMM_X86_GENERIC;
     }
-    else if (arch == libxsmm_stristr(arch, "aarch64"))
+    else if (arch == libxsmm_stristr(arch, "arm") || arch == libxsmm_stristr(arch, "arm64")
+          || arch == libxsmm_stristr(arch, "aarch64"))
     {
       target_archid = LIBXSMM_AARCH64_V81;
     }
-    else if (arch == libxsmm_stristr(arch, "generic")
-          || arch == libxsmm_stristr(arch, "none"))
-    {
+    else if (arch == libxsmm_stristr(arch, "generic")) {
+#if defined(LIBXSMM_PLATFORM_X86)
+      target_archid = LIBXSMM_X86_GENERIC;
+#else
+      target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
+#endif
+    }
+    else if (arch == libxsmm_stristr(arch, "none")) {
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
     }
     else {
