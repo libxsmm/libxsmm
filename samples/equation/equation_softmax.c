@@ -305,7 +305,7 @@ inline void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, f
 
 inline void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s1, s2, s3;
-  float tmp[S1][S3];
+  float tmp[S1][S3] __attribute__ ((aligned (64)));
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
@@ -323,7 +323,7 @@ inline void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout,
 
 inline void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s1, s2, s3;
-  float tmp[S1][S3];
+  float tmp[S1][S3] __attribute__ ((aligned (64)));
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
@@ -342,7 +342,7 @@ inline void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
 #if 1
 inline void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s1, s2, s3;
-  float tmp[S1][S3];
+  float tmp[S1][S3] __attribute__ ((aligned (64)));
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
@@ -362,7 +362,7 @@ inline void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
 
 inline void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgradout, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s1, s2, s3;
-  float tmp[S1][S3];
+  float tmp[S1][S3] __attribute__ ((aligned (64)));
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
