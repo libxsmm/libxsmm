@@ -2488,6 +2488,8 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
   unsigned int use_implicitly_indexed_vecidx = 0;
   unsigned int idx_tsize =  i_mateltwise_desc->n;
   unsigned int in_tsize = 4;
+  unsigned int vecidx_ind_base_param_offset = 8;
+  unsigned int vecidx_in_base_param_offset = 16;
   unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVL;
   int pf_dist = 4, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 1, load_acc = 1;
   unsigned int vstore_instr = 0;
@@ -2577,12 +2579,18 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_n, 0);
   libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JLE, END_LABEL, &l_jump_label_tracker);
 
+
+  if (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY) > 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX) > 0)) {
+    vecidx_ind_base_param_offset = 48;
+    vecidx_in_base_param_offset = 56;
+  }
+
   if (use_implicitly_indexed_vecidx == 0) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        8,
+        vecidx_ind_base_param_offset,
         i_gp_reg_mapping->gp_reg_ind_base,
         0 );
   }
@@ -2591,7 +2599,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      16,
+      vecidx_in_base_param_offset,
       i_gp_reg_mapping->gp_reg_in_base,
       0 );
 

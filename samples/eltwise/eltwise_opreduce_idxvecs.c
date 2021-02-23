@@ -221,8 +221,14 @@ int main(int argc, char* argv[])
     }
   } else {
     shuffle_array(all_ns, n);
-    for (i = 0; i < n_cols_idx; i++) {
-      cols_ind_array2[i] = all_ns[i];
+    if ((op_order == OPORDER_VECIN_VECIDX) && (use_implicit_idx > 0) ) {
+      for (i = 0; i < n_cols_idx; i++) {
+        cols_ind_array2[i] = i;
+      }
+    } else {
+      for (i = 0; i < n_cols_idx; i++) {
+        cols_ind_array2[i] = all_ns[i];
+      }
     }
   }
   sfill_matrix ( inp_matrix, ld_in, m, n );
@@ -268,7 +274,11 @@ int main(int argc, char* argv[])
           }
         }
       } else {
-        op_res = inp_matrix[j * ld_in + i];
+        if (op_order == OPORDER_VECIDX_VECIN) {
+         op_res = inp_matrix[j * ld_in + i];
+        } else {
+         op_res = inp_matrix2[_j * ld_in + i];
+        }
       }
 
       if (scale_op_res == SCALE_OP_RESULT) {
@@ -359,7 +369,11 @@ int main(int argc, char* argv[])
             }
           }
         } else {
-          op_res = inp_matrix[j * ld_in + i];
+          if (op_order == OPORDER_VECIDX_VECIN) {
+           op_res = inp_matrix[j * ld_in + i];
+          } else {
+           op_res = inp_matrix2[_j * ld_in + i];
+          }
         }
 
         if (scale_op_res == SCALE_OP_RESULT) {
