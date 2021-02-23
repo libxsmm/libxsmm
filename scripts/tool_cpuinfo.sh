@@ -16,12 +16,7 @@ CUT=$(command -v cut)
 TR=$(command -v tr)
 WC=$(command -v wc)
 
-if [ "" != "${GREP}" ] && \
-   [ "" != "${SORT}" ] && \
-   [ "" != "${CUT}" ] && \
-   [ "" != "${TR}" ] && \
-   [ "" != "${WC}" ];
-then
+if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ]; then
   if [ "$(command -v lscpu)" ]; then
     NS=$(lscpu | ${GREP} -m1 "Socket(s)" | ${TR} -d " " | ${CUT} -d: -f2)
     if [ "" = "${NS}" ]; then NS=1; fi
@@ -31,18 +26,18 @@ then
     NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
     if [ "" = "${NS}" ] || [ "" = "${NS}" ]; then NS=1; fi
     NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
-    NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
+    NT=$(${GREP} "core id" /proc/cpuinfo  | ${WC} -l | ${TR} -d " ")
   elif [ "Darwin" = "$(uname)" ]; then
-    NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
-    NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
-    NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
+    NS=$(sysctl hw.packages    | ${CUT} -d: -f2 | ${TR} -d " ")
+    NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | ${TR} -d " ")
+    NT=$(sysctl hw.logicalcpu  | ${CUT} -d: -f2 | ${TR} -d " ")
   fi
-  if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
+  if [ "${NC}" ] && [ "${NT}" ]; then
     HT=$((NT/NC))
   else
     NS=1 NC=1 NT=1 HT=1
   fi
-  if [ "" != "$(command -v numactl)" ]; then
+  if [ "$(command -v numactl)" ]; then
     NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
   else
     NN=${NS}
