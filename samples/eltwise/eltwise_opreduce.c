@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define OP_NONE 0
+#define OP_COPY 0
 #define OP_ADD  1
 #define OP_MUL  2
 #define OP_SUB  3
@@ -102,9 +102,9 @@ int main(int argc, char* argv[])
   if ( argc > 9 ) iters       = atoi(argv[9]);
   if ( argc > 10 ) use_bf16    = atoi(argv[10]);
 
-  if (op == OP_NONE) {
-    opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_NONE;
-    sprintf(opname, "NONE");
+  if (op == OP_COPY) {
+    opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY;
+    sprintf(opname, "COPY");
   } else if (op == OP_ADD) {
     opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_ADD;
     sprintf(opname, "ADD");
@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
         vec_in = _vec_in;
       }
 
-      if (op != OP_NONE) {
+      if (op != OP_COPY) {
         if (op == OP_ADD) {
           op_res = inp_matrix[j * ld_in + i] + vec_in[i];
         }
@@ -314,7 +314,7 @@ int main(int argc, char* argv[])
           vec_in = _vec_in;
         }
 
-        if (op != OP_NONE) {
+        if (op != OP_COPY) {
           if (op == OP_ADD) {
             op_res = inp_matrix[j * ld_in + i] + vec_in[i];
           }
