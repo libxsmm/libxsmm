@@ -18,20 +18,33 @@ if [ "" = "${SED}" ]; then
   SED=$(command -v sed)
 fi
 
-if [ "" != "${DIFF}" ] && \
-   [ "" != "${SED}" ];
-then
+if [ "${DIFF}" ] && [ "${SED}" ]; then
   ENVFILE=$1
-  shift
   if [ -e "${ENVFILE}" ]; then
-    # no need to have unique values in ENVDIFF aka "sort -u"
-    ENVDIFF=$(declare -px | ${DIFF} ${ENVFILE} - | ${SED} -n 's/[<>] \(..*\)/\1/p' | ${SED} -n 's/declare -x \(..*\)=..*/\1/p')
-    for ENV in ${ENVDIFF}; do # restore environment
-      ENVVAR=$(${SED} -n "/declare \-x ${ENV}=/p" ${ENVFILE})
-      if [ "" != "${ENVVAR}" ]; then
-        eval ${ENVVAR}
+    shift
+    ENVSRCF=$1
+    if [ "${ENVSRCF}" ]; then
+      if [ -e "${ENVSRCF}" ]; then truncate -s0 "${ENVSRCF}"; fi
+      if [ "" = "${UNIQ}" ] && [ "$(command -v sort)" ]; then UNIQ="| sort -u"; fi
+      if [ "" = "${UNIQ}" ] && [ "$(command -v uniq)" ]; then UNIQ="| uniq"; fi
+      shift
+    fi
+    # no need to have unique values in ENVDIFF in general
+    ENVDIFF="declare -px | ${DIFF} ${ENVFILE} - | ${SED} -n 's/[<>] \(..*\)/\1/p' | ${SED} -n 's/declare -x \(.[^=]*\)=..*/\1/p' ${UNIQ}"
+    for ENV in $(eval "${ENVDIFF}"); do # restore environment
+      DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${ENVFILE}")
+      if [ "${DEF}" ]; then
+        if [ "${ENVSRCF}" ]; then
+          VAL=$(echo "${DEF}" | ${SED} "s/declare -x ${ENV}=\(..*\)/\1/")
+          if [ "$(echo "${ENV}" | ${SED} -n "/PATH$/p")" ]; then
+            echo "declare -x ${ENV}=$(echo "${VAL}" | ${SED} -e "s/^\":*/\"\${${ENV}}:/" -e "s/:*\"$/\"/")" >>"${ENVSRCF}"
+          else
+            echo "declare -x ${ENV}=${VAL}" >>"${ENVSRCF}"
+          fi
+        fi
+        eval "${DEF}"
       else
-        unset ${ENV}
+        unset "${ENV}"
       fi
     done
   else
@@ -42,4 +55,3 @@ else
   >&2 echo "Error: missing prerequisites!"
   exit 1
 fi
-

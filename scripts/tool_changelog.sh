@@ -14,7 +14,7 @@ GREP=$(command -v grep)
 UNIQ=$(command -v uniq)
 GIT=$(command -v git)
 
-if [ "" != "${GREP}"   ] && [ "" != "${UNIQ}"  ] && [ "" != "${GIT}" ];
+if [ "${GREP}"   ] && [ "${UNIQ}"  ] && [ "${GIT}" ];
 then
   LASTRELEASE=$(${GIT} describe --match "[0-9]*" --abbrev=0)
   ${GIT} shortlog ${LASTRELEASE}..HEAD \

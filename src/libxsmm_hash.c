@@ -462,7 +462,7 @@ LIBXSMM_API_INTERN void libxsmm_hash_init(int target_arch)
   }
 #if (LIBXSMM_X86_SSE42 > LIBXSMM_STATIC_TARGET_ARCH)
   else {
-# if !defined(LIBXSMM_INTRINSICS_SSE42)
+# if defined(LIBXSMM_PLATFORM_X86) && !defined(LIBXSMM_INTRINSICS_SSE42)
     static int error_once = 0;
     if (0 == error_once && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
       fprintf(stderr, "LIBXSMM WARNING: unable to access CRC32 instructions due to the compiler used!\n");

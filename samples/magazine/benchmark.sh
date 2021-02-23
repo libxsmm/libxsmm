@@ -48,14 +48,14 @@ RUNS2=$(${SCRT} -1 $((128*128*128)) 46 \
   6, \
   0 0)
 
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   SIZE=$1
   shift
 else
   SIZE=0
 fi
 
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   RUNS=RUNS$1
   shift
 else
