@@ -38,24 +38,32 @@ WC=$(command -v wc)
 TR=$(command -v tr)
 BC=$(command -v bc)
 
-if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
-  export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
-  export NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
-  export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
-elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
-  export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
-  export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
-  export NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
-fi
-if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
-  export HT=$((NT/(NC)))
-else
-  export NS=1 NC=1 NT=1 HT=1
-fi
-if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "$(command -v numactl)" ]; then
-  export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
-else
-  export NN=${NS}
+if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ]; then
+  if [ "$(command -v lscpu)" ]; then
+    NS=$(lscpu | ${GREP} -m1 "Socket(s)" | ${TR} -d " " | ${CUT} -d: -f2)
+    if [ "" = "${NS}" ]; then NS=1; fi
+    NC=$((NS*$(lscpu | ${GREP} -m1 "Core(s) per socket" | ${TR} -d " " | ${CUT} -d: -f2)))
+    NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
+  elif [ -e /proc/cpuinfo ]; then
+    NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
+    if [ "" = "${NS}" ] || [ "" = "${NS}" ]; then NS=1; fi
+    NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
+    NT=$(${GREP} "core id" /proc/cpuinfo  | ${WC} -l | ${TR} -d " ")
+  elif [ "Darwin" = "$(uname)" ]; then
+    NS=$(sysctl hw.packages    | ${CUT} -d: -f2 | ${TR} -d " ")
+    NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | ${TR} -d " ")
+    NT=$(sysctl hw.logicalcpu  | ${CUT} -d: -f2 | ${TR} -d " ")
+  fi
+  if [ "${NC}" ] && [ "${NT}" ]; then
+    HT=$((NT/NC))
+  else
+    NS=1 NC=1 NT=1 HT=1
+  fi
+  if [ "$(command -v numactl)" ]; then
+    NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
+  else
+    NN=${NS}
+  fi
 fi
 
 CPUFLAGS=$(if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2-; fi)
