@@ -115,9 +115,7 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
   } else {
     libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, cur_node->tmp.id * 3 * i_micro_kernel_config->tmp_size, temp_reg);
   }
-  if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_kernel(cur_node->info.u_op.type) > 0)) {
-    libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1, temp_reg );
-  } else if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
+  if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
     libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR3, temp_reg );
   } else {
     libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR6, temp_reg );

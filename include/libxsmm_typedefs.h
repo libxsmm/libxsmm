@@ -802,8 +802,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_act_cvtfp32bf
 /** argument struct for matrix-eltwise: reduce */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_param {
   const void* in_ptr;     /* input pointer */
+  const void* in_ptr_s;
+  const void* in_ptr_t;
   void* out_ptr_0;        /* output pointer */
+  void* out_ptr_0_s;
+  void* out_ptr_0_t;
   void* out_ptr_1;        /* output pointer */
+  void* out_ptr_1_s;
+  void* out_ptr_1_t;
 } libxsmm_meltw_reduce_param;
 
 /** argument struct for matrix-eltwise: reduce */
