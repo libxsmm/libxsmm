@@ -806,7 +806,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_param 
   void* out_ptr_1;        /* output pointer */
 } libxsmm_meltw_reduce_param;
 
-
 /** argument struct for matrix-eltwise: reduce */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_cols_idx_param {
   unsigned long long n;

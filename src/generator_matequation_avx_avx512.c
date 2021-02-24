@@ -46,32 +46,55 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
    *
    *      Return address                            <-- RBP+8
    *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr2                         <-- RBP-8
-   *      Param_struct_ptr1                         <-- RBP-16
-   *      Param_struct_ptr0                         <-- RBP-24
-   *      Scratch ptr in stack (to be filled)       <-- RBP-32
-   *      Address scratch ptrin stack (to be filled)<-- RBP-40
-   *      Saved equation output ptr                 <-- RBP-48
-   *      Placeholder for stack var                 <-- RBP-56
-   *      Placeholder for stack var                 <-- RBP-64
-   *      Placeholder for stack var                 <-- RBP-72
-   *      Placeholder for stack var                 <-- RBP-80
+   *      Param_struct_ptr11                        <-- RBP-8
+   *      Param_struct_ptr10                        <-- RBP-16
+   *      Param_struct_ptr9                         <-- RBP-24
+   *      Param_struct_ptr8                         <-- RBP-32
+   *      Param_struct_ptr7                         <-- RBP-40
+   *      Param_struct_ptr6                         <-- RBP-48
+   *      Param_struct_ptr5                         <-- RBP-56
+   *      Param_struct_ptr4                         <-- RBP-64
+   *      Param_struct_ptr3                         <-- RBP-72
+   *      Param_struct_ptr2                         <-- RBP-80
+   *      Param_struct_ptr1                         <-- RBP-88
+   *      Param_struct_ptr0                         <-- RBP-96
+   *      Scratch ptr in stack (to be filled)       <-- RBP-104
+   *      Address scratch ptrin stack (to be filled)<-- RBP-112
+   *      Saved equation output ptr                 <-- RBP-120
    *
    * * */
 
   switch ( stack_var ) {
-    case LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR0:
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0:
+      return -96;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1:
+      return -88;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR2:
+      return -80;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR3:
+      return -72;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR4:
+      return -64;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR5:
+      return -56;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR6:
+      return -48;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR7:
+      return -40;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR8:
+      return -32;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9:
       return -24;
-    case LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR1:
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10:
       return -16;
-    case LIBXSMM_MEQN_STACK_VAR_UNARY_BINARY_PARAM_STRUCT_PTR2:
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11:
       return -8;
     case LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR:
-      return -32;
+      return -104;
     case LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR:
-      return -40;
+      return -112;
     case LIBXSMM_MEQN_STACK_VAR_OUT_PTR:
-      return -48;
+      return -120;
     default:
       return 0;
   }
@@ -150,22 +173,27 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
   i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 80 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 120 );
 
-  /* The stack now looks like this:
+  /* The stack at exit of setup looks like this:
    *
    *      Return address                            <-- RBP+8
    *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr2                         <-- RBP-8
-   *      Param_struct_ptr1                         <-- RBP-16
-   *      Param_struct_ptr0                         <-- RBP-24
-   *      Scratch ptr in stack (to be filled)       <-- RBP-32
-   *      Address scratch ptrin stack (to be filled)<-- RBP-40
-   *      Saved equation output ptr                 <-- RBP-48
-   *      Placeholder for stack var                 <-- RBP-56
-   *      Placeholder for stack var                 <-- RBP-64
-   *      Placeholder for stack var                 <-- RBP-72
-   *      Placeholder for stack var                 <-- RBP-80
+   *      Param_struct_ptr11                        <-- RBP-8
+   *      Param_struct_ptr10                        <-- RBP-16
+   *      Param_struct_ptr9                         <-- RBP-24
+   *      Param_struct_ptr8                         <-- RBP-32
+   *      Param_struct_ptr7                         <-- RBP-40
+   *      Param_struct_ptr6                         <-- RBP-48
+   *      Param_struct_ptr5                         <-- RBP-56
+   *      Param_struct_ptr4                         <-- RBP-64
+   *      Param_struct_ptr3                         <-- RBP-72
+   *      Param_struct_ptr2                         <-- RBP-80
+   *      Param_struct_ptr1                         <-- RBP-88
+   *      Param_struct_ptr0                         <-- RBP-96
+   *      Scratch ptr in stack (to be filled)       <-- RBP-104
+   *      Address scratch ptrin stack (to be filled)<-- RBP-112
+   *      Saved equation output ptr                 <-- RBP-120
    *
    * * */
 
@@ -181,7 +209,8 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
       /*TODO: Now we allocate tmps with dsize float */
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
       unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
-      scratch_size = tmp_size * n_tmp;
+      tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
+      scratch_size = tmp_size * 3 * n_tmp;
       i_micro_kernel_config->tmp_size = tmp_size;
       /* make scratch size multiple of 64b */
       scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
@@ -190,7 +219,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
     } else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS){
       unsigned int n_args = i_eqn->eqn_root->n_args;
       i_micro_kernel_config->n_args = n_args;
-      addr_scratch_size = n_args * 8;
+      addr_scratch_size = n_args * 3 * 8;
       /* make addr scratch size multiple of 64b */
       addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, addr_scratch_size );
@@ -199,15 +228,16 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
       unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
       unsigned int n_args = i_eqn->eqn_root->n_args;
+      tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
       i_micro_kernel_config->tmp_size = tmp_size;
       /* make scratch size multiple of 64b */
-      scratch_size = tmp_size * n_tmp;
+      scratch_size = tmp_size * 3 * n_tmp;
       scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
       /* make addr scratch size multiple of 64b */
       i_micro_kernel_config->n_args = n_args;
-      addr_scratch_size = n_args * 8;
+      addr_scratch_size = n_args * 3 * 8;
       addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, addr_scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
@@ -239,20 +269,24 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
    *
    *      Return address                            <-- RBP+8
    *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr2                         <-- RBP-8
-   *      Param_struct_ptr1                         <-- RBP-16
-   *      Param_struct_ptr0                         <-- RBP-24
-   *      Scratch ptr in stack                      <-- RBP-32
-   *      Address scratch ptrin stack               <-- RBP-40
-   *      Saved equation output ptr                 <-- RBP-48
-   *      Placeholder for stack var                 <-- RBP-56
-   *      Placeholder for stack var                 <-- RBP-64
-   *      Placeholder for stack var                 <-- RBP-72
-   *      Placeholder for stack var                 <-- RBP-80
-   *      [ Potentianl  pad for 64b align ]
-   *      Scratch, 64b aligned                      <-- (RBP-32) or (RBP-40) contains this address
+   *      Param_struct_ptr11                        <-- RBP-8
+   *      Param_struct_ptr10                        <-- RBP-16
+   *      Param_struct_ptr9                         <-- RBP-24
+   *      Param_struct_ptr8                         <-- RBP-32
+   *      Param_struct_ptr7                         <-- RBP-40
+   *      Param_struct_ptr6                         <-- RBP-48
+   *      Param_struct_ptr5                         <-- RBP-56
+   *      Param_struct_ptr4                         <-- RBP-64
+   *      Param_struct_ptr3                         <-- RBP-72
+   *      Param_struct_ptr2                         <-- RBP-80
+   *      Param_struct_ptr1                         <-- RBP-88
+   *      Param_struct_ptr0                         <-- RBP-96
+   *      Scratch ptr in stack (to be filled)       <-- RBP-104
+   *      Address scratch ptrin stack (to be filled)<-- RBP-112
+   *      Saved equation output ptr                 <-- RBP-120
+   *      [ Potential  pad for 64b align ]
+   *      Scratch, 64b aligned
    *      Callee-saved registers                    <-- RSP
-   *
    * * */
 }
 
@@ -500,7 +534,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     if (eqn_tree_id == (queue_size - 1)) {
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg);
     } else {
-      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, temp_reg);
+      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * 3 * l_kernel_config.tmp_size, temp_reg);
       copy_mateqn_desc.datatype = cur_eqn->eqn_root->tmp.dtype;
     }
 
