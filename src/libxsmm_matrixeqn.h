@@ -63,12 +63,22 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
 } libxsmm_matrix_eqn_arg;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_tmp_info {
+  libxsmm_blasint  id;
   libxsmm_blasint  m;
   libxsmm_blasint  n;
   libxsmm_blasint  ld;
-  libxsmm_blasint  id;
   libxsmm_datatype dtype;
   libxsmm_matrix_eqn_bcast_type  bcast_type;
+  libxsmm_blasint  m_s;
+  libxsmm_blasint  n_s;
+  libxsmm_blasint  ld_s;
+  libxsmm_datatype dtype_s;
+  libxsmm_matrix_eqn_bcast_type  bcast_type_s;
+  libxsmm_blasint  m_t;
+  libxsmm_blasint  n_t;
+  libxsmm_blasint  ld_t;
+  libxsmm_datatype dtype_t;
+  libxsmm_matrix_eqn_bcast_type  bcast_type_t;
 } libxsmm_matrix_eqn_tmp_info;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_info {
