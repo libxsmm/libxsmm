@@ -745,6 +745,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedgroupnorm_
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
   void* primary;
   void* secondary;
+  void* tertiary;
 } libxsmm_matrix_arg;
 
 /** argument struct for matrix-eltwise: copy */
@@ -860,24 +861,23 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_dropout_param
 
 /** argument struct for matrix-eltwise: unary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_param {
-  const void* in_ptr;     /* input pointer */
-  void* mask_ptr;         /* pointer to load/store mask if needed by the unary type */
-  void* out_ptr;          /* output pointer */
+  libxsmm_matrix_arg in;      /* input  */
+  libxsmm_matrix_arg out;     /* output */
 } libxsmm_meltw_unary_param;
 
 /** argument struct for matrix-eltwise: binary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_param {
-  const void* in_ptr_0;     /* 1st input pointer */
-  const void* in_ptr_1;     /* 2nd input pointer */
-  void* out_ptr;            /* output pointer */
+  libxsmm_matrix_arg in0;     /* 1st input  */
+  libxsmm_matrix_arg in1;     /* 2nd input  */
+  libxsmm_matrix_arg out;     /* output     */
 } libxsmm_meltw_binary_param;
 
 /** argument struct for matrix-eltwise: ternary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_param {
-  const void* in_ptr_0;     /* 1st input pointer */
-  const void* in_ptr_1;     /* 2nd input pointer */
-  const void* in_ptr_2;     /* 3rd input pointer */
-  void* out_ptr;            /* output pointer */
+  libxsmm_matrix_arg in0;     /* 1st input  */
+  libxsmm_matrix_arg in1;     /* 2nd input  */
+  libxsmm_matrix_arg in2;     /* 3rd input  */
+  libxsmm_matrix_arg out;     /* output     */
 } libxsmm_meltw_ternary_param;
 
 /** argument struct for matrix equation */
