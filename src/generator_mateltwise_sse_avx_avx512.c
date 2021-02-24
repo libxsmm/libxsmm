@@ -27,32 +27,33 @@
 
 LIBXSMM_API_INTERN
 int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var stack_var ) {
-  /* The stack at exit of setup looks like this:
-   *
-   *      Return address                            <-- RBP+8
-   *      Entry/saved RBP                           <-- RBP
-   *      Input ptr                                 <-- RBP-8
-   *      Output ptr                                <-- RBP-16
-   *      Mask ptr                                  <-- RBP-24
-   *      Scratch ptr in stack (to be filled)       <-- RBP-32
-   *      Placeholder for stack var                 <-- RBP-40
-   *      Placeholder for stack var                 <-- RBP-48
-   *      Placeholder for stack var                 <-- RBP-56
-   *      Placeholder for stack var                 <-- RBP-64
-   *      Placeholder for stack var                 <-- RBP-72
-   *      Placeholder for stack var                 <-- RBP-80
-   *
-   * * */
-
   switch ( stack_var ) {
-    case LIBXSMM_MELTW_STACK_VAR_INP_PTR:
+    case LIBXSMM_MELTW_STACK_VAR_INP0_PTR0:
       return -8;
-    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR:
+    case LIBXSMM_MELTW_STACK_VAR_INP0_PTR1:
       return -16;
-    case LIBXSMM_MELTW_STACK_VAR_MASK_PTR:
+    case LIBXSMM_MELTW_STACK_VAR_INP0_PTR2:
       return -24;
-    case LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR:
+    case LIBXSMM_MELTW_STACK_VAR_INP1_PTR0:
       return -32;
+    case LIBXSMM_MELTW_STACK_VAR_INP1_PTR1:
+      return -40;
+    case LIBXSMM_MELTW_STACK_VAR_INP1_PTR2:
+      return -48;
+    case LIBXSMM_MELTW_STACK_VAR_INP2_PTR0:
+      return -56;
+    case LIBXSMM_MELTW_STACK_VAR_INP2_PTR1:
+      return -64;
+    case LIBXSMM_MELTW_STACK_VAR_INP2_PTR2:
+      return -72;
+    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR0:
+      return -80;
+    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR1:
+      return -88;
+    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR2:
+      return -96;
+    case LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR:
+      return -104;
     default:
       return 0;
   }
@@ -112,39 +113,12 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
   if (use_stack_vars > 0) {
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 80 );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 104 );
   }
 
   /* Exemplary usage of how to store args to stack if need be  */
   if (save_args_to_stack > 0) {
-    if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_COPY) {
-      if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_COPY_ZERO) == 0) {
-        libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
-            i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, temp_reg, 0 );
-        libxsmm_generator_meltw_setval_stack_var( io_generated_code, LIBXSMM_MELTW_STACK_VAR_INP_PTR, temp_reg );
-      }
-      libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
-          i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, 8, temp_reg, 0 );
-      libxsmm_generator_meltw_setval_stack_var( io_generated_code, LIBXSMM_MELTW_STACK_VAR_OUT_PTR, temp_reg );
-    }
   }
-
-  /* The stack now looks like this:
-   *
-   *      Return address                            <-- RBP+8
-   *      Entry/saved RBP                           <-- RBP
-   *      Input ptr (to be filled)                  <-- RBP-8
-   *      Output ptr (to be filled)                 <-- RBP-16
-   *      Mask ptr (to be filled)                   <-- RBP-24
-   *      Scratch ptr in stack (to be filled)       <-- RBP-32
-   *      Placeholder for stack var                 <-- RBP-40
-   *      Placeholder for stack var                 <-- RBP-48
-   *      Placeholder for stack var                 <-- RBP-56
-   *      Placeholder for stack var                 <-- RBP-64
-   *      Placeholder for stack var                 <-- RBP-72
-   *      Placeholder for stack var                 <-- RBP-80
-   *
-   * * */
 
   if (allocate_scratch > 0) {
     /* TODO: Scratch size is kernel-dependent  */
@@ -169,26 +143,6 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
   }
-
-  /* The stack at exit of setup looks like this:
-   *
-   *      Return address                            <-- RBP+8
-   *      Entry/saved RBP                           <-- RBP
-   *      Input ptr (to be filled)                  <-- RBP-8
-   *      Output ptr (to be filled)                 <-- RBP-16
-   *      Mask ptr (to be filled)                   <-- RBP-24
-   *      Scratch ptr in stack (to be filled)       <-- RBP-32
-   *      Placeholder for stack var                 <-- RBP-40
-   *      Placeholder for stack var                 <-- RBP-48
-   *      Placeholder for stack var                 <-- RBP-56
-   *      Placeholder for stack var                 <-- RBP-64
-   *      Placeholder for stack var                 <-- RBP-72
-   *      Placeholder for stack var                 <-- RBP-80
-   *      [ Potentianl  pad for 64b align ]
-   *      Scratch, 64b aligned                      <-- (RBP-32) contains this address
-   *      Callee-saved registers                    <-- RSP
-   *
-   * * */
 }
 
 LIBXSMM_API_INTERN

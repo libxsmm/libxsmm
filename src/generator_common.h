@@ -1045,10 +1045,19 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
 /* Auxiliary stack variable enumeration for kernels */
 typedef enum libxsmm_meltw_stack_var {
   LIBXSMM_MELTW_STACK_VAR_NONE            =  0,
-  LIBXSMM_MELTW_STACK_VAR_INP_PTR         =  1,
-  LIBXSMM_MELTW_STACK_VAR_OUT_PTR         =  2,
-  LIBXSMM_MELTW_STACK_VAR_MASK_PTR        =  3,
-  LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR     =  4
+  LIBXSMM_MELTW_STACK_VAR_INP0_PTR0       =  1,
+  LIBXSMM_MELTW_STACK_VAR_INP0_PTR1       =  2,
+  LIBXSMM_MELTW_STACK_VAR_INP0_PTR2       =  3,
+  LIBXSMM_MELTW_STACK_VAR_INP1_PTR0       =  4,
+  LIBXSMM_MELTW_STACK_VAR_INP1_PTR1       =  5,
+  LIBXSMM_MELTW_STACK_VAR_INP1_PTR2       =  6,
+  LIBXSMM_MELTW_STACK_VAR_INP2_PTR0       =  7,
+  LIBXSMM_MELTW_STACK_VAR_INP2_PTR1       =  8,
+  LIBXSMM_MELTW_STACK_VAR_INP2_PTR2       =  9,
+  LIBXSMM_MELTW_STACK_VAR_OUT_PTR0        =  10,
+  LIBXSMM_MELTW_STACK_VAR_OUT_PTR1        =  11,
+  LIBXSMM_MELTW_STACK_VAR_OUT_PTR2        =  12,
+  LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR     =  13
 } libxsmm_meltw_stack_var;
 
 typedef enum libxsmm_meqn_stack_var {
