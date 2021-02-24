@@ -26,6 +26,11 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_GENERATOR_GEMM_AMX_JUMP_LABEL_TRACKER_MALLOC)
+# define LIBXSMM_GENERATOR_GEMM_AMX_JUMP_LABEL_TRACKER_MALLOC
+#endif
+
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_header_reduceloop_amx( libxsmm_generated_code*             io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
@@ -1569,7 +1574,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
     }
   }
 
-
 #if 0
   if (i_xgemm_desc->n == 49) {
     n_blocking_info[0].blocking = 19;
@@ -1707,9 +1711,13 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_END = 1;
   unsigned int i;
   unsigned int A_offs = 0, B_offs = 0;
-
+#if defined(LIBXSMM_GENERATOR_GEMM_AMX_JUMP_LABEL_TRACKER_MALLOC)
+  libxsmm_jump_label_tracker *const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
+#else
   libxsmm_jump_label_tracker l_jump_label_tracker;
-  libxsmm_reset_jump_label_tracker(&l_jump_label_tracker);
+  libxsmm_jump_label_tracker *const p_jump_label_tracker = &l_jump_label_tracker;
+#endif
+  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
   l_generator_kloop = libxsmm_generator_gemm_amx_kernel_kloop;
   i_micro_kernel_config->B_offs_trans = 0;
 
@@ -1729,7 +1737,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
       /* Compare actual trip count to the hint value. If equal jump to UNROLL START LABEL*/
       if (i_xgemm_desc->c3 > 0) {
         libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_reduce_count, i_xgemm_desc->c3);
-        libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JNE, NON_UNROLLED_BR_LOOP_LABEL_START, &l_jump_label_tracker);
+        libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JNE, NON_UNROLLED_BR_LOOP_LABEL_START, p_jump_label_tracker);
       }
 
       /* UNROLLED version code is here */
@@ -1816,11 +1824,11 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
       /* End of UNROLLED code is here*/
       /* Jump after non-unrolled code variant */
       if (i_xgemm_desc->c3 > 0) {
-        libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JMP, NON_UNROLLED_BR_LOOP_LABEL_END, &l_jump_label_tracker);
+        libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JMP, NON_UNROLLED_BR_LOOP_LABEL_END, p_jump_label_tracker);
       }
 
       /* NON_UNROLLED_BR_LOOP_LABEL_START */
-      libxsmm_x86_instruction_register_jump_label(io_generated_code, NON_UNROLLED_BR_LOOP_LABEL_START, &l_jump_label_tracker);
+      libxsmm_x86_instruction_register_jump_label(io_generated_code, NON_UNROLLED_BR_LOOP_LABEL_START, p_jump_label_tracker);
       /* This is the reduce loop  */
       libxsmm_generator_gemm_header_reduceloop_amx( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config );
 
@@ -1926,7 +1934,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
       libxsmm_generator_gemm_store_C_amx( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count] );
 
       /* NON_UNROLLED_BR_LOOP_LABEL_END */
-      libxsmm_x86_instruction_register_jump_label(io_generated_code, NON_UNROLLED_BR_LOOP_LABEL_END, &l_jump_label_tracker);
+      libxsmm_x86_instruction_register_jump_label(io_generated_code, NON_UNROLLED_BR_LOOP_LABEL_END, p_jump_label_tracker);
     } else {
       /* Here is the K loop along with the microkernel */
       l_generator_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count], 0, 0, 0);
@@ -1938,6 +1946,10 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
     }
     l_m_count++;
   }
+
+#if defined(LIBXSMM_GENERATOR_GEMM_AMX_JUMP_LABEL_TRACKER_MALLOC)
+  free(p_jump_label_tracker);
+#endif
 }
 
 
