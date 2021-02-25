@@ -106,6 +106,7 @@ void naive_layernorm_bwd(int m, int n, int ld_in, float *dY, float *X, float *me
   }
 }
 
+#if 0
 LIBXSMM_INLINE
 void optimized_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, float *beta, float *sout, float *mean_data, float *rstd_data, libxsmm_meltwfunction_reduce reduce_kernel, libxsmm_meltwfunction_scale scalemean_kernel, libxsmm_meltwfunction_scale scaleout_kernel, float * bias_aux)
 {
@@ -168,12 +169,14 @@ void optimized_layernorm(int m, int n, int ld_in, float *sinp, float *gamma, flo
   scaleout_kernel(&scaleout_params);
 }
 
+#else
 LIBXSMM_INLINE
 void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, float *gamma_data, float *beta_data, float *mean_data, float *rstd_data)
 {
-  int ld = bm, ld_vector = bn;
-  libxsmm_meltw_redu_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
-  libxsmm_meltwfunction_reduce reduce_rows_kernel, reduce_cols_kernel;
+  int ld = bm, ld_vector = bn, _ld;
+  libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltwfunction_unary reduce_rows_kernel, reduce_cols_kernel;
   libxsmm_meltw_scal_flags jit_scale_flags = 0;
   libxsmm_meltwfunction_scale scale_kernel;
   libxsmm_meltw_scal_flags jit_scaleout_flags = 0;
@@ -187,12 +190,10 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
   int nBlocks   = n/bn;
   int mBlocks   = m/bm;
   float *const scratch = (float*)libxsmm_aligned_scratch((2 * n * mBlocks + n) * sizeof(float), 0/*auto-alignment*/);
-  float *sums_ptr     = scratch;
-  float *sums_sq_ptr  = scratch + n * mBlocks;
-  float *aux_bias_ptr = scratch + 2 * n * mBlocks;
+  float *sums_sums_sq_ptr     = scratch;
+  float *aux_bias_ptr         = scratch + 2 * n * mBlocks;
 
-  LIBXSMM_VLA_DECL(3, float, sums,        sums_ptr, mBlocks, bn);
-  LIBXSMM_VLA_DECL(3, float, sums_sq,     sums_sq_ptr, mBlocks, bn);
+  LIBXSMM_VLA_DECL(3, float, sums_sums_sq,sums_sums_sq_ptr, mBlocks, 2*bn);
   LIBXSMM_VLA_DECL(2, float, mean,        mean_data, bn);
   LIBXSMM_VLA_DECL(2, float, rstd,        rstd_data, bn);
   LIBXSMM_VLA_DECL(2, float, gamma,       gamma_data, bm);
@@ -203,10 +204,15 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
   /*libxsmm_barrier *barrier;*/
 
   /* Generate JITED kernels for optimized code */
-  jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
-  reduce_rows_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
-  jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_COLS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
-  reduce_cols_kernel = libxsmm_dispatch_meltw_reduce(bn, mBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
+  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
+  reduce_rows_kernel = libxsmm_dispatch_meltw_unary(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
+  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+  _ld = 2*bn;
+  reduce_cols_kernel = libxsmm_dispatch_meltw_unary(bn, mBlocks, &_ld, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+
   jit_scale_flags = LIBXSMM_MELTW_FLAG_SCALE_ROWS | LIBXSMM_MELTW_FLAG_SCALE_MULT;
   scale_kernel = libxsmm_dispatch_meltw_scale(bn, 1, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_scale_flags, 0);
   jit_scaleout_flags = LIBXSMM_MELTW_FLAG_SCALE_ROWS_COLS | LIBXSMM_MELTW_FLAG_SCALE_MULT | LIBXSMM_MELTW_FLAG_SCALE_ADD_BIAS;
@@ -237,7 +243,7 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
     const int thr_begin_n = (ltid * chunksize_n < work_n) ? (ltid * chunksize_n) : work_n;
     const int thr_end_n = ((ltid + 1) * chunksize_n < work_n) ? ((ltid + 1) * chunksize_n) : work_n;
 
-    libxsmm_meltw_reduce_param reduce_rows_params, reduce_cols_params;;
+    libxsmm_meltw_unary_param reduce_rows_params, reduce_cols_params;
     libxsmm_meltw_scale_param scale_params;
     libxsmm_meltw_scale_param scaleout_params;
 
@@ -246,9 +252,8 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
     for (imin = thr_begin_mn; imin < thr_end_mn; imin++) {
       in = imin / mBlocks;
       im = imin % mBlocks;
-      reduce_rows_params.in_ptr    = &LIBXSMM_VLA_ACCESS(4, X, in, im, 0, 0, mBlocks, bn, bm);
-      reduce_rows_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(3, sums,    in, im, 0, mBlocks, bn);
-      reduce_rows_params.out_ptr_1 = &LIBXSMM_VLA_ACCESS(3, sums_sq, in, im, 0, mBlocks, bn);
+      reduce_rows_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, X, in, im, 0, 0, mBlocks, bn, bm);
+      reduce_rows_params.out.primary   = &LIBXSMM_VLA_ACCESS(3, sums_sums_sq, in, im, 0, mBlocks, 2*bn);
       reduce_rows_kernel(&reduce_rows_params);
     }
 
@@ -257,15 +262,19 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
 
     scale_params.scale_vals_ptr = &reverse_m;
     for (in = thr_begin_n; in < thr_end_n; in++) {
-      reduce_cols_params.in_ptr    = &LIBXSMM_VLA_ACCESS(3, sums,    in, 0, 0, mBlocks, bn);
-      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(2, mean,    in, 0, bn);
+
+      reduce_cols_params.in.primary    = &LIBXSMM_VLA_ACCESS(3, sums_sums_sq, in, 0, 0, mBlocks, 2*bn);
+      reduce_cols_params.out.primary   = &LIBXSMM_VLA_ACCESS(2, mean,    in, 0, bn);
       reduce_cols_kernel(&reduce_cols_params);
+
       scale_params.in_ptr         = &LIBXSMM_VLA_ACCESS(2, mean,    in, 0, bn);
       scale_params.out_ptr        = &LIBXSMM_VLA_ACCESS(2, mean,    in, 0, bn);
       scale_kernel(&scale_params);
-      reduce_cols_params.in_ptr    = &LIBXSMM_VLA_ACCESS(3, sums_sq, in, 0, 0, mBlocks, bn);
-      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(2, rstd,    in, 0, bn);
+
+      reduce_cols_params.in.primary    = &LIBXSMM_VLA_ACCESS(3, sums_sums_sq, in, 0, bn, mBlocks, 2*bn);
+      reduce_cols_params.out.primary   = &LIBXSMM_VLA_ACCESS(2, rstd,    in, 0, bn);
       reduce_cols_kernel(&reduce_cols_params);
+
       scale_params.in_ptr         = &LIBXSMM_VLA_ACCESS(2, rstd,    in, 0, bn);
       scale_params.out_ptr        = &LIBXSMM_VLA_ACCESS(2, rstd,    in, 0, bn);
       scale_kernel(&scale_params);
@@ -325,13 +334,15 @@ void optimized_blocked_layernorm(int m, int n, int bm, int bn, float *data_in, f
 
   libxsmm_free(scratch);
 }
+#endif
 
 LIBXSMM_INLINE
 void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, float *_X, float *_mean, float *_rstd, float *_gamma, float *_dX, float *_dgamma, float *_dbeta)
 {
   int ld = bm, ld_vector = bn;
-  libxsmm_meltw_redu_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
-  libxsmm_meltwfunction_reduce reduce_rows_kernel, reduce_cols_kernel, reduce_cols_kernel2, reduce_cols_kernel3;
+  libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltwfunction_unary reduce_rows_kernel, reduce_cols_kernel, reduce_cols_kernel2, reduce_cols_kernel3;
   int nBlocks   = n/bn;
   int mBlocks   = m/bm;
   float *const scratch = (float*)libxsmm_aligned_scratch((2 * n * mBlocks + 2 * m * nBlocks + 2 * n) * sizeof(float), 0/*auto-alignment*/);
@@ -363,12 +374,14 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
 #endif
 
   /* Generate JITED kernels for optimized code */
-  jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
-  reduce_rows_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
-  jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_COLS | LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
-  reduce_cols_kernel = libxsmm_dispatch_meltw_reduce(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
-  reduce_cols_kernel2 = libxsmm_dispatch_meltw_reduce(bm, nBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
-  reduce_cols_kernel3 = libxsmm_dispatch_meltw_reduce(bn, mBlocks, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, 0);
+  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
+  reduce_rows_kernel = libxsmm_dispatch_meltw_unary(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+
+  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+  reduce_cols_kernel = libxsmm_dispatch_meltw_unary(bm, bn, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+  reduce_cols_kernel2 = libxsmm_dispatch_meltw_unary(bm, nBlocks, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+  reduce_cols_kernel3 = libxsmm_dispatch_meltw_unary(bn, mBlocks, &ld_vector, &ld_vector, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
 
 #if !defined(_OPENMP)
   float *const aux = (float*)libxsmm_aligned_scratch((3 * bm * bn) * sizeof(float), 0/*auto-alignment*/);
@@ -403,7 +416,7 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
     const int thr_begin_m = (ltid * chunksize_m < work_m) ? (ltid * chunksize_m) : work_m;
     const int thr_end_m = ((ltid + 1) * chunksize_m < work_m) ? ((ltid + 1) * chunksize_m) : work_m;
 
-    libxsmm_meltw_reduce_param reduce_rows_params, reduce_cols_params;;
+    libxsmm_meltw_unary_param reduce_rows_params, reduce_cols_params;
 
     for (imin = thr_begin_mn; imin < thr_end_mn; imin++) {
       float *const tmp  = aux + bm*bn * (ltid*3 + 0); /* aux block for db */
@@ -444,20 +457,20 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
 #endif
 
       /* Now perform reductions */
-      reduce_rows_params.in_ptr    = tmp;
-      reduce_rows_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(3, db_aux, in, im, 0, mBlocks, bn);
+      reduce_rows_params.in.primary    = tmp;
+      reduce_rows_params.out.primary = &LIBXSMM_VLA_ACCESS(3, db_aux, in, im, 0, mBlocks, bn);
       reduce_rows_kernel(&reduce_rows_params);
 
-      reduce_rows_params.in_ptr    = tmp2;
-      reduce_rows_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(3, ds_aux, in, im, 0, mBlocks, bn);
+      reduce_rows_params.in.primary    = tmp2;
+      reduce_rows_params.out.primary = &LIBXSMM_VLA_ACCESS(3, ds_aux, in, im, 0, mBlocks, bn);
       reduce_rows_kernel(&reduce_rows_params);
 
-      reduce_cols_params.in_ptr    = (float*)&LIBXSMM_VLA_ACCESS(4, dY, in, im, 0, 0, mBlocks, bn, bm);
-      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(3, dbeta_aux, im, in, 0, nBlocks, bm);
+      reduce_cols_params.in.primary    = (float*)&LIBXSMM_VLA_ACCESS(4, dY, in, im, 0, 0, mBlocks, bn, bm);
+      reduce_cols_params.out.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_aux, im, in, 0, nBlocks, bm);
       reduce_cols_kernel(&reduce_cols_params);
 
-      reduce_cols_params.in_ptr    = tmp3;
-      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(3, dgamma_aux, im, in, 0, nBlocks, bm);
+      reduce_cols_params.in.primary    = tmp3;
+      reduce_cols_params.out.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_aux, im, in, 0, nBlocks, bm);
       reduce_cols_kernel(&reduce_cols_params);
     }
 
@@ -465,20 +478,20 @@ void optimized_blocked_layernorm_bwd(int m, int n, int bm, int bn, float *_dY, f
 
     /* Second level of reductions */
     for (in = thr_begin_n; in < thr_end_n; in++) {
-      reduce_cols_params.in_ptr    = &LIBXSMM_VLA_ACCESS(3, db_aux, in, 0, 0, mBlocks, bn);
-      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(2, db, in, 0, bn);
+      reduce_cols_params.in.primary    = &LIBXSMM_VLA_ACCESS(3, db_aux, in, 0, 0, mBlocks, bn);
+      reduce_cols_params.out.primary = &LIBXSMM_VLA_ACCESS(2, db, in, 0, bn);
       reduce_cols_kernel3(&reduce_cols_params);
-      reduce_cols_params.in_ptr    = &LIBXSMM_VLA_ACCESS(3, ds_aux, in, 0, 0, mBlocks, bn);
-      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(2, ds, in, 0, bn);
+      reduce_cols_params.in.primary    = &LIBXSMM_VLA_ACCESS(3, ds_aux, in, 0, 0, mBlocks, bn);
+      reduce_cols_params.out.primary = &LIBXSMM_VLA_ACCESS(2, ds, in, 0, bn);
       reduce_cols_kernel3(&reduce_cols_params);
     }
 
     for (im = thr_begin_m; im < thr_end_m; im++) {
-      reduce_cols_params.in_ptr    = &LIBXSMM_VLA_ACCESS(3, dbeta_aux, im, 0, 0, nBlocks, bm);
-      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(2, dbeta, im, 0, bm);
+      reduce_cols_params.in.primary    = &LIBXSMM_VLA_ACCESS(3, dbeta_aux, im, 0, 0, nBlocks, bm);
+      reduce_cols_params.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, im, 0, bm);
       reduce_cols_kernel2(&reduce_cols_params);
-      reduce_cols_params.in_ptr    = &LIBXSMM_VLA_ACCESS(3, dgamma_aux, im, 0, 0, nBlocks, bm);
-      reduce_cols_params.out_ptr_0 = &LIBXSMM_VLA_ACCESS(2, dgamma, im, 0, bm);
+      reduce_cols_params.in.primary    = &LIBXSMM_VLA_ACCESS(3, dgamma_aux, im, 0, 0, nBlocks, bm);
+      reduce_cols_params.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, im, 0, bm);
       reduce_cols_kernel2(&reduce_cols_params);
     }
 
@@ -563,7 +576,7 @@ int main(int argc, char* argv[])
   unsigned int m = 64, n = 64, iters = 10000, k = 0;
   libxsmm_blasint ld_in = 64, ld_vector = 64, block_size = 64;
 
-  float  *sinp, *gamma, *beta, *sout, *sout_nc, *mean_data, *rstd_data, *sout_ref, *mean_data_ref, *rstd_data_ref, *bias_aux;
+  float  *sinp, *gamma, *beta, *sout, *sout_nc, *mean_data, *rstd_data, *sout_ref, *mean_data_ref, *rstd_data_ref, *bias_aux, *mean_rstd_data;
   float  *dY_ref, *X_ref, *mean_ref, *rstd_ref, *gamma_ref, *dX_ref, *dgamma_ref, *dbeta_ref;
   float  *dY_bwd, *X_bwd, *dX_bwd, *dgamma_bwd, *dbeta_bwd, *dX_bwd_nc;
 
@@ -571,8 +584,10 @@ int main(int argc, char* argv[])
   unsigned long long l_start, l_end;
   double l_total = 0, l_total2 = 0;
 
+#if 0
   libxsmm_meltw_redu_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
   libxsmm_meltwfunction_reduce reduce_kernel;
+#endif
   libxsmm_meltw_scal_flags jit_scalemean_flags = 0;
   libxsmm_meltwfunction_scale scalemean_kernel;
   libxsmm_meltw_scal_flags jit_scaleout_flags = 0;
@@ -606,8 +621,9 @@ int main(int argc, char* argv[])
   beta      = (float*) malloc(m*sizeof(float) );
   sout      = (float*) malloc(ld_in*n*sizeof(float) );
   sout_nc   = (float*) malloc(ld_in*n*sizeof(float) );
-  mean_data = (float*) malloc(n*sizeof(float) );
-  rstd_data = (float*) malloc(n*sizeof(float) );
+  mean_rstd_data = (float*) malloc(2*n*sizeof(float) );
+  mean_data = (float*) mean_rstd_data;
+  rstd_data = (float*) mean_rstd_data + n;
 
   dY_ref    = (float*) malloc(m*n*sizeof(float));
   dY_bwd    = (float*) malloc(m*n*sizeof(float));
@@ -803,8 +819,7 @@ int main(int argc, char* argv[])
   free(gamma);
   free(beta);
   free(sout);
-  free(mean_data);
-  free(rstd_data);
+  free(mean_rstd_data);
   free(mean_data_ref);
   free(rstd_data_ref);
   free(sout_ref);
