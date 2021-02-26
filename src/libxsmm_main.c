@@ -2824,7 +2824,7 @@ LIBXSMM_API void* libxsmm_get_registry_begin(libxsmm_kernel_kind kind, const voi
         const libxsmm_descriptor* desc;
         if (NULL != libxsmm_get_kernel_xinfo(regentry, &desc, NULL/*code_size*/)) {
           LIBXSMM_ASSERT(NULL != desc);
-          if (LIBXSMM_DESCRIPTOR_KIND(desc->kind) == kind) {
+          if (LIBXSMM_DESCRIPTOR_KIND(desc->kind) == (int)kind) {
             if (NULL != key) *key = desc->user.desc;
             result = regentry.ptr;
             break;
