@@ -19,7 +19,7 @@ if [ "" = "${SED}" ]; then
   SED=$(command -v sed)
 fi
 
-HERE="$(cd "$(dirname "$0")"; pwd -P)"
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
 SRC="${HERE}/../src"
 EXT="c"
 
