@@ -101,11 +101,13 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
                                           ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_SCALE) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE) > 0)) ||
                                           ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT) > 0) )) ? 1 : 0;
 
-  /* TODO: Determine  if we want to save stuff to stack */
+  /* TODO: Determine if we want to save stuff to stack */
   unsigned int save_args_to_stack = 0;
   unsigned int allocate_scratch = 0;
   unsigned int use_aux_stack_vars = 0;
   unsigned int use_stack_vars = ((save_args_to_stack > 0) || (allocate_scratch > 0) || (use_aux_stack_vars > 0)) ? 1 : 0;
+
+  LIBXSMM_UNUSED(i_gp_reg_mapping);
 
   i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
   i_micro_kernel_config->use_stack_vars              = use_stack_vars;
