@@ -1056,7 +1056,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_xinfo {
-  /** Non-zero of kernel is registered. */
+  /** Non-zero if kernel is registered. */
   unsigned int registered;
   /** Number of FLoating Point OPerationS (FLOPS). */
   unsigned int nflops;
