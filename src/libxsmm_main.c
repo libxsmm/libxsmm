@@ -2848,15 +2848,15 @@ LIBXSMM_API void* libxsmm_get_registry_next(const void* regentry, const void** k
       && NULL != desc)
     {
       const int kind = LIBXSMM_DESCRIPTOR_KIND(desc->kind);
-      int i = desc - &internal_registry_keys->entry + 1;
+      int i = (int)(desc - &internal_registry_keys->entry + 1);
       for (; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
-        const libxsmm_code_pointer regentry = internal_registry[i];
-        if (NULL != regentry.ptr) {
-          if (NULL != libxsmm_get_kernel_xinfo(regentry, &desc, NULL/*code_size*/)
+        entry = internal_registry[i];
+        if (NULL != entry.ptr) {
+          if (NULL != libxsmm_get_kernel_xinfo(entry, &desc, NULL/*code_size*/)
             && LIBXSMM_DESCRIPTOR_KIND(desc->kind) == kind)
           {
             if (NULL != key) *key = desc->user.desc;
-            result = regentry.ptr;
+            result = entry.ptr;
             break;
           }
         }
