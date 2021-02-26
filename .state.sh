@@ -34,7 +34,7 @@ if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}"
     # BSD's diff does not support --unchanged-line-format=""
     STATE_DIFF=$(printf "%s\n" "${STATE}" \
                | ${DIFF} "${STATEFILE}" - 2>/dev/null | ${SED} -n 's/[<>] \(..*\)/\1/p' \
-               | ${SED} -e 's/=..*$//' -e 's/\"//g' -e '/^$/d' "${EXCLUDE}" | ${UNIQ})
+               | ${SED} -e 's/=..*$//' -e 's/\"//g' -e '/^$/d' ${EXCLUDE} | ${UNIQ})
     RESULT=$?
     if [ "0" != "${RESULT}" ] || [ "${STATE_DIFF}" ]; then
       if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
