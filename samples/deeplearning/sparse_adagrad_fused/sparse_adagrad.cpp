@@ -121,7 +121,7 @@ public:
 #ifdef USE_LIBXSMM_JIT
     _ld = E;
     kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
-    kernel1 = libxsmm_dispatch_meltw_reduce(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_ROWS_ELTS_SQUARED, 0);
+    kernel1 = libxsmm_dispatch_meltw_unary(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD);
     kernel2 = libxsmm_dispatch_meltw_scale(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE, 0);
 #endif
   }
@@ -164,9 +164,9 @@ public:
       kernel( &params );
 
       // squared + reduction kernel
-      libxsmm_meltw_reduce_param    params1;
-      params1.in_ptr = g_sum;
-      params1.out_ptr_1 = &sum;
+      libxsmm_meltw_unary_param    params1;
+      params1.in.primary = g_sum;
+      params1.out.primary = &sum;
       kernel1( &params1 );
 
       sum /= E;
@@ -214,7 +214,7 @@ public:
 #ifdef USE_LIBXSMM_JIT
   int _ld;
   libxsmm_meltwfunction_reduce_cols_idx kernel;
-  libxsmm_meltwfunction_reduce kernel1;
+  libxsmm_meltwfunction_unary kernel1;
   libxsmm_meltwfunction_scale kernel2;
 #endif
 };
