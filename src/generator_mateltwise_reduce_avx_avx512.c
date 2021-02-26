@@ -62,7 +62,7 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
       i_micro_kernel_config->alu_mov_instruction,
      i_gp_reg_mapping->gp_reg_param_struct,
      LIBXSMM_X86_GP_REG_UNDEF, 0,
-     8,
+     24,
      i_gp_reg_mapping->gp_reg_out,
      0 );
 
@@ -323,17 +323,20 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
         i_micro_kernel_config->alu_mov_instruction,
        i_gp_reg_mapping->gp_reg_param_struct,
        LIBXSMM_X86_GP_REG_UNDEF, 0,
-       8,
+       24,
        i_gp_reg_mapping->gp_reg_reduced_elts,
        0 );
-  }
-
-  if ( compute_squared_vals_reduce > 0 ) {
+    if ( compute_squared_vals_reduce > 0 ) {
+      unsigned int result_size = i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_out;
+      libxsmm_x86_instruction_alu_reg(io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_reduced_elts, i_gp_reg_mapping->gp_reg_reduced_elts_squared);
+      libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_reduced_elts_squared, result_size);
+    }
+  } else {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
        i_gp_reg_mapping->gp_reg_param_struct,
        LIBXSMM_X86_GP_REG_UNDEF, 0,
-       16,
+       24,
        i_gp_reg_mapping->gp_reg_reduced_elts_squared,
        0 );
   }
@@ -686,17 +689,20 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         i_micro_kernel_config->alu_mov_instruction,
        i_gp_reg_mapping->gp_reg_param_struct,
        LIBXSMM_X86_GP_REG_UNDEF, 0,
-       8,
+       24,
        i_gp_reg_mapping->gp_reg_reduced_elts,
        0 );
-  }
-
-  if ( compute_squared_vals_reduce > 0 ) {
+    if ( compute_squared_vals_reduce > 0 ) {
+      unsigned int result_size = i_mateltwise_desc->n * i_micro_kernel_config->datatype_size_out;
+      libxsmm_x86_instruction_alu_reg(io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_reduced_elts, i_gp_reg_mapping->gp_reg_reduced_elts_squared);
+      libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_reduced_elts_squared, result_size);
+    }
+  } else {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
        i_gp_reg_mapping->gp_reg_param_struct,
        LIBXSMM_X86_GP_REG_UNDEF, 0,
-       16,
+       24,
        i_gp_reg_mapping->gp_reg_reduced_elts_squared,
        0 );
   }

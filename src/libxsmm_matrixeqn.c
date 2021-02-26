@@ -506,7 +506,9 @@ int is_unary_opcode_reduce_kernel (unsigned int opcode) {
   int result = 0;
   if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
-      (opcode== LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MUL) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD_NCNC_FORMAT) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
     result = 1;
   }
