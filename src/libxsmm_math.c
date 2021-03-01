@@ -286,6 +286,17 @@ LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x)
 }
 
 
+LIBXSMM_API double libxsmm_kahan_sum(double value, double* accumulator, double* compensation)
+{
+  double r, c;
+  LIBXSMM_ASSERT(NULL != accumulator && NULL != compensation);
+  c = value - *compensation; r = *accumulator + c;
+  *compensation = (r - *accumulator) - c;
+  *accumulator = r;
+  return r;
+}
+
+
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double x)
 {
 #if defined(LIBXSMM_INTRINSICS_X86) && !defined(__PGI)

@@ -61,42 +61,34 @@ for (i = 0; i < nn; ++i) {
       }
 
       /* row-wise sum of reference values with Kahan compensation */
-      v0 = ra - comprj; v1 = normrj + v0;
-      comprj = (v1 - normrj) - v0;
-      normrj = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(ra, &normrj, &comprj);
 
       /* row-wise sum of test values with Kahan compensation */
-      v0 = ta - comptj; v1 = normtj + v0;
-      comptj = (v1 - normtj) - v0;
-      normtj = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(ta, &normtj, &comptj);
 
       /* row-wise sum of differences with Kahan compensation */
-      v0 = di - compij; v1 = normij + v0;
-      compij = (v1 - normij) - v0;
-      normij = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(di, &normij, &compij);
 
       /* Froebenius-norm of reference matrix with Kahan compensation */
-      v0 = ri * ri - compfr; v1 = normfr + v0;
-      compfr = (v1 - normfr) - v0;
-      normfr = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(ri * ri, &normfr, &compfr);
 
       /* Froebenius-norm of test matrix with Kahan compensation */
-      v0 = ti * ti - compft; v1 = normft + v0;
-      compft = (v1 - normft) - v0;
-      normft = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(ti * ti, &normft, &compft);
 
       /* Froebenius-norm of differences with Kahan compensation */
       v0 = di * di;
       if (inf > v0) {
-        v0 -= compf;
-        v1 = info->l2_abs + v0;
-        compf = (v1 - info->l2_abs) - v0;
-        info->l2_abs = v1;
+        LIBXSMM_PRAGMA_FORCEINLINE
+        libxsmm_kahan_sum(v0, &info->l2_abs, &compf);
       }
     }
     else { /* NaN */
-      info->m = j;
-      info->n = i;
+      info->m = j; info->n = i;
       result_nan = ((LIBXSMM_NOTNAN(ri) && inf > ra) ? 1 : 2);
       break;
     }
@@ -104,14 +96,12 @@ for (i = 0; i < nn; ++i) {
 
   if (0 == result_nan) {
     /* summarize reference values */
-    v0 = normrj - compr; v1 = info->l1_ref + v0;
-    compr = (v1 - info->l1_ref) - v0;
-    info->l1_ref = v1;
+    LIBXSMM_PRAGMA_FORCEINLINE
+    libxsmm_kahan_sum(normrj, &info->l1_ref, &compr);
 
     /* summarize test values */
-    v0 = normtj - compt; v1 = info->l1_tst + v0;
-    compt = (v1 - info->l1_tst) - v0;
-    info->l1_tst = v1;
+    LIBXSMM_PRAGMA_FORCEINLINE
+    libxsmm_kahan_sum(normtj, &info->l1_tst, &compt);
 
     /* calculate Infinity-norm of differences */
     if (info->normi_abs < normij) info->normi_abs = normij;
@@ -169,29 +159,24 @@ if (0 == result_nan) {
       const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
 
       /* variance of reference set with Kahan compensation */
-      double v0 = rd * rd - compr_var, v1 = info->var_ref + v0;
-      compr_var = (v1 - info->var_ref) - v0;
-      info->var_ref = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(rd * rd, &info->var_ref, &compr_var);
 
       /* variance of test set with Kahan compensation */
-      v0 = td * td - compt_var; v1 = info->var_tst + v0;
-      compt_var = (v1 - info->var_tst) - v0;
-      info->var_tst = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(td * td, &info->var_tst, &compt_var);
 
       /* column-wise sum of reference values with Kahan compensation */
-      v0 = ra - compri; v1 = normri + v0;
-      compri = (v1 - normri) - v0;
-      normri = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(ra, &normri, &compri);
 
       /* column-wise sum of test values with Kahan compensation */
-      v0 = ta - compti; v1 = normti + v0;
-      compti = (v1 - normti) - v0;
-      normti = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(ta, &normti, &compti);
 
       /* column-wise sum of differences with Kahan compensation */
-      v0 = di - comp1; v1 = norm1 + v0;
-      comp1 = (v1 - norm1) - v0;
-      norm1 = v1;
+      LIBXSMM_PRAGMA_FORCEINLINE
+      libxsmm_kahan_sum(di, &norm1, &comp1);
     }
 
     /* calculate One-norm of differences */
@@ -216,4 +201,3 @@ if (0 == result_nan) {
     info->var_tst /= size;
   }
 }
-
