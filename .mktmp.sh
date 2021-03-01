@@ -15,16 +15,16 @@ MV=$(command -v mv)
 
 if [ "${MKTEMP}" ] && [ "${MV}" ]; then
   TEMPLATE=${1/XXXXXX/}.XXXXXX
-  TMPFILE=$(${MKTEMP} ${TEMPLATE})
+  TMPFILE=$(${MKTEMP} "${TEMPLATE}")
   EXTFILE=${TMPFILE: -6}
   NEWFILE=${1/XXXXXX/${EXTFILE}}
   if [ "$1" != "${NEWFILE}" ]; then
-    ${MV} ${TMPFILE} ${NEWFILE}
+    ${MV} "${TMPFILE}" "${NEWFILE}"
     echo "${NEWFILE}"
   else
     echo "${TMPFILE}"
   fi
 else
-  touch $1
+  touch "$1"
 fi
 

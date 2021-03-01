@@ -14,7 +14,8 @@
 int main(/*int argc, char* argv[]*/)
 {
   int result = EXIT_SUCCESS;
-  struct { int x, y, z; } key[] = {
+  typedef struct key_type { int x, y, z; } key_type;
+  key_type key[] = {
     { 0, 0, 0 },
     { 0, 0, 1 },
     { 0, 1, 0 },
@@ -50,7 +51,7 @@ int main(/*int argc, char* argv[]*/)
     result = (NULL == libxsmm_xregister(key, key_size,
       0, NULL, NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
   }
-#if (0 != LIBXSMM_JIT) /* registry service only with JIT */
+#if (0 != LIBXSMM_JIT) /* registry service is only available if JIT is enabled */
   if (EXIT_SUCCESS == result) { /* same key but (larger) payload; initialized later */
     result = (NULL != libxsmm_xregister(key, key_size,
       strlen(value[0]) + 1, NULL, NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -65,6 +66,22 @@ int main(/*int argc, char* argv[]*/)
   for (i = 0; i < n && EXIT_SUCCESS == result; ++i) {
     result = (NULL != libxsmm_xregister(key + i, key_size,
       strlen(value[i]) + 1, value[i], NULL) ? EXIT_SUCCESS : EXIT_FAILURE);
+  }
+  if (EXIT_SUCCESS == result) {
+    const void* regkey = NULL;
+    const void* regentry = libxsmm_get_registry_begin(LIBXSMM_KERNEL_KIND_USER, &regkey);
+    for (; NULL != regentry; regentry = libxsmm_get_registry_next(regentry, &regkey)) {
+      const key_type *const ikey = (const key_type*)regkey;
+      const char *const ivalue = (const char*)regentry;
+      result = EXIT_FAILURE;
+      for (i = 0; i < n; ++i) {
+        if (ikey->x == key[i].x && ikey->y == key[i].y && ikey->z == key[i].z) {
+          result = (0 == strcmp(ivalue, value[i]) ? EXIT_SUCCESS : EXIT_SUCCESS);
+          break;
+        }
+      }
+      if (EXIT_SUCCESS != result) break;
+    }
   }
   for (i = 0; i < n && EXIT_SUCCESS == result; ++i) {
     const char *const v = (char*)libxsmm_xdispatch(key + i, key_size, NULL);
