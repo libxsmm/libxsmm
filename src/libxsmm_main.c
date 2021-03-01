@@ -2816,7 +2816,7 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
 LIBXSMM_API void* libxsmm_get_registry_begin(libxsmm_kernel_kind kind, const void** key)
 {
   void* result = NULL;
-  if (kind < LIBXSMM_KERNEL_UNREGISTERED) {
+  if (kind < LIBXSMM_KERNEL_UNREGISTERED && NULL != internal_registry) {
     int i = 0;
     for (; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
       const libxsmm_code_pointer regentry = internal_registry[i];
@@ -2846,7 +2846,7 @@ LIBXSMM_API void* libxsmm_get_registry_next(const void* regentry, const void** k
     entry.ptr_const = regentry;
     if (NULL != libxsmm_get_kernel_xinfo(entry, &desc, NULL/*code_size*/)
       /* given regentry is a registered kernel */
-      && NULL != desc)
+      && NULL != desc && NULL != internal_registry)
     {
       const int kind = LIBXSMM_DESCRIPTOR_KIND(desc->kind);
       int i = (int)(desc - &internal_registry_keys->entry + 1);
