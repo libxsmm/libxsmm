@@ -2857,7 +2857,7 @@ LIBXSMM_API void* libxsmm_get_registry_next(const void* regentry, const void** k
   {
     result = internal_get_registry_entry(
       (int)(desc - &internal_registry_keys->entry + 1),
-      LIBXSMM_DESCRIPTOR_KIND(desc->kind), key);
+      (libxsmm_kernel_kind)LIBXSMM_DESCRIPTOR_KIND(desc->kind), key);
   }
   return result;
 }
