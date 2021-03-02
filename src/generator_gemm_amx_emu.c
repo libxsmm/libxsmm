@@ -1585,6 +1585,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code* io_generated
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
   unsigned int m_blocking, n_blocking, k_blocking, ii = 0, m_tiles, n_tiles, im, in;
   libxsmm_tile_config tile_config;
+  LIBXSMM_MEMZERO127(&tile_config);
 
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );

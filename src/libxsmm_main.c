@@ -2813,25 +2813,33 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
 }
 
 
+LIBXSMM_API_INLINE void* internal_get_registry_entry(int i, libxsmm_kernel_kind kind, const void** key)
+{
+  void* result = NULL;
+  LIBXSMM_ASSERT(kind < LIBXSMM_KERNEL_UNREGISTERED && NULL != internal_registry);
+  for (; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
+    const libxsmm_code_pointer regentry = internal_registry[i];
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(regentry.ptr_const,
+      NULL/*code_size*/, NULL/*flags*/, &result) && NULL != result)
+    {
+      const libxsmm_kernel_xinfo info = *(const libxsmm_kernel_xinfo*)result;
+      const libxsmm_descriptor *const desc = &internal_registry_keys[info.registered].entry;
+      if (LIBXSMM_DESCRIPTOR_KIND(desc->kind) == (int)kind) {
+        if (NULL != key) *key = desc->user.desc;
+        result = regentry.ptr;
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+
 LIBXSMM_API void* libxsmm_get_registry_begin(libxsmm_kernel_kind kind, const void** key)
 {
   void* result = NULL;
-  if (kind < LIBXSMM_KERNEL_UNREGISTERED) {
-    int i = 0;
-    for (; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
-      const libxsmm_code_pointer regentry = internal_registry[i];
-      if (NULL != regentry.ptr) {
-        const libxsmm_descriptor* desc;
-        if (NULL != libxsmm_get_kernel_xinfo(regentry, &desc, NULL/*code_size*/)) {
-          LIBXSMM_ASSERT(NULL != desc);
-          if (LIBXSMM_DESCRIPTOR_KIND(desc->kind) == (int)kind) {
-            if (NULL != key) *key = desc->user.desc;
-            result = regentry.ptr;
-            break;
-          }
-        }
-      }
-    }
+  if (kind < LIBXSMM_KERNEL_UNREGISTERED && NULL != internal_registry) {
+    result = internal_get_registry_entry(0, kind, key);
   }
   return result;
 }
@@ -2840,30 +2848,16 @@ LIBXSMM_API void* libxsmm_get_registry_begin(libxsmm_kernel_kind kind, const voi
 LIBXSMM_API void* libxsmm_get_registry_next(const void* regentry, const void** key)
 {
   void* result = NULL;
-  if (NULL != regentry) {
-    const libxsmm_descriptor* desc;
-    libxsmm_code_pointer entry;
-    entry.ptr_const = regentry;
-    if (NULL != libxsmm_get_kernel_xinfo(entry, &desc, NULL/*code_size*/)
-      /* given regentry is a registered kernel */
-      && NULL != desc)
-    {
-      const int kind = LIBXSMM_DESCRIPTOR_KIND(desc->kind);
-      int i = (int)(desc - &internal_registry_keys->entry + 1);
-      for (; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
-        entry = internal_registry[i];
-        if (NULL != entry.ptr) {
-          if (NULL != libxsmm_get_kernel_xinfo(entry, &desc, NULL/*code_size*/)) {
-            LIBXSMM_ASSERT(NULL != desc);
-            if (LIBXSMM_DESCRIPTOR_KIND(desc->kind) == kind) {
-              if (NULL != key) *key = desc->user.desc;
-              result = entry.ptr;
-              break;
-            }
-          }
-        }
-      }
-    }
+  const libxsmm_descriptor* desc;
+  libxsmm_code_pointer entry;
+  entry.ptr_const = regentry;
+  if (NULL != libxsmm_get_kernel_xinfo(entry, &desc, NULL/*code_size*/)
+    /* given regentry is indeed a registered kernel */
+    && NULL != desc)
+  {
+    result = internal_get_registry_entry(
+      (int)(desc - &internal_registry_keys->entry + 1),
+      (libxsmm_kernel_kind)LIBXSMM_DESCRIPTOR_KIND(desc->kind), key);
   }
   return result;
 }
