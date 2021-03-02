@@ -2819,13 +2819,16 @@ LIBXSMM_API_INLINE void* internal_get_registry_entry(int i, libxsmm_kernel_kind 
   LIBXSMM_ASSERT(kind < LIBXSMM_KERNEL_UNREGISTERED && NULL != internal_registry);
   for (; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
     const libxsmm_code_pointer regentry = internal_registry[i];
-    libxsmm_kernel_xinfo* info = NULL;
-    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(regentry.ptr_const, NULL/*code_size*/, NULL/*flags*/,
-      (void**)&info) && NULL != info)
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(regentry.ptr_const,
+      NULL/*code_size*/, NULL/*flags*/, &result) && NULL != result)
     {
-      if (NULL != key) *key = internal_registry_keys[info->registered].entry.user.desc;
-      result = regentry.ptr;
-      break;
+      const libxsmm_kernel_xinfo info = *(const libxsmm_kernel_xinfo*)result;
+      const libxsmm_descriptor *const desc = &internal_registry_keys[info.registered].entry;
+      if (LIBXSMM_DESCRIPTOR_KIND(desc->kind) == (int)kind) {
+        if (NULL != key) *key = desc->user.desc;
+        result = regentry.ptr;
+        break;
+      }
     }
   }
   return result;
