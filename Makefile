@@ -221,19 +221,26 @@ endif
 IFLAGS += -I$(call quote,$(INCDIR))
 IFLAGS += -I$(call quote,$(ROOTDIR)/$(SRCDIR))
 
-# Version numbers according to interface (version.txt)
-ifneq (,$(PYTHON))
-  VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
-  VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
-  VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
-else
+ifeq (,$(PYTHON))
   $(info --------------------------------------------------------------------------------)
   $(error No Python interpreter found)
 endif
+
+# Version numbers according to interface (version.txt)
+VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
+VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
+VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
 VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
 VERSION_API ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))
+VERSION_ALL ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py)
+VERSION_RELEASED ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(VERSION_ALL))
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
+
+# no warning conversion for released versions
+ifneq (0,$(VERSION_RELEASED))
+  WERROR := 0
+endif
 
 # explicitly target all objects
 ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
@@ -406,7 +413,7 @@ endif
 ifneq (,$(PYTHON))
 information = \
   $(info ================================================================================) \
-  $(info LIBXSMM $(shell  $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py) ($(UNAME)$(if $(filter-out 0,$(LIBXSMM_TARGET_HIDDEN)),$(NULL),$(if $(HOSTNAME),@$(HOSTNAME))))) \
+  $(info LIBXSMM $(VERSION_ALL) ($(UNAME)$(if $(filter-out 0,$(LIBXSMM_TARGET_HIDDEN)),$(NULL),$(if $(HOSTNAME),@$(HOSTNAME))))) \
   $(info --------------------------------------------------------------------------------) \
   $(info $(GINFO)) \
   $(info $(CINFO)) \
@@ -742,7 +749,7 @@ endif
 define DEFINE_COMPILE_RULE
 $(1): $(2) $(3) $(dir $(1))/.make
 	@rm -f $(1)
-	-$(CC) $(4) $(WERROR_CFLAG) -c $(2) -o $(1)
+	-$(CC) $(4) $(if $(filter 0,$(WERROR)),$(NULL),$(WERROR_CFLAG)) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
 		echo "--------------------------------------------------------------"; \
 		echo "In case of assembler error, perhaps GNU Binutils are outdated."; \

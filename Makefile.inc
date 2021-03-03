@@ -654,10 +654,8 @@ endif
 endif
 
 WCHECK ?= 0
-ifneq (0,$(WERROR))
-  WERROR_CFLAG := $(call ctest,$(CC),-Werror)
-  WERROR_FCFLAG := $(call ftest,$(FC),-Werror)
-endif
+WERROR_CFLAG := $(call ctest,$(CC),-Werror)
+WERROR_FCFLAG := $(call ftest,$(FC),-Werror)
 ifneq (0,$(WCHECK))
   WCHECK_CFLAG := $(call ctest,$(CC),-Wcheck $(WERROR_CFLAG))
 endif
