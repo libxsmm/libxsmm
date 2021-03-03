@@ -2322,7 +2322,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   internal_cache_type *const cache = &internal_cache_buffer;
 # endif
   unsigned char cache_index;
-  const int ninit = LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED);
+  const unsigned int ninit = LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED);
   internal_pad_descriptor(desc, size);
   LIBXSMM_ASSERT(NULL != hash);
   if (0 == is_big_desc) {
