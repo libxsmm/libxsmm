@@ -500,7 +500,7 @@ LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(libxsmm_b
 LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype comp_type, libxsmm_meltw_ternary_flags flags, libxsmm_meltw_ternary_type type);
 
 /** matrix equation interface */
-LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create();
+LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void);
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_blasint in_pos, const libxsmm_blasint offs_in_pos, const libxsmm_datatype dtype );
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype );
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype );

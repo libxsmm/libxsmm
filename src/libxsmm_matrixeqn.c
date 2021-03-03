@@ -935,7 +935,7 @@ LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_ready_for_jit( libxsmm_blasint eqn_
 }
 
 
-LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create() {
+LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void) {
   libxsmm_blasint ret = libxsmm_matrix_eqns_count;
   libxsmm_matrix_eqn_elem* node;
 
