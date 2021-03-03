@@ -40,6 +40,8 @@
 #endif
 #endif
 
+/*#define DONT_FUSE_RELU_BWD*/
+
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), (__m256i)_mm512_cvtneps_pbh((B)))
 
@@ -777,7 +779,11 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 #ifdef PRIVATE_DACT_TRANS
   if (((fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) && (res.upd_2d_blocking == 1)) {
+#ifdef DONT_FUSE_RELU_BWD
+    res.fuse_relu_bwd = 0;
+#else
     res.fuse_relu_bwd = 1;
+#endif
   }
 #endif
 #endif
@@ -1379,7 +1385,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bf
 #ifdef FUSE_DACT_TRANS_BWD
 #else
 #ifdef PRIVATE_DACT_TRANS
-if (cfg.upd_2d_blocking == 0) {
+if (cfg.upd_2d_blocking == 0 || cfg.fuse_relu_bwd == 0) {
 #endif
   /* Apply to doutput potential fusions */
   if (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) {
@@ -1393,14 +1399,14 @@ if (cfg.upd_2d_blocking == 0) {
       relu_kernel(&relu_params);
 
       /* If in UPD pass, also perform transpose of doutput  */
-      if ( (pass & MY_PASS_BWD_W) == MY_PASS_BWD_W ) {
+      if ( ( cfg.upd_2d_blocking == 0 ) && ((pass & MY_PASS_BWD_W) == MY_PASS_BWD_W) ) {
         trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk);
         trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb);
         cfg.norm_to_vnni_kernel(&trans_param);
       }
     }
 
-    if ( (pass & MY_PASS_BWD_W) == MY_PASS_BWD_W ) {
+    if ( ( cfg.upd_2d_blocking == 0 ) && ((pass & MY_PASS_BWD_W) == MY_PASS_BWD_W) ) {
       performed_doutput_transpose = 1;
     }
     libxsmm_barrier_wait(cfg.barrier, ltid);
@@ -1691,7 +1697,7 @@ if (cfg.upd_2d_blocking == 0) {
   }
 #else
 #ifdef PRIVATE_DACT_TRANS
-  if (cfg.upd_2d_blocking == 1) {
+  if ((cfg.upd_2d_blocking == 1) && (cfg.fuse_relu_bwd == 1)) {
     /* Accumulation of bias happens in f32 */
     if (((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS)) {
       for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
