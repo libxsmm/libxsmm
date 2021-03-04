@@ -219,7 +219,7 @@ def version_numbers(version, branch=None):
             patch_list = version_list[n - 1]
             if 1 == len(patch_list.split(".")):
                 version_list = version_list[n - 2].split(".")
-                if 3 == n:
+                if version_list != [vbranch]:
                     patch = int(patch_list)
                 else:
                     major = int(patch_list)
