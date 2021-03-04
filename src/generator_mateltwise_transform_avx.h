@@ -46,6 +46,14 @@ void libxsmm_generator_transform_norm_to_normt_64bit_avx_microkernel( libxsmm_ge
                                                                       const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                       const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_avx( libxsmm_generated_code*                 io_generated_code,
+                                                                             const unsigned int                      i_gp_reg_in,
+                                                                             const unsigned int                      i_gp_reg_out,
+                                                                             const unsigned int                      i_m_valid,
+                                                                             const unsigned int                      i_n_valid,
+                                                                             const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                             const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_32bit_avx_microkernel( libxsmm_generated_code*                 io_generated_code,

@@ -55,7 +55,10 @@ void libxsmm_generator_transform_Xway_full_load_avx_avx512( libxsmm_generated_co
                                                             const unsigned int      i_vec_reg_dst_start,
                                                             const unsigned int      i_ld,
                                                             const unsigned int      i_ld_instr,
-                                                            const unsigned int      i_ways ) {
+                                                            const unsigned int      i_ways,
+                                                            const unsigned int      i_valid_ways,
+                                                            const unsigned int      i_use_masking,
+                                                            const unsigned int      i_mask_reg ) {
   unsigned int l_i = 0;
 
   if ( (i_ways != 8) && (i_ways != 16) && (i_ways != 32) ) {
@@ -68,12 +71,43 @@ void libxsmm_generator_transform_Xway_full_load_avx_avx512( libxsmm_generated_co
     return;
   }
 
+  if ( i_valid_ways > i_ways ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
   for ( l_i = 0 ; l_i < i_ways ; ++l_i ) {
     unsigned int l_dst = l_i + i_vec_reg_dst_start;
 
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
-                                      i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
-                                      i_vector_name, l_dst, 0, 1, 0 );
+    if ( l_i < i_valid_ways ) {
+      if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+        if ( i_use_masking != 0 ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
+                                            i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
+                                            i_vector_name, l_dst, i_mask_reg, 1, 0 );
+        } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
+                                            i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
+                                            i_vector_name, l_dst, 0, 1, 0 );
+        }
+      } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+        if ( i_use_masking != 0 ) {
+          libxsmm_x86_instruction_vec_mask_move( io_generated_code, i_ld_instr,
+                                                 i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
+                                                 i_vector_name, l_dst, i_mask_reg, 0 );
+        } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
+                                            i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
+                                            i_vector_name, l_dst, 0, 1, 0 );
+        }
+      } else {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+        return;
+      }
+    } else {
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD,
+                                                i_vector_name, l_dst, l_dst, l_dst );
+    }
   }
 }
 
@@ -84,6 +118,7 @@ void libxsmm_generator_transform_Xway_full_store_avx_avx512( libxsmm_generated_c
                                                              const unsigned int      i_vec_reg_src_start,
                                                              const unsigned int      i_ld,
                                                              const unsigned int      i_st_instr,
+                                                             const unsigned int      i_use_masking,
                                                              const unsigned int      i_mask_reg,
                                                              const unsigned int      i_ways ) {
   unsigned int l_i = 0;
@@ -91,9 +126,30 @@ void libxsmm_generator_transform_Xway_full_store_avx_avx512( libxsmm_generated_c
   for ( l_i = 0 ; l_i < i_ways ; ++l_i ) {
     unsigned int l_src = l_i + i_vec_reg_src_start;
 
-    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_st_instr,
-                                      i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
-                                      i_vector_name, l_src, i_mask_reg, 0, 1 );
+    if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+      if ( i_use_masking != 0 ) {
+        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_st_instr,
+                                          i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
+                                          i_vector_name, l_src, i_mask_reg, 0, 1 );
+      } else {
+        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_st_instr,
+                                          i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
+                                          i_vector_name, l_src, 0, 0, 1 );
+      }
+    } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+      if ( i_use_masking != 0 ) {
+        libxsmm_x86_instruction_vec_mask_move( io_generated_code, i_st_instr,
+                                               i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
+                                               i_vector_name, l_src, i_mask_reg, 1 );
+      } else {
+        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_st_instr,
+                                          i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
+                                          i_vector_name, l_src, 0, 0, 1 );
+      }
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
   }
 }
 

@@ -32,7 +32,10 @@ void libxsmm_generator_transform_Xway_full_load_avx_avx512( libxsmm_generated_co
                                                             const unsigned int      i_vec_reg_dst_start,
                                                             const unsigned int      i_ld,
                                                             const unsigned int      i_ld_instr,
-                                                            const unsigned int      i_ways );
+                                                            const unsigned int      i_ways,
+                                                            const unsigned int      i_valid_ways,
+                                                            const unsigned int      i_use_masking,
+                                                            const unsigned int      i_mask_reg );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_full_store_avx_avx512( libxsmm_generated_code* io_generated_code,
@@ -41,6 +44,7 @@ void libxsmm_generator_transform_Xway_full_store_avx_avx512( libxsmm_generated_c
                                                              const unsigned int      i_vec_reg_src_start,
                                                              const unsigned int      i_ld,
                                                              const unsigned int      i_st_instr,
+                                                             const unsigned int      i_use_masking,
                                                              const unsigned int      i_mask_reg,
                                                              const unsigned int      i_ways );
 
