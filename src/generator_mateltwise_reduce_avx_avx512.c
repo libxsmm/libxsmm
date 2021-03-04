@@ -327,7 +327,7 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
        i_gp_reg_mapping->gp_reg_reduced_elts,
        0 );
     if ( compute_squared_vals_reduce > 0 ) {
-      unsigned int result_size = i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_out;
+      unsigned int result_size = i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out;
       libxsmm_x86_instruction_alu_reg(io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_reduced_elts, i_gp_reg_mapping->gp_reg_reduced_elts_squared);
       libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_mapping->gp_reg_reduced_elts_squared, result_size);
     }
