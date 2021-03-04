@@ -214,7 +214,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_avx( lib
     }
 
     /* load register with constants from code */
-    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (void*)l_data, "load", 'y', 8 );
+    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)l_data, "load", 'y', 8 );
   }
 
   /* load 8 registers */
@@ -266,7 +266,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_avx( lib
     }
 
     /* load register with constants from code */
-    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (void*)l_data, "store", 'y', 0 );
+    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)l_data, "store", 'y', 0 );
   }
 
   /* storing 8x 32byte */
