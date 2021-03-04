@@ -425,16 +425,22 @@ inline void tpp_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, floa
     b = -a*mean[s2];
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     arg_array[3].primary = &LIBXSMM_VLA_ACCESS(3, dout, 0, s2, 0, S2, S3);
-    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, 0, 0, S3);
-    dbeta_func(&eqn_param);
-    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, 0, 0, S3);
-    dgamma_func(&eqn_param);
-    eqn_param.output.primary = &db;
-    db_func(&eqn_param);
+
     eqn_param.output.primary = &ds;
     ds_func(&eqn_param);
+
+    eqn_param.output.primary = &db;
+    db_func(&eqn_param);
+
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, 0, 0, S3);
+    dgamma_func(&eqn_param);
+
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, 0, 0, S3);
+    dbeta_func(&eqn_param);
+
     b = (db * mean[s2] - ds) * a * a * a * scale;
     c = -b * mean[s2] - db * a * scale;
+
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, din, 0, s2, 0, S2, S3);
     din_func(&eqn_param);
   }
@@ -468,16 +474,22 @@ inline void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
     b = -a*mean[s2];
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     arg_array[3].primary = &LIBXSMM_VLA_ACCESS(3, dout, 0, s2, 0, S2, S3);
-    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, 0, 0, S3);
-    dbeta_func(&eqn_param);
-    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, 0, 0, S3);
-    dgamma_func(&eqn_param);
-    eqn_param.output.primary = &db;
-    db_func(&eqn_param);
+
     eqn_param.output.primary = &ds;
     ds_func(&eqn_param);
+
+    eqn_param.output.primary = &db;
+    db_func(&eqn_param);
+
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, 0, 0, S3);
+    dgamma_func(&eqn_param);
+
+    eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, 0, 0, S3);
+    dbeta_func(&eqn_param);
+
     b = (db * mean[s2] - ds) * a * a * a * scale;
     c = -b * mean[s2] - db * a * scale;
+
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, din, 0, s2, 0, S2, S3);
     din_func(&eqn_param);
   }
