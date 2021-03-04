@@ -46,7 +46,7 @@
     ((A)[1] ^ ((const uint64_t*)(B))[1]))))
 #endif
 
-#define LIBXSMM_DIFF_AVX2_DECL(A) __m256i A = _mm256_undefined_si256()
+#define LIBXSMM_DIFF_AVX2_DECL(A) __m256i A = LIBXSMM_INTRINSICS_MM256_UNDEFINED_SI256()
 #define LIBXSMM_DIFF_AVX2_ASSIGN(A, B) (A) = (B)
 #define LIBXSMM_DIFF_AVX2_LOAD(A, SRC) A = _mm256_loadu_si256((const __m256i*)(SRC))
 #define LIBXSMM_DIFF_AVX2(A, B, ...) ((unsigned char)(-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8( \

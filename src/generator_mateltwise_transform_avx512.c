@@ -493,8 +493,8 @@ void libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( libxsmm
 
     /* storing 8 registers */
     libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                        i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
-                                                        i_micro_kernel_config->vmove_instruction_out, 0, 8 );
+                                                            i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
+                                                            i_micro_kernel_config->vmove_instruction_out, 0, 0, 8 );
 
     /* advance output pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -624,12 +624,12 @@ void libxsmm_generator_transform_copy_avx512_microkernel( libxsmm_generated_code
   /* load i_bsize registers full row */
   libxsmm_generator_transform_Xway_full_load_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
                                                      i_gp_reg_in, 0, i_ldi * i_micro_kernel_config->datatype_size_in,
-                                                     i_micro_kernel_config->vmove_instruction_in, i_bsize );
+                                                     i_micro_kernel_config->vmove_instruction_in, i_bsize, i_bsize, 0, 0 );
 
   /* store i_bsize registers */
   libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                      i_gp_reg_out, 0, i_ldo * i_micro_kernel_config->datatype_size_out,
-                                                      i_micro_kernel_config->vmove_instruction_out, 0, i_bsize );
+                                                          i_gp_reg_out, 0, i_ldo * i_micro_kernel_config->datatype_size_out,
+                                                          i_micro_kernel_config->vmove_instruction_out, 0, 0, i_bsize );
 
   /* advance input pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -762,8 +762,8 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( lib
 
       /* storing 4 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, 4 );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, 4 );
 
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -794,8 +794,8 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( lib
 
       /* storing 4 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, 4 );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_6, 4 );
 
       /* restore quarter load masks */
       libxsmm_x86_instruction_mask_move(io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, i_mask_reg_6);
@@ -843,8 +843,8 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( lib
 
       /* storing l_m_4rem registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, l_m_4rem );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, l_m_4rem );
 
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -875,8 +875,8 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( lib
 
       /* storing l_m_4rem registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, l_m_4rem );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_6, l_m_4rem );
     }
   }
 }
@@ -986,8 +986,8 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
 
       /* storing 8 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, 8 );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, 8 );
 
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -1015,8 +1015,8 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
 
       /* storing 8 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_5, 8 );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_5, 8 );
     }
 
     /* advance output pointer */
@@ -1062,8 +1062,8 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
 
       /* storing l_m_8rem registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, l_m_8rem );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, l_m_8rem );
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
                                        i_gp_reg_out, i_micro_kernel_config->datatype_size_out * 16 );
@@ -1090,8 +1090,8 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
 
       /* storing l_m_8rem registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_5, l_m_8rem );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_5, l_m_8rem );
     }
   }
 }
@@ -1297,8 +1297,8 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 
       /* storing 8 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, 8 );
+                                                              i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, 8 );
 
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -1327,8 +1327,8 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 
       /* storing 8 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, 8 );
+                                                              i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_6, 8 );
 
       /* restore quarter load masks */
       if ( !l_m_8rem_odd ) {
@@ -1376,8 +1376,8 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 
       /* storing l_m_8rem registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, l_m_8rem );
+                                                              i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, l_m_8rem );
 
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -1403,8 +1403,8 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
 
       /* storing m_8rem registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, l_m_8rem );
+                                                              i_gp_reg_out, 8, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_6, l_m_8rem );
     }
   }
 #elif COPY_UPPER_BOUND == 1
@@ -1632,8 +1632,8 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_spr_microkernel( lib
 
       /* storing 2 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, 2 );
+                                                              i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, 2 );
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
                                        i_gp_reg_out, i_micro_kernel_config->datatype_size_out * 32 );
@@ -1663,8 +1663,8 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_spr_microkernel( lib
 
       /* storing 2 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, 2 );
+                                                              i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_6, 2 );
       /* restore quarter load masks */
       libxsmm_x86_instruction_mask_move(io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, i_mask_reg_6);
     }
@@ -1707,8 +1707,8 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_spr_microkernel( lib
 
       /* storing l_m_8rem>>2 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, l_m_8rem>>2 );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, l_m_8rem>>2 );
 
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -1739,8 +1739,8 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_spr_microkernel( lib
 
       /* storing m_8rem registers>>2 */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_6, l_m_8rem>>2 );
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_6, l_m_8rem>>2 );
     }
   }
 }
@@ -1858,8 +1858,8 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel(
 
       /* storing 4 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, 4 );
+                                                              i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, 4 );
 
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -1887,8 +1887,8 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel(
 
       /* storing 4 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_5, 4 );
+                                                              i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_5, 4 );
     }
 
     /* advance output pointer */
@@ -1934,8 +1934,8 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel(
 
       /* storing l_m_16rem>>2 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, 0, l_m_16rem>>2 );
+                                                              i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, l_m_16rem>>2 );
 
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -1965,8 +1965,8 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_avx512_pre_spr_microkernel(
 
       /* storing l_m_16rem>>2 registers */
       libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
-                                                          i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
-                                                          i_micro_kernel_config->vmove_instruction_out, i_mask_reg_5, l_m_16rem>>2 );
+                                                              i_gp_reg_out, 0, l_ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_5, l_m_16rem>>2 );
     }
   }
 }
