@@ -414,6 +414,19 @@ void libxsmm_x86_instruction_vec_shuffle_sse_reg( libxsmm_generated_code* io_gen
                                                   const unsigned int      i_vec_reg_number_1,
                                                   const unsigned int      i_shuffle_operand );
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_vmove_instr,
+                                                const unsigned int      i_gp_reg_base,
+                                                const unsigned int      i_reg_idx,
+                                                const unsigned int      i_scale,
+                                                const int               i_displacement,
+                                                const char              i_vector_name,
+                                                const unsigned int      i_vec_reg_number_0,
+                                                const unsigned int      i_use_masking,
+                                                const unsigned int      i_mask_reg_number,
+                                                const unsigned int      i_is_store );
+
 /* @TODO check if we can merge this alu_imm */
 /**
  * Generates prefetch instructions with displacements, SIB addressing is not

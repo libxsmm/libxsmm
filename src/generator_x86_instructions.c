@@ -2909,6 +2909,45 @@ void libxsmm_x86_instruction_vec_shuffle_sse_reg( libxsmm_generated_code* io_gen
 
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_vmove_instr,
+                                                const unsigned int      i_gp_reg_base,
+                                                const unsigned int      i_reg_idx,
+                                                const unsigned int      i_scale,
+                                                const int               i_displacement,
+                                                const char              i_vector_name,
+                                                const unsigned int      i_vec_reg_number_0,
+                                                const unsigned int      i_use_masking,
+                                                const unsigned int      i_mask_reg_number,
+                                                const unsigned int      i_is_store ) {
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+    if ( i_use_masking != 0 ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_vmove_instr,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        i_vector_name, i_vec_reg_number_0, i_mask_reg_number, (i_is_store != 0) ? 0 : 1, i_is_store );
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_vmove_instr,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        i_vector_name, i_vec_reg_number_0, 0, (i_is_store != 0) ? 0 : 1, i_is_store );
+    }
+  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+    if ( i_use_masking != 0 ) {
+      libxsmm_x86_instruction_vec_mask_move( io_generated_code, i_vmove_instr,
+                                             i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                             i_vector_name, i_vec_reg_number_0, i_mask_reg_number, i_is_store );
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_vmove_instr,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        i_vector_name, i_vec_reg_number_0, 0, 1, i_is_store );
+    }
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_prefetch_instr,
                                        const unsigned int      i_gp_reg_base,
