@@ -292,9 +292,9 @@ void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   }
 
   /* use jited tranpose */
-  binary_param.in_ptr_0  = (void*)_in;
-  binary_param.in_ptr_1  = (void*)_in2;
-  binary_param.out_ptr = (void*)out;
+  binary_param.in0.primary  = (void*)_in;
+  binary_param.in1.primary  = (void*)_in2;
+  binary_param.out.primary  = (void*)out;
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
@@ -484,9 +484,9 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   }
 
   /* use jited tranpose */
-  binary_param.in_ptr_0  = (void*)_in;
-  binary_param.in_ptr_1  = (void*)_in2;
-  binary_param.out_ptr = (void*)out;
+  binary_param.in0.primary  = (void*)_in;
+  binary_param.in1.primary  = (void*)_in2;
+  binary_param.out.primary  = (void*)out;
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
@@ -671,9 +671,9 @@ void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     binary_op_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &in2[(i*ldi)], &out_gold[(i*ldo)], op );
   }
 
-  binary_param.in_ptr_0  = (void*)_in;
-  binary_param.in_ptr_1  = (void*)_in2;
-  binary_param.out_ptr = (void*)out;
+  binary_param.in0.primary  = (void*)_in;
+  binary_param.in1.primary  = (void*)_in2;
+  binary_param.out.primary  = (void*)out;
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
@@ -861,9 +861,9 @@ void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     binary_op_bf16_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &in2[(i*ldi)], &out_gold[(i*ldo)], op );
   }
 
-  binary_param.in_ptr_0  = (void*)_in;
-  binary_param.in_ptr_1  = (void*)_in2;
-  binary_param.out_ptr = (void*)out;
+  binary_param.in0.primary  = (void*)_in;
+  binary_param.in1.primary  = (void*)_in2;
+  binary_param.out.primary  = (void*)out;
   binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {

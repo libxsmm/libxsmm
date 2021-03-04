@@ -153,9 +153,9 @@ void test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     relu_fwd_f32_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldo)/8] );
   }
 
-  unary_param.in_ptr  = (void*)in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = (bitm == 0) ? NULL : (void*)mask;
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   if ( unary_kernel == NULL ) {
@@ -267,9 +267,9 @@ void test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
     relu_fwd_bf16_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldo)/8] );
   }
 
-  unary_param.in_ptr  = (void*)in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = (bitm == 0) ? NULL : (void*)mask;
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   if ( unary_kernel == NULL ) {
@@ -383,9 +383,9 @@ void test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
     relu_fwd_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldo)/8] );
   }
 
-  unary_param.in_ptr  = (void*)in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = (bitm == 0) ? NULL : (void*)mask;
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   if ( unary_kernel == NULL ) {
@@ -497,10 +497,10 @@ void test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
     relu_fwd_bf16_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldo)/8] );
   }
 
-  /* use jited tranpose */
-  unary_param.in_ptr  = (void*)in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = (bitm == 0) ? NULL : (void*)mask;
+  /* use jited relu */
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   if ( unary_kernel == NULL ) {
@@ -615,10 +615,11 @@ void test_relu_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     relu_bwd_f32_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldi)/8] );
   }
 
-  /* use jited tranpose */
-  unary_param.in_ptr  = (void*)in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = (void*)mask;
+  /* use jited relu */
+  unary_param.in.primary    = (void*)in;
+  unary_param.in.secondary  = (void*)mask;
+  unary_param.out.primary   = (void*)out;
+
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( unary_kernel == NULL ) {
@@ -715,10 +716,10 @@ void test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
     relu_bwd_bf16_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldi)/8] );
   }
 
-  /* use jited tranpose */
-  unary_param.in_ptr  = (void*)in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = (void*)mask;
+  /* use jited relu */
+  unary_param.in.primary    = (void*)in;
+  unary_param.in.secondary  = (void*)mask;
+  unary_param.out.primary   = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( unary_kernel == NULL ) {
@@ -816,10 +817,10 @@ void test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
     relu_bwd_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldi)/8] );
   }
 
-  /* use jited tranpose */
-  unary_param.in_ptr  = (void*)in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = (void*)mask;
+  /* use jited relu */
+  unary_param.in.primary    = (void*)in;
+  unary_param.in.secondary  = (void*)mask;
+  unary_param.out.primary   = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( unary_kernel == NULL ) {
@@ -916,10 +917,10 @@ void test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
     relu_bwd_bf16_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldi)/8] );
   }
 
-  /* use jited tranpose */
-  unary_param.in_ptr  = (void*)in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = (void*)mask;
+  /* use jited relu */
+  unary_param.in.primary    = (void*)in;
+  unary_param.in.secondary  = (void*)mask;
+  unary_param.out.primary   = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( unary_kernel == NULL ) {

@@ -65,14 +65,14 @@ element_output_type *grad_output_ptr = (element_output_type*)handle->grad_output
 element_output_type *tr_doutput_ptr = (element_output_type*)handle->scratch;
 #endif
 #if defined(LIBXSMM_DNN_FC_BWD_FUSE_RELU)
-libxsmm_meltw_relu_param   relu_params;
-libxsmm_meltwfunction_relu relu_kernel = handle->bwd_relu_kernel;
+libxsmm_meltw_unary_param   relu_params;
+libxsmm_meltwfunction_unary relu_kernel = handle->bwd_relu_kernel;
 #endif
 LIBXSMM_VLA_DECL(4, element_output_type,   doutput, grad_output_ptr, nBlocksOFm, bn, bk);
 LIBXSMM_VLA_DECL(5, element_output_type, doutput_tr, tr_doutput_ptr, nBlocksMB, bn_lp, bk, lpb);
 
-libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel = handle->bwd_cvtfp32bf16_kernel;
-libxsmm_meltw_cvtfp32bf16_param   eltwise_params;
+libxsmm_meltwfunction_unary eltwise_kernel = handle->bwd_cvtfp32bf16_kernel;
+libxsmm_meltw_unary_param   eltwise_params;
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -86,9 +86,9 @@ for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
   mb1  = mb1ofm1/nBlocksOFm;
   ofm1 = mb1ofm1%nBlocksOFm;
 
-  relu_params.in_ptr   = &LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
-  relu_params.out_ptr  = &LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
-  relu_params.mask_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
+  relu_params.in.primary   = (void*) &LIBXSMM_VLA_ACCESS(4, doutput_orig, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+  relu_params.out.primary  = &LIBXSMM_VLA_ACCESS(4, doutput, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+  relu_params.in.secondary = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
   relu_kernel(&relu_params);
 
   /* If in UPD pass, also perform transpose of doutput  */
@@ -303,8 +303,8 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
                 &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
             /* downconvert intermediate f32 tensor to bf 16 and store to final C */
             if ( ofm1 == BF-1  ) {
-              eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
-              eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              eltwise_params.out.primary = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
               eltwise_kernel(&eltwise_params);
             }
           }
@@ -343,8 +343,8 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
               &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
           /* downconvert intermediate f32 tensor to bf 16 and store to final C */
           if ( ofm1 == BF-1  ) {
-              eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
-              eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              eltwise_params.out.primary = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
               eltwise_kernel(&eltwise_params);
           }
         }

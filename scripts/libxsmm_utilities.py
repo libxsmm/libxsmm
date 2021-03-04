@@ -205,6 +205,44 @@ def version_branch_from_file(version_filepath):
     return (version, branch)
 
 
+def version_numbers(version, branch=None):
+    version_list = version.split("-")
+    if not version_list[0][0].isdigit():
+        vbranch = version_list[0]
+    else:
+        vbranch = "master"
+    if branch is None or vbranch == branch:
+        minor = update = patch = 0
+        major = 1
+        n = len(version_list)
+        if 1 < n:
+            patch_list = version_list[n - 1]
+            if 1 == len(patch_list.split(".")):
+                version_list = version_list[n - 2].split(".")
+                if 3 == n:
+                    patch = int(patch_list)
+                else:
+                    major = int(patch_list)
+            else:
+                version_list = patch_list.split(".")
+        else:
+            version_list = version.split(".")
+        n = len(version_list)
+        try:
+            if 0 < n:
+                major = int(version_list[0])
+            if 1 < n:
+                minor = int(version_list[1])
+            if 2 < n:
+                update = int(version_list[2])
+        except ValueError:
+            # if 1 == n: major = 0
+            pass
+    else:
+        major = minor = update = patch = -1
+    return major, minor, update, patch
+
+
 def version_branch(max_strlen=-1):
     version_filename = "version.txt"
     filepath_default = os.path.realpath(
@@ -236,42 +274,25 @@ def version_branch(max_strlen=-1):
     return (version, branch, realversion)
 
 
-def version_numbers(version):
-    version_list = version.split("-")
-    minor = update = patch = 0
-    major = 1
-    n = len(version_list)
-    if 1 < n:
-        patch_list = version_list[n - 1]
-        if 1 == len(patch_list.split(".")):
-            version_list = version_list[n - 2].split(".")
-            patch = int(patch_list)
-        else:
-            version_list = patch_list.split(".")
-    else:
-        version_list = version.split(".")
-    n = len(version_list)
-    if 0 < n:
-        major = int(version_list[0])
-    if 1 < n:
-        minor = int(version_list[1])
-    if 2 < n:
-        update = int(version_list[2])
-    return major, minor, update, patch
-
-
 if __name__ == "__main__":
     argc = len(sys.argv)
     if 1 < argc:
         arg1 = int(sys.argv[1])
     else:
         arg1 = 0
-    if -1 == arg1 and 5 < argc:
-        # threshold = int(sys.argv[2])
-        mnk_size = int(sys.argv[3])
-        dims = load_mnklist(sys.argv[4:4 + mnk_size], 0, -1)
-        dims = load_mnklist(sys.argv[4 + mnk_size:], 0, -2, dims)
-        print(" ".join(map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))))
+    if -1 == arg1:
+        if 5 < argc:
+            # threshold = int(sys.argv[2])
+            mnk_size = int(sys.argv[3])
+            dims = load_mnklist(sys.argv[4:4 + mnk_size], 0, -1)
+            dims = load_mnklist(sys.argv[4 + mnk_size:], 0, -2, dims)
+            mnklist = map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))
+            print(" ".join(mnklist))
+        elif 3 == argc:
+            major, minor, update, patch = (
+                version_numbers(sys.argv[2], "release")
+            )
+            print(["0", "1"][0 == patch])
     elif 0 <= arg1:
         if 0 == arg1 and 3 == argc:
             major, minor, update, patch = version_numbers(sys.argv[2])
@@ -288,16 +309,12 @@ if __name__ == "__main__":
             elif 4 == arg1:
                 print(patch)
             elif "" != branch:
-                print(branch + "-" + realversion)
+                print("{}-{}".format(branch, realversion))
             else:
                 print(realversion)
     else:
         sys.tracebacklimit = 0
         raise ValueError(
-            sys.argv[0]
-            + ": wrong ("
-            + str(argc - 1)
-            + ') number of arguments ("'
-            + " ".join(sys.argv[1:])
-            + '") given!'
+            "{}: wrong ({}) number of arguments ('{}') given!".format(
+                sys.argv[0], argc - 1, " ".join(sys.argv[1:]))
         )

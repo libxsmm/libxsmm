@@ -58,7 +58,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
   printf("    #repetitions\n");
-  printf("    tile configuratoin: 1 - external, 0 - internal\n");
+  printf("    tile configuration: 1 - external, 0 - internal\n");
   printf("\n\n");
   printf("2. Usage (dense*dense=dense, performance only option available):\n");
   printf("    filename with space-sperated sizes (M N K LDA LDB LDC)\n");
@@ -74,7 +74,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    BRunroll: 0/1\n");
   printf("    #repetitions\n");
   printf("    0: no check, otherwise: run check\n");
-  printf("    tile configuratoin: 1 - external, 0 - internal\n");
+  printf("    tile configuration: 1 - external, 0 - internal\n");
   printf("\n\n");
 }
 
@@ -1708,7 +1708,7 @@ int main(int argc, char* argv []) {
 
   if ((!is_env_SPR && arch_cpuid < LIBXSMM_X86_AVX512_SPR)
        && (l_tc_config)) {
-    printf("Warning: external tile configuratoin will be ingnored\n");
+    printf("Warning: external tile configuration will be ingnored\n");
     l_tc_config = 0;
   }
 

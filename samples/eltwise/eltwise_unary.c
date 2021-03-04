@@ -363,9 +363,8 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   }
 
   /* use jited tranpose */
-  unary_param.in_ptr  = (void*)_in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = NULL;
+  unary_param.in.primary  = (void*)_in;
+  unary_param.out.primary = (void*)out;
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
@@ -507,9 +506,8 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   }
 
   /* use jited tranpose */
-  unary_param.in_ptr  = (void*)_in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = NULL;
+  unary_param.in.primary  = (void*)_in;
+  unary_param.out.primary = (void*)out;
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
@@ -640,9 +638,8 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     unary_op_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], op );
   }
 
-  unary_param.in_ptr  = (void*)_in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = NULL;
+  unary_param.in.primary  = (void*)_in;
+  unary_param.out.primary = (void*)out;
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
@@ -775,9 +772,8 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     unary_op_bf16_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], op );
   }
 
-  unary_param.in_ptr  = (void*)_in;
-  unary_param.out_ptr = (void*)out;
-  unary_param.mask_ptr = NULL;
+  unary_param.in.primary  = (void*)_in;
+  unary_param.out.primary = (void*)out;
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {

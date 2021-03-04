@@ -301,7 +301,9 @@ libxsmm_get_mcopykernel_info
 libxsmm_get_meltwkernel_info
 libxsmm_get_mmkernel_info
 libxsmm_get_pid
+libxsmm_get_registry_begin
 libxsmm_get_registry_info
+libxsmm_get_registry_next
 libxsmm_get_scratch_allocator
 libxsmm_get_scratch_info
 libxsmm_get_scratch_limit
@@ -335,6 +337,7 @@ libxsmm_itrans_internal
 libxsmm_itrans_p0
 libxsmm_itrans_s1
 libxsmm_itrans_s2
+libxsmm_kahan_sum
 libxsmm_lcm
 libxsmm_malloc
 libxsmm_matcopy

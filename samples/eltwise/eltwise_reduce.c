@@ -49,10 +49,12 @@ int main(int argc, char* argv[])
   unsigned short *sinp_hp, *result_reduce_elts_hp;
 #endif
   unsigned long long *cols_ind_array;
+  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltwfunction_unary kernel;
+  libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_redu_flags jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
-  libxsmm_meltwfunction_reduce kernel;
   libxsmm_meltwfunction_reduce_cols_idx kernel2;
-  libxsmm_meltw_reduce_param params;
   libxsmm_meltw_reduce_cols_idx_param params2;
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;
   unsigned long long l_start, l_end;
@@ -102,8 +104,7 @@ int main(int argc, char* argv[])
 
   /* Allocate arrays  */
   sinp  = (float*) malloc( ld_in*n*sizeof(float) );
-  result_reduce_elts = (float*) malloc(result_size*sizeof(float) );
-  result_reduce_elts_squared = (float*) malloc(result_size*sizeof(float) );
+  result_reduce_elts = (float*) malloc(2 * result_size*sizeof(float) );
   ref_result_reduce_elts = (float*) malloc(result_size*sizeof(float) );
   ref_result_reduce_elts_squared = (float*) malloc(result_size*sizeof(float) );
   cols_ind_array = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
@@ -203,16 +204,39 @@ int main(int argc, char* argv[])
     jit_flags |=  LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
   }
 
+  if (reduce_rows == 1) {
+    unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
+  } else {
+    unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+  }
+
+  if (reduce_op == 0) {
+    if ((reduce_elts == 1) && (reduce_elts_squared == 1)) {
+      result_reduce_elts_squared = (float*) result_reduce_elts + result_size;
+      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
+    }
+    if ((reduce_elts == 0) && (reduce_elts_squared == 1)) {
+      result_reduce_elts_squared = (float*) result_reduce_elts;
+      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD;
+    }
+    if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
+    }
+  } else {
+    if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
+    }
+  }
 
   printf("JITing reduce kernel... \n");
   if (n_cols_idx == 0) {
-    kernel = libxsmm_dispatch_meltw_reduce(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_flags, 0);
+    kernel = libxsmm_dispatch_meltw_unary(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+
     /* Call JITed kernel and compare result  */
     printf("Calling JITed reduce kernel... \n");
-    params.in_ptr = sinp;
-    params.out_ptr_0 = result_reduce_elts;
-    params.out_ptr_1 = result_reduce_elts_squared;
-    kernel( &params );
+    unary_param.in.primary = sinp;
+    unary_param.out.primary = result_reduce_elts;
+    kernel( &unary_param );
   } else {
 #ifdef FP16_REDUCE_COLSIDX
     kernel2 = libxsmm_dispatch_meltw_reduce_cols_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_I64);
@@ -348,7 +372,7 @@ int main(int argc, char* argv[])
   l_start = libxsmm_timer_tick();
   if (n_cols_idx == 0) {
     for (k = 0; k < iters; k++) {
-      kernel( &params );
+      kernel( &unary_param );
     }
   } else {
     for (k = 0; k < iters; k++) {
@@ -362,7 +386,6 @@ int main(int argc, char* argv[])
 
   free(sinp);
   free(result_reduce_elts);
-  free(result_reduce_elts_squared);
   free(ref_result_reduce_elts);
   free(ref_result_reduce_elts_squared);
 

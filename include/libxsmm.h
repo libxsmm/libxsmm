@@ -95,23 +95,23 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void);
 /** Set the default prefetch strategy. */
 LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy);
 
-/** Receive information about JIT-generated code. */
-LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info* info);
-
 /** Get information about the matrix multiplication kernel. */
 LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mmkernel_info* info);
-
 /** Get information about the matrix transpose kernel. */
 LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transkernel_info* info);
-
 /** Get information about the matrix copy kernel. */
 LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libxsmm_mcopykernel_info* info);
-
 /** Get information about the matrix eltwise kernel. */
 LIBXSMM_API int libxsmm_get_meltwkernel_info(libxsmm_xmeltwfunction kernel, libxsmm_meltwkernel_info* info);
 
+/** Receive information about JIT-generated code (kernel or registry entry). */
+LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info* info);
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
+/** Enumerate registry by kind (e.g., LIBXSMM_KERNEL_KIND_USER); can be NULL (no such kind). */
+LIBXSMM_API void* libxsmm_get_registry_begin(libxsmm_kernel_kind kind, const void** key);
+/** Receive next (or NULL) based on given entry (see libxsmm_get_registry_begin). */
+LIBXSMM_API void* libxsmm_get_registry_next(const void* regentry, const void** key);
 
 /**
  * Register user-defined key-value.
@@ -500,7 +500,7 @@ LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(libxsmm_b
 LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary(libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo, libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype comp_type, libxsmm_meltw_ternary_flags flags, libxsmm_meltw_ternary_type type);
 
 /** matrix equation interface */
-LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create();
+LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void);
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_blasint in_pos, const libxsmm_blasint offs_in_pos, const libxsmm_datatype dtype );
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype );
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype );

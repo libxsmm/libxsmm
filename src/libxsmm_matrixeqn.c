@@ -506,7 +506,9 @@ int is_unary_opcode_reduce_kernel (unsigned int opcode) {
   int result = 0;
   if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ||
-      (opcode== LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MUL) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD_NCNC_FORMAT) ||
       (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD)) {
     result = 1;
   }
@@ -933,7 +935,7 @@ LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_ready_for_jit( libxsmm_blasint eqn_
 }
 
 
-LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create() {
+LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void) {
   libxsmm_blasint ret = libxsmm_matrix_eqns_count;
   libxsmm_matrix_eqn_elem* node;
 

@@ -456,7 +456,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int block_upd_ofm;
 
   libxsmm_xtransfunction tr_kernel;
-  libxsmm_meltwfunction_cvtfp32bf16 fwd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_unary fwd_cvtfp32bf16_kernel;
   libxsmm_xtransfunction tr_input_upd_kernel;
 
   /* Hoisting the compute kernels for FWD  */
@@ -733,11 +733,11 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_code_pointer gemm_upd3;    /* ability to hoist update GEMMs */
 
   /* JITed eltwise kernels... */
-  libxsmm_meltwfunction_cvtfp32bf16     fwd_cvtfp32bf16_kernel;
-  libxsmm_meltwfunction_cvtfp32bf16     bwd_cvtfp32bf16_kernel;
-  libxsmm_meltwfunction_relu            bwd_relu_kernel;
-  libxsmm_meltwfunction_cvtfp32bf16_act fwd_cvtfp32bf16_relu_kernel;
-  libxsmm_meltwfunction_act_cvtfp32bf16 fwd_sigmoid_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_unary fwd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_unary bwd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_unary bwd_relu_kernel;
+  libxsmm_meltwfunction_unary fwd_cvtfp32bf16_relu_kernel;
+  libxsmm_meltwfunction_unary fwd_sigmoid_cvtfp32bf16_kernel;
 };
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
@@ -1056,7 +1056,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_xinfo {
-  /** Non-zero of kernel is registered. */
+  /** Non-zero if kernel is registered. */
   unsigned int registered;
   /** Number of FLoating Point OPerationS (FLOPS). */
   unsigned int nflops;
