@@ -497,7 +497,7 @@ int main( int argc, char* argv[] ) {
   double t_vec = 0, t_tpp = 0;
   libxsmm_matdiff_info norms_out;
   float *inp, *out, *dinp, *dout, *eqn_dinp, *eqn_dout, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var, sum = 0.0;
-  libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_dinp, *bf16_dout, *bf16_eqn_dinp, *bf16_eqn_dout, *bf16_dbeta, *bf16_eqn_dbeta, *bf16_dgamma, *bf16_eqn_dgamma, *bf16_gamma, *bf16_beta, *bf16_eqn_out;
+  libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_dinp, *bf16_dout, *bf16_eqn_dinp, *bf16_eqn_dout, *bf16_gamma, *bf16_beta, *bf16_eqn_out;
   int S1 = 64;
   int S2 = 64;
   int S3 = 64;
@@ -543,12 +543,8 @@ int main( int argc, char* argv[] ) {
   bf16_out = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
   bf16_dinp = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
   bf16_dout = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
-  bf16_dgamma = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
-  bf16_dbeta = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
   bf16_eqn_dinp = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
   bf16_eqn_dout = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
-  bf16_eqn_dgamma = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
-  bf16_eqn_dbeta = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
   bf16_gamma = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
   bf16_beta = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
   bf16_eqn_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
@@ -583,10 +579,6 @@ int main( int argc, char* argv[] ) {
     eqn_dgamma[i] = dgamma[i];
     libxsmm_rne_convert_fp32_bf16( &gamma[i], &bf16_gamma[i], 1 );
     libxsmm_rne_convert_fp32_bf16( &beta[i], &bf16_beta[i], 1 );
-    libxsmm_rne_convert_fp32_bf16( &dgamma[i], &bf16_dgamma[i], 1 );
-    libxsmm_rne_convert_fp32_bf16( &dbeta[i], &bf16_dbeta[i], 1 );
-    libxsmm_rne_convert_fp32_bf16( &eqn_dgamma[i], &bf16_eqn_dgamma[i], 1 );
-    libxsmm_rne_convert_fp32_bf16( &eqn_dbeta[i], &bf16_eqn_dbeta[i], 1 );
   }
 
   for (i = 0; i < 1024 * 1024; i++ ) {
@@ -887,10 +879,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(dbeta);
   libxsmm_free(eqn_dgamma);
   libxsmm_free(eqn_dbeta);
-  libxsmm_free(bf16_dbeta);
-  libxsmm_free(bf16_dgamma);
-  libxsmm_free(bf16_eqn_dbeta);
-  libxsmm_free(bf16_eqn_dgamma);
   libxsmm_free(mean);
   libxsmm_free(var);
   libxsmm_free(gamma);
