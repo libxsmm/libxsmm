@@ -17,6 +17,7 @@
 #include "../../include/libxsmm_intrinsics_x86.h"
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
+#define USE_VECTORIZED_PATH 1
 
 inline __m512 _mm512_convert_bf_ps(__m256i a) { return _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(a),16)); }
 inline __m256i _mm256_convert_ps_bf(__m512 a) { return _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(a),16)); }
@@ -177,7 +178,7 @@ inline void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, float, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, float, beta, pbeta, S3);
-#if defined(__AVX512F__)
+#if USE_VECTORIZED_PATH && defined(__AVX512F__)
   for (s2 = 0; s2 < S2; s2++) {
     __m512 vm = _mm512_setzero_ps();
     __m512 vv = _mm512_setzero_ps();
@@ -228,10 +229,34 @@ inline void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp
     }
   }
 #else
+  for (s2 = 0; s2 < S2; s2++) {
+    float m = 0;
+    float v = 0;
+    float c = 1.0 / (S1*S3);
+    for (s1 = 0; s1 < S1; s1++) {
+      for( s3 = 0; s3 < S3; s3++) {
+        m += LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3);
+        v += LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) * LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3);
+      }
+    }
+    m = m * c;
+    v = v * c;
+    v = LIBXSMM_MAX(v - m * m, 0.0f);
+    v = 1.0f / ((float)sqrt(v+eps));
+    mean[s2] = m;
+    var[s2] = v;
+    float s = v;
+    float b = -1.0 * v * m;
+    for (s1 = 0; s1 < S1; s1++) {
+      for (s3 = 0; s3 < S3; s3++) {
+        LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3) = (LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) * s + b) * LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3) + LIBXSMM_VLA_ACCESS(2, beta, s1, s3, S3);
+      }
+    }
+  }
 #endif
 }
 
-inline void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta) {
+void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, float, din, pdin, S2, S3);
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
@@ -239,7 +264,7 @@ inline void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdou
   LIBXSMM_VLA_DECL(2, float, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, S3);
-#if defined(__AVX512F__)
+#if USE_VECTORIZED_PATH && defined(__AVX512F__)
   for (s2 = 0; s2 < S2; s2++) {
     float a = var[s2];
     float b = -a*mean[s2];
@@ -307,6 +332,28 @@ inline void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdou
     }
   }
 #else
+  for (s2 = 0; s2 < S2; s2++) {
+    float a = var[s2], c;
+    float b = -a*mean[s2];
+    float ds = 0.0f;
+    float db = 0.0f;
+    float scale = 1.0f / (S1 * S3);
+    for (s1 = 0; s1 < S1; s1++) {
+      for (s3 = 0; s3 < S3; s3++) {
+        LIBXSMM_VLA_ACCESS(2, dgamma, s1, s3, S3) += (a * LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) + b) * LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3);
+        LIBXSMM_VLA_ACCESS(2, dbeta, s1, s3, S3) += LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3);
+        ds += LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3) * LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3) * LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3);
+        db += LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3) * LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3);
+      }
+    }
+    b = (db * mean[s2] - ds) * a * a * a * scale;
+    c = -b * mean[s2] - db * a * scale;
+    for (s1 = 0; s1 < S1; s1++) {
+      for (s3 = 0; s3 < S3; s3++) {
+        LIBXSMM_VLA_ACCESS(3, din, s1, s2, s3, S2, S3) = LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3)  * a * LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3) + b * LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) + c;
+      }
+    }
+  }
 #endif
 }
 
