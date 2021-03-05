@@ -33,7 +33,7 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
-inline void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps) {
+void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
@@ -93,7 +93,7 @@ inline void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfl
 #endif
 }
 
-inline void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, libxsmm_bfloat16 *pinp, float *mean, float *var, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pdin, float *pdgamma, float *pdbeta) {
+void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, libxsmm_bfloat16 *pinp, float *mean, float *var, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pdin, float *pdgamma, float *pdbeta) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, din, pdin, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
@@ -172,7 +172,7 @@ inline void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfl
 #endif
 }
 
-inline void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps) {
+void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
@@ -357,7 +357,7 @@ void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, floa
 #endif
 }
 
-inline void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps, libxsmm_matrix_eqn_function func0, libxsmm_meltwfunction_unary reduce_rows_kernel, libxsmm_meltwfunction_unary reduce_cols_kernel) {
+void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps, libxsmm_matrix_eqn_function func0, libxsmm_meltwfunction_unary reduce_rows_kernel, libxsmm_meltwfunction_unary reduce_cols_kernel) {
   int s2;
   libxsmm_matrix_eqn_param eqn_param;
   libxsmm_meltw_unary_param m_reduce_rows_params, v_reduce_rows_params, reduce_cols_params;
@@ -400,7 +400,7 @@ inline void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float
   }
 }
 
-inline void tpp_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps, libxsmm_matrix_eqn_function func0, libxsmm_meltwfunction_unary reduce_rows_kernel, libxsmm_meltwfunction_unary reduce_cols_kernel) {
+void tpp_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps, libxsmm_matrix_eqn_function func0, libxsmm_meltwfunction_unary reduce_rows_kernel, libxsmm_meltwfunction_unary reduce_cols_kernel) {
   int s2;
   libxsmm_matrix_eqn_param eqn_param;
   libxsmm_meltw_unary_param m_reduce_rows_params, v_reduce_rows_params, reduce_cols_params;
@@ -444,7 +444,7 @@ inline void tpp_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
 }
 
 
-inline void tpp_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta,
+void tpp_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta,
     libxsmm_matrix_eqn_function dgamma_func, libxsmm_matrix_eqn_function dbeta_func, libxsmm_matrix_eqn_function db_func, libxsmm_matrix_eqn_function ds_func, libxsmm_matrix_eqn_function din_func) {
   int s2;
   float a, b, c, db, ds;
@@ -493,7 +493,7 @@ inline void tpp_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, floa
   }
 }
 
-inline void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, libxsmm_bfloat16 *pinp, float *mean, float *var, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pdin, float *pdgamma, float *pdbeta,
+void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, libxsmm_bfloat16 *pinp, float *mean, float *var, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pdin, float *pdgamma, float *pdbeta,
     libxsmm_matrix_eqn_function dgamma_func, libxsmm_matrix_eqn_function dbeta_func, libxsmm_matrix_eqn_function db_func, libxsmm_matrix_eqn_function ds_func, libxsmm_matrix_eqn_function din_func) {
   int s2;
   float a, b, c, db, ds;
