@@ -30,6 +30,7 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
   unsigned int bn, bc, N, C, Nb, iM, im, in, vreg0, vreg1;
   unsigned int use_m_masking, m_trips, m_outer_trips, m_inner_trips, mask_in_count, mask_out_count;
   unsigned int cur_acc0, cur_acc1, mask_load_0, mask_load_1, mask_store;
+  char vname_in;
 
   bc  = i_mateltwise_desc->m;
   bn  = i_mateltwise_desc->n;
@@ -69,6 +70,13 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
   use_m_masking     = (bc % 32 == 0) ? 0 : 1;
   m_trips           = (bc + 31)/32;
   m_outer_trips     = (m_trips + 7)/8;
+
+
+  if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+    vname_in = 'y';
+  } else {
+    vname_in = 'z';
+  }
 
   /* Calculate input mask in case we see m_masking */
   if (use_m_masking == 1) {
@@ -123,22 +131,24 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
             i_gp_reg_mapping->gp_reg_in,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (in * bc + im * 32 + iM * 32 * 8) * i_micro_kernel_config->datatype_size_in,
-            'y',
+            vname_in,
             vreg0, mask_load_0, 1, 0 );
 
-        /* convert 16 bit values into 32 bit (integer convert) */
-        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-            LIBXSMM_X86_INSTR_VPMOVSXWD,
-            i_micro_kernel_config->vector_name,
-            vreg0, vreg0 );
+        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+          /* convert 16 bit values into 32 bit (integer convert) */
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+              LIBXSMM_X86_INSTR_VPMOVSXWD,
+              i_micro_kernel_config->vector_name,
+              vreg0, vreg0 );
 
-        /* shift 16 bits to the left to generate valid FP32 numbers */
-        libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code,
-            LIBXSMM_X86_INSTR_VPSLLD_I,
-            i_micro_kernel_config->vector_name,
-            vreg0,
-            vreg0,
-            16);
+          /* shift 16 bits to the left to generate valid FP32 numbers */
+          libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code,
+              LIBXSMM_X86_INSTR_VPSLLD_I,
+              i_micro_kernel_config->vector_name,
+              vreg0,
+              vreg0,
+              16);
+        }
 
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                              LIBXSMM_X86_INSTR_VADDPS,
@@ -152,22 +162,24 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
               i_gp_reg_mapping->gp_reg_in,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               (in * bc + im * 32 + 16 + iM * 32 * 8) * i_micro_kernel_config->datatype_size_in,
-              'y',
+              vname_in,
               vreg1, mask_load_1, 1, 0 );
 
-          /* convert 16 bit values into 32 bit (integer convert) */
-          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-              LIBXSMM_X86_INSTR_VPMOVSXWD,
-              i_micro_kernel_config->vector_name,
-              vreg1, vreg1 );
+          if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+            /* convert 16 bit values into 32 bit (integer convert) */
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                LIBXSMM_X86_INSTR_VPMOVSXWD,
+                i_micro_kernel_config->vector_name,
+                vreg1, vreg1 );
 
-          /* shift 16 bits to the left to generate valid FP32 numbers */
-          libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-              LIBXSMM_X86_INSTR_VPSLLD_I,
-              i_micro_kernel_config->vector_name,
-              vreg1,
-              vreg1,
-              16);
+            /* shift 16 bits to the left to generate valid FP32 numbers */
+            libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
+                LIBXSMM_X86_INSTR_VPSLLD_I,
+                i_micro_kernel_config->vector_name,
+                vreg1,
+                vreg1,
+                16);
+          }
 
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                LIBXSMM_X86_INSTR_VADDPS,
