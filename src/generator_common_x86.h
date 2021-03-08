@@ -248,5 +248,18 @@ void libxsmm_generator_vcvtneps2bf16_avx512( libxsmm_generated_code* io_generate
                                              const unsigned int      io_mask_0,
                                              const unsigned int      io_mask_1 );
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_vmove_instr,
+                                                const unsigned int      i_gp_reg_base,
+                                                const unsigned int      i_reg_idx,
+                                                const unsigned int      i_scale,
+                                                const int               i_displacement,
+                                                const char              i_vector_name,
+                                                const unsigned int      i_vec_reg_number_0,
+                                                const unsigned int      i_use_masking,
+                                                const unsigned int      i_mask_reg_number,
+                                                const unsigned int      i_is_store );
+
 #endif /* GENERATOR_COMMON_X86_H */
 

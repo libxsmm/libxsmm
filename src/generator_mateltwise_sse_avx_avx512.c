@@ -231,6 +231,18 @@ void libxsmm_generator_mateltwise_footer_n_dyn_loop( libxsmm_generated_code*    
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_mateltwise_initialize_avx_mask( libxsmm_generated_code*            io_generated_code,
+    const unsigned int                       i_mask_reg,
+    const unsigned int                       i_mask_count) {
+  unsigned int mask_array[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  unsigned int i;
+  for (i = 0; i < i_mask_count; i++) {
+    mask_array[i] = 0xFFFFFFFF;
+  }
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) mask_array, "mask_array", 'y', i_mask_reg );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code*            io_generated_code,
     const unsigned int                       i_gp_reg_tmp,
     const unsigned int                       i_mask_reg,
@@ -560,7 +572,7 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
   libxsmm_generator_meltw_setup_stack_frame( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
   /* Depending on the elementwise function, dispatch the proper code JITer */
-  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX2) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16)) {
       if ( (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
         if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT) > 0) ) {
