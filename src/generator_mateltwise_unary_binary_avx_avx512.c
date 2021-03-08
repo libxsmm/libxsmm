@@ -662,11 +662,18 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
             LIBXSMM_X86_INSTR_VCMPPS,
             'y',
-            i_micro_kernel_config->tmp_vreg,
             i_micro_kernel_config->zero_vreg,
+            i_micro_kernel_config->tmp_vreg,
             i_micro_kernel_config->tmp_vreg,
             0, 0, 0, 14);
 
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
+            LIBXSMM_X86_INSTR_VBLENDVPS,
+            'y',
+            cur_vreg,
+            i_micro_kernel_config->zero_vreg,
+            cur_vreg,
+            0, 0, 0, (i_micro_kernel_config->tmp_vreg) << 4);
       } else {
         if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) > 0 ) {
           libxsmm_x86_instruction_mask_move_mem( io_generated_code, l_mask_ld_instr, i_gp_reg_mapping->gp_reg_relumask, LIBXSMM_X86_GP_REG_UNDEF,  0, (im * l_vlen + in * i_mateltwise_desc->ldi)/8,  cur_mask_reg );
