@@ -100,10 +100,13 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     libxsmm_blasint tpp_n = F_t;                                   // rows
     libxsmm_blasint ld_zero = W_t;
 
-    libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
-    libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+
+    libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
-        fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
+        fprintf( stderr, "JIT for initialization by unary copy kernel failed. Bailing...!\n");
         exit(-1);
     }
 
@@ -132,14 +135,17 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {                               // Loop for batches
         int last_block = 0;
-        libxsmm_meltw_copy_param copy_params_1;           // Copy parameter variable for holding the pointer
-        libxsmm_meltw_copy_param copy_params_2;
+        // libxsmm_meltw_copy_param copy_params_1;           // Copy parameter variable for holding the pointer
+        // libxsmm_meltw_copy_param copy_params_2;
+        libxsmm_meltw_unary_param copy_params_1;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_unary_param copy_params_2;
         libxsmm_meltw_transform_param trans_param_short;
         libxsmm_meltw_transform_param trans_param_edge;
 
         for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    // width blocking loop (Normal case)
 
-            copy_params_1.out_ptr = &Y_a[n*F_t*W_t + wb];                 /* Initialization of output array */
+            // copy_params_1.out_ptr = &Y_a[n*F_t*W_t + wb];                 /* Initialization of output array */
+            copy_params_1.out.primary = &Y_a[n*F_t*W_t + wb];                 /* Initialization of output array */
             copy_kernel_1(&copy_params_1);
 
             // VNNI transform
@@ -155,7 +161,8 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
 
         if (W_t % XS_TILE_FORWARD != 0){                       // Edge case
 
-            copy_params_2.out_ptr = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];                 /* Initialization of output array */
+            // copy_params_2.out_ptr = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];                 /* Initialization of output array */
+            copy_params_2.out.primary = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];                 /* Initialization of output array */
             copy_kernel_2(&copy_params_2);
 
             // VNNI transform
@@ -276,43 +283,58 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
     if (ldi_virtual < virtual_m1){                      // corner case when width's are very small
         virtual_m1 = ldi_virtual;
-        libxsmm_meltwfunction_copy all_zero = libxsmm_dispatch_meltw_copy(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+        // libxsmm_meltwfunction_copy all_zero = libxsmm_dispatch_meltw_copy(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+        libxsmm_meltwfunction_unary all_zero = libxsmm_dispatch_meltw_unary(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
         if ( all_zero == NULL) {
-            fprintf( stderr, "JIT for initialization by TPP virtual all zero kernel failed. Bailing...!\n");
+            fprintf( stderr, "JIT for initialization by unary virtual all zero kernel failed. Bailing...!\n");
             exit(-1);
         }
         #pragma omp parallel for
         for(int n = 0; n < N_t; n++){
-            libxsmm_meltw_copy_param all_zero_params;
-            all_zero_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                 // Initialize the entire array when widths are small
+            // libxsmm_meltw_copy_param all_zero_params;
+            // all_zero_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                 // Initialize the entire array when widths are small
+            libxsmm_meltw_unary_param all_zero_params;
+            all_zero_params.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual];                 // Initialize the entire array when widths are small
             all_zero(&all_zero_params);
         }
     }
 
-    libxsmm_meltwfunction_copy virtual_copy = libxsmm_dispatch_meltw_copy(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_NONE);
-    libxsmm_meltwfunction_copy virtual_copy_zero = libxsmm_dispatch_meltw_copy(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // libxsmm_meltwfunction_copy virtual_copy = libxsmm_dispatch_meltw_copy(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_NONE);
+    // libxsmm_meltwfunction_copy virtual_copy_zero = libxsmm_dispatch_meltw_copy(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+
+    libxsmm_meltwfunction_unary virtual_copy = libxsmm_dispatch_meltw_unary(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+    libxsmm_meltwfunction_unary virtual_copy_zero = libxsmm_dispatch_meltw_unary(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( virtual_copy == NULL || virtual_copy_zero == NULL) {
-        fprintf( stderr, "JIT for initialization by TPP virtual copy kernel failed. Bailing...!\n");
+        fprintf( stderr, "JIT for initialization by unary virtual copy kernel failed. Bailing...!\n");
         exit(-1);
     }
 
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++){                       // Loops for storing the edge portion of gradinant array into grad_a_shortpad
-        libxsmm_meltw_copy_param vcopy_params;           // Copy parameter variable for holding the pointer
-        libxsmm_meltw_copy_param vcopy_params_zero;
+        // libxsmm_meltw_copy_param vcopy_params;           // Copy parameter variable for holding the pointer
+        // libxsmm_meltw_copy_param vcopy_params_zero;
 
-        vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                                        // copy zeros
+        libxsmm_meltw_unary_param vcopy_params;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_unary_param vcopy_params_zero;
+
+        // vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                                        // copy zeros
+        vcopy_params_zero.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual];                                        // copy zeros
         virtual_copy_zero(&vcopy_params_zero);
 
-        vcopy_params.in_ptr = &grad_a[n*F_t*W_t];                                                             // copy after zeros from start of the grad array
-        vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ((WW_t - 1)*dial)];
+        // vcopy_params.in_ptr = &grad_a[n*F_t*W_t];                                                             // copy after zeros from start of the grad array
+        // vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ((WW_t - 1)*dial)];
+        vcopy_params.in.primary = &grad_a[n*F_t*W_t];                                                             // copy after zeros from start of the grad array
+        vcopy_params.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual + ((WW_t - 1)*dial)];
         virtual_copy(&vcopy_params);
 
-        vcopy_params.in_ptr = &grad_a[n*F_t*W_t + W_t - virtual_m1];              // copy from the end of the grad array
-        vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - virtual_m1 - ((WW_t - 1)*dial)];
+        // vcopy_params.in_ptr = &grad_a[n*F_t*W_t + W_t - virtual_m1];              // copy from the end of the grad array
+        // vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - virtual_m1 - ((WW_t - 1)*dial)];
+        vcopy_params.in.primary = &grad_a[n*F_t*W_t + W_t - virtual_m1];              // copy from the end of the grad array
+        vcopy_params.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - virtual_m1 - ((WW_t - 1)*dial)];
         virtual_copy(&vcopy_params);
 
-        vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - ((WW_t - 1)*dial)];     // copy zeros
+        // vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - ((WW_t - 1)*dial)];     // copy zeros
+        vcopy_params_zero.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - ((WW_t - 1)*dial)];     // copy zeros
         virtual_copy_zero(&vcopy_params_zero);
     }
 
@@ -363,8 +385,11 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_blasint tpp_n = C_t;                                     // rows
     libxsmm_blasint ld_zero = Win_t;
 
-    libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
-    libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+
+    libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
         fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
         exit(-1);
@@ -396,14 +421,17 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {
         int last_block=0;
-        libxsmm_meltw_copy_param copy_params_1;                       // Copy parameter variable for holding the pointer
-        libxsmm_meltw_copy_param copy_params_2;
+        // libxsmm_meltw_copy_param copy_params_1;                       // Copy parameter variable for holding the pointer
+        // libxsmm_meltw_copy_param copy_params_2;
+        libxsmm_meltw_unary_param copy_params_1;                       // Copy parameter variable for holding the pointer
+        libxsmm_meltw_unary_param copy_params_2;
         libxsmm_meltw_transform_param trans_param_1;
         libxsmm_meltw_transform_param trans_param_2;
 
         for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
 
-            copy_params_1.out_ptr = &d_input_a[n*C_t*Win_t + wb];             // Initialization
+            // copy_params_1.out_ptr = &d_input_a[n*C_t*Win_t + wb];             // Initialization
+            copy_params_1.out.primary = &d_input_a[n*C_t*Win_t + wb];             // Initialization
             copy_kernel_1(&copy_params_1);
 
             if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD){
@@ -446,7 +474,8 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
             // Right side case (Take VNNI transform of grad_a_shortpad array)
 
-            copy_params_2.out_ptr = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];             // Initialization
+            // copy_params_2.out_ptr = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];             // Initialization
+            copy_params_2.out.primary = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];             // Initialization
             copy_kernel_2(&copy_params_2);
 
             // VNNI transform
@@ -553,15 +582,19 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     /* JIT eltwise TPPs for FP32 to BF16 conversion... */
     libxsmm_blasint cvt_m = 1;
     libxsmm_blasint cvt_n = F_t*C_t*WW_t;
-    libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel = libxsmm_dispatch_meltw_cvtfp32bf16(cvt_m, cvt_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVT_NONE);
+    // libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel = libxsmm_dispatch_meltw_cvtfp32bf16(cvt_m, cvt_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_CVT_NONE);
+    libxsmm_meltwfunction_unary eltwise_kernel = libxsmm_dispatch_meltw_unary(cvt_m, cvt_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
     if ( eltwise_kernel == NULL ) {
         fprintf( stderr, "JIT for TPP convert FP32 to BF16 failed. Bailing...!\n");
         exit(-1);
     }
-    libxsmm_meltw_cvtfp32bf16_param eltwise_params;
+    // libxsmm_meltw_cvtfp32bf16_param eltwise_params;
+    libxsmm_meltw_unary_param eltwise_params;
 
-    eltwise_params.in_ptr = flip_d_weight_a;
-    eltwise_params.out_ptr = flip_d_weight_bf16;
+    // eltwise_params.in_ptr = flip_d_weight_a;
+    // eltwise_params.out_ptr = flip_d_weight_bf16;
+    eltwise_params.in.primary = flip_d_weight_a;
+    eltwise_params.out.primary = flip_d_weight_bf16;
     eltwise_kernel(&eltwise_params);
 
 
@@ -668,10 +701,22 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
     libxsmm_blasint tpp_n = F_t;      // rows
     libxsmm_blasint ld_zero = W_t;
 
-    libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
-    libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
-    if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
-        fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
+    // libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
+    //     fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
+    //     exit(-1);
+    // }
+
+    libxsmm_meltw_unary_type unary_type;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
+    libxsmm_meltw_unary_flags unary_flags;
+    unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+
+    libxsmm_meltwfunction_unary unary_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+    libxsmm_meltwfunction_unary unary_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+    if ( unary_kernel_1 == NULL || unary_kernel_2 == NULL) {
+        fprintf( stderr, "JIT for copy UNARY TPP. Bailing...!\n");
         exit(-1);
     }
 
@@ -679,20 +724,28 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {                               // Loop for batches
         int last_block = 0;
-        libxsmm_meltw_copy_param copy_params_1;           // Copy parameter variable for holding the pointer
-        libxsmm_meltw_copy_param copy_params_2;           // Copy parameter variable for holding the pointer
+        // libxsmm_meltw_copy_param copy_params_1;           // Copy parameter variable for holding the pointer
+        // libxsmm_meltw_copy_param copy_params_2;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_unary_param unary_param_1;
+        libxsmm_meltw_unary_param unary_param_2;
 
         for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    // width blocking loop (Normal case)
-            copy_params_1.out_ptr = &Y_a[n*F_t*W_t + wb];      // Initialization
-            copy_kernel_1(&copy_params_1);
+            // copy_params_1.out_ptr = &Y_a[n*F_t*W_t + wb];      // Initialization
+            // copy_kernel_1(&copy_params_1);
+            // unary_param_1.in.primary = &Y_a[n*F_t*W_t + wb];
+            unary_param_1.out.primary = &Y_a[n*F_t*W_t + wb];
+            unary_kernel_1( &unary_param_1 );
 
             kernel(&input_a[n*C_t*Win_t + 0*Win_t + wb], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
             last_block = wb;
         }
 
         if (W_t % XS_TILE_FORWARD != 0){                        // Edge Case
-            copy_params_2.out_ptr = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];     // Initialization
-            copy_kernel_2(&copy_params_2);
+            // copy_params_2.out_ptr = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];     // Initialization
+            // copy_kernel_2(&copy_params_2);
+            // unary_param_2.in.primary = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];
+            unary_param_2.out.primary = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];
+            unary_kernel_2( &unary_param_2 );
 
             kernel2(&input_a[n*C_t*Win_t + 0*Win_t + last_block + XS_TILE_FORWARD], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + last_block + XS_TILE_FORWARD], &l_br);
         }
@@ -816,44 +869,59 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
     if (ldi_virtual < virtual_m1){                      // corner case when width's are very small
         virtual_m1 = ldi_virtual;
-        libxsmm_meltwfunction_copy all_zero = libxsmm_dispatch_meltw_copy(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+        // libxsmm_meltwfunction_copy all_zero = libxsmm_dispatch_meltw_copy(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+        libxsmm_meltwfunction_unary all_zero = libxsmm_dispatch_meltw_unary(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
         if ( all_zero == NULL) {
-            fprintf( stderr, "JIT for initialization by TPP virtual all zero kernel failed. Bailing...!\n");
+            fprintf( stderr, "JIT for initialization by unary all zero copy kernel failed. Bailing...!\n");
             exit(-1);
         }
         #pragma omp parallel for
         for(int n = 0; n < N_t; n++){
-            libxsmm_meltw_copy_param all_zero_params;
-            all_zero_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                 // Initialize the entire array when widths are small
+            // libxsmm_meltw_copy_param all_zero_params;
+            // all_zero_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                 // Initialize the entire array when widths are small
+            libxsmm_meltw_unary_param all_zero_params;
+            all_zero_params.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual];                 // Initialize the entire array when widths are small
             all_zero(&all_zero_params);
         }
     }
 
 
-    libxsmm_meltwfunction_copy virtual_copy = libxsmm_dispatch_meltw_copy(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_NONE);
-    libxsmm_meltwfunction_copy virtual_copy_zero = libxsmm_dispatch_meltw_copy(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // libxsmm_meltwfunction_copy virtual_copy = libxsmm_dispatch_meltw_copy(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_NONE);
+    // libxsmm_meltwfunction_copy virtual_copy_zero = libxsmm_dispatch_meltw_copy(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+
+    libxsmm_meltwfunction_unary virtual_copy = libxsmm_dispatch_meltw_unary(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+    libxsmm_meltwfunction_unary virtual_copy_zero = libxsmm_dispatch_meltw_unary(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( virtual_copy == NULL || virtual_copy_zero == NULL) {
-        fprintf( stderr, "JIT for initialization by TPP virtual copy kernel failed. Bailing...!\n");
+        fprintf( stderr, "JIT for initialization by unary copy kernel failed. Bailing...!\n");
         exit(-1);
     }
 
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++){                         // Loops for storing the edge portion of gradinant array into grad_a_shortpad
-        libxsmm_meltw_copy_param vcopy_params;           // Copy parameter variable for holding the pointer
-        libxsmm_meltw_copy_param vcopy_params_zero;
+        // libxsmm_meltw_copy_param vcopy_params;           // Copy parameter variable for holding the pointer
+        // libxsmm_meltw_copy_param vcopy_params_zero;
 
-        vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                                        // copy zeros
+        libxsmm_meltw_unary_param vcopy_params;
+        libxsmm_meltw_unary_param vcopy_params_zero;
+
+        // vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual];                                        // copy zeros
+        vcopy_params_zero.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual];                                        // copy zeros
         virtual_copy_zero(&vcopy_params_zero);
 
-        vcopy_params.in_ptr = &grad_a[n*F_t*W_t];                                                              // copy after zeros from start of the grad array
-        vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ((WW_t - 1)*dial)];
+        // vcopy_params.in_ptr = &grad_a[n*F_t*W_t];                                                              // copy after zeros from start of the grad array
+        // vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ((WW_t - 1)*dial)];
+        vcopy_params.in.primary = &grad_a[n*F_t*W_t];                                                              // copy after zeros from start of the grad array
+        vcopy_params.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual + ((WW_t - 1)*dial)];
         virtual_copy(&vcopy_params);
 
-        vcopy_params.in_ptr = &grad_a[n*F_t*W_t + W_t - virtual_m1];              // copy from the end of the grad array
-        vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - virtual_m1 - ((WW_t - 1)*dial)];
+        // vcopy_params.in_ptr = &grad_a[n*F_t*W_t + W_t - virtual_m1];              // copy from the end of the grad array
+        // vcopy_params.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - virtual_m1 - ((WW_t - 1)*dial)];
+        vcopy_params.in.primary = &grad_a[n*F_t*W_t + W_t - virtual_m1];              // copy from the end of the grad array
+        vcopy_params.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - virtual_m1 - ((WW_t - 1)*dial)];
         virtual_copy(&vcopy_params);
 
-        vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - ((WW_t - 1)*dial)];     // copy zeros
+        // vcopy_params_zero.out_ptr = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - ((WW_t - 1)*dial)];     // copy zeros
+        vcopy_params_zero.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual + ldo_virtual - ((WW_t - 1)*dial)];     // copy zeros
         virtual_copy_zero(&vcopy_params_zero);
     }
 
@@ -891,8 +959,11 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     libxsmm_blasint tpp_n = C_t;      // rows
     libxsmm_blasint ld_zero = Win_t;
 
-    libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
-    libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // libxsmm_meltwfunction_copy copy_kernel_1 = libxsmm_dispatch_meltw_copy(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+    // libxsmm_meltwfunction_copy copy_kernel_2 = libxsmm_dispatch_meltw_copy(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_COPY_ZERO);
+
+    libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
         fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
         exit(-1);
@@ -902,12 +973,15 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {
         int last_block=0;
-        libxsmm_meltw_copy_param copy_params_1;           // Copy parameter variable for holding the pointer
-        libxsmm_meltw_copy_param copy_params_2;           // Copy parameter variable for holding the pointer
+        // libxsmm_meltw_copy_param copy_params_1;           // Copy parameter variable for holding the pointer
+        // libxsmm_meltw_copy_param copy_params_2;           // Copy parameter variable for holding the pointer
 
+        libxsmm_meltw_unary_param copy_params_1;
+        libxsmm_meltw_unary_param copy_params_2;
         for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
 
-            copy_params_1.out_ptr = &d_input_a[n*C_t*Win_t + wb];            // Initialization
+            // copy_params_1.out_ptr = &d_input_a[n*C_t*Win_t + wb];            // Initialization
+            copy_params_1.out.primary = &d_input_a[n*C_t*Win_t + wb];            // Initialization
             copy_kernel_1(&copy_params_1);
 
             if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD)              // Normal case
@@ -922,7 +996,8 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
         if (Win_t % XS_TILE_DBACKWARD != 0){                                // Edge case
 
-            copy_params_2.out_ptr = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];            // Initialization
+            // copy_params_2.out_ptr = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];            // Initialization
+            copy_params_2.out.primary = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];            // Initialization
             copy_kernel_2(&copy_params_2);
 
             kernel5(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + last_block + XS_TILE_DBACKWARD - Wpad_t + 2*pad_tile_multiple], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD], &l_br);
@@ -1069,7 +1144,14 @@ at::Tensor relu_forward_bf16(at::Tensor& input){
     libxsmm_blasint tpp_m = W_t;                      // columns
     libxsmm_blasint tpp_n = C_t;                  // rows
     libxsmm_blasint ld = W_t;
-    libxsmm_meltwfunction_relu relu_fwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_FWD, 0);
+    // libxsmm_meltwfunction_relu relu_fwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_FWD, 0);
+
+    libxsmm_meltw_unary_type unary_type;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+    libxsmm_meltw_unary_flags unary_flags;
+    unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+    libxsmm_meltwfunction_unary relu_fwd_kernel = libxsmm_dispatch_meltw_unary(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
+
     if ( relu_fwd_kernel == NULL ) {
         fprintf( stderr, "JIT for TPP relu_fwd_kernel failed. Bailing...!\n");
         exit(-1);
@@ -1077,10 +1159,15 @@ at::Tensor relu_forward_bf16(at::Tensor& input){
 
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {
-        libxsmm_meltw_relu_param relu_params;
-        relu_params.in_ptr   = &input_a[n*C_t*W_t];
-        relu_params.out_ptr  = &input_a[n*C_t*W_t];
-        relu_params.mask_ptr = NULL;
+        // libxsmm_meltw_relu_param relu_params;
+        // relu_params.in_ptr   = &input_a[n*C_t*W_t];
+        // relu_params.out_ptr  = &input_a[n*C_t*W_t];
+        // relu_params.mask_ptr = NULL;
+
+        libxsmm_meltw_unary_param relu_params;
+        relu_params.in.primary   = &input_a[n*C_t*W_t];
+        relu_params.out.primary  = &input_a[n*C_t*W_t];
+        relu_params.out.secondary = NULL;
         relu_fwd_kernel(&relu_params);
     }
 
@@ -1101,7 +1188,14 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& output){
     libxsmm_blasint tpp_m = W_t;                      // columns
     libxsmm_blasint tpp_n = C_t;                                // rows
     libxsmm_blasint ld = W_t;
-    libxsmm_meltwfunction_relu relu_bwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_BWD, 0);
+    // libxsmm_meltwfunction_relu relu_bwd_kernel = libxsmm_dispatch_meltw_relu(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_RELU_BWD, 0);
+
+    libxsmm_meltw_unary_type unary_type;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_RELU_INV;
+    libxsmm_meltw_unary_flags unary_flags;
+    unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+    libxsmm_meltwfunction_unary relu_bwd_kernel = libxsmm_dispatch_meltw_unary(tpp_m, tpp_n, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
+
     if ( relu_bwd_kernel == NULL ) {
         fprintf( stderr, "JIT for TPP relu_bwd_kernel failed. Bailing...!\n");
         exit(-1);
@@ -1109,10 +1203,15 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& output){
 
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {
-        libxsmm_meltw_relu_param relu_params;
-        relu_params.in_ptr   = &grad_a[n*C_t*W_t];
-        relu_params.out_ptr  = &grad_a[n*C_t*W_t];
-        relu_params.mask_ptr = &output_a[n*C_t*W_t];
+        // libxsmm_meltw_relu_param relu_params;
+        // relu_params.in_ptr   = &grad_a[n*C_t*W_t];
+        // relu_params.out_ptr  = &grad_a[n*C_t*W_t];
+        // relu_params.mask_ptr = &output_a[n*C_t*W_t];
+
+        libxsmm_meltw_unary_param relu_params;
+        relu_params.in.primary   = &grad_a[n*C_t*W_t];
+        relu_params.out.primary  = &grad_a[n*C_t*W_t];
+        relu_params.in.secondary = &output_a[n*C_t*W_t];
         relu_bwd_kernel(&relu_params);
     }
 
