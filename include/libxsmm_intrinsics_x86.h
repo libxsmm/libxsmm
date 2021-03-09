@@ -396,6 +396,7 @@
 # define LIBXSMM_INTRINSICS_MM512_ABS_PS(A) _mm512_abs_ps(A)
 # define LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32() _mm512_undefined_epi32()
 # define LIBXSMM_INTRINSICS_MM512_UNDEFINED() _mm512_undefined()
+# define LIBXSMM_INTRINSICS_MM256_UNDEFINED_SI256() _mm256_undefined_si256()
 # define LIBXSMM_INTRINSICS_MM_UNDEFINED_SI128() _mm_undefined_si128()
 # define LIBXSMM_INTRINSICS_MM_UNDEFINED_PD() _mm_undefined_pd()
 #else
@@ -406,6 +407,7 @@
                            _mm512_castps_si512(A), _mm512_set1_epi32(0x7FFFFFFF)))
 # define LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32() _mm512_set1_epi32(0)
 # define LIBXSMM_INTRINSICS_MM512_UNDEFINED() _mm512_set1_ps(0)
+# define LIBXSMM_INTRINSICS_MM256_UNDEFINED_SI256() _mm256_set1_epi32(0)
 # define LIBXSMM_INTRINSICS_MM_UNDEFINED_SI128() _mm_set1_epi32(0)
 # define LIBXSMM_INTRINSICS_MM_UNDEFINED_PD() _mm_set1_pd(0)
 #endif

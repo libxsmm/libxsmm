@@ -301,9 +301,7 @@ else # osx
   $(BINDIR)/libxsmm_gemm_generator
 endif
 
-ifneq (,$(PYTHON))
-  INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
-endif
+INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES := $(words $(INDICES))
 
 SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
@@ -410,7 +408,6 @@ endif
 endif
 endif
 
-ifneq (,$(PYTHON))
 information = \
   $(info ================================================================================) \
   $(info LIBXSMM $(VERSION_ALL) ($(UNAME)$(if $(filter-out 0,$(LIBXSMM_TARGET_HIDDEN)),$(NULL),$(if $(HOSTNAME),@$(HOSTNAME))))) \
@@ -425,7 +422,6 @@ information = \
   $(info --------------------------------------------------------------------------------) \
   $(if $(ENVSTATE),$(info Environment: $(ENVSTATE)) \
   $(info --------------------------------------------------------------------------------))
-endif
 
 ifneq (,$(strip $(TEST)))
 .PHONY: run-tests
@@ -610,6 +606,7 @@ endif
 
 .PHONY: config
 config: $(INCDIR)/libxsmm_config.h $(INCDIR)/libxsmm_version.h
+
 $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h $(DIRSTATE)/.state
 	$(information)
 	$(info --- LIBXSMM build log)
@@ -617,23 +614,17 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(ROOTDIR)/$(SRCDIR)/template/libxsm
 		$(ROOTDIR)/.github/install.sh 2>/dev/null; \
 	fi
 	@$(CP) $(filter $(ROOTDIR)/include/%.h,$(HEADERS)) $(INCDIR) 2>/dev/null || true
-ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) > $@
-endif
+
 $(INCDIR)/libxsmm_version.h: $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h $(INCDIR)/.make \
                              $(ROOTDIR)/$(SRCDIR)/template/libxsmm_version.h
-ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_version.h > $@
-else
-.PHONY: $(INCDIR)/libxsmm_version.h
-endif
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
-ifneq (,$(PYTHON))
 $(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
                      $(INCDIR)/libxsmm_version.h \
@@ -641,9 +632,6 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(HEADERS)
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
 		$(shell echo "$$(($(PRECISION)+($(FORTRAN)<<2)))") $(PREFETCH_TYPE) $(INDICES) > $@
-else
-.PHONY: $(INCDIR)/libxsmm.h
-endif
 
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
@@ -652,7 +640,6 @@ $(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(ROOTDIR)/$(SCRDIR)/libxsmm_source.
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-ifneq (,$(PYTHON))
 $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py \
                      $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
@@ -665,18 +652,11 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
 		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
-else
-.PHONY: $(INCDIR)/libxsmm.f
-endif
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
-ifneq (,$(PYTHON))
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(DIRSTATE)/.state
 	@$(PYTHON) $(call quote,$(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py) $(call qapath,$(DIRSTATE)/.state) $(PRECISION) $(THRESHOLD) $(INDICES) > $@
-else
-.PHONY: $(BLDDIR)/libxsmm_dispatch.h
-endif
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES_KERNELS)))
@@ -740,9 +720,7 @@ endif # noarch
 		-e "/#error No kernel was compiled, lacking support for current architecture?/d" \
 		-e "/#pragma message (\".*KERNEL COMPILATION WARNING: compiling ..* code on ..* or newer architecture: \" __FILE__)/d" \
 		| tr "~" "\n" > $(TMPFILE)
-ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
-endif
 	@$(MV) $(TMPFILE) $@
 endif
 

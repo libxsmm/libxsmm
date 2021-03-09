@@ -1246,12 +1246,39 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPSHUFD:
     case LIBXSMM_X86_INSTR_VPSHUFHW:
     case LIBXSMM_X86_INSTR_VPSHUFLW:
+    case LIBXSMM_X86_INSTR_VUNPCKLPD:
+    case LIBXSMM_X86_INSTR_VUNPCKLPS:
+    case LIBXSMM_X86_INSTR_VUNPCKHPD:
+    case LIBXSMM_X86_INSTR_VUNPCKHPS:
+    case LIBXSMM_X86_INSTR_VPUNPCKLWD:
+    case LIBXSMM_X86_INSTR_VPUNPCKHWD:
+    case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKHDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
+    case LIBXSMM_X86_INSTR_VPERMD:
+    case LIBXSMM_X86_INSTR_VPERMQ_I:
+    case LIBXSMM_X86_INSTR_VPERMPS:
+    case LIBXSMM_X86_INSTR_VPERMPD_I:
+    case LIBXSMM_X86_INSTR_VPERMILPS:
+    case LIBXSMM_X86_INSTR_VPERMILPS_I:
+    case LIBXSMM_X86_INSTR_VPERM2F128:
+    case LIBXSMM_X86_INSTR_VPERM2I128:
+    case LIBXSMM_X86_INSTR_VEXTRACTF128:
+    case LIBXSMM_X86_INSTR_VEXTRACTI128:
+    case LIBXSMM_X86_INSTR_VPERMILPD_VEX:
+    case LIBXSMM_X86_INSTR_VPERMILPD_VEX_I:
+    case LIBXSMM_X86_INSTR_VBLENDPD:
+    case LIBXSMM_X86_INSTR_VBLENDPS:
+    case LIBXSMM_X86_INSTR_VBLENDVPD:
+    case LIBXSMM_X86_INSTR_VBLENDVPS:
+    case LIBXSMM_X86_INSTR_VPBLENDD:
+    case LIBXSMM_X86_INSTR_VPBLENDW:
+    case LIBXSMM_X86_INSTR_VPBLENDVB:
     case LIBXSMM_X86_INSTR_VSHUFF32X4:
     case LIBXSMM_X86_INSTR_VSHUFF64X2:
     case LIBXSMM_X86_INSTR_VSHUFI32X4:
     case LIBXSMM_X86_INSTR_VSHUFI64X2:
-    case LIBXSMM_X86_INSTR_VEXTRACTF128:
-    case LIBXSMM_X86_INSTR_VEXTRACTI128:
     case LIBXSMM_X86_INSTR_VEXTRACTF32X4:
     case LIBXSMM_X86_INSTR_VEXTRACTF64X2:
     case LIBXSMM_X86_INSTR_VEXTRACTF32X8:
@@ -1273,25 +1300,14 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPEXPANDD:
     case LIBXSMM_X86_INSTR_VPEXPANDW:
     case LIBXSMM_X86_INSTR_VPEXPANDB:
-    case LIBXSMM_X86_INSTR_VUNPCKLPD:
-    case LIBXSMM_X86_INSTR_VUNPCKLPS:
-    case LIBXSMM_X86_INSTR_VUNPCKHPD:
-    case LIBXSMM_X86_INSTR_VUNPCKHPS:
-    case LIBXSMM_X86_INSTR_VPUNPCKLWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKHWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
-    case LIBXSMM_X86_INSTR_VPERM2F128:
-    case LIBXSMM_X86_INSTR_VPERM2I128:
     case LIBXSMM_X86_INSTR_VPERMW:
-    case LIBXSMM_X86_INSTR_VPERMD:
-    case LIBXSMM_X86_INSTR_VPERMQ_I:
+    case LIBXSMM_X86_INSTR_VPERMPD:
     case LIBXSMM_X86_INSTR_VPERMT2B:
     case LIBXSMM_X86_INSTR_VPERMT2W:
     case LIBXSMM_X86_INSTR_VPERMT2D:
     case LIBXSMM_X86_INSTR_VPERMT2Q:
+    case LIBXSMM_X86_INSTR_VPERMILPD:
+    case LIBXSMM_X86_INSTR_VPERMILPD_I:
     case LIBXSMM_X86_INSTR_VFMADD132PS:
     case LIBXSMM_X86_INSTR_VFMADD132PD:
     case LIBXSMM_X86_INSTR_VFMADD213PS:
@@ -1340,6 +1356,14 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VFNMSUB132SS:
     case LIBXSMM_X86_INSTR_VFNMSUB213SS:
     case LIBXSMM_X86_INSTR_VFNMSUB231SS:
+    case LIBXSMM_X86_INSTR_VROUNDPD:
+    case LIBXSMM_X86_INSTR_VROUNDSD:
+    case LIBXSMM_X86_INSTR_VROUNDPS:
+    case LIBXSMM_X86_INSTR_VROUNDSS:
+    case LIBXSMM_X86_INSTR_VRCPPS:
+    case LIBXSMM_X86_INSTR_VRCPSS:
+    case LIBXSMM_X86_INSTR_VRSQRTPS:
+    case LIBXSMM_X86_INSTR_VRSQRTSS:
     case LIBXSMM_X86_INSTR_VRANGEPS:
     case LIBXSMM_X86_INSTR_VRANGEPD:
     case LIBXSMM_X86_INSTR_VRANGESS:
@@ -1402,19 +1426,31 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VMULPD:
     case LIBXSMM_X86_INSTR_VSUBPD:
     case LIBXSMM_X86_INSTR_VDIVPD:
+    case LIBXSMM_X86_INSTR_VMINPD:
     case LIBXSMM_X86_INSTR_VMAXPD:
+    case LIBXSMM_X86_INSTR_VSQRTPD:
     case LIBXSMM_X86_INSTR_VADDSD:
     case LIBXSMM_X86_INSTR_VMULSD:
     case LIBXSMM_X86_INSTR_VSUBSD:
+    case LIBXSMM_X86_INSTR_VDIVSD:
+    case LIBXSMM_X86_INSTR_VMINSD:
+    case LIBXSMM_X86_INSTR_VMAXSD:
+    case LIBXSMM_X86_INSTR_VSQRTSD:
     case LIBXSMM_X86_INSTR_VXORPS:
     case LIBXSMM_X86_INSTR_VADDPS:
     case LIBXSMM_X86_INSTR_VMULPS:
     case LIBXSMM_X86_INSTR_VSUBPS:
     case LIBXSMM_X86_INSTR_VDIVPS:
+    case LIBXSMM_X86_INSTR_VMINPS:
     case LIBXSMM_X86_INSTR_VMAXPS:
+    case LIBXSMM_X86_INSTR_VSQRTPS:
     case LIBXSMM_X86_INSTR_VMULSS:
     case LIBXSMM_X86_INSTR_VADDSS:
     case LIBXSMM_X86_INSTR_VSUBSS:
+    case LIBXSMM_X86_INSTR_VDIVSS:
+    case LIBXSMM_X86_INSTR_VMINSS:
+    case LIBXSMM_X86_INSTR_VMAXSS:
+    case LIBXSMM_X86_INSTR_VSQRTSS:
     case LIBXSMM_X86_INSTR_VPXORD:
     case LIBXSMM_X86_INSTR_VPORD:
     case LIBXSMM_X86_INSTR_VPANDD:
@@ -2904,6 +2940,45 @@ void libxsmm_x86_instruction_vec_shuffle_sse_reg( libxsmm_generated_code* io_gen
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%u, %%%cmm%u, %%%cmm%u\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_vmove_instr,
+                                                const unsigned int      i_gp_reg_base,
+                                                const unsigned int      i_reg_idx,
+                                                const unsigned int      i_scale,
+                                                const int               i_displacement,
+                                                const char              i_vector_name,
+                                                const unsigned int      i_vec_reg_number_0,
+                                                const unsigned int      i_use_masking,
+                                                const unsigned int      i_mask_reg_number,
+                                                const unsigned int      i_is_store ) {
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+    if ( i_use_masking != 0 ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_vmove_instr,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        i_vector_name, i_vec_reg_number_0, i_mask_reg_number, (i_is_store != 0) ? 0 : 1, i_is_store );
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_vmove_instr,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        i_vector_name, i_vec_reg_number_0, 0, (i_is_store != 0) ? 0 : 1, i_is_store );
+    }
+  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+    if ( i_use_masking != 0 ) {
+      libxsmm_x86_instruction_vec_mask_move( io_generated_code, i_vmove_instr,
+                                             i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                             i_vector_name, i_vec_reg_number_0, i_mask_reg_number, i_is_store );
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_vmove_instr,
+                                        i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
+                                        i_vector_name, i_vec_reg_number_0, 0, 1, i_is_store );
+    }
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
   }
 }
 

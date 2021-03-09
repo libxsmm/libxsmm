@@ -766,7 +766,7 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block( libxsmm_generated
 
   switch (i_op_type) {
     case LIBXSMM_MELTW_TYPE_TERNARY_MULADD: {
-      ternary_op_instr = LIBXSMM_X86_INSTR_VFMADD213PS;
+      ternary_op_instr = LIBXSMM_X86_INSTR_VFMADD231PS;
     } break;
     case LIBXSMM_MELTW_TYPE_TERNARY_NMULADD: {
       ternary_op_instr = LIBXSMM_X86_INSTR_VFNMADD213PS;
