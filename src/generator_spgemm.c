@@ -184,12 +184,10 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
 
     if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) {
 #if !defined(NDEBUG)
-      double *const l_tmp = (double*)malloc((size_t)l_row_count * l_column_count * sizeof(double));
+      /* mute static analysis about garbage content */
+      double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count, sizeof(double));
       unsigned int l_n;
       unsigned int l_m;
-
-      /* mute static analysis about garbage content */
-      memset(l_tmp, 0, (size_t)l_row_count * l_column_count * sizeof(double));
 
       printf("CSC matrix data structure we just read:\n");
       printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
@@ -248,12 +246,10 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
 
     if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) { /* libxsmm_sparse_*_reader may have deallocated l_values */
 #if !defined(NDEBUG)
-      double *const l_tmp = (double*)malloc((size_t)l_row_count * l_column_count * sizeof(double));
+      /* mute static analysis about garbage content */
+      double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count, sizeof(double));
       unsigned int l_n;
       unsigned int l_m;
-
-      /* mute static analysis about garbage content */
-      memset(l_tmp, 0, (size_t)l_row_count * l_column_count * sizeof(double));
 
       printf("CSR matrix data structure we just read:\n");
       printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
