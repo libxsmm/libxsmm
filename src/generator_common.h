@@ -960,6 +960,22 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_scale;
   unsigned int vec_shifter;
 
+  /* Additional aux variables fir minimax approximations */
+  unsigned int vec_c0_lo;
+  unsigned int vec_c0_hi;
+  unsigned int vec_c1_lo;
+  unsigned int vec_c1_hi;
+  unsigned int vec_c2_lo;
+  unsigned int vec_c2_hi;
+  unsigned int vec_tmp0;
+  unsigned int vec_tmp1;
+  unsigned int vec_tmp2;
+  unsigned int vec_tmp3;
+  unsigned int vec_tmp4;
+  unsigned int vec_tmp5;
+  unsigned int vec_tmp6;
+  unsigned int vec_tmp7;
+
   /* Misc aux variables  */
   unsigned int neg_signs_vreg;
 
@@ -1098,7 +1114,17 @@ typedef enum libxsmm_meltw_stack_var {
   LIBXSMM_MELTW_STACK_VAR_OUT_PTR0        =  10,
   LIBXSMM_MELTW_STACK_VAR_OUT_PTR1        =  11,
   LIBXSMM_MELTW_STACK_VAR_OUT_PTR2        =  12,
-  LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR     =  13
+  LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR     =  13,
+  LIBXSMM_MELTW_STACK_VAR_CONST_0         =  14,
+  LIBXSMM_MELTW_STACK_VAR_CONST_1         =  15,
+  LIBXSMM_MELTW_STACK_VAR_CONST_2         =  16,
+  LIBXSMM_MELTW_STACK_VAR_CONST_3         =  17,
+  LIBXSMM_MELTW_STACK_VAR_CONST_4         =  18,
+  LIBXSMM_MELTW_STACK_VAR_CONST_5         =  19,
+  LIBXSMM_MELTW_STACK_VAR_CONST_6         =  20,
+  LIBXSMM_MELTW_STACK_VAR_CONST_7         =  21,
+  LIBXSMM_MELTW_STACK_VAR_CONST_8         =  22,
+  LIBXSMM_MELTW_STACK_VAR_CONST_9         =  23
 } libxsmm_meltw_stack_var;
 
 typedef enum libxsmm_meqn_stack_var {

@@ -1099,7 +1099,7 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
   /* TODO: some diagnostic if we need excessive number of required zmms for the equation and bail out */
   for (i = 0 ; i < 64; i++) {
     if (i_micro_kernel_config->unary_ops_pool[i] > 0) {
-      libxsmm_configure_unary_kernel_vregs_masks( io_generated_code, meltw_config, i, 0 );
+      libxsmm_configure_unary_kernel_vregs_masks( io_generated_code, meltw_config, i, 0, i_gp_reg_mapping->temp_reg);
     }
   }
 

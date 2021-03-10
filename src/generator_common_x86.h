@@ -59,6 +59,17 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx512( libxsmm_generated
     const unsigned int                             i_vec_c1,
     const unsigned int                             i_vec_c2 );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   i_gp_reg_tmp,
+    const unsigned int                             i_vec_c0_lo,
+    const unsigned int                             i_vec_c0_hi,
+    const unsigned int                             i_vec_c1_lo,
+    const unsigned int                             i_vec_c1_hi,
+    const unsigned int                             i_vec_c2_lo,
+    const unsigned int                             i_vec_c2_hi );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_ps_minimax3_avx512( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_x,

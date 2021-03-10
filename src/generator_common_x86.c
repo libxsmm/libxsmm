@@ -69,6 +69,60 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx512( libxsmm_generated
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   i_gp_reg_tmp,
+    const unsigned int                             i_vec_c0_lo,
+    const unsigned int                             i_vec_c0_hi,
+    const unsigned int                             i_vec_c1_lo,
+    const unsigned int                             i_vec_c1_hi,
+    const unsigned int                             i_vec_c2_lo,
+    const unsigned int                             i_vec_c2_hi ) {
+  unsigned int thres_array[1] = { 0x40879fff };
+  unsigned int signmask_array[1] = { 0x8000000 };
+  unsigned int absmask_array[1] = { 0x7fffffff };
+  unsigned int scale_array[1] = { 0x406a0ea1 };
+  unsigned int shifter_array[1] = { 0x4b400000 };
+  unsigned int half_array[1] = { 0x3f000000 };
+
+  unsigned int c0_array[16] = { 0x3ecc4231u, 0x3ecc541cu, 0x3ecd6c48u, 0x3ed174c3u, 0x3ed9bd5du, 0x3ee5acd5u, 0x3ef2aeddu, 0x3efd5384u, 0x3f016724u, 0x3f00f778u, 0x3efb389eu, 0x3ef0464du, 0x3ee3014fu, 0x3ed50a78u, 0x3ec779dbu, 0x3ebae363u };
+  unsigned int c1_array[16] = { 0xb7c7fb58u, 0xbacb9740u, 0xbc3e4b3au, 0xbd0d292au, 0xbd8bc5d0u, 0xbdd9978fu, 0xbe0f92d3u, 0xbe27b66du, 0xbe328ce7u, 0xbe3125bfu, 0xbe26dc9du, 0xbe17a056u, 0xbe06bdebu, 0xbdecc593u, 0xbdcf57aau, 0xbdb5ea3au };
+  unsigned int c2_array[16] = { 0xbd877b85u, 0xbd7d9780u, 0xbd4cb70eu, 0xbd08a1e9u, 0xbc808857u, 0xb9476fd2u, 0x3c36f765u, 0x3c924160u, 0x3ca7b1fcu, 0x3ca5732cu, 0x3c95af63u, 0x3c8079f7u, 0x3c55fa4fu, 0x3c2fa86bu, 0x3c0fbb00u, 0x3bec178cu };
+;
+
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, thres_array[0]);
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
+      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_0), i_gp_reg_tmp, 1 );
+
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, signmask_array[0]);
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
+      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_1), i_gp_reg_tmp, 1 );
+
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, absmask_array[0]);
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
+      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_2), i_gp_reg_tmp, 1 );
+
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, scale_array[0]);
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
+      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_3), i_gp_reg_tmp, 1 );
+
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, shifter_array[0]);
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
+      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_4), i_gp_reg_tmp, 1 );
+
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, half_array[0]);
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
+      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_5), i_gp_reg_tmp, 1 );
+
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c0_array, "c0_array", 'y', i_vec_c0_lo);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) &c0_array[8], "c0_array_", 'y', i_vec_c0_hi);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c1_array, "c1_array", 'y', i_vec_c1_lo);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) &c1_array[8], "c1_array_", 'y', i_vec_c1_hi);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_array, "c2_array", 'y', i_vec_c2_lo);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) &c2_array[8], "c2_array_", 'y', i_vec_c2_hi);
+
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_thres,
     const unsigned int                             i_vec_absmask,
@@ -95,6 +149,189 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx512( libxsmm_gener
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c1_array, "c1_array", 'z', i_vec_c1);
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_array, "c2_array", 'z', i_vec_c2);
 }
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vpermd_16way_avx2( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_index,
+    const unsigned int                             i_vec_c_lo,
+    const unsigned int                             i_vec_c_hi,
+    const unsigned int                             i_vec_result,
+    const unsigned int                             i_vec_tmp0,
+    const unsigned int                             i_vec_tmp1 ) {
+
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+      LIBXSMM_X86_INSTR_VPERMD, 'y',
+      i_vec_c_lo,
+      i_vec_index,
+      i_vec_tmp0,
+      0, 0, 0, 0);
+
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+      LIBXSMM_X86_INSTR_VPERMD, 'y',
+      i_vec_c_hi,
+      i_vec_index,
+      i_vec_tmp1,
+      0, 0, 0, 0);
+
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'y', i_vec_index, i_vec_result, 28 );
+
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
+            LIBXSMM_X86_INSTR_VBLENDVPS,
+            'y',
+            i_vec_tmp1,
+            i_vec_tmp0,
+            i_vec_result,
+            0, 0, 0, (i_vec_result) << 4);
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gelu_ps_minimax3_avx( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_x,
+    const unsigned int                             i_vec_c0_lo,
+    const unsigned int                             i_vec_c0_hi,
+    const unsigned int                             i_vec_c1_lo,
+    const unsigned int                             i_vec_c1_hi,
+    const unsigned int                             i_vec_c2_lo,
+    const unsigned int                             i_vec_c2_hi,
+    const unsigned int                             i_vec_tmp0,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2,
+    const unsigned int                             i_vec_tmp3,
+    const unsigned int                             i_vec_tmp4,
+    const unsigned int                             i_vec_tmp5,
+    const unsigned int                             i_vec_tmp6,
+    const unsigned int                             i_vec_tmp7 ) {
+
+  unsigned int i_vec_absmask = i_vec_tmp0, i_vec_xa = i_vec_tmp0;
+  unsigned int i_vec_xr = i_vec_tmp1, i_vec_thres = i_vec_tmp1;
+  unsigned int i_vec_signmask = i_vec_tmp1;
+  unsigned int i_vec_index = i_vec_tmp2;
+  unsigned int i_vec_shifter = i_vec_tmp3;
+  unsigned int i_vec_scale = i_vec_tmp4;
+  unsigned int i_vec_C0 = i_vec_tmp5;
+  unsigned int i_vec_C1 = i_vec_tmp6;
+  unsigned int i_vec_C2 = i_vec_tmp7;
+  unsigned int i_vec_half = i_vec_tmp6;
+
+  libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                  LIBXSMM_X86_INSTR_VBROADCASTSS,
+                  LIBXSMM_X86_GP_REG_RBP,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_2),
+                  'y',
+                  i_vec_absmask, 0, 0, 0 );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VPANDD,
+                                       'y',
+                                       i_vec_x, i_vec_absmask, i_vec_xa );
+
+  libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                  LIBXSMM_X86_INSTR_VBROADCASTSS,
+                  LIBXSMM_X86_GP_REG_RBP,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_0),
+                  'y',
+                  i_vec_thres, 0, 0, 0 );
+
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMINPS, 'y',  i_vec_xa, i_vec_thres, i_vec_xa );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMINPS, 'y',  i_vec_xa, i_vec_xa, i_vec_index );
+
+  libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                  LIBXSMM_X86_INSTR_VBROADCASTSS,
+                  LIBXSMM_X86_GP_REG_RBP,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_1),
+                  'y',
+                  i_vec_signmask, 0, 0, 0 );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VPANDD,
+                                       'y',
+                                       i_vec_x, i_vec_signmask, i_vec_signmask );
+
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VPORD,
+                                       'y',
+                                       i_vec_signmask, i_vec_xa, i_vec_xr );
+
+  libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                  LIBXSMM_X86_INSTR_VBROADCASTSS,
+                  LIBXSMM_X86_GP_REG_RBP,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_4),
+                  'y',
+                  i_vec_shifter, 0, 0, 0 );
+
+  libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                  LIBXSMM_X86_INSTR_VBROADCASTSS,
+                  LIBXSMM_X86_GP_REG_RBP,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_3),
+                  'y',
+                  i_vec_scale, 0, 0, 0 );
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'y',
+                                       i_vec_shifter, i_vec_scale, i_vec_index );
+
+
+   libxsmm_x86_instruction_vpermd_16way_avx2( io_generated_code,
+       i_vec_index,
+       i_vec_c0_lo,
+       i_vec_c0_hi,
+       i_vec_C0,
+       i_vec_tmp3,
+       i_vec_tmp4);
+
+   libxsmm_x86_instruction_vpermd_16way_avx2( io_generated_code,
+       i_vec_index,
+       i_vec_c1_lo,
+       i_vec_c1_hi,
+       i_vec_C1,
+       i_vec_tmp3,
+       i_vec_tmp4);
+
+   libxsmm_x86_instruction_vpermd_16way_avx2( io_generated_code,
+       i_vec_index,
+       i_vec_c2_lo,
+       i_vec_c2_hi,
+       i_vec_C2,
+       i_vec_tmp3,
+       i_vec_tmp4);
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'y',
+                                       i_vec_C1, i_vec_xa, i_vec_C2 );
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'y',
+                                       i_vec_C0, i_vec_xa, i_vec_C2 );
+
+  libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                  LIBXSMM_X86_INSTR_VBROADCASTSS,
+                  LIBXSMM_X86_GP_REG_RBP,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_5),
+                  'y',
+                  i_vec_half, 0, 0, 0 );
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VFMADD213PS,
+                                       'y',
+                                       i_vec_half, i_vec_xr, i_vec_C2 );
+
+   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                       LIBXSMM_X86_INSTR_VMULPS,
+                                       'y',
+                                       i_vec_x, i_vec_C2, i_vec_x );
+}
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_ps_minimax3_avx512( libxsmm_generated_code*                        io_generated_code,

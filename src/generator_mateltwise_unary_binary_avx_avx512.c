@@ -217,7 +217,7 @@ void libxsmm_generator_configure_avx512_vlens(const libxsmm_meltw_descriptor* i_
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_configure_M_N_blocking(unsigned int m, unsigned int n, unsigned int vlen, unsigned int *m_blocking, unsigned int *n_blocking) {
+void libxsmm_generator_configure_M_N_blocking(unsigned int m, unsigned int n, unsigned int vlen, unsigned int *m_blocking, unsigned int *n_blocking, unsigned int available_vregs) {
   /* The m blocking is done in chunks of vlen */
   unsigned int m_chunks = (m+vlen-1)/vlen;
   /* TODO: Make m chunk remainder depend on number of available zmm registers */
@@ -237,7 +237,11 @@ void libxsmm_generator_configure_M_N_blocking(unsigned int m, unsigned int n, un
     if (m_chunks > 16) {
       *m_blocking = (m_chunks - m_chunk_remainder) * vlen;
     } else {
-      *m_blocking = m;
+      if (available_vregs * vlen >= m) {
+        *m_blocking = m;
+      } else {
+        *m_blocking = (m_chunks - 1) * vlen;
+      }
     }
   }
 
@@ -539,22 +543,41 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
               LIBXSMM_X86_INSTR_VMULPS, 'z', i_micro_kernel_config->vec_x2, cur_vreg, cur_vreg );
         }
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU) {
-        libxsmm_generator_gelu_ps_minimax3_avx512( io_generated_code,
-            cur_vreg,
-            i_micro_kernel_config->vec_xr,
-            i_micro_kernel_config->vec_xa,
-            i_micro_kernel_config->vec_index,
-            i_micro_kernel_config->vec_C0,
-            i_micro_kernel_config->vec_C1,
-            i_micro_kernel_config->vec_C2,
-            i_micro_kernel_config->vec_thres,
-            i_micro_kernel_config->vec_absmask,
-            i_micro_kernel_config->vec_scale,
-            i_micro_kernel_config->vec_shifter,
-            i_micro_kernel_config->vec_halves,
-            i_micro_kernel_config->vec_c0,
-            i_micro_kernel_config->vec_c1,
-            i_micro_kernel_config->vec_c2 );
+        if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+          libxsmm_generator_gelu_ps_minimax3_avx( io_generated_code,
+              cur_vreg,
+              i_micro_kernel_config->vec_c0_lo,
+              i_micro_kernel_config->vec_c0_hi,
+              i_micro_kernel_config->vec_c1_lo,
+              i_micro_kernel_config->vec_c1_hi,
+              i_micro_kernel_config->vec_c2_lo,
+              i_micro_kernel_config->vec_c2_hi,
+              i_micro_kernel_config->vec_tmp0,
+              i_micro_kernel_config->vec_tmp1,
+              i_micro_kernel_config->vec_tmp2,
+              i_micro_kernel_config->vec_tmp3,
+              i_micro_kernel_config->vec_tmp4,
+              i_micro_kernel_config->vec_tmp5,
+              i_micro_kernel_config->vec_tmp6,
+              i_micro_kernel_config->vec_tmp7 );
+        } else {
+          libxsmm_generator_gelu_ps_minimax3_avx512( io_generated_code,
+              cur_vreg,
+              i_micro_kernel_config->vec_xr,
+              i_micro_kernel_config->vec_xa,
+              i_micro_kernel_config->vec_index,
+              i_micro_kernel_config->vec_C0,
+              i_micro_kernel_config->vec_C1,
+              i_micro_kernel_config->vec_C2,
+              i_micro_kernel_config->vec_thres,
+              i_micro_kernel_config->vec_absmask,
+              i_micro_kernel_config->vec_scale,
+              i_micro_kernel_config->vec_shifter,
+              i_micro_kernel_config->vec_halves,
+              i_micro_kernel_config->vec_c0,
+              i_micro_kernel_config->vec_c1,
+              i_micro_kernel_config->vec_c2 );
+        }
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV) {
         libxsmm_generator_gelu_inv_ps_minimax3_avx512( io_generated_code,
             cur_vreg,
@@ -1055,7 +1078,8 @@ LIBXSMM_API_INTERN
 void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                  unsigned int                            op,
-                                                 unsigned int                            flags ) {
+                                                 unsigned int                            flags,
+                                                 unsigned int                            i_gp_reg_tmp ) {
 
   char vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
 
@@ -1094,45 +1118,89 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
 
   if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU || op == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV) {
     unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
-    reserved_zmms += 14;
 
-    i_micro_kernel_config->vec_xr         = reserved_zmms - 1;
-    i_micro_kernel_config->vec_xa         = reserved_zmms - 2;
-    i_micro_kernel_config->vec_index      = reserved_zmms - 3;
-    i_micro_kernel_config->vec_C0         = reserved_zmms - 4;
-    i_micro_kernel_config->vec_C1         = reserved_zmms - 5;
-    i_micro_kernel_config->vec_C2         = reserved_zmms - 6;
-    i_micro_kernel_config->vec_thres      = reserved_zmms - 7;
-    i_micro_kernel_config->vec_absmask    = reserved_zmms - 8;
-    i_micro_kernel_config->vec_scale      = reserved_zmms - 9;
-    i_micro_kernel_config->vec_shifter    = reserved_zmms - 10;
-    i_micro_kernel_config->vec_halves     = reserved_zmms - 11;
-    i_micro_kernel_config->vec_c0         = reserved_zmms - 12;
-    i_micro_kernel_config->vec_c1         = reserved_zmms - 13;
-    i_micro_kernel_config->vec_c2         = reserved_zmms - 14;
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+      reserved_zmms += 14;
 
-    if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU ) {
-      libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx512( io_generated_code,
-          i_micro_kernel_config->vec_thres,
-          i_micro_kernel_config->vec_absmask,
-          i_micro_kernel_config->vec_scale,
-          i_micro_kernel_config->vec_shifter,
-          i_micro_kernel_config->vec_halves,
-          i_micro_kernel_config->vec_c0,
-          i_micro_kernel_config->vec_c1,
-          i_micro_kernel_config->vec_c2 );
-    }
+      i_micro_kernel_config->vec_c0_lo         = reserved_zmms - 1;
+      i_micro_kernel_config->vec_c0_hi         = reserved_zmms - 2;
+      i_micro_kernel_config->vec_c1_lo         = reserved_zmms - 3;
+      i_micro_kernel_config->vec_c1_hi         = reserved_zmms - 4;
+      i_micro_kernel_config->vec_c2_lo         = reserved_zmms - 5;
+      i_micro_kernel_config->vec_c2_hi         = reserved_zmms - 6;
+      i_micro_kernel_config->vec_tmp0          = reserved_zmms - 7;
+      i_micro_kernel_config->vec_tmp1          = reserved_zmms - 8;
+      i_micro_kernel_config->vec_tmp2          = reserved_zmms - 9;
+      i_micro_kernel_config->vec_tmp3          = reserved_zmms - 10;
+      i_micro_kernel_config->vec_tmp4          = reserved_zmms - 11;
+      i_micro_kernel_config->vec_tmp5          = reserved_zmms - 12;
+      i_micro_kernel_config->vec_tmp6          = reserved_zmms - 13;
+      i_micro_kernel_config->vec_tmp7          = reserved_zmms - 14;
 
-    if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ) {
-      libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx512( io_generated_code,
-          i_micro_kernel_config->vec_thres,
-          i_micro_kernel_config->vec_absmask,
-          i_micro_kernel_config->vec_scale,
-          i_micro_kernel_config->vec_shifter,
-          i_micro_kernel_config->vec_halves,
-          i_micro_kernel_config->vec_c0,
-          i_micro_kernel_config->vec_c1,
-          i_micro_kernel_config->vec_c2 );
+      if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU ) {
+        libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx( io_generated_code,
+            i_gp_reg_tmp,
+            i_micro_kernel_config->vec_c0_lo,
+            i_micro_kernel_config->vec_c0_hi,
+            i_micro_kernel_config->vec_c1_lo,
+            i_micro_kernel_config->vec_c1_hi,
+            i_micro_kernel_config->vec_c2_lo,
+            i_micro_kernel_config->vec_c2_hi);
+      }
+#if 0
+      if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ) {
+        libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx( io_generated_code,
+            i_micro_kernel_config->vec_thres,
+            i_micro_kernel_config->vec_absmask,
+            i_micro_kernel_config->vec_scale,
+            i_micro_kernel_config->vec_shifter,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2 );
+      }
+#endif
+    } else {
+      reserved_zmms += 14;
+
+      i_micro_kernel_config->vec_xr         = reserved_zmms - 1;
+      i_micro_kernel_config->vec_xa         = reserved_zmms - 2;
+      i_micro_kernel_config->vec_index      = reserved_zmms - 3;
+      i_micro_kernel_config->vec_C0         = reserved_zmms - 4;
+      i_micro_kernel_config->vec_C1         = reserved_zmms - 5;
+      i_micro_kernel_config->vec_C2         = reserved_zmms - 6;
+      i_micro_kernel_config->vec_thres      = reserved_zmms - 7;
+      i_micro_kernel_config->vec_absmask    = reserved_zmms - 8;
+      i_micro_kernel_config->vec_scale      = reserved_zmms - 9;
+      i_micro_kernel_config->vec_shifter    = reserved_zmms - 10;
+      i_micro_kernel_config->vec_halves     = reserved_zmms - 11;
+      i_micro_kernel_config->vec_c0         = reserved_zmms - 12;
+      i_micro_kernel_config->vec_c1         = reserved_zmms - 13;
+      i_micro_kernel_config->vec_c2         = reserved_zmms - 14;
+
+      if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU ) {
+        libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx512( io_generated_code,
+            i_micro_kernel_config->vec_thres,
+            i_micro_kernel_config->vec_absmask,
+            i_micro_kernel_config->vec_scale,
+            i_micro_kernel_config->vec_shifter,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2 );
+      }
+
+      if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ) {
+        libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx512( io_generated_code,
+            i_micro_kernel_config->vec_thres,
+            i_micro_kernel_config->vec_absmask,
+            i_micro_kernel_config->vec_scale,
+            i_micro_kernel_config->vec_shifter,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2 );
+      }
     }
 
     i_micro_kernel_config->reserved_zmms = reserved_zmms;
@@ -1268,7 +1336,7 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
   }
 
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) {
-    libxsmm_configure_unary_kernel_vregs_masks( io_generated_code, i_micro_kernel_config, i_mateltwise_desc->param, i_mateltwise_desc->flags );
+    libxsmm_configure_unary_kernel_vregs_masks( io_generated_code, i_micro_kernel_config, i_mateltwise_desc->param, i_mateltwise_desc->flags, i_gp_reg_tmp);
   }
 
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) {
@@ -1429,6 +1497,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned int loop_order, m_blocking, out_blocking, out_bound, out_block = 0, n_blocking, inner_blocking, inner_block, inner_bound, n_microkernel = 0, m_microkernel = 0;
   unsigned int out_ind, inner_ind, reset_regs, loop_type;
+  unsigned int available_vregs = 32;
   unsigned int i_gp_reg_tmp = LIBXSMM_X86_GP_REG_R11;
 
   /* Some rudimentary checking of M, N and LDs*/
@@ -1454,6 +1523,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
   if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
     i_micro_kernel_config->vlen_in = i_micro_kernel_config->vlen_in/2;
     i_micro_kernel_config->vlen_out = i_micro_kernel_config->vlen_out/2;
+    available_vregs = 16;
   }
 
   /* Configure the register mapping for this eltwise kernel */
@@ -1530,13 +1600,14 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
   }
 
-  /* Configure M and N blocking factors */
-  libxsmm_generator_configure_M_N_blocking(i_mateltwise_desc->m, i_mateltwise_desc->n, i_micro_kernel_config->vlen_in, &m_blocking, &n_blocking);
-  libxsmm_generator_configure_loop_order(i_mateltwise_desc, &loop_order, &m_blocking, &n_blocking, &out_blocking, &inner_blocking, &out_bound, &inner_bound);
-  i_micro_kernel_config->loop_order = loop_order;
-
   /* Based on kernel type reserve zmms and mask registers  */
   libxsmm_configure_kernel_vregs_masks( io_generated_code, i_micro_kernel_config, i_mateltwise_desc, i_gp_reg_tmp);
+  available_vregs = available_vregs - i_micro_kernel_config->reserved_zmms;
+
+  /* Configure M and N blocking factors */
+  libxsmm_generator_configure_M_N_blocking(i_mateltwise_desc->m, i_mateltwise_desc->n, i_micro_kernel_config->vlen_in, &m_blocking, &n_blocking, available_vregs);
+  libxsmm_generator_configure_loop_order(i_mateltwise_desc, &loop_order, &m_blocking, &n_blocking, &out_blocking, &inner_blocking, &out_bound, &inner_bound);
+  i_micro_kernel_config->loop_order = loop_order;
 
   out_ind = 0;
   while ( out_ind != out_bound ) {

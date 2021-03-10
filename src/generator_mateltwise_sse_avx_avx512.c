@@ -54,6 +54,26 @@ int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var sta
       return -96;
     case LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR:
       return -104;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_0:
+      return -112;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_1:
+      return -120;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_2:
+      return -128;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_3:
+      return -136;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_4:
+      return -144;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_5:
+      return -152;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_6:
+      return -160;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_7:
+      return -168;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_8:
+      return -176;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_9:
+      return -184;
     default:
       return 0;
   }
@@ -104,7 +124,8 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
   /* TODO: Determine if we want to save stuff to stack */
   unsigned int save_args_to_stack = 0;
   unsigned int allocate_scratch = 0;
-  unsigned int use_aux_stack_vars = 0;
+  unsigned int use_aux_stack_vars = ((io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) &&
+      (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU)) ? 1 : 0;
   unsigned int use_stack_vars = ((save_args_to_stack > 0) || (allocate_scratch > 0) || (use_aux_stack_vars > 0)) ? 1 : 0;
 
   LIBXSMM_UNUSED(i_gp_reg_mapping);
@@ -115,7 +136,7 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
   if (use_stack_vars > 0) {
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 104 );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 184 );
   }
 
   /* Exemplary usage of how to store args to stack if need be  */
