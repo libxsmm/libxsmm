@@ -975,6 +975,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_tmp5;
   unsigned int vec_tmp6;
   unsigned int vec_tmp7;
+  int rbp_offs_thres;
+  int rbp_offs_signmask;
+  int rbp_offs_absmask;
+  int rbp_offs_scale;
+  int rbp_offs_shifter;
+  int rbp_offs_half;
 
   /* Misc aux variables  */
   unsigned int neg_signs_vreg;

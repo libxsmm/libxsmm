@@ -559,7 +559,13 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
               i_micro_kernel_config->vec_tmp4,
               i_micro_kernel_config->vec_tmp5,
               i_micro_kernel_config->vec_tmp6,
-              i_micro_kernel_config->vec_tmp7 );
+              i_micro_kernel_config->vec_tmp7,
+              i_micro_kernel_config->rbp_offs_thres,
+              i_micro_kernel_config->rbp_offs_signmask,
+              i_micro_kernel_config->rbp_offs_absmask,
+              i_micro_kernel_config->rbp_offs_scale,
+              i_micro_kernel_config->rbp_offs_shifter,
+              i_micro_kernel_config->rbp_offs_half );
         } else {
           libxsmm_generator_gelu_ps_minimax3_avx512( io_generated_code,
               cur_vreg,
@@ -1145,7 +1151,13 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
             i_micro_kernel_config->vec_c1_lo,
             i_micro_kernel_config->vec_c1_hi,
             i_micro_kernel_config->vec_c2_lo,
-            i_micro_kernel_config->vec_c2_hi);
+            i_micro_kernel_config->vec_c2_hi,
+            i_micro_kernel_config->rbp_offs_thres,
+            i_micro_kernel_config->rbp_offs_signmask,
+            i_micro_kernel_config->rbp_offs_absmask,
+            i_micro_kernel_config->rbp_offs_scale,
+            i_micro_kernel_config->rbp_offs_shifter,
+            i_micro_kernel_config->rbp_offs_half );
       }
 #if 0
       if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ) {

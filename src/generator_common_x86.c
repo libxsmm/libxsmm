@@ -76,7 +76,13 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx( libxsmm_generated_co
     const unsigned int                             i_vec_c1_lo,
     const unsigned int                             i_vec_c1_hi,
     const unsigned int                             i_vec_c2_lo,
-    const unsigned int                             i_vec_c2_hi ) {
+    const unsigned int                             i_vec_c2_hi,
+    int                                            rbp_offs_thres,
+    int                                            rbp_offs_signmask,
+    int                                            rbp_offs_absmask,
+    int                                            rbp_offs_scale,
+    int                                            rbp_offs_shifter,
+    int                                            rbp_offs_half ) {
   unsigned int thres_array[1] = { 0x40879fff };
   unsigned int signmask_array[1] = { 0x8000000 };
   unsigned int absmask_array[1] = { 0x7fffffff };
@@ -90,28 +96,22 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx( libxsmm_generated_co
 ;
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, thres_array[0]);
-  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
-      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_0), i_gp_reg_tmp, 1 );
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, rbp_offs_thres, i_gp_reg_tmp, 1 );
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, signmask_array[0]);
-  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
-      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_1), i_gp_reg_tmp, 1 );
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, rbp_offs_signmask, i_gp_reg_tmp, 1 );
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, absmask_array[0]);
-  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
-      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_2), i_gp_reg_tmp, 1 );
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, rbp_offs_absmask, i_gp_reg_tmp, 1 );
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, scale_array[0]);
-  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
-      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_3), i_gp_reg_tmp, 1 );
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, rbp_offs_scale, i_gp_reg_tmp, 1 );
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, shifter_array[0]);
-  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
-      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_4), i_gp_reg_tmp, 1 );
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, rbp_offs_shifter, i_gp_reg_tmp, 1 );
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, half_array[0]);
-  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0,
-      libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_5), i_gp_reg_tmp, 1 );
+  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, rbp_offs_half, i_gp_reg_tmp, 1 );
 
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c0_array, "c0_array", 'y', i_vec_c0_lo);
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) &c0_array[8], "c0_array_", 'y', i_vec_c0_hi);
@@ -200,7 +200,13 @@ void libxsmm_generator_gelu_ps_minimax3_avx( libxsmm_generated_code*            
     const unsigned int                             i_vec_tmp4,
     const unsigned int                             i_vec_tmp5,
     const unsigned int                             i_vec_tmp6,
-    const unsigned int                             i_vec_tmp7 ) {
+    const unsigned int                             i_vec_tmp7,
+    int                                            rbp_offs_thres,
+    int                                            rbp_offs_signmask,
+    int                                            rbp_offs_absmask,
+    int                                            rbp_offs_scale,
+    int                                            rbp_offs_shifter,
+    int                                            rbp_offs_half ) {
 
   unsigned int i_vec_absmask = i_vec_tmp0, i_vec_xa = i_vec_tmp0;
   unsigned int i_vec_xr = i_vec_tmp1, i_vec_thres = i_vec_tmp1;
@@ -217,7 +223,7 @@ void libxsmm_generator_gelu_ps_minimax3_avx( libxsmm_generated_code*            
                   LIBXSMM_X86_INSTR_VBROADCASTSS,
                   LIBXSMM_X86_GP_REG_RBP,
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_2),
+                  rbp_offs_absmask,
                   'y',
                   i_vec_absmask, 0, 0, 0 );
 
@@ -230,7 +236,7 @@ void libxsmm_generator_gelu_ps_minimax3_avx( libxsmm_generated_code*            
                   LIBXSMM_X86_INSTR_VBROADCASTSS,
                   LIBXSMM_X86_GP_REG_RBP,
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_0),
+                  rbp_offs_thres,
                   'y',
                   i_vec_thres, 0, 0, 0 );
 
@@ -242,7 +248,7 @@ void libxsmm_generator_gelu_ps_minimax3_avx( libxsmm_generated_code*            
                   LIBXSMM_X86_INSTR_VBROADCASTSS,
                   LIBXSMM_X86_GP_REG_RBP,
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_1),
+                  rbp_offs_signmask,
                   'y',
                   i_vec_signmask, 0, 0, 0 );
 
@@ -261,7 +267,7 @@ void libxsmm_generator_gelu_ps_minimax3_avx( libxsmm_generated_code*            
                   LIBXSMM_X86_INSTR_VBROADCASTSS,
                   LIBXSMM_X86_GP_REG_RBP,
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_4),
+                  rbp_offs_shifter,
                   'y',
                   i_vec_shifter, 0, 0, 0 );
 
@@ -269,7 +275,7 @@ void libxsmm_generator_gelu_ps_minimax3_avx( libxsmm_generated_code*            
                   LIBXSMM_X86_INSTR_VBROADCASTSS,
                   LIBXSMM_X86_GP_REG_RBP,
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_3),
+                  rbp_offs_scale,
                   'y',
                   i_vec_scale, 0, 0, 0 );
 
@@ -317,7 +323,7 @@ void libxsmm_generator_gelu_ps_minimax3_avx( libxsmm_generated_code*            
                   LIBXSMM_X86_INSTR_VBROADCASTSS,
                   LIBXSMM_X86_GP_REG_RBP,
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_5),
+                  rbp_offs_half,
                   'y',
                   i_vec_half, 0, 0, 0 );
 
