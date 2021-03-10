@@ -947,6 +947,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_log2e;
   unsigned int vec_y;
   unsigned int vec_z;
+  unsigned int vec_expmask;
 
   /* Additional aux variables for gelu */
   unsigned int vec_xr;
