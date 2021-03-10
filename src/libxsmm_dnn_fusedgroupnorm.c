@@ -22,12 +22,11 @@ LIBXSMM_API libxsmm_dnn_fusedgroupnorm* libxsmm_dnn_create_fusedgroupnorm(libxsm
 
   if ( ((fusedgroupnorm_desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (fusedgroupnorm_desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) ||
        ((fusedgroupnorm_desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (fusedgroupnorm_desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32))    ) {
-    handle = (libxsmm_dnn_fusedgroupnorm*)malloc(sizeof(libxsmm_dnn_fusedgroupnorm));
+    /* zero entire content; not only safer but also sets data and code pointers to NULL */
+    handle = (libxsmm_dnn_fusedgroupnorm*)calloc(sizeof(libxsmm_dnn_fusedgroupnorm));
 
     if (0 != handle) {
       *status = LIBXSMM_DNN_SUCCESS;
-      /* zero entire content; not only safer but also sets data and code pointers to NULL */
-      memset(handle, 0, sizeof(*handle));
       /* let's make the description persistent */
       handle->desc = fusedgroupnorm_desc;
       /* we need to compute the memory layout given the */
@@ -75,10 +74,10 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedgroupnorm_create_ten
   layout = 0;
 
   if (handle != 0) {
-    layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
+    /* zero entire content; not only safer but also sets data and code pointers to NULL */
+    layout = (libxsmm_dnn_tensor_datalayout*) calloc(sizeof(libxsmm_dnn_tensor_datalayout));
 
     if (layout != 0) {
-      memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
       layout->format = handle->desc.buffer_format;
 
       if ( (type == LIBXSMM_DNN_REGULAR_INPUT)     || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  ||
