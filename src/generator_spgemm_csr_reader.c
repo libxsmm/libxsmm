@@ -56,13 +56,13 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
           *io_row_count = LIBXSMM_MAX(*io_row_count, row_count);
           /* allocate CSC data-structure matching mtx file, and set everything to zero for init */
           /* coverity[tainted_data] */
-          *o_column_idx = (unsigned int*) calloc(sizeof(unsigned int) * (*o_element_count));
+          *o_column_idx = (unsigned int*)calloc(*o_element_count, sizeof(unsigned int));
           /* coverity[tainted_data] */
-          *o_row_idx = (unsigned int*) calloc(sizeof(unsigned int) * ((size_t)(*io_row_count) + 1));
+          *o_row_idx = (unsigned int*)calloc((size_t)*io_row_count + 1, sizeof(unsigned int));
           /* coverity[tainted_data] */
-          *o_values = (double*) calloc(sizeof(double) * (*o_element_count));
+          *o_values = (double*)calloc(*o_element_count, sizeof(double));
           /* coverity[tainted_data] */
-          l_row_idx_id = (unsigned int*) calloc(sizeof(unsigned int) * (*io_row_count));
+          l_row_idx_id = (unsigned int*)calloc(*io_row_count, sizeof(unsigned int));
 
           /* check if mallocs were successful */
           if ( ( *o_row_idx == NULL )      ||

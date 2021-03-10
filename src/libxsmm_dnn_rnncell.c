@@ -48,7 +48,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
   }
 
   /* zero entire content; not only safer but also sets data and code pointers to NULL */
-  handle = (libxsmm_dnn_rnncell*)calloc(sizeof(libxsmm_dnn_rnncell));
+  handle = (libxsmm_dnn_rnncell*)calloc(1, sizeof(libxsmm_dnn_rnncell));
   if (NULL != handle) {
     *status = LIBXSMM_DNN_SUCCESS;
     /* initialize known handle components */
@@ -249,7 +249,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
   layout = 0;
   if (handle != 0) {
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
-    layout = (libxsmm_dnn_tensor_datalayout*) calloc(sizeof(libxsmm_dnn_tensor_datalayout));
+    layout = (libxsmm_dnn_tensor_datalayout*)calloc(1, sizeof(libxsmm_dnn_tensor_datalayout));
     if (layout != 0) {
       if ( (type == LIBXSMM_DNN_RNN_REGULAR_INPUT)             || (type == LIBXSMM_DNN_RNN_GRADIENT_INPUT)             ||
            (type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV)           || (type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV)           ||

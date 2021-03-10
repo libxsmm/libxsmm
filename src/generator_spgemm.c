@@ -185,7 +185,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
     if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) {
 #if !defined(NDEBUG)
       /* mute static analysis about garbage content */
-      double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count * sizeof(double));
+      double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count, sizeof(double));
       unsigned int l_n;
       unsigned int l_m;
 
@@ -247,7 +247,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
     if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) { /* libxsmm_sparse_*_reader may have deallocated l_values */
 #if !defined(NDEBUG)
       /* mute static analysis about garbage content */
-      double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count * sizeof(double));
+      double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count, sizeof(double));
       unsigned int l_n;
       unsigned int l_m;
 

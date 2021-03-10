@@ -33,7 +33,7 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_link_tensor(const libxsmm_dnn_tensor
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_link_qtensor(const libxsmm_dnn_tensor_datalayout* layout, const void* data, const unsigned char scf, libxsmm_dnn_err_t* status)
 {
   /* zero entire content; not only safer but also sets data and code pointers to NULL */
-  libxsmm_dnn_tensor* tensor = (libxsmm_dnn_tensor*)calloc(sizeof(libxsmm_dnn_tensor));
+  libxsmm_dnn_tensor* tensor = (libxsmm_dnn_tensor*)calloc(1, sizeof(libxsmm_dnn_tensor));
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (layout != 0 && tensor != 0 && data != 0) {
@@ -67,7 +67,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_duplicate_tensor_datalayo
     unsigned int dim = 0;
 
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
-    dst_layout = (libxsmm_dnn_tensor_datalayout*)calloc(sizeof(libxsmm_dnn_tensor_datalayout));
+    dst_layout = (libxsmm_dnn_tensor_datalayout*)calloc(1, sizeof(libxsmm_dnn_tensor_datalayout));
     if (0 != dst_layout) {
       dst_layout->dim_type = (libxsmm_dnn_tensor_dimtype*)malloc(layout->num_dims * sizeof(libxsmm_dnn_tensor_dimtype));
       dst_layout->dim_size = (unsigned int*)malloc(layout->num_dims * sizeof(unsigned int));

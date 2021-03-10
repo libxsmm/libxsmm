@@ -1550,7 +1550,7 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
   }
 
   /* zero entire content; not only safer but also sets data and code pointers to NULL */
-  handle = (libxsmm_dnn_layer*)calloc(sizeof(libxsmm_dnn_layer));
+  handle = (libxsmm_dnn_layer*)calloc(1, sizeof(libxsmm_dnn_layer));
 
   if (0 != handle) {
     /* initialize known handle components */
@@ -1648,7 +1648,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
 
   if (handle != 0) {
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
-    layout = (libxsmm_dnn_tensor_datalayout*) calloc(sizeof(libxsmm_dnn_tensor_datalayout));
+    layout = (libxsmm_dnn_tensor_datalayout*)calloc(1, sizeof(libxsmm_dnn_tensor_datalayout));
 
     if (layout != 0) {
       if ( (type == LIBXSMM_DNN_REGULAR_INPUT)  || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  ||

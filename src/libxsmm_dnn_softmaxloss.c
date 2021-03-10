@@ -22,7 +22,7 @@ LIBXSMM_API libxsmm_dnn_softmaxloss* libxsmm_dnn_create_softmaxloss(libxsmm_dnn_
 
   if ( (softmaxloss_desc.datatype == LIBXSMM_DNN_DATATYPE_F32) || (softmaxloss_desc.datatype == LIBXSMM_DNN_DATATYPE_BF16) ) {
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
-    handle = (libxsmm_dnn_softmaxloss*)calloc(sizeof(libxsmm_dnn_softmaxloss));
+    handle = (libxsmm_dnn_softmaxloss*)calloc(1, sizeof(libxsmm_dnn_softmaxloss));
 
     if (0 != handle) {
       *status = LIBXSMM_DNN_SUCCESS;
@@ -94,7 +94,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_softmaxloss_create_tensor
 
   if (handle != 0) {
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
-    layout = (libxsmm_dnn_tensor_datalayout*) calloc(sizeof(libxsmm_dnn_tensor_datalayout));
+    layout = (libxsmm_dnn_tensor_datalayout*)calloc(1, sizeof(libxsmm_dnn_tensor_datalayout));
 
     if (layout != 0) {
       layout->format = handle->desc.buffer_format;

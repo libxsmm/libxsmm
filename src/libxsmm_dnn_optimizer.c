@@ -20,7 +20,7 @@ LIBXSMM_API libxsmm_dnn_optimizer* libxsmm_dnn_create_optimizer(libxsmm_dnn_opti
 
   if ( (optimizer_desc.datatype == LIBXSMM_DNN_DATATYPE_F32) || (optimizer_desc.datatype == LIBXSMM_DNN_DATATYPE_BF16) ) {
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
-    handle = (libxsmm_dnn_optimizer*)calloc(sizeof(libxsmm_dnn_optimizer));
+    handle = (libxsmm_dnn_optimizer*)calloc(1, sizeof(libxsmm_dnn_optimizer));
 
     if (0 != handle) {
       *status = LIBXSMM_DNN_SUCCESS;
@@ -91,7 +91,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_optimizer_create_tensor_d
 
   if (handle != 0) {
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
-    layout = (libxsmm_dnn_tensor_datalayout*) calloc(sizeof(libxsmm_dnn_tensor_datalayout));
+    layout = (libxsmm_dnn_tensor_datalayout*)calloc(1, sizeof(libxsmm_dnn_tensor_datalayout));
 
     if (layout != 0) {
       layout->format = handle->desc.filter_format;
