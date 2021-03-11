@@ -15,6 +15,13 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrps_avx( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   instr,
+    const unsigned int                             i_vec_inout,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_inv_ps_minimax3_avx( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_x,
     const unsigned int                             i_vec_c0_lo,
