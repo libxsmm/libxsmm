@@ -15,6 +15,38 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_x,
+    const unsigned int                             i_vec_x2,
+    const unsigned int                             i_vec_nom,
+    const unsigned int                             i_vec_denom,
+    const unsigned int                             i_vec_c0,
+    const unsigned int                             i_vec_c1,
+    const unsigned int                             i_vec_c2,
+    const unsigned int                             i_vec_c3,
+    const unsigned int                             i_vec_c1_d,
+    const unsigned int                             i_vec_c2_d,
+    const unsigned int                             i_vec_c3_d,
+    const unsigned int                             i_vec_hi_bound,
+    const unsigned int                             i_vec_lo_bound,
+    const unsigned int                             i_vec_ones,
+    const unsigned int                             i_vec_neg_ones );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_c0,
+    const unsigned int                             i_vec_c1,
+    const unsigned int                             i_vec_c2,
+    const unsigned int                             i_vec_c3,
+    const unsigned int                             i_vec_c1_d,
+    const unsigned int                             i_vec_c2_d,
+    const unsigned int                             i_vec_c3_d,
+    const unsigned int                             i_vec_hi_bound,
+    const unsigned int                             i_vec_lo_bound,
+    const unsigned int                             i_vec_ones,
+    const unsigned int                             i_vec_neg_ones );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_scalefps_avx( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_x,
     const unsigned int                             i_vec_y,
