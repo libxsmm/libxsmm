@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
   ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
-  result_size = (reduce_rows == 1) ? n : m;
+  result_size = (reduce_rows == 1) ? n : ld_in;
 
 #if 0
   int m = E;
