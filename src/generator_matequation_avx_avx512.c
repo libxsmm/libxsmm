@@ -35,8 +35,16 @@ void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_c
     io_micro_kernel_config->vmove_instruction_out= LIBXSMM_X86_INSTR_VMOVUPS;
     io_micro_kernel_config->vector_name = 'z';
   } else {
-    /* That should not happen */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    io_micro_kernel_config->instruction_set = io_generated_code->arch;
+    io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
+    io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
+    io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
+    io_micro_kernel_config->alu_jmp_instruction = LIBXSMM_X86_INSTR_JL;
+    io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
+    io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
+    io_micro_kernel_config->vmove_instruction_in = LIBXSMM_X86_INSTR_VMOVUPS;
+    io_micro_kernel_config->vmove_instruction_out= LIBXSMM_X86_INSTR_VMOVUPS;
+    io_micro_kernel_config->vector_name = 'y';
   }
 }
 
