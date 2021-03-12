@@ -69,6 +69,9 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
    *      Scratch ptr in stack (to be filled)       <-- RBP-104
    *      Address scratch ptrin stack (to be filled)<-- RBP-112
    *      Saved equation output ptr                 <-- RBP-120
+   *      Const_0                                   <-- RBP-128
+   *      ...
+   *      Const_9                                   <-- RBP-200
    *
    * * */
 
@@ -103,6 +106,26 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
       return -112;
     case LIBXSMM_MEQN_STACK_VAR_OUT_PTR:
       return -120;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_0:
+      return -128;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_1:
+      return -136;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_2:
+      return -144;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_3:
+      return -152;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_4:
+      return -160;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_5:
+      return -168;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_6:
+      return -176;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_7:
+      return -184;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_8:
+      return -192;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_9:
+      return -200;
     default:
       return 0;
   }
@@ -181,7 +204,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
   i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 120 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 200 );
 
   /* The stack at exit of setup looks like this:
    *
@@ -202,7 +225,9 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
    *      Scratch ptr in stack (to be filled)       <-- RBP-104
    *      Address scratch ptrin stack (to be filled)<-- RBP-112
    *      Saved equation output ptr                 <-- RBP-120
-   *
+   *      Const_0                                   <-- RBP-128
+   *      ...
+   *      Const_9                                   <-- RBP-200
    * * */
 
   if (allocate_scratch > 0) {
