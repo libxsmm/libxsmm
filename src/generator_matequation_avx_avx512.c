@@ -584,9 +584,10 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       /* Re assign visit_stamps to current equation tree  */
       libxsmm_generator_matequation_assign_timestamps(cur_eqn);
 #if 0
-      printf("JITing tree with scratch %d\n", eqn_tree_id);
+      printf("\nJITing tree with scratch %d\n", eqn_tree_id);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
+      l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
       /* For these nodes use strategy via regblocks  */
@@ -606,9 +607,10 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       libxsmm_generator_reoptimize_eqn(cur_eqn);
       memset(&(l_kernel_config.meltw_kernel_config), 0, sizeof(libxsmm_mateltwise_kernel_config));
 #if 0
-      printf("JITing tree with regblocks %d\n", eqn_tree_id);
+      printf("\nJITing tree with regblocks %d\n", eqn_tree_id);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
+      l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     }
   }
