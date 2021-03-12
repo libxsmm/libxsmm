@@ -386,7 +386,7 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node) {
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV ||
-         /*node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_EXP ||*/
+         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_EXP ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ||
