@@ -19,6 +19,76 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( libxsmm_
   return libxsmm_matrix_eqns[eqn_idx];
 }
 
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags flags) {
+  libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
+  if ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) {
+    result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
+  } else if ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0) {
+    result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL;
+  } else if ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0) {
+    result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side) {
+  libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
+  if (side == RIGHT) {
+    if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR;
+    }
+  }
+  if (side == LEFT) {
+    if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR;
+    }
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_meltw_ternary_flags flags, unsigned int side) {
+  libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
+  if (side == RIGHT2) {
+    if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_2) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR;
+    }
+  }
+  if (side == RIGHT) {
+    if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_1) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR;
+    }
+  }
+  if (side == LEFT) {
+    if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_COL;
+    } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0) > 0) {
+      result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_SCALAR;
+    }
+  }
+  return result;
+}
+
 LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_matrix_eqn_elem* cur_node);
 LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_matrix_eqn_elem* cur_node) {
   libxsmm_blasint result = 1;
@@ -449,6 +519,63 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_
   libxsmm_matrix_eqn_exec_plan_configure_ternary_tmp( cur_node );
 }
 
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_children_bcast_tmp(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn_elem* cur_node) {
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    /* Do nothing */
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    if ((cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_unary(cur_node->info.u_op.flags) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
+      cur_node->le->tmp.id = eqn->eqn_root->reg_score;
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
+    }
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->le);
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    if ((cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_binary(cur_node->info.b_op.flags, LEFT) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
+      cur_node->le->tmp.id = eqn->eqn_root->reg_score;
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
+    }
+    if ((cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_binary(cur_node->info.b_op.flags, RIGHT) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
+      cur_node->ri->tmp.id = eqn->eqn_root->reg_score;
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
+    }
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->le);
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->ri);
+  } else if( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    if ((cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_ternary(cur_node->info.t_op.flags, LEFT) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
+      cur_node->le->tmp.id = eqn->eqn_root->reg_score;
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
+    }
+    if ((cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_ternary(cur_node->info.t_op.flags, RIGHT) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
+      cur_node->ri->tmp.id = eqn->eqn_root->reg_score;
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
+    }
+    if ((cur_node->r2->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_ternary(cur_node->info.t_op.flags, RIGHT2) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
+      cur_node->r2->tmp.id = eqn->eqn_root->reg_score;
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
+    }
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->le);
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->ri);
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->r2);
+  } else {
+    /* This should not happen  */
+  }
+}
+
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_bcast_tmp(libxsmm_matrix_eqn *eqn) {
+  libxsmm_matrix_eqn_elem* root = eqn->eqn_root;
+  if ( root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, root->le);
+  }
+  if ( root->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, root->le);
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, root->ri);
+  }
+  if ( root->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, root->le);
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, root->ri);
+    libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, root->r2);
+  }
+}
+
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *global_timestamp, libxsmm_blasint n_max_tmp, libxsmm_blasint *tmp_storage_pool ) {
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     libxsmm_matrix_eqn_exec_plan_visit_arg_node(cur_node);
@@ -612,6 +739,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
 #endif
   libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqns[idx]->eqn_root, &global_timestamp, max_reg_score, tmp_storage_pool );
   libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqns[idx]->eqn_root );
+  libxsmm_matrix_eqn_reassign_bcast_tmp( libxsmm_matrix_eqns[idx] );
 #if 0
   printf("Created optimal exexution plan...\n");
 #endif

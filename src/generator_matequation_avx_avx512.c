@@ -386,7 +386,7 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node) {
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV ||
-         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_EXP ||
+         /*node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_EXP ||*/
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ||
@@ -543,11 +543,11 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   l_gp_reg_mapping.gp_reg_out = LIBXSMM_X86_GP_REG_RAX;
   l_gp_reg_mapping.temp_reg    = LIBXSMM_X86_GP_REG_RBX;
   l_gp_reg_mapping.temp_reg2   = LIBXSMM_X86_GP_REG_RCX;
-  l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_RDI;
+  l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_R14;
   l_gp_reg_mapping.gp_reg_n_loop = LIBXSMM_X86_GP_REG_R15;
-  l_kernel_config.n_avail_gpr = 9;
+  l_kernel_config.n_avail_gpr = 8;
   l_kernel_config.gpr_pool[0] = LIBXSMM_X86_GP_REG_RSI; l_kernel_config.gpr_pool[1] = LIBXSMM_X86_GP_REG_RDX; l_kernel_config.gpr_pool[2] = LIBXSMM_X86_GP_REG_R8; l_kernel_config.gpr_pool[3] = LIBXSMM_X86_GP_REG_R9;
-  l_kernel_config.gpr_pool[4] = LIBXSMM_X86_GP_REG_R10; l_kernel_config.gpr_pool[5] = LIBXSMM_X86_GP_REG_R11; l_kernel_config.gpr_pool[6] = LIBXSMM_X86_GP_REG_R12; l_kernel_config.gpr_pool[7] = LIBXSMM_X86_GP_REG_R13; l_kernel_config.gpr_pool[8] = LIBXSMM_X86_GP_REG_R14;
+  l_kernel_config.gpr_pool[4] = LIBXSMM_X86_GP_REG_R10; l_kernel_config.gpr_pool[5] = LIBXSMM_X86_GP_REG_R11; l_kernel_config.gpr_pool[6] = LIBXSMM_X86_GP_REG_R12; l_kernel_config.gpr_pool[7] = LIBXSMM_X86_GP_REG_R13;
 
   jiting_queue = (libxsmm_matrix_eqn**) malloc(max_queue_size * sizeof(libxsmm_matrix_eqn*));
 

@@ -11,6 +11,10 @@
 #ifndef LIBXSMM_MATRIXEQN_H
 #define LIBXSMM_MATRIXEQN_H
 
+#define LEFT 0
+#define RIGHT 1
+#define RIGHT2 2
+
 #include <libxsmm.h>
 /**
  * TF includes src/libxsmm_main.h and uses LIBXSMM's sync primitives
@@ -125,5 +129,19 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
 LIBXSMM_API_INTERN int is_unary_opcode_reduce_kernel (unsigned int opcode);
 LIBXSMM_API_INTERN int is_unary_opcode_reduce_to_scalar (unsigned int opcode);
 LIBXSMM_API_INTERN int is_binary_opcode_reduce_to_scalar (unsigned int opcode);
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags flags);
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side);
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_meltw_ternary_flags flags, unsigned int side);
+
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_bcast_tmp(libxsmm_matrix_eqn *eqn);
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_children_bcast_tmp(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn_elem* cur_node);
+
+
 #endif /*LIBXSMM_MATRIXEQN_H*/
 

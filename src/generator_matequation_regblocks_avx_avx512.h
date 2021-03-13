@@ -174,15 +174,6 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
     libxsmm_matrix_eqn                      *eqn );
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags flags);
-
-LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side);
-
-LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_meltw_ternary_flags flags, unsigned int side);
-
-LIBXSMM_API_INTERN
 void get_parent_bcast_info(libxsmm_matrix_eqn_elem* cur_node);
 
 LIBXSMM_API_INTERN
