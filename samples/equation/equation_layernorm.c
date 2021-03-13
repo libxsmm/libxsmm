@@ -17,7 +17,7 @@
 #include "../../include/libxsmm_intrinsics_x86.h"
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
-#define USE_VECTORIZED_PATH 0
+#define USE_VECTORIZED_PATH 1
 
 inline __m512 _mm512_convert_bf_ps(__m256i a) { return _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(a),16)); }
 inline __m256i _mm256_convert_ps_bf(__m512 a) { return _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(a),16)); }
