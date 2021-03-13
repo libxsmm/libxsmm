@@ -525,33 +525,33 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_children_bcast_tmp(libxsmm_m
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
     if ((cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_unary(cur_node->info.u_op.flags) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
       cur_node->le->tmp.id = eqn->eqn_root->reg_score;
-      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score + 1;
     }
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->le);
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     if ((cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_binary(cur_node->info.b_op.flags, LEFT) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
       cur_node->le->tmp.id = eqn->eqn_root->reg_score;
-      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score + 1;
     }
     if ((cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_binary(cur_node->info.b_op.flags, RIGHT) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
       cur_node->ri->tmp.id = eqn->eqn_root->reg_score;
-      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score + 1;
     }
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->le);
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->ri);
   } else if( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     if ((cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_ternary(cur_node->info.t_op.flags, LEFT) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
       cur_node->le->tmp.id = eqn->eqn_root->reg_score;
-      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
-    }
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score + 1;
+     }
     if ((cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_ternary(cur_node->info.t_op.flags, RIGHT) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
       cur_node->ri->tmp.id = eqn->eqn_root->reg_score;
-      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
-    }
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score + 1;
+     }
     if ((cur_node->r2->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (get_bcast_type_ternary(cur_node->info.t_op.flags, RIGHT2) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
       cur_node->r2->tmp.id = eqn->eqn_root->reg_score;
-      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score++;
-    }
+      eqn->eqn_root->reg_score = eqn->eqn_root->reg_score + 1;
+     }
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->le);
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->ri);
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->r2);
