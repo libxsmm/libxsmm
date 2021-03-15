@@ -853,6 +853,10 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     case LIBXSMM_X86_INSTR_VPSCATTERDQ:
     case LIBXSMM_X86_INSTR_VPSCATTERQD:
     case LIBXSMM_X86_INSTR_VPSCATTERQQ:
+    case LIBXSMM_X86_INSTR_VMOVD_LD:
+    case LIBXSMM_X86_INSTR_VMOVQ_LD:
+    case LIBXSMM_X86_INSTR_VMOVD_ST:
+    case LIBXSMM_X86_INSTR_VMOVQ_ST:
     case LIBXSMM_X86_INSTR_MOVAPD:
     case LIBXSMM_X86_INSTR_MOVUPD:
     case LIBXSMM_X86_INSTR_MOVAPS:
@@ -1476,6 +1480,10 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
     case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
     case LIBXSMM_X86_INSTR_VMOVUPS:
+    case LIBXSMM_X86_INSTR_VMOVD_LD:
+    case LIBXSMM_X86_INSTR_VMOVQ_LD:
+    case LIBXSMM_X86_INSTR_VMOVD_ST:
+    case LIBXSMM_X86_INSTR_VMOVQ_ST:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
@@ -1936,6 +1944,10 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
     case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
     case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
+    case LIBXSMM_X86_INSTR_VMOVD_LD:
+    case LIBXSMM_X86_INSTR_VMOVQ_LD:
+    case LIBXSMM_X86_INSTR_VMOVD_ST:
+    case LIBXSMM_X86_INSTR_VMOVQ_ST:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
