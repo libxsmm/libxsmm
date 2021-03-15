@@ -116,13 +116,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_micro_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_b,
-                                     i_xgemm_desc->n * l_micro_kernel_config.datatype_size );
+                                     i_xgemm_desc->n * l_micro_kernel_config.datatype_size_in );
 
     /* reset C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_micro_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_c,
-                                     i_xgemm_desc->n * i_packed_width * l_micro_kernel_config.datatype_size );
+                                     i_xgemm_desc->n * i_packed_width * l_micro_kernel_config.datatype_size_out );
   } else if ( (l_n1_range > 0) && (l_n2_range == 0) ) {
     /* reset n loop */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_nloop, 0 );
@@ -141,13 +141,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_micro_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_b,
-                                     i_xgemm_desc->n * l_micro_kernel_config.datatype_size );
+                                     i_xgemm_desc->n * l_micro_kernel_config.datatype_size_in );
 
     /* reset C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_micro_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_c,
-                                     i_xgemm_desc->n * i_packed_width * l_micro_kernel_config.datatype_size );
+                                     i_xgemm_desc->n * i_packed_width * l_micro_kernel_config.datatype_size_out );
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
@@ -155,11 +155,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
 
   /* advance A pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_a,
-                                   l_micro_kernel_config.datatype_size*i_packed_width*i_xgemm_desc->lda);
+                                   l_micro_kernel_config.datatype_size_in*i_packed_width*i_xgemm_desc->lda);
 
   /* advance C pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_c,
-                                   l_micro_kernel_config.datatype_size*i_packed_width*i_xgemm_desc->ldc);
+                                   l_micro_kernel_config.datatype_size_out*i_packed_width*i_xgemm_desc->ldc);
 
   /* close m loop */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_mloop, i_xgemm_desc->m );
@@ -219,13 +219,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_a,
-                                     l_simd_packed_width * i_micro_kernel_config->datatype_size );
+                                     l_simd_packed_width * i_micro_kernel_config->datatype_size_in );
 
     /* advance C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_c,
-                                     l_simd_packed_width * i_micro_kernel_config->datatype_size );
+                                     l_simd_packed_width * i_micro_kernel_config->datatype_size_out );
 
     /* jump back to pack loop label */
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_help_0, i_packed_width );
@@ -235,13 +235,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_a,
-                                     l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size );
+                                     l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size_in );
 
     /* reset C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_c,
-                                     l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size );
+                                     l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size_out );
   /* we need masking and have less than SIMD width */
   } else if ( l_simd_packed_width > i_packed_width  ) {
     /* run remainder compute kernel */
@@ -262,13 +262,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_a,
-                                     l_simd_packed_width * i_micro_kernel_config->datatype_size );
+                                     l_simd_packed_width * i_micro_kernel_config->datatype_size_in );
 
     /* advance C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_c,
-                                     l_simd_packed_width * i_micro_kernel_config->datatype_size );
+                                     l_simd_packed_width * i_micro_kernel_config->datatype_size_out );
 
     /* jump back to pack loop label */
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_help_0, i_packed_width - l_simd_packed_remainder );
@@ -282,13 +282,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_a,
-                                     l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size );
+                                     l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size_in );
 
     /* reset C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_c,
-                                     l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size );
+                                     l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size_out );
   }
 
   /* advance B and C pointers if N is bigger than our register blocking */
@@ -297,13 +297,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_b,
-                                     i_n_blocking * i_micro_kernel_config->datatype_size );
+                                     i_n_blocking * i_micro_kernel_config->datatype_size_in );
 
     /* advance C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_c,
-                                     i_n_blocking * i_packed_width * i_micro_kernel_config->datatype_size );
+                                     i_n_blocking * i_packed_width * i_micro_kernel_config->datatype_size_out );
   }
 }
 
@@ -376,7 +376,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                             i_micro_kernel_config->c_vmove_instruction,
                                             i_gp_reg_mapping->gp_reg_c,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            l_n*i_packed_width*i_micro_kernel_config->datatype_size,
+                                            l_n*i_packed_width*i_micro_kernel_config->datatype_size_out,
                                             i_micro_kernel_config->vector_name,
                                             l_n, l_use_masking, 1, 0 );
         } else {
@@ -384,7 +384,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                                  l_avx_ac_move_instr,
                                                  i_gp_reg_mapping->gp_reg_c,
                                                  LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                 l_n*i_packed_width*i_micro_kernel_config->datatype_size,
+                                                 l_n*i_packed_width*i_micro_kernel_config->datatype_size_out,
                                                  i_micro_kernel_config->vector_name,
                                                  l_n, 15, 0);
         }
@@ -394,7 +394,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                           i_micro_kernel_config->c_vmove_instruction,
                                           i_gp_reg_mapping->gp_reg_c,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          l_n*i_packed_width*i_micro_kernel_config->datatype_size,
+                                          l_n*i_packed_width*i_micro_kernel_config->datatype_size_out,
                                           i_micro_kernel_config->vector_name,
                                           l_n, 0, 1, 0 );
       }
@@ -415,7 +415,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                           i_micro_kernel_config->a_vmove_instruction,
                                           i_gp_reg_mapping->gp_reg_a,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          l_lcl_k*i_packed_width*i_micro_kernel_config->datatype_size,
+                                          l_lcl_k*i_packed_width*i_micro_kernel_config->datatype_size_in,
                                           i_micro_kernel_config->vector_name,
                                           i_n_blocking+l_lcl_k, l_use_masking, 1, 0 );
       } else {
@@ -423,7 +423,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                                l_avx_ac_move_instr,
                                                i_gp_reg_mapping->gp_reg_a,
                                                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                               l_lcl_k*i_packed_width*i_micro_kernel_config->datatype_size,
+                                               l_lcl_k*i_packed_width*i_micro_kernel_config->datatype_size_in,
                                                i_micro_kernel_config->vector_name,
                                                i_n_blocking+l_lcl_k, 15, 0);
       }
@@ -433,7 +433,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                         i_micro_kernel_config->a_vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_a,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_lcl_k*i_packed_width*i_micro_kernel_config->datatype_size,
+                                        l_lcl_k*i_packed_width*i_micro_kernel_config->datatype_size_in,
                                         i_micro_kernel_config->vector_name,
                                         i_n_blocking+l_lcl_k, 0, 1, 0 );
     }
@@ -449,7 +449,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                                i_gp_reg_mapping->gp_reg_b,
                                                LIBXSMM_X86_GP_REG_UNDEF,
                                                0,
-                                               l_n * i_micro_kernel_config->datatype_size,
+                                               l_n * i_micro_kernel_config->datatype_size_in,
                                                i_micro_kernel_config->vector_name,
                                                i_n_blocking,
                                                l_n );
@@ -459,7 +459,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                         i_micro_kernel_config->b_vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_b,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_n * i_micro_kernel_config->datatype_size,
+                                        l_n * i_micro_kernel_config->datatype_size_in,
                                         i_micro_kernel_config->vector_name,
                                         i_n_blocking+1, 0, 1, 0 );
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -475,7 +475,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                         i_micro_kernel_config->b_vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_b,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_n * i_micro_kernel_config->datatype_size,
+                                        l_n * i_micro_kernel_config->datatype_size_in,
                                         i_micro_kernel_config->vector_name,
                                         i_n_blocking+1, 0, 1, 0 );
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -501,13 +501,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
                                    i_gp_reg_mapping->gp_reg_a,
-                                   i_packed_width * i_micro_kernel_config->datatype_size );
+                                   i_packed_width * i_micro_kernel_config->datatype_size_in );
 
   /* advance B pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
                                    i_gp_reg_mapping->gp_reg_b,
-                                   i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size );
+                                   i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in );
 
   /* close k loop */
   libxsmm_generator_gemm_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, 0, i_xgemm_desc->k, 0 );
@@ -522,7 +522,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                           i_micro_kernel_config->c_vmove_instruction,
                                           i_gp_reg_mapping->gp_reg_c,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          l_n*i_packed_width*i_micro_kernel_config->datatype_size,
+                                          l_n*i_packed_width*i_micro_kernel_config->datatype_size_out,
                                           i_micro_kernel_config->vector_name,
                                           l_n, l_use_masking, 0, 1 );
       } else {
@@ -530,7 +530,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                                l_avx_ac_move_instr,
                                                i_gp_reg_mapping->gp_reg_c,
                                                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                               l_n*i_packed_width*i_micro_kernel_config->datatype_size,
+                                               l_n*i_packed_width*i_micro_kernel_config->datatype_size_out,
                                                i_micro_kernel_config->vector_name,
                                                l_n, 15, 1);
       }
@@ -540,7 +540,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                         i_micro_kernel_config->c_vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_c,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_n*i_packed_width*i_micro_kernel_config->datatype_size,
+                                        l_n*i_packed_width*i_micro_kernel_config->datatype_size_out,
                                         i_micro_kernel_config->vector_name,
                                         l_n, 0, 0, 1 );
     }
@@ -550,11 +550,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_sub_instruction,
                                    i_gp_reg_mapping->gp_reg_a,
-                                   i_xgemm_desc->k * i_packed_width * i_micro_kernel_config->datatype_size );
+                                   i_xgemm_desc->k * i_packed_width * i_micro_kernel_config->datatype_size_in );
 
   /* reset B Pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_sub_instruction,
                                    i_gp_reg_mapping->gp_reg_b,
-                                   i_xgemm_desc->k * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size );
+                                   i_xgemm_desc->k * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in );
 }

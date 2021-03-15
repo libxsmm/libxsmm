@@ -293,8 +293,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                             l_micro_kernel_config.c_vmove_instruction,
                                             l_gp_reg_mapping.gp_reg_c,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +
-                                              l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
+                                            l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size_out +
+                                              l_n*l_micro_kernel_config.datatype_size_out*l_micro_kernel_config.vector_length,
                                             l_micro_kernel_config.vector_name,
                                             LIBXSMM_SPGEMM_ASPARSE_REG_ACC_REG+l_n, 0, 1, 0 );
         } else {
@@ -313,8 +313,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                             LIBXSMM_X86_INSTR_PREFETCHT2,
                                             l_gp_reg_mapping.gp_reg_c,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +
-                                              (l_n+1)*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length );
+                                            l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size_out +
+                                              (l_n+1)*l_micro_kernel_config.datatype_size_out*l_micro_kernel_config.vector_length );
         }
       }
     }
@@ -407,8 +407,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                  l_gp_reg_mapping.gp_reg_b,
                                                  LIBXSMM_X86_GP_REG_UNDEF,
                                                  0,
-                                                 i_column_idx[u]*i_xgemm_desc->ldb*l_micro_kernel_config.datatype_size +
-                                                   l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
+                                                 i_column_idx[u]*i_xgemm_desc->ldb*l_micro_kernel_config.datatype_size_in +
+                                                   l_n*l_micro_kernel_config.datatype_size_in*l_micro_kernel_config.vector_length,
                                                  l_micro_kernel_config.vector_name,
                                                  l_unique_reg,
                                                  LIBXSMM_SPGEMM_ASPARSE_REG_ACC_REG+l_n );
@@ -418,8 +418,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                             l_gp_reg_mapping.gp_reg_b,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
-                                            i_column_idx[u]*i_xgemm_desc->ldb*l_micro_kernel_config.datatype_size +
-                                              (l_n+1)*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length );
+                                            i_column_idx[u]*i_xgemm_desc->ldb*l_micro_kernel_config.datatype_size_in +
+                                              (l_n+1)*l_micro_kernel_config.datatype_size_in*l_micro_kernel_config.vector_length );
       }
     }
     if (l_row_elements > 0) {
@@ -439,8 +439,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                           l_store_instruction,
                                           l_gp_reg_mapping.gp_reg_c,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +
-                                            l_n*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length,
+                                          l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size_out +
+                                            l_n*l_micro_kernel_config.datatype_size_out*l_micro_kernel_config.vector_length,
                                           l_micro_kernel_config.vector_name,
                                           LIBXSMM_SPGEMM_ASPARSE_REG_ACC_REG+l_n, 0, 0, 1 );
       }

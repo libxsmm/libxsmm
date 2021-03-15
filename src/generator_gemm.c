@@ -30,6 +30,13 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_emu_amx = atoi(l_env_emu_amx);
   }
 
+  /* overwrite VNNI Flag when K == 1 */
+  if ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) &&
+       (l_xgemm_desc_mod.k == 1) &&
+       ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
+    l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags & (~LIBXSMM_GEMM_FLAG_VNNI_A);
+  }
+
   /* determining vector length depending on architecture and precision */
   if ( io_generated_code->arch <= LIBXSMM_TARGET_ARCH_GENERIC ) {
     /* nothing todo */
@@ -70,14 +77,20 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/4;
   } else if ( ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) &&
               ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) && LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
-    l_vector_length = 16;
     /* some checks as we cannot mask everything */
-    if ( (l_xgemm_desc_mod.k % 2 != 0) ) {
+    if ( (l_xgemm_desc_mod.k % 2 != 0) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
       return;
     }
-    l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
-    l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
+    if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) {
+      l_vector_length = 32;
+      l_xgemm_desc_mod.k = l_xgemm_desc_mod.k;
+      l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb;
+    } else {
+      l_vector_length = 16;
+      l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
+      l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
+    }
   } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_V81 ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 4;
   } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_V81 ) && LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
@@ -115,25 +128,35 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   /* check for trans B cases which are not supported in the generator */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
     if ( (LIBXSMM_GEMM_PRECISION_I16  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) ||
-         (LIBXSMM_GEMM_PRECISION_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) ||
-         (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ))    ) {
+         (LIBXSMM_GEMM_PRECISION_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ))    ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
       return;
     } else {
       /* we are fine, we have transpose support */
     }
+    if ( ( LIBXSMM_GEMM_PRECISION_BF16  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) {
+      if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0 ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+        return;
+      }
+    }
   }
 
   /* check for VNNI flag being set in case of low precision GEMM */
   if ( ( LIBXSMM_GEMM_PRECISION_I16  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ||
-       ( LIBXSMM_GEMM_PRECISION_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ||
-       ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) )    ) {
+       ( LIBXSMM_GEMM_PRECISION_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) )    ) {
     if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
       return;
     }
     if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+      return;
+    }
+  }
+  if ( ( LIBXSMM_GEMM_PRECISION_BF16  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) {
+    if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
       return;
     }
   }
@@ -150,6 +173,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     libxsmm_generator_gemm_noarch_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
     /* call actual kernel generation with revised parameters */
+    /* @TODO check for VNNI format */
     if ( (( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&
          ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
          ( l_xgemm_desc_mod.m % 32 == 0 ) && ( l_xgemm_desc_mod.k % 16 == 0 )) ||
