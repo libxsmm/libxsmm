@@ -16,7 +16,7 @@ LIBXSMM_API
 void libxsmm_generator_matequation_kernel( libxsmm_generated_code*         io_generated_code,
                                            const libxsmm_meqn_descriptor*  i_mateqn_desc ) {
   /* generate kernel */
-  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE  ) {
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX2  ) {
     libxsmm_generator_matequation_avx_avx512_kernel( io_generated_code, i_mateqn_desc );
    } else {
     /* TODO fix this error and support for more architectures */

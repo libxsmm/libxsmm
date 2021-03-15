@@ -35,8 +35,16 @@ void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_c
     io_micro_kernel_config->vmove_instruction_out= LIBXSMM_X86_INSTR_VMOVUPS;
     io_micro_kernel_config->vector_name = 'z';
   } else {
-    /* That should not happen */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    io_micro_kernel_config->instruction_set = io_generated_code->arch;
+    io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
+    io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
+    io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
+    io_micro_kernel_config->alu_jmp_instruction = LIBXSMM_X86_INSTR_JL;
+    io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
+    io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
+    io_micro_kernel_config->vmove_instruction_in = LIBXSMM_X86_INSTR_VMOVUPS;
+    io_micro_kernel_config->vmove_instruction_out= LIBXSMM_X86_INSTR_VMOVUPS;
+    io_micro_kernel_config->vector_name = 'y';
   }
 }
 
@@ -61,6 +69,9 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
    *      Scratch ptr in stack (to be filled)       <-- RBP-104
    *      Address scratch ptrin stack (to be filled)<-- RBP-112
    *      Saved equation output ptr                 <-- RBP-120
+   *      Const_0                                   <-- RBP-128
+   *      ...
+   *      Const_9                                   <-- RBP-200
    *
    * * */
 
@@ -95,6 +106,26 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
       return -112;
     case LIBXSMM_MEQN_STACK_VAR_OUT_PTR:
       return -120;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_0:
+      return -128;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_1:
+      return -136;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_2:
+      return -144;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_3:
+      return -152;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_4:
+      return -160;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_5:
+      return -168;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_6:
+      return -176;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_7:
+      return -184;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_8:
+      return -192;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_9:
+      return -200;
     default:
       return 0;
   }
@@ -173,7 +204,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
   i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 120 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 200 );
 
   /* The stack at exit of setup looks like this:
    *
@@ -194,7 +225,9 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
    *      Scratch ptr in stack (to be filled)       <-- RBP-104
    *      Address scratch ptrin stack (to be filled)<-- RBP-112
    *      Saved equation output ptr                 <-- RBP-120
-   *
+   *      Const_0                                   <-- RBP-128
+   *      ...
+   *      Const_9                                   <-- RBP-200
    * * */
 
   if (allocate_scratch > 0) {
@@ -510,11 +543,11 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   l_gp_reg_mapping.gp_reg_out = LIBXSMM_X86_GP_REG_RAX;
   l_gp_reg_mapping.temp_reg    = LIBXSMM_X86_GP_REG_RBX;
   l_gp_reg_mapping.temp_reg2   = LIBXSMM_X86_GP_REG_RCX;
-  l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_RDI;
+  l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_R14;
   l_gp_reg_mapping.gp_reg_n_loop = LIBXSMM_X86_GP_REG_R15;
-  l_kernel_config.n_avail_gpr = 9;
+  l_kernel_config.n_avail_gpr = 8;
   l_kernel_config.gpr_pool[0] = LIBXSMM_X86_GP_REG_RSI; l_kernel_config.gpr_pool[1] = LIBXSMM_X86_GP_REG_RDX; l_kernel_config.gpr_pool[2] = LIBXSMM_X86_GP_REG_R8; l_kernel_config.gpr_pool[3] = LIBXSMM_X86_GP_REG_R9;
-  l_kernel_config.gpr_pool[4] = LIBXSMM_X86_GP_REG_R10; l_kernel_config.gpr_pool[5] = LIBXSMM_X86_GP_REG_R11; l_kernel_config.gpr_pool[6] = LIBXSMM_X86_GP_REG_R12; l_kernel_config.gpr_pool[7] = LIBXSMM_X86_GP_REG_R13; l_kernel_config.gpr_pool[8] = LIBXSMM_X86_GP_REG_R14;
+  l_kernel_config.gpr_pool[4] = LIBXSMM_X86_GP_REG_R10; l_kernel_config.gpr_pool[5] = LIBXSMM_X86_GP_REG_R11; l_kernel_config.gpr_pool[6] = LIBXSMM_X86_GP_REG_R12; l_kernel_config.gpr_pool[7] = LIBXSMM_X86_GP_REG_R13;
 
   jiting_queue = (libxsmm_matrix_eqn**) malloc(max_queue_size * sizeof(libxsmm_matrix_eqn*));
 
@@ -551,9 +584,10 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       /* Re assign visit_stamps to current equation tree  */
       libxsmm_generator_matequation_assign_timestamps(cur_eqn);
 #if 0
-      printf("JITing tree with scratch %d\n", eqn_tree_id);
+      printf("\nJITing tree with scratch %d\n", eqn_tree_id);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
+      l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
       /* For these nodes use strategy via regblocks  */
@@ -573,9 +607,10 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       libxsmm_generator_reoptimize_eqn(cur_eqn);
       memset(&(l_kernel_config.meltw_kernel_config), 0, sizeof(libxsmm_mateltwise_kernel_config));
 #if 0
-      printf("JITing tree with regblocks %d\n", eqn_tree_id);
+      printf("\nJITing tree with regblocks %d\n", eqn_tree_id);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
+      l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     }
   }

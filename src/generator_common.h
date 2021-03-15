@@ -948,6 +948,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_log2e;
   unsigned int vec_y;
   unsigned int vec_z;
+  unsigned int vec_expmask;
 
   /* Additional aux variables for gelu */
   unsigned int vec_xr;
@@ -960,6 +961,28 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_absmask;
   unsigned int vec_scale;
   unsigned int vec_shifter;
+
+  /* Additional aux variables fir minimax approximations */
+  unsigned int vec_c0_lo;
+  unsigned int vec_c0_hi;
+  unsigned int vec_c1_lo;
+  unsigned int vec_c1_hi;
+  unsigned int vec_c2_lo;
+  unsigned int vec_c2_hi;
+  unsigned int vec_tmp0;
+  unsigned int vec_tmp1;
+  unsigned int vec_tmp2;
+  unsigned int vec_tmp3;
+  unsigned int vec_tmp4;
+  unsigned int vec_tmp5;
+  unsigned int vec_tmp6;
+  unsigned int vec_tmp7;
+  int rbp_offs_thres;
+  int rbp_offs_signmask;
+  int rbp_offs_absmask;
+  int rbp_offs_scale;
+  int rbp_offs_shifter;
+  int rbp_offs_half;
 
   /* Misc aux variables  */
   unsigned int neg_signs_vreg;
@@ -1099,7 +1122,17 @@ typedef enum libxsmm_meltw_stack_var {
   LIBXSMM_MELTW_STACK_VAR_OUT_PTR0        =  10,
   LIBXSMM_MELTW_STACK_VAR_OUT_PTR1        =  11,
   LIBXSMM_MELTW_STACK_VAR_OUT_PTR2        =  12,
-  LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR     =  13
+  LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR     =  13,
+  LIBXSMM_MELTW_STACK_VAR_CONST_0         =  14,
+  LIBXSMM_MELTW_STACK_VAR_CONST_1         =  15,
+  LIBXSMM_MELTW_STACK_VAR_CONST_2         =  16,
+  LIBXSMM_MELTW_STACK_VAR_CONST_3         =  17,
+  LIBXSMM_MELTW_STACK_VAR_CONST_4         =  18,
+  LIBXSMM_MELTW_STACK_VAR_CONST_5         =  19,
+  LIBXSMM_MELTW_STACK_VAR_CONST_6         =  20,
+  LIBXSMM_MELTW_STACK_VAR_CONST_7         =  21,
+  LIBXSMM_MELTW_STACK_VAR_CONST_8         =  22,
+  LIBXSMM_MELTW_STACK_VAR_CONST_9         =  23
 } libxsmm_meltw_stack_var;
 
 typedef enum libxsmm_meqn_stack_var {
@@ -1118,7 +1151,17 @@ typedef enum libxsmm_meqn_stack_var {
   LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR8  =  12,
   LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9  =  13,
   LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10 =  14,
-  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11 =  15
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11 =  15,
+  LIBXSMM_MEQN_STACK_VAR_CONST_0            =  16,
+  LIBXSMM_MEQN_STACK_VAR_CONST_1            =  17,
+  LIBXSMM_MEQN_STACK_VAR_CONST_2            =  18,
+  LIBXSMM_MEQN_STACK_VAR_CONST_3            =  19,
+  LIBXSMM_MEQN_STACK_VAR_CONST_4            =  20,
+  LIBXSMM_MEQN_STACK_VAR_CONST_5            =  21,
+  LIBXSMM_MEQN_STACK_VAR_CONST_6            =  22,
+  LIBXSMM_MEQN_STACK_VAR_CONST_7            =  23,
+  LIBXSMM_MEQN_STACK_VAR_CONST_8            =  24,
+  LIBXSMM_MEQN_STACK_VAR_CONST_9            =  25
 } libxsmm_meqn_stack_var;
 
 /* Auxiliary stack variable enumeration in GEMM */

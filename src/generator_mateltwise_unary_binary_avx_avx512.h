@@ -18,7 +18,8 @@ LIBXSMM_API_INTERN
 void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                  unsigned int                            op,
-                                                 unsigned int                            flags );
+                                                 unsigned int                            flags,
+                                                 unsigned int                            i_gp_reg_tmp);
 
 LIBXSMM_API_INTERN
 void adjust_after_microkernel_addr_gp_reg( libxsmm_generated_code*                 io_generated_code,
@@ -45,7 +46,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_configure_avx512_vlens(const libxsmm_meltw_descriptor* i_mateltwise_desc, libxsmm_mateltwise_kernel_config* i_micro_kernel_config);
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_configure_M_N_blocking(unsigned int m, unsigned int n, unsigned int vlen, unsigned int *m_blocking, unsigned int *n_blocking);
+void libxsmm_generator_configure_M_N_blocking(unsigned int m, unsigned int n, unsigned int vlen, unsigned int *m_blocking, unsigned int *n_blocking, unsigned int available_vregs);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_configure_loop_order(const libxsmm_meltw_descriptor* i_mateltwise_desc, unsigned int *loop_order, unsigned int *m_blocking, unsigned int *n_blocking, unsigned int *out_blocking, unsigned int *inner_blocking, unsigned int *out_bound, unsigned int *inner_bound);

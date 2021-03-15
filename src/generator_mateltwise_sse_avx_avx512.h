@@ -77,6 +77,10 @@ void libxsmm_generator_mateltwise_footer_n_dyn_loop( libxsmm_generated_code*    
                                               const libxsmm_mateltwise_kernel_config*       i_kernel_config,
                                               const unsigned int                            i_gp_reg_n_loop,
                                               const unsigned int                            i_gp_reg_n_bound );
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateltwise_initialize_avx_mask( libxsmm_generated_code*            io_generated_code,
+    const unsigned int                       i_mask_reg,
+    const unsigned int                       i_mask_count );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code*            io_generated_code,

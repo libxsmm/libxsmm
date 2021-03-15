@@ -54,6 +54,26 @@ int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var sta
       return -96;
     case LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR:
       return -104;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_0:
+      return -112;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_1:
+      return -120;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_2:
+      return -128;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_3:
+      return -136;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_4:
+      return -144;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_5:
+      return -152;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_6:
+      return -160;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_7:
+      return -168;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_8:
+      return -176;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_9:
+      return -184;
     default:
       return 0;
   }
@@ -104,7 +124,8 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
   /* TODO: Determine if we want to save stuff to stack */
   unsigned int save_args_to_stack = 0;
   unsigned int allocate_scratch = 0;
-  unsigned int use_aux_stack_vars = 0;
+  unsigned int use_aux_stack_vars = ((io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) &&
+      ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV) )) ? 1 : 0;
   unsigned int use_stack_vars = ((save_args_to_stack > 0) || (allocate_scratch > 0) || (use_aux_stack_vars > 0)) ? 1 : 0;
 
   LIBXSMM_UNUSED(i_gp_reg_mapping);
@@ -115,7 +136,18 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
   if (use_stack_vars > 0) {
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 104 );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 184 );
+  }
+
+  if ((io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY)) {
+    if ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV) ) {
+      i_micro_kernel_config->rbp_offs_thres = libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_0);
+      i_micro_kernel_config->rbp_offs_signmask = libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_1);
+      i_micro_kernel_config->rbp_offs_absmask = libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_2);
+      i_micro_kernel_config->rbp_offs_scale = libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_3);
+      i_micro_kernel_config->rbp_offs_shifter = libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_4);
+      i_micro_kernel_config->rbp_offs_half = libxsmm_generator_meltw_get_rbp_relative_offset(LIBXSMM_MELTW_STACK_VAR_CONST_5);
+    }
   }
 
   /* Exemplary usage of how to store args to stack if need be  */
@@ -228,6 +260,18 @@ void libxsmm_generator_mateltwise_footer_n_dyn_loop( libxsmm_generated_code*    
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_n_loop, 1);
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_kernel_config->alu_cmp_instruction, i_gp_reg_n_bound, i_gp_reg_n_loop);
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateltwise_initialize_avx_mask( libxsmm_generated_code*            io_generated_code,
+    const unsigned int                       i_mask_reg,
+    const unsigned int                       i_mask_count) {
+  unsigned int mask_array[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  unsigned int i;
+  for (i = 0; i < i_mask_count; i++) {
+    mask_array[i] = 0xFFFFFFFF;
+  }
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) mask_array, "mask_array", 'y', i_mask_reg );
 }
 
 LIBXSMM_API_INTERN
@@ -560,7 +604,7 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
   libxsmm_generator_meltw_setup_stack_frame( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
   /* Depending on the elementwise function, dispatch the proper code JITer */
-  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX2) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16_ACT) || (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_ACT_CVTFP32BF16)) {
       if ( (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
         if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT) > 0) ) {
