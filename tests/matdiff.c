@@ -127,7 +127,7 @@ int main(void)
   if (EXIT_SUCCESS == result) {
     /* One-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.norm1_abs - 3.1000000)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.norm1_rel - 0.0963158)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.norm1_rel - 0.0281818)) result = EXIT_FAILURE;
     /* Infinity-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.normi_abs - 2.4400000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.normi_rel - 0.0976000)) result = EXIT_FAILURE;
@@ -135,13 +135,13 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.normf_rel - 0.1074954)) result = EXIT_FAILURE;
     /** L2-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.l2_abs - 2.2383029)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.l2_rel - 0.6726295)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.l2_rel - 0.2438908)) result = EXIT_FAILURE;
     /** L1-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.l1_ref - 266.00)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.l1_tst - 267.86)) result = EXIT_FAILURE;
     /* Linf-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.linf_abs - 2.0000000)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.5600000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.2222222)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
     if (0 != diff.m || 2 != diff.n) result = EXIT_FAILURE;
     if (x[3*diff.m+diff.n] != diff.v_ref) result = EXIT_FAILURE;
