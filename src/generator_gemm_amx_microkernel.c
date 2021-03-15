@@ -171,6 +171,8 @@ void prefetch_tile_in_L2(libxsmm_generated_code*     io_generated_code,
     unsigned int base_reg,
     unsigned int offset) {
   unsigned int i;
+  LIBXSMM_UNUSED( i_micro_kernel_config );
+
   for (i=0; i<tile_cols; i++) {
     libxsmm_x86_instruction_prefetch(io_generated_code,
         LIBXSMM_X86_INSTR_PREFETCHT1,
