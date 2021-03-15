@@ -839,6 +839,10 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VMOVQ_LD", &mycode, LIBXSMM_X86_INSTR_VMOVD_LD, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VMOVQ_ST", &mycode, LIBXSMM_X86_INSTR_VMOVD_ST, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
 #endif
+  test_evex_compute_3reg_general( "evex_reg_VPBROADCASTB_GPR", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTB_GPR, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPBROADCASTW_GPR", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTW_GPR, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPBROADCASTD_GPR", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTD_GPR, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPBROADCASTQ_GPR", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTQ_GPR, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
   mycode.arch = LIBXSMM_X86_AVX2;
   test_vex_compute_3reg_general( "vex_reg_VMOVD_LD", &mycode, LIBXSMM_X86_INSTR_VMOVD_LD, 1, LIBXSMM_X86_IMM_UNDEF, 1 );
   test_vex_compute_3reg_general( "vex_reg_VMOVD_ST", &mycode, LIBXSMM_X86_INSTR_VMOVD_ST, 1, LIBXSMM_X86_IMM_UNDEF, 1 );

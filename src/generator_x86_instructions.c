@@ -1484,6 +1484,10 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VMOVQ_LD:
     case LIBXSMM_X86_INSTR_VMOVD_ST:
     case LIBXSMM_X86_INSTR_VMOVQ_ST:
+    case LIBXSMM_X86_INSTR_VPBROADCASTB_GPR:
+    case LIBXSMM_X86_INSTR_VPBROADCASTW_GPR:
+    case LIBXSMM_X86_INSTR_VPBROADCASTD_GPR:
+    case LIBXSMM_X86_INSTR_VPBROADCASTQ_GPR:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
