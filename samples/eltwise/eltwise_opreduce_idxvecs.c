@@ -297,9 +297,14 @@ int main(int argc, char* argv[])
 
   if (use_bf16 == 1) {
     libxsmm_rne_convert_fp32_bf16( inp_matrix, inp_matrix_bf16, ld_in*n );
+    libxsmm_convert_bf16_f32( inp_matrix_bf16, inp_matrix, ld_in*n );
     libxsmm_rne_convert_fp32_bf16( inp_matrix2, inp_matrix_bf162, ld_in*n );
+    libxsmm_convert_bf16_f32( inp_matrix_bf162, inp_matrix2, ld_in*n );
     libxsmm_rne_convert_fp32_bf16( scale_vals, scale_vals_bf16, n_cols_idx );
+    libxsmm_convert_bf16_f32( scale_vals_bf16, scale_vals, n_cols_idx);
     libxsmm_rne_convert_fp32_bf16( result, result_bf16, ld_in );
+    libxsmm_convert_bf16_f32( result_bf16, result, ld_in);
+    memcpy(ref_result, result, ld_in * sizeof(float));
   }
 
   for (i = 0; i < m; i++) {
@@ -359,12 +364,12 @@ int main(int argc, char* argv[])
         }
         if (redop == REDOP_MIN) {
           if (argop_vec_0 > 0) {
-            if (op_res < ref_result[i]) {
+            if (op_res <= ref_result[i]) {
               ref_argop_off_vec_0[i] = j;
             }
           }
           if (argop_vec_1 > 0) {
-            if (op_res < ref_result[i]) {
+            if (op_res <= ref_result[i]) {
               ref_argop_off_vec_1[i] = _j;
             }
           }
@@ -372,12 +377,12 @@ int main(int argc, char* argv[])
         }
         if (redop == REDOP_MAX) {
           if (argop_vec_0 > 0) {
-            if (op_res > ref_result[i]) {
+            if (op_res >= ref_result[i]) {
               ref_argop_off_vec_0[i] = j;
             }
           }
           if (argop_vec_1 > 0) {
-            if (op_res > ref_result[i]) {
+            if (op_res >= ref_result[i]) {
               ref_argop_off_vec_1[i] = _j;
             }
           }
