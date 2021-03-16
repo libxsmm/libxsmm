@@ -435,6 +435,13 @@ int main(int argc, char* argv[])
 
   kernel(&params);
 
+  if (idx_mode > 0) {
+    for (i = 0; i < m; i++) {
+      argop_off_vec_0_i32[i] = (unsigned int) argop_off_vec_0[i];
+      argop_off_vec_1_i32[i] = (unsigned int) argop_off_vec_1[i];
+    }
+  }
+
   /* compare */
   printf("#   Correctness  #\n");
   printf("OP=%s, OPORDER=%s, SCALE_OP_RES=%s, REDOP=%s\n", opname, opordername, scaleopresname, redopname);
@@ -454,11 +461,8 @@ int main(int argc, char* argv[])
 
   if (argop_vec_0 > 0) {
     printf("###### Arg idx 0 #######\n");
-    if (idx_mode == 0) {
-      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_vec_0_i32, argop_off_vec_0_i32, 0, 0);
-    } else {
-      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I64, m, 1, ref_argop_off_vec_0, argop_off_vec_0, 0, 0);
-    }
+    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_vec_0_i32, argop_off_vec_0_i32, 0, 0);
+
     printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
     printf("L1 test       : %.25g\n", norms_elts.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
@@ -471,11 +475,8 @@ int main(int argc, char* argv[])
 
   if (argop_vec_1 > 0) {
     printf("###### Arg idx 1 #######\n");
-    if (idx_mode == 0) {
-      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_vec_1_i32, argop_off_vec_1_i32, 0, 0);
-    } else {
-      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I64, m, 1, ref_argop_off_vec_1, argop_off_vec_1, 0, 0);
-    }
+    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_vec_1_i32, argop_off_vec_1_i32, 0, 0);
+
     printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
     printf("L1 test       : %.25g\n", norms_elts.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
