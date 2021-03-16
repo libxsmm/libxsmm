@@ -2695,13 +2695,13 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 #endif
   libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
 
-  if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) > 0) {
+  if ((i_mateltwise_desc->param & 0x1) > 0) {
     record_argop_off_vec0 = 1;
     vecargop_vec0_offset = 0;
     use_stack_vars = 1;
   }
 
-  if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1) > 0) {
+  if ((i_mateltwise_desc->param & 0x2) > 0) {
     record_argop_off_vec1 = 1;
     vecargop_vec1_offset = (record_argop_off_vec0 == 1) ? vecargop_vec0_offset + max_m_unrolling : 0;
     use_stack_vars = 1;

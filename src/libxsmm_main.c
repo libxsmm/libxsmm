@@ -4652,9 +4652,10 @@ LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opred
 {
   libxsmm_descriptor_blob blob;
   libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
+  unsigned char argidx_params = (unsigned char) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, idx_dtype_size, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    (unsigned short)flags, 0, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
+    (unsigned short)flags, argidx_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
