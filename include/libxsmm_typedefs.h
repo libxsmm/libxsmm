@@ -318,9 +318,9 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_NONE                           = 0,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX           = 1,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN           = 2,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY                        = 4,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY                        = 65536,//4,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_ADD                         = 8,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_SUB                         = 16,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_SUB                         = 131072,//16,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL                         = 32,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DIV                         = 64,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_DOT                         = 128,
@@ -332,6 +332,8 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC                    = 8192,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC           = 16384,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX        = 32768,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0         = 4,//65536,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1         = 16,//131072,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_SUM              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL_REDOP_SUM               = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL  | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MAX              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX,
@@ -832,6 +834,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs
   const void* scale_vals;    /* scale values of indexed vectors after ops */
   const void* indices2;       /* index array pointer */
   const void* in_matrix2;     /* input matrix pointer */
+  void* argop_off_vec_0;
+  void* argop_off_vec_1;
 } libxsmm_meltw_opreduce_vecs_idx_param;
 
 /** argument struct for matrix-eltwise: scale */

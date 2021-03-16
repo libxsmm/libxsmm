@@ -72,6 +72,9 @@ int main(int argc, char* argv[])
   float  *inp_matrix, *result, *ref_result, *inp_matrix2, *scale_vals;
   libxsmm_bfloat16 *inp_matrix_bf16, *result_bf16, *inp_matrix_bf162, *scale_vals_bf16;
   unsigned long long *cols_ind_array, *cols_ind_array2, *all_ns;
+  unsigned long long *argop_off_vec_0, *argop_off_vec_1, *ref_argop_off_vec_0, *ref_argop_off_vec_1;
+  unsigned int  *argop_off_vec_0_i32, *argop_off_vec_1_i32, *ref_argop_off_vec_0_i32, *ref_argop_off_vec_1_i32;
+  unsigned int  *cols_ind_array_i32, *cols_ind_array2_i32;
   libxsmm_meltw_opreduce_vecs_idx_param     params;
   libxsmm_meltw_opreduce_vecs_flags         opredop_flags;
   libxsmm_meltwfunction_opreduce_vecs_idx   kernel;
@@ -83,6 +86,11 @@ int main(int argc, char* argv[])
   char scaleopresname[50];
   char redopname[50];
   unsigned int use_bf16 = 0;
+  unsigned int argop_mode = 0;
+  unsigned int idx_mode = 0;
+  unsigned int argop_vec_0;
+  unsigned int argop_vec_1;
+  libxsmm_datatype idx_dtype;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -100,8 +108,30 @@ int main(int argc, char* argv[])
   if ( argc > 7 ) scale_op_res= atoi(argv[7]);
   if ( argc > 8 ) redop       = atoi(argv[8]);
   if ( argc > 9 ) use_implicit_idx = atoi(argv[9]);
-  if ( argc > 10 ) iters       = atoi(argv[10]);
-  if ( argc > 11 ) use_bf16    = atoi(argv[11]);
+  if ( argc > 10 ) argop_mode      = atoi(argv[10]);
+  if ( argc > 11 ) idx_mode        = atoi(argv[11]);
+  if ( argc > 12 ) iters       = atoi(argv[12]);
+  if ( argc > 13 ) use_bf16    = atoi(argv[13]);
+
+  if (argop_mode == 1) {
+    argop_vec_0 = 1;
+    argop_vec_1 = 0;
+  } else if (argop_mode == 2) {
+    argop_vec_0 = 0;
+    argop_vec_1 = 1;
+  } else if (argop_mode == 3) {
+    argop_vec_0 = 1;
+    argop_vec_1 = 1;
+  } else {
+    argop_vec_0 = 0;
+    argop_vec_1 = 0;
+  }
+
+  if (idx_mode == 0) {
+    idx_dtype = LIBXSMM_DATATYPE_I32;
+  } else {
+    idx_dtype = LIBXSMM_DATATYPE_I64;
+  }
 
   if (op == OP_COPY) {
     opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY;
@@ -174,14 +204,24 @@ int main(int argc, char* argv[])
     }
   }
 
+  if (argop_mode == 1) {
+    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0;
+  } else if (argop_mode == 2) {
+    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1;
+  } else if (argop_mode == 3) {
+    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0;
+    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1;
+  } else {
+  }
+
   if ((op == OP_COPY) && (use_implicit_idx > 0)) {
     opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX;
   }
 
   if (use_bf16 == 0) {
-    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64, opredop_flags);
+    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, idx_dtype, opredop_flags);
   } else {
-    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_I64, opredop_flags);
+    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, idx_dtype, opredop_flags);
   }
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
@@ -194,8 +234,19 @@ int main(int argc, char* argv[])
   inp_matrix2             = (float*) malloc(ld_in*n*sizeof(float) );
   cols_ind_array          = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
   cols_ind_array2         = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
+  cols_ind_array_i32          = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
+  cols_ind_array2_i32         = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
   all_ns                  = (unsigned long long*) malloc(n*sizeof(unsigned long long));
   scale_vals              = (float*) malloc(n_cols_idx*sizeof(float));
+
+  ref_argop_off_vec_0     = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
+  ref_argop_off_vec_1     = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
+  ref_argop_off_vec_0_i32 = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
+  ref_argop_off_vec_1_i32 = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
+  argop_off_vec_0     = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
+  argop_off_vec_1     = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
+  argop_off_vec_0_i32 = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
+  argop_off_vec_1_i32 = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
 
   if (use_bf16 == 1) {
     inp_matrix_bf16              = (libxsmm_bfloat16*) malloc(ld_in*n*sizeof(libxsmm_bfloat16) );
@@ -232,6 +283,12 @@ int main(int argc, char* argv[])
       }
     }
   }
+
+  for (i = 0; i < n_cols_idx; i++) {
+    cols_ind_array_i32[i] = (unsigned int) cols_ind_array[i];
+    cols_ind_array2_i32[i] = (unsigned int) cols_ind_array2[i];
+  }
+
   sfill_matrix ( inp_matrix, ld_in, m, n );
   sfill_matrix ( inp_matrix2, ld_in, m, n );
   sfill_matrix ( ref_result, ld_in, m, 1 );
@@ -243,6 +300,17 @@ int main(int argc, char* argv[])
     libxsmm_rne_convert_fp32_bf16( inp_matrix2, inp_matrix_bf162, ld_in*n );
     libxsmm_rne_convert_fp32_bf16( scale_vals, scale_vals_bf16, n_cols_idx );
     libxsmm_rne_convert_fp32_bf16( result, result_bf16, ld_in );
+  }
+
+  for (i = 0; i < m; i++) {
+    ref_argop_off_vec_0[i] = 0;
+    ref_argop_off_vec_0_i32[i] = 0;
+    ref_argop_off_vec_1[i] = 0;
+    ref_argop_off_vec_1_i32[i] = 0;
+    argop_off_vec_0[i] = 0;
+    argop_off_vec_0_i32[i] = 0;
+    argop_off_vec_1[i] = 0;
+    argop_off_vec_1_i32[i] = 0;
   }
 
   /* Calculate reference results...  */
@@ -290,9 +358,29 @@ int main(int argc, char* argv[])
           ref_result[i] += op_res;
         }
         if (redop == REDOP_MIN) {
+          if (argop_vec_0 > 0) {
+            if (op_res < ref_result[i]) {
+              ref_argop_off_vec_0[i] = j;
+            }
+          }
+          if (argop_vec_1 > 0) {
+            if (op_res < ref_result[i]) {
+              ref_argop_off_vec_1[i] = _j;
+            }
+          }
           ref_result[i] = LIBXSMM_MIN(ref_result[i], op_res);
         }
         if (redop == REDOP_MAX) {
+          if (argop_vec_0 > 0) {
+            if (op_res > ref_result[i]) {
+              ref_argop_off_vec_0[i] = j;
+            }
+          }
+          if (argop_vec_1 > 0) {
+            if (op_res > ref_result[i]) {
+              ref_argop_off_vec_1[i] = _j;
+            }
+          }
           ref_result[i] = LIBXSMM_MAX(ref_result[i], op_res);
         }
       } else {
@@ -301,11 +389,23 @@ int main(int argc, char* argv[])
     }
   }
 
+  for (i = 0; i < m; i++) {
+    ref_argop_off_vec_0_i32[i] = (unsigned int) ref_argop_off_vec_0[i];
+    ref_argop_off_vec_1_i32[i] = (unsigned int) ref_argop_off_vec_1[i];
+  }
+
   /* Call JITed kernel */
   params.n            = n_cols_idx;
-  params.indices      = cols_ind_array;
-  if (use_implicit_idx == 0) {
-    params.indices2      = cols_ind_array2;
+  if (idx_mode == 0) {
+    params.indices      = cols_ind_array_i32;
+    if (use_implicit_idx == 0) {
+      params.indices2      = cols_ind_array2_i32;
+    }
+  } else {
+    params.indices      = cols_ind_array;
+    if (use_implicit_idx == 0) {
+      params.indices2      = cols_ind_array2;
+    }
   }
 
   if (use_bf16 == 0) {
@@ -319,6 +419,15 @@ int main(int argc, char* argv[])
     params.scale_vals   = scale_vals_bf16;
     params.in_matrix2    = inp_matrix_bf162;
   }
+
+  if ( idx_mode == 0 ) {
+    params.argop_off_vec_0 = argop_off_vec_0_i32;
+    params.argop_off_vec_1 = argop_off_vec_1_i32;
+  } else {
+    params.argop_off_vec_0 = argop_off_vec_0;
+    params.argop_off_vec_1 = argop_off_vec_1;
+  }
+
   kernel(&params);
 
   /* compare */
@@ -337,6 +446,40 @@ int main(int argc, char* argv[])
   printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
   libxsmm_matdiff_reduce(&diff, &norms_elts);
+
+  if (argop_vec_0 > 0) {
+    printf("###### Arg idx 0 #######\n");
+    if (idx_mode == 0) {
+      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_vec_0_i32, argop_off_vec_0_i32, 0, 0);
+    } else {
+      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I64, m, 1, ref_argop_off_vec_0, argop_off_vec_0, 0, 0);
+    }
+    printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
+    printf("L1 test       : %.25g\n", norms_elts.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_elts);
+  }
+
+  if (argop_vec_1 > 0) {
+    printf("###### Arg idx 1 #######\n");
+    if (idx_mode == 0) {
+      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_vec_1_i32, argop_off_vec_1_i32, 0, 0);
+    } else {
+      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I64, m, 1, ref_argop_off_vec_1, argop_off_vec_1, 0, 0);
+    }
+    printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
+    printf("L1 test       : %.25g\n", norms_elts.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_elts);
+  }
 
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
@@ -385,9 +528,29 @@ int main(int argc, char* argv[])
             ref_result[i] += op_res;
           }
           if (redop == REDOP_MIN) {
+            if (argop_vec_0 > 0) {
+              if (op_res < ref_result[i]) {
+                ref_argop_off_vec_0[i] = j;
+              }
+            }
+            if (argop_vec_1 > 0) {
+              if (op_res < ref_result[i]) {
+                ref_argop_off_vec_1[i] = _j;
+              }
+            }
             ref_result[i] = LIBXSMM_MIN(ref_result[i], op_res);
           }
           if (redop == REDOP_MAX) {
+            if (argop_vec_0 > 0) {
+              if (op_res > ref_result[i]) {
+                ref_argop_off_vec_0[i] = j;
+              }
+            }
+            if (argop_vec_1 > 0) {
+              if (op_res > ref_result[i]) {
+                ref_argop_off_vec_1[i] = _j;
+              }
+            }
             ref_result[i] = LIBXSMM_MAX(ref_result[i], op_res);
           }
         } else {
@@ -415,8 +578,18 @@ int main(int argc, char* argv[])
   free(inp_matrix2);
   free(cols_ind_array);
   free(cols_ind_array2);
+  free(cols_ind_array_i32);
+  free(cols_ind_array2_i32);
   free(all_ns);
   free(scale_vals);
+  free(ref_argop_off_vec_0);
+  free(ref_argop_off_vec_0_i32);
+  free(ref_argop_off_vec_1);
+  free(ref_argop_off_vec_1_i32);
+  free(argop_off_vec_0);
+  free(argop_off_vec_0_i32);
+  free(argop_off_vec_1);
+  free(argop_off_vec_1_i32);
   if (use_bf16 == 1) {
     free(inp_matrix_bf16);
     free(result_bf16);
@@ -435,4 +608,3 @@ int main(int argc, char* argv[])
 
   return EXIT_SUCCESS;
 }
-
