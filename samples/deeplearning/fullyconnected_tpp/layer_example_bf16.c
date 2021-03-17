@@ -264,6 +264,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint ldc = bk;
   libxsmm_blasint ld_zero_bwd = bc*bn;
   libxsmm_blasint ld_zero_upd = bk;
+  libxsmm_blasint ld_relu_bwd = bk;
   libxsmm_blasint delbias_K = K;
   libxsmm_blasint delbias_N = N;
   float alpha = 1.0f;
@@ -410,7 +411,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     exit(-1);
   }
 
-  res.bwd_relu_kernel   = libxsmm_dispatch_meltw_unary(res.bc, res.bn,&ldb, &ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
+  res.bwd_relu_kernel   = libxsmm_dispatch_meltw_unary(res.bk, res.bn, &ld_relu_bwd, &ld_relu_bwd, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( res.bwd_relu_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP bwd_relu_kernel failed. Bailing...!\n");
     exit(-1);
