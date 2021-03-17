@@ -567,8 +567,8 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
     col_teams    = cfg.fwd_col_teams;
     row_teams = cfg.fwd_row_teams;
     hyperteam_id = ltid/(col_teams*row_teams);
-    _nBlocksOFm  = nBlocksOFm/cfg.fwd_M_hyperpartitions;
-    _nBlocksMB   = nBlocksMB/cfg.fwd_N_hyperpartitions;
+    _nBlocksOFm  = (nBlocksOFm + cfg.fwd_M_hyperpartitions - 1)/cfg.fwd_M_hyperpartitions;
+    _nBlocksMB   = (nBlocksMB + cfg.fwd_N_hyperpartitions -1)/cfg.fwd_N_hyperpartitions;
     _ltid = ltid % (col_teams * row_teams);
     M_hyperpartition_id = hyperteam_id % cfg.fwd_M_hyperpartitions;
     N_hyperpartition_id = hyperteam_id / cfg.fwd_M_hyperpartitions;
@@ -845,8 +845,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
       col_teams    = cfg.bwd_col_teams;
       row_teams = cfg.bwd_row_teams;
       hyperteam_id = ltid/(col_teams*row_teams);
-      _nBlocksIFm  = nBlocksIFm/cfg.bwd_M_hyperpartitions;
-      _nBlocksMB   = nBlocksMB/cfg.bwd_N_hyperpartitions;
+      _nBlocksIFm  = (nBlocksIFm + cfg.bwd_M_hyperpartitions - 1)/cfg.bwd_M_hyperpartitions;
+      _nBlocksMB   = (nBlocksMB +cfg.bwd_N_hyperpartitions -1)/cfg.bwd_N_hyperpartitions;
       _ltid = ltid % (col_teams * row_teams);
       M_hyperpartition_id = hyperteam_id % cfg.bwd_M_hyperpartitions;
       N_hyperpartition_id = hyperteam_id / cfg.bwd_M_hyperpartitions;
@@ -992,8 +992,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
       col_teams    = cfg.upd_col_teams;
       row_teams = cfg.upd_row_teams;
       hyperteam_id = ltid/(col_teams*row_teams);
-      _nBlocksOFm  = nBlocksOFm/cfg.upd_M_hyperpartitions;
-      _nBlocksIFm  = nBlocksIFm/cfg.upd_N_hyperpartitions;
+      _nBlocksOFm  = (nBlocksOFm + cfg.upd_M_hyperpartitions -1)/cfg.upd_M_hyperpartitions;
+      _nBlocksIFm  = (nBlocksIFm + cfg.upd_N_hyperpartitions-1)/cfg.upd_N_hyperpartitions;
       _ltid = ltid % (col_teams * row_teams);
       M_hyperpartition_id = hyperteam_id % cfg.upd_M_hyperpartitions;
       N_hyperpartition_id = hyperteam_id / cfg.upd_M_hyperpartitions;
