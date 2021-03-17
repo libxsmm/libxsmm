@@ -520,7 +520,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
   const libxsmm_blasint bn = cfg.bn;
   const libxsmm_blasint bk = cfg.bk;
   const libxsmm_blasint lpb = 2;
-  const libxsmm_blasint bc_lp = cfg.bc/lpb;
+  const libxsmm_blasint bc_lp = (cfg.bc/lpb > 0) ? cfg.bc/lpb : 1;
   /* const libxsmm_blasint bc = cfg.bc;*/
   libxsmm_blasint use_2d_blocking = cfg.fwd_2d_blocking;
 
@@ -714,9 +714,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
   const libxsmm_blasint bk = cfg.bk;
   const libxsmm_blasint bc = cfg.bc;
   libxsmm_blasint lpb = 2;
-  const libxsmm_blasint bc_lp = bc/lpb;
-  const libxsmm_blasint bk_lp = bk/lpb;
-  const libxsmm_blasint bn_lp = bn/lpb;
+  const libxsmm_blasint bc_lp = (bc/lpb > 0) ? bc/lpb : 1;
+  const libxsmm_blasint bk_lp = (bk/lpb > 0) ? bk/lpb : 1;
+  const libxsmm_blasint bn_lp = (bn/lpb > 0) ? bn/lpb : 1;
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
   const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
