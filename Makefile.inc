@@ -2203,7 +2203,21 @@ ifneq (0,$(MKL))
     endif
   endif
 else ifneq (0,$(BLAS)) # generic
-  ifeq (,$(strip $(BLASLIB)))
+  ifneq (,$(AOCL_ROOT))
+    ifeq (0,$(BLAS_STATIC)) # shared
+      ifeq (1,$(BLAS)) # sequential
+        BLAS_LDFLAGS := -L$(AOCL_ROOT)/lib -lblis $(BLAS_LDFLAGS)
+      else # multi-threaded
+        BLAS_LDFLAGS := -L$(AOCL_ROOT)/lib -lblis-mt $(BLAS_LDFLAGS)
+      endif
+    else # static
+      ifeq (1,$(BLAS)) # sequential
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis.a $(BLAS_LDFLAGS)
+      else # multi-threaded
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis-mt.a $(BLAS_LDFLAGS)
+      endif
+    endif
+  else ifeq (,$(strip $(BLASLIB)))
     ifneq (1,$(BLAS))
       ifneq (0,$(OMP))
         BLAS_THREADS := o

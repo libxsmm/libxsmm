@@ -241,6 +241,10 @@ VERSION_PACKAGE ?= 1
 ifneq (0,$(VERSION_RELEASED))
   WERROR := 0
 endif
+# no warning conversion for non-x86
+ifneq (x86_64,$(MNAME))
+  WERROR := 0
+endif
 
 # explicitly target all objects
 ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
