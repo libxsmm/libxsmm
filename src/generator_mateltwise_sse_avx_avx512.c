@@ -301,10 +301,10 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
       i_gp_reg_tmp,
       l_mask );
 
-  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE  ) {
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512  ) {
     if ( i_precision == LIBXSMM_DATATYPE_F64 || i_precision == LIBXSMM_DATATYPE_I64 ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
-          LIBXSMM_X86_INSTR_KMOVB_GPR_LD,
+          (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) ? LIBXSMM_X86_INSTR_KMOVB_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD,
           i_gp_reg_tmp,
           i_mask_reg );
     } else if ( i_precision == LIBXSMM_DATATYPE_F32 || i_precision == LIBXSMM_DATATYPE_I32 ) {
@@ -338,7 +338,7 @@ void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_g
                                                                        libxsmm_mateltwise_kernel_config*    io_micro_kernel_config,
                                                                        const libxsmm_meltw_descriptor* i_mateltwise_desc) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
-  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     io_micro_kernel_config->instruction_set = io_generated_code->arch;
     io_micro_kernel_config->vector_reg_count = 16;
     /* Configure input specific microkernel options */
@@ -398,7 +398,7 @@ void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_g
     io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
     io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
     io_micro_kernel_config->vector_name = 'z';
-  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE) ) {
+  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
     io_micro_kernel_config->instruction_set = io_generated_code->arch;
     io_micro_kernel_config->vector_reg_count = 16;
     /* Configure input specific microkernel options */
