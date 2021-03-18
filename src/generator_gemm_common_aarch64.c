@@ -155,7 +155,7 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*   
   unsigned int init_m_blocks = 0;
 
   /* check for valid values */
-  if ( max_n_blocking == 0 || init_m_blocking == 0 || io_micro_kernel_config->vector_length == 0 ) {
+  if ( max_n_blocking == 0 || io_micro_kernel_config->vector_length == 0 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
