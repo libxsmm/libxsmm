@@ -509,6 +509,46 @@ void test_alu_reg( char* test_name, libxsmm_generated_code* mycode, unsigned int
   dump_code_buffer( mycode, test_name );
 }
 
+void test_alu_mem( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned int load_store_cntl ) {
+  unsigned int b;
+  unsigned int i;
+  unsigned int d;
+  unsigned int scale = 2;
+  int displ[3] = {0, 128, 2097152};
+  unsigned int r;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (b = 0; b < 16; ++b ) {
+    for ( d = 0; d < 3; ++d ) {
+      for (r = 0; r < 16; ++r ) {
+        if ( (load_store_cntl & 0x1) == 0x1 ) {
+          libxsmm_x86_instruction_alu_mem( mycode, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], r, 0 );
+        }
+        if ( (load_store_cntl & 0x2) == 0x2 ) {
+          libxsmm_x86_instruction_alu_mem( mycode, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], r, 1 );
+        }
+      }
+    }
+  }
+  for (b = 0; b < 16; ++b ) {
+    for (i = 0; i < 16; ++i ) {
+      for ( d = 0; d < 3; ++d ) {
+        for (r = 0; r < 16; ++r ) {
+          if ( (load_store_cntl & 0x1) == 0x1 ) {
+            libxsmm_x86_instruction_alu_mem( mycode, instr, b, i, scale, displ[d], r, 0 );
+          }
+          if ( (load_store_cntl & 0x2) == 0x2 ) {
+            libxsmm_x86_instruction_alu_mem( mycode, instr, b, i, scale, displ[d], r, 1 );
+          }
+        }
+      }
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 int main( /*int argc, char* argv[]*/ ) {
   unsigned char* codebuffer = (unsigned char*)malloc( 8388608*sizeof(unsigned char) );
   libxsmm_generated_code mycode;
@@ -1202,6 +1242,16 @@ int main( /*int argc, char* argv[]*/ ) {
   test_alu_reg( "alu_reg_CMOVZ", &mycode, LIBXSMM_X86_INSTR_CMOVZ );
   test_alu_reg( "alu_reg_POPCNT", &mycode, LIBXSMM_X86_INSTR_POPCNT );
   test_alu_reg( "alu_reg_TZCNT", &mycode, LIBXSMM_X86_INSTR_TZCNT );
+
+  /* test alu mem */
+  test_alu_mem( "alu_mov_MOVB_LD", &mycode, LIBXSMM_X86_INSTR_MOVB, 1 );
+  test_alu_mem( "alu_mov_MOVB_ST", &mycode, LIBXSMM_X86_INSTR_MOVB, 2 );
+  test_alu_mem( "alu_mov_MOVW_LD", &mycode, LIBXSMM_X86_INSTR_MOVW, 1 );
+  test_alu_mem( "alu_mov_MOVW_ST", &mycode, LIBXSMM_X86_INSTR_MOVW, 2 );
+  test_alu_mem( "alu_mov_MOVL_LD", &mycode, LIBXSMM_X86_INSTR_MOVL, 1 );
+  test_alu_mem( "alu_mov_MOVL_ST", &mycode, LIBXSMM_X86_INSTR_MOVL, 2 );
+  test_alu_mem( "alu_mov_MOVQ_LD", &mycode, LIBXSMM_X86_INSTR_MOVQ, 1 );
+  test_alu_mem( "alu_mov_MOVQ_ST", &mycode, LIBXSMM_X86_INSTR_MOVQ, 2 );
 
   free( codebuffer );
 

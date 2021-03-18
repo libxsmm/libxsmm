@@ -3163,9 +3163,12 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
      int i = io_generated_code->code_size;
      int l_inst = 0x00, l_base = 0x00, l_place2 = i+2;
      int l_regbas0, l_gp8, l_regnum, l_nx8, l_sca = 0, l_forced_offset=0;
+     int l_force_rex = 0;
+     int l_sixsix_pre = 0;
 
      switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_MOVSLQ:
+          l_force_rex = 1;
           if ( i_is_store == 1 )
           {
              fprintf(stderr, "libxsmm_instruction_alu_mem: only use LIBXSMM_X86_INSTR_MOVSLQ with loads\n");
@@ -3173,6 +3176,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
           }
           break;
        case LIBXSMM_X86_INSTR_MOVQ:
+          l_force_rex = 1;
           if ( i_is_store == 1 )
           {
              l_inst = 0x26;
@@ -3181,6 +3185,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
           }
           break;
        case LIBXSMM_X86_INSTR_LEAQ:
+          l_force_rex = 1;
           l_inst = 0x2A;
           break;
        case LIBXSMM_X86_INSTR_MOVL:
@@ -3189,6 +3194,25 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
              l_inst = 0x26;
           } else {
              l_inst = 0x28;
+          }
+          l_base = -8;
+          break;
+       case LIBXSMM_X86_INSTR_MOVW:
+          l_sixsix_pre = 1;
+          if ( i_is_store == 1 )
+          {
+             l_inst = 0x26;
+          } else {
+             l_inst = 0x28;
+          }
+          l_base = -8;
+          break;
+       case LIBXSMM_X86_INSTR_MOVB:
+          if ( i_is_store == 1 )
+          {
+             l_inst = 0x25;
+          } else {
+             l_inst = 0x27;
           }
           l_base = -8;
           break;
@@ -3206,9 +3230,14 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
      else if (i_scale==4) l_sca=0x80;
      else if (i_scale==8) l_sca=0xc0;
 
+     if ( l_sixsix_pre != 0 ) {
+       buf[i++] = (unsigned char)0x66;
+       l_place2++;
+     }
+
      if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
      {
-         if ((i_alu_instr != LIBXSMM_X86_INSTR_MOVL) || l_gp8 || l_nx8 )
+         if ( ( l_force_rex != 0 ) || l_gp8 || l_nx8 )
          {
             buf[i++] = (unsigned char)(0x48 + l_base + l_gp8 * 0x01 + l_nx8 * 0x04);
          } else {
@@ -3223,7 +3252,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
      } else {
          int l_regidx  = i_gp_reg_idx  % 8;
          int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
-         if ((i_alu_instr != LIBXSMM_X86_INSTR_MOVL) || l_gp8 || l_nx8 || l_ix8 )
+         if ( ( l_force_rex != 0 ) || l_gp8 || l_nx8 || l_ix8 )
          {
             buf[i++] = (unsigned char)(0x48 + l_base + l_gp8 * 0x01 + l_ix8 * 0x02 + l_nx8 * 0x04);
          } else {
