@@ -154,8 +154,8 @@ void libxsmm_generator_dropout_fwd_avx512_microkernel( libxsmm_generated_code*  
       }
 
       /* draw a random number */
-      libxsmm_generator_xoshiro128p_f32_avx512( io_generated_code, state0_vreg, state1_vreg, state2_vreg, state3_vreg,
-                                                rng_vreg_tmp0, rng_vreg_tmp1, rng_vreg_one, rng_vreg_res );
+      libxsmm_generator_xoshiro128p_f32_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name, state0_vreg, state1_vreg, state2_vreg, state3_vreg,
+                                                    rng_vreg_tmp0, rng_vreg_tmp1, rng_vreg_one, rng_vreg_res );
 
       /* compare with p */
       libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCMPPS, 'z',

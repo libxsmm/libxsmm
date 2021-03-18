@@ -366,25 +366,27 @@ void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                 
     const unsigned int                             i_vec_tmp2);
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_xoshiro128pp_avx512( libxsmm_generated_code* io_generated_code,
-                                            const unsigned int      i_vec_reg_rng_state_0,
-                                            const unsigned int      i_vec_reg_rng_state_1,
-                                            const unsigned int      i_vec_reg_rng_state_2,
-                                            const unsigned int      i_vec_reg_rng_state_3,
-                                            const unsigned int      i_vec_reg_rng_tmp_0,
-                                            const unsigned int      i_vec_reg_rng_tmp_1,
-                                            const unsigned int      o_vec_reg_rng );
+void libxsmm_generator_xoshiro128pp_avx2_avx512( libxsmm_generated_code* io_generated_code,
+                                                 const unsigned char     i_vname,
+                                                 const unsigned int      i_vec_reg_rng_state_0,
+                                                 const unsigned int      i_vec_reg_rng_state_1,
+                                                 const unsigned int      i_vec_reg_rng_state_2,
+                                                 const unsigned int      i_vec_reg_rng_state_3,
+                                                 const unsigned int      i_vec_reg_rng_tmp_0,
+                                                 const unsigned int      i_vec_reg_rng_tmp_1,
+                                                 const unsigned int      o_vec_reg_rng );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_xoshiro128p_f32_avx512( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_vec_reg_rng_state_0,
-                                               const unsigned int      i_vec_reg_rng_state_1,
-                                               const unsigned int      i_vec_reg_rng_state_2,
-                                               const unsigned int      i_vec_reg_rng_state_3,
-                                               const unsigned int      i_vec_reg_rng_tmp_0,
-                                               const unsigned int      i_vec_reg_rng_tmp_1,
-                                               const unsigned int      i_vec_reg_rng_one,
-                                               const unsigned int      o_vec_reg_rng );
+void libxsmm_generator_xoshiro128p_f32_avx2_avx512( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned char     i_vname,
+                                                    const unsigned int      i_vec_reg_rng_state_0,
+                                                    const unsigned int      i_vec_reg_rng_state_1,
+                                                    const unsigned int      i_vec_reg_rng_state_2,
+                                                    const unsigned int      i_vec_reg_rng_state_3,
+                                                    const unsigned int      i_vec_reg_rng_tmp_0,
+                                                    const unsigned int      i_vec_reg_rng_tmp_1,
+                                                    const unsigned int      i_vec_reg_rng_one,
+                                                    const unsigned int      o_vec_reg_rng );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_cvtbf16ps_avx512( libxsmm_generated_code* io_generated_code,
