@@ -473,7 +473,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
-  res.norm_to_normT_kernel = libxsmm_dispatch_meltw_transform(bc, bn, &ldb, &ldb_orig, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  res.norm_to_normT_kernel = libxsmm_dispatch_meltw_transform(bc, bn, &ldb_orig, &ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
   if ( res.norm_to_normT_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP norm_to_normT_kernel failed. Bailing...!\n");
     exit(-1);
@@ -563,7 +563,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
   cfg.fwd_config_kernel(NULL, NULL, NULL);
 
   if (use_2d_blocking == 1) {
-    if (BF > 1) {
+    if ((BF > 1) || (cfg.K % 32 != 0)) {
       for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
         for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
           for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
@@ -624,7 +624,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
       }
     }
   } else {
-    if (BF > 1) {
+    if ((BF > 1) || (cfg.K % 32 != 0)) {
       for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
         for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
           mb1  = mb1ofm1%nBlocksMB;
@@ -699,9 +699,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
   const libxsmm_blasint bk = cfg.bk;
   const libxsmm_blasint bc = cfg.bc;
   libxsmm_blasint lpb = 2;
-  const libxsmm_blasint bc_lp = bc/lpb;
-  const libxsmm_blasint bk_lp = bk/lpb;
-  const libxsmm_blasint bn_lp = bn/lpb;
+  const libxsmm_blasint bc_lp = (bc/lpb > 0) ? bc/lpb : 1;
+  const libxsmm_blasint bk_lp = (bk/lpb > 0) ? bk/lpb : 1;
+  const libxsmm_blasint bn_lp = (bn/lpb > 0) ? bn/lpb : 1;
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
   const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
