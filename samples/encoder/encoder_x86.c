@@ -674,6 +674,9 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_compute_3reg_general( "vex_reg_VPBLENDD", &mycode, LIBXSMM_X86_INSTR_VPBLENDD, 0, 0x01, 0 );
   test_vex_compute_3reg_general( "vex_reg_VPBLENDW", &mycode, LIBXSMM_X86_INSTR_VPBLENDW, 0, 0x01, 0 );
   test_vex_compute_3reg_general( "vex_reg_VPBLENDVB", &mycode, LIBXSMM_X86_INSTR_VPBLENDVB, 0, 0x01, 0 );
+  test_vex_compute_3reg_general( "vex_reg_VMOVMSKPD", &mycode, LIBXSMM_X86_INSTR_VMOVMSKPD, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_3reg_general( "vex_reg_VMOVMSKPS", &mycode, LIBXSMM_X86_INSTR_VMOVMSKPS, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
+  test_vex_compute_3reg_general( "vex_reg_VPMOVMSKB", &mycode, LIBXSMM_X86_INSTR_VPMOVMSKB, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
   test_evex_compute_3reg_general( "evex_reg_VSHUFF32X4", &mycode, LIBXSMM_X86_INSTR_VSHUFF32X4, 0, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VSHUFF64X2", &mycode, LIBXSMM_X86_INSTR_VSHUFF64X2, 0, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VSHUFI32X4", &mycode, LIBXSMM_X86_INSTR_VSHUFI32X4, 0, 0x01, 32 );
