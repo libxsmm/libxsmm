@@ -31,8 +31,14 @@ void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_genera
     if (i_use_masking > 0) {
       if (i_is_store > 0 ) {
         vmove_instr = LIBXSMM_X86_INSTR_VMASKMOVPS_ST;
+        if (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVUPD) {
+          vmove_instr = LIBXSMM_X86_INSTR_VMASKMOVPD_ST;
+        }
       } else {
         vmove_instr = LIBXSMM_X86_INSTR_VMASKMOVPS;
+        if (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVUPD) {
+          vmove_instr = LIBXSMM_X86_INSTR_VMASKMOVPD;
+        }
       }
     }
   }
