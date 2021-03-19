@@ -799,14 +799,10 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
               i_micro_kernel_config->tmp_vreg, 0, 0, 0 );
 
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VPORD, i_micro_kernel_config->vector_name,
-                                       i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->vec_tmp1, i_micro_kernel_config->tmp_vreg);
-
-          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VPANDD, i_micro_kernel_config->vector_name,
                                        i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->tmp_vreg);
 
-          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCMPPS, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->tmp_vreg, 0);
+          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPEQD, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->tmp_vreg, 0);
         } else {
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             i_micro_kernel_config->vmove_instruction_in,
@@ -1229,15 +1225,10 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
       i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
       if (op == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) {
-        unsigned int const_mask_array[8] = { 0x3f800001, 0x3f800002 , 0x3f800004, 0x3f800008, 0x3f800010, 0x3f800020, 0x3f800040 , 0x3f800080  };
-        unsigned int const_mask_array2[8] = { 0x3f800000 , 0x3f800000 , 0x3f800000 , 0x3f800000 ,  0x3f800000 , 0x3f800000 , 0x3f800000 , 0x3f800000};
+        unsigned int const_mask_array[8] = { 0x00000001, 0x00000002 , 0x00000004, 0x00000008, 0x00000010, 0x00000020, 0x00000040 , 0x00000080 };
         i_micro_kernel_config->vec_tmp0 = i_micro_kernel_config->reserved_zmms;
         i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) const_mask_array, "const_mask_array", vname, i_micro_kernel_config->vec_tmp0 );
-
-        i_micro_kernel_config->vec_tmp1 = i_micro_kernel_config->reserved_zmms;
-        i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
-        libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) const_mask_array2, "const_mask_array2", vname, i_micro_kernel_config->vec_tmp1 );
       }
     }
 
