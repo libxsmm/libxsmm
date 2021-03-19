@@ -215,6 +215,7 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
 
     for (in = 0; in < bn; in++ ) {
       for (im = 0; im < m_inner_trips; im++) {
+        unsigned int m_done = 0;
         cur_acc0 = 8 + im * 2;
         cur_acc1 = 8 + im * 2 + 1;
         vreg0    = im * 2;
@@ -252,7 +253,9 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
                                              i_micro_kernel_config->vector_name,
                                              vreg0, cur_acc0, cur_acc0 );
 
-        if (mask_load_0 == 0) {
+        m_done = iM * 32 * 4 + im * 32 + 16;
+
+        if ((mask_load_0 == 0) && (m_done < bc)) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
               i_micro_kernel_config->vmove_instruction_in,
@@ -337,6 +340,7 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
                                           i_micro_kernel_config->vector_name,
                                           cur_acc0, mask_store * 2, 0, 1 );
       } else {
+        unsigned int m_done = 0;
         mask_load_0 = ((use_m_masking == 1) && (bc % 32 < 16) && (iM == m_outer_trips-1) && (im == m_inner_trips - 1)) ? 1 : 0;
         mask_load_1 = ((mask_load_0 == 0) && (use_m_masking == 1) && (iM == m_outer_trips-1) && (im == m_inner_trips - 1)) ? 1 : 0;
 
@@ -349,7 +353,9 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
             i_micro_kernel_config->vector_name,
             cur_acc0, mask_load_0 * 2, 0, 1 );
 
-        if (mask_load_0 == 0) {
+        m_done = iM * 32 * 4 + im * 32 + 16;
+
+        if ((mask_load_0 == 0) && (m_done < bc)) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VMOVUPS,
