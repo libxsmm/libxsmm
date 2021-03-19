@@ -1193,6 +1193,11 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_load_store( "vex_mov_VMOVSD", &mycode, LIBXSMM_X86_INSTR_VMOVSD, 3 );
   test_vex_load_store( "vex_mov_VBROADCASTSS", &mycode, LIBXSMM_X86_INSTR_VBROADCASTSS, 1 );
   test_vex_load_store( "vex_mov_VBROADCASTSD_VEX", &mycode, LIBXSMM_X86_INSTR_VBROADCASTSD_VEX, 1 );
+  test_vex_load_store( "vex_mov_VPBROADCASTB", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTB, 1 );
+  test_vex_load_store( "vex_mov_VPBROADCASTW", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTW, 1 );
+  test_vex_load_store( "vex_mov_VPBROADCASTD", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTD, 1 );
+  test_vex_load_store( "vex_mov_VPBROADCASTQ_VEX", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX, 1 );
+  test_vex_load_store( "vex_mov_VBROADCASTI128", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI128, 1 );
   test_vex_load_store( "vex_mov_VMOVNTPD", &mycode, LIBXSMM_X86_INSTR_VMOVNTPD, 2 );
   test_vex_load_store( "vex_mov_VMOVNTPS", &mycode, LIBXSMM_X86_INSTR_VMOVNTPS, 2 );
 
