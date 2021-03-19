@@ -532,6 +532,9 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
   int result = EXIT_SUCCESS, flags;
   void* buffer;
   size_t size_alloc, size;
+#if defined(NDEBUG)
+  LIBXSMM_UNUSED(memory);
+#endif
   LIBXSMM_ASSERT(NULL != memory && NULL != info);
   buffer = info->pointer;
   size_alloc = info->size_alloc;
