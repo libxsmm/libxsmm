@@ -177,7 +177,7 @@ void libxsmm_dgemm_batch(const char transa_array[], const char transb_array[],
   const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
 ```
 
-<a name="batch-sync"></a>**NOTE**: the multi-threaded implementation (`ntasks > 1` or "omp" form of the functions) avoids data races if indexes or pointers for the destination (C-)matrix are duplicated. This synchronization occurs automatically (`beta != 0`), but can be avoided by passing a negative `batchsize`, `group_size` and/or a negative `group_count`.
+<a name="batch-sync"></a>**Note**: the multi-threaded implementation (`ntasks > 1` or "omp" form of the functions) avoids data races if indexes or pointers for the destination (C-)matrix are duplicated. This synchronization occurs automatically (`beta != 0`), but can be avoided by passing a negative `batchsize`, `group_size` and/or a negative `group_count`.
 
 ### User-Data Dispatch
 
@@ -200,7 +200,7 @@ dgemm(trans=NN mnk=32,32,10 ldx=32,10,32 a,b=1,0): 5% [main$omp$1]
 
 Intercepted GEMMs can also build a sophisticated statistic (histogram) with LIBXSMM_VERBOSE=4 (or higher). The histogram displays the call sites (debug symbol name) of all intercepted GEMMs ([example](https://github.com/hfp/libxsmm/blob/master/samples/utilities/wrap/autobatch.c) above depicts an OpenMP region hosted by the main function). With <span>level&#160;5</span> (or higher), the histogram yields the entire content, and eventually less relevant entries are not pruned. An application must be built with symbols (`-g`) and export symbols similar to shared libraries (`-Wl,--export-dynamic` even when linked statically) in order to display the symbol names of where the GEMMs originated (call site).
 
-**NOTE**: Intercepting GEMM calls is low effort but implies overhead, which can be relatively high for small-sized problems. LIBXSMM's native programming interface has lower overhead and allows to amortize this overhead when using the same multiplication kernel in a consecutive fashion along with sophisticated data prefetch.
+**Note**: Intercepting GEMM calls is low effort but implies overhead, which can be relatively high for small-sized problems. LIBXSMM's native programming interface has lower overhead and allows to amortize this overhead when using the same multiplication kernel in a consecutive fashion along with sophisticated data prefetch.
 
 #### Static Linkage
 
@@ -224,7 +224,7 @@ gcc [...] -Wl,--wrap=dgemm_batch_,--wrap=sgemm_batch_ \
 
 Above, GEMM and GEMM_BATCH are intercepted both, however this can be chosen independently. For GEMM_BATCH the Fortran and C-form of the symbol may be intercepted both (regular GEMM can always be intercepted per `?gemm_` even when `?gemm` is used in C-code).
 
-**NOTE**: The static link-time wrapper technique may only work with a GCC tool chain (<span>GNU&#160;Binutils</span>: `ld`, or `ld` via compiler-driver), and it has been tested with <span>GNU&#160;GCC</span>, <span>Intel&#160;Compiler</span>, and Clang. However, this does not work under Microsoft Windows (even when using the GNU tool chain or Cygwin).
+**Note**: The static link-time wrapper technique may only work with a GCC tool chain (<span>GNU&#160;Binutils</span>: `ld`, or `ld` via compiler-driver), and it has been tested with <span>GNU&#160;GCC</span>, <span>Intel&#160;Compiler</span>, and Clang. However, this does not work under Microsoft Windows (even when using the GNU tool chain or Cygwin).
 
 #### Dynamic Linkage
 

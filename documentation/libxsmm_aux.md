@@ -3,7 +3,7 @@
 ### Target Architecture<a name="getting-and-setting-the-target-architecture"></a>
 
 This functionality is available for the C and Fortran interface. There are [ID based](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_cpuid.h#L47) (same for C and Fortran) and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the presented CPUID features. The latter may degrade performance if a lower set of instruction set extensions is requested, which can be still useful for studying the performance impact of different instruction set extensions.  
-**NOTE**: There is no additional check performed if an unsupported instruction set extension is requested, and incompatible JIT-generated code may be executed (unknown instruction signaled).
+**Note**: There is no additional check performed if an unsupported instruction set extension is requested, and incompatible JIT-generated code may be executed (unknown instruction signaled).
 
 ```C
 int libxsmm_get_target_archid(void);
@@ -80,12 +80,12 @@ FUNCTION libxsmm_xdispatch(key, keysize)
 END FUNCTION
 ```
 
-**NOTE**: This functionality can be used to, e.g., dispatch multiple kernels in one step if a code location relies on multiple kernels. This way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels used by this task. However, the functionality is not limited to multiple kernels but any data can be registered and queried. User-data dispatch uses the same implementation as regular code-dispatch.
+**Note**: This functionality can be used to, e.g., dispatch multiple kernels in one step if a code location relies on multiple kernels. This way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels used by this task. However, the functionality is not limited to multiple kernels but any data can be registered and queried. User-data dispatch uses the same implementation as regular code-dispatch.
 
 ### Memory Allocation
 
 The C interface ([libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h)) provides functions for aligned memory one of which allows to specify the alignment (or to request an automatically selected alignment). The automatic alignment is also available with a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
-**NOTE**: The function `libxsmm_free` must be used to deallocate buffers allocated by LIBXSMM's allocation functions.
+**Note**: The function `libxsmm_free` must be used to deallocate buffers allocated by LIBXSMM's allocation functions.
 
 ```C
 void* libxsmm_malloc(size_t size);
@@ -120,7 +120,7 @@ Scratch: 173 MB (mallocs=5, pools=1)
 
 To improve thread-scalability and to avoid frequent memory allocation/deallocation, the scratch memory allocator can be leveraged by [intercepting existing malloc/free calls](libxsmm_tune.md#intercepted-allocations).
 
-**NOTE**: be careful with scratch memory as it only grows during execution (in between `libxsmm_init` and `libxsmm_finalize` unless `libxsmm_release_scratch` is called). This is true even when `libxsmm_free` is (and should be) used!
+**Note**: be careful with scratch memory as it only grows during execution (in between `libxsmm_init` and `libxsmm_finalize` unless `libxsmm_release_scratch` is called). This is true even when `libxsmm_free` is (and should be) used!
 
 ### Meta Image File I/O
 
