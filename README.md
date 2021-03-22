@@ -94,7 +94,7 @@ The [service function domain (AUX)](documentation/libxsmm_aux.md) contains routi
 
 ### Backend<a name="jit-backend"></a>
 
-More information about the JIT-backend and the code generator can be found in a separate [document](documentation/libxsmm_be.md). The [encoder sample collection](https://github.com/hfp/libxsmm/tree/master/samples/encoder) can help to get started writing a kernel using LIBXSMM. Please note, LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](documentation/libxsmm_be.md#generator-driver) is considered legacy.
+More information about the JIT-backend and the code generator can be found in a separate [document](documentation/libxsmm_be.md). The [encoder sample collection](https://github.com/hfp/libxsmm/tree/master/samples/encoder) can help to get started writing a kernel using LIBXSMM. Please note, LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](documentation/libxsmm_be.md#generator-driver) is considered legacy (deprecated).
 
 ## Build Instructions
 
