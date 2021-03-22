@@ -498,6 +498,7 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
         || (0 != (~LIBXSMM_MALLOC_FLAG_VALID & result->flags))
         || (0 == (LIBXSMM_MALLOC_FLAG_R & result->flags))
         || (pointer == convert.ptr || pointer == result->context || pointer >= buffer || NULL == pointer)
+        || (result->size_alloc < result->size)
         || (LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_public_max, internal_malloc_local_max), internal_malloc_private_max) < result->size
             && 0 == (flags_px & result->flags)) || (0 == result->size)
         || (2 > libxsmm_ninit) /* before checksum calculation */
@@ -529,115 +530,110 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
 #if !defined(LIBXSMM_BUILD) || !defined(_WIN32)
   static int error_once = 0;
 #endif
-  int result = EXIT_SUCCESS, flags;
-  void* buffer;
-  size_t size_alloc, size;
+  const internal_malloc_info_type local = *info;
+  int result = EXIT_SUCCESS;
 #if defined(NDEBUG)
   LIBXSMM_UNUSED(memory);
+#else
+  const size_t size_alloc = local.size + (size_t)(((const char*)memory) - ((const char*)local.pointer));
 #endif
   LIBXSMM_ASSERT(NULL != memory && NULL != info);
-  buffer = info->pointer;
-  size_alloc = info->size_alloc;
-  size = info->size;
-  flags = info->flags;
 #if !defined(LIBXSMM_BUILD) /* sanity check */
-  if (NULL != buffer || 0 == size)
+  if (NULL != local.pointer || 0 == local.size)
 #endif
   {
-    LIBXSMM_ASSERT(0 == size || (NULL != buffer && size + (((const char*)memory) - ((const char*)buffer)) <= size_alloc));
-    if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
+    assert(0 == local.size || (NULL != local.pointer && size_alloc <= local.size_alloc)); /* !LIBXSMM_ASSERT */
+    if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & local.flags)) {
       if (NULL != info->free.function) {
 #if defined(LIBXSMM_MALLOC_DELETE_SAFE)
-        info->pointer = NULL;
-        info->size_alloc = 0;
-        info->size = 0;
+        LIBXSMM_MEMZERO127(info);
 #endif
         if (NULL == info->context) {
 #if defined(LIBXSMM_MALLOC_HOOK) && 0
           if (free == info->free.function) {
-            __real_free(buffer);
+            __real_free(local.pointer);
           }
           else
 #endif
           if (NULL != info->free.function) {
-            info->free.function(buffer);
+            info->free.function(local.pointer);
           }
         }
         else {
           LIBXSMM_ASSERT(NULL != info->free.ctx_form);
-          info->free.ctx_form(buffer, info->context);
+          info->free.ctx_form(local.pointer, info->context);
         }
       }
     }
     else {
 #if defined(LIBXSMM_VTUNE)
-      if (0 != (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != info->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
+      if (0 != (LIBXSMM_MALLOC_FLAG_X & local.flags) && 0 != info->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
         iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &info->code_id);
       }
 #endif
 #if defined(_WIN32)
-      result = (NULL == buffer || FALSE != VirtualFree(buffer, 0, MEM_RELEASE)) ? EXIT_SUCCESS : EXIT_FAILURE;
+      result = (NULL == local.pointer || FALSE != VirtualFree(local.pointer, 0, MEM_RELEASE)) ? EXIT_SUCCESS : EXIT_FAILURE;
 #else /* !_WIN32 */
       {
         void *const reloc = info->reloc;
-        if (0 != munmap(buffer, size_alloc)) {
+        if (0 != munmap(local.pointer, local.size_alloc)) {
           if (0 != libxsmm_verbosity /* library code is expected to be mute */
             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
             fprintf(stderr, "LIBXSMM ERROR: %s (attempted to unmap buffer %p+%" PRIuPTR ")!\n",
-              strerror(errno), buffer, (uintptr_t)size_alloc);
+              strerror(errno), local.pointer, (uintptr_t)local.size_alloc);
           }
           result = EXIT_FAILURE;
         }
-        if (0 != (LIBXSMM_MALLOC_FLAG_X & flags) && EXIT_SUCCESS == result
-          && NULL != reloc && MAP_FAILED != reloc && buffer != reloc
-          && 0 != munmap(reloc, size_alloc))
+        if (0 != (LIBXSMM_MALLOC_FLAG_X & local.flags) && EXIT_SUCCESS == result
+          && NULL != reloc && MAP_FAILED != reloc && local.pointer != reloc
+          && 0 != munmap(reloc, local.size_alloc))
         {
           if (0 != libxsmm_verbosity /* library code is expected to be mute */
             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
             fprintf(stderr, "LIBXSMM ERROR: %s (attempted to unmap code %p+%" PRIuPTR ")!\n",
-              strerror(errno), reloc, (uintptr_t)size_alloc);
+              strerror(errno), reloc, (uintptr_t)local.size_alloc);
           }
           result = EXIT_FAILURE;
         }
       }
 #endif
     }
-    if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* update statistics */
+    if (0 == (LIBXSMM_MALLOC_FLAG_X & local.flags)) { /* update statistics */
 #if !defined(_WIN32)
 # if defined(MAP_HUGETLB) && defined(LIBXSMM_MALLOC_HUGE_PAGES)
-      if (0 != (LIBXSMM_MALLOC_FLAG_PHUGE & flags)) { /* huge pages */
-        LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags));
-        LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_hugetlb, size_alloc, LIBXSMM_ATOMIC_RELAXED);
+      if (0 != (LIBXSMM_MALLOC_FLAG_PHUGE & local.flags)) { /* huge pages */
+        LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_MMAP & local.flags));
+        LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_hugetlb, local.size_alloc, LIBXSMM_ATOMIC_RELAXED);
       }
 # endif
 # if defined(MAP_LOCKED) && defined(LIBXSMM_MALLOC_LOCK_PAGES)
-      if (0 != (LIBXSMM_MALLOC_FLAG_PLOCK & flags)) { /* page-locked */
-        LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags));
-        LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_plocked, size_alloc, LIBXSMM_ATOMIC_RELAXED);
+      if (0 != (LIBXSMM_MALLOC_FLAG_PLOCK & local.flags)) { /* page-locked */
+        LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_MMAP & local.flags));
+        LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_plocked, local.size_alloc, LIBXSMM_ATOMIC_RELAXED);
       }
 # endif
 #endif
-      if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & flags)) { /* public */
-        if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) { /* scratch */
+      if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & local.flags)) { /* public */
+        if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & local.flags)) { /* scratch */
           const size_t current = (size_t)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(
             &internal_malloc_public_cur, LIBXSMM_ATOMIC_RELAXED);
           LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_malloc_public_cur,
-            size_alloc <= current ? (current - size_alloc) : 0, LIBXSMM_ATOMIC_RELAXED);
+            local.size_alloc <= current ? (current - local.size_alloc) : 0, LIBXSMM_ATOMIC_RELAXED);
         }
         else { /* local */
           const size_t current = (size_t)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(
             &internal_malloc_local_cur, LIBXSMM_ATOMIC_RELAXED);
           LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_malloc_local_cur,
-            size_alloc <= current ? (current - size_alloc) : 0, LIBXSMM_ATOMIC_RELAXED);
+            local.size_alloc <= current ? (current - local.size_alloc) : 0, LIBXSMM_ATOMIC_RELAXED);
         }
       }
       else { /* private */
         const size_t current = (size_t)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(
           &internal_malloc_private_cur, LIBXSMM_ATOMIC_RELAXED);
         LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_malloc_private_cur,
-          size_alloc <= current ? (current - size_alloc) : 0, LIBXSMM_ATOMIC_RELAXED);
+          local.size_alloc <= current ? (current - local.size_alloc) : 0, LIBXSMM_ATOMIC_RELAXED);
       }
     }
   }
@@ -701,7 +697,7 @@ LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const
   LIBXSMM_ASSERT(NULL != memory);
   for (; pool != end; ++pool) {
     if (0 != pool->instance.minsize) {
-      if (0 != pool->instance.counter
+      if (0 != /*LIBXSMM_ATOMIC_LOAD(&*/pool->instance.counter/*, LIBXSMM_ATOMIC_SEQ_CST)*/
 #if 1 /* should be implied by non-zero counter */
         && NULL != pool->instance.buffer
 #endif
@@ -2441,7 +2437,7 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
       if (0 != pools[i].instance.minsize) {
         if (
 # if !defined(LIBXSMM_MALLOC_SCRATCH_DELETE_FIRST)
-          1 < pools[i].instance.counter &&
+          1 < /*LIBXSMM_ATOMIC_LOAD(&*/pools[i].instance.counter/*, LIBXSMM_ATOMIC_SEQ_CST)*/ &&
 # endif
           NULL != pools[i].instance.buffer)
         {
@@ -2526,7 +2522,7 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
       for (; pool != end; ++pool) if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site) {
 # endif
         if (0 != pool->instance.minsize) {
-          const size_t npending = pool->instance.counter;
+          const size_t npending = /*LIBXSMM_ATOMIC_LOAD(&*/pool->instance.counter/*, LIBXSMM_ATOMIC_RELAXED)*/;
 # if defined(LIBXSMM_MALLOC_SCRATCH_DELETE_FIRST)
           info->npending += npending;
 # else
