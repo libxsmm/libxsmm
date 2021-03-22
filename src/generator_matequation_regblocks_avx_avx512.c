@@ -1155,7 +1155,8 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
   /* TODO: some diagnostic if we need excessive number of required zmms for the equation and bail out */
   for (i = 0 ; i < 64; i++) {
     if (i_micro_kernel_config->unary_ops_pool[i] > 0) {
-      libxsmm_configure_unary_kernel_vregs_masks( io_generated_code, meltw_config, i, 0, i_gp_reg_mapping->temp_reg);
+      /* @TODO Evangelos: see the last to args... they are needed for dropout... */
+      libxsmm_configure_unary_kernel_vregs_masks( io_generated_code, meltw_config, i, 0, i_gp_reg_mapping->temp_reg, LIBXSMM_X86_GP_REG_UNDEF, LIBXSMM_X86_GP_REG_UNDEF);
     }
   }
 
@@ -1371,6 +1372,7 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
     libxsmm_generator_mateqn_store_reduce_to_scalar_output( io_generated_code,  i_gp_reg_mapping, i_micro_kernel_config, i_mateqn_desc );
   }
 
+  /* @TODO Evangelos: can you please the finalize kernel from mateltwise and how we can apply this here ?! */
   if (i_micro_kernel_config->use_fp32bf16_cvt_replacement == 1) {
     libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
   }
