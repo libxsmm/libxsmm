@@ -85,7 +85,7 @@ make CXX=pgc++ CC=pgcc FC=pgfortran
 
 ### ARM AArch64
 
-This section is not strictly about compiler compatibility but rather about platform support for AArch64 (v8.1), which practically covers the baseline ARM 64-bit architecture from embedded and mobile to supercomputers. The build and installation process of LIBXSMM is the same as for Intel Architecture (IA) and the library can be natively compiled or cross-compiled. The latter for instance looks like:
+This section is not strictly about compiler compatibility but rather about AArch64 (v8.1) being supported, which practically covers the baseline ARM 64-bit architecture from embedded and mobile to supercomputers. The build and installation process of LIBXSMM is the same as for Intel Architecture (IA) and the library can be natively compiled or cross-compiled. The latter for instance looks like:
 
 ```bash
 make PLATFORM=1 AR=aarch64-linux-gnu-ar \
