@@ -865,7 +865,7 @@ LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefa
       /* must match allowed set of units */
       (NULL != unit && *unit == *end) ||
       /* value is given without unit */
-      (NULL == unit && '\0' == end)))
+      (NULL == unit && '\0' == *end)))
     {
       result = (size_t)ibytes;
       if ((size_t)LIBXSMM_UNLIMITED != result) {
