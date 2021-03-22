@@ -947,7 +947,7 @@ void libxsmm_compute_unary_2d_reg_block_dropout( libxsmm_generated_code*        
       unsigned int n_available_mask_regs = 8 - i_micro_kernel_config->reserved_mask_regs;
       unsigned int cur_mask_reg = i_micro_kernel_config->reserved_mask_regs + (in * i_m_blocking + im) % n_available_mask_regs;
       unsigned int l_vcmp_instr = LIBXSMM_X86_INSTR_VCMPPS;
-      unsigned int l_vblend_instr = LIBXSMM_X86_INSTR_VPBLENDMD;
+      unsigned int l_vmul_instr = LIBXSMM_X86_INSTR_VMULPS;
       unsigned int l_mask_st_instr = LIBXSMM_X86_INSTR_KMOVW_ST;
       unsigned int l_vlen = 16;
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
@@ -971,11 +971,11 @@ void libxsmm_compute_unary_2d_reg_block_dropout( libxsmm_generated_code*        
                                                        i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_one, i_micro_kernel_config->dropout_vreg_tmp2 );
 
         /* compare with p */
-        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCMPPS, 'z',
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, l_vcmp_instr, 'z',
                                                        i_micro_kernel_config->dropout_vreg_tmp2, i_micro_kernel_config->dropout_prob_vreg, cur_mask_reg, 0x06  );
 
         /* weight and zero input */
-        libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, 'z',
+        libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, l_vmul_instr, 'z',
                                                        cur_vreg, i_micro_kernel_config->dropout_invprob_vreg, cur_vreg, cur_mask_reg, 1 );
 
         /* Store dropout mask */
@@ -1006,7 +1006,7 @@ void libxsmm_compute_unary_2d_reg_block_dropout_inv( libxsmm_generated_code*    
       unsigned int n_available_mask_regs = 8 - i_micro_kernel_config->reserved_mask_regs;
       unsigned int cur_mask_reg = i_micro_kernel_config->reserved_mask_regs + (in * i_m_blocking + im) % n_available_mask_regs;
       unsigned int l_vcmp_instr = LIBXSMM_X86_INSTR_VCMPPS;
-      unsigned int l_vblend_instr = LIBXSMM_X86_INSTR_VPBLENDMD;
+      unsigned int l_vmul_instr = LIBXSMM_X86_INSTR_VMULPS;
       unsigned int l_mask_ld_instr = LIBXSMM_X86_INSTR_KMOVW_LD;
       unsigned int l_vlen = 16;
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
@@ -1084,7 +1084,7 @@ void libxsmm_compute_unary_2d_reg_block_dropout_inv( libxsmm_generated_code*    
         }
 
         /* weight and zero input */
-        libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, 'z',
+        libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, l_vmul_instr, 'z',
                                                        cur_vreg, i_micro_kernel_config->dropout_prob_vreg, cur_vreg, cur_mask_reg, 1 );
       }
     }
