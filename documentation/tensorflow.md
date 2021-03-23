@@ -55,7 +55,7 @@ bazel build --config=mkl -c opt --copt=-O2 \
 * AVX-512/CORE/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl --copt=-mavx512dq`
 * AVX-512/MIC/KNL/KNM: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
 
-**NOTE**: In the past, TensorFlow or specifically Eigen's packed math abstraction asserted an unmet condition in case of AVX-512. Therefore, one should either <span>(1)&#160;limit</span> the code to Intel AVX2 instructions, or <span>(2)&#160;supply</span> `-c opt` which implies `--copt=-DNDEBUG` and thereby **disables** the assertions (at own risk). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can utilize twice as many registers (32) on an AVX-512 capable system (if instructions are EVEX encoded).
+**Note**: In the past, TensorFlow or specifically Eigen's packed math abstraction asserted an unmet condition in case of AVX-512. Therefore, one should either <span>(1)&#160;limit</span> the code to Intel AVX2 instructions, or <span>(2)&#160;supply</span> `-c opt` which implies `--copt=-DNDEBUG` and thereby **disables** the assertions (at own risk). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can utilize twice as many registers (32) on an AVX-512 capable system (if instructions are EVEX encoded).
 
 To finally build the TensorFlow (pip-)package ("wheel"), please invoke the following command (in the past the zip-stage ran into problems with Python wheels containing debug code because of exceeding <span>2&#160;GB</span> for the size of the wheel).
 
@@ -76,7 +76,7 @@ pip uninstall tensorflow
 pip install /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
 
-**NOTE**: Unless a workload is symlinked and built underneath of the TensorFlow directory (for quicker development turnaround time; out of scope in this document), a wheel must be installed before it can be used to run any TensorFlow Python-code (the desired workload).
+**Note**: Unless a workload is symlinked and built underneath of the TensorFlow directory (for quicker development turnaround time; out of scope in this document), a wheel must be installed before it can be used to run any TensorFlow Python-code (the desired workload).
 
 ## Performance Tuning<a name="performance-tuning-and-profiling"></a>
 

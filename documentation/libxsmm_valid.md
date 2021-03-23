@@ -87,18 +87,11 @@ make PLATFORM=1 CC=xlc CXX=xlc++ FC=xlf
 
 ### Cross-compilation for ARM
 
-The ARM platform requires aforementioned `PLATFORM=1` to unlock compilation. Please note, `PLATFORM=1` also unlocks compilation for 32-bit targets.
+ARM AArch64 is regularly [supported](https://github.com/hfp/libxsmm/wiki/Compatibility#arm-aarch64). However, 32-bit ARM requires aforementioned `PLATFORM=1` to unlock compilation (similar to 32-bit Intel Architecture). Unlocking compilation for 32-bit ARM is not be confused with supporting 32-bit ARM architectures.
 
 ```bash
 make PLATFORM=1 AR=arm-linux-gnueabi-ar \
   FC=arm-linux-gnueabi-gfortran \
   CXX=arm-linux-gnueabi-g++ \
   CC=arm-linux-gnueabi-gcc
-```
-
-```bash
-make PLATFORM=1 AR=aarch64-linux-gnu-ar \
-  FC=aarch64-linux-gnu-gfortran \
-  CXX=aarch64-linux-gnu-g++ \
-  CC=aarch64-linux-gnu-gcc
 ```
