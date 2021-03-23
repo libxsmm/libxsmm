@@ -393,7 +393,8 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD_NCNC_FORMAT  = 23,
   LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD      = 24,
   LIBXSMM_MELTW_TYPE_UNARY_DROPOUT                      = 25,
-  LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV                  = 26
+  LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV                  = 26,
+  LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR            = 27
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
