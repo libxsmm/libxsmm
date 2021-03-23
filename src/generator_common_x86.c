@@ -1240,85 +1240,89 @@ void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx( libxsmm_genera
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_load_prng_state_avx512( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_gp_reg_prng_state_ptr,
-                                               const unsigned int      prng_state0_vreg,
-                                               const unsigned int      prng_state1_vreg,
-                                               const unsigned int      prng_state2_vreg,
-                                               const unsigned int      prng_state3_vreg ) {
+void libxsmm_generator_load_prng_state_avx_avx512( libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
+                                                   const unsigned int      i_gp_reg_prng_state_ptr,
+                                                   const unsigned int      prng_state0_vreg,
+                                                   const unsigned int      prng_state1_vreg,
+                                                   const unsigned int      prng_state2_vreg,
+                                                   const unsigned int      prng_state3_vreg ) {
   /* load RNG state */
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VMOVUPS_LD, i_gp_reg_prng_state_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                    'z', prng_state0_vreg, 0, 1, 0 );
+                                    i_vname, prng_state0_vreg, 0, 1, 0 );
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VMOVUPS_LD, i_gp_reg_prng_state_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 64,
-                                    'z', prng_state1_vreg, 0, 1, 0 );
+                                    i_vname, prng_state1_vreg, 0, 1, 0 );
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VMOVUPS_LD, i_gp_reg_prng_state_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 128,
-                                    'z', prng_state2_vreg, 0, 1, 0 );
+                                    i_vname, prng_state2_vreg, 0, 1, 0 );
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VMOVUPS_LD, i_gp_reg_prng_state_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 192,
-                                    'z', prng_state3_vreg, 0, 1, 0 );
+                                    i_vname, prng_state3_vreg, 0, 1, 0 );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_store_prng_state_avx512( libxsmm_generated_code* io_generated_code,
-                                                const unsigned int      i_gp_reg_prng_state_ptr,
-                                                const unsigned int      prng_state0_vreg,
-                                                const unsigned int      prng_state1_vreg,
-                                                const unsigned int      prng_state2_vreg,
-                                                const unsigned int      prng_state3_vreg ) {
+void libxsmm_generator_store_prng_state_avx_avx512( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned char     i_vname,
+                                                    const unsigned int      i_gp_reg_prng_state_ptr,
+                                                    const unsigned int      prng_state0_vreg,
+                                                    const unsigned int      prng_state1_vreg,
+                                                    const unsigned int      prng_state2_vreg,
+                                                    const unsigned int      prng_state3_vreg ) {
   /* load RNG state */
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VMOVUPS_ST, i_gp_reg_prng_state_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                    'z', prng_state0_vreg, 0, 0, 1 );
+                                    i_vname, prng_state0_vreg, 0, 0, 1 );
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VMOVUPS_ST, i_gp_reg_prng_state_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 64,
-                                    'z', prng_state1_vreg, 0, 0, 1 );
+                                    i_vname, prng_state1_vreg, 0, 0, 1 );
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VMOVUPS_ST, i_gp_reg_prng_state_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 128,
-                                    'z', prng_state2_vreg, 0, 0, 1 );
+                                    i_vname, prng_state2_vreg, 0, 0, 1 );
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VMOVUPS_ST, i_gp_reg_prng_state_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 192,
-                                    'z', prng_state3_vreg, 0, 0, 1 );
+                                    i_vname, prng_state3_vreg, 0, 0, 1 );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_prepare_dropout_avx512( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_gp_reg_tmp,
-                                               const unsigned int      i_gp_reg_prob_ptr,
-                                               const unsigned int      dropout_vreg_one,
-                                               const unsigned int      dropout_prob_vreg,
-                                               const unsigned int      dropout_invprob_vreg ) {
+void libxsmm_generator_prepare_dropout_avx_avx512( libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
+                                                   const unsigned int      i_gp_reg_tmp,
+                                                   const unsigned int      i_gp_reg_prob_ptr,
+                                                   const unsigned int      dropout_vreg_one,
+                                                   const unsigned int      dropout_prob_vreg,
+                                                   const unsigned int      dropout_invprob_vreg ) {
   /* load constant register */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, 0x3f800000);
   libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_tmp );
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VBROADCASTSS,
                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                    'z', dropout_vreg_one, 0, 1, 0 );
+                                    i_vname, dropout_vreg_one, 0, 1, 0 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_tmp );
 
   /* load probability */
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VBROADCASTSS,
                                     i_gp_reg_prob_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                    'z', dropout_prob_vreg, 0, 1, 0 );
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, 'z',
+                                    i_vname, dropout_prob_vreg, 0, 1, 0 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, i_vname,
                                             dropout_prob_vreg, dropout_vreg_one, dropout_prob_vreg );
 
   /* load 1/prob */
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VDIVPS, 'z',
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VDIVPS, i_vname,
                                             dropout_prob_vreg, dropout_vreg_one, dropout_invprob_vreg );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_prepare_dropout_inv_avx512( libxsmm_generated_code* io_generated_code,
-                                                   const unsigned int      i_gp_reg_tmp,
-                                                   const unsigned int      i_gp_reg_prob_ptr,
-                                                   const unsigned int      dropout_vreg_one,
-                                                   const unsigned int      dropout_vreg_zero,
-                                                   const unsigned int      dropout_prob_vreg ) {
+void libxsmm_generator_prepare_dropout_inv_avx_avx512( libxsmm_generated_code* io_generated_code,
+                                                       const unsigned char     i_vname,
+                                                       const unsigned int      i_gp_reg_tmp,
+                                                       const unsigned int      i_gp_reg_prob_ptr,
+                                                       const unsigned int      dropout_vreg_one,
+                                                       const unsigned int      dropout_vreg_zero,
+                                                       const unsigned int      dropout_prob_vreg ) {
 
   /* load constant register */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, 0x3f800000);
@@ -1326,23 +1330,23 @@ void libxsmm_generator_prepare_dropout_inv_avx512( libxsmm_generated_code* io_ge
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VBROADCASTSS,
                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                    'z', dropout_vreg_one, 0, 1, 0 );
+                                    i_vname, dropout_vreg_one, 0, 1, 0 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_tmp );
 
   /* load probability */
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VBROADCASTSS,
                                     i_gp_reg_prob_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                    'z', dropout_prob_vreg, 0, 1, 0 );
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, 'z',
+                                    i_vname, dropout_prob_vreg, 0, 1, 0 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, i_vname,
                                             dropout_prob_vreg, dropout_vreg_one, dropout_prob_vreg );
 
   /* load 1/prob */
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VDIVPS, 'z',
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VDIVPS, i_vname,
                                             dropout_prob_vreg, dropout_vreg_one, dropout_prob_vreg );
 
   /* load zero, for masking */
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'z',
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_vname,
                                             dropout_vreg_zero, dropout_vreg_zero, dropout_vreg_zero );
 }
 

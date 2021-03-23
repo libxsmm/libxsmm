@@ -954,16 +954,30 @@ void libxsmm_compute_unary_2d_reg_block_dropout( libxsmm_generated_code*        
 
       if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
         l_vlen = l_vlen/2;
-#if 0
-        cur_mask_reg = i_micro_kernel_config->tmp_vreg;
-        if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) > 0 ) {
-          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCMPPS, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_vreg, cur_vreg, cur_mask_reg, 6 );
-          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVMSKPS, i_micro_kernel_config->vector_name, cur_mask_reg, LIBXSMM_X86_VEC_REG_UNDEF, LIBXSMM_X86_GP_REG_RCX, 0 );
-          libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVB, i_gp_reg_mapping->gp_reg_relumask, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_mateltwise_desc->ldo)/8, LIBXSMM_X86_GP_REG_RCX,1);
-        }
+        cur_mask_reg = i_micro_kernel_config->dropout_vreg_avxmask;
 
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMAXPS, i_micro_kernel_config->vector_name, cur_vreg, i_micro_kernel_config->zero_vreg, cur_vreg );
-#endif
+        /* draw a random number */
+        libxsmm_generator_xoshiro128p_f32_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                       i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg, i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg,
+                                                       i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_one, i_micro_kernel_config->dropout_vreg_tmp2 );
+
+        /* compare with p */
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, l_vcmp_instr, 'y',
+                                                       i_micro_kernel_config->dropout_vreg_tmp2, i_micro_kernel_config->dropout_prob_vreg, cur_mask_reg, 0x06  );
+
+        /* weight */
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, l_vmul_instr, 'y',
+                                                  cur_vreg, i_micro_kernel_config->dropout_invprob_vreg, cur_vreg );
+
+        /* blend zero and multiplication result together */
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'y', i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->dropout_vreg_tmp0 );
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VBLENDVPS, 'y', cur_vreg, i_micro_kernel_config->dropout_vreg_tmp0, cur_vreg, 0, 0, 0, (cur_mask_reg) << 4);
+
+        if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) > 0 ) {
+          /* @TODO: remove usage of R11.... */
+          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVMSKPS, i_micro_kernel_config->vector_name, cur_mask_reg, LIBXSMM_X86_VEC_REG_UNDEF, LIBXSMM_X86_GP_REG_R11, 0 );
+          libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVB, i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_mateltwise_desc->ldo)/8, LIBXSMM_X86_GP_REG_R11, 1);
+        }
       } else {
         /* draw a random number */
         libxsmm_generator_xoshiro128p_f32_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
@@ -1435,8 +1449,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
                                                  unsigned int                            i_gp_reg_tmp,
                                                  const unsigned int                      i_gp_reg_aux0,
                                                  const unsigned int                      i_gp_reg_aux1 ) {
-
-  char vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
+  const char vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
 
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_RELU) || (op == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV)) {
     i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms;
@@ -1463,25 +1476,16 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
   }
 
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT) || (op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV)) {
-    if ((io_generated_code->arch < LIBXSMM_X86_AVX512) && ((flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) > 0)){
-      i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
+    if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+      i_micro_kernel_config->dropout_vreg_avxmask = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
-      if (op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV) {
+      if ((op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV) && ((flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) > 0)) {
         unsigned int const_mask_array[8] = { 0x00000001, 0x00000002 , 0x00000004, 0x00000008, 0x00000010, 0x00000020, 0x00000040 , 0x00000080 };
-        i_micro_kernel_config->vec_tmp0 = i_micro_kernel_config->reserved_zmms;
-        i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
-        libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) const_mask_array, "const_mask_array", vname, i_micro_kernel_config->vec_tmp0 );
+        libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) const_mask_array, "const_mask_array", vname, i_micro_kernel_config->dropout_vreg_avxmask );
       }
     }
 
-    if ((op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV) && ((flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) == 0) ) {
-      i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
-      i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
-    }
-
-    if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
-      /* @TODO */
-    } else {
+    if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
       unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
 
       if (op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT) {
@@ -1498,13 +1502,13 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
         i_micro_kernel_config->dropout_prob_vreg    = reserved_zmms - 9;
         i_micro_kernel_config->dropout_invprob_vreg = reserved_zmms - 10;
 
-        libxsmm_generator_load_prng_state_avx512( io_generated_code, i_gp_reg_aux0,
-                                                  i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
-                                                  i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
-        libxsmm_generator_prepare_dropout_avx512( io_generated_code, i_gp_reg_tmp, i_gp_reg_aux1,
-                                                  i_micro_kernel_config->dropout_vreg_one,
-                                                  i_micro_kernel_config->dropout_prob_vreg,
-                                                  i_micro_kernel_config->dropout_invprob_vreg );
+        libxsmm_generator_load_prng_state_avx_avx512( io_generated_code, vname, i_gp_reg_aux0,
+                                                      i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
+                                                      i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
+        libxsmm_generator_prepare_dropout_avx_avx512( io_generated_code, vname, i_gp_reg_tmp, i_gp_reg_aux1,
+                                                      i_micro_kernel_config->dropout_vreg_one,
+                                                      i_micro_kernel_config->dropout_prob_vreg,
+                                                      i_micro_kernel_config->dropout_invprob_vreg );
       }
 
       if (op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV) {
@@ -1517,10 +1521,10 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
         i_micro_kernel_config->dropout_vreg_zero = reserved_zmms - 5;
         i_micro_kernel_config->dropout_prob_vreg = reserved_zmms - 6;
 
-        libxsmm_generator_prepare_dropout_inv_avx512( io_generated_code, i_gp_reg_tmp, i_gp_reg_aux1,
-                                                      i_micro_kernel_config->dropout_vreg_one,
-                                                      i_micro_kernel_config->dropout_vreg_zero,
-                                                      i_micro_kernel_config->dropout_prob_vreg );
+        libxsmm_generator_prepare_dropout_inv_avx_avx512( io_generated_code, vname, i_gp_reg_tmp, i_gp_reg_aux1,
+                                                          i_micro_kernel_config->dropout_vreg_one,
+                                                          i_micro_kernel_config->dropout_vreg_zero,
+                                                          i_micro_kernel_config->dropout_prob_vreg );
       }
 
       i_micro_kernel_config->reserved_zmms = reserved_zmms;
@@ -1816,16 +1820,15 @@ void libxsmm_finalize_unary_kernel_vregs_masks( libxsmm_generated_code*         
                                                 unsigned int                            i_gp_reg_tmp,
                                                 const unsigned int                      i_gp_reg_aux0,
                                                 const unsigned int                      i_gp_reg_aux1 ) {
-  char vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
-  LIBXSMM_UNUSED(vname);
+  const char l_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
   LIBXSMM_UNUSED(flags);
   LIBXSMM_UNUSED(i_gp_reg_tmp);
   LIBXSMM_UNUSED(i_gp_reg_aux1);
 
   if ( op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT ) {
-    libxsmm_generator_store_prng_state_avx512( io_generated_code, i_gp_reg_aux0,
-                                               i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
-                                               i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
+    libxsmm_generator_store_prng_state_avx_avx512( io_generated_code, l_vname, i_gp_reg_aux0,
+                                                   i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
+                                                   i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
   }
 }
 

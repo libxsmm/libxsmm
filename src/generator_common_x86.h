@@ -338,36 +338,40 @@ void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsmm_gen
     const unsigned int                             i_vec_halves );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_load_prng_state_avx512( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_gp_reg_prng_state_ptr,
-                                               const unsigned int      prng_state0_vreg,
-                                               const unsigned int      prng_state1_vreg,
-                                               const unsigned int      prng_state2_vreg,
-                                               const unsigned int      prng_state3_vreg );
+void libxsmm_generator_load_prng_state_avx_avx512( libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
+                                                   const unsigned int      i_gp_reg_prng_state_ptr,
+                                                   const unsigned int      prng_state0_vreg,
+                                                   const unsigned int      prng_state1_vreg,
+                                                   const unsigned int      prng_state2_vreg,
+                                                   const unsigned int      prng_state3_vreg );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_store_prng_state_avx512( libxsmm_generated_code* io_generated_code,
-                                                const unsigned int      i_gp_reg_prng_state_ptr,
-                                                const unsigned int      prng_state0_vreg,
-                                                const unsigned int      prng_state1_vreg,
-                                                const unsigned int      prng_state2_vreg,
-                                                const unsigned int      prng_state3_vreg );
+void libxsmm_generator_store_prng_state_avx_avx512( libxsmm_generated_code* io_generated_code,
+                                                    const unsigned char     i_vname,
+                                                    const unsigned int      i_gp_reg_prng_state_ptr,
+                                                    const unsigned int      prng_state0_vreg,
+                                                    const unsigned int      prng_state1_vreg,
+                                                    const unsigned int      prng_state2_vreg,
+                                                    const unsigned int      prng_state3_vreg );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_prepare_dropout_avx512( libxsmm_generated_code* io_generated_code,
-                                               const unsigned int      i_gp_reg_tmp,
-                                               const unsigned int      i_gp_reg_prob_ptr,
-                                               const unsigned int      dropout_vreg_one,
-                                               const unsigned int      dropout_prob_vreg,
-                                               const unsigned int      dropout_invprob_vreg );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_prepare_dropout_inv_avx512( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_prepare_dropout_avx_avx512( libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
                                                    const unsigned int      i_gp_reg_tmp,
                                                    const unsigned int      i_gp_reg_prob_ptr,
                                                    const unsigned int      dropout_vreg_one,
-                                                   const unsigned int      dropout_vreg_zero,
-                                                   const unsigned int      dropout_prob_vreg );
+                                                   const unsigned int      dropout_prob_vreg,
+                                                   const unsigned int      dropout_invprob_vreg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_dropout_inv_avx_avx512( libxsmm_generated_code* io_generated_code,
+                                                       const unsigned char     i_vname,
+                                                       const unsigned int      i_gp_reg_tmp,
+                                                       const unsigned int      i_gp_reg_prob_ptr,
+                                                       const unsigned int      dropout_vreg_one,
+                                                       const unsigned int      dropout_vreg_zero,
+                                                       const unsigned int      dropout_prob_vreg );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
