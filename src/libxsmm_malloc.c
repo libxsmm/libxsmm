@@ -538,25 +538,26 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
 #if !defined(LIBXSMM_BUILD) || !defined(_WIN32)
   static int error_once = 0;
 #endif
-  const internal_malloc_info_type local = *info;
   int result = EXIT_SUCCESS;
-#if !defined(LIBXSMM_MALLOC_INFO_ALLOCSIZE) || !defined(NDEBUG)
-  const size_t size = local.size + (size_t)(((const char*)memory) - ((const char*)local.pointer));
-#endif
-#if defined(LIBXSMM_MALLOC_INFO_ALLOCSIZE)
-  const size_t size_alloc = local.size_alloc;
-  assert(0 == local.size || (NULL != local.pointer && size <= size_alloc)); /* !LIBXSMM_ASSERT */
-#else
-  const size_t size_alloc = /*LIBXSMM_UP2(*/size/*, LIBXSMM_PAGE_MINSIZE)*/;
-#endif
-#if defined(NDEBUG)
-  LIBXSMM_UNUSED(memory);
-#endif
-  LIBXSMM_ASSERT(NULL != memory && NULL != info && sizeof(internal_malloc_info_type) < size_alloc);
+  internal_malloc_info_type local;
+  LIBXSMM_ASSIGN127(&local, info);
 #if !defined(LIBXSMM_BUILD) /* sanity check */
   if (NULL != local.pointer || 0 == local.size)
 #endif
   {
+#if !defined(LIBXSMM_MALLOC_INFO_ALLOCSIZE) || !defined(NDEBUG)
+    const size_t size = local.size + (size_t)(((const char*)memory) - ((const char*)local.pointer));
+#endif
+#if defined(LIBXSMM_MALLOC_INFO_ALLOCSIZE)
+    const size_t size_alloc = local.size_alloc;
+    assert(0 == local.size || (NULL != local.pointer && size <= size_alloc)); /* !LIBXSMM_ASSERT */
+#else
+    const size_t size_alloc = /*LIBXSMM_UP2(*/size/*, LIBXSMM_PAGE_MINSIZE)*/;
+#endif
+    assert(NULL != memory && NULL != info && sizeof(internal_malloc_info_type) < size_alloc); /* !LIBXSMM_ASSERT */
+#if defined(LIBXSMM_MALLOC_INFO_ALLOCSIZE) && defined(NDEBUG)
+    LIBXSMM_UNUSED(memory);
+#endif
     if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & local.flags)) {
       if (NULL != local.free.function) {
 #if defined(LIBXSMM_MALLOC_DELETE_SAFE)
