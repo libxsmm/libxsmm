@@ -68,6 +68,7 @@
     <ClInclude Include="..\src\generator_mateltwise_copy_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_cvtfp32bf16_act_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_dropout_avx_avx512.h" />
+    <ClInclude Include="..\src\generator_mateltwise_misc_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_reduce_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_relu_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_scale_avx_avx512.h" />
@@ -170,6 +171,7 @@
     <ClCompile Include="..\src\generator_mateltwise_copy_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_cvtfp32bf16_act_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_dropout_avx_avx512.c" />
+    <ClCompile Include="..\src\generator_mateltwise_misc_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_reduce_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_relu_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_scale_avx_avx512.c" />
