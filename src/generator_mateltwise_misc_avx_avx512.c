@@ -151,9 +151,9 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
     libxsmm_mateltwise_kernel_config*              i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
-  unsigned int m, use_m_masking, m_trips, m_unroll_factor, _m_unroll_factor, m_trips_loop, peeled_m_trips, vlen, max_m_unrolling, im;
+  unsigned int m, use_m_masking, m_trips, m_unroll_factor, m_trips_loop, peeled_m_trips, vlen, max_m_unrolling;
   unsigned int in_tsize, out_tsize, tsize;
-  unsigned int mask_inout, mask_out_count;
+  unsigned int mask_inout = 1, mask_out_count;
   unsigned int END_LABEL = 1;
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
   libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
