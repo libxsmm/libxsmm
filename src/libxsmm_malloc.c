@@ -540,9 +540,6 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
 #endif
   const internal_malloc_info_type local = *info;
   int result = EXIT_SUCCESS;
-#if defined(NDEBUG)
-  LIBXSMM_UNUSED(memory);
-#endif
 #if defined(NDEBUG) || !defined(LIBXSMM_MALLOC_INFO_ALLOCSIZE)
   const size_t size = local.size + (size_t)(((const char*)memory) - ((const char*)local.pointer));
 #endif
@@ -551,6 +548,9 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
   assert(0 == local.size || (NULL != local.pointer && size <= size_alloc)); /* !LIBXSMM_ASSERT */
 #else
   const size_t size_alloc = /*LIBXSMM_UP2(*/size/*, LIBXSMM_PAGE_MINSIZE)*/;
+#endif
+#if defined(NDEBUG)
+  LIBXSMM_UNUSED(memory);
 #endif
   LIBXSMM_ASSERT(NULL != memory && NULL != info);
 #if !defined(LIBXSMM_BUILD) /* sanity check */
