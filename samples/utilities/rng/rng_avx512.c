@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   if (NULL == rngs) num_rngs = 0;
 
   /* create thread-safe state */
-  state = libxsmm_rng_create_avx512_extstate( (unsigned int)(time(0)) );
+  state = libxsmm_rng_create_extstate( (unsigned int)(time(0)) );
 
   /* fill array with random floats */
   for (i = 0; i < num_rngs; i+=16) {
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     libxsmm_timer_ncycles(start, libxsmm_timer_tick()) / ((size_t)num_rngs*16));
 
   /* free the state */
-  libxsmm_rng_destroy_avx512_extstate( state );
+  libxsmm_rng_destroy_extstate( state );
 
   /* let's compute some values of the random numbers */
   printf("\n%lli random numbers generated, which are uniformly distributed in [0,1(\n", (long long)num_rngs);

@@ -326,8 +326,8 @@ void test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
     mask_gold[i] = 0;
   }
 
-  rng_state = libxsmm_rng_create_avx512_extstate( 555 );
-  rng_state_gold = libxsmm_rng_create_avx512_extstate( 555 );
+  rng_state = libxsmm_rng_create_extstate( 555 );
+  rng_state_gold = libxsmm_rng_create_extstate( 555 );
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
@@ -389,8 +389,8 @@ void test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
     }
   }
 
-  libxsmm_rng_destroy_avx512_extstate( rng_state );
-  libxsmm_rng_destroy_avx512_extstate( rng_state_gold );
+  libxsmm_rng_destroy_extstate( rng_state );
+  libxsmm_rng_destroy_extstate( rng_state_gold );
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -450,8 +450,8 @@ void test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
     mask_gold[i] = 0;
   }
 
-  rng_state = libxsmm_rng_create_avx512_extstate( 555 );
-  rng_state_gold = libxsmm_rng_create_avx512_extstate( 555 );
+  rng_state = libxsmm_rng_create_extstate( 555 );
+  rng_state_gold = libxsmm_rng_create_extstate( 555 );
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
@@ -517,8 +517,8 @@ void test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
     }
   }
 
-  libxsmm_rng_destroy_avx512_extstate( rng_state );
-  libxsmm_rng_destroy_avx512_extstate( rng_state_gold );
+  libxsmm_rng_destroy_extstate( rng_state );
+  libxsmm_rng_destroy_extstate( rng_state_gold );
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -577,8 +577,8 @@ void test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     mask_gold[i] = 0;
   }
 
-  rng_state = libxsmm_rng_create_avx512_extstate( 555 );
-  rng_state_gold = libxsmm_rng_create_avx512_extstate( 555 );
+  rng_state = libxsmm_rng_create_extstate( 555 );
+  rng_state_gold = libxsmm_rng_create_extstate( 555 );
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
@@ -644,8 +644,8 @@ void test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     }
   }
 
-  libxsmm_rng_destroy_avx512_extstate( rng_state );
-  libxsmm_rng_destroy_avx512_extstate( rng_state_gold );
+  libxsmm_rng_destroy_extstate( rng_state );
+  libxsmm_rng_destroy_extstate( rng_state_gold );
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -704,8 +704,8 @@ void test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     mask_gold[i] = 0;
   }
 
-  rng_state = libxsmm_rng_create_avx512_extstate( 555 );
-  rng_state_gold = libxsmm_rng_create_avx512_extstate( 555 );
+  rng_state = libxsmm_rng_create_extstate( 555 );
+  rng_state_gold = libxsmm_rng_create_extstate( 555 );
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
@@ -767,8 +767,8 @@ void test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     }
   }
 
-  libxsmm_rng_destroy_avx512_extstate( rng_state );
-  libxsmm_rng_destroy_avx512_extstate( rng_state_gold );
+  libxsmm_rng_destroy_extstate( rng_state );
+  libxsmm_rng_destroy_extstate( rng_state_gold );
 
   libxsmm_free( out_gold );
   libxsmm_free( out );

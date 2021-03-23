@@ -171,7 +171,7 @@ void internal_rng_f32_seq_avx512(float* rngs, libxsmm_blasint count)
 #endif /*defined(LIBXSMM_INTRINSICS_AVX512)*/
 
 
-LIBXSMM_API unsigned int* libxsmm_rng_create_avx512_extstate(unsigned int/*uint32_t*/ seed)
+LIBXSMM_API unsigned int* libxsmm_rng_create_extstate(unsigned int/*uint32_t*/ seed)
 {
   unsigned int* state = (unsigned int*) libxsmm_aligned_malloc( 64*sizeof(unsigned int), 64 );
   static const uint32_t temp_state[] = {
@@ -200,7 +200,7 @@ LIBXSMM_API unsigned int* libxsmm_rng_create_avx512_extstate(unsigned int/*uint3
 }
 
 
-LIBXSMM_API void libxsmm_rng_destroy_avx512_extstate(unsigned int* stateptr)
+LIBXSMM_API void libxsmm_rng_destroy_extstate(unsigned int* stateptr)
 {
   if ( stateptr != NULL ) {
     libxsmm_free( stateptr );

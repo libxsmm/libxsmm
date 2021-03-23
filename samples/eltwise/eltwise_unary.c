@@ -37,6 +37,7 @@
 #define RCP_OP 13
 #define RCP_SQRT_OP 14
 #define EXP_OP 15
+#define REPLICATE_COL_VAR 16
 
 int unequal_fp32_vals(float a, float b) {
   if (fabs(a-b) < EPS) {
@@ -81,7 +82,7 @@ float gelu_inv(float x) {
 
 float fp32_unary_compute(float in, unsigned int op) {
   float res;
-  if ( op == COPY_OP) {
+  if ( op == COPY_OP || op == REPLICATE_COL_VAR) {
     res = in;
   }
   if ( op == NEGATE_OP) {
@@ -134,6 +135,9 @@ void set_opname(unsigned int op, char *opname) {
   if ( op == COPY_OP ) {
     sprintf(opname, "copy");
   }
+  if ( op == REPLICATE_COL_VAR ) {
+    sprintf(opname, "replicate_col_var");
+  }
   if ( op == X2_OP ) {
     sprintf(opname, "x2");
   }
@@ -183,6 +187,9 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
 
   if ( op == COPY_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_IDENTITY;
+  }
+  if ( op == REPLICATE_COL_VAR ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR;
   }
   if ( op == X2_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
@@ -365,6 +372,10 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   /* use jited tranpose */
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unsigned long long _N = N;
+    unary_param.out.secondary = (void*) &_N;
+  }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
@@ -377,7 +388,13 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+
+  libxsmm_meltwfunction_unary unary_kernel;
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -508,6 +525,10 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   /* use jited tranpose */
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unsigned long long _N = N;
+    unary_param.out.secondary = (void*) &_N;
+  }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
@@ -520,7 +541,13 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
+  libxsmm_meltwfunction_unary unary_kernel;
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
+  }
+
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -640,6 +667,10 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unsigned long long _N = N;
+    unary_param.out.secondary = (void*) &_N;
+  }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
@@ -652,7 +683,13 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
+  libxsmm_meltwfunction_unary unary_kernel;
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
+  }
+
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -774,6 +811,10 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unsigned long long _N = N;
+    unary_param.out.secondary = (void*) &_N;
+  }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
@@ -786,7 +827,14 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+
+  libxsmm_meltwfunction_unary unary_kernel;
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+  }
+
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -854,7 +902,7 @@ int main( int argc, char* argv[] ) {
 
   valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP ||
                op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP || op == SQRT_OP || op == NEGATE_OP ||
-               op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP || op == EXP_OP) ? 1 : 0;
+               op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP || op == EXP_OP || op == REPLICATE_COL_VAR) ? 1 : 0;
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
@@ -867,6 +915,11 @@ int main( int argc, char* argv[] ) {
       printf("Using scalar broadcast for the input value...\n");
     }
   }
+
+  if (op == REPLICATE_COL_VAR) {
+    use_bcast = COL_BCAST;
+  }
+
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");
     test_unary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);

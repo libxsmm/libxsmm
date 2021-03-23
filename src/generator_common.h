@@ -1027,6 +1027,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int dropout_vreg_zero;
   unsigned int dropout_prob_vreg;
   unsigned int dropout_invprob_vreg;
+  unsigned int dropout_vreg_avxmask;
 
   /* Misc aux variables  */
   unsigned int neg_signs_vreg;

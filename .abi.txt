@@ -450,8 +450,8 @@ libxsmm_release_smmkernel
 libxsmm_release_wimmkernel
 libxsmm_rnaz_convert_fp32_bf16
 libxsmm_rne_convert_fp32_bf16
-libxsmm_rng_create_avx512_extstate
-libxsmm_rng_destroy_avx512_extstate
+libxsmm_rng_create_extstate
+libxsmm_rng_destroy_extstate
 libxsmm_rng_f32_seq
 libxsmm_rng_f64
 libxsmm_rng_seq
