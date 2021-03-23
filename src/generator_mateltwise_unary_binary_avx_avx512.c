@@ -1027,47 +1027,40 @@ void libxsmm_compute_unary_2d_reg_block_dropout_inv( libxsmm_generated_code*    
 
       if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
         l_vlen = l_vlen/2;
-#if 0
+
+        /* load mask */
         if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) > 0 ) {
-          libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-              LIBXSMM_X86_INSTR_VPBROADCASTB,
-              i_gp_reg_mapping->gp_reg_relumask,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              (im * l_vlen + in * i_mateltwise_desc->ldi)/8,
-              i_micro_kernel_config->vector_name,
-              i_micro_kernel_config->tmp_vreg, 0, 0, 0 );
+          libxsmm_x86_instruction_unified_vec_move( io_generated_code, LIBXSMM_X86_INSTR_VPBROADCASTB,
+                                                    i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_mateltwise_desc->ldi)/8,
+                                                    i_micro_kernel_config->vector_name, i_micro_kernel_config->dropout_vreg_tmp0, 0, 0, 0 );
 
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VPANDD, i_micro_kernel_config->vector_name,
-                                       i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->tmp_vreg);
+                                       i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->dropout_vreg_avxmask, i_micro_kernel_config->dropout_vreg_tmp0);
 
-          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPEQD, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->tmp_vreg, 0);
+          libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPEQD, i_micro_kernel_config->vector_name,
+                                                         i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->dropout_vreg_avxmask, i_micro_kernel_config->dropout_vreg_tmp0, 0);
         } else {
-          libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-            i_micro_kernel_config->vmove_instruction_in,
-            i_gp_reg_mapping->gp_reg_relumask,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (im * l_vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
-            i_micro_kernel_config->vector_name,
-            i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
+          libxsmm_x86_instruction_unified_vec_move( io_generated_code, i_micro_kernel_config->vmove_instruction_in,
+                                                    i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+                                                    i_micro_kernel_config->vector_name, i_micro_kernel_config->dropout_vreg_tmp0,
+                                                    ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
 
           libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
               LIBXSMM_X86_INSTR_VCMPPS,
               'y',
               i_micro_kernel_config->zero_vreg,
-              i_micro_kernel_config->tmp_vreg,
-              i_micro_kernel_config->tmp_vreg,
+              i_micro_kernel_config->dropout_vreg_tmp0,
+              i_micro_kernel_config->dropout_vreg_tmp0,
               0, 0, 0, 14);
         }
 
-        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
-            LIBXSMM_X86_INSTR_VBLENDVPS,
-            'y',
-            cur_vreg,
-            i_micro_kernel_config->zero_vreg,
-            cur_vreg,
-            0, 0, 0, (i_micro_kernel_config->tmp_vreg) << 4);
-#endif
+        /* weight */
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, l_vmul_instr, 'y', cur_vreg, i_micro_kernel_config->dropout_prob_vreg, cur_vreg );
+
+        /* select which value is set to 0 */
+        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VBLENDVPS, 'y',
+                                                                cur_vreg, i_micro_kernel_config->zero_vreg, cur_vreg, 0, 0, 0, (i_micro_kernel_config->dropout_vreg_tmp0) << 4);
       } else {
         if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) > 0 ) {
           libxsmm_x86_instruction_mask_move_mem( io_generated_code, l_mask_ld_instr, i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_X86_GP_REG_UNDEF,  0, (im * l_vlen + in * i_mateltwise_desc->ldi)/8,  cur_mask_reg );

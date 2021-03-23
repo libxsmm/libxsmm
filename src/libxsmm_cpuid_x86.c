@@ -73,7 +73,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
       int feature_cpu = LIBXSMM_X86_GENERIC, feature_os = LIBXSMM_X86_GENERIC, has_context = 0;
       unsigned int maxleaf = eax;
 # if defined(__linux__)
-      if (0 == libxsmm_se) {
+      if (0 == libxsmm_se && LIBXSMM_TARGET_ARCH_UNKNOWN == result) {
         FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
         if (NULL != selinux) {
           if (1 == fread(&libxsmm_se, 1/*sizeof(char)*/, 1/*count*/, selinux)) {
