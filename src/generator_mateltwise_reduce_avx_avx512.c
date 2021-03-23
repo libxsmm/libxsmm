@@ -4678,6 +4678,8 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
 #endif
+  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
+
   if ( 0 == env_max_m_unroll ) {
   } else {
     max_m_unrolling = atoi(env_max_m_unroll);

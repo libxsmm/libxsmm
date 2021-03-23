@@ -161,6 +161,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
   libxsmm_jump_label_tracker l_jump_label_tracker;
   libxsmm_jump_label_tracker* const p_jump_label_tracker = &l_jump_label_tracker;
 #endif
+  libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
 
   /* Configure the register mapping for this eltwise kernel */
   i_gp_reg_mapping->gp_reg_in     = LIBXSMM_X86_GP_REG_R8;
