@@ -10,9 +10,7 @@
 ******************************************************************************/
 
 #include "generator_mateltwise_sse_avx_avx512.h"
-#include "generator_mateltwise_transform_sse.h"
-#include "generator_mateltwise_transform_avx.h"
-#include "generator_mateltwise_transform_avx512.h"
+#include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_relu_avx_avx512.h"
 #include "generator_mateltwise_dropout_avx_avx512.h"
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
@@ -659,17 +657,7 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
     } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_RELU) {
       libxsmm_generator_relu_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
     } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TRANSFORM ) {
-      if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) {
-        libxsmm_generator_transform_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-      } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE) ) {
-        libxsmm_generator_transform_avx_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-      } else if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch < LIBXSMM_X86_AVX) ) {
-        libxsmm_generator_transform_sse_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-      } else {
-        /* This should not happen  */
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-        return;
-      }
+      libxsmm_generator_transform_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc, 0 );
     } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_DROPOUT ) {
       libxsmm_generator_dropout_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
     } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
@@ -690,6 +678,12 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
         }
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
         libxsmm_generator_replicate_col_var_avx_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+      } else if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI)     ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT)    ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT)    ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNIT)    ||
+                  (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD)    ) {
+        libxsmm_generator_transform_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc, 1 );
       } else {
         libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
       }
@@ -704,7 +698,7 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
     }
   } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE) ) {
     if ( i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TRANSFORM ) {
-      libxsmm_generator_transform_avx_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+      libxsmm_generator_transform_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc, 0 );
     } else  {
       /* This should not happen  */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
@@ -712,7 +706,7 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
     }
   } else if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch < LIBXSMM_X86_AVX) ) {
     if ( i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TRANSFORM ) {
-      libxsmm_generator_transform_sse_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
+      libxsmm_generator_transform_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc, 0 );
     } else  {
       /* This should not happen  */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );

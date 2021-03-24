@@ -60,6 +60,7 @@
 #include "../src/generator_mateltwise_sse_avx_avx512.c"
 #include "../src/generator_mateltwise_transform_avx.c"
 #include "../src/generator_mateltwise_transform_avx512.c"
+#include "../src/generator_mateltwise_transform_common.c"
 #include "../src/generator_mateltwise_transform_common_x86.c"
 #include "../src/generator_mateltwise_transform_sse.c"
 #include "../src/generator_mateltwise_unary_binary_avx_avx512.c"

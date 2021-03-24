@@ -365,22 +365,35 @@ void libxsmm_generator_transform_avx_microkernel( libxsmm_generated_code*       
                                                   libxsmm_loop_label_tracker*                    io_loop_label_tracker,
                                                   libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
                                                   const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-                                                  const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
+                                                  const libxsmm_meltw_descriptor*                i_mateltwise_desc,
+                                                  const unsigned char                            i_called_from_unary ) {
   unsigned int l_gp_reg_in  = LIBXSMM_X86_GP_REG_R8;
   unsigned int l_gp_reg_out = LIBXSMM_X86_GP_REG_R9;
   unsigned int l_gp_reg_mloop = LIBXSMM_X86_GP_REG_RAX;
   unsigned int l_gp_reg_nloop = LIBXSMM_X86_GP_REG_RDX;
 
   /* load pointers from struct */
-  libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
-                                   i_gp_reg_mapping->gp_reg_param_struct,
-                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-                                   l_gp_reg_in, 0 );
+  if ( i_called_from_unary != 0 ) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
+                                     i_gp_reg_mapping->gp_reg_param_struct,
+                                     LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                     l_gp_reg_in, 0 );
 
-  libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
-                                   i_gp_reg_mapping->gp_reg_param_struct,
-                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 8,
-                                   l_gp_reg_out, 0 );
+    libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
+                                     i_gp_reg_mapping->gp_reg_param_struct,
+                                     LIBXSMM_X86_GP_REG_UNDEF, 0, 24,
+                                     l_gp_reg_out, 0 );
+  } else {
+    libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
+                                     i_gp_reg_mapping->gp_reg_param_struct,
+                                     LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                     l_gp_reg_in, 0 );
+
+    libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
+                                     i_gp_reg_mapping->gp_reg_param_struct,
+                                     LIBXSMM_X86_GP_REG_UNDEF, 0, 8,
+                                     l_gp_reg_out, 0 );
+  }
 
   /* check leading dimnesions and sizes */
   if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT) > 0) ||
