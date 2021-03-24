@@ -390,6 +390,7 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node) {
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ||
+         is_unary_opcode_transform_kernel(node->info.u_op.type) ||
          is_unary_opcode_reduce_kernel(node->info.u_op.type) ) {
       result = 1;
     }

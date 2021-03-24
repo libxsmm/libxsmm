@@ -98,6 +98,9 @@ LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_matrix_eqn_
   if ((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
     result = 0;
   }
+  if (is_unary_opcode_transform_kernel(cur_node->info.u_op.type) > 0) {
+    result = 0;
+  }
   return result;
 }
 
@@ -643,6 +646,19 @@ int is_unary_opcode_reduce_kernel (unsigned int opcode) {
 }
 
 LIBXSMM_API_INTERN
+int is_unary_opcode_transform_kernel (unsigned int opcode) {
+  int result = 0;
+  if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNIT) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD)) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
 int is_unary_opcode_reduce_to_scalar (unsigned int opcode) {
   int result = 0;
   if (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD) {
@@ -680,6 +696,10 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
       cur_node->tmp.m = 1;
       cur_node->tmp.n = 1;
       cur_node->tmp.ld = 1;
+    } else if ( is_unary_opcode_transform_kernel(cur_node->info.u_op.type) > 0 ) {
+      cur_node->tmp.m = cur_node->le->tmp.n;
+      cur_node->tmp.n = cur_node->le->tmp.m;
+      cur_node->tmp.ld = cur_node->le->tmp.n;
     } else {
       cur_node->tmp.m = cur_node->le->tmp.m;
       cur_node->tmp.n = cur_node->le->tmp.n;
