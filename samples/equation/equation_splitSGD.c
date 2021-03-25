@@ -77,11 +77,15 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_param eqn_param;
   libxsmm_matrix_arg arg_array[4];
   libxsmm_matdiff_info norms_out;
-  int i, j;
+  int i, j, it = 0;
+  unsigned long long l_start, l_end;
+  double l_total = 0, l_total2 = 0;
+  int iters = 100;
 
   if ( argc > 1 ) M = atoi(argv[1]);
   if ( argc > 2 ) N = atoi(argv[2]);
   if ( argc > 3 ) ld = atoi(argv[3]);
+  if ( argc > 4 ) iters = atoi(argv[4]);
 
   wt = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
   wt_lo = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
@@ -152,24 +156,34 @@ int main( int argc, char* argv[] ) {
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-#if 0
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < ld; ++j ) {
-      if (eqn_out_lo[(i*ld)+j] != out_lo[(i*ld)+j] ) {
-        correct = 0;
-      }
-      if (eqn_out_hi[(i*ld)+j] != out_hi[(i*ld)+j] ) {
-        correct = 0;
-      }
-    }
+  reference_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
+  l_start = libxsmm_timer_tick();
+  for (it = 0; it < iters; it++) {
+    reference_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
   }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
 
-  if (correct == 1) {
-    printf("CORRECT !!!\n");
-  } else {
-    printf("ERROR !!!\n");
+  func0(&eqn_param);
+  l_start = libxsmm_timer_tick();
+  for (it = 0; it < iters; it++) {
+    func0(&eqn_param);
   }
-#endif
+  l_end = libxsmm_timer_tick();
+  l_total2 = libxsmm_timer_duration(l_start, l_end);
+  printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
+
+  printf("Speedup is %.5g\n", l_total/l_total2);
+
+  libxsmm_free(wt);
+  libxsmm_free(wt_lo);
+  libxsmm_free(wt_hi);
+  libxsmm_free(eqn_wt_lo);
+  libxsmm_free(eqn_wt_hi);
+  libxsmm_free(bf16_dwt);
+  libxsmm_free(f32_ref_out);
+  libxsmm_free(f32_eqn_out);
 
   return 0;
 }
