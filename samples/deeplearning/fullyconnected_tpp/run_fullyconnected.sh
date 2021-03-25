@@ -17,7 +17,7 @@ else # check
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1; fi
 fi
 
-if [ $# -ne 9 ]
+if [ $# -ne 8 ]
 then
   echo "Usage: $(basename $0) bin=(f32, bf16) iters MB type=(A, F, B, U, M) fuse=(0 (None), 1 (Bias), 2 (ReLU), 4 (Bias+ReLU)) bn bc bk"
   BIN=f32
@@ -29,14 +29,14 @@ then
   BC=32
   BK=32
 else
-  BIN=$2
-  ITERS=$3
-  MB=$4
-  TYPE=$5
-  FUSE=$6
-  BN=$7
-  BC=$8
-  BK=$9
+  BIN=$1
+  ITERS=$2
+  MB=$3
+  TYPE=$4
+  FUSE=$5
+  BN=$6
+  BC=$7
+  BK=$8
 fi
 
 if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ]; then

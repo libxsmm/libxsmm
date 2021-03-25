@@ -99,15 +99,15 @@ typedef struct my_fc_bwd_config {
   libxsmm_bmmfunction_reducebatch_strd gemm_upd3;
   libxsmm_meltwfunction_unary     bwd_cvtfp32bf16_kernel;
   libxsmm_meltwfunction_unary     upd_cvtfp32bf16_kernel;
-  libxsmm_meltwfunction_unary            bwd_relu_kernel;
-  libxsmm_meltwfunction_unary            bwd_zero_kernel;
-  libxsmm_meltwfunction_unary            upd_zero_kernel;
-  libxsmm_meltwfunction_unary           delbias_reduce_kernel;
-  libxsmm_meltwfunction_transform       vnni_to_vnniT_kernel;
-  libxsmm_meltwfunction_transform       norm_to_normT_kernel;
-  libxsmm_meltwfunction_transform       norm_to_vnni_kernel;
-  libxsmm_meltwfunction_transform       upd_norm_to_vnni_kernel;
-  libxsmm_meltwfunction_transform       norm_to_vnni_kernel_wt;
+  libxsmm_meltwfunction_unary     bwd_relu_kernel;
+  libxsmm_meltwfunction_unary     bwd_zero_kernel;
+  libxsmm_meltwfunction_unary     upd_zero_kernel;
+  libxsmm_meltwfunction_unary     delbias_reduce_kernel;
+  libxsmm_meltwfunction_unary     vnni_to_vnniT_kernel;
+  libxsmm_meltwfunction_unary     norm_to_normT_kernel;
+  libxsmm_meltwfunction_unary     norm_to_vnni_kernel;
+  libxsmm_meltwfunction_unary     upd_norm_to_vnni_kernel;
+  libxsmm_meltwfunction_unary     norm_to_vnni_kernel_wt;
 } my_fc_bwd_config;
 
 my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
@@ -279,7 +279,6 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   size_t size_upd_scratch;
   libxsmm_blasint bbk;
   libxsmm_blasint bbc;
-  libxsmm_meltw_transform_flags trans_flags;
   libxsmm_blasint ldaT = bc;
   libxsmm_blasint ldb_orig= bc;
 
@@ -424,8 +423,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   /* JITing the tranpose kernel */
-  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_VNNI_TO_VNNIT;
-  res.vnni_to_vnniT_kernel = libxsmm_dispatch_meltw_transform(bk, bc, &lda, &ldaT, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  res.vnni_to_vnniT_kernel = libxsmm_dispatch_meltw_unary(bk, bc, &lda, &ldaT, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT);
   if ( res.vnni_to_vnniT_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP vnni_to_vnniT_kernel failed. Bailing...!\n");
     exit(-1);
@@ -472,29 +470,25 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   /* JITing the tranpose kernels */
-  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI;
-  res.norm_to_vnni_kernel = libxsmm_dispatch_meltw_transform(bk, bn, &lda, &lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  res.norm_to_vnni_kernel = libxsmm_dispatch_meltw_unary(bk, bn, &lda, &lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI);
   if ( res.norm_to_vnni_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP norm_to_vnni_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI;
-  res.upd_norm_to_vnni_kernel = libxsmm_dispatch_meltw_transform(bk, bc, &lda, &lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  res.upd_norm_to_vnni_kernel = libxsmm_dispatch_meltw_unary(bk, bc, &lda, &lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI);
   if ( res.upd_norm_to_vnni_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP upd_norm_to_vnni_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI;
-  res.norm_to_vnni_kernel_wt = libxsmm_dispatch_meltw_transform(bbk, bbc, &ldc, &ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  res.norm_to_vnni_kernel_wt = libxsmm_dispatch_meltw_unary(bbk, bbc, &ldc, &ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI);
   if ( res.norm_to_vnni_kernel_wt == NULL ) {
     fprintf( stderr, "JIT for TPP norm_to_vnni_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
-  res.norm_to_normT_kernel = libxsmm_dispatch_meltw_transform(bc, bn, &ldb_orig, &ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, trans_flags);
+  res.norm_to_normT_kernel = libxsmm_dispatch_meltw_unary(bc, bn, &ldb_orig, &ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
   if ( res.norm_to_normT_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP norm_to_normT_kernel failed. Bailing...!\n");
     exit(-1);
@@ -723,7 +717,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
   const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
   libxsmm_blasint mb1ofm1 = 0, mb1 = 0, ofm1 = 0, ofm2 = 0;
   libxsmm_blasint performed_doutput_transpose = 0;
-  libxsmm_meltw_transform_param trans_param;
+  libxsmm_meltw_unary_param trans_param;
 
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
@@ -782,8 +776,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
 
       /* If in UPD pass, also perform transpose of doutput  */
       if ( (pass & MY_PASS_BWD_W) == MY_PASS_BWD_W ) {
-        trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk);
-        trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb);
+        trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk);
+        trans_param.out.primary = &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb);
         cfg.norm_to_vnni_kernel(&trans_param);
       }
     }
@@ -864,8 +858,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
     for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
       ofm1 = ifm1ofm1 / nBlocksIFm;
       ifm1 = ifm1ofm1 % nBlocksIFm;
-      trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
-      trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb);
+      trans_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, filter,  ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+      trans_param.out.primary = &LIBXSMM_VLA_ACCESS(5, filter_tr, ifm1, ofm1, 0, 0, 0, nBlocksOFm, bk_lp, bc, lpb);
       cfg.vnni_to_vnniT_kernel(&trans_param);
     }
 
@@ -1011,8 +1005,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
     for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
       mb1 = mb1ifm1%nBlocksMB;
       ifm1 = mb1ifm1/nBlocksMB;
-      trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, input, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc);
-      trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, mb1, 0, 0, nBlocksMB, bc, bn);
+      trans_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, input, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc);
+      trans_param.out.primary = &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, mb1, 0, 0, nBlocksMB, bc, bn);
       cfg.norm_to_normT_kernel(&trans_param);
     }
 
@@ -1020,8 +1014,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
       for (mb1ofm1 = tr_out_thr_begin; mb1ofm1 < tr_out_thr_end; mb1ofm1++) {
         mb1 = mb1ofm1%nBlocksMB;
         ofm1 = mb1ofm1/nBlocksMB;
-        trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk);
-        trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb);
+        trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1, 0, 0, nBlocksOFm, bn, bk);
+        trans_param.out.primary = &LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, mb1, 0, 0, 0, nBlocksMB, bn_lp, bk, lpb);
         cfg.norm_to_vnni_kernel(&trans_param);
       }
     }
@@ -1035,8 +1029,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
         for (ofm1 = my_M_start; ofm1 < my_M_end; ++ofm1) {
           for (ifm1 = my_N_start; ifm1 < my_N_end; ++ifm1) {
             cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), _tmp, &blocks);
-            trans_param.in_ptr  = _tmp;
-            trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+            trans_param.in.primary  = _tmp;
+            trans_param.out.primary = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
             cfg.upd_norm_to_vnni_kernel(&trans_param);
           }
         }
@@ -1055,8 +1049,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
                 LIBXSMM_ALIGNED(libxsmm_bfloat16 tmp_buf[bc][bk], 64);
                 eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
                 eltwise_params.out.primary = tmp_buf;
-                trans_param.in_ptr  = tmp_buf;
-                trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
+                trans_param.in.primary  = tmp_buf;
+                trans_param.out.primary = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
                 eltwise_kernel2(&eltwise_params);
                 cfg.norm_to_vnni_kernel_wt(&trans_param);
               }
@@ -1072,8 +1066,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
           ifm1 = ((ifm1ofm1 % Cck_work) % Cc_work) / ifm_subtasks;
           ifm2 = ((ifm1ofm1 % Cck_work) % Cc_work) % ifm_subtasks;
           cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(5, doutput_tr, ofm1, 0, 0, ofm2*bbk, 0, nBlocksMB, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, input_tr, ifm1, 0, ifm2*bbc, 0, nBlocksMB, bc, bn), _tmp, &blocks);
-          trans_param.in_ptr  = _tmp;
-          trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
+          trans_param.in.primary  = _tmp;
+          trans_param.out.primary = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
           cfg.upd_norm_to_vnni_kernel(&trans_param);
         }
       } else {
@@ -1094,8 +1088,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
               LIBXSMM_ALIGNED(libxsmm_bfloat16 tmp_buf[bc][bk], 64);
               eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, dfilter_f32, ofm1, ifm1, ifm2*bbc, ofm2*bbk, nBlocksIFm, bc, bk);
               eltwise_params.out.primary = tmp_buf;
-              trans_param.in_ptr  = tmp_buf;
-              trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
+              trans_param.in.primary  = tmp_buf;
+              trans_param.out.primary = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, (ifm2*bbc)/lpb, ofm2*bbk, 0, nBlocksIFm, bc_lp, bk, lpb);
               eltwise_kernel2(&eltwise_params);
               cfg.norm_to_vnni_kernel_wt(&trans_param);
             }
