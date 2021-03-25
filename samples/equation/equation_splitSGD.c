@@ -14,6 +14,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <immintrin.h>
+#include "../../include/libxsmm_intrinsics_x86.h"
+
+#define ALIGNDOWN(N, A) ((N) & ~((A)-1))
 
 #define EPS 1.19209290e-03F
 
@@ -58,6 +62,54 @@ void reference_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
     }
   }
 }
+
+#if defined(__AVX512F__)
+inline __m512 convert_split_bf16_to_fp32(const __m256i src_hi, const __m256i src_lo) {
+  __m512i y1 = _mm512_cvtepu16_epi32(src_hi);
+  __m512i y2 = _mm512_cvtepu16_epi32(src_lo);
+  return _mm512_castsi512_ps(_mm512_add_epi32(_mm512_bslli_epi128(y1, 2), y2));
+}
+
+inline __m512 convert_bf16_to_fp32(const __m256i src) {
+  __m512i y = _mm512_cvtepu16_epi32(src);
+  return _mm512_castsi512_ps(_mm512_bslli_epi128(y, 2));
+}
+
+inline __m256i  convert_fp32_to_bf16(const __m512 src) {
+  __m512i y = _mm512_bsrli_epi128(_mm512_castps_si512(src), 2);
+  return _mm512_cvtepi32_epi16(y);
+}
+
+inline void iadd_split_bf16(libxsmm_bfloat16 *inout_hi, libxsmm_bfloat16 *inout_lo, libxsmm_bfloat16 *in, int len, float alpha) {
+  __m512 vAlpha = _mm512_set1_ps(alpha);
+  int state_mask = ((1 << 16) - 1);
+  __m512i vMask = _mm512_set1_epi32(state_mask);
+  int i = 0;
+  for(; i < len - 15; i += 16) {
+    __m512 y1 = convert_split_bf16_to_fp32(_mm256_loadu_si256((__m256i*)(inout_hi+i)), _mm256_loadu_si256((__m256i*)(inout_lo+i)));
+    __m512 y2 = convert_bf16_to_fp32(_mm256_loadu_si256((__m256i*)(in+i)));
+    y1 = _mm512_fmadd_ps(vAlpha, y2, y1);
+    _mm256_storeu_si256((__m256i*)(inout_hi+i), convert_fp32_to_bf16(y1));
+    _mm256_storeu_si256((__m256i*)(inout_lo+i), _mm512_cvtepi32_epi16(_mm512_and_si512(_mm512_castps_si512(y1), vMask)));
+  }
+  if(i < len) {
+    int rem = len - i;
+    __mmask16 mask = (1 << rem) - 1;
+    __m512 y1 = convert_split_bf16_to_fp32(_mm256_maskz_loadu_epi16(mask, inout_hi+i), _mm256_maskz_loadu_epi16(mask, inout_lo+i));
+    __m512 y2 = convert_bf16_to_fp32(_mm256_maskz_loadu_epi16(mask, in+i));
+    y1 = _mm512_fmadd_ps(vAlpha, y2, y1);
+    _mm256_mask_storeu_epi16(inout_hi+i, mask, convert_fp32_to_bf16(y1));
+    _mm256_mask_storeu_epi16(inout_lo+i, mask, _mm512_cvtepi32_epi16(_mm512_and_si512(_mm512_castps_si512(y1), vMask)));
+  }
+}
+
+void vec_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libxsmm_bfloat16 *dwt, float lr, libxsmm_bfloat16 *out_lo, libxsmm_bfloat16 *out_hi) {
+  libxsmm_blasint i, j;
+  for (j = 0; j < N; j++) {
+    iadd_split_bf16(&out_hi[j*ld], &out_lo[j*ld], &dwt[j*ld], M, lr);
+  }
+}
+#endif
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint my_eqn0;
@@ -173,8 +225,19 @@ int main( int argc, char* argv[] ) {
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
   printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
+  printf("Speedup over compiler is %.5g\n", l_total/l_total2);
 
-  printf("Speedup is %.5g\n", l_total/l_total2);
+#if defined(__AVX512F__)
+  vec_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
+  l_start = libxsmm_timer_tick();
+  for (it = 0; it < iters; it++) {
+    vec_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  printf("Vectorized equation time  = %.5g\n", ((double)(l_total)));
+  printf("Speedup over vectorized code is %.5g\n", l_total/l_total2);
+#endif
 
   libxsmm_free(wt);
   libxsmm_free(wt_lo);
