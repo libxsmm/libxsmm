@@ -560,6 +560,53 @@ void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*       
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_mateqn_unpackstore_2d_reg_block( libxsmm_generated_code*          io_generated_code,
+                                                 libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
+                                                 libxsmm_matequation_kernel_config*      i_micro_kernel_config,
+                                                 const libxsmm_meqn_descriptor*          i_meqn_desc,
+                                                 unsigned int                            i_vlen,
+                                                 unsigned int                            i_reg_block_id,
+                                                 unsigned int                            i_m_blocking,
+                                                 unsigned int                            i_n_blocking,
+                                                 unsigned int                            i_mask_last_m_chunk,
+                                                 unsigned int                            i_mask_reg ) {
+  unsigned int in, im;
+  unsigned int cur_vreg;
+  unsigned int i_start_vreg = get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
+
+  if (i_micro_kernel_config->is_head_reduce_to_scalar > 0) return;
+
+  for (in = 0; in < i_n_blocking; in++) {
+    for (im = 0; im < i_m_blocking; im++) {
+      cur_vreg = i_start_vreg + in * i_m_blocking + im;
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          io_generated_code->arch,
+          LIBXSMM_X86_INSTR_VPMOVDW,
+          i_gp_reg_mapping->gp_reg_out,
+          LIBXSMM_X86_GP_REG_UNDEF,
+          0,
+          (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
+          'z',
+          cur_vreg,
+          ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
+          0, 1);
+      libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, 'z', cur_vreg, cur_vreg, 16 );
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          io_generated_code->arch,
+          LIBXSMM_X86_INSTR_VPMOVDW,
+          i_gp_reg_mapping->gp_reg_out,
+          i_gp_reg_mapping->gp_reg_offset,
+          1,
+          (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
+          'z',
+          cur_vreg,
+          ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
+          0, 1);
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_store_reduce_to_scalar_output( libxsmm_generated_code*          io_generated_code,
                                                  libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
                                                  libxsmm_matequation_kernel_config*      i_micro_kernel_config,
@@ -951,8 +998,13 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
   }
 
   /* Store the computed register block to output  */
-  libxsmm_generator_mateqn_store_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-      i_vlen_out, i_eqn->eqn_root->tmp.id, m_unroll_factor, n_unroll_factor, use_m_output_masking, mask_reg_out );
+  if ((i_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (i_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+    libxsmm_generator_mateqn_unpackstore_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
+        i_vlen_out, i_eqn->eqn_root->tmp.id, m_unroll_factor, n_unroll_factor, use_m_output_masking, mask_reg_out );
+  } else {
+    libxsmm_generator_mateqn_store_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
+        i_vlen_out, i_eqn->eqn_root->tmp.id, m_unroll_factor, n_unroll_factor, use_m_output_masking, mask_reg_out );
+  }
 
   /* Footers of microkernel loops */
   if (m_assm_trips > 1) {

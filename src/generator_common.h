@@ -906,6 +906,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_out;
   unsigned int gp_reg_ldo;
   unsigned int gp_reg_relumask;
+  unsigned int gp_reg_offset;
   unsigned int gp_reg_dropoutmask;
   unsigned int gp_reg_dropoutprob;
   unsigned int gp_reg_prngstate;
@@ -1055,7 +1056,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_gp_reg_mapping_struct {
   unsigned int gp_reg_m_loop;
   unsigned int gp_reg_n_loop;
   unsigned int gp_reg_n;
-
+  unsigned int gp_reg_offset;
   unsigned int temp_reg;
   unsigned int temp_reg2;
   libxsmm_mateltwise_gp_reg_mapping gp_reg_mapping_eltwise;
