@@ -100,16 +100,16 @@ typedef struct my_fc_bwd_config {
   libxsmm_bsmmfunction_reducebatch_strd gemm_upd;
   libxsmm_bsmmfunction_reducebatch_strd gemm_upd2;
   libxsmm_bmmfunction_reducebatch_strd gemm_upd3;
-  libxsmm_meltwfunction_unary     bwd_cvtfp32bf16_kernel;
-  libxsmm_meltwfunction_unary     upd_cvtfp32bf16_kernel;
-  libxsmm_meltwfunction_unary     bwd_relu_kernel;
-  libxsmm_meltwfunction_unary     bwd_zero_kernel;
-  libxsmm_meltwfunction_unary     upd_zero_kernel;
-  libxsmm_meltwfunction_unary     delbias_reduce_kernel;
-  libxsmm_meltwfunction_unary     vnni_to_vnniT_kernel;
-  libxsmm_meltwfunction_unary     norm_to_normT_kernel;
-  libxsmm_meltwfunction_unary     norm_to_vnni_kernel;
-  libxsmm_meltwfunction_unary     norm_to_vnni_kernel_wt;
+  libxsmm_meltwfunction_unary bwd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_unary upd_cvtfp32bf16_kernel;
+  libxsmm_meltwfunction_unary bwd_relu_kernel;
+  libxsmm_meltwfunction_unary bwd_zero_kernel;
+  libxsmm_meltwfunction_unary upd_zero_kernel;
+  libxsmm_meltwfunction_unary delbias_reduce_kernel;
+  libxsmm_meltwfunction_unary vnni_to_vnniT_kernel;
+  libxsmm_meltwfunction_unary norm_to_normT_kernel;
+  libxsmm_meltwfunction_unary norm_to_vnni_kernel;
+  libxsmm_meltwfunction_unary norm_to_vnni_kernel_wt;
 } my_fc_bwd_config;
 
 my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,

@@ -80,7 +80,7 @@ typedef struct my_fc_bwd_config {
   libxsmm_smmfunction_reducebatch_strd gemm_bwd2;
   libxsmm_smmfunction_reducebatch_strd gemm_upd;
   libxsmm_smmfunction_reducebatch_strd gemm_upd2;
-  libxsmm_meltwfunction_unary     norm_to_normT_kernel;
+  libxsmm_meltwfunction_unary norm_to_normT_kernel;
 } my_fc_bwd_config;
 
 my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,

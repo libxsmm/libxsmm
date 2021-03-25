@@ -13,9 +13,6 @@ BLAS = 0
 OMP = 1
 SYM = 1
 
-# example code requires (currently) specific target flags
-BF16 = 1
-
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
@@ -51,8 +48,6 @@ MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basena
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/layer_example_f32  $(OUTDIR)/layer_example_fully_tpp_f32  $(OUTDIR)/layer_example_bf16_amx $(OUTDIR)/layer_example_bf16
 
-ifneq (0,$(BF16))
-
 .PHONY: all
 all: $(XFILES)
 
@@ -76,12 +71,6 @@ $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(
 
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
-
-else
-$(info Example "$(OUTNAME)" requires Bf16 compiler support!)
-.PHONY: all
-.PHONY: compile
-endif
 
 .PHONY: clean
 clean:

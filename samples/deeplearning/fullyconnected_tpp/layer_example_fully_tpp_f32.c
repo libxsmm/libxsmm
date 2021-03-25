@@ -53,11 +53,9 @@ typedef struct my_fc_fwd_config {
   libxsmm_barrier* barrier;
   libxsmm_smmfunction_reducebatch_strd gemm_fwd;
   libxsmm_smmfunction_reducebatch_strd gemm_fwd2;
-
-  /* Eltwise TPPs  */
-  libxsmm_meltwfunction_unary            fwd_zero_kernel;
-  libxsmm_meltwfunction_unary            fwd_relu_kernel;
-  libxsmm_meltwfunction_unary            fwd_colbcast_copy_kernel;
+  libxsmm_meltwfunction_unary fwd_zero_kernel;
+  libxsmm_meltwfunction_unary fwd_relu_kernel;
+  libxsmm_meltwfunction_unary fwd_colbcast_copy_kernel;
 } my_fc_fwd_config;
 
 typedef struct my_fc_bwd_config {
@@ -85,13 +83,11 @@ typedef struct my_fc_bwd_config {
   libxsmm_smmfunction_reducebatch_strd gemm_bwd2;
   libxsmm_smmfunction_reducebatch_strd gemm_upd;
   libxsmm_smmfunction_reducebatch_strd gemm_upd2;
-
-  /* Eltwise TPPs  */
-  libxsmm_meltwfunction_transform       tr_kernel;
-  libxsmm_meltwfunction_unary           bwd_relu_kernel;
-  libxsmm_meltwfunction_unary           bwd_zero_kernel;
-  libxsmm_meltwfunction_unary           upd_zero_kernel;
-  libxsmm_meltwfunction_unary           delbias_reduce_kernel;
+  libxsmm_meltwfunction_unary norm_to_normT_kernel;
+  libxsmm_meltwfunction_unary bwd_relu_kernel;
+  libxsmm_meltwfunction_unary bwd_zero_kernel;
+  libxsmm_meltwfunction_unary upd_zero_kernel;
+  libxsmm_meltwfunction_unary delbias_reduce_kernel;
 } my_fc_bwd_config;
 
 my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
@@ -182,13 +178,9 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
                                  libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
   my_fc_bwd_config res;
-  const libxsmm_trans_descriptor* tr_desc = 0;
-  libxsmm_descriptor_blob blob;
   libxsmm_blasint lda = bc;
   libxsmm_blasint ldb = bk;
   libxsmm_blasint ldc = bc;
-  libxsmm_blasint ld_wt = bk;
-  libxsmm_blasint ld_wtT = bc;
   libxsmm_blasint ld_zero_bwd = bc*bn;
   libxsmm_blasint ld_zero_upd = bk;
   libxsmm_blasint ld_relu_bwd = bk;
@@ -200,6 +192,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   int updflags = LIBXSMM_GEMM_FLAGS( 'N', 'T' );
   libxsmm_blasint updM;
   libxsmm_blasint updN;
+  libxsmm_blasint ldaT = bk;
 
   /* setting up some handle values */
   res.N = N;
@@ -269,8 +262,8 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     exit(-1);
   }
 
-  res.tr_kernel = libxsmm_dispatch_meltw_transform(bk, bc, &ld_wt, &ld_wtT, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT);
-  if ( res.tr_kernel == NULL ) {
+  res.norm_to_normT_kernel = libxsmm_dispatch_meltw_unary(bk, bc, &ldaT, &lda, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+  if ( res.norm_to_normT_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP norm_to_normT_kernel failed. Bailing...!\n");
     exit(-1);
   }
@@ -538,8 +531,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
 
   LIBXSMM_VLA_DECL(2,         float,    dbias, dbias_ptr,                     cfg.bk);
   LIBXSMM_VLA_DECL(4, unsigned char, relubitmask,  relu_ptr, nBlocksOFm, cfg.bn, cfg.bk/8);
-  libxsmm_meltw_unary_param       eltwise_params;
-  libxsmm_meltw_transform_param trans_param;
+  libxsmm_meltw_unary_param eltwise_params;
+  libxsmm_meltw_unary_param trans_param;
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
@@ -618,9 +611,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
     for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
       ofm1 = ifm1ofm1 / nBlocksIFm;
       ifm1 = ifm1ofm1 % nBlocksIFm;
-      trans_param.in_ptr  = &LIBXSMM_VLA_ACCESS(4,    filter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
-      trans_param.out_ptr = &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc);
-      cfg.tr_kernel(&trans_param);
+      trans_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4,    filter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+      trans_param.out.primary = &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc);
+      cfg.norm_to_normT_kernel(&trans_param);
     }
 
     /* wait for transpose to finish */
