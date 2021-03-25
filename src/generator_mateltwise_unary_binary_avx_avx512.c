@@ -344,6 +344,26 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
   /* In this case we don't have to load any data  */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) return;
 
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)) {
+    for (in = 0; in < i_n_blocking; in++) {
+      for (im = 0; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            io_generated_code->arch,
+            LIBXSMM_X86_INSTR_VPMOVZXWD,
+            i_gp_reg_mapping->gp_reg_in,
+            LIBXSMM_X86_GP_REG_UNDEF,
+            0,
+            (im * i_vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+            'z',
+            cur_vreg,
+            ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
+            0, 0);
+      }
+    }
+    return;
+  }
+
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
@@ -466,7 +486,20 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
             0, 1);
       }
     }
-  } else {
+  } else if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)) {
+    for (in = 0; in < i_n_blocking; in++) {
+      for (im = 0; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+            i_micro_kernel_config->vmove_instruction_out,
+            i_gp_reg_mapping->gp_reg_out,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (im * i_vlen + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
+            'z',
+            cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? 1 : 0, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 1 );
+      }
+    }
+  }  else {
     for (in = 0; in < i_n_blocking; in++) {
       for (im = 0; im < i_m_blocking; im++) {
         cur_vreg = i_start_vreg + in * i_m_blocking + im;
@@ -1167,6 +1200,30 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
       binary_op_instr = LIBXSMM_X86_INSTR_VFMADD213PS;
     } break;
     default:;
+  }
+
+  if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK) {
+    for (in = 0; in < i_n_blocking; in++) {
+      for (im = 0; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            io_generated_code->arch,
+            LIBXSMM_X86_INSTR_VPMOVZXWD,
+            i_gp_reg_mapping->gp_reg_in2,
+            LIBXSMM_X86_GP_REG_UNDEF,
+            0,
+            (im * i_vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+            'z',
+            i_micro_kernel_config->tmp_vreg,
+            ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
+            0, 0);
+
+        libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'z', i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg, 16 );
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, 'z', cur_vreg, i_micro_kernel_config->tmp_vreg, cur_vreg );
+      }
+    }
+    return;
   }
 
   for (in = 0; in < i_n_blocking; in++) {
@@ -2084,10 +2141,12 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
 
   /* check datatype */
   if ( ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ||
-         LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )    )
+         LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ||
+         LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) )
        &&
        ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ||
-         LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )    ) ) {
+         LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ||
+         LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ) {
     /* fine */
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
