@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm
+XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm  $(OUTDIR)/equation_splitSGD
 .PHONY: all
 all: $(XFILES)
 
@@ -49,6 +49,9 @@ $(OUTDIR)/equation_simple: $(OUTDIR)/.make $(BLDDIR)/equation_simple-c.o $(LIBDE
 
 $(OUTDIR)/equation_softmax: $(OUTDIR)/.make $(BLDDIR)/equation_softmax-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_softmax-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/equation_splitSGD: $(OUTDIR)/.make $(BLDDIR)/equation_splitSGD-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/equation_splitSGD-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/equation_layernorm: $(OUTDIR)/.make $(BLDDIR)/equation_layernorm-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_layernorm-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
