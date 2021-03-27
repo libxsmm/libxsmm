@@ -381,7 +381,9 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
-  unsigned int in, m, n, m_full_trips, use_m_masking, mask_count, compute_squared_vals_reduce, compute_plain_vals_reduce, reg_n, reg_sum = 30, reg_sum_squared = 31;
+  unsigned int in, im, m, n, m_trips, use_m_masking, mask_count, compute_squared_vals_reduce, compute_plain_vals_reduce;
+  unsigned int start_vreg_sum = 0;
+  unsigned int start_vreg_sum2 = 0;
   unsigned int reduce_instr = 0;
   char  vname_in = i_micro_kernel_config->vector_name;
   char  vname_out = i_micro_kernel_config->vector_name;
@@ -389,7 +391,11 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
   unsigned int vmove_instruction_out = i_micro_kernel_config->vmove_instruction_out;
   unsigned int mask_reg = 0;
   unsigned int vlen = 16;
-  unsigned int available_vregs = 28;
+  unsigned int tmp_vreg = 31;
+  unsigned int max_m_unrolling = 30;
+  unsigned int m_unroll_factor = 30;
+  unsigned int peeled_m_trips = 0;
+  unsigned int m_trips_loop = 0;
 
   if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
     vname_in = 'y';
@@ -438,10 +444,9 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
   }
 
   if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
-    reg_sum = 14;
-    reg_sum_squared = 15;
     vlen = 8;
-    available_vregs = 14;
+    tmp_vreg = 15;
+    max_m_unrolling = 15;
   }
 
   /* Configure the register mapping for this eltwise kernel */
@@ -487,7 +492,6 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
   m                 = i_mateltwise_desc->m;
   n                 = i_mateltwise_desc->n;
   use_m_masking     = ( m % vlen == 0 ) ? 0 : 1;
-  m_full_trips      = m / vlen;
 
   /* Calculate input mask in case we see m_masking */
   if (use_m_masking == 1) {
@@ -495,12 +499,23 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
     if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
       mask_count =  vlen - (m % vlen);
       mask_reg = 1;
-      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_count, LIBXSMM_GEMM_PRECISION_F32);;
+      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_count, LIBXSMM_GEMM_PRECISION_F32);
     } else {
-      mask_reg = 13;
+      mask_reg = 15;
+      tmp_vreg = 14;
       libxsmm_generator_mateltwise_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
-      available_vregs--;
+      max_m_unrolling--;
     }
+  }
+
+  m_trips           = (m + vlen - 1) / vlen;
+  m_unroll_factor   = m_trips;
+  m_trips_loop      = 1;
+  peeled_m_trips    = 0;
+
+  if ( (compute_plain_vals_reduce > 0) && (compute_squared_vals_reduce > 0) ) {
+    max_m_unrolling = max_m_unrolling/2;
+    start_vreg_sum2 = max_m_unrolling;
   }
 
   if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
@@ -509,236 +524,275 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
     }
   }
 
-  if ( m_full_trips >= 1 ) {
-    if (m_full_trips > 1) {
-      /* open m loop */
+  /* In this case we have to generate a loop for m */
+  if (m_unroll_factor > max_m_unrolling) {
+    m_unroll_factor = max_m_unrolling;
+    m_trips_loop = m_trips/m_unroll_factor;
+    peeled_m_trips = m_trips  - m_unroll_factor * m_trips_loop;
+    if ((use_m_masking > 0) && (peeled_m_trips == 0)) {
+      m_trips_loop--;
+      peeled_m_trips = m_trips  - m_unroll_factor * m_trips_loop;
+    }
+  } else {
+    if ((use_m_masking > 0) && (peeled_m_trips == 0)) {
+      m_trips_loop--;
+      peeled_m_trips = m_trips  - m_unroll_factor * m_trips_loop;
+    }
+  }
+
+  if ( m_trips_loop >= 1 ) {
+    if ( m_trips_loop > 1 ) {
       libxsmm_generator_mateltwise_header_m_loop(  io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_m_loop );
     }
-
     /* Initialize accumulators to zero */
-    if ( compute_plain_vals_reduce > 0 ) {
-      if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD) > 0 ) {
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
-                                                 i_micro_kernel_config->vector_name,
-                                                 reg_sum, reg_sum, reg_sum );
-      } else if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX) > 0 ) {
-        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-            vmove_instruction_in,
-            i_gp_reg_mapping->gp_reg_in,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            0,
-            vname_in,
-            reg_sum, 0, 0, 0 );
-        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
-          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', reg_sum, reg_sum );
-        }
-      }
-    }
-
-    if ( compute_squared_vals_reduce > 0 ) {
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
-                                               i_micro_kernel_config->vector_name,
-                                               reg_sum_squared, reg_sum_squared, reg_sum_squared );
-    }
-
-    for (in = 0; in < n; in++) {
-      reg_n = in % available_vregs;
-
-      libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-          vmove_instruction_in,
-          i_gp_reg_mapping->gp_reg_in,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          in * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
-          vname_in,
-          reg_n, 0, 0, 0 );
-      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
-        libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', reg_n, reg_n );
-      }
-
+    for (im = 0; im < m_unroll_factor; im++) {
       if ( compute_plain_vals_reduce > 0 ) {
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                             reduce_instr,
-                                             i_micro_kernel_config->vector_name,
-                                             reg_n, reg_sum, reg_sum );
+        if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD) > 0 ) {
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                   LIBXSMM_X86_INSTR_VPXORD,
+                                                   i_micro_kernel_config->vector_name,
+                                                   start_vreg_sum + im, start_vreg_sum + im, start_vreg_sum + im );
+        } else if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX) > 0 ) {
+          libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+              vmove_instruction_in,
+              i_gp_reg_mapping->gp_reg_in,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              im * vlen * i_micro_kernel_config->datatype_size_in,
+              vname_in,
+              start_vreg_sum + im, 0, 0, 0 );
+          if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+            libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', start_vreg_sum + im, start_vreg_sum + im );
+          }
+        }
       }
 
       if ( compute_squared_vals_reduce > 0 ) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                             LIBXSMM_X86_INSTR_VFMADD231PS,
-                                             i_micro_kernel_config->vector_name,
-                                             reg_n, reg_n, reg_sum_squared );
+                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 i_micro_kernel_config->vector_name,
+                                                 start_vreg_sum2 + im, start_vreg_sum2 + im, start_vreg_sum2 + im );
+      }
+    }
+
+    for (in = 0; in < n; in++) {
+      for (im = 0; im < m_unroll_factor; im++) {
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+            vmove_instruction_in,
+            i_gp_reg_mapping->gp_reg_in,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (im * vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+            vname_in,
+            tmp_vreg, 0, 0, 0 );
+        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', tmp_vreg, tmp_vreg );
+        }
+
+        if ( compute_plain_vals_reduce > 0 ) {
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                               reduce_instr,
+                                               i_micro_kernel_config->vector_name,
+                                               tmp_vreg, start_vreg_sum + im, start_vreg_sum + im );
+        }
+
+        if ( compute_squared_vals_reduce > 0 ) {
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                               LIBXSMM_X86_INSTR_VFMADD231PS,
+                                               i_micro_kernel_config->vector_name,
+                                               tmp_vreg, tmp_vreg, start_vreg_sum2 + im );
+        }
       }
     }
 
     /* Store computed results */
-    if ( compute_plain_vals_reduce > 0 ) {
-      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
-        if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
-          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z',
-              reg_sum, reg_sum,
-              28, 29,
-              2, 3);
-        } else {
-         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', reg_sum, reg_sum );
+    for (im = 0; im < m_unroll_factor; im++) {
+      if ( compute_plain_vals_reduce > 0 ) {
+        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
+          if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
+            libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z',
+                start_vreg_sum + im, start_vreg_sum + im,
+                30, 31,
+                2, 3);
+          } else {
+           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', start_vreg_sum + im, start_vreg_sum + im );
+          }
         }
-      }
-      libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-                                        vmove_instruction_out,
-                                        i_gp_reg_mapping->gp_reg_reduced_elts,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        0,
-                                        vname_out,
-                                        reg_sum, 0, 0, 1 );
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                                          vmove_instruction_out,
+                                          i_gp_reg_mapping->gp_reg_reduced_elts,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          im * vlen * i_micro_kernel_config->datatype_size_out,
+                                          vname_out,
+                                          start_vreg_sum + im, 0, 0, 1 );
 
+      }
+
+      if ( compute_squared_vals_reduce > 0 ) {
+        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
+          if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
+            libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z',
+                start_vreg_sum2 + im, start_vreg_sum2 + im,
+                30, 31,
+                2, 3);
+          } else {
+           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', start_vreg_sum2 + im, start_vreg_sum2 + im );
+          }
+        }
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                                          vmove_instruction_out,
+                                          i_gp_reg_mapping->gp_reg_reduced_elts_squared,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          im * vlen * i_micro_kernel_config->datatype_size_out,
+                                          vname_out,
+                                          start_vreg_sum2 + im, 0, 0, 1 );
+      }
     }
 
-    if ( compute_squared_vals_reduce > 0 ) {
-      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
-        if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
-          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z',
-              reg_sum_squared, reg_sum_squared,
-              28, 29,
-              2, 3);
-        } else {
-         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', reg_sum_squared, reg_sum_squared );
-        }
-      }
-      libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-                                        vmove_instruction_out,
-                                        i_gp_reg_mapping->gp_reg_reduced_elts_squared,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        0,
-                                        vname_out,
-                                        reg_sum_squared, 0, 0, 1 );
-    }
-
-    if ((m_full_trips > 1) || (use_m_masking == 1)) {
+    if (m_trips_loop > 1) {
       /* Adjust input and output pointer */
       libxsmm_x86_instruction_alu_imm(  io_generated_code,
           i_micro_kernel_config->alu_add_instruction,
           i_gp_reg_mapping->gp_reg_in,
-          vlen * i_micro_kernel_config->datatype_size_in);
+          m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_in);
 
       if ( compute_plain_vals_reduce > 0 ) {
         libxsmm_x86_instruction_alu_imm(  io_generated_code,
             i_micro_kernel_config->alu_add_instruction,
             i_gp_reg_mapping->gp_reg_reduced_elts,
-            vlen * i_micro_kernel_config->datatype_size_out);
+            m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_out);
       }
 
       if ( compute_squared_vals_reduce > 0 ) {
         libxsmm_x86_instruction_alu_imm(  io_generated_code,
             i_micro_kernel_config->alu_add_instruction,
             i_gp_reg_mapping->gp_reg_reduced_elts_squared,
-            vlen * i_micro_kernel_config->datatype_size_out);
+            m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_out);
       }
-    }
-
-    if (m_full_trips > 1) {
-      /* close m loop */
-      libxsmm_generator_mateltwise_footer_m_loop(  io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_m_loop, m_full_trips);
+      libxsmm_generator_mateltwise_footer_m_loop(  io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_m_loop, m_trips_loop);
     }
   }
 
-  if (use_m_masking == 1) {
-    /* Initialize accumulators to zero */
-    if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD) > 0 ) {
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
-                                               i_micro_kernel_config->vector_name,
-                                               reg_sum, reg_sum, reg_sum );
-    } else if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX) > 0 ) {
-      libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-          vmove_instruction_in,
+  if (peeled_m_trips > 0) {
+    if (m_trips_loop == 1) {
+      /* Adjust input and output pointer */
+      libxsmm_x86_instruction_alu_imm(  io_generated_code,
+          i_micro_kernel_config->alu_add_instruction,
           i_gp_reg_mapping->gp_reg_in,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          0,
-          vname_in,
-          reg_sum, use_m_masking, mask_reg, 0);
-      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
-        libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', reg_sum, reg_sum );
-      }
-    }
-
-    if ( compute_squared_vals_reduce > 0 ) {
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
-                                               i_micro_kernel_config->vector_name,
-                                               reg_sum_squared, reg_sum_squared, reg_sum_squared );
-    }
-
-    for (in = 0; in < n; in++) {
-      reg_n = in % available_vregs;
-
-      libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-          vmove_instruction_in,
-          i_gp_reg_mapping->gp_reg_in,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          in * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
-          vname_in,
-          reg_n, use_m_masking, mask_reg, 0 );
-
-      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
-        libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', reg_n, reg_n );
-      }
+          m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_in);
 
       if ( compute_plain_vals_reduce > 0 ) {
+        libxsmm_x86_instruction_alu_imm(  io_generated_code,
+            i_micro_kernel_config->alu_add_instruction,
+            i_gp_reg_mapping->gp_reg_reduced_elts,
+            m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_out);
+      }
+
+      if ( compute_squared_vals_reduce > 0 ) {
+        libxsmm_x86_instruction_alu_imm(  io_generated_code,
+            i_micro_kernel_config->alu_add_instruction,
+            i_gp_reg_mapping->gp_reg_reduced_elts_squared,
+            m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_out);
+      }
+    }
+
+    for (im = 0; im < peeled_m_trips; im++) {
+      /* Initialize accumulators to zero */
+      if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD) > 0 ) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                             reduce_instr,
-                                             i_micro_kernel_config->vector_name,
-                                             reg_n, reg_sum, reg_sum );
+                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 i_micro_kernel_config->vector_name,
+                                                 start_vreg_sum + im, start_vreg_sum + im, start_vreg_sum + im );
+      } else if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX) > 0 ) {
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+            vmove_instruction_in,
+            i_gp_reg_mapping->gp_reg_in,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            im * vlen * i_micro_kernel_config->datatype_size_in,
+            vname_in,
+            start_vreg_sum + im, ((im == peeled_m_trips -1) && (use_m_masking > 0)) ? 1 : 0, ((im == peeled_m_trips -1) && (use_m_masking > 0)) ? mask_reg : 0, 0);
+        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', start_vreg_sum + im, start_vreg_sum + im );
+        }
       }
 
       if ( compute_squared_vals_reduce > 0 ) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                             LIBXSMM_X86_INSTR_VFMADD231PS,
-                                             i_micro_kernel_config->vector_name,
-                                             reg_n, reg_n, reg_sum_squared );
+                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 i_micro_kernel_config->vector_name,
+                                                 start_vreg_sum2 + im, start_vreg_sum2 + im, start_vreg_sum2 + im );
+      }
+    }
+
+    for (in = 0; in < n; in++) {
+      for (im = 0; im < peeled_m_trips; im++) {
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+            vmove_instruction_in,
+            i_gp_reg_mapping->gp_reg_in,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (im * vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+            vname_in,
+            tmp_vreg, ((im == peeled_m_trips -1) && (use_m_masking > 0)) ? 1 : 0, ((im == peeled_m_trips -1) && (use_m_masking > 0)) ? mask_reg : 0, 0 );
+        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', tmp_vreg, tmp_vreg );
+        }
+
+        if ( compute_plain_vals_reduce > 0 ) {
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                               reduce_instr,
+                                               i_micro_kernel_config->vector_name,
+                                               tmp_vreg, start_vreg_sum + im, start_vreg_sum + im );
+        }
+
+        if ( compute_squared_vals_reduce > 0 ) {
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                               LIBXSMM_X86_INSTR_VFMADD231PS,
+                                               i_micro_kernel_config->vector_name,
+                                               tmp_vreg, tmp_vreg, start_vreg_sum2 + im );
+        }
       }
     }
 
     /* Store computed results */
-    if ( compute_plain_vals_reduce > 0 ) {
-      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
-        if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
-          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z',
-              reg_sum, reg_sum,
-              28, 29,
-              2, 3);
-        } else {
-         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', reg_sum, reg_sum );
+    for (im = 0; im < peeled_m_trips; im++) {
+      if ( compute_plain_vals_reduce > 0 ) {
+        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
+          if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
+            libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z',
+                start_vreg_sum + im, start_vreg_sum + im,
+                30, 31,
+                2, 3);
+          } else {
+           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', start_vreg_sum + im, start_vreg_sum + im );
+          }
         }
-      }
-      libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-                                        vmove_instruction_out,
-                                        i_gp_reg_mapping->gp_reg_reduced_elts,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        0,
-                                        vname_out,
-                                        reg_sum, use_m_masking, mask_reg, 1 );
-    }
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                                          vmove_instruction_out,
+                                          i_gp_reg_mapping->gp_reg_reduced_elts,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          im * vlen * i_micro_kernel_config->datatype_size_out,
+                                          vname_out,
+                                          start_vreg_sum + im, ((im == peeled_m_trips -1) && (use_m_masking > 0)) ? 1 : 0, ((im == peeled_m_trips -1) && (use_m_masking > 0)) ? mask_reg : 0, 1 );
 
-    if ( compute_squared_vals_reduce > 0 ) {
-      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
-        if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
-          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z',
-              reg_sum_squared, reg_sum_squared,
-              28, 29,
-              2, 3);
-        } else {
-         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', reg_sum_squared, reg_sum_squared );
-        }
       }
 
-      libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-                                        vmove_instruction_out,
-                                        i_gp_reg_mapping->gp_reg_reduced_elts_squared,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        0,
-                                        vname_out,
-                                        reg_sum_squared, use_m_masking, mask_reg, 1 );
+      if ( compute_squared_vals_reduce > 0 ) {
+        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
+          if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
+            libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z',
+                start_vreg_sum2 + im, start_vreg_sum2 + im,
+                30, 31,
+                2, 3);
+          } else {
+           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', start_vreg_sum2 + im, start_vreg_sum2 + im );
+          }
+        }
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                                          vmove_instruction_out,
+                                          i_gp_reg_mapping->gp_reg_reduced_elts_squared,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          im * vlen * i_micro_kernel_config->datatype_size_out,
+                                          vname_out,
+                                          start_vreg_sum2 + im, ((im == peeled_m_trips -1) && (use_m_masking > 0)) ? 1 : 0, ((im == peeled_m_trips -1) && (use_m_masking > 0)) ? mask_reg : 0, 1 );
+      }
     }
   }
 
