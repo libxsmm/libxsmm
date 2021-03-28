@@ -460,19 +460,23 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_sve_struct_move( libxsmm_generated_code*                io_generated_code,
-                                                  const unsigned int                     i_vmove_instr,
-                                                  const unsigned char                    i_gp_reg_addr,
-                                                  const unsigned char                    i_gp_reg_offset,
-                                                  const unsigned char                    i_offset,
-                                                  const unsigned char                    i_vec_reg,
-                                                  const unsigned char                    i_pred_reg ) {
+void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*                io_generated_code,
+                                           const unsigned int                     i_vmove_instr,
+                                           const unsigned char                    i_gp_reg_addr,
+                                           const unsigned char                    i_gp_reg_offset,
+                                           const short                            i_offset,
+                                           const unsigned char                    i_vec_reg,
+                                           const unsigned char                    i_pred_reg ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_sve_struct_move: at least ARM A64FX needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM A64FX needs to be specified as target arch!\n");
     exit(-1);
   }
 
   switch ( i_vmove_instr ) {
+    case LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_STR_P_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR:
@@ -485,7 +489,7 @@ void libxsmm_aarch64_instruction_sve_struct_move( libxsmm_generated_code*       
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF:
        break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_sve_struct_move: unexpected instruction number: %u\n", i_vmove_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: unexpected instruction number: %u\n", i_vmove_instr);
       exit(-1);
   }
 
@@ -500,19 +504,57 @@ void libxsmm_aarch64_instruction_sve_struct_move( libxsmm_generated_code*       
     /* setting Rn */
     code[code_head] |= (unsigned int)((0x1f & i_gp_reg_addr) << 5);
     /* setting pred register */
-    code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
+    if ( (i_vmove_instr & 0x80) == 0x80 ) {
+      code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
+    }
 
     /* load/store with offset register */
     if ( (i_vmove_instr & 0x3) == 0x3 ) {
       /* setting Rm */
       code[code_head] |= (unsigned int)((0x1f & i_gp_reg_offset) << 16);
     }
-    if ( (i_vmove_instr & 0x8) == 0x8 ) {
+    if ( (i_vmove_instr & 0x4) == 0x4 ) {
       if ( (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF) || (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF) ) {
-        code[code_head] |= (unsigned int)((0x3f & i_offset) << 16);
+        unsigned char l_offset = 0;
+        if ( i_offset < 0 ) {
+          fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1RW, LD1RD only positive offsets are allowed!\n");
+          exit(-1);
+        }
+
+        if ( i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF ) {
+          l_offset = (unsigned char)((unsigned int)i_offset >> 2);
+        } else if ( i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF ) {
+          l_offset = (unsigned char)((unsigned int)i_offset >> 3);
+        }
+
+        if ( l_offset > 63 ) {
+          fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1RW, LD1RD offset is out of range!\n");
+          exit(-1);
+        }
+
+        code[code_head] |= (unsigned int)((0x3f & l_offset) << 16);
+      } else if ( (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF) || (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF) ||
+                  (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_STR_P_I_OFF) || (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF)    ) {
+        if ( i_offset < -256 || i_offset > 256 ) {
+          fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for STR/LDR offset is out of range!\n");
+          exit(-1);
+        }
+
+        code[code_head] |= (unsigned int)((0x7 & i_offset) << 10);
+        code[code_head] |= (unsigned int)((0x3f & (i_offset >> 3)) << 16);
       } else {
+        if ( i_offset < -8 || i_offset > 7 ) {
+          fprintf(stderr, "libxsmm_aarch64_instruction_sve_struct_move: for LD1W/D, ST1W/D offset is out of range!\n");
+          exit(-1);
+        }
+
         code[code_head] |= (unsigned int)((0xf & i_offset) << 16);
       }
+    }
+
+    /* we have only 16 P registers in the encoding */
+    if ( (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF) || (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_STR_P_I_OFF) ) {
+       code[code_head] &= (unsigned int)0xffffffef;
     }
 
     /* advance code head */
