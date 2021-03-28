@@ -120,6 +120,49 @@
 #define LIBXSMM_AARCH64_ASIMD_REG_V31                    31
 #define LIBXSMM_AARCH64_ASIMD_REG_UNDEF                 127
 
+/* defining SVE register mappings */
+#define LIBXSMM_AARCH64_SVE_REG_Z0                      0
+#define LIBXSMM_AARCH64_SVE_REG_Z1                      1
+#define LIBXSMM_AARCH64_SVE_REG_Z2                      2
+#define LIBXSMM_AARCH64_SVE_REG_Z3                      3
+#define LIBXSMM_AARCH64_SVE_REG_Z4                      4
+#define LIBXSMM_AARCH64_SVE_REG_Z5                      5
+#define LIBXSMM_AARCH64_SVE_REG_Z6                      6
+#define LIBXSMM_AARCH64_SVE_REG_Z7                      7
+#define LIBXSMM_AARCH64_SVE_REG_Z8                      8
+#define LIBXSMM_AARCH64_SVE_REG_Z9                      9
+#define LIBXSMM_AARCH64_SVE_REG_Z10                    10
+#define LIBXSMM_AARCH64_SVE_REG_Z11                    11
+#define LIBXSMM_AARCH64_SVE_REG_Z12                    12
+#define LIBXSMM_AARCH64_SVE_REG_Z13                    13
+#define LIBXSMM_AARCH64_SVE_REG_Z14                    14
+#define LIBXSMM_AARCH64_SVE_REG_Z15                    15
+#define LIBXSMM_AARCH64_SVE_REG_Z16                    16
+#define LIBXSMM_AARCH64_SVE_REG_Z17                    17
+#define LIBXSMM_AARCH64_SVE_REG_Z18                    18
+#define LIBXSMM_AARCH64_SVE_REG_Z19                    19
+#define LIBXSMM_AARCH64_SVE_REG_Z20                    20
+#define LIBXSMM_AARCH64_SVE_REG_Z21                    21
+#define LIBXSMM_AARCH64_SVE_REG_Z22                    22
+#define LIBXSMM_AARCH64_SVE_REG_Z23                    23
+#define LIBXSMM_AARCH64_SVE_REG_Z24                    24
+#define LIBXSMM_AARCH64_SVE_REG_Z25                    25
+#define LIBXSMM_AARCH64_SVE_REG_Z26                    26
+#define LIBXSMM_AARCH64_SVE_REG_Z27                    27
+#define LIBXSMM_AARCH64_SVE_REG_Z28                    28
+#define LIBXSMM_AARCH64_SVE_REG_Z29                    29
+#define LIBXSMM_AARCH64_SVE_REG_Z30                    30
+#define LIBXSMM_AARCH64_SVE_REG_Z31                    31
+#define LIBXSMM_AARCH64_SVE_REG_P0                      0
+#define LIBXSMM_AARCH64_SVE_REG_P1                      1
+#define LIBXSMM_AARCH64_SVE_REG_P2                      2
+#define LIBXSMM_AARCH64_SVE_REG_P3                      3
+#define LIBXSMM_AARCH64_SVE_REG_P4                      4
+#define LIBXSMM_AARCH64_SVE_REG_P5                      5
+#define LIBXSMM_AARCH64_SVE_REG_P6                      6
+#define LIBXSMM_AARCH64_SVE_REG_P7                      7
+#define LIBXSMM_AARCH64_SVE_REG_UNDEF                 127
+
 /* special instruction */
 #define LIBXSMM_AARCH64_INSTR_UNDEF                    9999
 
@@ -131,7 +174,8 @@
  * 2nd byte
  *   --> from ISA manual
  * 2st byte
- *   7-3: not used
+ *   7: SVE: predication required
+ *   6-3: not used
  *   2:   has immediate
  *   1-0: number of register operands
  */
@@ -183,11 +227,34 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_POST   0x2c800007
 #define LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_PRE    0x2d800007
 #define LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF   0x2c000007
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R         0x0d40c002
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST  0x0dc0c003
 /* define ASIMD compute instructions */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S     0x5f801003
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V     0x0f801003
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V       0x0e20cc03
 #define LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V        0x2e201c03
+
+/* define SVE LD/ST instriction */
+#define LIBXSMM_AARCH64_INSTR_SVE_LDR_Z          0x85804002
+#define LIBXSMM_AARCH64_INSTR_SVE_LDR_P          0x85800002
+#define LIBXSMM_AARCH64_INSTR_SVE_STR_Z          0xe5804002
+#define LIBXSMM_AARCH64_INSTR_SVE_STR_P          0xe5800002
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR        0xa5e04083
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF     0xa5e0a086
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR        0xa5404083
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF     0xa540a086
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR        0xe5e04083
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1D_I_OFF     0xe5e0e086
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR        0xe5404083
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF     0xe540e086
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF    0x8540c086
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF    0x85c0e086
+/* define SVE compute instructions */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V         0x65200083
+#define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03003
+/* define SVE preducate instructions */
+#define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 
 /**
  * shift mode */
@@ -218,6 +285,44 @@ typedef enum libxsmm_aarch64_asimd_tupletype {
   LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S  = 0x2,
   LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D  = 0x3
 } libxsmm_aarch64_asimd_tupletype;
+
+typedef enum libxsmm_aarch64_asimd_structtype {
+  LIBXSMM_AARCH64_ASIMD_SCRUCTTYPE_8B  = 0x0,
+  LIBXSMM_AARCH64_ASIMD_SCRUCTTYPE_16B = 0x1,
+  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_4H  = 0x2,
+  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_8H  = 0x3,
+  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_2S  = 0x4,
+  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_4S  = 0x5,
+  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_1D  = 0x6,
+  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_2D  = 0x7
+} libxsmm_aarch64_asimd_structtype;
+
+typedef enum libxsmm_aarch64_sve_type {
+  LIBXSMM_AARCH64_SVE_TYPE_B = 0x0,
+  LIBXSMM_AARCH64_SVE_TYPE_H = 0x1,
+  LIBXSMM_AARCH64_SVE_TYPE_S = 0x2,
+  LIBXSMM_AARCH64_SVE_TYPE_D = 0x3
+} libxsmm_aarch64_sve_type;
+
+typedef enum libxsmm_aarch64_sve_pattern {
+  LIBXSMM_AARCH64_SVE_PATTERN_POW2   = 0x00,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL1    = 0x01,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL2    = 0x02,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL3    = 0x03,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL4    = 0x04,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL5    = 0x05,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL6    = 0x06,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL7    = 0x07,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL8    = 0x08,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL16   = 0x09,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL32   = 0x0a,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL64   = 0x0b,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL128  = 0x0c,
+  LIBXSMM_AARCH64_SVE_PATTERN_VL256  = 0x0d,
+  LIBXSMM_AARCH64_SVE_PATTERN_MUL4   = 0x1d,
+  LIBXSMM_AARCH64_SVE_PATTERN_MUL3   = 0x1e,
+  LIBXSMM_AARCH64_SVE_PATTERN_ALL    = 0x1f
+} libxsmm_aarch64_sve_pattern;
 
 /**
  * Opens the inline assembly section / jit stream
@@ -260,6 +365,24 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
                                              const libxsmm_aarch64_asimd_width i_asimdwidth );
 
 /**
+ * Generates ldX, stX, etc. instructions for structs
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_vmove_instr actual vmov variant
+ * @param i_gp_reg_addr gp register containing the base address
+ * @param i_gp_reg_offset gp register containing an offset
+ * @param i_vec_reg the simd register
+ * @param i_structtype struct specifier
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*                io_generated_code,
+                                                    const unsigned int                     i_vmove_instr,
+                                                    const unsigned char                    i_gp_reg_addr,
+                                                    const unsigned char                    i_gp_reg_offset,
+                                                    const unsigned char                    i_vec_reg,
+                                                    const libxsmm_aarch64_asimd_structtype i_structtype );
+
+/**
  * Generates ldp, stp, etc. instructions
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
@@ -298,6 +421,64 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
                                                 const unsigned char                   i_index,
                                                 const unsigned char                   i_vec_reg_dst,
                                                 const libxsmm_aarch64_asimd_tupletype i_tupletype );
+
+/**
+ * Generates ldX, stX, etc. instructions for structs
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_vmove_instr actual vmov variant
+ * @param i_gp_reg_addr gp register containing the base address
+ * @param i_gp_reg_offset gp register containing an offset
+ * @param i_offset imm offset
+ * @param i_vec_reg the simd register
+ * @param i_pred_reg pred specifier
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_struct_move( libxsmm_generated_code*                io_generated_code,
+                                                  const unsigned int                     i_vmove_instr,
+                                                  const unsigned char                    i_gp_reg_addr,
+                                                  const unsigned char                    i_gp_reg_offset,
+                                                  const unsigned char                    i_offset,
+                                                  const unsigned char                    i_vec_reg,
+                                                  const unsigned char                    i_pred_reg );
+
+/**
+ * Generates fmla and similar
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_vec_instr actual operation variant
+ * @param i_vec_reg_src_0 first source register
+ * @param i_index index if non-negative this value is the scalar access to src0
+ * @param i_vec_reg_src_1 second source register
+ * @param i_vec_reg_dst destination register
+ * @param i_pred_reg pred register
+ * @param i_type  type
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_generated_code,
+                                              const unsigned int             i_vec_instr,
+                                              const unsigned char            i_vec_reg_src_0,
+                                              const unsigned char            i_vec_reg_src_1,
+                                              const unsigned char            i_index,
+                                              const unsigned char            i_vec_reg_dst,
+                                              const unsigned char            i_pred_reg,
+                                              const libxsmm_aarch64_sve_type i_type );
+
+/**
+ * Generates ptrue and similar
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_pred_instr actual operation variant
+ * @param i_pred_reg pred register
+ * @param i_pattern  type
+ * @param i_type  type
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*           io_generated_code,
+                                               const unsigned int                i_pred_instr,
+                                               const unsigned char               i_pred_reg,
+                                               const libxsmm_aarch64_sve_pattern i_pattern,
+                                               const libxsmm_aarch64_sve_type    i_type );
 
 /**
  * Generates alu memory movements like ldr, str,

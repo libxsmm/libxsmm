@@ -1578,6 +1578,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     {
       target_archid = LIBXSMM_AARCH64_V81;
     }
+    else if (arch == libxsmm_stristr(arch, "a64fx"))
+    {
+      target_archid = LIBXSMM_AARCH64_A64FX;
+    }
 #endif
     else if (arch == libxsmm_stristr(arch, "generic")) {
 #if defined(LIBXSMM_PLATFORM_X86)

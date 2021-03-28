@@ -36,6 +36,7 @@
 #define LIBXSMM_X86_AVX512_SPR   1023
 #define LIBXSMM_X86_ALLFEAT      1999
 #define LIBXSMM_AARCH64_V81      2002
+#define LIBXSMM_AARCH64_A64FX    2100
 #define LIBXSMM_AARCH64_ALLFEAT  2999
 
 /** A zero-initialized structure assumes conservative properties. */
