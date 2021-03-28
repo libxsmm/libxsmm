@@ -166,7 +166,7 @@ void test_asimd_compute( char* test_name, libxsmm_generated_code* mycode, unsign
   dump_code_buffer( mycode, test_name );
 }
 
-void test_sve_struct_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned char has_offset ) {
+void test_sve_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, short offset ) {
   unsigned char b;
   unsigned char o;
   unsigned char v;
@@ -174,12 +174,12 @@ void test_sve_struct_move( char* test_name, libxsmm_generated_code* mycode, unsi
 
   reset_code_buffer( mycode, test_name );
 
-  if (has_offset == 0) {
+  if (offset == 0) {
     for (b = 32; b < 64; ++b ) {
       for (o = 32; o < 64; ++o ) {
         for (v = 0; v < 32; ++v ) {
           for (p = 0; p < 8; ++p ) {
-            libxsmm_aarch64_instruction_sve_struct_move( mycode, instr, b, o, v, 0, p );
+            libxsmm_aarch64_instruction_sve_move( mycode, instr, b, o, 0, v, p );
           }
         }
       }
@@ -188,7 +188,7 @@ void test_sve_struct_move( char* test_name, libxsmm_generated_code* mycode, unsi
     for (b = 32; b < 64; ++b ) {
       for (v = 0; v < 32; ++v ) {
         for (p = 0; p < 8; ++p ) {
-          libxsmm_aarch64_instruction_sve_struct_move( mycode, instr, b, LIBXSMM_AARCH64_GP_REG_UNDEF, v, 0, p );
+          libxsmm_aarch64_instruction_sve_move( mycode, instr, b, LIBXSMM_AARCH64_GP_REG_UNDEF, offset, v, p );
         }
       }
     }
@@ -416,16 +416,20 @@ int main( /*int argc, char* argv[]*/ ) {
 
   mycode.arch = LIBXSMM_AARCH64_A64FX;
   /* testing asimd ldr/str instructions */
-  test_sve_struct_move( "sve_mov_LD1D_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR, 0 );
-  test_sve_struct_move( "sve_mov_LD1D_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF, 1 );
-  test_sve_struct_move( "sve_mov_LD1W_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR, 0 );
-  test_sve_struct_move( "sve_mov_LD1W_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF, 1 );
-  test_sve_struct_move( "sve_mov_ST1D_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR, 0 );
-  test_sve_struct_move( "sve_mov_ST1D_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1D_I_OFF, 1 );
-  test_sve_struct_move( "sve_mov_ST1W_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR, 0 );
-  test_sve_struct_move( "sve_mov_ST1W_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF, 1 );
-  test_sve_struct_move( "sve_mov_LD1RD_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF, 1 );
-  test_sve_struct_move( "sve_mov_LD1RW_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF, 1 );
+  test_sve_move( "sve_mov_LDR_P_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF, 128 );
+  test_sve_move( "sve_mov_LDR_Z_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, 128 );
+  test_sve_move( "sve_mov_STR_P_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_STR_P_I_OFF, 128 );
+  test_sve_move( "sve_mov_STR_Z_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF, 128 );
+  test_sve_move( "sve_mov_LD1D_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR, 0 );
+  test_sve_move( "sve_mov_LD1D_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF, 7 );
+  test_sve_move( "sve_mov_LD1W_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR, 0 );
+  test_sve_move( "sve_mov_LD1W_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF, 7 );
+  test_sve_move( "sve_mov_ST1D_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR, 0 );
+  test_sve_move( "sve_mov_ST1D_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1D_I_OFF, 7 );
+  test_sve_move( "sve_mov_ST1W_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR, 0 );
+  test_sve_move( "sve_mov_ST1W_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF, 7 );
+  test_sve_move( "sve_mov_LD1RD_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF, 64 );
+  test_sve_move( "sve_mov_LD1RW_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF, 64 );
 
   /* test SVE compute insturctions */
   test_sve_compute( "sve_comp_FMLA_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V,   1 );

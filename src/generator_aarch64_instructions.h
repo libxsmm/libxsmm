@@ -161,6 +161,14 @@
 #define LIBXSMM_AARCH64_SVE_REG_P5                      5
 #define LIBXSMM_AARCH64_SVE_REG_P6                      6
 #define LIBXSMM_AARCH64_SVE_REG_P7                      7
+#define LIBXSMM_AARCH64_SVE_REG_P8                      8
+#define LIBXSMM_AARCH64_SVE_REG_P9                      9
+#define LIBXSMM_AARCH64_SVE_REG_P10                    10
+#define LIBXSMM_AARCH64_SVE_REG_P11                    11
+#define LIBXSMM_AARCH64_SVE_REG_P12                    12
+#define LIBXSMM_AARCH64_SVE_REG_P13                    13
+#define LIBXSMM_AARCH64_SVE_REG_P14                    14
+#define LIBXSMM_AARCH64_SVE_REG_P15                    15
 #define LIBXSMM_AARCH64_SVE_REG_UNDEF                 127
 
 /* special instruction */
@@ -236,10 +244,10 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V        0x2e201c03
 
 /* define SVE LD/ST instriction */
-#define LIBXSMM_AARCH64_INSTR_SVE_LDR_Z          0x85804002
-#define LIBXSMM_AARCH64_INSTR_SVE_LDR_P          0x85800002
-#define LIBXSMM_AARCH64_INSTR_SVE_STR_Z          0xe5804002
-#define LIBXSMM_AARCH64_INSTR_SVE_STR_P          0xe5800002
+#define LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF    0x85804006
+#define LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF    0x85800006
+#define LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF    0xe5804006
+#define LIBXSMM_AARCH64_INSTR_SVE_STR_P_I_OFF    0xe5800006
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR        0xa5e04083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF     0xa5e0a086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR        0xa5404083
@@ -434,13 +442,13 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
  * @param i_pred_reg pred specifier
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_sve_struct_move( libxsmm_generated_code*                io_generated_code,
-                                                  const unsigned int                     i_vmove_instr,
-                                                  const unsigned char                    i_gp_reg_addr,
-                                                  const unsigned char                    i_gp_reg_offset,
-                                                  const unsigned char                    i_offset,
-                                                  const unsigned char                    i_vec_reg,
-                                                  const unsigned char                    i_pred_reg );
+void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*                io_generated_code,
+                                           const unsigned int                     i_vmove_instr,
+                                           const unsigned char                    i_gp_reg_addr,
+                                           const unsigned char                    i_gp_reg_offset,
+                                           const short                            i_offset,
+                                           const unsigned char                    i_vec_reg,
+                                           const unsigned char                    i_pred_reg );
 
 /**
  * Generates fmla and similar
