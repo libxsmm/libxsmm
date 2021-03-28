@@ -533,6 +533,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                                               const unsigned char            i_vec_reg_dst,
                                               const unsigned char            i_pred_reg,
                                               const libxsmm_aarch64_sve_type i_type ) {
+  LIBXSMM_UNUSED( i_index );
+
   if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: at least ARM A64FX needs to be specified as target arch!\n");
     exit(-1);
