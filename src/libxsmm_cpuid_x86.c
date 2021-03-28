@@ -268,6 +268,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_AARCH64_V81: {
       target_arch = "aarch64";
     } break;
+    case LIBXSMM_AARCH64_A64FX: {
+      target_arch = "a64fx";
+    } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
     } break;
@@ -300,6 +303,9 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
   if (LIBXSMM_AARCH64_V81 == id) {
     result = 4;
+  }
+  else if (LIBXSMM_AARCH64_A64FX == id) {
+    result = 16;
   }
 #endif
   else { /* scalar */
