@@ -381,7 +381,7 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
-  unsigned int in, _in, in_use, im, m, n, m_trips, use_m_masking, mask_count, compute_squared_vals_reduce, compute_plain_vals_reduce;
+  unsigned int _in, in_use, im, m, n, m_trips, use_m_masking, mask_count, compute_squared_vals_reduce, compute_plain_vals_reduce;
   unsigned int start_vreg_sum = 0;
   unsigned int start_vreg_sum2 = 0;
   unsigned int reduce_instr = 0;
@@ -397,7 +397,6 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
   unsigned int peeled_m_trips = 0;
   unsigned int m_trips_loop = 0;
   unsigned int accs_used = 0;
-  unsigned int split_acc = 0;
   unsigned int split_factor = 0;
   unsigned int n_trips = 0;
   unsigned int n_remainder = 0;
@@ -548,10 +547,8 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
 
   accs_used = m_unroll_factor;
   if (max_m_unrolling/accs_used > 1) {
-    split_acc = 1;
     split_factor = max_m_unrolling/accs_used;
   } else {
-    split_acc = 0;
     split_factor = 1;
   }
 
