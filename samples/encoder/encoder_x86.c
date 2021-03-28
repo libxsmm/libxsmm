@@ -191,7 +191,6 @@ void test_evex_compute_3reg_general( char* test_name, libxsmm_generated_code* my
 
 void test_mask_compute_reg( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned int twoops, unsigned short imm8 ) {
   unsigned int i;
-  unsigned int m;
 
   reset_code_buffer( mycode, test_name );
 
