@@ -75,6 +75,7 @@
     <ClInclude Include="..\src\generator_mateltwise_sse_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_avx.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_avx512.h" />
+    <ClInclude Include="..\src\generator_mateltwise_transform_common.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_common_x86.h" />
     <ClInclude Include="..\src\generator_mateltwise_transform_sse.h" />
     <ClInclude Include="..\src\generator_mateltwise_unary_binary_avx_avx512.h" />
@@ -186,6 +187,7 @@
     <ClCompile Include="..\src\generator_mateltwise_sse_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_avx.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_avx512.c" />
+    <ClCompile Include="..\src\generator_mateltwise_transform_common.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_common_x86.c" />
     <ClCompile Include="..\src\generator_mateltwise_transform_sse.c" />
     <ClCompile Include="..\src\generator_mateltwise_unary_binary_avx_avx512.c" />
@@ -227,6 +229,7 @@
     <ClCompile Include="..\src\generator_transpose_avx_avx512.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm_blocked_gemm.c" />
+    <ClCompile Include="..\src\libxsmm_cpuid_arm.c" />
     <ClCompile Include="..\src\libxsmm_dnn.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_backward.c" />

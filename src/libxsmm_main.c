@@ -257,7 +257,7 @@ LIBXSMM_APIVAR_DEFINE(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR_DEFINE(const char* internal_build_state);
 /** Time stamp (startup time of library). */
 LIBXSMM_APIVAR_DEFINE(libxsmm_timer_tickint internal_timer_start);
-LIBXSMM_APIVAR_DEFINE(libxsmm_cpuid_x86_info internal_cpuid_info);
+LIBXSMM_APIVAR_DEFINE(libxsmm_cpuid_info internal_cpuid_info);
 
 #if defined(_WIN32)
 # define INTERNAL_SINGLETON_HANDLE HANDLE
@@ -685,13 +685,15 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
       char number_format_buffer[32];
       libxsmm_scratch_info scratch_info;
-      libxsmm_cpuid_x86_info info;
+#if defined(LIBXSMM_PLATFORM_X86)
+      libxsmm_cpuid_info info;
       libxsmm_cpuid_x86(&info);
       if ((LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) &&
         0 == internal_cpuid_info.has_context && 0 != info.has_context)
       {
         fprintf(stderr, "\nLIBXSMM: CPU features have been promoted.");
       }
+#endif
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
       }
@@ -1217,10 +1219,12 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           internal_dump(stdout, 1/*urgent*/);
         }
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* mid-timing */
+#if defined(LIBXSMM_PLATFORM_X86)
         libxsmm_cpuid_x86(&internal_cpuid_info);
         if (0 != internal_cpuid_info.constant_tsc && t0 < t1) {
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
+#endif
         register_termination_proc = atexit(internal_finalize);
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* final timing */
         /* set timer-scale and determine start of the "uptime" (shown at termination) */
@@ -1247,7 +1251,12 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           if (EXIT_SUCCESS != register_termination_proc) {
             fprintf(stderr, "LIBXSMM ERROR: failed to register termination procedure!\n");
           }
-          if (0 == libxsmm_timer_scale) {
+          if (0 == libxsmm_timer_scale
+#if defined(LIBXSMM_PLATFORM_X86)
+            && 0 == internal_cpuid_info.constant_tsc
+#endif
+            && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
+          {
             fprintf(stderr, "LIBXSMM WARNING: timer is maybe not cycle-accurate!\n");
           }
         }
@@ -2105,7 +2114,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             generated_code.arch = libxsmm_cpuid();
           }
         }
-
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_mateltwise_kernel, &generated_code, request->descriptor.meltw);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -2142,7 +2150,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             generated_code.arch = libxsmm_cpuid();
           }
         }
-
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_matequation_kernel, &generated_code, request->descriptor.meqn);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)

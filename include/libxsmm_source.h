@@ -102,6 +102,7 @@
 #include "../src/generator_transpose_avx_avx512.c"
 #include "../src/generator_x86_instructions.c"
 #include "../src/libxsmm_blocked_gemm.c"
+#include "../src/libxsmm_cpuid_arm.c"
 #include "../src/libxsmm_cpuid_x86.c"
 #include "../src/libxsmm_dnn.c"
 #include "../src/libxsmm_dnn_convolution.c"

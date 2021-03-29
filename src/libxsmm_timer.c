@@ -137,12 +137,14 @@ LIBXSMM_API int libxsmm_get_timer_info(libxsmm_timer_info* info)
     result = EXIT_SUCCESS;
   }
   else {
+#if !defined(NDEBUG)
     static int error_once = 0;
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM ERROR: invalid argument for libxsmm_get_timer_info specified!\n");
     }
+#endif
     result = EXIT_FAILURE;
   }
   return result;

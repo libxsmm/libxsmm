@@ -8,9 +8,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_intrinsics_x86.h>
 #include <libxsmm_generator.h>
 #include <libxsmm_memory.h>
+#include <libxsmm_sync.h>
 #if !defined(_WIN32)
 # include <sys/mman.h>
 #endif
@@ -59,10 +59,18 @@
 #define LIBXSMM_CPUID_CHECK(VALUE, CHECK) ((CHECK) == ((CHECK) & (VALUE)))
 
 
-LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
+LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if !defined(LIBXSMM_PLATFORM_X86)
+# if !defined(NDEBUG)
+  static int error_once = 0;
+  if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM WARNING: libxsmm_cpuid_x86 called on non-x86 platform!\n");
+  }
+# endif
   if (NULL != info) LIBXSMM_MEMZERO127(info);
 #else
   unsigned int eax, ebx, ecx, edx;
@@ -217,16 +225,19 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
 
 LIBXSMM_API int libxsmm_cpuid(void)
 {
-#if defined(LIBXSMM_PLATFORM_AARCH64)
-  /* @TODO add AARCH64 feature check */
-  return LIBXSMM_AARCH64_V81;
-#endif
 #if defined(LIBXSMM_PLATFORM_X86)
   return libxsmm_cpuid_x86(NULL/*info*/);
+#else
+  return libxsmm_cpuid_arm(NULL/*info*/);
 #endif
 }
 
 
+/**
+ * This implementation also accounts for non-x86 platforms,
+ * which not only allows to resolve any given ID but to
+ * fallback gracefully ("unknown").
+ */
 LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 {
   const char* target_arch = NULL;
@@ -281,12 +292,16 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
       target_arch = "unknown";
     }
   }
-
   LIBXSMM_ASSERT(NULL != target_arch);
   return target_arch;
 }
 
 
+/**
+ * This implementation also accounts for non-x86 platforms,
+ * which not only allows to resolve any given ID but to
+ * fallback gracefully (scalar).
+ */
 LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
 {
   int result;
@@ -300,6 +315,7 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   else if (LIBXSMM_X86_SSE42 <= id) {
     result = 4;
   }
+  else
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
   if (LIBXSMM_AARCH64_V81 == id) {
     result = 4;
@@ -307,10 +323,12 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   else if (LIBXSMM_AARCH64_A64FX == id) {
     result = 16;
   }
+  else
+#else
+  LIBXSMM_UNUSED(id);
 #endif
-  else { /* scalar */
+  { /* scalar */
     result = 1;
   }
   return result;
 }
-
