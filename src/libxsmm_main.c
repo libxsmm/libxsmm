@@ -1231,7 +1231,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         if (t0 < t1 && 0.0 < libxsmm_timer_scale) {
           const double scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
           const double diff = LIBXSMM_DELTA(libxsmm_timer_scale, scale) / scale;
-          if (5E-5 > diff) {
+          if (5E-4 > diff) {
             libxsmm_timer_scale = scale;
             internal_timer_start = t0;
           }
