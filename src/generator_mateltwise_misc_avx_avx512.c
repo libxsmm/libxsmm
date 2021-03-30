@@ -213,6 +213,9 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
   } else if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
     in_tsize = 4;
   } else {
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+    free(p_jump_label_tracker);
+#endif
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
@@ -225,6 +228,9 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
   } else if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
     out_tsize = 4;
   } else {
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+    free(p_jump_label_tracker);
+#endif
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
