@@ -252,7 +252,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
     libxsmm_generator_vcvtneps2bf16_avx512_prep_stack( io_generated_code, LIBXSMM_X86_GP_REG_RAX );
     i_micro_kernel_config->dcvt_zmm_aux0 = 31;
     i_micro_kernel_config->dcvt_zmm_aux1 = 30;
-    i_micro_kernel_config->dcvt_mask_aux0 = 2;
+    /*i_micro_kernel_config->dcvt_mask_aux0 = 2;*/
     i_micro_kernel_config->dcvt_mask_aux0 = 3;
     max_m_unrolling -= 2;
   }

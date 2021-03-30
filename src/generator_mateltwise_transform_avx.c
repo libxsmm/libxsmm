@@ -398,6 +398,7 @@ void libxsmm_generator_transform_avx_microkernel( libxsmm_generated_code*       
   /* check leading dimnesions and sizes */
   if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT) > 0) ||
        ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_TRANSFORM_VNNI_TO_VNNIT) > 0)    ) {
+    /* coverity[copy_paste_error] */
     if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;

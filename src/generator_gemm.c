@@ -84,8 +84,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
     if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) {
       l_vector_length = 32;
-      l_xgemm_desc_mod.k = l_xgemm_desc_mod.k;
-      l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb;
+      /*l_xgemm_desc_mod.k = l_xgemm_desc_mod.k;*/
+      /*l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb;*/
     } else {
       l_vector_length = 16;
       l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
