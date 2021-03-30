@@ -66,7 +66,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
        (libxsmm_target_archid < LIBXSMM_X86_AVX512 ) ) {
     tmp_max_k_block = 32;
   } else if ( libxsmm_target_archid == LIBXSMM_AARCH64_V81 ) {
-    tmp_max_c_block = 16;
+    tmp_max_k_block = 16;
   }
   if ( K < tmp_max_k_block ) {
     ofmblock = K;
