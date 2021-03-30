@@ -245,6 +245,10 @@ endif
 ifneq (x86_64,$(MNAME))
   WERROR := 0
 endif
+# no warning conversion
+ifneq (,$(filter-out 0 1,$(INTEL)))
+  WERROR := 0
+endif
 
 # explicitly target all objects
 ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
