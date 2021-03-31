@@ -137,6 +137,8 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* setup parallelization strategy */
   res.fwd_M_hyperpartitions = 1;
   res.fwd_N_hyperpartitions = 1;
+
+#if 0
   if (threads == 16) {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 1;
@@ -166,6 +168,126 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.fwd_2d_blocking = 0;
     res.fwd_col_teams = 1;
     res.fwd_row_teams = 1;
+  }
+#endif
+
+  res.fwd_bf = 1;
+  res.fwd_2d_blocking = 0;
+  res.fwd_col_teams = 1;
+  res.fwd_row_teams = 1;
+
+  if (res.threads == 14) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 2;
+    res.fwd_row_teams = 7;
+  }
+
+  if (res.threads == 2) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 2;
+    res.fwd_row_teams = 1;
+  }
+
+  if (res.threads == 4) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 2;
+    res.fwd_row_teams = 2;
+  }
+
+  if (res.threads == 8) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 2;
+    res.fwd_row_teams = 4;
+  }
+
+  if (res.threads == 16) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 2;
+    res.fwd_row_teams = 8;
+  }
+
+  if (res.C == 100 && res.K == 1024 && res.threads == 28) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 14;
+    res.fwd_row_teams = 2;
+  }
+
+  if (res.C == 1024 && res.K == 1024 && res.threads == 28) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 7;
+    res.fwd_row_teams = 4;
+  }
+
+  if (res.C == 512 && res.K == 512 && res.threads == 28) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 1;
+    res.fwd_row_teams = 1;
+  }
+
+  if (res.C == 1024 && res.K == 1 && res.threads == 28) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 1;
+    res.fwd_row_teams = 1;
+  }
+
+  if (res.C == 1024 && res.K == 1024 && res.threads == 20) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 5;
+    res.fwd_row_teams = 4;
+  }
+
+  if (res.C == 100 && res.K == 1024 && res.threads == 20) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 5;
+    res.fwd_row_teams = 4;
+  }
+
+  if (res.C == 1024 && res.K == 1024 && res.threads == 24) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 6;
+    res.fwd_row_teams = 4;
+  }
+  if (res.C == 100 && res.K == 1024 && res.threads == 24) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 5;
+    res.fwd_row_teams = 4;
+  }
+  if (res.C == 512 && res.K == 512 && res.threads == 24) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 5;
+    res.fwd_row_teams = 4;
+  }
+  if (res.C == 512 && res.K == 512 && res.threads == 20) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 5;
+    res.fwd_row_teams = 4;
+  }
+  if (res.C == 1024 && res.K == 1 && res.threads == 24) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 5;
+    res.fwd_row_teams = 4;
+  }
+  if (res.C == 1024 && res.K == 1 && res.threads == 20) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 6;
+    res.fwd_row_teams = 4;
   }
 
 #if 0
@@ -254,7 +376,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 }
 
 my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
-                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
+    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
   my_fc_bwd_config res;
   libxsmm_blasint lda = bk;
   libxsmm_blasint ldb = bc;
@@ -293,6 +415,8 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.upd_M_hyperpartitions = 1;
   res.bwd_N_hyperpartitions = 1;
   res.upd_N_hyperpartitions = 1;
+
+#if 0
   if (threads == 16) {
     res.bwd_bf = 1;
     res.bwd_2d_blocking = 1;
@@ -356,6 +480,234 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.upd_row_teams = 1;
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
+  }
+#endif
+
+  res.bwd_bf = 1;
+  res.bwd_2d_blocking = 0;
+  res.bwd_col_teams = 1;
+  res.bwd_row_teams = 1;
+  res.upd_bf = 1;
+  res.upd_2d_blocking = 0;
+  res.upd_col_teams = 1;
+  res.upd_row_teams = 1;
+  res.ifm_subtasks = 1;
+  res.ofm_subtasks = 1;
+
+  if (res.threads == 14) {
+    res.bwd_bf = 1;
+    res.upd_bf = 1;
+    res.bwd_2d_blocking = 1;
+    res.upd_2d_blocking = 0;
+    res.bwd_col_teams = 2;
+    res.bwd_row_teams = 7;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = 1;
+    res.ofm_subtasks = 1;
+  }
+
+  if (res.threads == 2) {
+    res.bwd_bf = 1;
+    res.upd_bf = 1;
+    res.bwd_2d_blocking = 1;
+    res.upd_2d_blocking = 0;
+    res.bwd_col_teams = 2;
+    res.bwd_row_teams = 1;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = 1;
+    res.ofm_subtasks = 1;
+  }
+
+  if (res.threads == 4) {
+    res.bwd_bf = 1;
+    res.upd_bf = 1;
+    res.bwd_2d_blocking = 1;
+    res.upd_2d_blocking = 0;
+    res.bwd_col_teams = 2;
+    res.bwd_row_teams = 2;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = 1;
+    res.ofm_subtasks = 1;
+  }
+
+  if (res.threads == 8) {
+    res.bwd_bf = 1;
+    res.upd_bf = 1;
+    res.bwd_2d_blocking = 1;
+    res.upd_2d_blocking = 0;
+    res.bwd_col_teams = 2;
+    res.bwd_row_teams = 4;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = 1;
+    res.ofm_subtasks = 1;
+  }
+
+  if (res.threads == 16) {
+    res.bwd_bf = 1;
+    res.upd_bf = 1;
+    res.bwd_2d_blocking = 1;
+    res.upd_2d_blocking = 0;
+    res.bwd_col_teams = 2;
+    res.bwd_row_teams = 8;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = 1;
+    res.ofm_subtasks = 1;
+  }
+
+  if (res.C == 100 && res.K == 1024 && res.threads == 28) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 1;
+    res.bwd_row_teams = 1;
+    res.upd_bf = ((res.N/res.bn) % 14 == 0) ? 14 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = 1/*((res.bc % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
+  if (res.C == 1024 && res.K == 1024 && res.threads == 28) {
+    res.bwd_bf = ((res.K/res.bk) % 8 == 0) ? 8 : 1;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 7;
+    res.bwd_row_teams = 4;
+    res.upd_bf = ((res.N/res.bn) % 14 == 0) ? 14 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 7;
+    res.upd_row_teams = 4;
+    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
+  if (res.C == 512 && res.K == 512 && res.threads == 28) {
+    res.bwd_bf = ((res.K/res.bk) % 4 == 0) ? 4 : 1;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 1;
+    res.bwd_row_teams = 1;
+    res.upd_bf = ((res.N/res.bn) % 14 == 0) ? 14 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
+  if (res.C == 1024 && res.K == 1 && res.threads == 28) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 1;
+    res.bwd_col_teams = 14;
+    res.bwd_row_teams = 2;
+    res.upd_bf = ((res.N/res.bn) % 2 == 0) ? 2 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
+  if (res.C == 1024 && res.K == 1024 && res.threads == 20) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 1;
+    res.bwd_col_teams = 5;
+    res.bwd_row_teams = 4;
+    res.upd_bf = ((res.N/res.bn) % 15 == 0) ? 15 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 5;
+    res.upd_row_teams = 4;
+    res.ifm_subtasks = 1/*((res.bc % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
+  if (res.C == 100 && res.K == 1024 && res.threads == 20) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 1;
+    res.bwd_row_teams = 1;
+    res.upd_bf = ((res.N/res.bn) % 9 == 0) ? 9 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = 1/*((res.bc % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+    res.ofm_subtasks = ((res.bk % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+  }
+
+  if (res.C == 1024 && res.K == 1024 && res.threads == 24) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 6;
+    res.bwd_row_teams = 4;
+    res.upd_bf = ((res.N/res.bn) % 15 == 0) ? 15 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 6;
+    res.upd_row_teams = 4;
+    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+  if (res.C == 100 && res.K == 1024 && res.threads == 24) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 1;
+    res.bwd_col_teams = 12;
+    res.bwd_row_teams = 2;
+    res.upd_bf = ((res.N/res.bn) % 15 == 0) ? 15 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 5;
+    res.upd_row_teams = 4;
+    res.ifm_subtasks = 1/*((res.bc % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+  if (res.C == 512 && res.K == 512 && res.threads == 24) {
+    res.bwd_bf = ((res.K/res.bk) % 4 == 0) ? 4 : 1;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 5;
+    res.bwd_row_teams = 4;
+    res.upd_bf = ((res.N/res.bn) % 15 == 0) ? 15 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 5;
+    res.upd_row_teams = 4;
+    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+  if (res.C == 512 && res.K == 512 && res.threads == 20) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 1;
+    res.bwd_row_teams = 1;
+    res.upd_bf = ((res.N/res.bn) % 15 == 0) ? 15 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = ((res.bc % 4 == 0) && (res.upd_2d_blocking == 0)) ? 4 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+  if (res.C == 1024 && res.K == 1 && res.threads == 24) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 5;
+    res.bwd_row_teams = 4;
+    res.upd_bf = 1/*((res.N/res.bn) % 1 == 0) ? 1 : 1*/;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 5;
+    res.upd_row_teams = 4;
+    res.ifm_subtasks = ((res.bc % 4 == 0) && (res.upd_2d_blocking == 0)) ? 4 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+  if (res.C == 1024 && res.K == 1 && res.threads == 20) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 1;
+    res.bwd_col_teams = 5;
+    res.bwd_row_teams = 4;
+    res.upd_bf = 1/*((res.N/res.bn) % 1 == 0) ? 1 : 1*/;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 6;
+    res.upd_row_teams = 4;
+    res.ifm_subtasks = 1/*((res.bc % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
   }
 
   bbk = (res.upd_2d_blocking == 1) ? bk : bk/res.ofm_subtasks;
@@ -502,7 +854,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 }
 
 void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
-                     const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
+    const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
   const libxsmm_blasint nBlocksMB  = cfg.N / cfg.bn;
@@ -693,8 +1045,8 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
 }
 
 void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
-                     const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
-                     libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch ) {
+    const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+    libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch ) {
   /* size variables, all const */
   /* here we assume that input and output blocking is similar */
   const libxsmm_blasint bn = cfg.bn;
@@ -905,9 +1257,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const libxsmm_bfloat16* wt_ptr, libxs
                 &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
             /* downconvert libxsmm_blasintermediate f32 tensor to bf 16 and store to final C */
             if ( ofm1 == BF-1  ) {
-                eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
-                eltwise_params.out.primary = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
-                eltwise_kernel(&eltwise_params);
+              eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, dinput_f32,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              eltwise_params.out.primary = &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc);
+              eltwise_kernel(&eltwise_params);
             }
           }
         }
@@ -1300,7 +1652,7 @@ int main(int argc, char* argv[])
 
   /* we can also use the layout functions and set the data on our
      own external to the library */
-   matrix_copy_NC_to_NCNC_bf16( naive_input_bf16,     input_libxsmm,     1, nImg, nIFm, bn, bc );
+  matrix_copy_NC_to_NCNC_bf16( naive_input_bf16,     input_libxsmm,     1, nImg, nIFm, bn, bc );
   matrix_copy_NC_to_NCNC_bf16( naive_delinput_bf16,  delinput_libxsmm,  1, nImg, nIFm, bn, bc );
   matrix_copy_NC_to_NCNC_bf16( naive_output_bf16,    output_libxsmm,    1, nImg, nOFm, bn, bk );
   matrix_copy_NC_to_NCNC_bf16( naive_deloutput_bf16, deloutput_libxsmm, 1, nImg, nOFm, bn, bk );
@@ -1332,7 +1684,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
-                      bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+          bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
     }
 
     /* copy out data */
@@ -1366,7 +1718,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       my_fc_bwd_exec( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-                      input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
+          input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
     }
 
     /* copy out data */
@@ -1427,7 +1779,7 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < iters; ++i) {
         my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
-                        bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+            bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -1460,7 +1812,7 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < iters; ++i) {
         my_fc_bwd_exec( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-                        input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
+            input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
