@@ -90,7 +90,7 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx( libxsmm_generated_co
     int                                            rbp_offs_shifter,
     int                                            rbp_offs_half ) {
   unsigned int thres_array[1] = { 0x40879fff };
-  unsigned int signmask_array[1] = { 0x8000000 };
+  unsigned int signmask_array[1] = { 0x80000000 };
   unsigned int absmask_array[1] = { 0x7fffffff };
   unsigned int scale_array[1] = { 0x406a0ea1 };
   unsigned int shifter_array[1] = { 0x4b400000 };
@@ -173,7 +173,7 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx( libxsmm_generate
     int                                            rbp_offs_half ) {
 
   unsigned int thres_array[1] = { 0x408f5fff };
-  unsigned int signmask_array[1] = { 0x8000000 };
+  unsigned int signmask_array[1] = { 0x80000000 };
   unsigned int absmask_array[1] = { 0x7fffffff };
   unsigned int scale_array[1] = { 0x405d67c9 };
   unsigned int shifter_array[1] = { 0x4b400000 };
