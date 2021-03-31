@@ -418,8 +418,8 @@ void libxsmm_generator_gelu_ps_minimax3_avx512( libxsmm_generated_code*         
 
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
       LIBXSMM_X86_INSTR_VRANGEPS, 'z',
-      i_vec_x,
       i_vec_thres,
+      i_vec_x,
       i_vec_xr,
       0, 0, 8, 2);
 
@@ -500,8 +500,8 @@ void libxsmm_generator_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*     
     const unsigned int                             i_vec_c2 ) {
  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
       LIBXSMM_X86_INSTR_VRANGEPS, 'z',
-      i_vec_x,
       i_vec_thres,
+      i_vec_x,
       i_vec_xr,
       0, 0, 8, 2);
 
