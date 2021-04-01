@@ -637,21 +637,33 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
 
     /* jited tranpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, F_t, C_t)*/
-    libxsmm_meltw_transform_flags trans_per_flags;
-    trans_per_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+
     libxsmm_blasint per_m = WW_t;
     libxsmm_blasint per_n = F_t*C_t;
     libxsmm_blasint per_ldi = WW_t;
     libxsmm_blasint per_ldo = F_t*C_t;
-    libxsmm_meltwfunction_transform trans_permute = libxsmm_dispatch_meltw_transform(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_per_flags);
-    if ( trans_permute == NULL) {
-        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+
+    // libxsmm_meltw_transform_flags trans_per_flags;
+    // trans_per_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    // libxsmm_meltwfunction_transform trans_permute = libxsmm_dispatch_meltw_transform(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_per_flags);
+    // if ( trans_permute == NULL) {
+    //     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    //     exit(-1);
+    // }
+    // libxsmm_meltw_transform_param trans_param_permute;
+    // trans_param_permute.in_ptr  = weight_a;
+    // trans_param_permute.out_ptr = flip_weight_a;
+    // trans_permute( &trans_param_permute );
+
+    libxsmm_meltwfunction_unary trans_permute_kernel = libxsmm_dispatch_meltw_unary(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    if ( trans_permute_kernel == NULL) {
+        fprintf( stderr, "JIT unary TPP for NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
     }
-    libxsmm_meltw_transform_param trans_param_permute;
-    trans_param_permute.in_ptr  = weight_a;
-    trans_param_permute.out_ptr = flip_weight_a;
-    trans_permute( &trans_param_permute );
+    libxsmm_meltw_unary_param trans_permute_param;
+    trans_permute_param.in.primary  = weight_a;
+    trans_permute_param.out.primary = flip_weight_a;
+    trans_permute_kernel( &trans_permute_param);
 
     int lda = C_t;                      // Input channels (15)
     int ldb = Win_t;                    // Input width (60400)
@@ -754,43 +766,70 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     /* jited tranpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, C_t, F_t)*/
 
-    libxsmm_meltw_transform_flags trans_flip_flags;
-    trans_flip_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
     libxsmm_blasint flip_m1 = WW_t;
     libxsmm_blasint flip_n1 = F_t*C_t;
     libxsmm_blasint flip_ldi_1 = WW_t;
     libxsmm_blasint flip_ldo_1 = F_t*C_t;
-    libxsmm_meltwfunction_transform trans_flip_1 = libxsmm_dispatch_meltw_transform(flip_m1, flip_n1, &flip_ldi_1, &flip_ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flip_flags);
-    if ( trans_flip_1 == NULL) {
-        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+
+    // libxsmm_meltw_transform_flags trans_flip_flags;
+    // trans_flip_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    // libxsmm_meltwfunction_transform trans_flip_1 = libxsmm_dispatch_meltw_transform(flip_m1, flip_n1, &flip_ldi_1, &flip_ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flip_flags);
+    // if ( trans_flip_1 == NULL) {
+    //     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    //     exit(-1);
+    // }
+
+    // // Convert (F_t, C_t, WW_t) -----> (WW_t, F_t, C_t)
+    // libxsmm_meltw_transform_param trans_param_flip_1;
+    // trans_param_flip_1.in_ptr  = flip_weight_a;
+    // trans_param_flip_1.out_ptr = weight_buffer_a;
+    // trans_flip_1( &trans_param_flip_1 );
+
+    libxsmm_meltwfunction_unary trans_unary_flip_1 = libxsmm_dispatch_meltw_unary(flip_m1, flip_n1, &flip_ldi_1, &flip_ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    if ( trans_unary_flip_1 == NULL) {
+        fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
     }
-
     // Convert (F_t, C_t, WW_t) -----> (WW_t, F_t, C_t)
-    libxsmm_meltw_transform_param trans_param_flip_1;
-    trans_param_flip_1.in_ptr  = flip_weight_a;
-    trans_param_flip_1.out_ptr = weight_buffer_a;
-    trans_flip_1( &trans_param_flip_1 );
+    libxsmm_meltw_unary_param trans_unary_param_flip_1;
+    trans_unary_param_flip_1.in.primary  = flip_weight_a;
+    trans_unary_param_flip_1.out.primary = weight_buffer_a;
+    trans_unary_flip_1( &trans_unary_param_flip_1 );
 
     libxsmm_blasint flip_m2 = C_t;
     libxsmm_blasint flip_n2 = F_t;
     libxsmm_blasint flip_ldi_2 = C_t;
     libxsmm_blasint flip_ldo_2 = F_t;
-    libxsmm_meltwfunction_transform trans_flip_2 = libxsmm_dispatch_meltw_transform(flip_m2, flip_n2, &flip_ldi_2, &flip_ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flip_flags);
-    if ( trans_flip_2 == NULL) {
-        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+
+    // libxsmm_meltwfunction_transform trans_flip_2 = libxsmm_dispatch_meltw_transform(flip_m2, flip_n2, &flip_ldi_2, &flip_ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flip_flags);
+    // if ( trans_flip_2 == NULL) {
+    //     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    //     exit(-1);
+    // }
+
+    // // Convert (WW_t, F_t, C_t) -----> (F_t, C_t, WW_t)
+    // #pragma omp parallel for
+    // for(int kw = 0; kw < WW_t; kw++){                   // permute last two dimensions
+    //     libxsmm_meltw_transform_param trans_param_flip_2;
+    //     trans_param_flip_2.in_ptr  = &weight_buffer_a[kw*C_t*F_t];
+    //     trans_param_flip_2.out_ptr = &flip_weight_a[kw*C_t*F_t];
+    //     trans_flip_2( &trans_param_flip_2 );
+    // }
+
+    libxsmm_meltwfunction_unary trans_unary_flip_2 = libxsmm_dispatch_meltw_unary(flip_m2, flip_n2, &flip_ldi_2, &flip_ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    if ( trans_unary_flip_2 == NULL) {
+        fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
     }
 
     // Convert (WW_t, F_t, C_t) -----> (F_t, C_t, WW_t)
     #pragma omp parallel for
     for(int kw = 0; kw < WW_t; kw++){                   // permute last two dimensions
-        libxsmm_meltw_transform_param trans_param_flip_2;
-        trans_param_flip_2.in_ptr  = &weight_buffer_a[kw*C_t*F_t];
-        trans_param_flip_2.out_ptr = &flip_weight_a[kw*C_t*F_t];
-        trans_flip_2( &trans_param_flip_2 );
+        libxsmm_meltw_unary_param trans_unary_param_flip_2;
+        trans_unary_param_flip_2.in.primary  = &weight_buffer_a[kw*C_t*F_t];
+        trans_unary_param_flip_2.out.primary = &flip_weight_a[kw*C_t*F_t];
+        trans_unary_flip_2( &trans_unary_param_flip_2 );
     }
-
 
     int64_t Wpad_t = W_t + 2*(WW_t - 1)*dial;
     int64_t tile_multiple = (Win_t/XS_TILE_DBACKWARD)*XS_TILE_DBACKWARD;
@@ -938,8 +977,12 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         }
     }
 
-    /* Backward weight part of the code  */
 
+
+
+
+
+    /* Backward weight part of the code  */
 
     auto flip_d_weight = weight.new_empty({WW_t,C_t,F_t});                  // Tensor for storing permuted weight gradiant
     float* flip_d_weight_a = flip_d_weight.data_ptr<float>();
@@ -975,12 +1018,19 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     float* grad_edgetrans = grad_edgetrans_tensor.data_ptr<float>();
 
     /* use jited tranpose */
-    libxsmm_meltw_transform_flags trans_flags;
-    trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
-    libxsmm_meltwfunction_transform trans_shortkernel_grad = libxsmm_dispatch_meltw_transform(short_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flags);
-    libxsmm_meltwfunction_transform trans_edgekernel_grad = libxsmm_dispatch_meltw_transform(edge_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flags);
+    // libxsmm_meltw_transform_flags trans_flags;
+    // trans_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    // libxsmm_meltwfunction_transform trans_shortkernel_grad = libxsmm_dispatch_meltw_transform(short_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flags);
+    // libxsmm_meltwfunction_transform trans_edgekernel_grad = libxsmm_dispatch_meltw_transform(edge_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_flags);
+    // if ( trans_shortkernel_grad == NULL | trans_edgekernel_grad == NULL) {
+    //     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    //     exit(-1);
+    // }
+
+    libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary(short_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    libxsmm_meltwfunction_unary trans_edgekernel_grad = libxsmm_dispatch_meltw_unary(edge_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_shortkernel_grad == NULL | trans_edgekernel_grad == NULL) {
-        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
     }
 
@@ -992,13 +1042,19 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     #pragma omp parallel for reduction(+: flip_d_weight_a[:F_t*C_t*WW_t])                // Distribute the weight array
     for(int n = 0; n < N_t; n++) {
         int last_block = 0;
-        libxsmm_meltw_transform_param trans_param_short;                    // Pointer to hold trans short
-        libxsmm_meltw_transform_param trans_param_edge;                     // Pointer to hold trans edge
+        // libxsmm_meltw_transform_param trans_param_short;                    // Pointer to hold trans short
+        // libxsmm_meltw_transform_param trans_param_edge;                     // Pointer to hold trans edge
+        libxsmm_meltw_unary_param trans_param_short;                    // Pointer to hold trans short
+        libxsmm_meltw_unary_param trans_param_edge;                     // Pointer to hold trans edge
 
         for(int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {                // Normal case
 
-            trans_param_short.in_ptr  = &grad_a[n*F_t*W_t + wb];
-            trans_param_short.out_ptr = &grad_shorttrans[n*F_t*short_W_t];
+            // trans_param_short.in_ptr  = &grad_a[n*F_t*W_t + wb];
+            // trans_param_short.out_ptr = &grad_shorttrans[n*F_t*short_W_t];
+            // trans_shortkernel_grad( &trans_param_short );
+
+            trans_param_short.in.primary  = &grad_a[n*F_t*W_t + wb];
+            trans_param_short.out.primary = &grad_shorttrans[n*F_t*short_W_t];
             trans_shortkernel_grad( &trans_param_short );
 
             for(int kw = 0; kw < WW_t; kw++) {
@@ -1009,8 +1065,12 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
         if (W_t % XS_TILE_WBACKWARD != 0){
 
-            trans_param_edge.in_ptr  = &grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD];
-            trans_param_edge.out_ptr = &grad_edgetrans[n*F_t*edge_W_t];
+            // trans_param_edge.in_ptr  = &grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD];
+            // trans_param_edge.out_ptr = &grad_edgetrans[n*F_t*edge_W_t];
+            // trans_edgekernel_grad( &trans_param_edge );
+
+            trans_param_edge.in.primary  = &grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD];
+            trans_param_edge.out.primary = &grad_edgetrans[n*F_t*edge_W_t];
             trans_edgekernel_grad( &trans_param_edge );
 
             for(int kw = 0; kw < WW_t; kw++) {
@@ -1023,24 +1083,36 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
     /* jited tranpose to permute the array dimensions
         Overall Convert (WW_t, C_t, F_t) -----> (F_t, C_t, WW_t)*/
-    libxsmm_meltw_transform_flags trans_per_flags;
-    trans_per_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
     libxsmm_blasint per_m1 = F_t;
     libxsmm_blasint per_n1 = C_t;
     libxsmm_blasint ldi_1 = F_t;
     libxsmm_blasint ldo_1 = C_t;
-    libxsmm_meltwfunction_transform trans_permute_1 = libxsmm_dispatch_meltw_transform(per_m1, per_n1, &ldi_1, &ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_per_flags);
+
+    // libxsmm_meltw_transform_flags trans_per_flags;
+    // trans_per_flags = LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT;
+    // libxsmm_meltwfunction_transform trans_permute_1 = libxsmm_dispatch_meltw_transform(per_m1, per_n1, &ldi_1, &ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_per_flags);
+    // if ( trans_permute_1 == NULL) {
+    //     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    //     exit(-1);
+    // }
+
+    libxsmm_meltwfunction_unary trans_permute_1 = libxsmm_dispatch_meltw_unary(per_m1, per_n1, &ldi_1, &ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_permute_1 == NULL) {
-        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
     }
 
     // Convert (WW_t, C_t, F_t) -----> (WW_t, F_t, C_t)
     #pragma omp parallel for
     for(int kw = 0; kw < WW_t; kw++){                   // permute last two dimensions
-        libxsmm_meltw_transform_param trans_param_permute_1;
-        trans_param_permute_1.in_ptr  = &flip_d_weight_a[kw*C_t*F_t];
-        trans_param_permute_1.out_ptr = &flip_weight_a[kw*C_t*F_t];
+        // libxsmm_meltw_transform_param trans_param_permute_1;
+        // trans_param_permute_1.in_ptr  = &flip_d_weight_a[kw*C_t*F_t];
+        // trans_param_permute_1.out_ptr = &flip_weight_a[kw*C_t*F_t];
+        // trans_permute_1( &trans_param_permute_1 );
+
+        libxsmm_meltw_unary_param trans_param_permute_1;
+        trans_param_permute_1.in.primary  = &flip_d_weight_a[kw*C_t*F_t];
+        trans_param_permute_1.out.primary = &flip_weight_a[kw*C_t*F_t];
         trans_permute_1( &trans_param_permute_1 );
     }
 
@@ -1049,17 +1121,29 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     libxsmm_blasint per_n2 = WW_t;
     libxsmm_blasint ldi_2 = F_t*C_t;
     libxsmm_blasint ldo_2 = WW_t;
-    libxsmm_meltwfunction_transform trans_permute_2 = libxsmm_dispatch_meltw_transform(per_m2, per_n2, &ldi_2, &ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_per_flags);
+    // libxsmm_meltwfunction_transform trans_permute_2 = libxsmm_dispatch_meltw_transform(per_m2, per_n2, &ldi_2, &ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, trans_per_flags);
+    // if ( trans_permute_2 == NULL) {
+    //     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+    //     exit(-1);
+    // }
+
+    libxsmm_meltwfunction_unary trans_permute_2 = libxsmm_dispatch_meltw_unary(per_m2, per_n2, &ldi_2, &ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_permute_2 == NULL) {
-        fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
+        fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
     }
 
     // Convert (WW_t, F_t, C_t) -----> (F_t, C_t, WW_t)
-    libxsmm_meltw_transform_param trans_param_permute_2;
-    trans_param_permute_2.in_ptr  = flip_weight_a;
-    trans_param_permute_2.out_ptr = d_weight_a;
+    // libxsmm_meltw_transform_param trans_param_permute_2;
+    // trans_param_permute_2.in_ptr  = flip_weight_a;
+    // trans_param_permute_2.out_ptr = d_weight_a;
+    // trans_permute_2( &trans_param_permute_2 );
+
+    libxsmm_meltw_unary_param trans_param_permute_2;
+    trans_param_permute_2.in.primary  = flip_weight_a;
+    trans_param_permute_2.out.primary = d_weight_a;
     trans_permute_2( &trans_param_permute_2 );
+
 
     return {d_input, d_weight};         // return data gradiant and weight gradiant
 }
