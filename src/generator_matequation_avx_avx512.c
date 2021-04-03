@@ -468,6 +468,40 @@ LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags) 
   return result;
 }
 
+LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags flags, libxsmm_matrix_eqn_elem *node);
+LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags flags, libxsmm_matrix_eqn_elem *node) {
+  int result = 1;
+  if ( ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0) ) {
+    if (node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
+      result = 0;
+    }
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flags flags, libxsmm_matrix_eqn_elem *node);
+LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flags flags, libxsmm_matrix_eqn_elem *node) {
+  int result = 1;
+  if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0) > 0) ) {
+    if (node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
+      result = 0;
+    }
+  }
+
+  if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0) ||
+       ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1) > 0) ) {
+    if (node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) {
+      result = 0;
+    }
+  }
+  return result;
+}
+
 LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_meltw_ternary_flags flags, libxsmm_matrix_eqn_elem *node);
 LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_meltw_ternary_flags flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
@@ -507,8 +541,8 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
     if ( (timestamp < last_timestamp) && ((is_eqn_node_breaking_point(cur_node) > 0) || (is_eqn_node_breaking_point(cur_node->up) > 0) ||
                                            ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_to_scalar(cur_node->info.u_op.type) > 0)) ||
                                            ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (is_binary_opcode_reduce_to_scalar(cur_node->info.b_op.type) > 0)) ||
-                                           ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_with_bcast(cur_node->up->info.u_op.flags) > 0)) ||
-                                           ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (is_binary_with_bcast(cur_node->up->info.b_op.flags) > 0)) ||
+                                           ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_with_bcast(cur_node->up->info.u_op.flags) > 0) && (is_unary_bcast_arg_an_inputarg(cur_node->up->info.u_op.flags, cur_node->up) == 0) ) ||
+                                           ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (is_binary_with_bcast(cur_node->up->info.b_op.flags) > 0) && (is_binary_bcast_arg_an_inputarg(cur_node->up->info.b_op.flags, cur_node->up) == 0)) ||
                                            ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (is_ternary_with_bcast(cur_node->up->info.t_op.flags) > 0) && (is_ternary_bcast_arg_an_inputarg(cur_node->up->info.t_op.flags, cur_node->up) == 0)))) {
 
       libxsmm_matrix_eqn_elem       *new_arg_node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
