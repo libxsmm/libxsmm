@@ -548,6 +548,25 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
   }
 }
 
+LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result);
+LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result) {
+  if (node->tmp.dtype != LIBXSMM_DATATYPE_F32) {
+    *result = 0;
+  }
+  if ( node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    return;
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    are_nodes_pure_f32(node->le, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    are_nodes_pure_f32(node->le, result);
+    are_nodes_pure_f32(node->ri, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    are_nodes_pure_f32(node->le, result);
+    are_nodes_pure_f32(node->ri, result);
+    are_nodes_pure_f32(node->r2, result);
+  }
+}
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc) {
@@ -563,9 +582,18 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   unsigned int strategy = JIT_STRATEGY_HYBRID;
   unsigned int eqn_tree_id = 0;
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R8;
+  unsigned int all_nodes_f32 = 1;
 
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
+    return;
+  }
+
+  are_nodes_pure_f32(eqn->eqn_root, &all_nodes_f32);
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) &&
+       !((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1))) {
+    /* This should not happen  */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
 
