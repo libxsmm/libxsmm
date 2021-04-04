@@ -159,6 +159,20 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.fwd_row_teams = 4;
   }
 
+  if (res.C == 100 && res.K == 1024 && res.threads == 40) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 10;
+    res.fwd_row_teams = 4;
+  }
+
+  if (res.C == 1024 && res.K == 1024 && res.threads == 40) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 10;
+    res.fwd_row_teams = 4;
+  }
+
   if (res.C == 100 && res.K == 1024 && res.threads == 22) {
     res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
     res.fwd_2d_blocking = 1;
@@ -195,6 +209,20 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.C == 1024 && res.K == 1 && res.threads == 28) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 1;
+    res.fwd_row_teams = 1;
+  }
+
+  if (res.C == 512 && res.K == 512 && res.threads == 40) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 1;
+    res.fwd_row_teams = 1;
+  }
+
+  if (res.C == 1024 && res.K == 1 && res.threads == 40) {
     res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
     res.fwd_2d_blocking = 0;
     res.fwd_col_teams = 1;
@@ -480,6 +508,59 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
     res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
   }
+
+  if (res.C == 100 && res.K == 1024 && res.threads == 40) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 1;
+    res.bwd_row_teams = 1;
+    res.upd_bf = ((res.N/res.bn) % 10 == 0) ? 10 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = 1/*((res.bc % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
+  if (res.C == 1024 && res.K == 1024 && res.threads == 40) {
+    res.bwd_bf = ((res.K/res.bk) % 8 == 0) ? 8 : 1;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 7;
+    res.bwd_row_teams = 4;
+    res.upd_bf = ((res.N/res.bn) % 10 == 0) ? 10 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 7;
+    res.upd_row_teams = 4;
+    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
+  if (res.C == 512 && res.K == 512 && res.threads == 40) {
+    res.bwd_bf = ((res.K/res.bk) % 4 == 0) ? 4 : 1;
+    res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 1;
+    res.bwd_row_teams = 1;
+    res.upd_bf = ((res.N/res.bn) % 10 == 0) ? 10 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
+  if (res.C == 1024 && res.K == 1 && res.threads == 40) {
+    res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
+    res.bwd_2d_blocking = 1;
+    res.bwd_col_teams = 10;
+    res.bwd_row_teams = 4;
+    res.upd_bf = ((res.N/res.bn) % 2 == 0) ? 2 : 1;
+    res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
+    res.upd_row_teams = 1;
+    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
 
   if (res.C == 1024 && res.K == 1024 && res.threads == 20) {
     res.bwd_bf = 1/*((res.K/res.bk) % 1 == 0) ? 1 : 1*/;
