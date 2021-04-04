@@ -100,3 +100,8 @@ ${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 512 ${FUSE} ${TYPE} 64 32 
 ${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 256 ${FUSE} ${TYPE} 64 32 32
 ${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 256 1 1 ${TYPE} 64 1 32
 
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 512 ${FUSE} ${TYPE} 64 32 32
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 64 ${FUSE} ${TYPE} 64 32 32
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 100 1024 ${FUSE} ${TYPE} 64 32 25
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 1024 ${FUSE} ${TYPE} 64 32 32
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1 1024 0 A 64 1 32

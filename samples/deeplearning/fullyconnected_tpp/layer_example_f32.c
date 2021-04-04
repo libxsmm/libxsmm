@@ -259,6 +259,13 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
 #endif
 
+  if ((res.C >= 512) && (res.threads == 22)) {
+    res.fwd_bf = 4;
+    while  ((res.C/res.bc) % res.fwd_bf != 0) {
+      res.fwd_bf--;
+    }
+  }
+
 #if 0
   res.fwd_bf = atoi(getenv("FWD_BF"));
   res.fwd_2d_blocking = atoi(getenv("FWD_2D_BLOCKING"));
@@ -379,7 +386,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.upd_2d_blocking = 0;
     res.upd_col_teams = 7;
     res.upd_row_teams = 4;
-    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ifm_subtasks = 1/*((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1*/;
     res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
   }
 
@@ -392,7 +399,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.upd_2d_blocking = 0;
     res.upd_col_teams = 1;
     res.upd_row_teams = 1;
-    res.ifm_subtasks = ((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1;
+    res.ifm_subtasks = 1/*((res.bc % 2 == 0) && (res.upd_2d_blocking == 0)) ? 2 : 1*/;
     res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
   }
 
@@ -571,6 +578,20 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.upd_row_teams = 4;
     res.ifm_subtasks = 1/*((res.bc % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
     res.ofm_subtasks = 1/*((res.bk % 1 == 0) && (res.upd_2d_blocking == 0)) ? 1 : 1*/;
+  }
+
+  if ((res.K >= 512) && (res.threads == 22)) {
+    res.bwd_bf = 4;
+    while  ((res.K/res.bk) % res.bwd_bf != 0) {
+      res.bwd_bf--;
+    }
+  }
+
+  if ((res.N >= 512) && (res.threads == 22) && (res.ifm_subtasks == 1) && (res.ofm_subtasks == 1)) {
+    res.upd_bf = 8;
+    while  ((res.N/res.bn) % res.upd_bf != 0) {
+      res.upd_bf--;
+    }
   }
 
 #if 0
