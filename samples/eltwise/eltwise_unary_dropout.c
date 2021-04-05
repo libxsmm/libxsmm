@@ -216,22 +216,38 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned sh
   for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 8); i+=8) {
     __m256 rnd = LIBXSMM_INTRINSICS_MM256_RNG_EXTSTATE_PS(rng_state);
     __m256 vin = _mm256_loadu_ps(in+i);
-    __m256 dmsk = _mm256_cmp_ps(vp, rnd, 0x06);
+    __m256 vmsk = _mm256_cmp_ps(vp, rnd, 0x06);
     __m256 vout = _mm256_mul_ps(vin, vpi);
-    vout = _mm256_blendv_ps( vzero, vout, dmsk );
+    vout = _mm256_blendv_ps( vzero, vout, vmsk );
     _mm256_storeu_ps(out+i, vout);
-    out_mask[i/8] = _mm256_movemask_ps( dmsk );
+    out_mask[i/8] = _mm256_movemask_ps( vmsk );
   }
 #if 0
   if (i < M) {
     int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
-    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
-    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_mask_storeu_ps(out+i, mask, vout);
-    dropout_mask[i/16] = dmsk & mask;
+  }
+#endif
+}
+
+void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
+  unsigned int i = 0;
+  float pn = 1 - p;
+  unsigned char* out_mask = (unsigned char*)dropout_mask;
+  __m256 vpi = _mm256_set1_ps(1.0/pn);
+  __m256 vzero = _mm256_setzero_ps();
+  __m256i vand = _mm256_set_epi32( 0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001 );
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 8); i+=8) {
+    __m256 vin = _mm256_loadu_ps(in+i);
+    __m256i vmask = _mm256_set1_epi8( out_mask[i/8] );
+    vmask = _mm256_and_si256( vmask, vand );
+    vmask = _mm256_cmpeq_epi32( vmask, vand );
+    __m256 vout = _mm256_mul_ps(vin, vpi);
+    vout = _mm256_blendv_ps( vzero, vout, _mm256_castsi256_ps(vmask) );
+    _mm256_storeu_ps(out+i, vout);
+  }
+#if 0
+  if (i < M) {
+    int rem = M - i;
   }
 #endif
 }
@@ -242,6 +258,15 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned sh
   LIBXSMM_UNUSED( out );
   LIBXSMM_UNUSED( dropout_mask );
   LIBXSMM_UNUSED( rng_state );
+  LIBXSMM_UNUSED( p );
+  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+}
+
+void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
+  LIBXSMM_UNUSED( M );
+  LIBXSMM_UNUSED( in );
+  LIBXSMM_UNUSED( out );
+  LIBXSMM_UNUSED( dropout_mask );
   LIBXSMM_UNUSED( p );
   fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
 }
@@ -273,15 +298,6 @@ void dropout_fwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out,
   LIBXSMM_UNUSED( out );
   LIBXSMM_UNUSED( dropout_mask );
   LIBXSMM_UNUSED( rng_state );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
-}
-
-void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
   LIBXSMM_UNUSED( p );
   fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
 }
