@@ -621,7 +621,9 @@ void libxsmm_compute_unary_2d_reg_block_op( libxsmm_generated_code*             
               i_micro_kernel_config->vec_c3,
               i_micro_kernel_config->vec_halves,
               i_micro_kernel_config->vec_log2e,
-              i_micro_kernel_config->vec_expmask );
+              i_micro_kernel_config->vec_expmask,
+              i_micro_kernel_config->vec_hi_bound,
+              i_micro_kernel_config->vec_lo_bound );
         } else {
           libxsmm_generator_exp_ps_3dts_avx512( io_generated_code,
               cur_vreg,
@@ -1737,7 +1739,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
   if (op == LIBXSMM_MELTW_TYPE_UNARY_EXP) {
     unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
     if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
-      reserved_zmms += 9;
+      reserved_zmms += 11;
       i_micro_kernel_config->vec_y          = reserved_zmms - 1;
       i_micro_kernel_config->vec_z          = reserved_zmms - 2;
       i_micro_kernel_config->vec_halves     = reserved_zmms - 3;
@@ -1747,7 +1749,8 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
       i_micro_kernel_config->vec_c3         = reserved_zmms - 7;
       i_micro_kernel_config->vec_log2e      = reserved_zmms - 8;
       i_micro_kernel_config->vec_expmask    = reserved_zmms - 9;
-
+      i_micro_kernel_config->vec_hi_bound   = reserved_zmms -10;
+      i_micro_kernel_config->vec_lo_bound   = reserved_zmms -11;
       libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx( io_generated_code,
           i_micro_kernel_config->vec_c0,
           i_micro_kernel_config->vec_c1,
@@ -1755,7 +1758,9 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_c3,
           i_micro_kernel_config->vec_halves,
           i_micro_kernel_config->vec_log2e,
-          i_micro_kernel_config->vec_expmask );
+          i_micro_kernel_config->vec_expmask,
+          i_micro_kernel_config->vec_hi_bound,
+          i_micro_kernel_config->vec_lo_bound );
     } else {
       reserved_zmms += 8;
       i_micro_kernel_config->vec_y          = reserved_zmms - 1;
