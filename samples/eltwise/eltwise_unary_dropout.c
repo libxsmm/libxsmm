@@ -16,6 +16,10 @@
 
 #ifdef __AVX512BW__
 #include <libxsmm_intrinsics_x86.h>
+#else
+#ifdef __AVX2__
+#include <libxsmm_intrinsics_x86.h>
+#endif
 #endif
 
 #define LIBXSMM_ALIGNDOWN(N, A) ((N) & ~((A)-1))
@@ -201,6 +205,37 @@ void dropout_bwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out,
   }
 }
 #else
+#ifdef __AVX2__
+void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
+  unsigned int i;
+  float pn = 1 - p;
+  unsigned char* out_mask = (unsigned char*)dropout_mask;
+  __m256 vp = _mm256_set1_ps(pn);
+  __m256 vpi = _mm256_set1_ps(1.0/pn);
+  __m256 vzero = _mm256_setzero_ps();
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 8); i+=8) {
+    __m256 rnd = LIBXSMM_INTRINSICS_MM256_RNG_EXTSTATE_PS(rng_state);
+    __m256 vin = _mm256_loadu_ps(in+i);
+    __m256 dmsk = _mm256_cmp_ps(vp, rnd, 0x06);
+    __m256 vout = _mm256_mul_ps(vin, vpi);
+    vout = _mm256_blendv_ps( vzero, vout, dmsk );
+    _mm256_storeu_ps(out+i, vout);
+    out_mask[i/8] = _mm256_movemask_ps( dmsk );
+  }
+#if 0
+  if (i < M) {
+    int rem = M - i;
+    __mmask16 mask = (1 << rem) - 1;
+    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
+    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
+    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
+    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
+    _mm512_mask_storeu_ps(out+i, mask, vout);
+    dropout_mask[i/16] = dmsk & mask;
+  }
+#endif
+}
+#else
 void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
   LIBXSMM_UNUSED( M );
   LIBXSMM_UNUSED( in );
@@ -210,6 +245,7 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned sh
   LIBXSMM_UNUSED( p );
   fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
 }
+#endif
 
 void dropout_fwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, void* rng_state, float p) {
   LIBXSMM_UNUSED( M );

@@ -579,6 +579,47 @@ LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
 
 /**
+ * Pseudo intrinsics (AVX-2)
+ */
+#if defined(LIBXSMM_INTRINSICS_AVX2) /*__AVX2__*/
+# if defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC) && 0
+LIBXSMM_PRAGMA_OPTIMIZE_OFF /* avoid ICE in case of symbols (-g) */
+# endif
+/** Generate random number in the interval [0, 1); thread save, state needs to be managed by user.
+ *  this is based on xoshiro128+ 1.0, e.g. http://prng.di.unimi.it/xoshiro128plus.c */
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2) __m256i LIBXSMM_INTRINSICS_MM256_RNG_XOSHIRO128P_EXTSTATE_EPI32(unsigned int* stateptr) {
+  __m256i state_0 = _mm256_loadu_si256( (const __m256i*)stateptr      );
+  __m256i state_1 = _mm256_loadu_si256( (const __m256i*)(stateptr+16) );
+  __m256i state_2 = _mm256_loadu_si256( (const __m256i*)(stateptr+32) );
+  __m256i state_3 = _mm256_loadu_si256( (const __m256i*)(stateptr+48) );
+  const __m256i result = _mm256_add_epi32(state_0, state_3);
+  const __m256i s = _mm256_slli_epi32(state_1, 9);
+  __m256i t;
+  state_2 = _mm256_xor_si256(state_2, state_0);
+  state_3 = _mm256_xor_si256(state_3, state_1);
+  state_1 = _mm256_xor_si256(state_1, state_2);
+  state_0 = _mm256_xor_si256(state_0, state_3);
+  state_2 = _mm256_xor_si256(state_2, s);
+  _mm256_storeu_si256( (__m256i*)stateptr   , state_0 );
+  _mm256_storeu_si256( (__m256i*)(stateptr+16), state_1 );
+  _mm256_storeu_si256( (__m256i*)(stateptr+32), state_2 );
+  t = _mm256_slli_epi32(state_3, 11);
+  state_3 = _mm256_or_si256(t, _mm256_srli_epi32(state_3, 32 - 11));
+  _mm256_storeu_si256( (__m256i*)(stateptr+48), state_3 );
+  return result;
+}
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2) __m256 LIBXSMM_INTRINSICS_MM256_RNG_EXTSTATE_PS(unsigned int* stateptr) {
+  const __m256i rng_mantissa = _mm256_srli_epi32( LIBXSMM_INTRINSICS_MM256_RNG_XOSHIRO128P_EXTSTATE_EPI32(stateptr), 9 );
+  const __m256 one = _mm256_set1_ps(1.0f);
+  return _mm256_sub_ps(_mm256_castsi256_ps(_mm256_or_si256(_mm256_set1_epi32(0x3f800000), rng_mantissa)), one);
+}
+# if defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC) && 0
+LIBXSMM_PRAGMA_OPTIMIZE_ON
+# endif
+#endif /*__AVX2__*/
+
+/**
  * Pseudo intrinsics (AVX-512)
  */
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
