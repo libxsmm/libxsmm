@@ -745,7 +745,9 @@ void libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx( libxsmm_generated_code*  
     const unsigned int                             i_vec_c3,
     const unsigned int                             i_vec_halves,
     const unsigned int                             i_vec_log2e,
-    const unsigned int                             i_vec_expmask ) {
+    const unsigned int                             i_vec_expmask,
+    const unsigned int                             i_vec_hi_bound,
+    const unsigned int                             i_vec_lo_bound ) {
   float c0_array[16] = { 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f, 0.70654502287f };
   float c1_array[16] = { 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f, 0.49454875509f };
   float c2_array[16] = { 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f, 0.15697034396f };
@@ -753,6 +755,8 @@ void libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx( libxsmm_generated_code*  
   float log2e_array[16] = { 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f, 1.442695f };
   float halves_array[16] = { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
   unsigned int expmask_array[8] = { 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f };
+  float hi_b_array[8] = { 88.3762626647949f , 88.3762626647949f, 88.3762626647949f, 88.3762626647949f, 88.3762626647949f, 88.3762626647949f, 88.3762626647949f, 88.3762626647949f };
+  float lo_b_array[8] = { -88.3762626647949f, -88.3762626647949f, -88.3762626647949f, -88.3762626647949f, -88.3762626647949f, -88.3762626647949f, -88.3762626647949f, -88.3762626647949f };
 
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) halves_array, "halves_array_", 'y', i_vec_halves);
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) log2e_array, "log2e_array_", 'y', i_vec_log2e);
@@ -761,6 +765,8 @@ void libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx( libxsmm_generated_code*  
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c2_array, "c2_array_", 'y', i_vec_c2);
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) c3_array, "c3_array_", 'y', i_vec_c3);
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) expmask_array, "expmask_array_", 'y', i_vec_expmask);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) hi_b_array, "hi_b_array_", 'y', i_vec_hi_bound);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) lo_b_array, "lo_b_array_", 'y', i_vec_lo_bound);
 }
 
 LIBXSMM_API_INTERN
@@ -804,7 +810,12 @@ void libxsmm_generator_exp_ps_3dts_avx( libxsmm_generated_code*                 
     const unsigned int                             i_vec_c3,
     const unsigned int                             i_vec_halves,
     const unsigned int                             i_vec_log2e,
-    const unsigned int                             i_vec_expmask ) {
+    const unsigned int                             i_vec_expmask,
+    const unsigned int                             i_vec_hi_bound,
+    const unsigned int                             i_vec_lo_bound ) {
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMAXPS, 'y',  i_vec_x, i_vec_lo_bound, i_vec_x );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMINPS, 'y',  i_vec_x, i_vec_hi_bound, i_vec_x );
 
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VFMADD213PS,

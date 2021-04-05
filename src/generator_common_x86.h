@@ -140,7 +140,9 @@ void libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx( libxsmm_generated_code*  
     const unsigned int                             i_vec_c3,
     const unsigned int                             i_vec_halves,
     const unsigned int                             i_vec_log2e,
-    const unsigned int                             i_vec_expmask );
+    const unsigned int                             i_vec_expmask,
+    const unsigned int                             i_vec_hi_bound,
+    const unsigned int                             i_vec_lo_bound );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_exp_ps_3dts_avx( libxsmm_generated_code*                        io_generated_code,
@@ -153,7 +155,9 @@ void libxsmm_generator_exp_ps_3dts_avx( libxsmm_generated_code*                 
     const unsigned int                             i_vec_c3,
     const unsigned int                             i_vec_halves,
     const unsigned int                             i_vec_log2e,
-    const unsigned int                             i_vec_expmask );
+    const unsigned int                             i_vec_expmask,
+    const unsigned int                             i_vec_hi_bound,
+    const unsigned int                             i_vec_lo_bound );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_generic_loop_header( libxsmm_generated_code*             io_generated_code,

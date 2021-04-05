@@ -708,7 +708,9 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block( libxsmm_generated_c
               i_micro_kernel_config->vec_c3,
               i_micro_kernel_config->vec_halves,
               i_micro_kernel_config->vec_log2e,
-              i_micro_kernel_config->vec_expmask );
+              i_micro_kernel_config->vec_expmask,
+              i_micro_kernel_config->vec_hi_bound,
+              i_micro_kernel_config->vec_lo_bound );
         } else {
           libxsmm_generator_exp_ps_3dts_avx512( io_generated_code,
               cur_vreg,
