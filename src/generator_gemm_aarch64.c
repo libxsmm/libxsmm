@@ -227,13 +227,15 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
   /* register blocking counter in m */
   unsigned int l_m = 0;
 
-  unsigned int l_m_blocks[2]; /* 0: full vector loads, 1: predicate loads */
+  unsigned int l_m_blocks[2] = { 0 }; /* 0: full vector loads, 1: predicate loads */
+  unsigned int l_m_total_blocks = 0;
+  unsigned int l_vec_reg_acc_start = 0;
   l_m_blocks[0] = i_m_blocking / i_micro_kernel_config->vector_length;
   l_m_blocks[1] = i_m_blocking % i_micro_kernel_config->vector_length;
-  unsigned int l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
+  l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
 
   /* start register of accumulator */
-  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_total_blocks);
+  l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_total_blocks);
 
   /* full vector loads on a */
   for( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {

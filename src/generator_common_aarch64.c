@@ -21,6 +21,10 @@ void libxsmm_generator_init_p_registers_aarch64_sve( libxsmm_generated_code* io_
                                                      unsigned char           i_p_reg_remainder,
                                                      unsigned char           i_nnz_remainder,
                                                      unsigned char           i_gp_reg_scratch ) {
+  LIBXSMM_UNUSED( i_p_reg_remainder );
+  LIBXSMM_UNUSED( i_nnz_remainder );
+  LIBXSMM_UNUSED( i_gp_reg_scratch );
+
   libxsmm_aarch64_instruction_sve_pcompute( io_generated_code,
                                             LIBXSMM_AARCH64_INSTR_SVE_PTRUE,
                                             i_p_reg_full,
@@ -157,14 +161,18 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
   /* register blocking counter in m */
   unsigned int l_m = 0;
 
-  unsigned int l_m_blocks[2]; /* 0: full vector loads, 1: predicate loads */
+  unsigned int l_m_blocks[2] = { 0 }; /* 0: full vector loads, 1: predicate loads */
+  unsigned int l_m_total_blocks = 0;
+  unsigned int l_m_bytes_full = 0;
+  unsigned int l_vec_reg_acc_start = 0;
+
   l_m_blocks[0] = i_m_blocking / i_vec_length;
   l_m_blocks[1] = i_m_blocking % i_vec_length;
-  unsigned int l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
-  unsigned int l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
+  l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
+  l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
 
   /* start register of accumulator */
-  unsigned int l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+  l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
 
   /* loads C accumulator from memory */
   if( i_zero == 0 ) {
@@ -330,17 +338,21 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
   /* register blocking counter in m */
   unsigned int l_m = 0;
 
-  unsigned int l_m_blocks[2]; /* 0: full vector loads, 1: predicate loads */
-  l_m_blocks[0] = i_m_blocking / i_vec_length;
-  l_m_blocks[1] = i_m_blocking % i_vec_length;
-  unsigned int l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
-  unsigned int l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
-
-  /* start register of accumulator */
-  unsigned int l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
-
   /* this is the jump size to be performed after a n-block is complete */
   unsigned long long l_jump_block_n_last = 0;
+
+  unsigned int l_m_blocks[2] = { 0 }; /* 0: full vector loads, 1: predicate loads */
+  unsigned int l_m_total_blocks = 0;
+  unsigned int l_m_bytes_full = 0;
+  unsigned int l_vec_reg_acc_start = 0;
+
+  l_m_blocks[0] = i_m_blocking / i_vec_length;
+  l_m_blocks[1] = i_m_blocking % i_vec_length;
+  l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
+  l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
+
+  /* start register of accumulator */
+  l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
 
   /* full vector loads */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
