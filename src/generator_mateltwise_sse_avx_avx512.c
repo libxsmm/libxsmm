@@ -607,7 +607,7 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
   libxsmm_x86_instruction_open_stream_mateltwise( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
 
   /* being BLAS aligned, for empty kermls, do nothing */
-  if ( (i_mateltwise_desc->m > 0) && (i_mateltwise_desc->n > 0) ) {
+  if ( (i_mateltwise_desc->m > 0) && ((i_mateltwise_desc->n > 0) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) ) ) {
     /* Stack management for melt kernel */
     libxsmm_generator_meltw_setup_stack_frame( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
