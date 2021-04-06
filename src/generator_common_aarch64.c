@@ -238,10 +238,6 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
   }
   /* init C accumulator to zero */
   else {
-    fprintf(stderr, "libxsmm_generator_load_2dregblock_aarch64_sve: beta=0 not implmented!\n");
-    exit(-1);
-    /* TODO: check why the code below is not working */
-#if 0
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
         libxsmm_aarch64_instruction_sve_compute( io_generated_code,
@@ -259,7 +255,6 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
        exit(-1);
       }
     }
-#endif
   }
 }
 
