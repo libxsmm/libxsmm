@@ -139,9 +139,9 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_a64fx( libxsmm_generated_c
   /* VLEN per l_m interations */
   unsigned int l_m_blocks[3] = { 0 };  /* 0: 128bit, 1: 64bit, 2: 32bit */
   unsigned int l_m_total_blocks = 0;
-  libxsmm_aarch64_asimd_width  l_m_instr_width[32] = { 0 };
+  libxsmm_aarch64_asimd_width l_m_instr_width[32] = { LIBXSMM_AARCH64_ASIMD_WIDTH_B };
   unsigned int l_m_instr_offset[32] = { 0 };
-  libxsmm_aarch64_asimd_tupletype l_m_instr_tuple[32] = { 0 };
+  libxsmm_aarch64_asimd_tupletype l_m_instr_tuple[32] = { LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8B };
 
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_micro_kernel_config->vector_length;                                            /* number of 128 bit stores */
