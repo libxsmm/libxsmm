@@ -58,7 +58,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
     io_micro_kernel_config->use_masking_a_c = 0;
     io_micro_kernel_config->vector_name = 'v';
     if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-      io_micro_kernel_config->vector_length = 2;
+      io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 8;
       io_micro_kernel_config->datatype_size_out = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
@@ -70,7 +70,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
       io_micro_kernel_config->vmul_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
     } else if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-      io_micro_kernel_config->vector_length = 4;
+      io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size_in = 4;
       io_micro_kernel_config->datatype_size_out = 4;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
@@ -133,19 +133,15 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
   } else if ( ( i_arch == LIBXSMM_AARCH64_A64FX ) && ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
     /* @TODO check if there is a better blocking strategy */
-    if ( i_xgemm_desc->m >= 16 ) {
-      l_m_blocking = 16;
+    if ( i_xgemm_desc->m >= 64 ) {
+      l_m_blocking = 64;
     } else {
       l_m_blocking = i_xgemm_desc->m;
-      /* in case we don't have a full vector length, we use masking */
-      if (l_m_blocking == 15) {  /* for 15 we would need 5 M registers :-( 4-4-4-2-1 */
-        l_m_blocking = 12;
-      }
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_A64FX ) && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     /* @TODO check if there is a better blocking strategy */
-    if ( i_xgemm_desc->m >= 8 ) {
-      l_m_blocking = 8;
+    if ( i_xgemm_desc->m >= 32 ) {
+      l_m_blocking = 32;
     } else {
       l_m_blocking = i_xgemm_desc->m;
     }
@@ -187,19 +183,14 @@ unsigned int libxsmm_generator_gemm_aarch64_update_m_blocking( libxsmm_micro_ker
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_A64FX ) && ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32 out kernel with the same logic */
-    if (i_current_m_blocking == 16) {
-      l_m_blocking = i_xgemm_desc->m % 16;
-      if (l_m_blocking == 15) { /* for 15 we would need 5 M registers 4-4-4-2-1 */
-        l_m_blocking = 12;
-      }
-    } else if ( i_current_m_blocking == 12 && i_xgemm_desc->m != 12 ) {
-      l_m_blocking = i_xgemm_desc->m % 4;
+    if (i_current_m_blocking == 64 ) {
+      l_m_blocking = i_xgemm_desc->m % 64;
     } else {
       /* we are done with m_blocking */
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_A64FX ) && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    if (i_current_m_blocking == 8) {
-      l_m_blocking = i_xgemm_desc->m % 8;
+    if (i_current_m_blocking == 32) {
+      l_m_blocking = i_xgemm_desc->m % 32;
     } else {
       /* we are done with m_blocking */
     }
@@ -270,7 +261,8 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
       l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
       libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2, (unsigned long long)l_b_offset );
 
-      l_b_offset = (i_n_blocking * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in) - (i_micro_kernel_config->datatype_size_in);
+      l_b_offset = i_xgemm_desc->ldb - i_n_blocking;
+      l_b_offset *= i_micro_kernel_config->datatype_size_in;;
     }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
