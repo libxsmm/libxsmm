@@ -60,10 +60,17 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
     if (NULL != getcap) {
       const unsigned long capabilities = getcap(AT_HWCAP);
 #     if defined(HWCAP_DCPOP)
-      if (HWCAP_DCPOP & capabilities) result = LIBXSMM_AARCH64_V82;
-#     endif
-#     if defined(HWCAP_SVE)
-      if (HWCAP_SVE & capabilities) result = LIBXSMM_AARCH64_A64FX;
+      if (HWCAP_DCPOP & capabilities) {
+#       if defined(HWCAP_SVE)
+        if (HWCAP_SVE & capabilities) {
+          result = LIBXSMM_AARCH64_A64FX;
+        }
+        else
+#       endif
+        {
+          result = LIBXSMM_AARCH64_V82;
+        }
+      } /* HWCAP_DCPOP */
 #     endif
     }
     else {
