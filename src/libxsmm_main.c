@@ -1585,7 +1585,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
     else if (arch == libxsmm_stristr(arch, "arm") || arch == libxsmm_stristr(arch, "arm64")
           || arch == libxsmm_stristr(arch, "arm_v81")
-          || arch == libxsmm_stristr(arch, "aarch64")
+          || arch == libxsmm_stristr(arch, "aarch64"))
     {
       target_archid = LIBXSMM_AARCH64_V81;
     }
