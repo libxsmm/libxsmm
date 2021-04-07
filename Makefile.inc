@@ -755,7 +755,7 @@ endif
 # Select x86 code path (if not selected otherwise)
 CPUFLAGS_X86 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
-  elif [[ "Darwin" = "$(UNAME)" && "x86_64" = "$(UNAME) -m" ]]; then \
+  elif [ "Darwin" = "$(UNAME)" ] && [ "x86_64" = "$(UNAME) -m" ]; then \
     sysctl -a machdep.cpu.features \
       machdep.cpu.extfeatures \
       machdep.cpu.leaf7_features \
@@ -797,7 +797,7 @@ MIC ?= 0
 # Select aarch64 code path
 CPUFLAGS_AARCH64 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 Features /proc/cpuinfo | cut -d: -f2-; \
-  elif [[ "Darwin" = "$(UNAME)" && "arm64" = "$(UNAME) -m" ]]; then \
+  elif [ "Darwin" = "$(UNAME)" ] && [ "arm64" = "$(UNAME) -m" ]; then \
     sysctl -a hw.optional.neon | cut -d: -f2-; \
   fi))
 ASIMD ?= 1
