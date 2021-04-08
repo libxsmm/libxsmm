@@ -196,8 +196,11 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_blocksifm_blocking( libxsmm
     if ((handle->desc.C >= 2048) && (handle->desc.K >= 512)) {
       result = 1;
     }
-    if ((handle->target_archid < LIBXSMM_X86_AVX512) && (handle->desc.C >= 512) && (handle->desc.K >= 512) ) {
+    if ( (handle->target_archid < LIBXSMM_X86_AVX512) && (handle->desc.C >= 512) ) {
       result = 2;
+    }
+    if ( (handle->target_archid < LIBXSMM_X86_AVX512) && (handle->desc.C >= 1024) ) {
+      result = 4;
     }
   } else {
     result = 1;
