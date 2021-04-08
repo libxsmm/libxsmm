@@ -62,7 +62,7 @@
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
-#if !defined(LIBXSMM_PLATFORM_X86)
+#if defined(LIBXSMM_PLATFORM_X86)
   unsigned int eax, ebx, ecx, edx;
   LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID max. leaf */
