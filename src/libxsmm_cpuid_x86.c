@@ -63,16 +63,6 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if !defined(LIBXSMM_PLATFORM_X86)
-# if !defined(NDEBUG)
-  static int error_once = 0;
-  if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM WARNING: libxsmm_cpuid_x86 called on non-x86 platform!\n");
-  }
-# endif
-  if (NULL != info) LIBXSMM_MEMZERO127(info);
-#else
   unsigned int eax, ebx, ecx, edx;
   LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID max. leaf */
@@ -218,6 +208,16 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
     if (NULL != info) LIBXSMM_MEMZERO127(info);
     result = LIBXSMM_X86_GENERIC;
   }
+#else
+# if !defined(NDEBUG)
+  static int error_once = 0;
+  if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM WARNING: libxsmm_cpuid_x86 called on non-x86 platform!\n");
+  }
+# endif
+  if (NULL != info) LIBXSMM_MEMZERO127(info);
 #endif
   return result;
 }
