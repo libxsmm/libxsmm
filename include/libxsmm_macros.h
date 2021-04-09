@@ -652,6 +652,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
 # endif
 #endif
+#if !defined(NDEBUG)
+# define LIBXSMM_UNUSED_DEBUG(VARIABLE) LIBXSMM_UNUSED(VARIABLE)
+#else
+# define LIBXSMM_UNUSED_DEBUG(VARIABLE)
+#endif
 
 #if defined(_OPENMP)
 # define LIBXSMM_PRAGMA_OMP(...) LIBXSMM_PRAGMA(omp __VA_ARGS__)
