@@ -1225,6 +1225,62 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->use_fallback_fwd_loops = libxsmm_dnn_convolution_setup_fallback_loops_fwd(handle);
   handle->fwd_padding_copy = libxsmm_dnn_convolution_setup_fwd_padding_copy(handle);
 
+#if 0
+  if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
+    int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
+    int brgemm_pf_oob = 0;
+    const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
+    handle->block_fwd_ofm = 1;
+    handle->block_fwd_oj = handle->fwd_ofh_rb;
+    ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
+    ldA = handle->ofmblock;
+    ldC = handle->ofmblock;
+    beta = (handle->avoid_acc_load) ? (float)0.0 : (float)1.0;
+    l_flags = ( LIBXSMM_GEMM_FLAGS('N', 'N') ) | handle->fwd_flags;
+    if ( 0 == env_brgemm_pf_oob ) {
+    } else {
+      brgemm_pf_oob = atoi(env_brgemm_pf_oob);
+    }
+    if (brgemm_pf_oob > 0) {
+      prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
+    }
+    handle->fwd_compute_kernel_offs_f32 = NULL;
+    handle->fwd_compute_kernel_strd_f32 = NULL;
+    handle->fwd_compute_kernel_addr_a_f32 = NULL;
+    handle->fwd_compute_kernel_addr_b_f32 = NULL;
+    if (handle->desc.R == 1 && handle->desc.S == 1) {
+      const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
+      const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
+      int stride_a = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_in);
+      int stride_b = IFW * IFH * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
+      handle->fwd_compute_kernel_strd_f32 = libxsmm_smmdispatch_reducebatch_strd_unroll(handle->ofmblock, handle->fwd_gemm_pixels, handle->ifmblock, stride_a, stride_b, handle->blocksifm_blocking, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+    } else {
+      const int IFW = (handle->fwd_padding_copy == 1) ? handle->ifwp + 2*handle->desc.pad_w : ( (handle->pack_input == 1) ? handle->ofwp : handle->ifwp );
+      const int IFH = (handle->fwd_padding_copy == 1) ? handle->ifhp + 2*handle->desc.pad_h : ( (handle->pack_input == 1) ? handle->ofhp : handle->ifhp );
+      int n_blocks = handle->desc.R * handle->desc.S * handle->blocksifm_blocking;
+      int i = 0, ifm, ki, kj;
+      handle->A_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
+      handle->B_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
+      for (ifm = 0; ifm < handle->blocksifm_blocking; ifm++) {
+        for (kj = 0; kj < handle->desc.R; kj++) {
+          for (ki = 0; ki < handle->desc.S; ki++) {
+            handle->A_offsets[i] = (ifm * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock +
+                kj * handle->desc.S * handle->ifmblock * handle->ofmblock +
+                ki * handle->ifmblock * handle->ofmblock) * libxsmm_dnn_typesize(handle->datatype_in);
+            handle->B_offsets[i] = (ifm * IFH * IFW * handle->ifmblock +
+                kj * IFW * handle->ifmblock +
+                ki * handle->ifmblock) * libxsmm_dnn_typesize(handle->datatype_in);
+            i++;
+          }
+        }
+      }
+      handle->fwd_compute_kernel_offs_f32 = libxsmm_smmdispatch_reducebatch_offs(handle->ofmblock, handle->fwd_gemm_pixels, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+    }
+    handle->fwd_compute_kernel_addr_a_f32 = libxsmm_smmdispatch_reducebatch_addr(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+    handle->fwd_compute_kernel_addr_b_f32 = libxsmm_smmdispatch_reducebatch_addr(handle->ofmblock, handle->fwd_ofh_rb*(handle->fwd_ofw_rb-1), handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+  }
+#endif
+
   if ( ((handle->target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->target_archid <= LIBXSMM_X86_ALLFEAT)) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) {
     handle->block_fwd_ofm = 1;
     handle->block_fwd_oj = handle->fwd_ofh_rb;
