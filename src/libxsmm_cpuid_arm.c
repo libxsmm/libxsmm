@@ -13,6 +13,15 @@
 #include <libxsmm_memory.h>
 #include <libxsmm_sync.h>
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <signal.h>
+#include <setjmp.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
 #if defined(_MSC_VER)
 # define LIBXSMM_CPUID_ARM_ENC16(OP0, OP1, CRN, CRM, OP2) ( \
     (((OP0) & 1) << 14) | \
@@ -29,24 +38,43 @@
 #endif
 
 
+#if defined(LIBXSMM_PLATFORM_AARCH64)
+LIBXSMM_APIVAR_DEFINE(jmp_buf internal_cpuid_arm_jmp_buf);
+
+LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int /*signum*/);
+LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int signum)
+{
+  void (*const handler)(int) = signal(signum, internal_cpuid_arm_sigill);
+  if (SIG_ERR != handler) {
+    longjmp(internal_cpuid_arm_jmp_buf, 1);
+  }
+}
+#endif
+
+
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if defined(LIBXSMM_PLATFORM_AARCH64)
-  /* avoid redetecting features */
-  if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) {
+  if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* avoid redetecting features */
+    void (*const handler)(int) = signal(SIGILL, internal_cpuid_arm_sigill);
     result = LIBXSMM_AARCH64_V81;
-    { uint64_t capability; /* 64-bit value */
-      LIBXSMM_CPUID_ARM_MRS(capability, ID_AA64ISAR1_EL1);
-      if (0xF & capability) { /* DPB */
-        LIBXSMM_CPUID_ARM_MRS(capability, ID_AA64PFR0_EL1);
-        if (0xF & (capability >> 32)) { /* SVE */
-          result = LIBXSMM_AARCH64_A64FX;
-        }
-        else {
+    if (SIG_ERR != handler) {
+      uint64_t capability; /* 64-bit value */
+      if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
+        LIBXSMM_CPUID_ARM_MRS(capability, ID_AA64ISAR1_EL1);
+        if (0xF & capability) { /* DPB */
           result = LIBXSMM_AARCH64_V82;
+          if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
+            LIBXSMM_CPUID_ARM_MRS(capability, ID_AA64PFR0_EL1);
+            if (0xF & (capability >> 32)) { /* SVE */
+              result = LIBXSMM_AARCH64_A64FX;
+            }
+          }
         }
       }
+      /* restore original state */
+      signal(SIGILL, handler);
     }
     if (NULL != info) LIBXSMM_MEMZERO127(info);
   }
