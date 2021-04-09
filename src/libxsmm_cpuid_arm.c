@@ -45,9 +45,8 @@ LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int /*signum*/);
 LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int signum)
 {
   void (*const handler)(int) = signal(signum, internal_cpuid_arm_sigill);
-  if (SIG_ERR != handler) {
-    longjmp(internal_cpuid_arm_jmp_buf, 1);
-  }
+  LIBXSMM_ASSERT(SIGILL == signum);
+  if (SIG_ERR != handler) longjmp(internal_cpuid_arm_jmp_buf, 1);
 }
 #endif
 
