@@ -68,9 +68,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   float l_code_const_fp[16];
   unsigned int l_const_perm_ops[16];
 
-  int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
-  int l_breg_unique, l_preg_unique, l_psreg_unique;
-  int l_base_acc_reg, l_base_perm_reg, l_bcast_reg;
+  unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
+  unsigned int l_breg_unique, l_preg_unique, l_psreg_unique;
+  unsigned int l_base_acc_reg, l_base_perm_reg, l_bcast_reg;
   int l_prefetch;
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
