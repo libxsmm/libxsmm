@@ -112,7 +112,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     l_prefetch = 0;
 
     l_preg_unique = l_psreg_unique = 0;
-    l_base_perm_reg = l_bcast_reg = -1;
+    l_base_perm_reg = l_bcast_reg = (unsigned int)-1;
   } else {
     l_breg_unique = 31;
     l_base_acc_reg = 31;
