@@ -349,20 +349,20 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
     unsigned char l_opc = 0x0;
-    char l_imm = 0x0;
+    signed char l_imm = 0x0;
 
     switch ( i_asimdwidth ) {
       case LIBXSMM_AARCH64_ASIMD_WIDTH_S:
         l_opc = 0x0;
-        l_imm = i_offset/4;
+        l_imm = (signed char)(i_offset/4);
         break;
       case LIBXSMM_AARCH64_ASIMD_WIDTH_D:
         l_opc = 0x1;
-        l_imm = i_offset/8;
+        l_imm = (signed char)(i_offset/8);
         break;
       case LIBXSMM_AARCH64_ASIMD_WIDTH_Q:
         l_opc = 0x2;
-        l_imm = i_offset/16;
+        l_imm = (signed char)(i_offset/16);
         break;
       default:
         fprintf(stderr, "libxsmm_aarch64_instruction_asimd_pair_move: unexpected asimdwidth number: %u\n", i_asimdwidth);
@@ -774,7 +774,7 @@ void libxsmm_aarch64_instruction_alu_pair_move( libxsmm_generated_code*         
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
     unsigned char l_opc = 0x0;
-    char l_imm = 0x0;
+    signed char l_imm = 0x0;
 
     if ( (0x20 & i_gp_reg_0) == 0x20 ) {
       l_opc = 0x1;
