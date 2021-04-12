@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
       }
       result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
-        fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+        fprintf(stdout, "\tdiff: l2_rel=%f (ref=%f vs tst=%f)\n", diff.l2_rel, diff.v_ref, diff.v_tst);
         if (check < diff.l2_rel) {
           fprintf(stderr, "FAILED.\n");
           result = EXIT_FAILURE;
