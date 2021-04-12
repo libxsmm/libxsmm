@@ -89,7 +89,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     a_csr_rowptr[M] = a_nnz;
 
     /* attempt to JIT a sparse_reg */
-    new_handle->N_chunksize = 8;
+    new_handle->N_chunksize = libxsmm_cpuid_vlen32(libxsmm_cpuid()) / 2;
 
     xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, new_handle->N_chunksize, K,
       0, ldb, ldc, one, beta, flags, prefetch);
@@ -101,20 +101,17 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
-    assert( a_nnz <= LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_L1_DP );
     /* allocate 8 * 512-bit permute operands if not stored in registers */
-    if (a_nnz > LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_REG_DP) {
-      new_handle->permute_operands = (unsigned int*)libxsmm_aligned_malloc(8*16*sizeof(unsigned int), 64);
-      /* store permute operands */
-      for (i = 0; i < 8; i++) {
-        j = 0;
-        /* repeat pattern to select 64-bits using vpermd */
-        while (j < 16) {
-          new_handle->permute_operands[i*16+(j)] = i*2;
-          j++;
-          new_handle->permute_operands[i*16+(j)] = i*2 + 1;
-          j++;
-        }
+    new_handle->permute_operands = (unsigned int*)libxsmm_aligned_malloc(8*16*sizeof(unsigned int), 64);
+    /* store permute operands */
+    for (i = 0; i < 8; i++) {
+      j = 0;
+      /* repeat pattern to select 64-bits using vpermd */
+      while (j < 16) {
+        new_handle->permute_operands[i*16+(j)] = i*2;
+        j++;
+        new_handle->permute_operands[i*16+(j)] = i*2 + 1;
+        j++;
       }
     }
   /* attempt to JIT dense kernel as sparse_reg failed */
@@ -215,7 +212,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     a_csr_rowptr[M] = a_nnz;
 
     /* attempt to JIT a sparse_reg */
-    new_handle->N_chunksize = 16;
+    new_handle->N_chunksize = libxsmm_cpuid_vlen32(libxsmm_cpuid());
 
     xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, new_handle->N_chunksize, K,
       0, ldb, ldc, one, beta, flags, prefetch);
@@ -227,18 +224,15 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
-    assert( a_nnz <= LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_L1_SP );
     /* allocate 16 * 512-bit permute operands if not stored in registers */
-    if (a_nnz > LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_REG_SP) {
-      new_handle->permute_operands = (unsigned int*)libxsmm_aligned_malloc(16*16*sizeof(unsigned int), 64);
-      /* store permute operands */
-      for (i = 0; i < 16; i++) {
-        j = 0;
-        /* repeat pattern to select 32-bits using vpermd */
-        while (j < 16) {
-          new_handle->permute_operands[i*16+j] = i;
-          j++;
-        }
+    new_handle->permute_operands = (unsigned int*)libxsmm_aligned_malloc(16*16*sizeof(unsigned int), 64);
+    /* store permute operands */
+    for (i = 0; i < 16; i++) {
+      j = 0;
+      /* repeat pattern to select 32-bits using vpermd */
+      while (j < 16) {
+        new_handle->permute_operands[i*16+j] = i;
+        j++;
       }
     }
   /* attempt to JIT dense kernel as sparse_reg failed */

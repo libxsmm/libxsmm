@@ -14,16 +14,6 @@
 
 #include <libxsmm_generator.h>
 
-#define LIBXSMM_SPGEMM_ASPARSE_REG_BCAST_REG 30
-#define LIBXSMM_SPGEMM_ASPARSE_REG_ACC_REG 31
-#define LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_REG_DP 176
-#define LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_REG_SP 224
-#define LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_L1_DP 240
-#define LIBXSMM_SPGEMM_ASPARSE_REG_MAX_UNIQUE_L1_SP 480
-/* first register number to store 8/16 permute operands */
-#define LIBXSMM_SPGEMM_ASPARSE_REG_PERM_FIRST_REG_OP_DP 22
-#define LIBXSMM_SPGEMM_ASPARSE_REG_PERM_FIRST_REG_OP_SP 14
-
 LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code* io_generated_code,
                                   const char*                           i_routine_name,
