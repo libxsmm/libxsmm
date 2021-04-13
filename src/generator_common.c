@@ -57,7 +57,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   if (i_code_to_append != NULL) {
     l_length_2 = i_append_length;
   } else {
-    fprintf(stderr, "LIBXSMM WARNING: libxsmm_append_code_as_string was called with an empty string for appending code");
+    fprintf(stderr, "LIBXSMM WARNING: libxsmm_append_code_as_string was called with an empty string");
   }
 
   /* allocate new string */
