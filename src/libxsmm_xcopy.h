@@ -63,12 +63,14 @@
     libxsmm_mzero_call_args_.in.primary = (void*)(SRC); \
     libxsmm_mzero_call_args_.out.primary = (DST); \
     (KERNEL).meltw_zero(&libxsmm_mzero_call_args_); \
+    LIBXSMM_UNUSED(LDO); \
   }
 # define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
     libxsmm_meltw_unary_param libxsmm_mcopy_call_args_; \
     libxsmm_mcopy_call_args_.in.primary = (void*)(SRC); \
     libxsmm_mcopy_call_args_.out.primary = (DST); \
     (KERNEL).meltw_copy(&libxsmm_mcopy_call_args_); \
+    LIBXSMM_UNUSED(LDO); \
   }
 # define LIBXSMM_MCOPY_CALL_PF(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) \
     LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO)
@@ -105,6 +107,7 @@
     libxsmm_tcopy_call_args_.in.primary = (void*)(SRC); \
     libxsmm_tcopy_call_args_.out.primary = (DST); \
     (KERNEL).meltw_trans(&libxsmm_tcopy_call_args_); \
+    LIBXSMM_UNUSED(LDO); \
   }
 #else
 # define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
