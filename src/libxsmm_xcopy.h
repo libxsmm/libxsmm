@@ -38,10 +38,11 @@
 #   if defined(LIBXSMM_XCOPY_MELTW)
 #     define LIBXSMM_XCOPY_JIT 3
 #   elif (defined(_WIN32) || defined(__CYGWIN__))
-/* only enable matcopy code generation (workaround issue with taking GP registers correctly) */
-#     define LIBXSMM_XCOPY_JIT 0
+#     define LIBXSMM_XCOPY_JIT 2
+#   elif defined(NDEBUG)
+#     define LIBXSMM_XCOPY_JIT 2
 #   else
-#     define LIBXSMM_XCOPY_JIT 1
+#     define LIBXSMM_XCOPY_JIT 3
 #   endif
 # endif
 #else
@@ -102,9 +103,9 @@
 /* call JIT-kernel (transpose) */
 #if defined(LIBXSMM_XCOPY_MELTW)
 # define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    libxsmm_meltw_transform_param libxsmm_tcopy_call_args_; \
-    libxsmm_tcopy_call_args_.in_ptr = (SRC); \
-    libxsmm_tcopy_call_args_.out_ptr = (DST); \
+    libxsmm_meltw_unary_param libxsmm_tcopy_call_args_; \
+    libxsmm_tcopy_call_args_.in.primary = (void*)(SRC); \
+    libxsmm_tcopy_call_args_.out.primary = (DST); \
     (KERNEL).meltw_trans(&libxsmm_tcopy_call_args_); \
   }
 #else
