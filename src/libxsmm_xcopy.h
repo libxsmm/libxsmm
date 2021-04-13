@@ -29,18 +29,16 @@
 #if !defined(LIBXSMM_XCOPY_TILE_MIN)
 # define LIBXSMM_XCOPY_TILE_MIN 2
 #endif
-#if !defined(LIBXSMM_XCOPY_MELTW) && 0
+#if !defined(LIBXSMM_XCOPY_MELTW) && 1
 # define LIBXSMM_XCOPY_MELTW
 #endif
 /* 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy */
 #if defined(LIBXSMM_PLATFORM_X86)
 # if !defined(LIBXSMM_XCOPY_JIT)
-#   if defined(LIBXSMM_XCOPY_MELTW)
-#     define LIBXSMM_XCOPY_JIT 3
-#   elif (defined(_WIN32) || defined(__CYGWIN__))
-#     define LIBXSMM_XCOPY_JIT 2
+#   if (defined(_WIN32) || defined(__CYGWIN__))
+#     define LIBXSMM_XCOPY_JIT 0
 #   elif defined(NDEBUG)
-#     define LIBXSMM_XCOPY_JIT 2
+#     define LIBXSMM_XCOPY_JIT 0
 #   else
 #     define LIBXSMM_XCOPY_JIT 3
 #   endif
@@ -61,15 +59,15 @@
 
 #if defined(LIBXSMM_XCOPY_MELTW)
 # define LIBXSMM_MZERO_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    libxsmm_meltw_zero_param libxsmm_mzero_call_args_; \
-    libxsmm_mzero_call_args_.in_ptr = (SRC); \
-    libxsmm_mzero_call_args_.out_ptr = (DST); \
+    libxsmm_meltw_unary_param libxsmm_mzero_call_args_; \
+    libxsmm_mzero_call_args_.in.primary = (void*)(SRC); \
+    libxsmm_mzero_call_args_.out.primary = (DST); \
     (KERNEL).meltw_zero(&libxsmm_mzero_call_args_); \
   }
 # define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    libxsmm_meltw_copy_param libxsmm_mcopy_call_args_; \
-    libxsmm_mcopy_call_args_.in_ptr = (SRC); \
-    libxsmm_mcopy_call_args_.out_ptr = (DST); \
+    libxsmm_meltw_unary_param libxsmm_mcopy_call_args_; \
+    libxsmm_mcopy_call_args_.in.primary = (void*)(SRC); \
+    libxsmm_mcopy_call_args_.out.primary = (DST); \
     (KERNEL).meltw_copy(&libxsmm_mcopy_call_args_); \
   }
 # define LIBXSMM_MCOPY_CALL_PF(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) \
@@ -269,9 +267,7 @@
   LIBXSMM_CONCATENATE(XKERNEL,_TILES)(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1)
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
-  libxsmm_meltwfunction_unary meltw_trans;
-  libxsmm_meltwfunction_copy meltw_copy;
-  libxsmm_meltwfunction_zero meltw_zero;
+  libxsmm_meltwfunction_unary meltw_trans, meltw_copy, meltw_zero;
   libxsmm_xmcopyfunction xmcopy;
   libxsmm_xtransfunction xtrans;
   const void* ptr;

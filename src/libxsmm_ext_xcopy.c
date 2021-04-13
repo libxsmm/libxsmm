@@ -52,19 +52,10 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
         if (0 != (2 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
 #   if defined(LIBXSMM_XCOPY_MELTW)
           const libxsmm_blasint sldi = ldi * typesize, sldo = ldo * typesize;
-          if (NULL != in) { /* mcopy */
-            kernel.meltw_copy = libxsmm_dispatch_meltw_copy(
-              (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
-              &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
-              LIBXSMM_MELTW_FLAG_COPY_NONE);
-          }
-#     if 0 /* TODO: LIBXSMM_MELTW_OPERATION_ZERO does not seem to be implemented */
-          else { /* mzero */
-            kernel.meltw_zero = libxsmm_dispatch_meltw_zero(
-              (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
-              &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
-          }
-#     endif
+          kernel.meltw_copy = libxsmm_dispatch_meltw_unary(
+            (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize, &sldi, &sldo,
+            LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_MELTW_FLAG_UNARY_NONE,
+            NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
 #   else
           const libxsmm_mcopy_descriptor* desc;
           libxsmm_descriptor_blob blob;

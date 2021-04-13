@@ -104,9 +104,6 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
   { /* check if JIT-code generation is permitted */
     const char *const env_jit = getenv("LIBXSMM_XCOPY_JIT");
     libxsmm_xcopy_jit = ((NULL == env_jit || 0 == *env_jit) ? (LIBXSMM_XCOPY_JIT) : atoi(env_jit));
-# if defined(LIBXSMM_XCOPY_MELTW)
-    if (LIBXSMM_X86_AVX512_CORE > archid) libxsmm_xcopy_jit &= ~2;
-# endif
   }
 #endif
   { /* determines if OpenMP tasks are used (when available) */
@@ -306,24 +303,15 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
       if (0 != (2 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
 # if defined(LIBXSMM_XCOPY_MELTW)
         const libxsmm_blasint sldi = ldi * typesize, sldo = ldo * typesize;
-        if (NULL != in) { /* mcopy */
-          kernel.meltw_copy = libxsmm_dispatch_meltw_copy(
-            (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
-            &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
-            LIBXSMM_MELTW_FLAG_COPY_NONE);
-        }
-#   if 0 /* TODO: LIBXSMM_MELTW_OPERATION_ZERO does not seem to be implemented */
-        else { /* mzero */
-          kernel.meltw_zero = libxsmm_dispatch_meltw_zero(
-            (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
-            &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
-        }
-#   endif
+        kernel.meltw_copy = libxsmm_dispatch_meltw_unary(
+          (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize, &sldi, &sldo,
+          LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_MELTW_FLAG_UNARY_NONE,
+          NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
 # else
         libxsmm_descriptor_blob blob;
         kernel.xmcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&blob,
           typesize, tm, tn, (unsigned int)ldo, (unsigned int)ldi,
-          NULL != in ? LIBXSMM_MATCOPY_FLAG_DEFAULT : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
+          NULL != in ? LIBXSMM_MATCOPY_FLAG_DEFAULT/*mcopy*/ : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE/*mzero*/,
           prefetch, NULL/*default unroll*/));
 # endif
       }
