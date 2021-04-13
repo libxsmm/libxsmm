@@ -123,7 +123,7 @@ typedef struct my_fc_bwd_config {
   libxsmm_smmfunction_reducebatch_strd gemm_bwd2;
   libxsmm_smmfunction_reducebatch_strd gemm_upd;
   libxsmm_smmfunction_reducebatch_strd gemm_upd2;
-  libxsmm_xtransfunction tr_kernel;
+  libxsmm_meltwfunction_unary norm_to_normT_kernel;
 } my_fc_bwd_config;
 
 my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
@@ -194,8 +194,6 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
                                  libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
   my_fc_bwd_config res;
-  const libxsmm_trans_descriptor* tr_desc = 0;
-  libxsmm_descriptor_blob blob;
   libxsmm_blasint lda = bc;
   libxsmm_blasint ldb = bk;
   libxsmm_blasint ldc = bc;
@@ -205,6 +203,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   int updflags = LIBXSMM_GEMM_FLAGS( 'N', 'T' );
   libxsmm_blasint updM;
   libxsmm_blasint updN;
+  libxsmm_blasint ldaT = bk;
 
   /* setting up some handle values */
   res.N = N;
@@ -273,13 +272,13 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     fprintf( stderr, "JIT for BRGEMM TPP gemm_bwd2 failed. Bailing...!\n");
     exit(-1);
   }
-  /* Transpose kernel used for weight transpose in bwd pass */
-  tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), res.bk, res.bc, res.bc);
-  res.tr_kernel = libxsmm_dispatch_trans(tr_desc);
-  if ( res.tr_kernel == NULL ) {
-    fprintf( stderr, "JIT for transpose TPP tr_kernel failed. Bailing...!\n");
+
+  res.norm_to_normT_kernel = libxsmm_dispatch_meltw_unary(bk, bc, &ldaT, &lda, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+  if ( res.norm_to_normT_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP norm_to_normT_kernel failed. Bailing...!\n");
     exit(-1);
   }
+
   /* UPD GEMM */
   lda = res.bk;
   ldb = res.bc;
@@ -583,9 +582,6 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
 
-  /* Transpose kernel to transpose filters  */
-  libxsmm_xtransfunction tr_kernel = cfg.tr_kernel;
-
   /* number of tasks for transpose that could be run in parallel */
   const libxsmm_blasint eltwise_work = nBlocksOFm * nBlocksMB;
   /* compute chunk size */
@@ -612,6 +608,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
 
   LIBXSMM_VLA_DECL(2,               float,    dbias, dbias_ptr,                     cfg.bk);
   LIBXSMM_VLA_DECL(4, const unsigned char, relumask,  relu_ptr, nBlocksOFm, cfg.bn, cfg.bk);
+  libxsmm_meltw_unary_param trans_param;
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
@@ -701,12 +698,11 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
 
     /* transpose weight */
     for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-      const unsigned int ubk = (unsigned int)bk;
-      const unsigned int ubc = (unsigned int)bc;
       ofm1 = ifm1ofm1 / nBlocksIFm;
       ifm1 = ifm1ofm1 % nBlocksIFm;
-      tr_kernel(&LIBXSMM_VLA_ACCESS(4,    filter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &ubk,
-                &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc), &ubc);
+      trans_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4,    filter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+      trans_param.out.primary = &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc);
+      cfg.norm_to_normT_kernel(&trans_param);
     }
 
     /* wait for transpose to finish */
