@@ -257,7 +257,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         else
 #endif /*defined(_OPENMP)*/
         { /* no MT, or small problem-size */
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT) && !defined(LIBXSMM_XCOPY_MELTW))
           libxsmm_xcopykernel kernel;
           const libxsmm_trans_descriptor* desc;
           libxsmm_descriptor_blob blob;

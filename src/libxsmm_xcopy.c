@@ -380,7 +380,7 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
         }
         if ((unsigned int)m < tm || (unsigned int)n < tn) {
           if (1 == ntasks) {
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT) && !defined(LIBXSMM_XCOPY_MELTW))
             libxsmm_descriptor_blob blob;
             if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
               && NULL != (kernel.xtrans = libxsmm_dispatch_trans( /* JIT-kernel available? */
@@ -399,7 +399,7 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
             const unsigned int mm = (unsigned int)(libxsmm_tcopy_nscale * nn);
             tn = LIBXSMM_CLMP((unsigned int)n, 1, nn);
             tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT) && !defined(LIBXSMM_XCOPY_MELTW))
             { const libxsmm_trans_descriptor* desc;
               libxsmm_descriptor_blob blob;
               if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
