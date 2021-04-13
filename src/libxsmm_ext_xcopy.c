@@ -355,17 +355,21 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
       {
 # if defined(LIBXSMM_XCOPY_MELTW)
         switch (typesize) {
-          case 8: kernel.meltw_trans = libxsmm_dispatch_meltw_transform(m, n, &ldi, &ldo,
-            LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT);
+          case 8: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
+            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
             break;
-          case 4: kernel.meltw_trans = libxsmm_dispatch_meltw_transform(m, n, &ldi, &ldo,
-            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT);
+          case 4: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
             break;
-          case 2: kernel.meltw_trans = libxsmm_dispatch_meltw_transform(m, n, &ldi, &ldo,
-            LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT);
+          case 2: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16,
+            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
             break;
-          case 1: kernel.meltw_trans = libxsmm_dispatch_meltw_transform(m, n, &ldi, &ldo,
-            LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT);
+          case 1: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
+            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
             break;
         }
 # else

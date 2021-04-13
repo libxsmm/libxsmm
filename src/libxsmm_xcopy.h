@@ -268,7 +268,7 @@
   LIBXSMM_CONCATENATE(XKERNEL,_TILES)(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1)
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
-  libxsmm_meltwfunction_transform meltw_trans;
+  libxsmm_meltwfunction_unary meltw_trans;
   libxsmm_meltwfunction_copy meltw_copy;
   libxsmm_meltwfunction_zero meltw_zero;
   libxsmm_xmcopyfunction xmcopy;
