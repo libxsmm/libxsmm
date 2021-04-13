@@ -189,15 +189,14 @@ typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_DECOMPRESS_A                          = 13,
   LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A              = 14,
   LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX                     = 15,
-  LIBXSMM_MELTW_OPERATION_TRANSFORM                             = 16,
-  LIBXSMM_MELTW_OPERATION_TRANSFORM_B_NORM_TO_NORMT_EXT_BUFFER  = 17,
-  LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_TRANSFORM_B_NORM_TO_NORMT_EXT_BUFFER = 18,
-  LIBXSMM_MELTW_OPERATION_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER              = 19,
-  LIBXSMM_MELTW_OPERATION_ACT_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER          = 20,
-  LIBXSMM_MELTW_OPERATION_DROPOUT                                          = 21,
-  LIBXSMM_MELTW_OPERATION_UNARY                                            = 22,
-  LIBXSMM_MELTW_OPERATION_BINARY                                           = 23,
-  LIBXSMM_MELTW_OPERATION_TERNARY                                          = 24
+  LIBXSMM_MELTW_OPERATION_TRANSFORM_B_NORM_TO_NORMT_EXT_BUFFER  = 16,
+  LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_TRANSFORM_B_NORM_TO_NORMT_EXT_BUFFER = 17,
+  LIBXSMM_MELTW_OPERATION_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER              = 18,
+  LIBXSMM_MELTW_OPERATION_ACT_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER          = 19,
+  LIBXSMM_MELTW_OPERATION_DROPOUT                                          = 20,
+  LIBXSMM_MELTW_OPERATION_UNARY                                            = 21,
+  LIBXSMM_MELTW_OPERATION_BINARY                                           = 22,
+  LIBXSMM_MELTW_OPERATION_TERNARY                                          = 23
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
@@ -340,14 +339,6 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MAX              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MIN              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN
 } libxsmm_meltw_opreduce_vecs_flags;
-
-typedef enum libxsmm_meltw_transform_flags {
-  LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI   = 1,
-  LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_NORMT  = 2,
-  LIBXSMM_MELTW_FLAG_TRANSFORM_VNNI_TO_VNNIT  = 4,
-  LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNIT  = 8,
-  LIBXSMM_MELTW_FLAG_TRANSFORM_NORM_TO_VNNI_PAD = 16
-} libxsmm_meltw_transform_flags;
 
 typedef enum libxsmm_meltw_dropout_flags {
   LIBXSMM_MELTW_FLAG_DROPOUT_FWD = 1,
@@ -868,11 +859,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_cbiasact_para
   void* out_ptr;                /* output pointer */
 } libxsmm_meltw_cbiasact_param;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_transform_param {
-  const void* in_ptr;           /* input pointer */
-  void* out_ptr;                /* output pointer */
-} libxsmm_meltw_transform_param;
-
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_dropout_param {
   const void* in_ptr;           /* input pointer */
   void* out_ptr;                /* output pointer */
@@ -933,7 +919,6 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_opred
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_scale)(const libxsmm_meltw_scale_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_cvtfp32bf16_act)(const libxsmm_meltw_cvtfp32bf16_act_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_act_cvtfp32bf16)(const libxsmm_meltw_act_cvtfp32bf16_param* in_struct);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_transform)(const libxsmm_meltw_transform_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_dropout)(const libxsmm_meltw_dropout_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_unary)(const libxsmm_meltw_unary_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_binary)(const libxsmm_meltw_binary_param* in_struct);
@@ -949,7 +934,6 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   libxsmm_meltwfunction_opreduce_vecs_idx meltw_opreduce_vecs_idx;
   libxsmm_meltwfunction_cvtfp32bf16_act meltw_cvtfp32bf16_act;
   libxsmm_meltwfunction_act_cvtfp32bf16 meltw_act_cvtfp32bf16;
-  libxsmm_meltwfunction_transform meltw_transform;
   libxsmm_meltwfunction_dropout meltw_dropout;
   libxsmm_meltwfunction_unary meltw_unary;
   libxsmm_meltwfunction_binary meltw_binary;
