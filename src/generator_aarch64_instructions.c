@@ -623,6 +623,9 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*           io_generated_code,
                                                const unsigned int                i_pred_instr,
                                                const unsigned char               i_pred_reg,
+                                               const unsigned char               i_gp_reg_src_0,
+                                               const libxsmm_aarch64_gp_width    i_gp_width,
+                                               const unsigned char               i_gp_reg_src_1,
                                                const libxsmm_aarch64_sve_pattern i_pattern,
                                                const libxsmm_aarch64_sve_type    i_type ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
@@ -632,6 +635,8 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
 
   switch ( i_pred_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE_PTRUE:
+      break;
+    case LIBXSMM_AARCH64_INSTR_SVE_WHILELT:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_pcompute: unexpected instruction number: %u\n", i_pred_instr);
@@ -646,8 +651,18 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
     code[code_head]  = (unsigned int)(0xffffff00 & i_pred_instr);
     /* setting Rd */
     code[code_head] |= (unsigned int)(0xf & i_pred_reg);
-    /* setting pattern */
-    code[code_head] |= (unsigned int)((0x1f & i_pattern) << 5);
+    if( i_pred_instr == LIBXSMM_AARCH64_INSTR_SVE_PTRUE ) {
+      /* setting pattern */
+      code[code_head] |= (unsigned int)((0x1f & i_pattern) << 5);
+    }
+    if( i_pred_instr == LIBXSMM_AARCH64_INSTR_SVE_WHILELT ) {
+      /* setting first source register */
+      code[code_head] |= (unsigned int)((0x1f & i_gp_reg_src_0) << 5);
+      /* setting width register */
+      code[code_head] |= (unsigned int)((0x1 & i_gp_width) << 12);
+      /* setting second source register */
+      code[code_head] |= (unsigned int)((0x1f & i_gp_reg_src_1) << 16);
+    }
     /* setting type */
     code[code_head] |= (unsigned int)((0x3 & i_type) << 22);
 
