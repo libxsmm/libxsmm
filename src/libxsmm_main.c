@@ -4684,21 +4684,6 @@ LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opred
 }
 
 
-LIBXSMM_API libxsmm_meltwfunction_scale libxsmm_dispatch_meltw_scale(
-  libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-  libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_meltw_scal_flags flags, unsigned char param)
-{
-  libxsmm_descriptor_blob blob;
-  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
-    in_type, out_type, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    (unsigned short)flags, param, LIBXSMM_MELTW_OPERATION_SCALE);
-
-  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
-
-  return result.meltw_scale;
-}
-
-
 LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary(
   libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
   libxsmm_datatype in_type, libxsmm_datatype compute_type, libxsmm_datatype out_type, libxsmm_meltw_unary_flags flags, libxsmm_meltw_unary_type type)

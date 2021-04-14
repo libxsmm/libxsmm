@@ -122,7 +122,7 @@ public:
     _ld = E;
     kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
     kernel1 = libxsmm_dispatch_meltw_unary(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD);
-    kernel2 = libxsmm_dispatch_meltw_scale(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE, 0);
+    kernel2 = libxsmm_dispatch_meltw_binary(E, 1, &_ld, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_MELTW_TYPE_BINARY_MULADD);
 #endif
   }
 
@@ -177,11 +177,11 @@ public:
       float scale = lr / (sqrt(hi) + eps);
 
       // scale and accumulate kernel
-      libxsmm_meltw_scale_param params2;
-      params2.in_ptr = g_sum;
-      params2.out_ptr = &wt[idx][0];
-      params2.scale_vals_ptr = &scale;
-      kernel2( &params2 );
+      libxsmm_meltw_binary_param binary_param;
+      binary_param.in0.primary  = (void*)&scale;
+      binary_param.in1.primary  = (void*)g_sum;
+      binary_param.out.primary  = (void*)&wt[idx][0];
+      kernel2(&binary_param);
 
 #else
       for (int l = start; l < end; l++) {
@@ -215,7 +215,7 @@ public:
   int _ld;
   libxsmm_meltwfunction_reduce_cols_idx kernel;
   libxsmm_meltwfunction_unary kernel1;
-  libxsmm_meltwfunction_scale kernel2;
+  libxsmm_meltwfunction_binary kernel2;
 #endif
 };
 

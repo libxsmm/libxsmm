@@ -54,7 +54,6 @@
 #include "../src/generator_mateltwise_cvtfp32bf16_act_avx_avx512.c"
 #include "../src/generator_mateltwise_misc_avx_avx512.c"
 #include "../src/generator_mateltwise_reduce_avx_avx512.c"
-#include "../src/generator_mateltwise_scale_avx_avx512.c"
 #include "../src/generator_mateltwise_sse_avx_avx512.c"
 #include "../src/generator_mateltwise_transform_avx.c"
 #include "../src/generator_mateltwise_transform_avx512.c"

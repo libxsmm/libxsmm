@@ -14,7 +14,6 @@
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_mateltwise_reduce_avx_avx512.h"
 #include "generator_mateltwise_misc_avx_avx512.h"
-#include "generator_mateltwise_scale_avx_avx512.h"
 #include "generator_mateltwise_copy_avx_avx512.h"
 #include "generator_mateltwise_cvtfp32bf16_act_avx_avx512.h"
 #include "libxsmm_matrixeqn.h"
@@ -114,7 +113,6 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) ||
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ||
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE) ||
-                                          ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_SCALE) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE) > 0)) ||
                                           ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_CVTFP32BF16) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_CVT_VNNI_FORMAT) > 0) )) ? 1 : 0;
 
   /* TODO: Determine if we want to save stuff to stack */
@@ -652,14 +650,6 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
         libxsmm_generator_reduce_cols_index_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
       } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) {
         libxsmm_generator_opreduce_vecs_index_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-      } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_SCALE) {
-        if ( (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
-          libxsmm_generator_scale_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-        } else {
-          /* This should not happen  */
-          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
-          return;
-        }
       } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
         if (is_unary_opcode_reduce_kernel(i_mateltwise_desc->param) > 0) {
           libxsmm_descriptor_blob   blob;
