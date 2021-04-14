@@ -251,7 +251,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_mcopy_descr
 /** Packed structure storing the mateltw argument description. */
 LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descriptor {
   /** LDx, M, and N. */
-  unsigned int m, n, ldi, ldo, ldx, ldy;
+  unsigned int m, n, ldi, ldo, ldi2, ldi3;
   /** Size of data element. */
   unsigned char datatype;
   unsigned char datatype2;

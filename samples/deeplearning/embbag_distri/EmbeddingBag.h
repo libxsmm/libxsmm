@@ -137,7 +137,7 @@ public:
     T(*__restrict weight)[E] = (T(*)[*])weight_;
     T(*__restrict grads)[E] = (T(*)[*])grads_;
     int _ld = E;
-    libxsmm_meltwfunction_binary kernel = libxsmm_dispatch_meltw_binary(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_MELTW_TYPE_BINARY_MULADD);
+    libxsmm_meltwfunction_binary kernel = libxsmm_dispatch_meltw_binary(E, 1, &_ld, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_MELTW_TYPE_BINARY_MULADD);
 
     SimpleSpinLock fallBackLock;
 #pragma omp parallel for
