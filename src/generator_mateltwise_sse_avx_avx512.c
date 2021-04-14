@@ -11,8 +11,6 @@
 
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_transform_common.h"
-#include "generator_mateltwise_relu_avx_avx512.h"
-#include "generator_mateltwise_dropout_avx_avx512.h"
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
 #include "generator_mateltwise_reduce_avx_avx512.h"
 #include "generator_mateltwise_misc_avx_avx512.h"
@@ -662,10 +660,6 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
           return;
         }
-      } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_RELU) {
-        libxsmm_generator_relu_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
-      } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_DROPOUT ) {
-        libxsmm_generator_dropout_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
       } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
         if (is_unary_opcode_reduce_kernel(i_mateltwise_desc->param) > 0) {
           libxsmm_descriptor_blob   blob;
