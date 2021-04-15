@@ -14,7 +14,6 @@
 
 LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsmm_dnn_fullyconnected_desc fullyconnected_desc, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_fullyconnected* handle = 0;
-  const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_descriptor_blob blob;
 
   /* init libxsmm */
@@ -707,8 +706,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
           handle->gemm_bwd2.xgemm.smrs = libxsmm_smmdispatch_reducebatch_strd(handle->bc, handle->bn, handle->bk, handle->bk*handle->bc*sizeof(float), handle->bk*handle->bn*sizeof(float), &ldb, &lda, &ldb, &alpha, &zerobeta, NULL, NULL);
 
           /* Transpose kernel used for weight transpose in bwd pass */
-          tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), handle->bk, handle->bc, handle->bc);
-          handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
+          handle->tr_kernel = libxsmm_dispatch_meltw_unary(handle->bk, handle->bc, &(handle->bk), &(handle->bc), LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
 
           /* update has different LDs */
           lda = (libxsmm_blasint)handle->bk;

@@ -61,6 +61,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   LIBXSMM_VLA_DECL(3,        element_input_type,    dinput, (element_input_type* )handle->grad_input->data,  nBlocksIFm, nIFmBlock);
   LIBXSMM_VLA_DECL(4,       element_filter_type, filter_tr, (element_filter_type*)handle->scratch,           nBlocksOFm, nOFmBlock, nIFmBlock);
 #endif
+  libxsmm_meltw_unary_param trans_param;
 
   /* lazy barrier init */
   libxsmm_barrier_init(handle->barrier, ltid);
@@ -70,19 +71,20 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
     ofm1 = ifm1ofm1 / nBlocksIFm;
     ifm1 = ifm1ofm1 % nBlocksIFm;
 
+#if defined(LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32)
     for (ofm2 = 0; ofm2 < nOFmBlock; ++ofm2) {
       for (ifm2 = 0; ifm2 < nIFmBlock; ++ifm2) {
-#if defined(LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32)
         union libxsmm_bfloat16_hp filter_f32;
         filter_f32.i[0] = 0;
         filter_f32.i[1] = LIBXSMM_VLA_ACCESS(4, filter,  ofm1, ifm1, ifm2, ofm2, nBlocksIFm, nIFmBlock, nOFmBlock);
         LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, ofm2, ifm2, nBlocksOFm, nOFmBlock, nIFmBlock) = filter_f32.f;
-#else
-        LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, ofm2, ifm2, nBlocksOFm, nOFmBlock, nIFmBlock) =
-          LIBXSMM_VLA_ACCESS(4, filter,  ofm1, ifm1, ifm2, ofm2, nBlocksIFm, nIFmBlock, nOFmBlock);
-#endif
       }
     }
+#else
+    trans_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, filter,  ofm1, ifm1, 0, 0, nBlocksIFm, nIFmBlock, nOFmBlock);
+    trans_param.out.primary = & LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, nOFmBlock, nIFmBlock);
+    handle->tr_kernel( &trans_param );
+#endif
   }
 
   /* wait for transpose to finish */

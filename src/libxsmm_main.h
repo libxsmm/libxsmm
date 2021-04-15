@@ -711,7 +711,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_bsmmfunction upd_config_kernel;
   libxsmm_bsmmfunction tilerelease_kernel;
 
-  libxsmm_xtransfunction tr_kernel;
+  libxsmm_meltwfunction_unary tr_kernel;
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd2;    /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd3;    /* ability to hoist forward GEMMs */
