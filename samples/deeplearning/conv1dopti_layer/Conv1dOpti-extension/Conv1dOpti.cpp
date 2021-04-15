@@ -64,7 +64,7 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
 
     libxsmm_meltwfunction_unary trans_permute_kernel = libxsmm_dispatch_meltw_unary(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_permute_kernel == NULL) {
-        fprintf( stderr, "JIT unary TPP for NORM_TO_NORMT TPP. Bailing...!\n");
+        fprintf( stderr, "JIT unary TPP for NORM_TO_NORMT. Bailing...!\n");
         exit(-1);
     }
     libxsmm_meltw_unary_param trans_permute_param;
