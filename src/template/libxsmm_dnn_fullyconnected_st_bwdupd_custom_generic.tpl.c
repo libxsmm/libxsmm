@@ -72,6 +72,7 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
     ifm1 = ifm1ofm1 % nBlocksIFm;
 
 #if defined(LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32)
+    LIBXSMM_UNUSED( trans_param );
     for (ofm2 = 0; ofm2 < nOFmBlock; ++ofm2) {
       for (ifm2 = 0; ifm2 < nIFmBlock; ++ifm2) {
         union libxsmm_bfloat16_hp filter_f32;
@@ -81,6 +82,8 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
       }
     }
 #else
+    LIBXSMM_UNUSED( ofm2 );
+    LIBXSMM_UNUSED( ifm2 );
     trans_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, filter,  ofm1, ifm1, 0, 0, nBlocksIFm, nIFmBlock, nOFmBlock);
     trans_param.out.primary = & LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, nOFmBlock, nIFmBlock);
     handle->tr_kernel( &trans_param );

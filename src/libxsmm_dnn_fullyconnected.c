@@ -14,7 +14,6 @@
 
 LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsmm_dnn_fullyconnected_desc fullyconnected_desc, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_fullyconnected* handle = 0;
-  libxsmm_descriptor_blob blob;
 
   /* init libxsmm */
   LIBXSMM_INIT
