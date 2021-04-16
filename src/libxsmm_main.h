@@ -457,7 +457,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 
   libxsmm_xtransfunction tr_kernel;
   libxsmm_meltwfunction_unary fwd_cvtfp32bf16_kernel;
-  libxsmm_xtransfunction tr_input_upd_kernel;
 
   /* Hoisting the compute kernels for FWD  */
   libxsmm_bsmmfunction fwd_config_kernel;
