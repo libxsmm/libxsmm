@@ -79,7 +79,7 @@
 #if !defined(LIBXSMM_CACHE_PAD) && 1
 # define LIBXSMM_CACHE_PAD
 #endif
-#if !defined(LIBXSMM_AUTOPIN) && 1
+#if !defined(LIBXSMM_AUTOPIN) && 0
 # define LIBXSMM_AUTOPIN
 #endif
 #if !defined(INTERNAL_DELIMS)
