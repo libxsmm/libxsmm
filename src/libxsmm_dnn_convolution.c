@@ -1173,9 +1173,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_convolution_setup_upd_scratch( libxsmm_dnn_l
 
 LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_blasint _ldi = 64, _ldo = 64;
-  libxsmm_descriptor_blob blob;
   libxsmm_blasint ldx;
   libxsmm_blasint ldA;
   libxsmm_blasint ldC;
@@ -1506,8 +1504,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->code_bwd[2].ptr = 0;
 
   /* Transpose kernel used for filter transpose in bwd pass  */
-  tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
-  handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
+  handle->tr_kernel = libxsmm_dispatch_meltw_unary(64, 16, &(_ldi), &(_ldo), LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
 
   /* UPD parameter setup */
   handle->upd_linearized_tasklist = libxsmm_dnn_convolution_setup_linearized_tasklist_upd(handle);

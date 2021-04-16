@@ -455,7 +455,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int block_upd_ifm;
   int block_upd_ofm;
 
-  libxsmm_xtransfunction tr_kernel;
+  libxsmm_meltwfunction_unary tr_kernel;
   libxsmm_meltwfunction_unary fwd_cvtfp32bf16_kernel;
 
   /* Hoisting the compute kernels for FWD  */
