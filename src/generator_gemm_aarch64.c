@@ -609,7 +609,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
 
   if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
-    int l_nnz_bits = i_xgemm_desc->m%16;
+    int l_nnz_bits = i_xgemm_desc->m%l_micro_kernel_config.vector_length;
     l_nnz_bits *= l_micro_kernel_config.datatype_size_out;
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P0,
