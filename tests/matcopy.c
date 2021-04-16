@@ -147,7 +147,9 @@ int main(void)
       }
 # endif
 # if defined(TEST_JIT) && (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-      if (0 == fun && LIBXSMM_X86_AVX2 <= libxsmm_get_target_archid()) { /* Issue #354 */
+      if (0 == fun && LIBXSMM_X86_AVX512 <= libxsmm_get_target_archid()
+        && LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE))
+      {
         const libxsmm_datatype type = LIBXSMM_DATATYPE(ELEM_TYPE);
         const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary(
           m[test], n[test], ldi + test, ldo + test, type, type, type,
