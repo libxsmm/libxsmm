@@ -53,8 +53,6 @@ if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) == 0 ) 
   /* Special case of 64x64 transpose with JITed transpose */
   if (handle->ifmblock == 64 && handle->ofmblock == 64) {
     libxsmm_meltwfunction_unary tr_kernel = handle->tr_kernel;
-    const unsigned int ld_in = 64;
-    const unsigned int ld_out = 64;
     libxsmm_meltw_unary_param trans_param;
     for (task = transpose_thr_begin; task < transpose_thr_end; ++task) {
       ifm1 = task/(handle->blocksofm * handle->desc.R * handle->desc.S);
