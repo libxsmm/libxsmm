@@ -2072,26 +2072,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
       }
     } break;
-    case LIBXSMM_BUILD_KIND_MCOPY: { /* matcopy kernel */
-      LIBXSMM_ASSERT(NULL != request->descriptor.mcopy);
-# if 0 /* TODO: backend supports typesize <= 4, but kernels for typesize < 4 are incorrect */
-      if (4 == request->descriptor.mcopy->typesize)
-# endif
-      {
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_matcopy_kernel, &generated_code, request->descriptor.mcopy, target_arch);
-# if !defined(LIBXSMM_VTUNE)
-        if (0 > libxsmm_verbosity)
-# endif
-        {
-          char tsizename[4];
-          internal_get_typesize_string(tsizename, sizeof(tsizename), request->descriptor.mcopy->typesize);
-          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_p%u.mcopy", target_arch, tsizename,
-            request->descriptor.mcopy->m, request->descriptor.mcopy->n, request->descriptor.mcopy->ldi, request->descriptor.mcopy->ldo,
-            (unsigned int)request->descriptor.mcopy->prefetch);
-        }
-      }
-    } break;
     case LIBXSMM_BUILD_KIND_MELTW: { /* matcopy kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.meltw);
       {
@@ -2154,22 +2134,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%u_eqn-idx%u.meltw", target_arch, tsizename,
             request->descriptor.meqn->m, request->descriptor.meqn->n, request->descriptor.meqn->ldo,
             (unsigned int)request->descriptor.meqn->eqn_idx );
-        }
-      }
-    } break;
-    case LIBXSMM_BUILD_KIND_TRANS: { /* transpose kernel */
-      LIBXSMM_ASSERT(NULL != request->descriptor.trans);
-      if (4 == request->descriptor.trans->typesize || 8 == request->descriptor.trans->typesize) {
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_transpose_kernel, &generated_code, request->descriptor.trans, libxsmm_target_archid);
-# if !defined(LIBXSMM_VTUNE)
-        if (0 > libxsmm_verbosity)
-# endif
-        {
-          char tsizename[4];
-          internal_get_typesize_string(tsizename, sizeof(tsizename), request->descriptor.trans->typesize);
-          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%u.trans", target_arch, tsizename,
-            request->descriptor.trans->m, request->descriptor.trans->n, request->descriptor.trans->ldo);
         }
       }
     } break;
@@ -2679,85 +2643,6 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
         else {
           fprintf(stderr, "LIBXSMM ERROR: invalid kernel cannot be inspected!\n");
         }
-      }
-      result = EXIT_FAILURE;
-    }
-  }
-  else {
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: invalid argument!\n");
-    }
-    result = EXIT_FAILURE;
-  }
-  return result;
-}
-
-
-LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transkernel_info* info)
-{
-  libxsmm_code_pointer code;
-  static int error_once = 0;
-  int result;
-  code.xtrans = kernel;
-  if (NULL != info) {
-    const libxsmm_descriptor* desc;
-    if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
-        NULL != desc && LIBXSMM_KERNEL_KIND_TRANS == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
-    {
-      info->typesize = desc->trans.desc.typesize;
-      info->ldo = desc->trans.desc.ldo;
-      info->m = desc->trans.desc.m;
-      info->n = desc->trans.desc.n;
-      result = EXIT_SUCCESS;
-    }
-    else {
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM ERROR: invalid kernel cannot be inspected!\n");
-      }
-      result = EXIT_FAILURE;
-    }
-  }
-  else {
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: invalid argument!\n");
-    }
-    result = EXIT_FAILURE;
-  }
-  return result;
-}
-
-
-LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libxsmm_mcopykernel_info* info)
-{
-  libxsmm_code_pointer code;
-  static int error_once = 0;
-  int result;
-  code.xmatcopy = kernel;
-  if (NULL != info) {
-    const libxsmm_descriptor* desc;
-    if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
-        NULL != desc && LIBXSMM_KERNEL_KIND_MCOPY == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
-    {
-      info->typesize = desc->mcopy.desc.typesize;
-      info->prefetch = desc->mcopy.desc.prefetch;
-      info->flags = desc->mcopy.desc.flags;
-      info->ldi = desc->mcopy.desc.ldi;
-      info->ldo = desc->mcopy.desc.ldo;
-      info->m = desc->mcopy.desc.m;
-      info->n = desc->mcopy.desc.n;
-      result = EXIT_SUCCESS;
-    }
-    else {
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM ERROR: invalid kernel cannot be inspected!\n");
       }
       result = EXIT_FAILURE;
     }
@@ -4480,33 +4365,6 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd_meltwfused libxsmm_bsmmdispatc
 }
 
 
-LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_descriptor* descriptor)
-{
-  libxsmm_xmcopyfunction result;
-  LIBXSMM_INIT /* verbosity */
-#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-  LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
-#endif
-  if (NULL != descriptor) {
-    unsigned int hash;
-    libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
-#endif
-    LIBXSMM_ASSIGN127(&wrap.mcopy.desc, descriptor);
-    wrap.kind = LIBXSMM_KERNEL_KIND_MCOPY;
-#if (defined(_WIN32) || defined(__CYGWIN__))
-    wrap.mcopy.desc.prefetch = 0;
-#endif
-    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xmatcopy;
-  }
-  else {
-    result = NULL;
-  }
-  return result;
-}
-
-
 LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_descriptor* descriptor)
 {
   libxsmm_xmeltwfunction result;
@@ -4758,36 +4616,15 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const 
 }
 
 
-LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldo, const libxsmm_datatype out_type, const unsigned int eqn_idx ) {
+LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn(
+  const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldo,
+  const libxsmm_datatype out_type, const unsigned int eqn_idx )
+{
   libxsmm_descriptor_blob blob;
   const libxsmm_meqn_descriptor *const desc = libxsmm_meqn_descriptor_init(&blob,
     out_type, m, n, (ldo == NULL) ? m : *ldo, eqn_idx );
 
   return libxsmm_dispatch_matrix_eqn_desc( desc );
-}
-
-
-LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor)
-{
-  libxsmm_xtransfunction result;
-  LIBXSMM_INIT /* verbosity */
-#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-  LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
-#endif
-  if (NULL != descriptor) {
-    unsigned int hash;
-    libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
-#endif
-    LIBXSMM_ASSIGN127(&wrap.trans.desc, descriptor);
-    wrap.kind = LIBXSMM_KERNEL_KIND_TRANS;
-    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xtrans;
-  }
-  else {
-    result = NULL;
-  }
-  return result;
 }
 
 

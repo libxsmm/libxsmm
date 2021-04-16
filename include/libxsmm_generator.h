@@ -75,15 +75,6 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
   int flags, int prefetch, double* dalpha, double* dbeta);
 
 /** Initialize transpose descriptor as used by low-level routines. */
-LIBXSMM_API libxsmm_trans_descriptor* libxsmm_trans_descriptor_init(libxsmm_descriptor_blob* blob,
-  unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo);
-
-/** Initialize transpose descriptor as used by low-level routines. */
-LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_descriptor_blob* blob,
-  unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo,
-  unsigned int ldi, int flags, int prefetch, const int* unroll);
-
-/** Initialize transpose descriptor as used by low-level routines. */
 LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_datatype in_type, libxsmm_datatype out_type,
   libxsmm_blasint m, libxsmm_blasint n,
@@ -249,12 +240,6 @@ void libxsmm_generator_trsm_kernel( libxsmm_generated_code*         io_generated
                                     const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
                                     const char*                     i_arch );
 
-/* @TODO change int based architecture value */
-LIBXSMM_API
-void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*            io_generated_code,
-                                       const libxsmm_mcopy_descriptor*    i_matcopy_desc,
-                                       const char*                        i_arch );
-
 LIBXSMM_API
 void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*            io_generated_code,
                                           const libxsmm_meltw_descriptor*    i_mateltw_desc );
@@ -262,11 +247,6 @@ void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*            io_
 LIBXSMM_API
 void libxsmm_generator_matequation_kernel( libxsmm_generated_code*        io_generated_code,
                                            const libxsmm_meqn_descriptor* i_mateqn_desc );
-
-LIBXSMM_API
-void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_generated_code,
-                                         const libxsmm_trans_descriptor*  i_trans_desc,
-                                         int                              i_arch );
 
 /** Initialization counter that can be used to check whether the library is initialized (!=0) or not (==0). */
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_ninit);

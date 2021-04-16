@@ -51,9 +51,6 @@ int main(void)
   const libxsmm_blasint n[]   = { 0, 0, 1, 0, 1, 6, 7, 7, 2,  4, 3, 4, 1, 1, 1, 1, 5, 9, 23, 250, 16, 31, 500, 448, 1975 };
   const libxsmm_blasint ldi[] = { 0, 1, 1, 1, 1, 1, 2, 2, 2, 17, 3, 6, 6, 8, 6, 7, 9, 9,  9, 512, 16, 63,  16, 512, 3000 };
   const libxsmm_blasint ldo[] = { 0, 1, 1, 1, 1, 1, 1, 8, 2,  2, 3, 4, 6, 6, 8, 8, 9, 9,  9,  16, 16, 64, 512,  16, 3072 };
-# if defined(TEST_JIT) && (0 != LIBXSMM_JIT)
-  const int prefetch[]        = { 0, 0, 1, 1, 1, 0, 1, 0, 1,  0, 1, 0, 1, 0, 1, 0, 0, 0,  0,   0,  1,  0,   1,   0,    1 };
-# endif
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0, i, j;
   unsigned int nerrors = 0;
@@ -150,17 +147,17 @@ int main(void)
       }
 # endif
 # if defined(TEST_JIT) && (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-#   if 0  /* Issue #354 */
-      if (0 == fun && LIBXSMM_X86_AVX <= libxsmm_get_target_archid())
+      if (0 == fun && LIBXSMM_X86_AVX2 <= libxsmm_get_target_archid()) { /* Issue #354 */
+        const libxsmm_datatype type = LIBXSMM_DATATYPE(ELEM_TYPE);
+        const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary(
+          m[test], n[test], ldi + test, ldo + test, type, type, type,
+          LIBXSMM_MELTW_FLAG_UNARY_NONE,
+#   if 1
+          LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/
 #   else
-      if (0 == fun && LIBXSMM_X86_AVX512 <= libxsmm_get_target_archid())
+          LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/
 #   endif
-      {
-        libxsmm_descriptor_blob blob;
-        const libxsmm_mcopy_descriptor *const desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(ELEM_TYPE),
-          (unsigned int)m[test], (unsigned int)n[test], (unsigned int)ldo[test], (unsigned int)ldi[test],
-          LIBXSMM_MATCOPY_FLAG_DEFAULT, prefetch[test], NULL/*unroll*/);
-        const libxsmm_xmcopyfunction kernel = libxsmm_dispatch_mcopy(desc);
+        );
         if (NULL == kernel) {
 #   if defined(_DEBUG)
           fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n", fun + 1, test + 1);
