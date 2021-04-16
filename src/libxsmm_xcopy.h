@@ -12,6 +12,7 @@
 #define LIBXSMM_XCOPY_H
 
 #include <libxsmm_typedefs.h>
+#include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_XCOPY_CHECK) && !defined(NDEBUG)
 # define LIBXSMM_XCOPY_CHECK
@@ -28,9 +29,6 @@
 #endif
 #if !defined(LIBXSMM_XCOPY_TILE_MIN)
 # define LIBXSMM_XCOPY_TILE_MIN 2
-#endif
-#if !defined(LIBXSMM_XCOPY_MELTW) && 1
-# define LIBXSMM_XCOPY_MELTW
 #endif
 /* 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy */
 #if defined(LIBXSMM_PLATFORM_X86)
@@ -57,43 +55,20 @@
   const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDI) + (INDEX_J))); \
         TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDO) + (INDEX_J)))
 
-#if defined(LIBXSMM_XCOPY_MELTW)
-# define LIBXSMM_MZERO_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    libxsmm_meltw_unary_param libxsmm_mzero_call_args_; \
-    libxsmm_mzero_call_args_.in.primary = (void*)(SRC); \
-    libxsmm_mzero_call_args_.out.primary = (DST); \
-    (KERNEL).meltw_zero(&libxsmm_mzero_call_args_); \
-    LIBXSMM_UNUSED(LDO); \
-  }
-# define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    libxsmm_meltw_unary_param libxsmm_mcopy_call_args_; \
-    libxsmm_mcopy_call_args_.in.primary = (void*)(SRC); \
-    libxsmm_mcopy_call_args_.out.primary = (DST); \
-    (KERNEL).meltw_copy(&libxsmm_mcopy_call_args_); \
-    LIBXSMM_UNUSED(LDO); \
-  }
-# define LIBXSMM_MCOPY_CALL_PF(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) \
-    LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO)
-#else
-/* call JIT-kernel (matrix-copy with prefetch) */
-# define LIBXSMM_MZERO_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    const unsigned int libxsmm_mzero_call_uldo_ = (unsigned int)(LDO); \
-    (KERNEL).xmcopy(SRC, &libxsmm_mzero_call_uldo_, DST, &libxsmm_mzero_call_uldo_); \
-  }
-/* call JIT-kernel (matrix-copy) */
-# define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    const unsigned int libxsmm_mcopy_call_nopf_uldi_ = (unsigned int)(LDI); \
-    const unsigned int libxsmm_mcopy_call_nopf_uldo_ = (unsigned int)(LDO); \
-    (KERNEL).xmcopy(SRC, &libxsmm_mcopy_call_nopf_uldi_, DST, &libxsmm_mcopy_call_nopf_uldo_); \
-  }
-/* call JIT-kernel (matrix-copy with prefetch) */
-# define LIBXSMM_MCOPY_CALL_PF(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    const unsigned int libxsmm_mcopy_call_uldi_ = (unsigned int)(LDI); \
-    const unsigned int libxsmm_mcopy_call_uldo_ = (unsigned int)(LDO); \
-    (KERNEL).xmcopy(SRC, &libxsmm_mcopy_call_uldi_, DST, &libxsmm_mcopy_call_uldo_, \
-      /*prefetch next line*/((const char*)(SRC)) + (TYPESIZE) * (size_t)(LDI)); \
-  }
-#endif
+#define LIBXSMM_MZERO_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+  libxsmm_meltw_unary_param libxsmm_mzero_call_args_; \
+  libxsmm_mzero_call_args_.in.primary = (void*)(SRC); \
+  libxsmm_mzero_call_args_.out.primary = (DST); \
+  (KERNEL).meltw_zero(&libxsmm_mzero_call_args_); \
+  LIBXSMM_UNUSED(LDO); \
+}
+#define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+  libxsmm_meltw_unary_param libxsmm_mcopy_call_args_; \
+  libxsmm_mcopy_call_args_.in.primary = (void*)(SRC); \
+  libxsmm_mcopy_call_args_.out.primary = (DST); \
+  (KERNEL).meltw_copy(&libxsmm_mcopy_call_args_); \
+  LIBXSMM_UNUSED(LDO); \
+}
 
 /* kernel uses consecutive stores and strided loads (transpose) */
 #define LIBXSMM_TCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
@@ -101,21 +76,13 @@
         TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDO) + (INDEX_J)))
 
 /* call JIT-kernel (transpose) */
-#if defined(LIBXSMM_XCOPY_MELTW)
-# define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    libxsmm_meltw_unary_param libxsmm_tcopy_call_args_; \
-    libxsmm_tcopy_call_args_.in.primary = (void*)(SRC); \
-    libxsmm_tcopy_call_args_.out.primary = (DST); \
-    (KERNEL).meltw_trans(&libxsmm_tcopy_call_args_); \
-    LIBXSMM_UNUSED(LDO); \
-  }
-#else
-# define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
-    const unsigned int libxsmm_tcopy_call_uldi_ = (unsigned int)(LDI); \
-    const unsigned int libxsmm_tcopy_call_uldo_ = (unsigned int)(LDO); \
-    (KERNEL).xtrans(SRC, &libxsmm_tcopy_call_uldi_, DST, &libxsmm_tcopy_call_uldo_); \
-  }
-#endif
+#define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+  libxsmm_meltw_unary_param libxsmm_tcopy_call_args_; \
+  libxsmm_tcopy_call_args_.in.primary = (void*)(SRC); \
+  libxsmm_tcopy_call_args_.out.primary = (DST); \
+  (KERNEL).meltw_trans(&libxsmm_tcopy_call_args_); \
+  LIBXSMM_UNUSED(LDO); \
+}
 
 #define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
   libxsmm_blasint libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
@@ -269,13 +236,6 @@
 #define LIBXSMM_XCOPY(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) \
   LIBXSMM_CONCATENATE(XKERNEL,_TILES)(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1)
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
-  libxsmm_meltwfunction_unary meltw_trans, meltw_copy, meltw_zero;
-  libxsmm_xmcopyfunction xmcopy;
-  libxsmm_xtransfunction xtrans;
-  const void* ptr;
-} libxsmm_xcopykernel;
-
 /** Initializes the transpose functionality; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid);
 /** Finalizes the transpose functionality; NOT thread-safe. */
@@ -310,10 +270,6 @@ LIBXSMM_API void libxsmm_itrans_internal(char* inout, void* scratch, unsigned in
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
 /** Determines whether JIT-kernels are used or not; values see LIBXSMM_XCOPY_JIT. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_jit);
-# if !defined(LIBXSMM_XCOPY_MELTW)
-/** Targeted default prefetch */
-LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_mcopy_prefetch);
-# endif
 #endif
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_taskscale);

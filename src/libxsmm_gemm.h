@@ -134,7 +134,7 @@ LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemv);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemv);
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
-  libxsmm_code_pointer copy_a, copy_b, copy_i, copy_o;
+  libxsmm_xcopykernel copy_a, copy_b, copy_i, copy_o;
   libxsmm_xmmfunction kernel[2];
   unsigned int m, n, k, lda, ldb, ldc;
   /* kernel size (tile) */
