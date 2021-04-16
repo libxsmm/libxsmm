@@ -330,9 +330,6 @@
     <ClInclude Include="..\src\generator_packed_aux.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_mateltwise_dropout_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_common_x86.h">
       <Filter>src\generator</Filter>
     </ClInclude>
@@ -342,9 +339,6 @@
     <ClInclude Include="..\src\generator_gemm_sse_microkernel.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_mateltwise_relu_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_mateltwise_unary_binary_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
@@ -352,9 +346,6 @@
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_mateltwise_cvtfp32bf16_act_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_mateltwise_scale_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_mateltwise_reduce_avx_avx512.h">
@@ -1037,9 +1028,6 @@
     <ClCompile Include="..\src\generator_packed.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_mateltwise_dropout_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_common_x86.c">
       <Filter>src\generator</Filter>
     </ClCompile>
@@ -1047,9 +1035,6 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_sse_microkernel.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_mateltwise_relu_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_mateltwise_unary_binary_avx_avx512.c">
@@ -1062,9 +1047,6 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_mateltwise_reduce_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_mateltwise_scale_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_matequation.c">

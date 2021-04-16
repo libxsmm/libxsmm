@@ -27,13 +27,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="eltwise_layernorm.c" />
+    <ClCompile Include="eltwise_binary.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>eltwise_layernorm</ProjectName>
+    <ProjectName>eltwise_binary</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{7EC4C8A0-6818-488E-BF14-FF14FBBC2B5E}</ProjectGuid>
   </PropertyGroup>
