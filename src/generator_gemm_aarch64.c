@@ -359,9 +359,20 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
   l_b_stride *= i_micro_kernel_config->datatype_size_in;
 
   /* prep of B-ptr for next k-iteration */
-  unsigned int l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - 1);
-  unsigned int l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_SUB;
-  if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+  unsigned int l_b_next_k = 0;
+  unsigned int l_b_next_k_inst = 0;
+
+  if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
+    if( i_n_blocking == 1 ) {
+      l_b_next_k = 1;
+      l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_ADD;
+    }
+    else{
+      l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - 1);
+      l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_SUB;
+    }
+  }
+  else{
     l_b_next_k = i_xgemm_desc->ldb - (i_n_blocking - 1);
     l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_ADD;
   }
