@@ -27,13 +27,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="eltwise_scale.c" />
+    <ClCompile Include="eltwise_opreduce.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>eltwise_scale</ProjectName>
+    <ProjectName>eltwise_opreduce</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{28E719E4-B482-4D8A-A4CD-674E870EEE37}</ProjectGuid>
   </PropertyGroup>

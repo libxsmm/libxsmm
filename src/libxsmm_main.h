@@ -189,10 +189,8 @@
 #define LIBXSMM_REGDESC_DEFAULT
 #define LIBXSMM_REGDESC(START, MODIFIER) \
   START libxsmm_gemm_descriptor MODIFIER gemm; \
-  START libxsmm_mcopy_descriptor MODIFIER mcopy; \
   START libxsmm_meltw_descriptor MODIFIER meltw; \
   START libxsmm_meqn_descriptor MODIFIER meqn; \
-  START libxsmm_trans_descriptor MODIFIER trans; \
   START libxsmm_pgemm_descriptor MODIFIER pgemm; \
   START libxsmm_getrf_descriptor MODIFIER getrf; \
   START libxsmm_trmm_descriptor MODIFIER trmm; \
@@ -234,20 +232,6 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descri
   unsigned char meltw_operation;
 };
 
-/** Packed structure storing the matcopy argument description. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_mcopy_descriptor {
-  /** LDx, M, and N. */
-  unsigned int m, n, ldi, ldo;
-  /** Size of data element. */
-  unsigned char typesize;
-  /** Level of unrolling. */
-  unsigned char unroll_level;
-  /** Boolean value (@TODO fix this). */
-  unsigned char prefetch;
-  /** Set of flags. */
-  unsigned char flags;
-};
-
 /** Packed structure storing the mateltw argument description. */
 LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descriptor {
   /** LDx, M, and N. */
@@ -261,14 +245,6 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descr
   unsigned char param;
   /** operation specifier */
   unsigned char operation;
-};
-
-/** Packed structure storing the transpose argument description. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_trans_descriptor {
-  /** LD, M, and N. */
-  unsigned int m, n, ldo;
-  /** Size of data element. */
-  unsigned char typesize;
 };
 
 /** Packed structure storing arguments of packed GEMM. */
@@ -340,6 +316,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const void* values;
 } libxsmm_csr_reg_descriptor;
 
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
+  libxsmm_meltwfunction_unary meltw_trans, meltw_copy, meltw_zero;
+  const void* ptr;
+} libxsmm_xcopykernel;
+
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   void (*ptr_fn)(LIBXSMM_VARIADIC);
   const void* ptr_const;
@@ -347,10 +328,8 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   uintptr_t uval;
   intptr_t ival;
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wimm, or void-function */
-  libxsmm_xmcopyfunction xmatcopy;
   libxsmm_xmeltwfunction xmateltw;
   libxsmm_matrix_eqn_function xmateqn;
-  libxsmm_xtransfunction xtrans;
   libxsmm_pgemm_xfunction xpgemm;
   libxsmm_getrf_xfunction xgetrf;
   libxsmm_trmm_xfunction xtrmm;
@@ -455,9 +434,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int block_upd_ifm;
   int block_upd_ofm;
 
-  libxsmm_xtransfunction tr_kernel;
+  libxsmm_meltwfunction_unary tr_kernel;
   libxsmm_meltwfunction_unary fwd_cvtfp32bf16_kernel;
-  libxsmm_xtransfunction tr_input_upd_kernel;
 
   /* Hoisting the compute kernels for FWD  */
   libxsmm_bsmmfunction fwd_config_kernel;
@@ -711,7 +689,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_bsmmfunction upd_config_kernel;
   libxsmm_bsmmfunction tilerelease_kernel;
 
-  libxsmm_xtransfunction tr_kernel;
+  libxsmm_meltwfunction_unary tr_kernel;
   libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd2;    /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd3;    /* ability to hoist forward GEMMs */
@@ -882,10 +860,8 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meqn_descri
 
 typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_GEMM       = LIBXSMM_KERNEL_KIND_MATMUL,
-  LIBXSMM_BUILD_KIND_MCOPY      = LIBXSMM_KERNEL_KIND_MCOPY,
   LIBXSMM_BUILD_KIND_MELTW      = LIBXSMM_KERNEL_KIND_MELTW,
   LIBXSMM_BUILD_KIND_MEQN       = LIBXSMM_KERNEL_KIND_MEQN,
-  LIBXSMM_BUILD_KIND_TRANS      = LIBXSMM_KERNEL_KIND_TRANS,
   LIBXSMM_BUILD_KIND_PGEMM      = LIBXSMM_KERNEL_KIND_PGEMM,
   LIBXSMM_BUILD_KIND_GETRF      = LIBXSMM_KERNEL_KIND_GETRF,
   LIBXSMM_BUILD_KIND_TRMM       = LIBXSMM_KERNEL_KIND_TRMM,

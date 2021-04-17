@@ -18,4 +18,5 @@ export KMP_AFFINITY=compact,1,0,granularity=fine              # Set KMP affinity
 export OMP_NUM_THREADS=28                                     # Set number of threads
 export LD_LIBRARY_PATH=../../../../libxsmm/lib/        # Set LD_LIBRARY_PATH
 
-python torch_example.py                                       # Run the pytorch example
+# python torch_example.py                                       # Run the pytorch example
+python Efficiency_test.py                                       # Run the Efficiency test

@@ -70,11 +70,13 @@ int main(void)
       otrans[fun](b, a, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test]);
       nerrors += validate(a, b, c, max_size_b, m[test], n[test], ldi[test], ldo[test]);
 #if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-      if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid() && (4 == typesize || 8 == typesize)) {
-        libxsmm_descriptor_blob blob;
-        const libxsmm_trans_descriptor* const desc = libxsmm_trans_descriptor_init(
-          &blob, (unsigned int)typesize, m[test], n[test], ldo[test]);
-        const libxsmm_xtransfunction kernel = libxsmm_dispatch_trans(desc);
+      if (LIBXSMM_X86_AVX512 <= libxsmm_get_target_archid()
+        && LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE))
+      {
+        const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary(
+          m[test], n[test], ldi + test, ldo + test,
+          LIBXSMM_DATATYPE(ELEM_TYPE), LIBXSMM_DATATYPE(ELEM_TYPE), LIBXSMM_DATATYPE(ELEM_TYPE),
+          LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
         if (NULL == kernel) {
 # if defined(_DEBUG)
           fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n", fun + 1, test + 1);

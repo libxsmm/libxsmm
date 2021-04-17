@@ -52,22 +52,25 @@ libxsmm_barrier_init(handle->barrier, ltid);
 if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) == 0 ) {
   /* Special case of 64x64 transpose with JITed transpose */
   if (handle->ifmblock == 64 && handle->ofmblock == 64) {
-    libxsmm_xtransfunction tr_kernel = handle->tr_kernel;
-    const unsigned int ld_in = 64;
-    const unsigned int ld_out = 64;
+    libxsmm_meltwfunction_unary tr_kernel = handle->tr_kernel;
+    libxsmm_meltw_unary_param trans_param;
     for (task = transpose_thr_begin; task < transpose_thr_end; ++task) {
       ifm1 = task/(handle->blocksofm * handle->desc.R * handle->desc.S);
       ofm1 = (task%(handle->blocksofm * handle->desc.R * handle->desc.S))/(handle->desc.R * handle->desc.S);
       kj =   ((task%(handle->blocksofm * handle->desc.R * handle->desc.S))%(handle->desc.R * handle->desc.S))/handle->desc.S;
       ki =   ((task%(handle->blocksofm * handle->desc.R * handle->desc.S))%(handle->desc.R * handle->desc.S))%handle->desc.S;
-      tr_kernel(&LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &ld_in,
-          &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 0, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), &ld_out);
-      tr_kernel(&LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 16, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &ld_in,
-          &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 16, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), &ld_out);
-      tr_kernel(&LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 32, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &ld_in,
-          &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 32, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), &ld_out);
-      tr_kernel(&LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 48, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &ld_in,
-          &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 48, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), &ld_out);
+      trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+      trans_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 0, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
+      tr_kernel( &trans_param );
+      trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 16, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+      trans_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 16, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
+      tr_kernel( &trans_param );
+      trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 32, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+      trans_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 32, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
+      tr_kernel( &trans_param );
+      trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 48, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+      trans_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 48, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
+      tr_kernel( &trans_param );
     }
   } else {
     /* number of tasks for transpose that could be run in parallel */

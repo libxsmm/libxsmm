@@ -115,6 +115,12 @@ MALLOC ?= 0
 # 0: disabled
 WRAP ?= 1
 
+# Attempts to pin OpenMP based threads
+AUTOPIN ?= 0
+ifneq (0,$(AUTOPIN))
+  DFLAGS += -DLIBXSMM_AUTOPIN
+endif
+
 # Profiling JIT code using Linux Perf
 # PERF=0: disabled (default)
 # PERF=1: enabled (without JITDUMP)
