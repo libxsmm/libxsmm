@@ -115,38 +115,21 @@ for (i = 0; i < nn; ++i) {
 }
 
 if (0 == result_nan) {
-  const libxsmm_blasint size = mm * nn;
   double compr_var = 0, compt_var = 0;
 
   /* initial variance */
   LIBXSMM_ASSERT(0 == info->var_ref);
   LIBXSMM_ASSERT(0 == info->var_tst);
 
-  if (0 != size) { /* final average */
-    info->avg_ref = info->l1_ref / size;
-    info->avg_tst = info->l1_tst / size;
-  }
-  /* Infinity-norm relative to reference */
-  if (0 < normr) {
-    info->normi_rel = info->normi_abs / normr;
-  }
-  else if (0 < normt) { /* relative to test */
-    info->normi_rel = info->normi_abs / normt;
-  }
-  else { /* should not happen */
-    info->normi_rel = 0;
+  if (0 != ntotal) { /* final average */
+    info->avg_ref = info->l1_ref / ntotal;
+    info->avg_tst = info->l1_tst / ntotal;
   }
 
+  /* Infinity-norm relative to reference */
+  info->normi_rel = LIBXSMM_MATDIFF_DIV(info->normi_abs, normr, normt);
   /* Froebenius-norm relative to reference */
-  if (0 < normfr) {
-    info->normf_rel = info->l2_abs / normfr;
-  }
-  else if (0 < normft) { /* relative to test */
-    info->normf_rel = info->l2_abs / normft;
-  }
-  else { /* should not happen */
-    info->normf_rel = 0;
-  }
+  info->normf_rel = LIBXSMM_MATDIFF_DIV(info->l2_abs, normfr, normft);
 
   for (j = 0; j < mm; ++j) {
     double compri = 0, compti = 0, comp1 = 0;
@@ -187,17 +170,5 @@ if (0 == result_nan) {
   }
 
   /* One-norm relative to reference */
-  if (0 < normrc) {
-    info->norm1_rel = info->norm1_abs / normrc;
-  }
-  else if (0 < normtc) { /* relative to test */
-    info->norm1_rel = info->norm1_abs / normtc;
-  }
-  else { /* should not happen */
-    info->norm1_rel = 0;
-  }
-  if (0 != size) { /* final variance */
-    info->var_ref /= size;
-    info->var_tst /= size;
-  }
+  info->norm1_rel = LIBXSMM_MATDIFF_DIV(info->norm1_abs, normrc, normtc);
 }

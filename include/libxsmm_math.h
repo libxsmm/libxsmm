@@ -22,8 +22,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
   /** One-norm */         double norm1_abs, norm1_rel;
   /** Infinity-norm */    double normi_abs, normi_rel;
   /** Froebenius-norm */  double normf_rel;
-  /** Maximum difference, and L2-norm (both absolute and relative). */
-  double linf_abs, linf_rel, l2_abs, l2_rel;
+  /** Maximum difference, L2-norm (absolute and relative), and R-squared. */
+  double linf_abs, linf_rel, l2_abs, l2_rel, rsq;
   /** Statistics: sum/l1, min., max., arith. avg., and variance. */
   double l1_ref, min_ref, max_ref, avg_ref, var_ref;
   /** Statistics: sum/l1, min., max., arith. avg., and variance. */
