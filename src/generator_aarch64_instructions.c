@@ -651,14 +651,14 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
     code[code_head]  = (unsigned int)(0xffffff00 & i_pred_instr);
     /* setting Rd */
     code[code_head] |= (unsigned int)(0xf & i_pred_reg);
-    if( i_pred_instr == LIBXSMM_AARCH64_INSTR_SVE_PTRUE ) {
+    if( (i_pred_instr & 0x3) == 0x1 ) {
       /* setting pattern */
       code[code_head] |= (unsigned int)((0x1f & i_pattern) << 5);
     }
-    if( i_pred_instr == LIBXSMM_AARCH64_INSTR_SVE_WHILELT ) {
+    else if( (i_pred_instr & 0x3) == 0x3 ) {
       /* setting first source register */
       code[code_head] |= (unsigned int)((0x1f & i_gp_reg_src_0) << 5);
-      /* setting width register */
+      /* setting width of registers */
       code[code_head] |= (unsigned int)((0x1 & i_gp_width) << 12);
       /* setting second source register */
       code[code_head] |= (unsigned int)((0x1f & i_gp_reg_src_1) << 16);
