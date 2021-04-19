@@ -274,19 +274,19 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
 # endif
       if (0 != (2 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
         switch (typesize) {
-          case 8: kernel.meltw_copy = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+          case 8: kernel.function = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
             LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_MELTW_FLAG_UNARY_NONE,
             NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
             break;
-          case 4: kernel.meltw_copy = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+          case 4: kernel.function = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
             LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE,
             NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
             break;
-          case 2: kernel.meltw_copy = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+          case 2: kernel.function = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
             LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_MELTW_FLAG_UNARY_NONE,
             NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
             break;
-          case 1: kernel.meltw_copy = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+          case 1: kernel.function = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
             LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_MELTW_FLAG_UNARY_NONE,
             NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
             break;
@@ -360,19 +360,19 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT & 1))
             if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
               switch (typesize) {
-                case 8: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+                case 8: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
                   LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
                   LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
                   break;
-                case 4: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+                case 4: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
                   LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
                   LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
                   break;
-                case 2: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+                case 2: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
                   LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16,
                   LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
                   break;
-                case 1: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+                case 1: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
                   LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
                   LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
                   break;
@@ -394,19 +394,19 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT & 1))
             if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
               switch (typesize) {
-                case 8: kernel.meltw_trans = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+                case 8: kernel.function = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
                   LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
                   LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
                   break;
-                case 4: kernel.meltw_trans = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+                case 4: kernel.function = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
                   LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
                   LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
                   break;
-                case 2: kernel.meltw_trans = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+                case 2: kernel.function = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
                   LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16,
                   LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
                   break;
-                case 1: kernel.meltw_trans = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+                case 1: kernel.function = libxsmm_dispatch_meltw_unary((libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
                   LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
                   LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
                   break;
@@ -657,19 +657,19 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
         && (m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))
       {
         switch (typesize) {
-          case 8: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+          case 8: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
             LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
             LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
             break;
-          case 4: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+          case 4: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
             LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
             LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
             break;
-          case 2: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+          case 2: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
             LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16,
             LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
             break;
-          case 1: kernel.meltw_trans = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+          case 1: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
             LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
             LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
             break;

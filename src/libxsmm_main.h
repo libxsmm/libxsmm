@@ -317,7 +317,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
 } libxsmm_csr_reg_descriptor;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
-  libxsmm_meltwfunction_unary meltw_trans, meltw_copy, meltw_zero;
+  libxsmm_meltwfunction_unary function;
   const void* ptr;
 } libxsmm_xcopykernel;
 
