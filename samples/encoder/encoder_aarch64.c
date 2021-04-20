@@ -238,7 +238,7 @@ void test_sve_pcompute( char* test_name, libxsmm_generated_code* mycode, unsigne
   for (d = 0; d < 8; ++d ) {
     for (t = 0; t < 4; ++t ) {
       for (p = 0; p < 3; ++p ) {
-        libxsmm_aarch64_instruction_sve_pcompute( mycode, instr, d, tuple[p], size[t] );
+        libxsmm_aarch64_instruction_sve_pcompute( mycode, instr, d, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, tuple[p], size[t] );
       }
     }
   }
