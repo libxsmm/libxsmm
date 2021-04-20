@@ -25,7 +25,7 @@ void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_ge
                                               LIBXSMM_AARCH64_INSTR_SVE_PTRUE,
                                               i_p_reg,
                                               LIBXSMM_AARCH64_ASIMD_REG_UNDEF,
-                                              0,
+                                              LIBXSMM_AARCH64_GP_WIDTH_W,
                                               LIBXSMM_AARCH64_ASIMD_REG_UNDEF,
                                               LIBXSMM_AARCH64_SVE_PATTERN_ALL,
                                               LIBXSMM_AARCH64_SVE_TYPE_B );
