@@ -31,7 +31,7 @@ void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_ge
                                               LIBXSMM_AARCH64_SVE_TYPE_B );
   }
   else {
-    // store number of bits in gp register
+    /* store number of bits in gp register */
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code,
                                                i_gp_reg_scratch,
                                                i_n_bits );
@@ -354,6 +354,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
   unsigned int l_m_bytes_full = 0;
   unsigned int l_vec_reg_acc_start = 0;
   unsigned int l_remainder_size = 0;
+  unsigned long long l_jump_block_n_last = 0; /* this is the jump size to be performed after a n-block is complete */
 
   l_m_blocks[0] = i_m_blocking / i_vec_length;
   l_remainder_size = i_m_blocking % i_vec_length;
@@ -365,9 +366,6 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
 
   /* stores C accumulator to memory */
-  /* this is the jump size to be performed after a n-block is complete */
-  unsigned long long l_jump_block_n_last = 0;
-
   /* full vector stores */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     /* this is the jump size to be performed after a m-block is complete */

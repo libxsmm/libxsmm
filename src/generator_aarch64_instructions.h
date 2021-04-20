@@ -277,7 +277,7 @@ typedef enum libxsmm_aarch64_shiftmode {
  * general purpose register width */
 typedef enum libxsmm_aarch64_gp_width {
   LIBXSMM_AARCH64_GP_WIDTH_W = 0x0,
-  LIBXSMM_AARCH64_GP_WIDTH_X = 0x1,
+  LIBXSMM_AARCH64_GP_WIDTH_X = 0x1
 } libxsmm_aarch64_gp_width;
 
 /**
