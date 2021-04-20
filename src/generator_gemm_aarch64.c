@@ -345,6 +345,10 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
   unsigned int l_m_total_blocks = 0;
   unsigned int l_vec_reg_acc_start = 0;
   unsigned int l_remainder_size = 0;
+  unsigned int l_b_stride = i_xgemm_desc->ldb;
+  /* prep of B-ptr for next k-iteration */
+  unsigned int l_b_next_k = 0;
+  unsigned int l_b_next_k_inst = 0;
 
   l_m_blocks[0] = i_m_blocking / i_micro_kernel_config->vector_length;
   l_remainder_size = i_m_blocking % i_micro_kernel_config->vector_length;
@@ -352,15 +356,10 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
   l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
 
   /* stride when accessing B */
-  unsigned int l_b_stride = i_xgemm_desc->ldb;
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
     l_b_stride = 1;
   }
   l_b_stride *= i_micro_kernel_config->datatype_size_in;
-
-  /* prep of B-ptr for next k-iteration */
-  unsigned int l_b_next_k = 0;
-  unsigned int l_b_next_k_inst = 0;
 
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
     if( i_n_blocking == 1 ) {
