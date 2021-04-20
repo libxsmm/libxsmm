@@ -152,7 +152,7 @@ public:
     for (int u = 0; u < U; u++) {
       int start = mb_offsets[u];
       int end = mb_offsets[u+1];
-      float g_sum[E] = {0};
+      float g_sum[E];
       float sum = 0.0;
 
 #ifdef USE_LIBXSMM_JIT
