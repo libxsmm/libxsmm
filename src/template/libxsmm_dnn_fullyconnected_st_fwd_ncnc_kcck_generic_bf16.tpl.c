@@ -118,8 +118,8 @@ if (use_2d_blocking == 1) {
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
                   /* we ar using Pade 7/8 approximation */
-                  cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
-                  cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
+                  cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
+                  cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
 #endif
                   _mm512_storeu_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk), cur_out_0);
                   _mm512_storeu_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk), cur_out_1);
@@ -190,8 +190,8 @@ if (use_2d_blocking == 1) {
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
               /* we ar using Pade 7/8 approximation */
-              cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
-              cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
+              cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
+              cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
 #endif
               _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk), LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( cur_out_1, cur_out_0 ));
             }
@@ -269,8 +269,8 @@ if (use_2d_blocking == 1) {
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
                 /* we ar using Pade 7/8 approximation */
-                cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
-                cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
+                cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
+                cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
 #endif
                 _mm512_storeu_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk), cur_out_0);
                 _mm512_storeu_ps(&LIBXSMM_VLA_ACCESS(4,  output_f32, mb1, ofm1, mb2, ofm2+16, nBlocksOFm, handle->bn, handle->bk), cur_out_1);
@@ -341,8 +341,8 @@ if (use_2d_blocking == 1) {
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
             /* we ar using Pade 7/8 approximation */
-            cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
-            cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_RATIONAL_78(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
+            cur_out_0 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(_mm512_mul_ps(cur_out_0, halves)), ones), halves);
+            cur_out_1 = _mm512_mul_ps(_mm512_add_ps(LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2(_mm512_mul_ps(cur_out_1, halves)), ones), halves);
 #endif
             _mm512_storeu_si512(&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk), LIBXSMM_INTRINSISCS_MM512_CVTNE2PS_PBH( cur_out_1, cur_out_0 ));
           }

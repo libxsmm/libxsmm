@@ -15,10 +15,6 @@
 #include "generator_spgemm_csc_bsparse.h"
 #include "generator_spgemm_csr_asparse.h"
 #include "generator_spgemm_csr_asparse_reg.h"
-#include "generator_spgemm_csr_bsparse_soa.h"
-#include "generator_spgemm_csr_asparse_soa.h"
-#include "generator_spgemm_csc_bsparse_soa.h"
-#include "generator_spgemm_csc_csparse_soa.h"
 #include "libxsmm_main.h"
 
 LIBXSMM_API
@@ -146,91 +142,6 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
 }
 
 LIBXSMM_API
-void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_generated_code,
-                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                              const char*                    i_arch,
-                                              const unsigned int*            i_row_idx,
-                                              const unsigned int*            i_column_idx,
-                                              const void*                    i_values,
-                                              const unsigned int             i_packed_width ) {
-  /* A matrix is sparse */
-  if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
-    /* check LDB */
-    if ( i_xgemm_desc->ldb < i_xgemm_desc->n ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
-      return;
-    }
-    /* check LDC */
-    if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
-      return;
-    }
-    libxsmm_generator_spgemm_csr_asparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values, i_packed_width );
-  /* B matrix is sparse */
-  } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
-    /* check LDA */
-    if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
-      return;
-    }
-    /* check LDC */
-    /* coverity[copy_paste_error] */
-    if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
-      return;
-    }
-    libxsmm_generator_spgemm_csr_bsparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values, i_packed_width );
-  } else {
-    /* something bad happened... */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
-    return;
-  }
-}
-
-LIBXSMM_API
-void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_generated_code,
-                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                              const char*                    i_arch,
-                                              const unsigned int*            i_row_idx,
-                                              const unsigned int*            i_column_idx,
-                                              const void*                    i_values,
-                                              const unsigned int             i_packed_width ) {
-  /* B matrix is sparse */
-  if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
-    /* check LDA */
-    if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
-      return;
-    }
-    /* check LDC */
-    if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
-      return;
-    }
-    libxsmm_generator_spgemm_csc_bsparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values, i_packed_width );
-  /* C matrix is sparse */
-  } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc == 0) ) {
-#if 0
-    /* check LDA */
-    if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
-      return;
-    }
-#endif
-    /* check LDB */
-    if ( i_xgemm_desc->ldb < i_xgemm_desc->n ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
-      return;
-    }
-    libxsmm_generator_spgemm_csc_csparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values, i_packed_width );
-  } else {
-    /* something bad happened... */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
-    return;
-  }
-}
-
-LIBXSMM_API
 void libxsmm_generator_spgemm( const char*                    i_file_out,
                                const char*                    i_routine_name,
                                const libxsmm_gemm_descriptor* i_xgemm_desc,
@@ -273,12 +184,10 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
 
     if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) {
 #if !defined(NDEBUG)
-      double *const l_tmp = (double*)malloc((size_t)l_row_count * l_column_count * sizeof(double));
+      /* mute static analysis about garbage content */
+      double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count, sizeof(double));
       unsigned int l_n;
       unsigned int l_m;
-
-      /* mute static analysis about garbage content */
-      memset(l_tmp, 0, (size_t)l_row_count * l_column_count * sizeof(double));
 
       printf("CSC matrix data structure we just read:\n");
       printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
@@ -327,9 +236,6 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       /* generate the actual kernel code for current description depending on the architecture */
       if (i_is_csr == 0) {
         libxsmm_generator_spgemm_csc_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
-      } else if (i_is_csr == 10) {
-        assert(0/*should not happen*/);
-        /*libxsmm_generator_spgemm_csc_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values, 16 );*/
       } else {
         assert(0/*should not happen*/);
       }
@@ -340,12 +246,10 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
 
     if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) { /* libxsmm_sparse_*_reader may have deallocated l_values */
 #if !defined(NDEBUG)
-      double *const l_tmp = (double*)malloc((size_t)l_row_count * l_column_count * sizeof(double));
+      /* mute static analysis about garbage content */
+      double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count, sizeof(double));
       unsigned int l_n;
       unsigned int l_m;
-
-      /* mute static analysis about garbage content */
-      memset(l_tmp, 0, (size_t)l_row_count * l_column_count * sizeof(double));
 
       printf("CSR matrix data structure we just read:\n");
       printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
@@ -394,10 +298,6 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       if (i_is_csr == 1) {
         /* generate the actual kernel code for current description depending on the architecture */
         libxsmm_generator_spgemm_csr_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
-      } else if (i_is_csr == 2) {
-        /* generate the actual kernel code for current description depending on the architecture */
-        assert(0/*should not happen*/);
-        /*libxsmm_generator_spgemm_csr_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values, 16 );*/
       } else if (i_is_csr == 3) {
         /* generate the actual kernel code for current description depending on the architecture */
         libxsmm_generator_spgemm_csr_reg_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );

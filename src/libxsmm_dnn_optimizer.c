@@ -19,12 +19,11 @@ LIBXSMM_API libxsmm_dnn_optimizer* libxsmm_dnn_create_optimizer(libxsmm_dnn_opti
   LIBXSMM_INIT
 
   if ( (optimizer_desc.datatype == LIBXSMM_DNN_DATATYPE_F32) || (optimizer_desc.datatype == LIBXSMM_DNN_DATATYPE_BF16) ) {
-    handle = (libxsmm_dnn_optimizer*)malloc(sizeof(libxsmm_dnn_optimizer));
+    /* zero entire content; not only safer but also sets data and code pointers to NULL */
+    handle = (libxsmm_dnn_optimizer*)calloc(1, sizeof(libxsmm_dnn_optimizer));
 
     if (0 != handle) {
       *status = LIBXSMM_DNN_SUCCESS;
-      /* zero entire content; not only safer but also sets data and code pointers to NULL */
-      memset(handle, 0, sizeof(*handle));
       /* let's make the description persistent */
       handle->desc = optimizer_desc;
 
@@ -91,10 +90,10 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_optimizer_create_tensor_d
   layout = 0;
 
   if (handle != 0) {
-    layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
+    /* zero entire content; not only safer but also sets data and code pointers to NULL */
+    layout = (libxsmm_dnn_tensor_datalayout*)calloc(1, sizeof(libxsmm_dnn_tensor_datalayout));
 
     if (layout != 0) {
-      memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
       layout->format = handle->desc.filter_format;
 
       if ( (type == LIBXSMM_DNN_REGULAR_FILTER) || (type == LIBXSMM_DNN_GRADIENT_FILTER) || (type == LIBXSMM_DNN_MASTER_FILTER) ) {

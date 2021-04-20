@@ -45,7 +45,9 @@
 #endif
 
 /** MKL_DIRECT_CALL requires to include the MKL interface. */
-#if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
+#if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL) || \
+    (defined(__MKL) && !defined(LIBXSMM_BUILD) && \
+    (!defined(__BLAS) || (0 != __BLAS))))
 # if (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
 #   error "Inconsistent ILP64 configuration detected!"
 # endif
@@ -57,8 +59,8 @@
 #   include <mkl.h>
 # endif
 #endif
-/** INTEL_MKL_VERSION is needed later to fix some NOTHROW issue. */
-#if defined(__MKL) && !defined(INTEL_MKL_VERSION) && defined(NOTHROW)
+/** __INTEL_MKL__ is needed later to fix some NOTHROW issue. */
+#if defined(__MKL) && !defined(__INTEL_MKL__) && defined(NOTHROW)
 # if defined(LIBXSMM_OFFLOAD_BUILD)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #   include <mkl_version.h>
@@ -66,6 +68,11 @@
 # else
 #   include <mkl_version.h>
 # endif
+#endif
+
+/** Unfortunately calculation of INTEL_MKL_VERSION is not stable over time. */
+#if defined(__INTEL_MKL__) && defined(__INTEL_MKL_MINOR__) && defined(__INTEL_MKL_UPDATE__)
+# define LIBXSMM_MKL_VERSION3 LIBXSMM_VERSION3(__INTEL_MKL__, __INTEL_MKL_MINOR__, __INTEL_MKL_UPDATE__)
 #endif
 
 /** Automatically select a prefetch-strategy (libxsmm_get_gemm_xprefetch, etc.). */
@@ -180,7 +187,7 @@
 # define LIBXSMM_BLAS_NOTHROW LIBXSMM_NOEXCEPT
 #endif
 #define LIBXSMM_BLAS_NOEXCEPT(KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_NOEXCEPT_, KIND)
-#if defined(INTEL_MKL_VERSION) && (20200002 <= INTEL_MKL_VERSION)
+#if defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(2020, 0, 2) <= LIBXSMM_MKL_VERSION3)
 # define LIBXSMM_BLAS_NOEXCEPT_gemm_batch LIBXSMM_BLAS_NOTHROW
 #else
 # define LIBXSMM_BLAS_NOEXCEPT_gemm_batch
@@ -276,7 +283,7 @@
 # define LIBXSMM_INIT if (2 > libxsmm_ninit) libxsmm_init();
 #endif
 
-/** Map to appropriate BLAS function (or fall-back). The mapping is used, e.g., inside of LIBXSMM_BLAS_XGEMM. */
+/** Map to appropriate BLAS function (or fallback). The mapping is used, e.g., inside of LIBXSMM_BLAS_XGEMM. */
 #define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
 #if (0 != LIBXSMM_BLAS) /* Helper macro to eventually (if defined) call libxsmm_init */
 # if defined(LIBXSMM_INIT_COMPLETED)
@@ -386,7 +393,7 @@
 #endif
 
 /**
- * Execute a specialized function, or use a fall-back code path depending on threshold (macro template).
+ * Execute a specialized function, or use a fallback code path depending on threshold (macro template).
  * LIBXSMM_XGEMM_FALLBACK0 or specialized function: below LIBXSMM_MAX_MNK
  * LIBXSMM_XGEMM_FALLBACK1: above LIBXSMM_MAX_MNK
  */
@@ -519,13 +526,13 @@ LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
 LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
   libxsmm_xmmfunction kernel, const void* a, const void* b, void* c);
 
-/** GEMM_BATCH: fall-back prototype functions served by any compliant LAPACK/BLAS. */
+/** GEMM_BATCH: fallback prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
-/** GEMM: fall-back prototype functions served by any compliant LAPACK/BLAS. */
+/** GEMM: fallback prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float,  gemm));
-/** GEMV: fall-back prototype functions served by any compliant LAPACK/BLAS. */
+/** GEMV: fallback prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float,  gemv));
 /** Helper function to consume arguments when called. */

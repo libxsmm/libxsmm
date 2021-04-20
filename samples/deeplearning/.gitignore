@@ -9,6 +9,7 @@ fullyconnecteddriver/fourlayer_example_f32
 fullyconnecteddriver/layer_example_bf16
 fullyconnecteddriver/layer_example_bf16_f32
 fullyconnecteddriver/layer_example_f32
+fullyconnecteddriver/layer_example_bf16_sparse_A
 fusedbndriver/layer_example_bf16
 fusedbndriver/layer_example_f32
 fusedgndriver/layer_example_f32

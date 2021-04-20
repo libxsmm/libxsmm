@@ -11,7 +11,7 @@
 ###############################################################################
 set -o pipefail
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 BASENAME=$(command -v basename)
 MKDIR=$(command -v mkdir)
 CHMOD=$(command -v chmod)
@@ -161,8 +161,10 @@ then
     LIMITRUN=$((LIMIT<LIMITRUN?LIMIT:LIMITRUN))
   fi
 
+  # eventually cleanup run-script of terminated/previous sessions
+  ${RM} -f "${HERE}/../.tool_??????.sh"
   # setup batch execution (TEST may be a singular test given by filename)
-  if [ "" = "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
+  if [ "" = "${LAUNCH_CMD}" ] && [ "" = "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "${BUILDKITE_LABEL}" ]; then
       LABEL=$(echo "${BUILDKITE_LABEL}" | ${TR} -s [:punct:][:space:] - | ${SED} -e "s/^-//" -e "s/-$//")
     fi
@@ -175,19 +177,20 @@ then
     fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
     umask 007
-    # eventually cleanup run-script of terminated/previous sessions
-    ${RM} -f "${HERE}/../.tool_??????.sh"
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT}"
-  elif [ "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ]; then
+  elif [ "" = "${LAUNCH_CMD}" ] && [ "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ]; then
     umask 007
-    # eventually cleanup run-script of terminated/previous sessions
-    ${RM} -f "${HERE}/../.tool_??????.sh"
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${TESTSCRIPT}"
+  elif [ "${LAUNCH_CMD}" ]; then
+    umask 007
+    TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
+    ${CHMOD} +rx ${TESTSCRIPT}
+    LAUNCH="${LAUNCH_CMD} ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
     if [ "" = "${MAKEJ}" ]; then
       export MAKEJ="-j $(eval ${HERE}/tool_cpuinfo.sh -nc)"
@@ -290,7 +293,7 @@ then
         ENVSTR=${ENV}
       fi
       # print some header if all tests are selected or in case of multi-tests
-      if [ "" = "$1" ] || [ "none" != "${PARTITION}" ] || [ "none" != "${ENV}" ]; then
+      if [[ "none" != "${CONFIG}" && ("" = "$1" || "none" != "${PARTITION}" || "none" != "${ENV}") ]]; then
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
           if [ "${ENVVAL}" ]; then
             echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG}/${ENVVAL})"
@@ -307,7 +310,8 @@ then
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" > ${TESTSCRIPT}
         echo "set -eo pipefail" >> ${TESTSCRIPT}
-        if [ "${SYNC}" ]; then echo "${SYNC}" >> ${TESTSCRIPT}; fi
+        echo "cd ${REPOROOT}" >> ${TESTSCRIPT}
+        echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >> ${TESTSCRIPT}
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >> ${TESTSCRIPT}; fi
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
@@ -320,12 +324,17 @@ then
           echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
         fi
         # setup environment on a per-test basis
-        echo "if [ \"\" != \"${CONFIGFILE}\" ]; then" >> ${TESTSCRIPT}
-        echo "  if [ -e \"${ENVFILE}\" ]; then" >> ${TESTSCRIPT}
-        echo "    eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\"" >> ${TESTSCRIPT}
-        echo "  fi" >> ${TESTSCRIPT}
-        echo "  source \"${CONFIGFILE}\" \"\"" >> ${TESTSCRIPT}
+        echo "if [ -e \"${ENVFILE}\" ]; then" >> ${TESTSCRIPT}
+        if [ "${LAUNCH_CMD}" ]; then
+          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\" \"${HERE}/../.env.sh\"" >> ${TESTSCRIPT}
+          echo "  source \"${HERE}/../.env.sh\"" >> ${TESTSCRIPT}
+        else
+          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\"" >> ${TESTSCRIPT}
+        fi
         echo "fi" >> ${TESTSCRIPT}
+        if [ -e "${CONFIGFILE}" ]; then
+          echo "  source \"${CONFIGFILE}\" \"\"" >> ${TESTSCRIPT}
+        fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e "${SLURMFILE}" ]; then
           DIR=$(cd $(dirname ${SLURMFILE}); pwd -P)
@@ -396,7 +405,7 @@ then
       RESULT=$?
 
       # exit the loop in case of an error
-      if [ "0" != "${RESULT}" ]; then
+      if [ "0" != "${RESULT}" ] && [ "1" != "${LIMITHARD}" ]; then
         if [ "${TOUCHFILE}" ]; then
           ${RM} -f "${TOUCHFILE}"
           TOUCHFILE=""
@@ -448,4 +457,3 @@ then
 
   exit ${RESULT}
 fi
-

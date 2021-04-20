@@ -31,7 +31,7 @@
   !defined(_WIN32) /* check this manually under Windows */
 # define MKLJIT
 #endif
-#if (!defined(INTEL_MKL_VERSION) || (20190003 <= INTEL_MKL_VERSION)) && \
+#if (!defined(LIBXSMM_MKL_VERSION3) || (LIBXSMM_VERSION3(2019, 0, 3) <= LIBXSMM_MKL_VERSION3)) && \
   !defined(_WIN32) /* TODO: Windows calling convention */
 # define CHECK
 #endif
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   const int max_nthreads = 1;
 #endif
   const int default_minsize = 4;
-#if !defined(INTEL_MKL_VERSION) || (20190003 <= INTEL_MKL_VERSION)
+#if !defined(LIBXSMM_MKL_VERSION3) || (LIBXSMM_VERSION3(2019, 0, 3) <= LIBXSMM_MKL_VERSION3)
   const int default_maxsize = MAXSIZE;
 #else
   const int default_maxsize = 16;
@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
 
 #if 0 != LIBXSMM_JIT
-  if (LIBXSMM_X86_SSE3 > libxsmm_get_target_archid()) {
+  if (LIBXSMM_X86_GENERIC > libxsmm_get_target_archid()) {
     fprintf(stderr, "\n\tWarning: JIT support is not available at runtime!\n");
   }
 #else

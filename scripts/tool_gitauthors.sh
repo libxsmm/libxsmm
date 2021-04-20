@@ -12,7 +12,7 @@
 
 GIT=$(command -v git)
 
-if [ "" != "${GIT}" ]; then
+if [ "${GIT}" ]; then
   ${GIT} shortlog -sne --all --no-merges
 else
   >&2 echo "Error: missing prerequisites!"

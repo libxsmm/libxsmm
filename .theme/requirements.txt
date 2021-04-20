@@ -1,5 +1,5 @@
 sphinx-rtd-theme
 recommonmark
 mkdocs>=1.1.2
-pip>=20.0.2
-m2r
+pip>=20.3
+m2r2

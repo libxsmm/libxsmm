@@ -109,12 +109,12 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd_w, norms_upd_r, norms_upd_b, diff;
-  memset(&norms_fwd, 0, sizeof(norms_fwd));
-  memset(&norms_bwd, 0, sizeof(norms_bwd));
-  memset(&norms_upd_w, 0, sizeof(norms_upd_w));
-  memset(&norms_upd_r, 0, sizeof(norms_upd_r));
-  memset(&norms_upd_b, 0, sizeof(norms_upd_b));
-  memset(&diff, 0, sizeof(diff));
+  libxsmm_matdiff_clear(&norms_fwd);
+  libxsmm_matdiff_clear(&norms_bwd);
+  libxsmm_matdiff_clear(&norms_upd_w);
+  libxsmm_matdiff_clear(&norms_upd_r);
+  libxsmm_matdiff_clear(&norms_upd_b);
+  libxsmm_matdiff_clear(&diff);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("\nUsage: ./lstmdriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [N] [C] [K] [time_steps > 0]\n\n");
@@ -280,23 +280,24 @@ int main(int argc, char* argv[])
 
   /* initialize data */
   /* FWD */
-  LIBXSMM_MATINIT_OMP(float, 24, cspgold,N, K, N, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 24, hpgold, N, K, N, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, wigold, C, K, C, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, wfgold, C, K, C, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, wogold, C, K, C, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, wcgold, C, K, C, 1.0);
+  init_buf(cspgold, N*K, 0, 0);
+  init_buf(hpgold, N*K, 0, 0);
+  init_buf(wigold, C*K, 0, 0);
+  init_buf(wfgold, C*K, 0, 0);
+  init_buf(wogold, C*K, 0, 0);
+  init_buf(wcgold, K*C, 0, 0);
   for (j = 0; j < t; ++j) {
-    LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C), N, C, N, 1.0);
+    init_buf(&LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C), N*C, 0, 0);
   }
-  LIBXSMM_MATINIT_OMP(float, 42, rigold, K, K, K, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, rfgold, K, K, K, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, rogold, K, K, K, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, rcgold, K, K, K, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 24, bigold, 1, K, 1, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 24, bfgold, 1, K, 1, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 24, bogold, 1, K, 1, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 24, bcgold, 1, K, 1, 1.0);
+  init_buf(rigold, K*K, 0, 0);
+  init_buf(rfgold, K*K, 0, 0);
+  init_buf(rogold, K*K, 0, 0);
+  init_buf(rcgold, K*K, 0, 0);
+  init_buf(bigold, K, 0, 0);
+  init_buf(bfgold, K, 0, 0);
+  init_buf(bogold, K, 0, 0);
+  init_buf(bcgold, K, 0, 0);
+
   for (j = 0; j < K; j++) {
     bfgold_fb[j] = bfgold[j] + forget_bias;
   }
@@ -327,9 +328,9 @@ int main(int argc, char* argv[])
   zero_buf(dhgold, K*N);
   /* BWD/UPD */
   for (j = 0; j < t; ++j) {
-    LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, K * N), N, K, N, 1.0);
+    init_buf(&LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, K * N), K*N, 0, 0);
   }
-  LIBXSMM_MATINIT_OMP(float, 24, djdcsgold, N, K, N, 1.0);
+  init_buf(djdcsgold, K*N, 0, 0);
   zero_buf(i3gold, K*N);
   zero_buf(f3gold, K*N);
   zero_buf(d3gold, K*N);

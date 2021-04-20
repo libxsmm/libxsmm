@@ -370,7 +370,7 @@ int main(int argc, char* argv[])
 
     /* Sparsify filters to requested level */
     memset(filter_libxsmm_sparse, 0, nIFm * nOFm * sizeof(libxsmm_bfloat16));
-#if defined(__AVX512BW__)
+#if defined(__AVX512VBMI2__) || (defined(__AVX512BW__) && defined(LIBXSMM_INTEL_COMPILER))
     for (__i = 0; __i < nIFm * nOFm; __i+= 32 ) {
       unsigned int  cur_mask_int    = random_mask_half_full(sparsity_factor);
       __mmask32     cur_mask        = _cvtu32_mask32(cur_mask_int);
@@ -382,7 +382,14 @@ int main(int argc, char* argv[])
       __j += 32/sparsity_factor;
     }
 #else
-    fprintf(stderr, "ERROR:We need at least AVX512BW support for this kernel...\n");
+    fprintf(stderr,
+      "ERROR: support for at least "
+# if defined(LIBXSMM_INTEL_COMPILER)
+      "AVX512BW"
+# else
+      "AVX512VBMI2"
+# endif
+      " required for this kernel!\n");
     exit(EXIT_FAILURE);
 #endif
     /* Copyover the sparse idx tensor after the compressed filter buffer  */

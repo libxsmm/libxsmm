@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
 FILE=cp2k-perf.txt
 
@@ -36,13 +36,13 @@ if [ "" = "${!RUNS}" ]; then
   RUNS=RUNS11
 fi
 
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   SIZE=$1
   shift
 else
   SIZE=0
 fi
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   FILE=$1
   shift
 fi

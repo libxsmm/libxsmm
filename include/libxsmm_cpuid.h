@@ -24,7 +24,7 @@
 #define LIBXSMM_TARGET_ARCH_GENERIC 1
 #define LIBXSMM_X86_GENERIC      1002
 #define LIBXSMM_X86_SSE3         1003
-#define LIBXSMM_X86_SSE4         1004
+#define LIBXSMM_X86_SSE42        1004
 #define LIBXSMM_X86_AVX          1005
 #define LIBXSMM_X86_AVX2         1006
 #define LIBXSMM_X86_AVX512       1007
@@ -35,20 +35,28 @@
 #define LIBXSMM_X86_AVX512_CPX   1022
 #define LIBXSMM_X86_AVX512_SPR   1023
 #define LIBXSMM_X86_ALLFEAT      1999
-#define LIBXSMM_AARCH64_V81      2002
+#define LIBXSMM_AARCH64_V81      2001 /* Baseline */
+#define LIBXSMM_AARCH64_V82      2002 /* A64FX minus SVE */
+#define LIBXSMM_AARCH64_A64FX    2100 /* SVE */
 #define LIBXSMM_AARCH64_ALLFEAT  2999
 
-/** A zero-initialized structure assumes conservative properties. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_cpuid_x86_info {
+#if defined(LIBXSMM_PLATFORM_X86)
+/** Zero-initialized structure; assumes conservative properties. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_cpuid_info {
   int constant_tsc; /** Timer stamp counter is monotonic. */
   int has_context;  /** Context switches are permitted. */
-} libxsmm_cpuid_x86_info;
+} libxsmm_cpuid_info;
+#else
+typedef int libxsmm_cpuid_info;
+#endif
 
 /** Returns the target architecture and instruction set extensions. */
 #if defined(__cplusplus) /* note: stay compatible with TF */
-LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info = NULL);
+LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info = NULL);
+LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info = NULL);
 #else
-LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info);
+LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info);
+LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
 #endif
 
 /**

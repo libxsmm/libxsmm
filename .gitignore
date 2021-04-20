@@ -20,8 +20,9 @@ samples/*/*.dat
 samples/*/*.pdf
 samples/*/*.png
 inspector*
+licenses
 bazel-*
-python
+python*
 html
 site
 bin
@@ -42,6 +43,9 @@ err*.txt
 out*.txt
 log.txt
 _*.txt
+.env.sh
+.env_??????
+.tool_??????.sh
 .libxsmm_??????.*
 *.lastcodeanalysissucceeded
 *.amplxeproj

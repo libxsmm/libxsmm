@@ -9,7 +9,9 @@
 /* Dhiraj Kalamkar, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #define JIT_REDUCE_COLS_IDX
-#ifdef JIT_REDUCE_COLS_IDX
+#define JIT_REPLICATE_COLS_VAR
+#define JIT_SCALE
+#if defined( JIT_REDUCE_COLS_IDX) || defined(JIT_REPLICATE_COLS_VAR) || defined(JIT_SCALE)
 #include <libxsmm.h>
 #endif
 #include "utils.h"
@@ -83,6 +85,29 @@ public:
   }
 #endif
 
+#ifdef JIT_REPLICATE_COLS_VAR
+  void backward(int N, int NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
+  {
+    T(*__restrict gradout)[E] = (T(*)[*])gradout_;
+    T(*__restrict values)[E] = (T(*)[*])values_;
+    int _ld = E;
+    libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary(E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR);
+#pragma omp parallel for
+    for (int n = 0; n < N; n++)
+    {
+      libxsmm_meltw_unary_param unary_param;
+      auto start = offsets[n];
+      auto end = (n < N - 1 ? offsets[n + 1] : NS);
+      unsigned long long _N = end-start;
+
+      unary_param.in.primary    = (void*)&gradout[n][0];
+      unary_param.out.primary   = (void*)&values[start][0];
+      unary_param.out.secondary = (void*)&_N;
+
+      kernel(&unary_param);
+    }
+  }
+#else
   void backward(int N, int NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
   {
     T(*__restrict gradout)[E] = (T(*)[*])gradout_;
@@ -104,7 +129,32 @@ public:
       }
     }
   }
+#endif
 
+#ifdef JIT_SCALE
+  void update(int NS, const T *grads_, const long *indices, float lr)
+  {
+    T(*__restrict weight)[E] = (T(*)[*])weight_;
+    T(*__restrict grads)[E] = (T(*)[*])grads_;
+    int _ld = E;
+    libxsmm_meltwfunction_binary kernel = libxsmm_dispatch_meltw_binary(E, 1, &_ld, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_MELTW_TYPE_BINARY_MULADD);
+
+    SimpleSpinLock fallBackLock;
+#pragma omp parallel for
+    for (long i = 0; i < NS; i++)
+    {
+      libxsmm_meltw_binary_param binary_param;
+      long ind = indices[i];
+      binary_param.in0.primary  = (void*)&lr;
+      binary_param.in1.primary  = (void*)&grads[i][0];
+      binary_param.out.primary  = (void*)&weight[ind][0];
+      {
+        TransactionScope guard(fallBackLock, 100, 0);
+        kernel(&binary_param);
+      }
+    }
+  }
+#else
   void update(int NS, const T *grads_, const long *indices, float lr)
   {
     T(*__restrict weight)[E] = (T(*)[*])weight_;
@@ -123,6 +173,7 @@ public:
       }
     }
   }
+#endif
 
   T *weight_;
   int M;

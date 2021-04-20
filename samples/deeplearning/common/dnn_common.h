@@ -2551,26 +2551,26 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
       __m512 csv, cov, hv;
       /* i = sigmoid(i) */
       iv = _mm512_mul_ps (iv, minus1);
-      iv = LIBXSMM_INTRINSICS_MM512_EXP_PS (iv);
+      iv = LIBXSMM_INTRINSICS_MM512_EXP_PS_3DTS (iv);
       iv = _mm512_add_ps (iv, plus1);
       iv = _mm512_div_ps (plus1, iv);
       /* c = tanh(c) */
-      cv = LIBXSMM_INTRINSICS_MM512_TANH_PS (cv);
+      cv = LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2 (cv);
       /* f = sigmoid(f) */
       fv = _mm512_mul_ps (fv, minus1);
-      fv = LIBXSMM_INTRINSICS_MM512_EXP_PS (fv);
+      fv = LIBXSMM_INTRINSICS_MM512_EXP_PS_3DTS (fv);
       fv = _mm512_add_ps (fv, plus1);
       fv = _mm512_div_ps (plus1, fv);
       /* o = sigmoid(o) */
       ov = _mm512_mul_ps (ov, minus1);
-      ov = LIBXSMM_INTRINSICS_MM512_EXP_PS (ov);
+      ov = LIBXSMM_INTRINSICS_MM512_EXP_PS_3DTS (ov);
       ov = _mm512_add_ps (ov, plus1);
       ov = _mm512_div_ps (plus1, ov);
       /* cs = f.csp + i.c */
       csv = _mm512_mul_ps (fv, cspv);
       csv = _mm512_fmadd_ps (iv, cv, csv);
       /* co = tanh(cs) */
-      cov = LIBXSMM_INTRINSICS_MM512_TANH_PS (csv);
+      cov = LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2 (csv);
       /* h = o.co */
       hv = _mm512_mul_ps (ov, cov);
       _mm512_storeu_ps (&(i[j*4*K + l]), iv);

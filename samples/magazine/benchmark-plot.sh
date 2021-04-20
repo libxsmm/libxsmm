@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 FIND=$(command -v find)
 SORT=$(command -v sort)
 JOIN=$(command -v join)
@@ -74,7 +74,7 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   env GDFONTPATH=/cygdrive/c/Windows/Fonts \
     FILEEXT=${FILEEXT} KIND=${KIND} MULTI=${MULTI} \
     "${WGNUPLOT}" "${HERE}/benchmark.plt"
-  if [ "1" != "${MULTI}" ] && [ "pdf" != "${FILEEXT}" ] && [ "" != "$(command -v mogrify)" ]; then
+  if [ "1" != "${MULTI}" ] && [ "pdf" != "${FILEEXT}" ] && [ "$(command -v mogrify)" ]; then
     ${FIND} . -name "benchmark*.${FILEEXT}" -type f -exec mogrify -trim -transparent-color white {} \;
   fi
 else

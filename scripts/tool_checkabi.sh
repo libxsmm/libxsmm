@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 LIBS=${HERE}/../lib
 
 #EXCLUDE="libxsmmgen"
@@ -46,9 +46,9 @@ if [ "" = "${SED}" ]; then
   SED=$(command -v sed)
 fi
 
-if [ "" != "${NM}"   ] && [ "" != "${SED}"  ] && [ "" != "${CUT}" ] && \
-   [ "" != "${LS}"   ] && [ "" != "${CP}"   ] && [ "" != "${MV}"  ] && \
-   [ "" != "${WC}" ] && [ "" != "${SORT}" ] && [ "" != "${DIFF}" ];
+if [ "${NM}" ] && [ "${SED}"  ] && [ "${CUT}"  ] && \
+   [ "${LS}" ] && [ "${CP}"   ] && [ "${MV}"   ] && \
+   [ "${WC}" ] && [ "${SORT}" ] && [ "${DIFF}" ];
 then
   # determine behavior of sort command
   export LC_ALL=C IFS=$'\n'
@@ -56,16 +56,16 @@ then
     ${CP} /dev/null ${ABINEW}
     for LIBFILE in $(${LS} -1 "${LIBS}"/*.${LIBTYPE} 2>/dev/null); do
       LIB=$(${BASENAME} "${LIBFILE}" .${LIBTYPE})
-      if [ "" = "${EXCLUDE}" ] || [ "" != "$(echo "${EXCLUDE}" | ${SED} "/\b${LIB}\b/d")" ]; then
+      if [ "" = "${EXCLUDE}" ] || [ "$(echo "${EXCLUDE}" | ${SED} "/\b${LIB}\b/d")" ]; then
         echo "Checking ${LIB}..."
         while read LINE; do
           SYMBOL=$(echo "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
-          if [ "" != "${SYMBOL}" ]; then
+          if [ "${SYMBOL}" ]; then
             # cleanup compiler-specific symbols (Intel Fortran, GNU Fortran)
             SYMBOL=$(echo ${SYMBOL} | ${SED} \
               -e "s/^libxsmm_mp_libxsmm_\(..*\)_/libxsmm_\1/" \
               -e "s/^__libxsmm_MOD_libxsmm_/libxsmm_/")
-            if [ "" != "$(echo ${SYMBOL} | ${SED} -n "/^libxsmm[^.]/p")" ];
+            if [ "$(echo ${SYMBOL} | ${SED} -n "/^libxsmm[^.]/p")" ];
             then
               echo "${SYMBOL}" >> ${ABINEW}
             elif [ "" = "$(echo ${SYMBOL} | ${SED} -n "/^__libxsmm_MOD___/p")" ] && \
@@ -87,7 +87,7 @@ then
             fi
           else
             LOCATION=$(echo "${LINE}" | ${SED} -n "/..*\.o:$/p")
-            if [ "" != "${LOCATION}" ]; then
+            if [ "${LOCATION}" ]; then
               OBJECT=$(echo "${LOCATION}" | ${SED} -e "s/:$//")
             fi
           fi
@@ -108,14 +108,16 @@ then
     else
       >&2 echo "Error: removed or renamed function(s)"
       echo "${REMOVED}"
+      exit 1
     fi
   elif [ -e "${LIBS}"/${INCLUDE}.${LIBTYPE} ]; then
     >&2 echo "Error: ABI checker requires shared libraries (${LIBTYPE})."
+    exit 1
   else
     >&2 echo "Error: ABI checker requires Fortran interface (${INCLUDE})."
+    exit 1
   fi
 else
   >&2 echo "Error: missing prerequisites!"
   exit 1
 fi
-

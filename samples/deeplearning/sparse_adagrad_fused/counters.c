@@ -1,34 +1,13 @@
 /******************************************************************************
-** Copyright (c) 2020-2020, Intel Corporation                                **
-** All rights reserved.                                                      **
-**                                                                           **
-** Redistribution and use in source and binary forms, with or without        **
-** modification, are permitted provided that the following conditions        **
-** are met:                                                                  **
-** 1. Redistributions of source code must retain the above copyright         **
-**    notice, this list of conditions and the following disclaimer.          **
-** 2. Redistributions in binary form must reproduce the above copyright      **
-**    notice, this list of conditions and the following disclaimer in the    **
-**    documentation and/or other materials provided with the distribution.   **
-** 3. Neither the name of the copyright holder nor the names of its          **
-**    contributors may be used to endorse or promote products derived        **
-**    from this software without specific prior written permission.          **
-**                                                                           **
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
-** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
-** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
-** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
-** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
-** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
-** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
+* Copyright (c) Intel Corporation - All rights reserved.                      *
+* This file is part of the LIBXSMM library.                                   *
+*                                                                             *
+* For information on the license, see the LICENSE file.                       *
+* Further information: https://github.com/hfp/libxsmm/                        *
+* SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Sanchit Misra (Intel Corp), Alexander Heinecke (Intel Corp.)
+/* Sanchit Misra, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -56,6 +35,8 @@ typedef struct perf_skx_uc_fd{
   int fd_vert_ring_bl_in_use_dn[SKX_NCHA];
   int fd_horz_ring_bl_in_use_lf[SKX_NCHA];
   int fd_horz_ring_bl_in_use_rt[SKX_NCHA];
+  int fd_llc_lookup_rd[SKX_NCHA];
+  int fd_llc_lookup_wr[SKX_NCHA];
   int fd_cha_clockticks[SKX_NCHA];
   ctrs_skx_uc_exp exp;
 } perf_skx_uc_fd;
@@ -70,7 +51,7 @@ static int perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
   return ret;
 }
 
-void evsetup(const char *ename, int *fd, int event, int umask) {
+void evsetup(const char *ename, int *fd, unsigned int event, unsigned int umask, unsigned int filter0, unsigned int filter1) {
   char fname[1024];
   snprintf(fname, sizeof(fname), "%s/type", ename);
   FILE *fp = fopen(fname, "r");
@@ -79,6 +60,9 @@ void evsetup(const char *ename, int *fd, int event, int umask) {
   }
   int type;
   int ret = fscanf(fp, "%d", &type);
+  uint64_t filter0_64;
+  uint64_t filter1_64;
+
   assert(ret == 1);
   fclose(fp);
 #if 0
@@ -100,7 +84,14 @@ void evsetup(const char *ename, int *fd, int event, int umask) {
   on two socket system we would need to create a second set for the
   second socket
 #endif
-  hw.config = event | (umask << 8);
+  hw.config   = event | (umask << 8);
+  filter0_64 = (uint64_t)filter0;
+  filter1_64 = (uint64_t)filter1;
+  filter0_64 |= filter1_64 << 32;
+  hw.config1  = filter0_64;
+#if 0
+  printf("0x%llx\n", hw.config1 );
+#endif
   int cpu = 0;
   int pid = -1;
   *fd = perf_event_open(&hw, pid, cpu, -1, 0);
@@ -117,13 +108,13 @@ void setup_skx_uc_ctrs( ctrs_skx_uc_exp exp ) {
   for ( mc = 0; mc < SKX_NIMC; ++mc ) {
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_imc_%d",mc);
     if ( exp == CTRS_EXP_DRAM_ACT ) {
-      evsetup(fname, &gbl_perf_fd.fd_act_rd[mc], 0x01, 0x01);
-      evsetup(fname, &gbl_perf_fd.fd_act_wr[mc], 0x01, 0x02);
-      evsetup(fname, &gbl_perf_fd.fd_imc_clockticks[mc], 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_act_rd[mc], 0x01, 0x01, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_act_wr[mc], 0x01, 0x02, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_imc_clockticks[mc], 0x00, 0x00, 0x00, 0x00);
     } else if ( exp == CTRS_EXP_DRAM_CAS ) {
-      evsetup(fname, &gbl_perf_fd.fd_cas_rd[mc], 0x04, 0x03);
-      evsetup(fname, &gbl_perf_fd.fd_cas_wr[mc], 0x04, 0x0C);
-      evsetup(fname, &gbl_perf_fd.fd_imc_clockticks[mc], 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_cas_rd[mc], 0x04, 0x03, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_cas_wr[mc], 0x04, 0x0C, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_imc_clockticks[mc], 0x00, 0x00, 0x00, 0x00);
     } else {
       /* nothing */
     }
@@ -132,17 +123,21 @@ void setup_skx_uc_ctrs( ctrs_skx_uc_exp exp ) {
   for ( cha = 0; cha < SKX_NCHA; ++cha ) {
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_cha_%d",cha);
     if ( exp == CTRS_EXP_CHA_ACT ) {
-      evsetup(fname, &gbl_perf_fd.fd_cha_rd[cha], 0x50, 0x03);
-      evsetup(fname, &gbl_perf_fd.fd_cha_wr[cha], 0x50, 0x0C);
-      evsetup(fname, &gbl_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_cha_rd[cha], 0x50, 0x03, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_cha_wr[cha], 0x50, 0x0C, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00);
     } else if ( exp == CTRS_EXP_CHA_BL_VERT ) {
-      evsetup(fname, &gbl_perf_fd.fd_vert_ring_bl_in_use_up[cha], 0xAA, 0x03);
-      evsetup(fname, &gbl_perf_fd.fd_vert_ring_bl_in_use_dn[cha], 0xAA, 0x0C);
-      evsetup(fname, &gbl_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_vert_ring_bl_in_use_up[cha], 0xAA, 0x03, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_vert_ring_bl_in_use_dn[cha], 0xAA, 0x0C, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00);
     } else if ( exp == CTRS_EXP_CHA_BL_HORZ ) {
-      evsetup(fname, &gbl_perf_fd.fd_horz_ring_bl_in_use_lf[cha], 0xAA, 0x03);
-      evsetup(fname, &gbl_perf_fd.fd_horz_ring_bl_in_use_rt[cha], 0xAA, 0x0C);
-      evsetup(fname, &gbl_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_horz_ring_bl_in_use_lf[cha], 0xAB, 0x03, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_horz_ring_bl_in_use_rt[cha], 0xAB, 0x0C, 0x00, 0x00);
+      evsetup(fname, &gbl_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00);
+    } else if ( exp == CTRS_EXP_CHA_LLC_LOOKUP ) {
+      evsetup(fname, &gbl_perf_fd.fd_llc_lookup_rd[cha], 0x34, 0x03, 0x01e20000, 0x10); /* F,M,E,S,I LLC and NM */
+      evsetup(fname, &gbl_perf_fd.fd_llc_lookup_wr[cha], 0x34, 0x05, 0x01e20000, 0x10); /* F,M,E,S,I LLC and NM */
+      evsetup(fname, &gbl_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00);
     } else {
       /* nothing */
     }
@@ -191,6 +186,10 @@ void read_skx_uc_ctrs( ctrs_skx_uc *c ) {
       c->horz_ring_bl_in_use_lf[cha] = readctr(gbl_perf_fd.fd_horz_ring_bl_in_use_lf[cha]);
       c->horz_ring_bl_in_use_rt[cha] = readctr(gbl_perf_fd.fd_horz_ring_bl_in_use_rt[cha]);
       c->cha_clockticks[cha] = readctr(gbl_perf_fd.fd_cha_clockticks[cha]);
+    } else if ( gbl_perf_fd.exp == CTRS_EXP_CHA_LLC_LOOKUP ) {
+      c->llc_lookup_rd[cha] = readctr(gbl_perf_fd.fd_llc_lookup_rd[cha]);
+      c->llc_lookup_wr[cha] = readctr(gbl_perf_fd.fd_llc_lookup_wr[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_perf_fd.fd_cha_clockticks[cha]);
     } else {
       /* nothing */
     }
@@ -216,6 +215,8 @@ void zero_skx_uc_ctrs( ctrs_skx_uc *c ) {
     c->vert_ring_bl_in_use_dn[cha] = 0;
     c->horz_ring_bl_in_use_lf[cha] = 0;
     c->horz_ring_bl_in_use_rt[cha] = 0;
+    c->llc_lookup_rd[cha] = 0;
+    c->llc_lookup_wr[cha] = 0;
     c->cha_clockticks[cha] = 0;
   }
 }
@@ -237,6 +238,8 @@ void divi_skx_uc_ctrs( ctrs_skx_uc *c, uint64_t div ) {
     c->vert_ring_bl_in_use_dn[cha] /= div;
     c->horz_ring_bl_in_use_lf[cha] /= div;
     c->horz_ring_bl_in_use_rt[cha] /= div;
+    c->llc_lookup_rd[cha] /= div;
+    c->llc_lookup_wr[cha] /= div;
     c->cha_clockticks[cha] /= div;
   }
 }
@@ -264,6 +267,8 @@ void difa_skx_uc_ctrs( const ctrs_skx_uc *a, const ctrs_skx_uc *b, ctrs_skx_uc* 
     c->vert_ring_bl_in_use_dn[cha] += b->vert_ring_bl_in_use_dn[cha] - a->vert_ring_bl_in_use_dn[cha];
     c->horz_ring_bl_in_use_lf[cha] += b->horz_ring_bl_in_use_lf[cha] - a->horz_ring_bl_in_use_lf[cha];
     c->horz_ring_bl_in_use_rt[cha] += b->horz_ring_bl_in_use_rt[cha] - a->horz_ring_bl_in_use_rt[cha];
+    c->llc_lookup_rd[cha] += b->llc_lookup_rd[cha] - a->llc_lookup_rd[cha];
+    c->llc_lookup_wr[cha] += b->llc_lookup_wr[cha] - a->llc_lookup_wr[cha];
     c->cha_clockticks[cha] += b->cha_clockticks[cha] - a->cha_clockticks[cha];
   }
 
@@ -283,12 +288,35 @@ void get_cas_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
     bw->rd = 0;
     bw->wr = 0;
     return;
-
   }
 
   for ( mc = 0; mc < SKX_NIMC; ++mc ) {
     read_bytes  += c->cas_rd[mc]*64;
     write_bytes += c->cas_wr[mc]*64;
+  }
+
+  bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
+  bw->wr = (((double)write_bytes)/t)/(1024.0*1024.0*1024.0);
+}
+
+void get_llc_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
+  uint64_t read_bytes;
+  uint64_t write_bytes;
+  int cha;
+
+  read_bytes  = 0;
+  write_bytes = 0;
+
+  if ( c->exp != CTRS_EXP_CHA_LLC_LOOKUP ) {
+    printf("exp type need to be CTRS_EXP_CHA_LLC_LOOKUP!\n");
+    bw->rd = 0;
+    bw->wr = 0;
+    return;
+  }
+
+  for ( cha = 0; cha < SKX_NCHA; ++cha ) {
+    read_bytes  += c->llc_lookup_rd[cha]*64;
+    write_bytes += c->llc_lookup_wr[cha]*64;
   }
 
   bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);

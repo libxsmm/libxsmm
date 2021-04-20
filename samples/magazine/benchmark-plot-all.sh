@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 
 "${HERE}"/benchmark-plot.sh eigen "$@"
 "${HERE}"/benchmark-plot.sh blaze "$@"

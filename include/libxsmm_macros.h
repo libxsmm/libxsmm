@@ -39,7 +39,7 @@
  * and subsequently to list LIBXSMM as "broken" on
  * that platform.
  * Note: successful compilation on an unsupported
- * platform is desired, but only fall-back code is
+ * platform is desired, but only fallback code is
  * present at best.
  */
 #if !defined(LIBXSMM_PLATFORM_FORCE) && 0
@@ -54,11 +54,15 @@
     (defined(_M_IX86)))
 # define LIBXSMM_PLATFORM_X86
 #endif
+#if !defined(LIBXSMM_PLATFORM_AARCH64) && \
+    (defined(__aarch64__) || defined(__arm64__))
+# define LIBXSMM_PLATFORM_AARCH64
+#endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
-# if defined(LIBXSMM_PLATFORM_X86)
+# if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_AARCH64)
 #   define LIBXSMM_PLATFORM_SUPPORTED
 # elif !defined(LIBXSMM_PLATFORM_FORCE)
-#   error Intel Architecture or compatible CPU required!
+#   error LIBXSMM requires X86_64, AArch64, or compatible CPUs!
 # endif
 #endif
 #if !defined(LIBXSMM_BITS)
@@ -73,7 +77,7 @@
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
 # elif !defined(LIBXSMM_PLATFORM_FORCE) && defined(NDEBUG)
-#   error LIBXSMM is only supported on a 64-bit platform!
+#   error LIBXSMM is only supported on 64-bit platforms!
 # else /* JIT-generated code (among other issues) is not supported! */
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFF
 #   define LIBXSMM_BITS 32
@@ -92,10 +96,54 @@
 #define LIBXSMM_EXPAND(...) __VA_ARGS__
 #define LIBXSMM_ELIDE(...)
 
+/**
+ * Check given value against type-range (assertion).
+ * Note: allows "-1" for unsigned types.
+ */
+#if !defined(NDEBUG)
+# define LIBXSMM_CHECK_ULLONG(VALUE) assert(-1 <= (VALUE) && (VALUE) <= ULLONG_MAX)
+# define LIBXSMM_CHECK_LLONG(VALUE) assert(ULLONG_MIN <= (VALUE) && (VALUE) <= LLONG_MAX)
+# define LIBXSMM_CHECK_ULONG(VALUE) assert(-1 <= (VALUE) && (VALUE) <= ULONG_MAX)
+# define LIBXSMM_CHECK_LONG(VALUE) assert(LONG_MIN <= (VALUE) && (VALUE) <= LONG_MAX)
+# define LIBXSMM_CHECK_USHORT(VALUE) assert(-1 <= (VALUE) && (VALUE) <= USHRT_MAX)
+# define LIBXSMM_CHECK_SHORT(VALUE) assert(SHRT_MIN <= (VALUE) && (VALUE) <= SHRT_MAX)
+# define LIBXSMM_CHECK_UCHAR(VALUE) assert(-1 <= (VALUE) && (VALUE) <= UCHAR_MAX)
+# define LIBXSMM_CHECK_ICHAR(VALUE) assert(SCHAR_MIN <= (VALUE) && (VALUE) <= SCHAR_MAX)
+# define LIBXSMM_CHECK_UINT(VALUE) assert(-1 <= (VALUE) && (VALUE) <= UINT_MAX)
+# define LIBXSMM_CHECK_INT(VALUE) assert(INT_MIN <= (VALUE) && (VALUE) <= INT_MAX)
+#else
+# define LIBXSMM_CHECK_ULLONG(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_LLONG(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_ULONG(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_LONG(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_USHORT(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_SHORT(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_UCHAR(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_ICHAR(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_UINT(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_INT(VALUE) 0/*dummy*/
+#endif
+
+/**
+ * Perform verbose type-cast with following two advantages:
+ * (1) Make it easy to locate/find the type-cast.
+ * (2) Range-check to ensure fitting into type.
+ */
+#define LIBXSMM_CAST_ULLONG(VALUE) (LIBXSMM_CHECK_ULLONG(VALUE), (unsigned long long)(VALUE))
+#define LIBXSMM_CAST_LLONG(VALUE) (LIBXSMM_CHECK_LLONG(VALUE), (/*signed*/long long)(VALUE))
+#define LIBXSMM_CAST_ULONG(VALUE) (LIBXSMM_CHECK_ULONG(VALUE), (unsigned long)(VALUE))
+#define LIBXSMM_CAST_LONG(VALUE) (LIBXSMM_CHECK_LONG(VALUE), (/*signed*/long)(VALUE))
+#define LIBXSMM_CAST_USHORT(VALUE) (LIBXSMM_CHECK_USHORT(VALUE), (unsigned short)(VALUE))
+#define LIBXSMM_CAST_SHORT(VALUE) (LIBXSMM_CHECK_SHORT(VALUE), (/*signed*/short)(VALUE))
+#define LIBXSMM_CAST_UCHAR(VALUE) (LIBXSMM_CHECK_UCHAR(VALUE), (unsigned char)(VALUE))
+#define LIBXSMM_CAST_ICHAR(VALUE) (LIBXSMM_CHECK_ICHAR(VALUE), (signed char)(VALUE))
+#define LIBXSMM_CAST_UINT(VALUE) (LIBXSMM_CHECK_UINT(VALUE), (unsigned int)(VALUE))
+#define LIBXSMM_CAST_INT(VALUE) (LIBXSMM_CHECK_INT(VALUE), (/*signed*/int)(VALUE))
+
 /** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
 #define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
 #define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
-#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) (int) \
+#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) \
   (((0x7F & (MAJOR)) << 24) | ((0x1F & (MINOR)) << 19) | ((0x1F & (UPDATE)) << 14) | (0x3FFF & (PATCH)))
 #define LIBXSMM_VERSION41(VERSION) (((VERSION) >> 24))
 #define LIBXSMM_VERSION42(VERSION) (((VERSION) >> 19) & 0x1F)
@@ -167,7 +215,11 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
 # define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
 #else
-# define LIBXSMM_ATTRIBUTE_COMMON
+# if defined(_WIN32)
+#   define LIBXSMM_ATTRIBUTE_COMMON LIBXSMM_ATTRIBUTE(selectany)
+# else
+#   define LIBXSMM_ATTRIBUTE_COMMON
+# endif
 # define LIBXSMM_ATTRIBUTE_MALLOC
 # define LIBXSMM_ATTRIBUTE_UNUSED
 # define LIBXSMM_ATTRIBUTE_USED
@@ -318,9 +370,9 @@
 #define LIBXSMM_APIVAR_ALIGNED(DECL, VISIBILITY) LIBXSMM_APIVAR(DECL, VISIBILITY, LIBXSMM_API_DEF)
 #endif
 
-/** Public visible variable declaration (without definition) located in header file. */
+/** Public variable declaration (without definition) located in header file. */
 #define LIBXSMM_APIVAR_PUBLIC(DECL) LIBXSMM_APIVAR(DECL, EXPORT, LIBXSMM_API_EXTERN)
-/** Public visible variable definition (complements declaration) located in source file. */
+/** Public variable definition (complements declaration) located in source file. */
 #define LIBXSMM_APIVAR_PUBLIC_DEF(DECL) LIBXSMM_APIVAR_ALIGNED(DECL, EXPORT)
 /** Private variable declaration (without definition) located in header file. */
 #define LIBXSMM_APIVAR_PRIVATE(DECL) LIBXSMM_APIVAR(DECL, INTERN, LIBXSMM_API_EXTERN)
@@ -643,6 +695,11 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # else
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
 # endif
+#endif
+#if !defined(NDEBUG)
+# define LIBXSMM_UNUSED_DEBUG(VARIABLE) LIBXSMM_UNUSED(VARIABLE)
+#else
+# define LIBXSMM_UNUSED_DEBUG(VARIABLE)
 #endif
 
 #if defined(_OPENMP)

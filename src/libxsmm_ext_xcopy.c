@@ -23,14 +23,8 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
   {
     if (0 < m && 0 < n) {
 #if defined(_OPENMP)
-# if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT)) && !defined(LIBXSMM_XCOPY_MELTW)
-      int prefetch = 0;
-# endif
       unsigned int tm, tn, ts;
       if (NULL != in) { /* mcopy */
-# if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT)) && !defined(LIBXSMM_XCOPY_MELTW)
-        prefetch = libxsmm_mcopy_prefetch;
-# endif
         tm = LIBXSMM_UPDIV(libxsmm_mcopy_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
         ts = libxsmm_mcopy_mbytes;
@@ -48,31 +42,26 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
       if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
         libxsmm_xcopykernel kernel;
         kernel.ptr = NULL;
-# if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+# if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT & 2))
         if (0 != (2 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
-#   if defined(LIBXSMM_XCOPY_MELTW)
-          const libxsmm_blasint sldi = ldi * typesize, sldo = ldo * typesize;
-          if (NULL != in) { /* mcopy */
-            kernel.meltw_copy = libxsmm_dispatch_meltw_copy(
-              (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
-              &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
+          switch (typesize) {
+            case 8: kernel.function = libxsmm_dispatch_meltw_unary(tm, tn, &ldi, &ldo,
+              LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_MELTW_FLAG_UNARY_NONE,
+              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
+              break;
+            case 4: kernel.function = libxsmm_dispatch_meltw_unary(tm, tn, &ldi, &ldo,
+              LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE,
+              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
+              break;
+            case 2: kernel.function = libxsmm_dispatch_meltw_unary(tm, tn, &ldi, &ldo,
+              LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_MELTW_FLAG_UNARY_NONE,
+              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
+              break;
+            case 1: kernel.function = libxsmm_dispatch_meltw_unary(tm, tn, &ldi, &ldo,
+              LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_MELTW_FLAG_UNARY_NONE,
+              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
+              break;
           }
-          else { /* mzero */
-            kernel.meltw_zero = libxsmm_dispatch_meltw_zero(
-              (libxsmm_blasint)tm * typesize, (libxsmm_blasint)tn * typesize,
-              &sldi, &sldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
-          }
-#   else
-          const libxsmm_mcopy_descriptor* desc;
-          libxsmm_descriptor_blob blob;
-          if (NULL != (desc = libxsmm_mcopy_descriptor_init(&blob,
-            typesize, tm, tn, (unsigned int)ldo, (unsigned int)ldi,
-            NULL != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
-            prefetch, NULL/*default unroll*/)))
-          {
-            kernel.xmcopy = libxsmm_dispatch_mcopy(desc);
-          }
-#   endif
         }
 # endif
 # if defined(LIBXSMM_EXT_TASKS) && 0/* implies _OPENMP */
@@ -87,15 +76,9 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 # endif
           {
 #           pragma omp parallel num_threads(nthreads)
-# if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
             libxsmm_matcopy_task_internal(out, in, typesize,
               (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
               tm, tn, kernel, omp_get_thread_num(), nthreads);
-#else
-            libxsmm_matcopy_task_internal(out, in, typesize,
-              (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-              tm, tn, kernel, omp_get_thread_num(), nthreads);
-#endif
           }
 # if defined(LIBXSMM_EXT_TASKS)
           else { /* tasks requested */
@@ -131,10 +114,6 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #           pragma omp taskwait
           }
-# elif (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
-          libxsmm_matcopy_task_internal(out, in, typesize,
-            (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-            tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # else
           libxsmm_matcopy_task_internal(out, in, typesize,
             (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
@@ -263,16 +242,31 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         else
 #endif /*defined(_OPENMP)*/
         { /* no MT, or small problem-size */
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT & 1))
           libxsmm_xcopykernel kernel;
-          const libxsmm_trans_descriptor* desc;
-          libxsmm_descriptor_blob blob;
           kernel.ptr = NULL;
-          if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
-            && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo))
-            && NULL != (kernel.xtrans = libxsmm_dispatch_trans(desc))) /* JIT-kernel available */
-          {
-            LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
+          if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
+            switch (typesize) {
+              case 8: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+                LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
+                LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+                break;
+              case 4: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+                LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+                LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+                break;
+              case 2: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+                LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16,
+                LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+                break;
+              case 1: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+                LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
+                LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+                break;
+            }
+            if (NULL != kernel.ptr) { /* JIT-kernel available */
+              LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
+            }
           }
           else
 #endif
@@ -345,14 +339,29 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
           fprintf(stderr, "LIBXSMM ERROR: failed to allocate buffer for in-place transpose!\n");
         }
       }
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT & 1))
       if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
         /* avoid outgrown transpose kernel upfront */
         && (m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))
       {
-        libxsmm_descriptor_blob blob;
-        kernel.xtrans = libxsmm_dispatch_trans(libxsmm_trans_descriptor_init(&blob,
-          typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo));
+        switch (typesize) {
+          case 8: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
+            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+            break;
+          case 4: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+            break;
+          case 2: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16,
+            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+            break;
+          case 1: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
+            LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
+            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+            break;
+        }
       }
 #endif
     }

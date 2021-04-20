@@ -48,18 +48,18 @@ LIBXSMM_VLA_DECL(2, const element_input_type, bias, (element_input_type*) handle
 #endif
 #if defined(LIBXSMM_DNN_FC_FWD_FUSE_RELU)
 LIBXSMM_VLA_DECL(4, __mmask32,  relubitmask,     (__mmask32*)handle->relumask->data, nBlocksOFm, handle->bn, handle->bk/32);
-libxsmm_meltwfunction_cvtfp32bf16_act eltwise_kernel = handle->fwd_cvtfp32bf16_relu_kernel;
-libxsmm_meltw_cvtfp32bf16_act_param   eltwise_params;
+libxsmm_meltwfunction_unary eltwise_kernel = handle->fwd_cvtfp32bf16_relu_kernel;
+libxsmm_meltw_unary_param   eltwise_params;
 #elif defined(LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID)
-libxsmm_meltwfunction_act_cvtfp32bf16 eltwise_kernel = handle->fwd_sigmoid_cvtfp32bf16_kernel;
-libxsmm_meltw_act_cvtfp32bf16_param   eltwise_params;
+libxsmm_meltwfunction_unary eltwise_kernel = handle->fwd_sigmoid_cvtfp32bf16_kernel;
+libxsmm_meltw_unary_param   eltwise_params;
 #else
-libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel = handle->fwd_cvtfp32bf16_kernel;
-libxsmm_meltw_cvtfp32bf16_param   eltwise_params;
+libxsmm_meltwfunction_unary eltwise_kernel = handle->fwd_cvtfp32bf16_kernel;
+libxsmm_meltw_unary_param   eltwise_params;
 #endif
 #else
-libxsmm_meltwfunction_cvtfp32bf16 eltwise_kernel = handle->fwd_cvtfp32bf16_kernel;
-libxsmm_meltw_cvtfp32bf16_param   eltwise_params;
+libxsmm_meltwfunction_unary eltwise_kernel = handle->fwd_cvtfp32bf16_kernel;
+libxsmm_meltw_unary_param   eltwise_params;
 #endif
 
 unsigned long long  blocks = nBlocksIFm;
@@ -115,10 +115,10 @@ if (use_2d_blocking == 1) {
 
           /* downconvert intermediate f32 tensor to bf 16 and store to final C */
           if ( ifm1 == BF-1  ) {
-            eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
-            eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+            eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+            eltwise_params.out.primary = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
 #if defined(LIBXSMM_DNN_FC_FWD_FUSE_RELU)
-            eltwise_params.actstore_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
+            eltwise_params.out.secondary = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
 #endif
             eltwise_kernel(&eltwise_params);
           }
@@ -180,10 +180,10 @@ if (use_2d_blocking == 1) {
 
         /* downconvert intermediate f32 tensor to bf 16 and store to final C */
         if ( ifm1 == BF-1  ) {
-          eltwise_params.in_ptr = &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
-          eltwise_params.out_ptr = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+          eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+          eltwise_params.out.primary = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
 #if defined(LIBXSMM_DNN_FC_FWD_FUSE_RELU)
-          eltwise_params.actstore_ptr = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
+          eltwise_params.out.secondary = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
 #endif
           eltwise_kernel(&eltwise_params);
         }

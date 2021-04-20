@@ -21,6 +21,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define LIBXSMM_MATDIFF_DIV(NOMINATOR, DENREF, DENTST) \
+  (0 < (DENREF) ? ((NOMINATOR) / (DENREF)) : \
+  (0 < (DENTST) ? ((NOMINATOR) / (DENTST)) : 0))
+
 
 LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
@@ -30,6 +34,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_blasint ldr = (NULL == ldref ? m : *ldref), ldt = (NULL == ldtst ? m : *ldtst);
   if (NULL == ref && NULL != tst) { ref = tst; tst = NULL; result_swap = 1; }
   if (NULL != ref && NULL != info && m <= ldr && m <= ldt) {
+    const size_t ntotal = (size_t)m * n;
     libxsmm_blasint mm = m, nn = n;
     double inf;
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
@@ -89,9 +94,8 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
             size[0] = (size_t)ldr; size[1] = (size_t)nn;
           }
           else { /* reshape */
-            const size_t x = (size_t)mm * (size_t)nn;
-            const size_t y = (size_t)libxsmm_isqrt2_u32((unsigned int)x);
-            shape[0] = x / y; shape[1] = y;
+            const size_t y = (size_t)libxsmm_isqrt2_u32((unsigned int)ntotal);
+            shape[0] = ntotal / y; shape[1] = y;
             size[0] = shape[0];
             size[1] = shape[1];
           }
@@ -120,6 +124,11 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         }
       }
       if (0 == result_nan) {
+        info->rsq = 1.0 - LIBXSMM_MATDIFF_DIV(info->l2_abs, info->var_ref, info->var_tst);
+        if (0 != ntotal) { /* final variance */
+          info->var_ref /= ntotal;
+          info->var_tst /= ntotal;
+        }
         info->normf_rel = libxsmm_dsqrt(info->normf_rel);
         info->l2_abs = libxsmm_dsqrt(info->l2_abs);
         info->l2_rel = libxsmm_dsqrt(info->l2_rel);
@@ -130,11 +139,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
                         = info->linf_abs = info->linf_rel = info->l2_abs = info->l2_rel
                         = inf;
       }
-      if (1 == n) {
-        const libxsmm_blasint tmp = info->m;
-        info->m = info->n;
-        info->n = tmp;
-      }
+      if (1 == n) LIBXSMM_ISWAP(info->m, info->n);
       if (0 != result_swap) {
         info->min_tst = info->min_ref;
         info->min_ref = 0;
@@ -146,6 +151,8 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         info->var_ref = 0;
         info->l1_tst = info->l1_ref;
         info->l1_ref = 0;
+        info->v_tst = info->v_ref;
+        info->v_ref = 0;
       }
     }
   }
@@ -158,60 +165,59 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
 
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input)
 {
-  LIBXSMM_ASSERT(NULL != output && NULL != input);
-  if (output->linf_abs < input->linf_abs) {
-    output->linf_abs = input->linf_abs;
-    LIBXSMM_ASSERT(0 <= input->m);
-    output->m = input->m;
-    LIBXSMM_ASSERT(0 <= input->n);
-    output->n = input->n;
+  if (NULL != output && NULL != input) {
+    if (output->linf_abs < input->linf_abs) {
+      output->linf_abs = input->linf_abs;
+      output->linf_rel = input->linf_rel;
+      output->v_ref = input->v_ref;
+      output->v_tst = input->v_tst;
+      LIBXSMM_ASSERT(0 <= input->m);
+      output->m = input->m;
+      LIBXSMM_ASSERT(0 <= input->n);
+      output->n = input->n;
+    }
+    if (output->norm1_abs < input->norm1_abs) {
+      output->norm1_abs = input->norm1_abs;
+      output->norm1_rel = input->norm1_rel;
+    }
+    if (output->normi_abs < input->normi_abs) {
+      output->normi_abs = input->normi_abs;
+      output->normi_rel = input->normi_rel;
+    }
+    if (output->l2_abs < input->l2_abs) {
+      output->l2_abs = input->l2_abs;
+      output->l2_rel = input->l2_rel;
+      output->rsq = input->rsq;
+    }
+    if (output->normf_rel < input->normf_rel) {
+      output->normf_rel = input->normf_rel;
+    }
+    if (output->var_ref < input->var_ref) {
+      output->var_ref = input->var_ref;
+    }
+    if (output->var_tst < input->var_tst) {
+      output->var_tst = input->var_tst;
+    }
+    if (output->max_ref < input->max_ref) {
+      output->max_ref = input->max_ref;
+    }
+    if (output->max_tst < input->max_tst) {
+      output->max_tst = input->max_tst;
+    }
+    if (output->min_ref > input->min_ref) {
+      output->min_ref = input->min_ref;
+    }
+    if (output->min_tst > input->min_tst) {
+      output->min_tst = input->min_tst;
+    }
+    output->avg_ref = 0.5 * (output->avg_ref + input->avg_ref);
+    output->avg_tst = 0.5 * (output->avg_tst + input->avg_tst);
+    output->l1_ref += input->l1_ref;
+    output->l1_tst += input->l1_tst;
   }
-  if (output->norm1_abs < input->norm1_abs) {
-    output->norm1_abs = input->norm1_abs;
+  else {
+    libxsmm_matdiff_clear(output);
   }
-  if (output->norm1_rel < input->norm1_rel) {
-    output->norm1_rel = input->norm1_rel;
-  }
-  if (output->normi_abs < input->normi_abs) {
-    output->normi_abs = input->normi_abs;
-  }
-  if (output->normi_rel < input->normi_rel) {
-    output->normi_rel = input->normi_rel;
-  }
-  if (output->normf_rel < input->normf_rel) {
-    output->normf_rel = input->normf_rel;
-  }
-  if (output->linf_rel < input->linf_rel) {
-    output->linf_rel = input->linf_rel;
-  }
-  if (output->l2_abs < input->l2_abs) {
-    output->l2_abs = input->l2_abs;
-  }
-  if (output->l2_rel < input->l2_rel) {
-    output->l2_rel = input->l2_rel;
-  }
-  if (output->var_ref < input->var_ref) {
-    output->var_ref = input->var_ref;
-  }
-  if (output->var_tst < input->var_tst) {
-    output->var_tst = input->var_tst;
-  }
-  if (output->max_ref < input->max_ref) {
-    output->max_ref = input->max_ref;
-  }
-  if (output->max_tst < input->max_tst) {
-    output->max_tst = input->max_tst;
-  }
-  if (output->min_ref > input->min_ref) {
-    output->min_ref = input->min_ref;
-  }
-  if (output->min_tst > input->min_tst) {
-    output->min_tst = input->min_tst;
-  }
-  output->avg_ref = 0.5 * (output->avg_ref + input->avg_ref);
-  output->avg_tst = 0.5 * (output->avg_tst + input->avg_tst);
-  output->l1_ref += input->l1_ref;
-  output->l1_tst += input->l1_tst;
 }
 
 
@@ -286,6 +292,17 @@ LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x)
 }
 
 
+LIBXSMM_API double libxsmm_kahan_sum(double value, double* accumulator, double* compensation)
+{
+  double r, c;
+  LIBXSMM_ASSERT(NULL != accumulator && NULL != compensation);
+  c = value - *compensation; r = *accumulator + c;
+  *compensation = (r - *accumulator) - c;
+  *accumulator = r;
+  return r;
+}
+
+
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double x)
 {
 #if defined(LIBXSMM_INTRINSICS_X86) && !defined(__PGI)
@@ -293,7 +310,7 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double 
   const double result = _mm_cvtsd_f64(_mm_sqrt_sd(a, _mm_set_sd(x)));
 #elif !defined(LIBXSMM_NO_LIBM)
   const double result = sqrt(x);
-#else /* fall-back */
+#else /* fallback */
   double result, y = x;
   if (LIBXSMM_NEQ(0, x)) {
     do {
@@ -313,7 +330,7 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) float libxsmm_ssqrt(float x)
   const float result = _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)));
 #elif !defined(LIBXSMM_NO_LIBM)
   const float result = LIBXSMM_SQRTF(x);
-#else /* fall-back */
+#else /* fallback */
   float result, y = x;
   if (LIBXSMM_NEQ(0, x)) {
     do {
@@ -425,7 +442,7 @@ LIBXSMM_API float libxsmm_sexp2(float x)
 {
 #if !defined(LIBXSMM_NO_LIBM)
   return LIBXSMM_EXP2F(x);
-#else /* fall-back */
+#else /* fallback */
   return internal_math_sexp2(x, 20/*compromise*/);
 #endif
 }

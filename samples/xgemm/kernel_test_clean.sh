@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 
 MKTEMP=${HERE}/../../.mktmp.sh
 SED=$(command -v sed)
@@ -21,8 +21,8 @@ CLEANUP="-o -D"
 JOBDIR=kernel_test
 JOBEXT=slurm
 
-if [ "" != "${MKTEMP}" ] && [ "" != "${SED}" ] && \
-   [ "" != "${CP}" ] && [ "" != "${RM}" ];
+if [ "${MKTEMP}" ] && [ "${SED}" ] && \
+   [ "${CP}" ] && [ "${RM}" ];
 then
   # remove any leftover temporary files
   ${RM} -f .${JOBDIR}_??????.${JOBEXT}
@@ -39,7 +39,7 @@ then
   COUNT_TOTAL=0
   COUNT_CLEAN=0
   for JOBFILE in $(ls -1 ${HERE}/${JOBDIR}/*.${JOBEXT}); do
-    if [ "" != "$(${SED} -n "${CLEAN_CHECK}" ${JOBFILE})" ];
+    if [ "$(${SED} -n "${CLEAN_CHECK}" ${JOBFILE})" ];
     then
       echo "Cleaning ${JOBFILE}..."
       ${SED} "${CLEAN_CLEAN}" ${JOBFILE} > ${JOBTMPFILE}

@@ -25,8 +25,8 @@ const element_filter_type *A_ptrs[1024];
 const element_input_type  *B_ptrs[1024];
 unsigned long long n_blocks;
 /* JITed eltwise function */
-libxsmm_meltwfunction_cvtfp32bf16 cvt_kernel = handle->fwd_cvtfp32bf16_kernel;
-libxsmm_meltw_cvtfp32bf16_param cvt_params;
+libxsmm_meltwfunction_unary cvt_kernel = handle->fwd_cvtfp32bf16_kernel;
+libxsmm_meltw_unary_param cvt_params;
 
 /* offset output pointer in case of physical output padding */
 element_output_type* out = (element_output_type*)handle->reg_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
@@ -203,8 +203,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                          (next_kj == 0 && next_kj == last_kj && oj == 0) ||
                          (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
 
-                      cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                      cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                      cvt_params.in.primary = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                      cvt_params.out.primary = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                       cvt_kernel(&cvt_params);
                     }
                   }
@@ -226,8 +226,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                         ((kj == last_kj && ki == last_ki) ||
                          (next_kj == 0 && next_kj == last_kj && oj == 0) ||
                          (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
-                      cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                      cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                      cvt_params.in.primary = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                      cvt_params.out.primary = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                       cvt_kernel(&cvt_params);
                     }
                   }
@@ -248,8 +248,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                         ((kj == last_kj && ki == last_ki) ||
                          (next_kj == 0 && next_kj == last_kj && oj == 0) ||
                          (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
-                      cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                      cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                      cvt_params.in.primary = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                      cvt_params.out.primary = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                       cvt_kernel(&cvt_params);
                     }
                   }
@@ -312,8 +312,8 @@ if (handle->use_fallback_fwd_loops == 1) {
               out_ptr = (handle->avoid_acc_load == 1) ? &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, 0, 0, 0, handle->fwd_ofw_rb, handle->ofmblock) : &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
               br_gemm_kernel(A_ptrs, B_ptrs, out_ptr, &n_blocks);
               if (ifm2 == handle->blocksifm && kj == handle->desc.R && ki == handle->desc.S) {
-                cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS( 5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                cvt_params.in.primary = &LIBXSMM_VLA_ACCESS( 5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                cvt_params.out.primary = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                 cvt_kernel(&cvt_params);
               }
             }
@@ -389,8 +389,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                                   ((kj == last_kj && ki == last_ki) ||
                                    (next_kj == 0 && next_kj == last_kj && oj == 0) ||
                                    (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
-                                cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                                cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                                cvt_params.in.primary = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                                cvt_params.out.primary = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                                 cvt_kernel(&cvt_params);
                               }
                             }
@@ -411,8 +411,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                                   ((kj == last_kj && ki == last_ki) ||
                                    (next_kj == 0 && next_kj == last_kj && oj == 0) ||
                                    (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
-                                cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                                cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                                cvt_params.in.primary = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                                cvt_params.out.primary = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                                 cvt_kernel(&cvt_params);
                               }
                             }
@@ -433,8 +433,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                                   ((kj == last_kj && ki == last_ki) ||
                                    (next_kj == 0 && next_kj == last_kj && oj == 0) ||
                                    (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
-                                cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                                cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                                cvt_params.in.primary = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                                cvt_params.out.primary = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                                 cvt_kernel(&cvt_params);
                               }
                             }
@@ -505,8 +505,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                         out_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                         br_gemm_kernel(A_ptrs, B_ptrs, out_ptr, &n_blocks);
                         if (kj1 == handle->desc.R && ki1 == handle->desc.S && ifm2 == handle->blocksifm) {
-                          cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                          cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                          cvt_params.in.primary = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                          cvt_params.out.primary = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                           cvt_kernel(&cvt_params);
                         }
                       }
@@ -573,8 +573,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                       out_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                       br_gemm_kernel(A_ptrs, B_ptrs, out_ptr, &n_blocks);
                       if (kj == handle->desc.R && ki == handle->desc.S && ifm2 == handle->blocksifm) {
-                        cvt_params.in_ptr = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                        cvt_params.out_ptr = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                        cvt_params.in.primary = &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                        cvt_params.out.primary = &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                         cvt_kernel(&cvt_params);
                       }
                     }

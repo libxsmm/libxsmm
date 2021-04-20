@@ -65,7 +65,6 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_BWD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
   /* lazy barrier init */
   libxsmm_barrier_init(handle->barrier, ltid);
 
-
   for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     ofm1 = ifm1ofm1 / nBlocksIFm;
     ifm1 = ifm1ofm1 % nBlocksIFm;

@@ -21,6 +21,7 @@
 #include <time.h>
 #include <math.h>
 #include <unistd.h>
+#include <assert.h>
 #include <immintrin.h>
 #ifdef _OPENMP
 #include <omp.h>
@@ -124,8 +125,8 @@ public:
 #ifdef USE_LIBXSMM_JIT
     _ld = E;
     kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
-    kernel1 = libxsmm_dispatch_meltw_reduce(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD_ROWS_ELTS_SQUARED, 0);
-    kernel2 = libxsmm_dispatch_meltw_scale(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_SCALE_ROWS_BCASTVAL_ACCUMULATE, 0);
+    kernel1 = libxsmm_dispatch_meltw_unary(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD);
+    kernel2 = libxsmm_dispatch_meltw_binary(E, 1, &_ld, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_MELTW_TYPE_BINARY_MULADD);
 #endif
   }
 
@@ -167,9 +168,9 @@ public:
       kernel( &params );
 
       // squared + reduction kernel
-      libxsmm_meltw_reduce_param    params1;
-      params1.in_ptr = g_sum;
-      params1.out_ptr_1 = &sum;
+      libxsmm_meltw_unary_param    params1;
+      params1.in.primary = g_sum;
+      params1.out.primary = &sum;
       kernel1( &params1 );
 
       sum /= E;
@@ -180,11 +181,11 @@ public:
       float scale = lr / (sqrt(hi) + eps);
 
       // scale and accumulate kernel
-      libxsmm_meltw_scale_param params2;
-      params2.in_ptr = g_sum;
-      params2.out_ptr = &wt[idx][0];
-      params2.scale_vals_ptr = &scale;
-      kernel2( &params2 );
+      libxsmm_meltw_binary_param binary_param;
+      binary_param.in0.primary  = (void*)&scale;
+      binary_param.in1.primary  = (void*)g_sum;
+      binary_param.out.primary  = (void*)&wt[idx][0];
+      kernel2(&binary_param);
 
 #else
       for (int l = start; l < end; l++) {
@@ -217,8 +218,8 @@ public:
 #ifdef USE_LIBXSMM_JIT
   int _ld;
   libxsmm_meltwfunction_reduce_cols_idx kernel;
-  libxsmm_meltwfunction_reduce kernel1;
-  libxsmm_meltwfunction_scale kernel2;
+  libxsmm_meltwfunction_unary kernel1;
+  libxsmm_meltwfunction_binary kernel2;
 #endif
 };
 
@@ -312,7 +313,59 @@ void sparse_transpose_radix(EmbeddingInOut *eio)
   my_free(tmpBuf1);
 }
 
-void allocate_buffers_and_generte_rnd_input(int N, int P, EmbeddingBag *eb, EmbeddingInOut *eio)
+// based on https://www.csee.usf.edu/~kchriste/tools/genzipf.c
+int zipf_dist(double alpha, int M)
+{
+  static int init_done = 0;
+  static double k = 0;
+  static double *sum_probs;
+  static int prev_M = 0;
+  double z;
+  int value;
+  int    i;
+  int low, high, mid;
+
+  if (prev_M != M) {
+    init_done = 0;
+    prev_M = M;
+  }
+
+  if (!init_done) {
+    for (i=1; i<=M; i++)
+      k = k + (1.0 / pow((double) i, alpha));
+    k = 1.0 / k;
+
+    sum_probs = (double *) my_malloc((M+1)*sizeof(double), alignment);
+    sum_probs[0] = 0;
+    for (i=1; i<=M; i++) {
+      sum_probs[i] = sum_probs[i-1] + k / pow((double) i, alpha);
+    }
+    init_done = 1;
+  }
+
+  do {
+    drand48_r(&rand_buf, &z);
+  } while ((z == 0) || (z == 1));
+
+  low = 1, high = M, mid;
+  do {
+    mid = floor((low+high)/2);
+    if (sum_probs[mid] >= z && sum_probs[mid-1] < z) {
+      value = mid;
+      break;
+    } else if (sum_probs[mid] >= z) {
+      high = mid-1;
+    } else {
+      low = mid+1;
+    }
+  } while (low <= high);
+
+  assert((value >=1) && (value <= M));
+
+  return(value);
+}
+
+void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, EmbeddingBag *eb, EmbeddingInOut *eio)
 {
   int E = eb->E;
   int M = eb->M;
@@ -331,7 +384,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, EmbeddingBag *eb, Embe
   for(int i = 1; i <= N; i++) {
     double randval;
     drand48_r(&rand_buf, &randval);
-    int cp = (int)(randval * P);
+    int cp = (int)(randval * P * 2);
     if (cp == 0) cp = 1;
     NS += cp;
     eio->offsets[i] = NS;
@@ -346,9 +399,15 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, EmbeddingBag *eb, Embe
     int end = eio->offsets[n+1];
     for (int i = start; i < end; i++)
     {
-      double randval;
-      drand48_r(&rand_buf, &randval);
-      ITyp ind = (ITyp)(randval * M);
+      ITyp ind;
+      if (alpha == 0.0) {
+        double randval;
+        drand48_r(&rand_buf, &randval);
+        ind = (ITyp)(randval * M);
+      } else {
+        ind = (ITyp) zipf_dist(alpha, M);
+      }
+
       if (ind == M)
         ind--;
       eio->indices[i] = ind;
@@ -380,25 +439,26 @@ void free_buffers(EmbeddingInOut *eio)
   my_free(eio->wt_indices);
 }
 
-
 int iters = 100;
 int N = 2048;
 int E = 64;
 int P = 100;
 int M = 1000000;
 int S = 8;
+double alpha = 0.0;
 
 #define my_printf(fmt, args...) printf(fmt, args)
 
 int main(int argc, char * argv[]) {
   if(argc > 1 && strncmp(argv[1], "-h", 3) == 0) {
-    printf("Usage: %s iters N E M S P\n", argv[0]);
+    printf("Usage: %s iters N E M S P alpha \n", argv[0]);
     printf("iters: Number of iterations (= %d)\n", iters);
     printf("N: Minibatch (= %d)\n", N);
     printf("E: embedding row width (= %d)\n", E);
     printf("M: Number of rows per table (= %d)\n", M);
     printf("S: Number of Tables (= %d)\n", S);
     printf("P: Average number of indices per look up (= %d)\n", P);
+    printf("alpha: Alpha value for Zipf distribution to generate Indices. Use 0 for uniform distribution");
     exit(0);
   }
 
@@ -410,9 +470,10 @@ int main(int argc, char * argv[]) {
     if(argc > i) M = atoi(argv[i++]);
     if(argc > i) S = atoi(argv[i++]);
     if(argc > i) P = atoi(argv[i++]);
+    if(argc > i) alpha = atof(argv[i++]);
   }
 
-  printf("Using: iters: %d N: %d E: %d M: %d S: %d P: %d\n", iters, N, E, M, S, P);
+  printf("Using: iters: %d N: %d E: %d M: %d S: %d P: %d alpha: %f\n", iters, N, E, M, S, P, alpha);
 
   double checksum = 0.0;
 
@@ -422,9 +483,13 @@ int main(int argc, char * argv[]) {
 
 #ifdef USE_PERF_COUNTERS
   ctrs_skx_uc a, b, s;
-  bw_gibs bw_min, bw_max, bw_avg;
+  bw_gibs bw_avg;
 
+#ifdef USE_LLC_COUNTERS
+  setup_skx_uc_ctrs( CTRS_EXP_CHA_LLC_LOOKUP );
+#else
   setup_skx_uc_ctrs( CTRS_EXP_DRAM_CAS );
+#endif
   zero_skx_uc_ctrs( &a );
   zero_skx_uc_ctrs( &b );
   zero_skx_uc_ctrs( &s );
@@ -447,7 +512,7 @@ int main(int argc, char * argv[]) {
     {
       eio[j][i] = new EmbeddingInOut();
       auto t0 = get_time();
-      allocate_buffers_and_generte_rnd_input(N, P, eb[i], eio[j][i]);
+      allocate_buffers_and_generte_rnd_input(N, P, alpha, eb[i], eio[j][i]);
       auto t1 = get_time();
       //printf("Rand init time = %.3f ms\n", t1 - t0);
       tNS += eio[j][i]->NS;
@@ -516,8 +581,14 @@ int main(int argc, char * argv[]) {
   my_printf("BW: TT Min: %.3f GB/s   Max: %.3f GB/s \n", bwdupdBytesMin*scale/bwdupdTime, bwdupdBytesMax*scale/bwdupdTime);
 
 #ifdef USE_PERF_COUNTERS
+
+#ifdef USE_LLC_COUNTERS
+  get_llc_bw_skx( &s, bwdupdTime/iters/1000.0, &bw_avg );
+  printf("Measured LLC AVG GB/s: RD %f   WR %f   TT %f\n", bw_avg.rd, bw_avg.wr, bw_avg.rd + bw_avg.wr);
+#else
   get_cas_ddr_bw_skx( &s, bwdupdTime/iters/1000.0, &bw_avg );
-  printf("Measured AVG GB/s: RD %f   WR %f   TT %f\n", bw_avg.rd, bw_avg.wr, bw_avg.rd + bw_avg.wr);
+  printf("Measured MEM AVG GB/s: RD %f   WR %f   TT %f\n", bw_avg.rd, bw_avg.wr, bw_avg.rd + bw_avg.wr);
+#endif
 #endif
 
 #ifdef VERIFY_CORRECTNESS

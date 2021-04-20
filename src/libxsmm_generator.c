@@ -15,12 +15,10 @@
 #endif
 
 
-#if defined(LIBXSMM_INTRINSICS_AVX512)
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state0[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state1[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
-#endif
 
 /* definition of corresponding variables */
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_ninit);
@@ -332,62 +330,6 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
 }
 
 
-LIBXSMM_API libxsmm_trans_descriptor* libxsmm_trans_descriptor_init(libxsmm_descriptor_blob* blob,
-  unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo)
-{
-  union {
-    libxsmm_trans_descriptor* ptr;
-    libxsmm_descriptor_blob* blob;
-  } result;
-  LIBXSMM_DESCRIPTOR_CLEAR(blob);
-  result.blob = blob;
-  result.ptr->typesize = (unsigned char)typesize;
-  result.ptr->ldo = ldo;
-  result.ptr->m = m;
-  result.ptr->n = n;
-  return result.ptr;
-}
-
-
-LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_descriptor_blob* blob,
-  unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo,
-  unsigned int ldi, int flags, int prefetch, const int* unroll)
-{
-  union {
-    libxsmm_mcopy_descriptor* ptr;
-    libxsmm_descriptor_blob* blob;
-  } result;
-  LIBXSMM_DESCRIPTOR_CLEAR(blob);
-  result.blob = blob;
-  result.ptr->prefetch = (unsigned char)prefetch;
-  result.ptr->flags = (unsigned char)flags;
-  /* TODO: backend supports typesize <= 4, but certain AVX1/AVX2-kernels are incorrect */
-  if (4 >= typesize && (LIBXSMM_X86_AVX512 <= libxsmm_target_archid || 32 <= (typesize * m) || ldi == ldo)) {
-    result.ptr->typesize = (unsigned char)typesize;
-    result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? LIBXSMM_MAX(8 / result.ptr->typesize, 1) : LIBXSMM_MIN(*unroll, 64));
-    result.ptr->ldi = ldi;
-    result.ptr->ldo = ldo;
-    result.ptr->m = m;
-    result.ptr->n = n;
-  }
-  else { /* fix-up incl. DP-support */
-    result.ptr->typesize = 4;
-    result.ptr->unroll_level = 2;
-    result.ptr->ldi = ldi * typesize / 4; /* scale */
-    result.ptr->ldo = ldo * typesize / 4; /* scale */
-    result.ptr->m = m * typesize / 4; /* scale */
-    result.ptr->n = n;
-    if (((typesize * ldi) != (4 * result.ptr->ldi)
-      || (typesize * ldo) != (4 * result.ptr->ldo)
-      || (typesize * m) != (4 * result.ptr->m)))
-    {
-      result.ptr = NULL;
-    }
-  }
-  return result.ptr;
-}
-
-
 LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_datatype in_type, libxsmm_datatype out_type,
   libxsmm_blasint m, libxsmm_blasint n,
@@ -407,8 +349,8 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   result.ptr->param = (unsigned char)param;
   result.ptr->ldi = ldi;
   result.ptr->ldo = ldo;
-  result.ptr->ldx = 0;
-  result.ptr->ldy = 0;
+  result.ptr->ldi2 = 0;
+  result.ptr->ldi3 = 0;
   result.ptr->m = m;
   result.ptr->n = n;
   return result.ptr;
@@ -418,7 +360,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
 LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_descriptor_blob* blob,
   libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
   libxsmm_blasint m, libxsmm_blasint n,
-  libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldx, libxsmm_blasint ldy,
+  libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldi2, libxsmm_blasint ldi3,
   unsigned short flags, unsigned char param, unsigned char operation)
 {
   union {
@@ -434,12 +376,32 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   result.ptr->param = (unsigned char)param;
   result.ptr->ldi = ldi;
   result.ptr->ldo = ldo;
-  result.ptr->ldx = ldx;
-  result.ptr->ldy = ldy;
+  result.ptr->ldi2 = ldi2;
+  result.ptr->ldi3 = ldi3;
   result.ptr->m = m;
   result.ptr->n = n;
   return result.ptr;
 }
+
+
+LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_datatype out_type, libxsmm_blasint m, libxsmm_blasint n,
+  libxsmm_blasint ldo, unsigned int eqn_idx)
+{
+  union {
+    libxsmm_meqn_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  LIBXSMM_DESCRIPTOR_CLEAR(blob);
+  result.blob = blob;
+  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM( LIBXSMM_DATATYPE_UNSUPPORTED, out_type);
+  result.ptr->eqn_idx = eqn_idx;
+  result.ptr->ldo = ldo;
+  result.ptr->m = m;
+  result.ptr->n = n;
+  return result.ptr;
+}
+
 
 LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,

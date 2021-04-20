@@ -13,12 +13,13 @@
 PATTERNS="*.c *.cc *.cpp *.cxx *.h *.hpp *.hxx *.f *.F90 *.fh *.py *.sh *.env *.yml *.txt *.slurm"
 BANNED_CHARS="\t"
 
+PATPRE="s/^[[:space:]][[:space:]]*#/"
 PATSPC="s/[[:space:]][[:space:]]*$/"
 PATBAN="s/[${BANNED_CHARS}]/"
 PATCMT="s/[[:space:]]\/\//"
 PATEOL="s/\r$/"
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
@@ -121,6 +122,12 @@ then
          [ "$(${SED} -n "${PATBAN}x/p" ${FILE} 2>/dev/null)" ];
     then
       echo " : has banned characters"
+      exit 1
+    elif [[ ${FILE} = "src/"* ]] && \
+         [[ (${FILE} = *".c"*) || (${FILE} = *".h"*) ]] && \
+         [ "$(${SED} -n "${PATPRE}x/p" ${FILE} 2>/dev/null)" ];
+    then
+      echo " : white space leads '#' (malformed preprocessor command)"
       exit 1
     elif [ "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" ${FILE})" ]; then
       ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" ${FILE} > ${TMPF}

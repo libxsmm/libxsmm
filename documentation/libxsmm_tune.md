@@ -22,7 +22,7 @@ gcc [...] -Wl,--export-dynamic \
 
 The main library causes a BLAS-dependency which may be already fulfilled for the application in question. However, if this is not the case (unresolved symbols), `libxsmmnoblas.a` must be linked in addition. Depending on the dependencies of the application, the link order may also need to be adjusted. Other i.e. a GNU-compatible compiler (as shown above), can induce additional requirements (compiler runtime libraries).
 
-**NOTE**: The Intel Compiler may need "libirc", i.e., `-lirc` in front of `libxsmm.a`. Linking LIBXSMM's static library may require above mentioned linker flags (`--wrap`) in particular when using Intel Fortran (IFORT) as a linker driver unless `CALL libxsmm_init()` is issued (or at least one symbol of LIBXSMM's main library is referenced; check with `nm application | grep libxsmm`). Linking the static library by using the GNU compiler does not strictly need special flags when linking the application.
+**Note**: The Intel Compiler may need "libirc", i.e., `-lirc` in front of `libxsmm.a`. Linking LIBXSMM's static library may require above mentioned linker flags (`--wrap`) in particular when using Intel Fortran (IFORT) as a linker driver unless `CALL libxsmm_init()` is issued (or at least one symbol of LIBXSMM's main library is referenced; check with `nm application | grep libxsmm`). Linking the static library by using the GNU compiler does not strictly need special flags when linking the application.
 
 Linking the shared library form of LIBXSMM (`make STATIC=0`) has similar requirements with respect to the application but does not require `-Wl,--wrap` although `-Wl,--export-dynamic` is necessary if the application is statically linked (beside of LIBXSMM linked in a shared fashion). The LD_PRELOAD based mechanism does not need any changes to the link step of an application. However, `libxsmmnoblas` may be required if the application does not already link against BLAS.
 
@@ -32,7 +32,7 @@ LD_LIBRARY_PATH=/path/to/libxsmm/lib:${LD_LIBRARY_PATH}
 LIBXSMM_MALLOC=1
 ```
 
-**NOTE**: If the application already uses BLAS, of course `libxsmmnoblas` must not be used!
+**Note**: If the application already uses BLAS, of course `libxsmmnoblas` must not be used!
 
 The following code can be compiled and linked with `gfortran example.f -o example`:
 
@@ -108,7 +108,7 @@ Specifying a code path is not necessary if the JIT backend is not disabled. Howe
 make JIT=0 AVX=3 MNK="1 2 3 4 5"
 ```
 
-The above example builds a library which cannot be deployed to anything else but the Intel&#160;Knights&#160;Landing processor family&#160;("KNL") or future Intel&#160;Xeon processors supporting foundational Intel&#160;AVX&#8209;512 instructions (AVX&#8209;512F). The latter might be even more adjusted by supplying MIC=1 (along with AVX=3), however this does not matter since critical code is in inline assembly (and not affected). Similarly, SSE=0 (or JIT=0 without SSE or AVX build flag) employs an "arch-native" approach whereas AVX=1, AVX=2 (with FMA), and AVX=3 are specifically selecting the kind of Intel&#160;AVX code. Moreover, controlling the target flags manually or adjusting the code optimizations is also possible. The following example is GCC-specific and corresponds to OPT=3, AVX=3, and MIC=1:
+The above example builds a library which cannot be deployed to anything else but the <span>Intel&#160;Knights&#160;Landing processor family&#160;("KNL")</span> or future <span>Intel&#160;Xeon</span> processors supporting foundational <span>Intel&#160;AVX&#8209;512</span> instructions (<span>AVX&#8209;512F</span>). The latter might be even more adjusted by supplying MIC=1 (along with AVX=3), however this does not matter since critical code is in inline assembly (and not affected). Similarly, SSE=0 (or JIT=0 without SSE or AVX build flag) employs an "arch-native" approach whereas AVX=1, AVX=2 (with FMA), and AVX=3 are specifically selecting the kind of <span>Intel&#160;AVX</span> code. Moreover, controlling the target flags manually or adjusting the code optimizations is also possible. The following example is GCC-specific and corresponds to OPT=3, AVX=3, and MIC=1:
 
 ```bash
 make OPT=3 TARGET="-mavx512f -mavx512cd -mavx512er -mavx512pf"
@@ -131,7 +131,7 @@ The function `libxsmm_?mmdispatch` helps amortizing the cost of the dispatch whe
 1. Specialized routine (implemented in assembly code),
 2. BLAS library call (fallback).
 
-Both levels are accessible directly, which allows to customize the code dispatch. The fallback level may be supplied by the Intel&#160;Math&#160;Kernel&#160;Library&#160;(Intel&#160;MKL)&#160;11.2 DIRECT CALL feature.
+Both levels are accessible directly, which allows to customize the code dispatch. The fallback level may be supplied by the <span>Intel&#160;Math&#160;Kernel&#160;Library&#160;(Intel&#160;MKL)&#160;11.2</span> DIRECT CALL feature.
 
 Further, a preprocessor symbol denotes the largest problem-size (*M* x *N* x *K*) that belongs to the first level, and therefore determines if a matrix multiplication falls back to BLAS. The problem-size threshold can be configured by using for example:
 
@@ -147,7 +147,7 @@ For statically generated code, the precision can be selected:
 make PRECISION=2
 ```
 
-The default preference is to generate and register both single and double-precision code (PRECISION=0). Specifying PRECISION=1&#124;2 is generating and registering single-precision or double-precision code respectively.
+The default preference is to generate and register both single and double-precision code (PRECISION=0). Specifying <span>PRECISION=1&#124;2</span> is generating and registering single-precision or double-precision code respectively.
 
 The automatic dispatch is highly convenient because existing GEMM calls can serve specialized kernels (even in a binary compatible fashion), however there is (and always will be) an overhead associated with looking up the code-registry and checking whether the code determined by the GEMM call is already JIT'ted or not. This lookup has been optimized with various techniques such as specialized CPU instructions to calculate CRC32 checksums, to avoid costly synchronization (needed for thread-safety) until it is ultimately known that the requested kernel is not yet JIT'ted, and by implementing a small thread-local cache of recently dispatched kernels. The latter of which can be adjusted in size (only power-of-two sizes) but also disabled:
 

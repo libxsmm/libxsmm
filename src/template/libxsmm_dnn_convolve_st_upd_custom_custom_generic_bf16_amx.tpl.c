@@ -44,25 +44,6 @@
   }\
 }while(0)
 
-#if 0
-tr_input_kernel(&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), &ld_in,
-    &LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, 0, 0, handle->blocksifm, handle->ifmblock, handle->input_pixels), &ld_out);
-
-#define TRANS_INPUT(img, ifm1) do {\
-  for (ij = 0; ij < handle->ifhp; ij++) {\
-    for (ii = 0; ii < handle->ifwp; ii++) {\
-      for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {\
-        LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, ifm2, ij * handle->ifwp + ii, handle->blocksifm, handle->ifmblock, handle->input_pixels) =\
-        LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);\
-      }\
-    }\
-  }\
-  for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {\
-    zero_ptr_in = (element_input_type*)  &LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, ifm2, handle->ifhp * handle->ifwp, handle->blocksifm, handle->ifmblock, handle->input_pixels);\
-    memset(zero_ptr_in, 0, (handle->input_pixels - handle->ifhp * handle->ifwp)*sizeof(element_input_type));\
-  }\
-} while(0)
-#endif
 #define TRANS_INPUT(img, ifm1) do {\
   transpose_input_pixels_bf16((element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),(element_input_type*)&LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, 0, 0, handle->blocksifm, handle->ifmblock, handle->input_pixels), handle->ifmblock, handle->ifhp*handle->ifwp, handle->ifmblock, handle->input_pixels);\
   if (handle->input_pixels - handle->ifhp*handle->ifwp > 0) {\
@@ -708,13 +689,6 @@ if (handle->upd_linearized_pixels == 0) {
     }
 
   } else {
-#if 0
-    libxsmm_xtransfunction tr_input_kernel = handle->tr_input_upd_kernel;
-    const unsigned int ld_in = handle->ifmblock/2;
-    const unsigned int ld_out = handle->input_pixels/2;
-    gemm_function gemm_kernel = libxsmm_bsmmdispatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
-    tile_config_kernel = libxsmm_bsmmdispatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_tc_flags, NULL);
-#endif
     for (img = my_img_start; img < my_img_end; img++) {
       for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
         for (pix = 0; pix < handle->n_used_pixels; pix += handle->pixel_blocking){

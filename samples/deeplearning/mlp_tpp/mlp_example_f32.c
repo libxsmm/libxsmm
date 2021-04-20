@@ -90,8 +90,8 @@ typedef struct my_fc_fwd_config {
   my_eltwise_fuse fuse_type;
   libxsmm_blasint fwd_bf;
   libxsmm_blasint fwd_2d_blocking;
+  libxsmm_blasint fwd_col_teams;
   libxsmm_blasint fwd_row_teams;
-  libxsmm_blasint fwd_column_teams;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
   libxsmm_smmfunction_reducebatch_strd gemm_fwd;
@@ -109,12 +109,12 @@ typedef struct my_fc_bwd_config {
   my_eltwise_fuse fuse_type;
   libxsmm_blasint bwd_bf;
   libxsmm_blasint bwd_2d_blocking;
+  libxsmm_blasint bwd_col_teams;
   libxsmm_blasint bwd_row_teams;
-  libxsmm_blasint bwd_column_teams;
   libxsmm_blasint upd_bf;
   libxsmm_blasint upd_2d_blocking;
+  libxsmm_blasint upd_col_teams;
   libxsmm_blasint upd_row_teams;
-  libxsmm_blasint upd_column_teams;
   libxsmm_blasint ifm_subtasks;
   libxsmm_blasint ofm_subtasks;
   size_t          scratch_size;
@@ -123,7 +123,7 @@ typedef struct my_fc_bwd_config {
   libxsmm_smmfunction_reducebatch_strd gemm_bwd2;
   libxsmm_smmfunction_reducebatch_strd gemm_upd;
   libxsmm_smmfunction_reducebatch_strd gemm_upd2;
-  libxsmm_xtransfunction tr_kernel;
+  libxsmm_meltwfunction_unary norm_to_normT_kernel;
 } my_fc_bwd_config;
 
 my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
@@ -150,20 +150,20 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   if (threads == 16) {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 1;
-    res.fwd_row_teams = 2;
-    res.fwd_column_teams = 8;
+    res.fwd_col_teams = 2;
+    res.fwd_row_teams = 8;
   } else {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 0;
+    res.fwd_col_teams = 1;
     res.fwd_row_teams = 1;
-    res.fwd_column_teams = 1;
   }
 
 #if 0
   res.fwd_bf = atoi(getenv("FWD_BF"));
   res.fwd_2d_blocking = atoi(getenv("FWD_2D_BLOCKING"));
+  res.fwd_col_teams = atoi(getenv("FWD_COL_TEAMS"));
   res.fwd_row_teams = atoi(getenv("FWD_ROW_TEAMS"));
-  res.fwd_column_teams = atoi(getenv("FWD_COLUMN_TEAMS"));
 #endif
 
   /* setting up the barrier */
@@ -194,8 +194,6 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
                                  libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type) {
   my_fc_bwd_config res;
-  const libxsmm_trans_descriptor* tr_desc = 0;
-  libxsmm_descriptor_blob blob;
   libxsmm_blasint lda = bc;
   libxsmm_blasint ldb = bk;
   libxsmm_blasint ldc = bc;
@@ -205,6 +203,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   int updflags = LIBXSMM_GEMM_FLAGS( 'N', 'T' );
   libxsmm_blasint updM;
   libxsmm_blasint updN;
+  libxsmm_blasint ldaT = bk;
 
   /* setting up some handle values */
   res.N = N;
@@ -220,23 +219,23 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   if (threads == 16) {
     res.bwd_bf = 1;
     res.bwd_2d_blocking = 1;
-    res.bwd_row_teams = 2;
-    res.bwd_column_teams = 8;
+    res.bwd_col_teams = 2;
+    res.bwd_row_teams = 8;
     res.upd_bf = 1;
     res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
     res.upd_row_teams = 1;
-    res.upd_column_teams = 1;
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
   } else {
     res.bwd_bf = 1;
     res.bwd_2d_blocking = 0;
+    res.bwd_col_teams = 1;
     res.bwd_row_teams = 1;
-    res.bwd_column_teams = 1;
     res.upd_bf = 1;
     res.upd_2d_blocking = 0;
+    res.upd_col_teams = 1;
     res.upd_row_teams = 1;
-    res.upd_column_teams = 1;
     res.ifm_subtasks = 1;
     res.ofm_subtasks = 1;
   }
@@ -244,12 +243,12 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 #if 0
   res.bwd_bf = atoi(getenv("BWD_BF"));
   res.bwd_2d_blocking = atoi(getenv("BWD_2D_BLOCKING"));
+  res.bwd_col_teams = atoi(getenv("BWD_COL_TEAMS"));
   res.bwd_row_teams = atoi(getenv("BWD_ROW_TEAMS"));
-  res.bwd_column_teams = atoi(getenv("BWD_COLUMN_TEAMS"));
   res.upd_bf = atoi(getenv("UPD_BF"));
   res.upd_2d_blocking = atoi(getenv("UPD_2D_BLOCKING"));
+  res.upd_col_teams = atoi(getenv("UPD_COL_TEAMS"));
   res.upd_row_teams = atoi(getenv("UPD_ROW_TEAMS"));
-  res.upd_column_teams = atoi(getenv("UPD_COLUMN_TEAMS"));
   res.ifm_subtasks = atoi(getenv("IFM_SUBTASKS"));
   res.ofm_subtasks = atoi(getenv("OFM_SUBTASKS"));
 #endif
@@ -273,13 +272,13 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     fprintf( stderr, "JIT for BRGEMM TPP gemm_bwd2 failed. Bailing...!\n");
     exit(-1);
   }
-  /* Transpose kernel used for weight transpose in bwd pass */
-  tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), res.bk, res.bc, res.bc);
-  res.tr_kernel = libxsmm_dispatch_trans(tr_desc);
-  if ( res.tr_kernel == NULL ) {
-    fprintf( stderr, "JIT for transpose TPP tr_kernel failed. Bailing...!\n");
+
+  res.norm_to_normT_kernel = libxsmm_dispatch_meltw_unary(bk, bc, &ldaT, &lda, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+  if ( res.norm_to_normT_kernel == NULL ) {
+    fprintf( stderr, "JIT for TPP norm_to_normT_kernel failed. Bailing...!\n");
     exit(-1);
   }
+
   /* UPD GEMM */
   lda = res.bk;
   ldb = res.bc;
@@ -388,9 +387,9 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_
 
   /* loop variables */
   libxsmm_blasint mb1ofm1 = 0, mb1 = 0, ofm1 = 0, ifm1 = 0, mb2 = 0, ofm2 = 0;
-  libxsmm_blasint im_tasks_per_thread = 0, in_tasks_per_thread = 0;
-  libxsmm_blasint my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0;
-  libxsmm_blasint my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
+  libxsmm_blasint N_tasks_per_thread = 0, M_tasks_per_thread = 0;
+  libxsmm_blasint my_M_start = 0, my_M_end = 0, my_N_start = 0, my_N_end = 0;
+  libxsmm_blasint my_col_id = 0, my_row_id = 0, col_teams = 0, row_teams = 0;
 
   LIBXSMM_VLA_DECL(4, float,           output, out_act_ptr, nBlocksOFm, cfg.bn, cfg.bk);
   LIBXSMM_VLA_DECL(4, const float,      input,  in_act_ptr, nBlocksIFm, cfg.bn, cfg.bc);
@@ -406,16 +405,16 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_
   CB_BLOCKS = nBlocksIFm/BF;
   blocks = CB_BLOCKS;
 
+  col_teams = cfg.fwd_col_teams;
   row_teams = cfg.fwd_row_teams;
-  column_teams = cfg.fwd_column_teams;
-  my_col_id = ltid % column_teams;
-  my_row_id = ltid / column_teams;
-  im_tasks_per_thread = LIBXSMM_UPDIV(nBlocksMB, row_teams);
-  in_tasks_per_thread = LIBXSMM_UPDIV(nBlocksOFm, column_teams);
-  my_im_start = LIBXSMM_MIN(my_row_id * im_tasks_per_thread, nBlocksMB);
-  my_im_end = LIBXSMM_MIN((my_row_id+1) * im_tasks_per_thread, nBlocksMB);
-  my_in_start = LIBXSMM_MIN(my_col_id * in_tasks_per_thread, nBlocksOFm);
-  my_in_end = LIBXSMM_MIN((my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
+  my_row_id = ltid % row_teams;
+  my_col_id = ltid / row_teams;
+  N_tasks_per_thread = LIBXSMM_UPDIV(nBlocksMB, col_teams);
+  M_tasks_per_thread = LIBXSMM_UPDIV(nBlocksOFm, row_teams);
+  my_N_start = LIBXSMM_MIN(my_col_id * N_tasks_per_thread, nBlocksMB);
+  my_N_end = LIBXSMM_MIN((my_col_id+1) * N_tasks_per_thread, nBlocksMB);
+  my_M_start = LIBXSMM_MIN(my_row_id * M_tasks_per_thread, nBlocksOFm);
+  my_M_end = LIBXSMM_MIN((my_row_id+1) * M_tasks_per_thread, nBlocksOFm);
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
@@ -423,8 +422,8 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_
   if (cfg.fwd_2d_blocking == 1) {
     if (BF > 1) {
       for (ifm1 = 0; ifm1 < BF; ++ifm1) {
-        for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
-          for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+        for (ofm1 = my_M_start; ofm1 < my_M_end; ++ofm1) {
+          for (mb1 = my_N_start; mb1 < my_N_end; ++mb1) {
             /* Initialize output slice */
             if ( ifm1 == 0 ) {
               if ( (cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS ) {
@@ -462,8 +461,8 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_
         }
       }
     } else {
-      for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
-        for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+      for (ofm1 = my_M_start; ofm1 < my_M_end; ++ofm1) {
+        for (mb1 = my_N_start; mb1 < my_N_end; ++mb1) {
           if ( (cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS ) {
             for ( mb2 = 0; mb2 < cfg.bn; ++mb2 ) {
               for ( ofm2 = 0; ofm2 < cfg.bk; ++ofm2 ) {
@@ -583,9 +582,6 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
 
-  /* Transpose kernel to transpose filters  */
-  libxsmm_xtransfunction tr_kernel = cfg.tr_kernel;
-
   /* number of tasks for transpose that could be run in parallel */
   const libxsmm_blasint eltwise_work = nBlocksOFm * nBlocksMB;
   /* compute chunk size */
@@ -612,6 +608,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
 
   LIBXSMM_VLA_DECL(2,               float,    dbias, dbias_ptr,                     cfg.bk);
   LIBXSMM_VLA_DECL(4, const unsigned char, relumask,  relu_ptr, nBlocksOFm, cfg.bn, cfg.bk);
+  libxsmm_meltw_unary_param trans_param;
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
@@ -674,7 +671,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
 
     /* loop variables */
     libxsmm_blasint ifm1 = 0, ifm2 = 0, ifm1ofm1 = 0, mb1ifm1 = 0;
-    libxsmm_blasint im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
+    libxsmm_blasint N_tasks_per_thread = 0, M_tasks_per_thread = 0, my_M_start = 0, my_M_end = 0, my_N_start = 0, my_N_end = 0, my_col_id = 0, my_row_id = 0, col_teams = 0, row_teams = 0;
 
     LIBXSMM_VLA_DECL(4, const float,    filter,          wt_ptr, nBlocksIFm, bc, bk);
     LIBXSMM_VLA_DECL(4,       float,    dinput,     din_act_ptr, nBlocksIFm, bn, bc);
@@ -687,26 +684,25 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
     blocks = KB_BLOCKS;
 
     if (use_2d_blocking == 1) {
+      col_teams = cfg.bwd_col_teams;
       row_teams = cfg.bwd_row_teams;
-      column_teams = cfg.bwd_column_teams;
-      my_col_id = ltid % column_teams;
-      my_row_id = ltid / column_teams;
-      im_tasks_per_thread = LIBXSMM_UPDIV(nBlocksMB, row_teams);
-      in_tasks_per_thread = LIBXSMM_UPDIV(nBlocksIFm, column_teams);
-      my_im_start = LIBXSMM_MIN(my_row_id * im_tasks_per_thread, nBlocksMB);
-      my_im_end = LIBXSMM_MIN((my_row_id+1) * im_tasks_per_thread, nBlocksMB);
-      my_in_start = LIBXSMM_MIN(my_col_id * in_tasks_per_thread, nBlocksIFm);
-      my_in_end = LIBXSMM_MIN((my_col_id+1) * in_tasks_per_thread, nBlocksIFm);
+      my_row_id = ltid % row_teams;
+      my_col_id = ltid / row_teams;
+      N_tasks_per_thread = LIBXSMM_UPDIV(nBlocksMB, col_teams);
+      M_tasks_per_thread = LIBXSMM_UPDIV(nBlocksIFm, row_teams);
+      my_N_start = LIBXSMM_MIN(my_col_id * N_tasks_per_thread, nBlocksMB);
+      my_N_end = LIBXSMM_MIN((my_col_id+1) * N_tasks_per_thread, nBlocksMB);
+      my_M_start = LIBXSMM_MIN(my_row_id * M_tasks_per_thread, nBlocksIFm);
+      my_M_end = LIBXSMM_MIN((my_row_id+1) * M_tasks_per_thread, nBlocksIFm);
     }
 
     /* transpose weight */
     for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-      const unsigned int ubk = (unsigned int)bk;
-      const unsigned int ubc = (unsigned int)bc;
       ofm1 = ifm1ofm1 / nBlocksIFm;
       ifm1 = ifm1ofm1 % nBlocksIFm;
-      tr_kernel(&LIBXSMM_VLA_ACCESS(4,    filter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &ubk,
-                &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc), &ubc);
+      trans_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4,    filter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk);
+      trans_param.out.primary = &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, 0, 0, nBlocksOFm, bk, bc);
+      cfg.norm_to_normT_kernel(&trans_param);
     }
 
     /* wait for transpose to finish */
@@ -715,8 +711,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
     if (use_2d_blocking == 1) {
       if (BF > 1) {
         for ( ofm1 = 0; ofm1 < BF; ++ofm1 ) {
-          for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
-            for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+          for (ifm1 = my_M_start; ifm1 < my_M_end; ++ifm1) {
+            for (mb1 = my_N_start; mb1 < my_N_end; ++mb1) {
               /* Initialize intermediate f32 tensor */
               if ( ofm1 == 0 ) {
                 for ( mb2 = 0; mb2 < bn; ++mb2 ) {
@@ -732,8 +728,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
           }
         }
       } else {
-        for (ifm1 = my_in_start; ifm1 < my_in_end; ++ifm1) {
-          for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+        for (ifm1 = my_M_start; ifm1 < my_M_end; ++ifm1) {
+          for (mb1 = my_N_start; mb1 < my_N_end; ++mb1) {
             cfg.gemm_bwd2( &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, 0, 0, 0, nBlocksOFm, bk, bc),
                 &LIBXSMM_VLA_ACCESS(4, doutput,   mb1,  0, 0, 0, nBlocksOFm, bn, bk),
                 &LIBXSMM_VLA_ACCESS(4, dinput,    mb1,  ifm1, 0, 0, nBlocksIFm, bn, bc), &blocks);
@@ -785,7 +781,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
 
     /* 2D blocking parameters  */
     libxsmm_blasint use_2d_blocking = cfg.upd_2d_blocking;
-    libxsmm_blasint im_tasks_per_thread = 0, in_tasks_per_thread = 0, my_in_start = 0, my_in_end = 0, my_im_start = 0, my_im_end = 0, my_row_id = 0, my_col_id = 0, row_teams = 0, column_teams = 0;
+    libxsmm_blasint N_tasks_per_thread = 0, M_tasks_per_thread = 0, my_M_start = 0, my_M_end = 0, my_N_start = 0, my_N_end = 0, my_col_id = 0, my_row_id = 0, col_teams = 0, row_teams = 0;
 
     /* compute chunk size */
     const libxsmm_blasint chunksize = (work % cfg.threads == 0) ? (work / cfg.threads) : ((work / cfg.threads) + 1);
@@ -804,22 +800,22 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
     LIBXSMM_VLA_DECL(4,       float, dfilter,    dwt_ptr, nBlocksIFm, bc, bk);
 
     if (use_2d_blocking == 1) {
+      col_teams = cfg.upd_col_teams;
       row_teams = cfg.upd_row_teams;
-      column_teams = cfg.upd_column_teams;
-      my_col_id = ltid % column_teams;
-      my_row_id = ltid / column_teams;
-      im_tasks_per_thread = LIBXSMM_UPDIV(nBlocksIFm, row_teams);
-      in_tasks_per_thread = LIBXSMM_UPDIV(nBlocksOFm, column_teams);
-      my_im_start = LIBXSMM_MIN(my_row_id * im_tasks_per_thread, nBlocksIFm);
-      my_im_end = LIBXSMM_MIN((my_row_id+1) * im_tasks_per_thread, nBlocksIFm);
-      my_in_start = LIBXSMM_MIN(my_col_id * in_tasks_per_thread, nBlocksOFm);
-      my_in_end = LIBXSMM_MIN((my_col_id+1) * in_tasks_per_thread, nBlocksOFm);
+      my_row_id = ltid % row_teams;
+      my_col_id = ltid / row_teams;
+      N_tasks_per_thread = LIBXSMM_UPDIV(nBlocksIFm, col_teams);
+      M_tasks_per_thread = LIBXSMM_UPDIV(nBlocksOFm, row_teams);
+      my_N_start = LIBXSMM_MIN(my_col_id * N_tasks_per_thread, nBlocksIFm);
+      my_N_end = LIBXSMM_MIN((my_col_id+1) * N_tasks_per_thread, nBlocksIFm);
+      my_M_start = LIBXSMM_MIN(my_row_id * M_tasks_per_thread, nBlocksOFm);
+      my_M_end = LIBXSMM_MIN((my_row_id+1) * M_tasks_per_thread, nBlocksOFm);
     }
 
     if (use_2d_blocking == 1) {
       if (BF == 1) {
-        for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
-          for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
+        for (ofm1 = my_M_start; ofm1 < my_M_end; ++ofm1) {
+          for (ifm1 = my_N_start; ifm1 < my_N_end; ++ifm1) {
             cfg.gemm_upd2(&LIBXSMM_VLA_ACCESS(4, doutput, 0, ofm1, 0, 0, nBlocksOFm, bn, bk),
                           &LIBXSMM_VLA_ACCESS(4, input,   0, ifm1, 0, 0, nBlocksIFm, bn, bc),
                           &LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &blocks);
@@ -827,8 +823,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
         }
       } else {
         for (bfn = 0; bfn < BF; bfn++) {
-          for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
-            for (ifm1 = my_im_start; ifm1 < my_im_end; ++ifm1) {
+          for (ofm1 = my_M_start; ofm1 < my_M_end; ++ofm1) {
+            for (ifm1 = my_N_start; ifm1 < my_N_end; ++ifm1) {
               /* initialize current work task to zero */
               if (bfn == 0) {
                 for (ii = 0; ii<bc; ii++) {
@@ -1088,7 +1084,6 @@ int main(int argc, char* argv[])
   double fil_size = 0.0;
   double act_size = 0.0;
   float lr = 0.2f;
-  float loss = 0;
   float loss_weight = 0.1f;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff;
@@ -1232,7 +1227,7 @@ int main(int argc, char* argv[])
   } else if ( fuse_type == 4 ) {
     my_fuse = MY_ELTWISE_FUSE_BIAS_RELU;
   } else {
-    /* cannot happen */
+    my_fuse = MY_ELTWISE_FUSE_NONE;
   }
 
   /* allocating handles */

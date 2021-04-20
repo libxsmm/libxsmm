@@ -63,12 +63,14 @@ ifeq (,$(HOSTNAME))
   HOSTNAME := $(shell hostname 2>/dev/null)
 endif
 ifeq (Windows_NT,$(OS))
+  MNAME ?= $(if $(filter AMD64,$(PROCESSOR_ARCHITECTURE)),x86_64,$(PROCESSOR_ARCHITECTURE))
   UNAME ?= Windows_NT
   # Cygwin/MinGW based
   DLIBEXT ?= dll
   SLIBEXT ?= lib
 else
-  UNAME ?= $(shell uname)
+  MNAME ?= $(shell uname -m 2>/dev/null)
+  UNAME ?= $(shell uname 2>/dev/null)
   ifneq (Darwin,$(UNAME))
     ENVBIN ?= $(call which,env)
   endif
@@ -187,10 +189,6 @@ ifneq (0,$(call qnum,$(PLATFORM))) # NaN
   DFLAGS += -DLIBXSMM_PLATFORM_FORCE
 endif
 
-# Intrinsics support level (0: None, 1: Static, 2: Dynamic)
-# 1003<=INTRINSICS<1999: CPUID (see libxsmm_cpuid.h)
-INTRINSICS ?= 2
-
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
   MPSS ?= 1
@@ -302,16 +300,16 @@ uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
 
 ctest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   echo "int main(void) { return 0; }" > $${INFILE} && if [ "$3" ]; \
-  then $1 -c $${INFILE} -o $${INFILE}.o 2>/dev/null >/dev/null && \
-    if [ "$$($1 $2 $${INFILE}.o -o $${INFILE}.x 2>&1)" ]; then false; fi; \
-  else $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null; fi && echo "OK"; \
-  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.c.* 2>/dev/null),$2))
+  then $(firstword $1) -c $${INFILE} -o $${INFILE}.o >/dev/null && \
+       $1 $2 $${INFILE}.o -o $${INFILE}.x >/dev/null; \
+  else $(firstword $1) $2 $${INFILE} -o $${INFILE}.x >/dev/null; fi 2>&1 || echo "FAILED"; \
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.c.* 2>/dev/null),$(NULL),$2))
 # INFILE cannot use leading dot when used with certain F-compiler
 ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
   printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && if [ "$3" ]; \
-  then $1 -c $${INFILE} -o $${INFILE}.o 2>/dev/null >/dev/null && \
-    if [ "$$($1 $2 $${INFILE}.o -o $${INFILE}.x 2>&1)" ]; then false; fi; \
-  else $1 $2 $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null; fi || echo "FAILED"; \
+  then $(firstword $1) -c $${INFILE} -o $${INFILE}.o >/dev/null && \
+       $1 $2 $${INFILE}.o -o $${INFILE}.x >/dev/null; \
+  else $(firstword $1) $2 $${INFILE} -o $${INFILE}.x >/dev/null; fi 2>&1 || echo "FAILED"; \
   rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$(NULL),$2))
 
 ldclib = $(if $1,$(call ctest,$1 $2,-l$(strip $3)))
@@ -335,27 +333,7 @@ ifeq (0,$(GNU))
       CC := icx
     endif
   endif
-  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" \
-                         | $(CC) $(call ctest,$(CC),$(ECFLAGS) $(EFLAGS)) -E -P - 2>/dev/null \
-                         | sed "/^[[:space:]]*$$/d" 2>/dev/null))
-    ifneq (,$(INTEL))
-      ICX := $(INTEL)
-    else
-      ICX := 1
-    endif
-  endif
 endif
-ifneq (,$(shell echo "__INTEL_COMPILER" \
-        | $(FC) $(call ftest,$(FC),$(EFCFLAGS) $(EFLAGS)) -E -P /dev/stdin 2>/dev/null \
-        | sed "/^[[:space:]]*$$/d;/^__INTEL_COMPILER$$/d" 2>/dev/null))
-  ifneq (,$(INTEL))
-    ICX := $(shell echo "$$(($(INTEL)+1))")
-  else
-    ICX := 1
-  endif
-  FIXFC ?= 0
-endif
-ICX ?= 0
 
 # adopt extra flags from C if not set individually
 ECXXFLAGS ?= $(ECFLAGS)
@@ -398,6 +376,19 @@ else
     COMPILER_VERSION_FLAG ?= -V 2>&1
   endif
 endif
+
+ifneq (,$(filter-out __INTEL_LLVM_COMPILER,$(shell echo "__INTEL_LLVM_COMPILER" \
+        | $(CC) $(call ctest,$(CC),$(ECFLAGS) $(EFLAGS)) -E -P - 2>/dev/null \
+        | sed "/^[[:space:]]*$$/d" 2>/dev/null)))
+  ICX := 1
+endif
+ifneq (,$(filter-out __INTEL_LLVM_COMPILER,$(shell echo "__INTEL_LLVM_COMPILER" \
+        | $(FC) $(call ftest,$(FC),$(EFCFLAGS) $(EFLAGS)) -E -P /dev/stdin 2>/dev/null \
+        | sed "/^[[:space:]]*$$/d" 2>/dev/null)))
+  ICX := $(if $(filter 1,$(ICX)),2,1)
+  FIXFC ?= 0
+endif
+ICX ?= 0
 
 # linker setup
 LD := $(CC)
@@ -662,6 +653,24 @@ ifneq (0,$(FORCE_CXX))
 endif
 endif
 
+WCHECK ?= 0
+WERROR_CFLAG := $(call ctest,$(CC),-Werror)
+WERROR_FCFLAG := $(call ftest,$(FC),-Werror)
+ifneq (0,$(WCHECK))
+  WCHECK_CFLAG := $(call ctest,$(CC),-Wcheck $(WERROR_CFLAG))
+endif
+
+ifeq (0,$(ICX))
+ifneq (0,$(INTEL))
+  NOLIMITS_CFLAG := $(call ctest,$(CC),-qoverride-limits $(WERROR_CFLAG))
+  ifeq (,$(strip $(GFC)))
+  ifneq (,$(strip $(FC)))
+    NOLIMITS_FCFLAG := $(call ftest,$(FC),-qoverride-limits $(WERROR_FCFLAG))
+  endif
+  endif
+endif
+endif
+
 ifeq (Windows_NT,$(UNAME))
 ifeq (MINGW64,$(MSYSTEM))
   MINGW := 64
@@ -743,10 +752,10 @@ endif
 endif
 endif
 
-# Select code path (if not selected otherwise)
-CPUFLAGS := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
+# Select x86 code path (if not selected otherwise)
+CPUFLAGS_X86 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
-  elif [ "Darwin" = "$(UNAME)" ]; then \
+  elif [ "Darwin" = "$(UNAME)" ] && [ "x86_64" = "$(UNAME) -m" ]; then \
     sysctl -a machdep.cpu.features \
       machdep.cpu.extfeatures \
       machdep.cpu.leaf7_features \
@@ -755,26 +764,28 @@ CPUFLAGS := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
   fi))
 SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX
-  ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
-    ifeq (2,$(words $(filter avx512pf avx512er,$(CPUFLAGS)))) # KNL
+  ifeq (1,$(words $(filter avx512f,$(CPUFLAGS_X86))))
+    ifeq (2,$(words $(filter avx512pf avx512er,$(CPUFLAGS_X86)))) # KNL
       AVX ?= 3
       MIC ?= 1
     else
       AVX ?= 2
     endif
-  else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
-    ifeq (1,$(words $(filter fma,$(CPUFLAGS))))
+  else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS_X86))))
+    ifeq (1,$(words $(filter fma,$(CPUFLAGS_X86))))
       AVX ?= 2
     else
       AVX ?= 1
     endif
   endif
 else ifeq (1,$(SSE)) # discover SSE
-  ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
+  ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS_X86))))
     SSE := 4
-  else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
+  else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS_X86))))
     SSE := 3
-  else ifneq (,$(CPUFLAGS))
+  else ifneq (0,$(words $(filter sse2 ,$(CPUFLAGS_X86))))
+    SSE := 2
+  else ifneq (,$(CPUFLAGS_X86))
     SSE := 0
   endif
 else ifneq (0,$(KNC))
@@ -782,6 +793,23 @@ else ifneq (0,$(KNC))
 endif
 AVX ?= 0
 MIC ?= 0
+
+# Select aarch64 code path
+CPUFLAGS_AARCH64 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
+    grep -m1 Features /proc/cpuinfo | cut -d: -f2-; \
+  elif [ "Darwin" = "$(UNAME)" ] && [ "arm64" = "$(UNAME) -m" ]; then \
+    sysctl -a hw.optional.neon | cut -d: -f2-; \
+  fi))
+ASIMD ?= 1
+ifeq (1,$(ASIMD)) # discover ASIMD
+  ifeq (1,$(words $(filter asimd,$(CPUFLAGS_AARCH64))))
+    ASIMD := 1
+  else ifneq (0,$(words $(filter 1,$(CPUFLAGS_AARCH64))))
+    ASIMD := 1
+  else ifneq (,$(CPUFLAGS_X86))
+    ASIMD := 0
+  endif
+endif
 
 ifneq (0,$(INTEL))
   SUITE := Intel Compiler
@@ -1145,12 +1173,13 @@ ifneq (0,$(INTEL))
     endif
     FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   endif
+  CPEDANTIC += $(WCHECK_CFLAG) -diag-disable 177,981,1419,1572,2547,10382
   ifeq (0,$(ICX))
-    CPEDANTIC += -Wcheck
-  else ifneq (1,$(ICX))
-    CPEDANTIC += -diag-disable 593,1599,2415
+    CPEDANTIC += -diag-disable 593,1599,2415,2591
+    ifeq (0,$(WCHECK))
+      CPEDANTIC += -diag-disable 2259
+    endif
   endif
-  CPEDANTIC += -diag-disable 177,981,1419,1572,2547,10382
   CWARNEXTRA := -Wremarks
   ifeq (1,$(PEDANTIC))
     ifeq (,$(filter-out 0,$(FORCE_CXX)))
@@ -1162,10 +1191,8 @@ ifneq (0,$(INTEL))
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
       FCFLAGS += $(FFORM_FLAG)
     endif
-    ifeq (0,$(ICX))
-      CXXFLAGS += -Wcheck
-      CFLAGS += -Wcheck
-    endif
+    CXXFLAGS += $(WCHECK_CFLAG)
+    CFLAGS += $(WCHECK_CFLAG)
   else ifneq (0,$(PEDANTIC))
     ifneq (,$(filter 0 1,$(ICX)))
     ifeq (,$(filter-out 0,$(FORCE_CXX)))
@@ -1218,11 +1245,17 @@ ifneq (0,$(INTEL))
       FMFLAGS += -J
     endif
   endif
+  # avoid turning OpenMP limits into an error (-Werror)
+  ifneq (,$(WERROR_CFLAG))
+    FCFLAGS += $(NOLIMITS_FCFLAG)
+    CXXFLAGS += $(NOLIMITS_CFLAG)
+    CFLAGS += $(NOLIMITS_CFLAG)
+  endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     ifeq (0,$(ICX))
-      #CXXFLAGS += -qoverride_limits #-fp-model fast=2
-      #CFLAGS += -qoverride_limits #-fp-model fast=2
+      #CXXFLAGS += -fp-model fast=2
+      #CFLAGS += -fp-model fast=2
       CXXFLAGS += -fno-alias
       CFLAGS += -fno-alias
     endif
@@ -1230,7 +1263,7 @@ ifneq (0,$(INTEL))
     CFLAGS += -ansi-alias
     ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
-      #FCFLAGS += -qoverride_limits #-fp-model fast=2
+      #FCFLAGS += -fp-model fast=2
       ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION_NUM)))"))
         FCFLAGS += -align array64byte
       endif
@@ -1403,7 +1436,8 @@ else # GCC assumed
     else ifneq (0,$(CLANG))
       CPEDANTIC += -Wno-overlength-strings
     endif
-    ifneq (0,$(shell echo "$$((40500<=$(CC_VERSION_NUM)))"))
+    ifneq (0,$(shell echo "$$((40600<=$(CC_VERSION_NUM)))"))
+      # can yield false positives with older GCC
       CPEDANTIC += -Wshadow
     endif
     ifneq (,$(strip $(FC)))
@@ -1683,11 +1717,11 @@ ifeq (undefined,$(origin TARGET))
               else # maintainer build
                 ifeq (0,$(DEPSTATIC))
                   TARGET := -msse4.2
-                  CTARGET := -msse3
+                  CTARGET := -msse2
                 else ifneq (0,$(SHARED))
                   ifneq (,$(SHARED))
                     TARGET := -msse4.2
-                    CTARGET := -msse3
+                    CTARGET := -msse2
                   else
                     CTARGET := -msse4.2
                   endif
@@ -1696,7 +1730,7 @@ ifeq (undefined,$(origin TARGET))
                 endif
               endif
             else
-              CTARGET := -msse3
+              CTARGET := -msse2
             endif
           endif
           CTARGET ?= -msse4.2
@@ -1707,7 +1741,7 @@ ifeq (undefined,$(origin TARGET))
       ifeq (,$(CTARGET)) # SSE3
       ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
         ifneq (Darwin,$(UNAME))
-          CTARGET ?= -msse3
+          CTARGET ?= -msse2
         else # prevents Clang BE error (CRC32 and others)
           CTARGET ?= -msse4.2
         endif
@@ -1741,18 +1775,29 @@ ifeq ($(CTARGET),$(FTARGET))
   TARGET ?= $(CTARGET)
 endif
 
-ifneq (0,$(INTRINSICS))
-  ifeq (1,$(INTRINSICS))
-    ifeq (0,$(INTEL))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
-    else ifneq (,$(CTARGET))
-      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+# Intrinsics support level (0: None, 1: Static, 2: Dynamic)
+# 1003<=INTRINSICS<1999: CPUID (see libxsmm_cpuid.h)
+# For example, LIBXSMM_X86_AVX2=1006
+ifneq (0,$(INTEL))
+  INTRINSICS ?= 2
+else ifneq (0,$(CLANG))
+  INTRINSICS ?= 2
+endif
+ifeq (x86_64,$(MNAME))
+  INTRINSICS ?= 1006
+  ifneq (0,$(INTRINSICS))
+    ifeq (1,$(INTRINSICS))
+      ifeq (0,$(INTEL))
+        DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+      else ifneq (,$(CTARGET))
+        DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+      endif
+    else ifneq (2,$(INTRINSICS))
+      DFLAGS += -DLIBXSMM_TARGET_ARCH=$(INTRINSICS)
     endif
-  else ifneq (2,$(INTRINSICS))
-    DFLAGS += -DLIBXSMM_MAX_STATIC_TARGET_ARCH=$(INTRINSICS)
+  else
+    DFLAGS += -DLIBXSMM_INTRINSICS_NONE
   endif
-else # disabled
-  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
 endif
 
 ifeq (0,$(SYM))
@@ -2158,7 +2203,21 @@ ifneq (0,$(MKL))
     endif
   endif
 else ifneq (0,$(BLAS)) # generic
-  ifeq (,$(strip $(BLASLIB)))
+  ifneq (,$(AOCL_ROOT))
+    ifeq (0,$(BLAS_STATIC)) # shared
+      ifeq (1,$(BLAS)) # sequential
+        BLAS_LDFLAGS := -L$(AOCL_ROOT)/lib -lblis $(BLAS_LDFLAGS)
+      else # multi-threaded
+        BLAS_LDFLAGS := -L$(AOCL_ROOT)/lib -lblis-mt $(BLAS_LDFLAGS)
+      endif
+    else # static
+      ifeq (1,$(BLAS)) # sequential
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis.a $(BLAS_LDFLAGS)
+      else # multi-threaded
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis-mt.a $(BLAS_LDFLAGS)
+      endif
+    endif
+  else ifeq (,$(strip $(BLASLIB)))
     ifneq (1,$(BLAS))
       ifneq (0,$(OMP))
         BLAS_THREADS := o

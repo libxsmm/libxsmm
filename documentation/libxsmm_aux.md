@@ -3,7 +3,7 @@
 ### Target Architecture<a name="getting-and-setting-the-target-architecture"></a>
 
 This functionality is available for the C and Fortran interface. There are [ID based](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_cpuid.h#L47) (same for C and Fortran) and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the presented CPUID features. The latter may degrade performance if a lower set of instruction set extensions is requested, which can be still useful for studying the performance impact of different instruction set extensions.  
-**NOTE**: There is no additional check performed if an unsupported instruction set extension is requested, and incompatible JIT-generated code may be executed (unknown instruction signaled).
+**Note**: There is no additional check performed if an unsupported instruction set extension is requested, and incompatible JIT-generated code may be executed (unknown instruction signaled).
 
 ```C
 int libxsmm_get_target_archid(void);
@@ -17,8 +17,8 @@ Available code paths (IDs and corresponding strings):
 
 * LIBXSMM_TARGET_ARCH_GENERIC: "**generic**", "none", "0"
 * LIBXSMM_X86_GENERIC: "**x86**", "x64", "sse2"
-* LIBXSMM_X86_SSE3: "**sse3**", "sse", "ssse3", "ssse"
-* LIBXSMM_X86_SSE4: "**wsm**", "nhm", "sse4", "sse4_1", "sse4.1", "sse4_2", "sse4.2"
+* LIBXSMM_X86_SSE3: "**sse3**"
+* LIBXSMM_X86_SSE42: "**wsm**", "nhm", "sse4", "sse4_2", "sse4.2"
 * LIBXSMM_X86_AVX: "**snb**", "avx"
 * LIBXSMM_X86_AVX2: "**hsw**", "avx2"
 * LIBXSMM_X86_AVX512_MIC: "**knl**", "mic"
@@ -26,6 +26,7 @@ Available code paths (IDs and corresponding strings):
 * LIBXSMM_X86_AVX512_CORE: "**skx**", "skl", "avx3", "avx512"
 * LIBXSMM_X86_AVX512_CLX: "**clx**"
 * LIBXSMM_X86_AVX512_CPX: "**cpx**"
+* LIBXSMM_X86_AVX512_SPR: "**spr**"
 
 The **bold** names are returned by `libxsmm_get_target_arch` whereas `libxsmm_set_target_arch` accepts all of the above strings (similar to the environment variable LIBXSMM_TARGET).
 
@@ -55,14 +56,14 @@ libxsmm_timer_tickint libxsmm_timer_ncycles(
 
 ### User-Data Dispatch
 
-To register a user-defined key-value pair with LIBXSMM's fast key-value store, the key must be binary reproducible. Structured key-data (`struct` or `class` type) that is potentially padded in a compiler/platform-specific fashion must be fully initialized before registration and dispatch/query, i.e., all gaps may be zero-filled before initializing data members (`memset(&mykey, 0, sizeof(mykey))`). This is because some compilers leave padded data uninitialized, which breaks binary reproducible keys. The size of the key is arbitrary but limited to LIBXSMM_DESCRIPTOR_MAXSIZE (64 Byte), and the size of the value can be of an arbitrary size. The given value is copied by LIBXSMM and may be initialized at registration-time or when dispatched. Registered data is released at program termination but can be manually unregistered and released (`libxsmm_xrelease`), e.g., to register a larger value for an existing key.
+To register a user-defined key-value pair with LIBXSMM's fast key-value store, the key must be binary reproducible. Structured key-data (`struct` or `class` type which can be padded in a compiler-specific fashion) must be completely cleared, i.e., all gaps may be zero-filled before initializing data members (`memset(&mykey, 0, sizeof(mykey))`). This is because some compilers can leave padded data uninitialized, which breaks binary reproducible keys, hence the flow is: claring heterogeneous keys (struct), initialization (members), and registration. The size of the key is arbitrary but limited to LIBXSMM_DESCRIPTOR_MAXSIZE (96 Byte), and the size of the value can be of an arbitrary size. The given value is copied and may be initialized at registration-time or when dispatched. Registered data is released at program termination but can be manually unregistered and released (`libxsmm_xrelease`), e.g., to register a larger value for an existing key.
 
 ```C
 void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, const void* value_init);
 void* libxsmm_xdispatch(const void* key, size_t key_size);
 ```
 
-The Fortran interface is designed to follow the same flow as the C&#160;language: (1)&#160;`libxsmm_xdispatch` is used to query the value, and (2)&#160;if the value is a NULL-pointer, it is registered per `libxsmm_xregister`. Similar to C (`memset`), structured key-data must be zero-filled (`libxsmm_xclear`) even when followed by an element-wise initialization. A key based on a contiguous array has no gaps by definition and it is enough to initialize the array elements. A [Fortran example](https://github.com/hfp/libxsmm/blob/master/samples/utilities/dispatch/dispatch_udt.f) is given as part of the [Dispatch Microbenchmark](https://github.com/hfp/libxsmm/tree/master/samples/utilities/dispatch).
+The Fortran interface is designed to follow the same flow as the <span>C&#160;language</span>: <span>(1)&#160;</span>`libxsmm_xdispatch` is used to query the value, and <span>(2)&#160;if</span> the value is a NULL-pointer, it is registered per `libxsmm_xregister`. Similar to C (`memset`), structured key-data must be zero-filled (`libxsmm_xclear`) even when followed by an element-wise initialization. A key based on a contiguous array has no gaps by definition and it is enough to initialize the array elements. A [Fortran example](https://github.com/hfp/libxsmm/blob/master/samples/utilities/dispatch/dispatch_udt.f) is given as part of the [Dispatch Microbenchmark](https://github.com/hfp/libxsmm/tree/master/samples/utilities/dispatch).
 
 ```Fortran
 FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
@@ -79,12 +80,12 @@ FUNCTION libxsmm_xdispatch(key, keysize)
 END FUNCTION
 ```
 
-**NOTE**: This functionality can be used to, e.g., dispatch multiple kernels in one step if a code location relies on multiple kernels. This way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels used by this task. However, the functionality is not limited to multiple kernels but any data can be registered and queried. User-data dispatch uses the same implementation as regular code-dispatch.
+**Note**: This functionality can be used to, e.g., dispatch multiple kernels in one step if a code location relies on multiple kernels. This way, one can pay the cost of dispatch one time per task rather than according to the number of JIT-kernels used by this task. However, the functionality is not limited to multiple kernels but any data can be registered and queried. User-data dispatch uses the same implementation as regular code-dispatch.
 
 ### Memory Allocation
 
 The C interface ([libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h)) provides functions for aligned memory one of which allows to specify the alignment (or to request an automatically selected alignment). The automatic alignment is also available with a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
-**NOTE**: The function `libxsmm_free` must be used to deallocate buffers allocated by LIBXSMM's allocation functions.
+**Note**: The function `libxsmm_free` must be used to deallocate buffers allocated by LIBXSMM's allocation functions.
 
 ```C
 void* libxsmm_malloc(size_t size);
@@ -95,7 +96,7 @@ int libxsmm_get_malloc_info(const void* m, libxsmm_malloc_info* i);
 int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 ```
 
-The library exposes two memory allocation domains: (1)&#160;default memory allocation, and (2)&#160;scratch memory allocation. There are similar service functions for both domains that allow to customize the allocation and deallocation function. The "context form" even supports a user-defined "object", which may represent an allocator or any other external facility. To set the allocator of the default domain is analogous to setting the allocator of the scratch memory domain (shown below).
+The library exposes two memory allocation domains: <span>(1)&#160;default</span> memory allocation, and <span>(2)&#160;scratch</span> memory allocation. There are similar service functions for both domains that allow to customize the allocation and deallocation function. The "context form" even supports a user-defined "object", which may represent an allocator or any other external facility. To set the allocator of the default domain is analogous to setting the allocator of the scratch memory domain (shown below).
 
 ```C
 int libxsmm_set_scratch_allocator(void* context,
@@ -104,7 +105,7 @@ int libxsmm_get_scratch_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 ```
 
-The scratch memory allocation is very effective and delivers a decent speedup over subsequent regular memory allocations. In contrast to the default allocator, a watermark for repeatedly allocated and deallocated buffers is established. The scratch memory domain is (arbitrarily) limited to 4&#160;GB of memory which can be adjusted to a different number of Bytes (available per [libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h), and also per environment variable LIBXSMM_SCRATCH_LIMIT with optional "k|K", "m|M", "g|G" units, unlimited per "-1").
+The scratch memory allocation is very effective and delivers a decent speedup over subsequent regular memory allocations. In contrast to the default allocator, a watermark for repeatedly allocated and deallocated buffers is established. The scratch memory domain is (arbitrarily) limited to <span>4&#160;GB</span> of memory which can be adjusted to a different number of Bytes (available per [libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h), and also per environment variable LIBXSMM_SCRATCH_LIMIT with optional "k|K", "m|M", "g|G" units, unlimited per "-1").
 
 ```C
 void libxsmm_set_scratch_limit(size_t nbytes);
@@ -119,13 +120,13 @@ Scratch: 173 MB (mallocs=5, pools=1)
 
 To improve thread-scalability and to avoid frequent memory allocation/deallocation, the scratch memory allocator can be leveraged by [intercepting existing malloc/free calls](libxsmm_tune.md#intercepted-allocations).
 
-**NOTE**: be careful with scratch memory as it only grows during execution (in between `libxsmm_init` and `libxsmm_finalize` unless `libxsmm_release_scratch` is called). This is true even when `libxsmm_free` is (and should be) used!
+**Note**: be careful with scratch memory as it only grows during execution (in between `libxsmm_init` and `libxsmm_finalize` unless `libxsmm_release_scratch` is called). This is true even when `libxsmm_free` is (and should be) used!
 
 ### Meta Image File I/O
 
 Loading and storing data (I/O) is normally out of LIBXSMM's scope. However, comparing results (correctness) or writing files for visual inspection is clearly desired. This is particularly useful for the DNN domain. The MHD library domain provides support for the Meta Image File format (MHD). Tools such as [ITK-SNAP](http://itksnap.org/) or [ParaView](https://www.paraview.org/) can be used to inspect, compare, and modify images (even beyond two-dimensional images).
 
-Writing an image is per `libxsmm_mhd_write`, and loading an image is split in two stages: (1)&#160;`libxsmm_mhd_read_header`, and (2)&#160;`libxsmm_mhd_read`. The first step allows to allocate a properly sized buffer, which is then used to obtain the data per `libxsmm_mhd_read`. When reading data, an on-the-fly type conversion is supported. Further, data that is already in memory can be compared against file-data without allocating memory or reading this file into memory.
+Writing an image is per `libxsmm_mhd_write`, and loading an image is split in two stages: <span>(1)&#160;</span>`libxsmm_mhd_read_header`, and <span>(2)&#160;</span>`libxsmm_mhd_read`. The first step allows to allocate a properly sized buffer, which is then used to obtain the data per `libxsmm_mhd_read`. When reading data, an on-the-fly type conversion is supported. Further, data that is already in memory can be compared against file-data without allocating memory or reading this file into memory.
 
 To load an image from a familiar format (JPG, PNG, etc.), one may save the raw data using for instance [IrfanView](http://www.irfanview.com/) and rely on a "header-only" MHD-file (plain text). This may look like:
 

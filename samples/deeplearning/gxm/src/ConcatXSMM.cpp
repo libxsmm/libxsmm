@@ -42,7 +42,7 @@ void ConcatXSMM::forwardPropagate(vector<TensorBuf*>& inpb, TensorBuf *outpb, in
     int ofm = 0;
     for(int b=0; b<inpb.size(); b++) {
       int nBIfm = gp->nInput[b]/VLEN;
-      float *inp __attribute__((aligned(64)));
+      LIBXSMM_ALIGNED(float *inp, 64);
       inp = (float*)inpb[b]->getBuffer();
       float (* __restrict input )[nBIfm][ifh][ifw][VLEN] = (float (*)[*][*][*][VLEN])inp;
       for(int ifm=0; ifm < nBIfm; ifm++) {
@@ -89,7 +89,7 @@ void ConcatXSMM::backPropagate(TensorBuf *deloutpb, vector<TensorBuf*>& delinpb,
     int ofm = 0;
     for(int b=0; b<delinpb.size(); b++) {
       int nBIfm = gp->nInput[b]/VLEN;
-      float *delinp __attribute__((aligned(64)));
+      LIBXSMM_ALIGNED(float *delinp, 64);
       delinp = (float*)delinpb[b]->getBuffer();
       float (* __restrict del_input)[nBIfm][ifh][ifw][VLEN] = (float (*)[*][*][*][VLEN])delinp;
       for(int ifm=0; ifm < nBIfm; ifm++) {

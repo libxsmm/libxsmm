@@ -488,7 +488,56 @@ rm -rf opentuner.db
 
 Above, the series of matrix multiplications from 192-8K is separately tuned in eight ranges. The tuning script uses the environment variables `LIBXSMM_TGEMM_M`, `LIBXSMM_TGEMM_N`, and `LIBXSMM_TGEMM_K` which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme within LIBXSMM's `libxsmm_?gemm_omp` routines.
 
-## Deep Learning with GxM
+
+This package contains the optimized kernels for the 1D dilated convolutional layer. 
+The C++ implementation has code for both FP32 and BF16 formats.
+You can run this code on AVX-512 enabled CPUs. Ex. - Cascade Lake or Cooper lake.
+
+ Install instructions 
+
+IInstall PyTorch in an anaconda or virtual environment before installing the package.
+Use GCC version 8.3.0 or higher.
+conda activate environment              # Activate anaconda or virtual environment containing PyTorch
+
+cd Conv1dOpti-extension/
+python setup.py install                 # Install package
+cd ..
+
+
+A user can either use run.sh script to run the torch_example.py code or
+he/she can follow the following commands.  
+
+export LD_LIBRARY_PATH={LIBXSMM_ROOT/lib}           # Set LD_LIBRARY_PATH
+export OMP_NUM_THREADS=28                           # Set number of threads
+export KMP_AFFINITY=compact,1,0,granularity=fine    # Set KMP affinity
+
+python torch_example.py                             # Run the pytorch example
+
+In the previous example, we compare "nn.Conv1d" layer with our optimized "Conv1dOpti" layer.
+The example shows how "nn.Conv1d" can be replaced with "Conv1dOpti" layer in a neural network
+without requiring any other change.
+The optimized python layer can be imported using "from Conv1dOpti_ext import Conv1dOpti" in python.
+The example checks the accuracy of the results and calculates the computation time of both layers.
+
+
+  Limitations of the current version 
+
+- Keep padding=0 in the options. The current layer doesn't do padding. Explicit padding is needed 
+  for the optimized convolutional layer. You can use the example for reference.
+- Optimized convolutional layer code can only run with stride = 1.
+- Similarly, apply the nonlinearity (Ex. ReLU) separately.  
+
+
+To run code in BFloat16, set enable_BF16 flag to True. BFloat16 code runs only when the parameters of 
+Input width, number of filters and input channels to the layer are even number.
+Ex. -  Filters = 16, Channels = 16, Input width = 60000, enable_BF16 = True   BF16 run
+If any of the previous parameter is odd number then code runs in FP32 format. 
+
+
+Keep batch size as multiple of ununtilized cores (Ex. - 28, 56, 84, 128 .... on a 28 core cascade lake)
+for optimal performance with the Conv1dOpti layer. Each batch will run on a seperate thread thus 
+performance may go down if some core are not free, or batch size is not equal to the number of free cores. 
+Keep the batch size as power of 2 with the MKLDNN backend (Conv1d) for optimal performance. # Deep Learning with GxM
 
 ### Compiling and Building GxM
 
@@ -562,17 +611,20 @@ Make sure that the makefile follows the OpenCV Ver 3 path!
 ## DNN Training with Incremental Sparsification + Sparse JIT Kernels
 
 ### This project contains code for the following DNN models
-1. Resnet - ported from [link](https://pytorch.org/docs/stable/torchvision/models.html)
+
+1. Resnet - ported from [link](https://pytorch.org/vision/stable/models.html)
 2. Transformer - ported from [link](https://github.com/pytorch/fairseq)
 3. DLRM - ported from [link](https://github.com/facebookresearch/dlrm)
 4. PCL_MLP - A python extension of the `torch.nn.Linear` module that uses efficient sparse JIT kernels for matrix multiplication (supports forward, backward and update pass) - ported from [link](https://github.com/hfp/libxsmm/tree/master/samples/deeplearning/sparse_weight_mult)
 
 ### Features
+
 1. Training scripts for all three models located at the root of each directory in a form of a shell file
 2. By specifying each of the four parameters, the pruning criteria (magnitude-based or random-based), the pruning start time and end time and target sparsity you can apply incremental sparsity to model weights for training
 3. Additionally, by specifying a tensorboard log directory, one can examine training logs and metrics using tensorboard.
 
 ### Data preparation
+
 Each model requires an extensive amount of data to be properly stress-tested against incremental sparsity. According to [The State of Sparsity](https://arxiv.org/abs/1902.09574) and by extensive experimentation, using a relatively small dataset or an overparameterized model may lead to false performance implications. For instance, when a ResNet-50 model is trained with the CIFAR-10 dataset or if the base Transformer is trained with a limited sentence pair dataset (i.e., EN-VI) it may seem as if the model isn't impacted even with extremely high sparsity since the model was overdetermined to begin with.
 
 - For Resnet
@@ -583,6 +635,7 @@ Each model requires an extensive amount of data to be properly stress-tested aga
 - Training the DLRM requires the terabyte dataset [link](https://labs.criteo.com/2013/12/download-terabyte-click-logs/)
 
 ### Running scripts
+
 Each project consists of two scripts: a script that launches `sbatch` scripts for experimenting various target sparsities (usually named as `launch_pruning_runs.sh`)and a script that runs a single experiment. Use accordingly.
 
 1. ResNet model
@@ -628,7 +681,7 @@ Further, another [Fortran example](https://github.com/hfp/libxsmm/blob/master/sa
 This code sample aims to provide a simple piece of code, which takes an image and produces a visual result using LIBXSMM's MHD image file I/O. Performing a single convolution is *not* a showcase of LIBXSMM's Deeplearning as the code only runs over a single image with one channel.
 LIBXSMM's CNNs are vectorized over image channels (multiple images) according to the native vector-width of the processor and otherwise fall back to a high-level implementation.
 
-**NOTE**: For high-performance deep learning, please refer to the collection of [CNN layer samples](https://github.com/hfp/libxsmm/tree/master/samples/deeplearning/cnnlayer).
+**Note**: For high-performance deep learning, please refer to the collection of [CNN layer samples](https://github.com/hfp/libxsmm/tree/master/samples/deeplearning/cnnlayer).
 
 The executable can run with the following arguments (all arguments are optional):
 
