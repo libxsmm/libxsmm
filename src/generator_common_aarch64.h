@@ -16,22 +16,18 @@
 #include "generator_common.h"
 
 /**
- * Intializes the given predicate registers for vector ops.
- * reg_p_full: Every bit is initialized to 1.
- * reg_p_remainder: only the first nnz_remainder bits are set to 1.
+ * Sets the given predicate register.
  *
  * @param io_generated_code will be updated with respective instructions.
- * @param i_p_reg_full id of the predicate register for full vector ops.
- * @param i_p_reg_remainder id of the predicate register for remainder ops.
- * @param i_nnz_remainder number of non-zero bits in the remainder register.
+ * @param i_p_reg id of the predicate register which is set.
+ * @param i_n_bits number of of bits which are set to 1. if negative, all bits are set.
  * @param i_gp_reg_scratch general purpose scratch register.
  **/
 LIBXSMM_API_INTERN
-void libxsmm_generator_init_p_registers_aarch64_sve( libxsmm_generated_code* io_generated_code,
-                                                     unsigned char           i_p_reg_full,
-                                                     unsigned char           i_p_reg_remainder,
-                                                     unsigned char           i_nnz_remainder,
-                                                     unsigned char           i_gp_reg_scratch );
+void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_generated_code,
+                                                   unsigned char           i_p_reg,
+                                                            int            i_n_bits,
+                                                   unsigned char           i_gp_reg_scratch );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_loop_header_aarch64( libxsmm_generated_code*     io_generated_code,

@@ -176,12 +176,12 @@
 
 /* Descriptor
  * 4th byte
- *   --> form ISA manual
+ *   --> from ISA manual
  * 3rd byte
  *   --> from ISA manual
  * 2nd byte
  *   --> from ISA manual
- * 2st byte
+ * 1st byte
  *   7: SVE: predication required
  *   6-3: not used
  *   2:   has immediate
@@ -261,8 +261,9 @@
 /* define SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V         0x65200083
 #define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03003
-/* define SVE preducate instructions */
+/* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
+#define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403
 
 /**
  * shift mode */
@@ -271,6 +272,13 @@ typedef enum libxsmm_aarch64_shiftmode {
   LIBXSMM_AARCH64_SHIFTMODE_LSR = 0x1,
   LIBXSMM_AARCH64_SHIFTMODE_ASR = 0x2
 } libxsmm_aarch64_shiftmode;
+
+/**
+ * general purpose register width */
+typedef enum libxsmm_aarch64_gp_width {
+  LIBXSMM_AARCH64_GP_WIDTH_W = 0x0,
+  LIBXSMM_AARCH64_GP_WIDTH_X = 0x1,
+} libxsmm_aarch64_gp_width;
 
 /**
  * asimd vector width simd load and stores */
@@ -478,13 +486,19 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_pred_instr actual operation variant
  * @param i_pred_reg pred register
- * @param i_pattern  type
- * @param i_type  type
+ * @param i_gp_reg_src_0 first source register
+ * @param i_gp_width width of the GP-registers.
+ * @param i_gp_reg_src_1 second source register
+ * @param i_pattern type
+ * @param i_type type
  */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*           io_generated_code,
                                                const unsigned int                i_pred_instr,
                                                const unsigned char               i_pred_reg,
+                                               const unsigned char               i_gp_reg_src_0,
+                                               libxsmm_aarch64_gp_width          i_gp_width,
+                                               const unsigned char               i_gp_reg_src_1,
                                                const libxsmm_aarch64_sve_pattern i_pattern,
                                                const libxsmm_aarch64_sve_type    i_type );
 
