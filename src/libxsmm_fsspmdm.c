@@ -14,36 +14,53 @@
 
 
 /* Double precision AVX-512 lane broadcasts */
-LIBXSMM_APIVAR_DEFINE(const unsigned int dperm[]) = {
-  0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-  2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
-  4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5,
-  6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7,
-  8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9,
-  10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11,
-  12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13,
-  14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15
-};
-
+LIBXSMM_APIVAR_DEFINE(const double* internal_fsspmdm_dperm);
 /* Single precision AVX-512 lane broadcasts */
-LIBXSMM_APIVAR_DEFINE(const unsigned int sperm[]) = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-  5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-  6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-  7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-  8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-  9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-  10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-  11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
-  12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
-  13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
-  14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
-  15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15
-};
+LIBXSMM_APIVAR_DEFINE(const float* internal_fsspmdm_sperm);
+
+
+LIBXSMM_API_INTERN void internal_dfsspmdm_init(void);
+LIBXSMM_API_INTERN void internal_dfsspmdm_init(void)
+{
+  LIBXSMM_ALIGNED(static const unsigned int dperm[], LIBXSMM_ALIGNMENT) = {
+    0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+    2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
+    4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5,
+    6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7,
+    8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9,
+    10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11,
+    12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13,
+    14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15
+  };
+  LIBXSMM_ASSERT(NULL == internal_fsspmdm_dperm);
+  internal_fsspmdm_dperm = (const double*)((const void*)dperm);
+}
+
+
+LIBXSMM_API_INTERN void internal_sfsspmdm_init(void);
+LIBXSMM_API_INTERN void internal_sfsspmdm_init(void)
+{
+  LIBXSMM_ALIGNED(static const unsigned int sperm[], LIBXSMM_ALIGNMENT) = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+    10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+    11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
+    12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+    13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+    15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15
+  };
+  LIBXSMM_ASSERT(NULL == internal_fsspmdm_sperm);
+  internal_fsspmdm_sperm = (const float*)((const void*)sperm);
+}
 
 
 LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
@@ -65,6 +82,9 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_dmmfunction k_sparse = NULL;
   libxsmm_dmmfunction k_dense = NULL;
   int i, j, n, a_nnz, N_sparse, N_dense;
+
+  /* internal lazy initialization */
+  if (NULL == internal_fsspmdm_dperm) internal_dfsspmdm_init();
 
   /* some checks... */
   assert(N % 8 == 0);
@@ -195,7 +215,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       t1 = libxsmm_timer_tick();
       for ( i = 0; i < 25; i++ ) {
         for ( j = 0; j < N; j += N_sparse ) {
-          k_sparse( (const double*)((const void*)dperm), B + j, C + j );
+          k_sparse( internal_fsspmdm_dperm, B + j, C + j );
         }
       }
       t2 = libxsmm_timer_tick();
@@ -262,6 +282,9 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_smmfunction k_sparse = NULL;
   libxsmm_smmfunction k_dense = NULL;
   int i, j, n, a_nnz, N_sparse, N_dense;
+
+  /* internal lazy initialization */
+  if (NULL == internal_fsspmdm_sperm) internal_sfsspmdm_init();
 
   /* some checks... */
   assert(N % 16 == 0);
@@ -392,7 +415,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       t1 = libxsmm_timer_tick();
       for ( i = 0; i < 25; i++ ) {
         for ( j = 0; j < N; j += N_sparse ) {
-          k_sparse( (const float*)((const void*)sperm), B + j, C + j );
+          k_sparse( internal_fsspmdm_sperm, B + j, C + j );
         }
       }
       t2 = libxsmm_timer_tick();
@@ -447,7 +470,7 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
 
   if ( handle->a_dense == NULL ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( (const double*)((const void*)dperm), B+i, C+i );
+      handle->kernel( internal_fsspmdm_dperm, B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
@@ -464,7 +487,7 @@ LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const
 
   if ( handle->a_dense == NULL ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( (const float*)((const void*)sperm), B+i, C+i );
+      handle->kernel( internal_fsspmdm_sperm, B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
