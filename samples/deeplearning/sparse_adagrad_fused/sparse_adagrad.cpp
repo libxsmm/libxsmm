@@ -36,6 +36,8 @@
 #include "counters.h"
 #endif
 
+#include "radix_sort.h"
+
 const int alignment = 64;
 typedef long ITyp;
 typedef float FTyp;
@@ -98,13 +100,13 @@ double get_checksum(FTyp *buf, size_t sz)
 
 inline void *my_malloc(size_t sz, size_t align)
 {
-  return libxsmm_aligned_malloc(sz, align);
+  return _mm_malloc(sz, align);
 }
 
 inline void my_free(void *p)
 {
     if(!p) return;
-    libxsmm_free(p);
+    _mm_free(p);
 }
 
 #define DECL_VLA_PTR(type, name, dims, ptr) type (*name)dims = (type (*)dims)ptr
@@ -223,7 +225,7 @@ typedef EmbeddingBagImpl<FTyp> EmbeddingBag;
 
 
 struct EmbeddingInOut {
-  int N, NS, E, U;
+  int M, N, NS, E, U;
   ITyp *offsets;
   ITyp *indices;
   FTyp *output;
@@ -234,11 +236,16 @@ struct EmbeddingInOut {
   ITyp * wt_indices;
 };
 
-void sparse_transpose(EmbeddingInOut *eio)
+void sparse_transpose_radix(EmbeddingInOut *eio)
 {
+  int M = eio->M;
   int N = eio->N;
   int NS = eio->NS;
-  std::vector<std::pair<int, int>> tmpBuf(NS);
+  Key_Value_Pair<int>* tmpBuf = (Key_Value_Pair<int>*)my_malloc((NS) * sizeof(Key_Value_Pair<int>), alignment);
+  Key_Value_Pair<int>* tmpBuf1 = (Key_Value_Pair<int>*)my_malloc((NS) * sizeof(Key_Value_Pair<int>), alignment);
+
+  auto t0 = get_time();
+#pragma omp parallel for
   for(int i = 0; i < N; i++) {
     int start = eio->offsets[i];
     int end = eio->offsets[i+1];
@@ -247,31 +254,61 @@ void sparse_transpose(EmbeddingInOut *eio)
       tmpBuf[j].second = i;
     }
   }
-  //std::sort(tmpBuf.begin(), tmpBuf.end(), [](const std::pair<int, int> &a, const std::pair<int, int> &b) { return a.first < b.first; });
-  __gnu_parallel::sort(tmpBuf.begin(), tmpBuf.end(), [](const std::pair<int, int> &a, const std::pair<int, int> &b) { return a.first < b.first; });
+  auto t1 = get_time();
+  //printf("Keypair buffer fill Time = %.3f ms\n", t1-t0);
 
-  int U = 1;
-  for (int i = 1; i < NS; i++) {
-    if (tmpBuf[i].first != tmpBuf[i-1].first) U++;
-  }
-  eio->mb_offsets = (ITyp*)my_malloc((U+1) * sizeof(ITyp), alignment);
-  eio->mb_indices = (ITyp*)my_malloc((NS) * sizeof(ITyp), alignment);
-  eio->wt_indices = (ITyp*)my_malloc((U) * sizeof(ITyp), alignment);
+  t0 = get_time();
+  Key_Value_Pair<int>* tmpBuf2 = radix_sort_parallel<int>(&tmpBuf[0], &tmpBuf1[0], NS, M);
+  t1 = get_time();
+  //printf("Radix Sort Time = %.3f ms\n", t1-t0);
 
-  eio->mb_offsets[0] = 0;
-  eio->mb_indices[0] = tmpBuf[0].second;
-  eio->wt_indices[0] = tmpBuf[0].first;
-  int u = 0;
-  for (int i = 1; i < NS; i++) {
-    eio->mb_indices[i] = tmpBuf[i].second;
-    if (tmpBuf[i].first != tmpBuf[i-1].first) {
-      u++;
-      eio->wt_indices[u] = tmpBuf[i].first;
-      eio->mb_offsets[u] = i;
+  int max_thds = omp_get_max_threads();
+  int num_uniq[max_thds];
+
+  t0 = get_time();
+#pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+    num_uniq[tid] = 0;
+#pragma omp for schedule(static)
+    for (int i = 1; i < NS; i++) {
+      if (tmpBuf2[i].first != tmpBuf2[i-1].first) num_uniq[tid]++;
     }
   }
-  eio->mb_offsets[u+1] = NS;
+
+  num_uniq[0] += 1;
+  for(int i = 1; i < max_thds; i++)
+    num_uniq[i] += num_uniq[i-1];
+  int U = num_uniq[max_thds-1];
+  t1 = get_time();
+  //printf("Num Unique Index Time = %.3f ms\n", t1-t0);
+
+  t0 = get_time();
+  eio->mb_offsets[0] = 0;
+  eio->mb_indices[0] = tmpBuf2[0].second;
+  eio->wt_indices[0] = tmpBuf2[0].first;
+#pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+    ITyp *tstart = (tid == 0 ? eio->wt_indices + 1 : eio->wt_indices + num_uniq[tid-1]);
+    ITyp *t_offs = (tid == 0 ? eio->mb_offsets + 1 : eio->mb_offsets + num_uniq[tid-1]);
+#pragma omp for schedule(static)
+    for (int i = 1; i < NS; i++) {
+      eio->mb_indices[i] = tmpBuf2[i].second;
+      if (tmpBuf2[i].first != tmpBuf2[i-1].first) {
+        *tstart = tmpBuf2[i].first;
+        *t_offs = i;
+        tstart++;
+        t_offs++;
+      }
+    }
+  }
+  t1 = get_time();
+  //printf("Offset/Index array construction Time = %.3f ms\n", t1-t0);
+  eio->mb_offsets[U] = NS;
   eio->U = U;
+  my_free(tmpBuf);
+  my_free(tmpBuf1);
 }
 
 // based on https://www.csee.usf.edu/~kchriste/tools/genzipf.c
@@ -331,6 +368,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   int E = eb->E;
   int M = eb->M;
   int NS = 0;
+  eio->M = M;
   eio->N = N;
   eio->E = E;
 
@@ -375,11 +413,14 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
     std::sort(&eio->indices[start], &eio->indices[end]);
   }
   eio->U = -1;
-  eio->mb_offsets = NULL;
-  eio->mb_indices = NULL;
-  eio->wt_indices = NULL;
+  eio->mb_offsets = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
+  eio->mb_indices = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
+  eio->wt_indices = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
+  init_zero(NS, eio->mb_offsets);
+  init_zero(NS, eio->mb_indices);
+  init_zero(NS, eio->wt_indices);
   auto t0 = get_time();
-  sparse_transpose(eio);
+  sparse_transpose_radix(eio);
   auto t1 = get_time();
   //printf("Trans Time = %.3f ms\n", t1-t0);
 }
