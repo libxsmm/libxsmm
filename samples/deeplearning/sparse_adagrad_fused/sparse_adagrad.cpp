@@ -100,15 +100,13 @@ double get_checksum(FTyp *buf, size_t sz)
 
 inline void *my_malloc(size_t sz, size_t align)
 {
-  return _mm_malloc(sz, align);
-  //return libxsmm_aligned_malloc(sz, align);
+  return libxsmm_aligned_malloc(sz, align);
 }
 
 inline void my_free(void *p)
 {
     if(!p) return;
-    _mm_free(p);
-    //libxsmm_free(p);
+    libxsmm_free(p);
 }
 
 #define DECL_VLA_PTR(type, name, dims, ptr) type (*name)dims = (type (*)dims)ptr
@@ -424,7 +422,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   auto t0 = get_time();
   sparse_transpose_radix(eio);
   auto t1 = get_time();
-  //printf("Trans Time = %.3f ms\n", t1-t0);
+  printf("Trans Time = %.3f ms\n", t1-t0);
 }
 
 void free_buffers(EmbeddingInOut *eio)
@@ -500,10 +498,6 @@ int main(int argc, char * argv[]) {
   size_t tNS = 0;
   size_t tU = 0;
 
-  long MAX_BUF_SIZE = 10000000000;
-  int *my_buf = (int *) my_malloc(MAX_BUF_SIZE*sizeof(int), alignment);
-  init_zero(MAX_BUF_SIZE, my_buf);
-  my_free(my_buf);
   for(int i = 0; i < LS; i++)
   {
     eb[i] = new EmbeddingBag(M, E);
