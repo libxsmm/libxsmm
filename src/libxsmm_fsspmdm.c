@@ -195,7 +195,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       t1 = libxsmm_timer_tick();
       for ( i = 0; i < 25; i++ ) {
         for ( j = 0; j < N; j += N_sparse ) {
-          k_sparse( (const double*)dperm, B + j, C + j );
+          k_sparse( (const double*)((const void*)dperm), B + j, C + j );
         }
       }
       t2 = libxsmm_timer_tick();
@@ -392,7 +392,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       t1 = libxsmm_timer_tick();
       for ( i = 0; i < 25; i++ ) {
         for ( j = 0; j < N; j += N_sparse ) {
-          k_sparse( (const float*)sperm, B + j, C + j );
+          k_sparse( (const float*)((const void*)sperm), B + j, C + j );
         }
       }
       t2 = libxsmm_timer_tick();
@@ -447,7 +447,7 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
 
   if ( handle->a_dense == NULL ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( (const double*)dperm, B+i, C+i );
+      handle->kernel( (const double*)((const void*)dperm), B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
@@ -464,7 +464,7 @@ LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const
 
   if ( handle->a_dense == NULL ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( (const float*)sperm, B+i, C+i );
+      handle->kernel( (const float*)((const void*)sperm), B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
@@ -512,5 +512,4 @@ LIBXSMM_API void libxsmm_sfsspmdm_destroy( libxsmm_sfsspmdm* handle )
 
   free(handle);
 }
-
 
