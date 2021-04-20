@@ -45,6 +45,7 @@ LIBXSMM_APIVAR_DEFINE(const unsigned int sperm[]) = {
   15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15
 };
 
+
 LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
@@ -84,11 +85,11 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   }
 
   /* Null matrix */
-  if ( 0 == a_nnz ) return 0;
+  if ( 0 == a_nnz ) return NULL;
 
   /* Allocate handle */
   new_handle = (libxsmm_dfsspmdm*)malloc(sizeof(libxsmm_dfsspmdm));
-  if ( 0 == new_handle ) return 0;
+  if ( NULL == new_handle ) return NULL;
 
   /* Initialize the handle */
   LIBXSMM_MEMZERO127(new_handle);
@@ -112,11 +113,11 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   /* Allocate dense storage */
   aa_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), 64);
 
-  if ( 0 == a_csr_values || 0 == a_csr_rowptr || 0 == a_csr_colidx || 0 == aa_dense ) {
+  if ( NULL == a_csr_values || NULL == a_csr_rowptr || NULL == a_csr_colidx || NULL == aa_dense ) {
     free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
     free( new_handle );
     libxsmm_free( aa_dense );
-    return 0;
+    return NULL;
   }
 
   /* Populate CSR structure */
@@ -136,7 +137,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   N_sparse = libxsmm_cpuid_vlen32(libxsmm_cpuid()) / 2;
   xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse, K,
                                               0, ldb, ldc, one, beta, flags, prefetch);
-  if ( 0 != xgemm_desc ) {
+  if ( NULL != xgemm_desc ) {
     k_sparse = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
   }
 
@@ -149,53 +150,62 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   N_dense = 8;
   k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
 
-  if ( 0 != k_dense ) {
+  if ( NULL != k_dense ) {
     /* copy A over */
-    for ( i = 0; i < M; ++i )
-      for ( j = 0; j < K; ++j )
+    for ( i = 0; i < M; ++i ) {
+      for ( j = 0; j < K; ++j ) {
         aa_dense[i*K + j] = alpha*a_dense[i*lda + j];
+      }
+    }
   }
 
   /* Sparse only */
-  if ( 0 != k_sparse && 0 == k_dense ) {
+  if ( NULL != k_sparse && NULL == k_dense ) {
     new_handle->N_chunksize = N_sparse;
     new_handle->kernel = k_sparse;
     libxsmm_free( aa_dense );
   }
   /* Dense only */
-  else if ( 0 != k_dense && 0 == k_sparse ) {
+  else if ( NULL != k_dense && NULL == k_sparse ) {
     new_handle->N_chunksize = N_dense;
     new_handle->kernel = k_dense;
     new_handle->a_dense = aa_dense;
   }
   /* Both; benchmark */
-  else if ( 0 != k_dense && 0 != k_sparse ) {
+  else if ( NULL != k_dense && NULL != k_sparse ) {
     int use_sparse = 1;
     libxsmm_timer_tickint t1, t2, t3;
     double* B = (double*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(double), 64);
     double* C = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(double), 64);
     void* fp;
 
-    if (0 != B && 0 != C ) {
-      for ( i = 0; i < K; i++ )
-        for ( j = 0; j < N; j++ )
+    if ( NULL != B && NULL != C ) {
+      for ( i = 0; i < K; i++ ) {
+        for ( j = 0; j < N; j++ ) {
           B[i*ldb + j] = 1;
-
-      for ( i = 0; i < M; i++ )
-        for ( j = 0; j < N; j++ )
+        }
+      }
+      for ( i = 0; i < M; i++ ) {
+        for ( j = 0; j < N; j++ ) {
           C[i*ldc + j] = 1;
+        }
+      }
 
       /* Benchmark sparse */
       t1 = libxsmm_timer_tick();
-      for ( i = 0; i < 25; i++ )
-        for ( j = 0; j < N; j += N_sparse )
+      for ( i = 0; i < 25; i++ ) {
+        for ( j = 0; j < N; j += N_sparse ) {
           k_sparse( (double*)dperm, B + j, C + j );
+        }
+      }
       t2 = libxsmm_timer_tick();
 
       /* Benchmark dense */
-      for ( i = 0; i < 25; i++ )
-        for ( j = 0; j < N; j += N_dense )
+      for ( i = 0; i < 25; i++ ) {
+        for ( j = 0; j < N; j += N_dense ) {
           k_dense( B + j, aa_dense, C + j );
+        }
+      }
       t3 = libxsmm_timer_tick();
 
       /* Compare */
@@ -226,7 +236,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   else {
     libxsmm_free( aa_dense );
     free( new_handle );
-    new_handle = 0;
+    new_handle = NULL;
   }
 
   return new_handle;
@@ -240,17 +250,17 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   const float* a_dense)
 {
   float one = 1.0f;
-  float* a_csr_values = 0;
-  unsigned int* a_csr_rowptr = 0;
-  unsigned int* a_csr_colidx = 0;
-  float* aa_dense = 0;
+  float* a_csr_values = NULL;
+  unsigned int* a_csr_rowptr = NULL;
+  unsigned int* a_csr_colidx = NULL;
+  float* aa_dense = NULL;
   int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
-  libxsmm_sfsspmdm* new_handle = 0;
-  libxsmm_smmfunction k_sparse = 0;
-  libxsmm_smmfunction k_dense = 0;
+  libxsmm_sfsspmdm* new_handle = NULL;
+  libxsmm_smmfunction k_sparse = NULL;
+  libxsmm_smmfunction k_dense = NULL;
   int i, j, n, a_nnz, N_sparse, N_dense;
 
   /* some checks... */
@@ -276,7 +286,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* Allocate handle */
   new_handle = (libxsmm_sfsspmdm*)malloc(sizeof(libxsmm_sfsspmdm));
-  if ( 0 == new_handle ) return 0;
+  if ( NULL == new_handle ) return NULL;
 
   /* Initialize the handle */
   LIBXSMM_MEMZERO127(new_handle);
@@ -300,11 +310,11 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   /* Allocate dense storage */
   aa_dense = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(float), 64);
 
-  if ( 0 == a_csr_values || 0 == a_csr_rowptr || 0 == a_csr_colidx || 0 == aa_dense ) {
+  if ( NULL == a_csr_values || NULL == a_csr_rowptr || NULL == a_csr_colidx || NULL == aa_dense ) {
     free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
     free( new_handle );
     libxsmm_free( aa_dense );
-    return 0;
+    return NULL;
   }
 
   /* Populate CSR structure */
@@ -324,7 +334,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   N_sparse = libxsmm_cpuid_vlen32(libxsmm_cpuid());
   xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse, K,
                                              0, ldb, ldc, one, beta, flags, prefetch);
-  if ( 0 != xgemm_desc ) {
+  if ( NULL != xgemm_desc ) {
     k_sparse = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
   }
 
@@ -337,53 +347,62 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   N_dense = 16;
   k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
 
-  if ( 0 != k_dense ) {
+  if ( NULL != k_dense ) {
     /* copy A over */
-    for ( i = 0; i < M; ++i )
-      for ( j = 0; j < K; ++j )
+    for ( i = 0; i < M; ++i ) {
+      for ( j = 0; j < K; ++j ) {
         aa_dense[i*K + j] = alpha*a_dense[i*lda + j];
+      }
+    }
   }
 
   /* Sparse only */
-  if ( 0 != k_sparse && 0 == k_dense ) {
+  if ( NULL != k_sparse && NULL == k_dense ) {
     new_handle->N_chunksize = N_sparse;
     new_handle->kernel = k_sparse;
     libxsmm_free( aa_dense );
   }
   /* Dense only */
-  else if ( 0 != k_dense && 0 == k_sparse ) {
+  else if ( NULL != k_dense && NULL == k_sparse ) {
     new_handle->N_chunksize = N_dense;
     new_handle->kernel = k_dense;
     new_handle->a_dense = aa_dense;
   }
   /* Both; benchmark */
-  else if ( 0 != k_dense && 0 != k_sparse ) {
+  else if ( NULL != k_dense && NULL != k_sparse ) {
     int use_sparse = 1;
     libxsmm_timer_tickint t1, t2, t3;
     float* B = (float*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(float), 64);
     float* C = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(float), 64);
     void* fp;
 
-    if (0 != B && 0 != C ) {
-      for ( i = 0; i < K; i++ )
-        for ( j = 0; j < N; j++ )
+    if ( NULL != B && NULL != C ) {
+      for ( i = 0; i < K; i++ ) {
+        for ( j = 0; j < N; j++ ) {
           B[i*ldb + j] = 1;
-
-      for ( i = 0; i < M; i++ )
-        for ( j = 0; j < N; j++ )
+        }
+      }
+      for ( i = 0; i < M; i++ ) {
+        for ( j = 0; j < N; j++ ) {
           C[i*ldc + j] = 1;
+        }
+      }
 
       /* Benchmark sparse */
       t1 = libxsmm_timer_tick();
-      for ( i = 0; i < 25; i++ )
-        for ( j = 0; j < N; j += N_sparse )
+      for ( i = 0; i < 25; i++ ) {
+        for ( j = 0; j < N; j += N_sparse ) {
           k_sparse( (float*)sperm, B + j, C + j );
+        }
+      }
       t2 = libxsmm_timer_tick();
 
       /* Benchmark dense */
-      for ( i = 0; i < 25; i++ )
-        for ( j = 0; j < N; j += N_dense )
+      for ( i = 0; i < 25; i++ ) {
+        for ( j = 0; j < N; j += N_dense ) {
           k_dense( B + j, aa_dense, C + j );
+        }
+      }
       t3 = libxsmm_timer_tick();
 
       /* Compare */
@@ -414,7 +433,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   else {
     libxsmm_free( aa_dense );
     free( new_handle );
-    new_handle = 0;
+    new_handle = NULL;
   }
 
   return new_handle;
@@ -424,9 +443,9 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const double* B, double* C )
 {
   int i;
-  assert( handle != 0 );
+  assert( handle != NULL );
 
-  if ( handle->a_dense == 0 ) {
+  if ( handle->a_dense == NULL ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
       handle->kernel( (double*)dperm, B+i, C+i );
     }
@@ -441,9 +460,9 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
 LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const float* B, float* C )
 {
   int i;
-  assert( handle != 0 );
+  assert( handle != NULL );
 
-  if ( handle->a_dense == 0 ) {
+  if ( handle->a_dense == NULL ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
       handle->kernel( (float*)sperm, B+i, C+i );
     }
@@ -457,11 +476,12 @@ LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const
 
 LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
 {
-  assert( handle != 0 );
+  assert( handle != NULL );
 
-  if (handle->a_dense != 0) {
+  if ( handle->a_dense != NULL ) {
     libxsmm_free(handle->a_dense);
-  } else {
+  }
+  else {
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
@@ -476,11 +496,12 @@ LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
 
 LIBXSMM_API void libxsmm_sfsspmdm_destroy( libxsmm_sfsspmdm* handle )
 {
-  assert( handle != 0 );
+  assert( handle != NULL );
 
-  if (handle->a_dense != 0) {
+  if ( handle->a_dense != NULL ) {
     libxsmm_free(handle->a_dense);
-  } else {
+  }
+  else {
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
