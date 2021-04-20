@@ -21,6 +21,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define LIBXSMM_MATDIFF_DIV(NOMINATOR, DENREF, DENTST) \
+  (0 < (DENREF) ? ((NOMINATOR) / (DENREF)) : \
+  (0 < (DENTST) ? ((NOMINATOR) / (DENTST)) : 0))
+
 
 LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
@@ -30,6 +34,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_blasint ldr = (NULL == ldref ? m : *ldref), ldt = (NULL == ldtst ? m : *ldtst);
   if (NULL == ref && NULL != tst) { ref = tst; tst = NULL; result_swap = 1; }
   if (NULL != ref && NULL != info && m <= ldr && m <= ldt) {
+    const size_t ntotal = (size_t)m * n;
     libxsmm_blasint mm = m, nn = n;
     double inf;
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
@@ -89,9 +94,8 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
             size[0] = (size_t)ldr; size[1] = (size_t)nn;
           }
           else { /* reshape */
-            const size_t x = (size_t)mm * (size_t)nn;
-            const size_t y = (size_t)libxsmm_isqrt2_u32((unsigned int)x);
-            shape[0] = x / y; shape[1] = y;
+            const size_t y = (size_t)libxsmm_isqrt2_u32((unsigned int)ntotal);
+            shape[0] = ntotal / y; shape[1] = y;
             size[0] = shape[0];
             size[1] = shape[1];
           }
@@ -120,6 +124,11 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         }
       }
       if (0 == result_nan) {
+        info->rsq = 1.0 - LIBXSMM_MATDIFF_DIV(info->l2_abs, info->var_ref, info->var_tst);
+        if (0 != ntotal) { /* final variance */
+          info->var_ref /= ntotal;
+          info->var_tst /= ntotal;
+        }
         info->normf_rel = libxsmm_dsqrt(info->normf_rel);
         info->l2_abs = libxsmm_dsqrt(info->l2_abs);
         info->l2_rel = libxsmm_dsqrt(info->l2_rel);
@@ -178,6 +187,7 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     if (output->l2_abs < input->l2_abs) {
       output->l2_abs = input->l2_abs;
       output->l2_rel = input->l2_rel;
+      output->rsq = input->rsq;
     }
     if (output->normf_rel < input->normf_rel) {
       output->normf_rel = input->normf_rel;
