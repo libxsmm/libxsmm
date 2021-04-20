@@ -53,17 +53,17 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   const double* a_dense)
 {
   double one = 1.0;
-  double* a_csr_values = 0;
-  unsigned int* a_csr_rowptr = 0;
-  unsigned int* a_csr_colidx = 0;
-  double* aa_dense = 0;
+  double* a_csr_values = NULL;
+  unsigned int* a_csr_rowptr = NULL;
+  unsigned int* a_csr_colidx = NULL;
+  double* aa_dense = NULL;
   int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
-  libxsmm_dfsspmdm* new_handle = 0;
-  libxsmm_dmmfunction k_sparse = 0;
-  libxsmm_dmmfunction k_dense = 0;
+  libxsmm_dfsspmdm* new_handle = NULL;
+  libxsmm_dmmfunction k_sparse = NULL;
+  libxsmm_dmmfunction k_dense = NULL;
   int i, j, n, a_nnz, N_sparse, N_dense;
 
   /* some checks... */
@@ -195,7 +195,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       t1 = libxsmm_timer_tick();
       for ( i = 0; i < 25; i++ ) {
         for ( j = 0; j < N; j += N_sparse ) {
-          k_sparse( (double*)dperm, B + j, C + j );
+          k_sparse( (const double*)dperm, B + j, C + j );
         }
       }
       t2 = libxsmm_timer_tick();
@@ -392,7 +392,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       t1 = libxsmm_timer_tick();
       for ( i = 0; i < 25; i++ ) {
         for ( j = 0; j < N; j += N_sparse ) {
-          k_sparse( (float*)sperm, B + j, C + j );
+          k_sparse( (const float*)sperm, B + j, C + j );
         }
       }
       t2 = libxsmm_timer_tick();
@@ -447,7 +447,7 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
 
   if ( handle->a_dense == NULL ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( (double*)dperm, B+i, C+i );
+      handle->kernel( (const double*)dperm, B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
@@ -464,7 +464,7 @@ LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const
 
   if ( handle->a_dense == NULL ) {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
-      handle->kernel( (float*)sperm, B+i, C+i );
+      handle->kernel( (const float*)sperm, B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i+=handle->N_chunksize ) {
