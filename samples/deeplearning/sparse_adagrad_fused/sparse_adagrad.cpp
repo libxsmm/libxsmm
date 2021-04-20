@@ -422,7 +422,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   auto t0 = get_time();
   sparse_transpose_radix(eio);
   auto t1 = get_time();
-  printf("Trans Time = %.3f ms\n", t1-t0);
+  //printf("Trans Time = %.3f ms\n", t1-t0);
 }
 
 void free_buffers(EmbeddingInOut *eio)
