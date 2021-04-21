@@ -30,8 +30,8 @@ Key_Value_Pair<T>* radix_sort_parallel(Key_Value_Pair<T>* inp_buf, Key_Value_Pai
     for(unsigned int pass = 0; pass < num_passes; pass++)
     {
 
-      // Step 1: compute histogram
-      // Reset histogram
+      /* Step 1: compute histogram
+         Reset histogram */
       for(int i = 0; i < 256; i++) local_histogram[i] = 0;
 
 #pragma omp for schedule(static)
@@ -56,7 +56,7 @@ Key_Value_Pair<T>* radix_sort_parallel(Key_Value_Pair<T>* inp_buf, Key_Value_Pai
         }
       }
 #pragma omp barrier
-      // Step 2: prefix sum
+      /* Step 2: prefix sum */
       if(tid == 0)
       {
         int sum = 0, prev_sum = 0;
@@ -65,7 +65,7 @@ Key_Value_Pair<T>* radix_sort_parallel(Key_Value_Pair<T>* inp_buf, Key_Value_Pai
       }
 #pragma omp barrier
 
-      // Step 3: scatter
+      /* Step 3: scatter */
 #pragma omp for schedule(static)
       for(int64_t i = 0; i < elements_count_4; i+=4)
       {
