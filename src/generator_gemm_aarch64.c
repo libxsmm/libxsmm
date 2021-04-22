@@ -341,12 +341,41 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
   /* register blocking counter in m */
   unsigned int l_m = 0;
 
-  unsigned int l_m_blocks[2] = { 0 }; /* 0: full vector loads, 1: predicate loads */
+  unsigned int l_m_blocks[2] = { 0 }; /* 0: full vector ops, 1: remainder ops */
   unsigned int l_m_total_blocks = 0;
   unsigned int l_vec_reg_acc_start = 0;
+  unsigned int l_remainder_size = 0;
+  unsigned int l_b_stride = i_xgemm_desc->ldb;
+  /* prep of B-ptr for next k-iteration */
+  unsigned int l_b_next_k = 0;
+  unsigned int l_b_next_k_inst = 0;
+
   l_m_blocks[0] = i_m_blocking / i_micro_kernel_config->vector_length;
-  l_m_blocks[1] = i_m_blocking % i_micro_kernel_config->vector_length;
+  l_remainder_size = i_m_blocking % i_micro_kernel_config->vector_length;
+  l_m_blocks[1] = (l_remainder_size > 0);
   l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
+
+  /* stride when accessing B */
+  if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+    l_b_stride = 1;
+  }
+  l_b_stride *= i_micro_kernel_config->datatype_size_in;
+
+  if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
+    if( i_n_blocking == 1 ) {
+      l_b_next_k = 1;
+      l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_ADD;
+    }
+    else{
+      l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - 1);
+      l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_SUB;
+    }
+  }
+  else{
+    l_b_next_k = i_xgemm_desc->ldb - (i_n_blocking - 1);
+    l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_ADD;
+  }
+  l_b_next_k *= i_micro_kernel_config->datatype_size_in;
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_total_blocks);
@@ -358,7 +387,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                           i_gp_reg_mapping->gp_reg_a,
                                           LIBXSMM_AARCH64_GP_REG_UNDEF,
                                           0,
-                                          1 + l_m_blocks[0] * l_n + l_m,
+                                          1 + l_m_total_blocks * l_n + l_m,
                                           LIBXSMM_AARCH64_SVE_REG_UNDEF );
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                    LIBXSMM_AARCH64_INSTR_GP_ADD_I,
@@ -367,10 +396,22 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                                    i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size_in,
                                                    0 );
   }
-  /* remainder loads on a */
-  for( l_m = 0; l_m < l_m_blocks[1]; l_m++ ) {
-    fprintf(stderr, "libxsmm_generator_load_2dregblock_aarch64_sve: remainder handling not implmented, use only multiples of 8 in DP and 16 in SP for M!\n");
-    exit(-1);
+  /* remainder load on a */
+  if( l_m_blocks[1] > 0) {
+    libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                          (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF :
+                                                                                           LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
+                                          i_gp_reg_mapping->gp_reg_a,
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                          0,
+                                          1 + l_m_total_blocks * l_n + l_m_blocks[0],
+                                          LIBXSMM_AARCH64_SVE_REG_P1 );
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
+                                                   LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                   i_gp_reg_mapping->gp_reg_a,
+                                                   i_gp_reg_mapping->gp_reg_a,
+                                                   l_remainder_size * i_micro_kernel_config->datatype_size_in,
+                                                   0 );
   }
 
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
@@ -389,17 +430,17 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                                      LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                      i_gp_reg_mapping->gp_reg_b,
                                                      i_gp_reg_mapping->gp_reg_b,
-                                                     i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in,
+                                                     l_b_stride,
                                                      0 );
     }
     else {
       /* prepare for next call of kernel */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
-                                                     LIBXSMM_AARCH64_INSTR_GP_META_SUB,
+                                                     l_b_next_k_inst,
                                                      i_gp_reg_mapping->gp_reg_b,
                                                      i_gp_reg_mapping->gp_reg_help_0,
                                                      i_gp_reg_mapping->gp_reg_b,
-                                                     ( (i_n_blocking -1) * i_xgemm_desc->ldb - 1) * i_micro_kernel_config->datatype_size_in );
+                                                     l_b_next_k );
     }
 
     /* issue FMAs */
@@ -411,6 +452,16 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                                -1,
                                                l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n),
                                                LIBXSMM_AARCH64_SVE_REG_P0,
+                                               (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_SVE_TYPE_S : LIBXSMM_AARCH64_SVE_TYPE_D );
+    }
+    if( l_m_blocks[1] > 0 ) {
+      libxsmm_aarch64_instruction_sve_compute( io_generated_code,
+                                               LIBXSMM_AARCH64_INSTR_SVE_FMLA_V,
+                                               1 + l_m_blocks[0],
+                                               0,
+                                               -1,
+                                               l_vec_reg_acc_start + (l_m_total_blocks * l_n) + l_m_blocks[0],
+                                               LIBXSMM_AARCH64_SVE_REG_P1,
                                                (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_SVE_TYPE_S : LIBXSMM_AARCH64_SVE_TYPE_D );
     }
   }
@@ -552,14 +603,6 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_AARCH64_GP_REG_X29;      /* for b ptr updates in BRGEMM */
   l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_AARCH64_GP_REG_X30; /* BRGEMM loop */
 
-  if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
-    libxsmm_generator_init_p_registers_aarch64_sve( io_generated_code,
-                                                    LIBXSMM_AARCH64_SVE_REG_P0,
-                                                    LIBXSMM_AARCH64_SVE_REG_P1,
-                                                    0,
-                                                    l_gp_reg_mapping.gp_reg_help_0 );
-  }
-
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
@@ -574,6 +617,20 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
   /* open asm */
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
+
+  if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+    int l_nnz_bits = i_xgemm_desc->m%l_micro_kernel_config.vector_length;
+    l_nnz_bits *= l_micro_kernel_config.datatype_size_out;
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
+                                                  LIBXSMM_AARCH64_SVE_REG_P0,
+                                                  -1,
+                                                  l_gp_reg_mapping.gp_reg_help_0 );
+
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
+                                                  LIBXSMM_AARCH64_SVE_REG_P1,
+                                                  l_nnz_bits,
+                                                  l_gp_reg_mapping.gp_reg_help_0 );
+  }
 
   /* apply n_blocking */
   while (l_n_done != (unsigned int)i_xgemm_desc->n) {

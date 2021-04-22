@@ -317,7 +317,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
 } libxsmm_csr_reg_descriptor;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
-  libxsmm_meltwfunction_unary meltw_trans, meltw_copy, meltw_zero;
+  libxsmm_meltwfunction_unary function;
   const void* ptr;
 } libxsmm_xcopykernel;
 
@@ -831,7 +831,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
   int ldb;
   int ldc;
   int N_chunksize;
-  unsigned int* permute_operands;
   double* a_dense;
   libxsmm_dmmfunction kernel;
 };
@@ -843,7 +842,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
   int ldb;
   int ldc;
   int N_chunksize;
-  unsigned int* permute_operands;
   float* a_dense;
   libxsmm_smmfunction kernel;
 };
