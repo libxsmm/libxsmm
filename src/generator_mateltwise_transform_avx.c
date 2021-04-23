@@ -115,7 +115,7 @@ void libxsmm_generator_transform_norm_to_normt_64bit_4x8_shufflenetwork_avx( lib
   unsigned int l_st0_instr = (l_n0_masking == 0) ? i_micro_kernel_config->vmove_instruction_out : LIBXSMM_X86_INSTR_VMASKMOVPD_ST;
   unsigned int l_st1_instr = (l_n1_masking == 0) ? i_micro_kernel_config->vmove_instruction_out : LIBXSMM_X86_INSTR_VMASKMOVPD_ST;
   unsigned int l_n0_advance = (i_n_valid < 4) ? i_n_valid : 4;
-  unsigned int l_n1_advance = ((i_n_valid < 8) && (i_n_valid >= 4)) ? i_n_valid - 4 : 4;
+  unsigned int l_n1_advance = ((i_n_valid <= 8) && (i_n_valid >= 4)) ? i_n_valid - 4 : 0;
 
   /* load mask register */
   if ( l_m_masking != 0 ) {
