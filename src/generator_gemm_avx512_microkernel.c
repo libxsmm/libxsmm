@@ -579,6 +579,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
     /* setting vector length for a load to 'y' */
     l_vec_name_ld_a = 'y';
   }
+  /* for flat VNNI layout kernel set masking register */
+  if ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
+         ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
+    libxsmm_x86_instruction_alu_imm_i64( io_generated_code,  LIBXSMM_X86_INSTR_MOVQ,
+                                         i_gp_reg_mapping->gp_reg_help_2, 0xaaaaaaaa );
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mapping->gp_reg_help_2, 7 );
+    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
+  }
 
   /* apply k blocking */
   for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
@@ -682,18 +691,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
           16);
 
       /* we put "1" elements of A matrix into l_k%2 zmm*/
-      libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-          LIBXSMM_X86_INSTR_VPSRAD_I,
+      libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code,
+          LIBXSMM_X86_INSTR_VMOVDQU16_LD,
           i_micro_kernel_config->vector_name,
           l_k%2,
           l_k%2,
-          16);
-      libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-          LIBXSMM_X86_INSTR_VPSLLD_I,
-          i_micro_kernel_config->vector_name,
-          l_k%2,
-          l_k%2,
-          16);
+          7,
+          1);
     }
 
     if ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
@@ -895,18 +899,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                                 2, 0, 1, 0 );
 
               /* we put "1" elements of B matrix into zmm2 */
-              libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-                  LIBXSMM_X86_INSTR_VPSRAD_I,
+              libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code,
+                  LIBXSMM_X86_INSTR_VMOVDQU16_LD,
                   i_micro_kernel_config->vector_name,
                   2,
                   2,
-                  16);
-              libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-                  LIBXSMM_X86_INSTR_VPSLLD_I,
-                  i_micro_kernel_config->vector_name,
-                  2,
-                  2,
-                  16);
+                  7, 1);
 
               /* perform fma operations for multiplying "1" elements of A and B */
               libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
