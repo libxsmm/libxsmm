@@ -328,10 +328,9 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_generated_code*         io_generated_code,
-                                                                       libxsmm_mateltwise_kernel_config*    io_micro_kernel_config,
-                                                                       const libxsmm_meltw_descriptor* i_mateltwise_desc) {
-  memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
+void libxsmm_generator_mateltwise_update_micro_kernel_config_vectorlength( libxsmm_generated_code*           io_generated_code,
+                                                                           libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
+                                                                           const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     io_micro_kernel_config->instruction_set = io_generated_code->arch;
     io_micro_kernel_config->vector_reg_count = 16;
@@ -525,6 +524,14 @@ void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_g
      /* That should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
   }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_generated_code*           io_generated_code,
+                                                                       libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
+                                                                       const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
+  memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
+  libxsmm_generator_mateltwise_update_micro_kernel_config_vectorlength( io_generated_code, io_micro_kernel_config, i_mateltwise_desc);
 }
 
 LIBXSMM_API_INTERN

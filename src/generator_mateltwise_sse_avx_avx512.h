@@ -90,6 +90,11 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
     const unsigned int                       i_precision);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_mateltwise_update_micro_kernel_config_vectorlength( libxsmm_generated_code*           io_generated_code,
+                                                                           libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
+                                                                           const libxsmm_meltw_descriptor*   i_mateltwise_desc);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( libxsmm_generated_code*           io_generated_code,
                                                                        libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
                                                                        const libxsmm_meltw_descriptor*   i_mateltwise_desc);
