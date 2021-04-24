@@ -48,8 +48,6 @@
 #include "../src/generator_gemm_sse_avx_avx2_avx512.c"
 #include "../src/generator_gemm_sse_microkernel.c"
 #include "../src/generator_mateltwise.c"
-#include "../src/generator_mateltwise_copy_avx_avx512.c"
-#include "../src/generator_mateltwise_cvtfp32bf16_act_avx_avx512.c"
 #include "../src/generator_mateltwise_misc_avx_avx512.c"
 #include "../src/generator_mateltwise_reduce_avx_avx512.c"
 #include "../src/generator_mateltwise_sse_avx_avx512.c"
