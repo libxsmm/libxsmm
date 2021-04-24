@@ -599,8 +599,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_i
         l_use_masking_a_c = 1;
       }
     }
-  } else if ( ( ( i_arch <= LIBXSMM_X86_AVX512_CLX ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) ||
-              ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) && (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ) {
+  } else if ( ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) && (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ) {
     /* @TODO check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 16 ) {
       l_m_blocking = 16;
@@ -773,8 +772,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_updat
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( ( ( i_arch <= LIBXSMM_X86_AVX512_CLX ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) ||
-              ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) && (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ) {
+  } else if ( ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) && (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ) {
     if (i_current_m_blocking == 16) {
       l_m_blocking = i_xgemm_desc->m % 16;
       if ( l_m_blocking % 16 != 0 ) {
@@ -830,8 +828,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_updat
 
 
 LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_max_n_blocking( const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                                                                                const libxsmm_gemm_descriptor*      i_xgemm_desc,
-                                                                                                const unsigned int                  i_arch ) {
+                                                                                               const libxsmm_gemm_descriptor*      i_xgemm_desc,
+                                                                                               const unsigned int                  i_arch ) {
   if ( i_arch <= LIBXSMM_X86_ALLFEAT ) {
     if ( i_arch >= LIBXSMM_X86_AVX512 ) {
       /* handle KNM qmadd */
