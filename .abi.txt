@@ -99,7 +99,6 @@ libxsmm_dispatch_meltw_opreduce_vecs_idx
 libxsmm_dispatch_meltw_reduce_cols_idx
 libxsmm_dispatch_meltw_ternary
 libxsmm_dispatch_meltw_unary
-libxsmm_dispatch_meltw_zero
 libxsmm_dispatch_pgemm
 libxsmm_dispatch_trmm
 libxsmm_dispatch_trsm
