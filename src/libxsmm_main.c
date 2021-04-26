@@ -1468,15 +1468,19 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_SSE42:
     case LIBXSMM_X86_SSE3:
     case LIBXSMM_AARCH64_V81:
-    case LIBXSMM_TARGET_ARCH_GENERIC: {
+    case LIBXSMM_AARCH64_V82:
+    case LIBXSMM_AARCH64_A64FX: {
       target_archid = id;
     } break;
-    default: if (LIBXSMM_X86_GENERIC <= id) {
+    case LIBXSMM_TARGET_ARCH_GENERIC:
+#if defined(LIBXSMM_PLATFORM_X86)
       target_archid = LIBXSMM_X86_GENERIC;
-    }
-    else {
-      target_archid = libxsmm_cpuid();
-    }
+      break;
+#elif defined(LIBXSMM_PLATFORM_AARCH64)
+      target_archid = LIBXSMM_AARCH64_V81;
+      break;
+#endif
+    default: target_archid = libxsmm_cpuid();
   }
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
   if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
