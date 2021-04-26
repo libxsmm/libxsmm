@@ -70,8 +70,9 @@ int main(void)
       otrans[fun](b, a, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test]);
       nerrors += validate(a, b, c, max_size_b, m[test], n[test], ldi[test], ldo[test]);
 #if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-      if (LIBXSMM_X86_AVX512 <= libxsmm_get_target_archid()
-        && LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE))
+      if (LIBXSMM_X86_SSE3 <= libxsmm_get_target_archid()
+        && (LIBXSMM_DATATYPE_F64 == LIBXSMM_DATATYPE(ELEM_TYPE) ||
+            LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE)))
       {
         const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary(
           m[test], n[test], ldi + test, ldo + test,
