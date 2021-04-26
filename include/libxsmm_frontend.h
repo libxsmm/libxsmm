@@ -441,7 +441,7 @@
 
 /** Helper macro to setup a matrix with some initial values. */
 #define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) { \
-  /*const*/ double libxsmm_matinit_seed_ = (double)SEED; /* avoid constant conditional */ \
+  /*const*/ double libxsmm_matinit_seed_ = (double)(SEED); /* avoid constant conditional */ \
   const double libxsmm_matinit_scale_ = (SCALE) * libxsmm_matinit_seed_ + (SCALE); \
   const libxsmm_blasint libxsmm_matinit_nrows_ = (libxsmm_blasint)NROWS; \
   const libxsmm_blasint libxsmm_matinit_ld_ = (libxsmm_blasint)LD; \
@@ -457,7 +457,7 @@
       } \
       for (; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
         const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
-        (DST)[libxsmm_matinit_k_] = (TYPE)SEED; \
+        (DST)[libxsmm_matinit_k_] = (TYPE)(SEED); \
       } \
     } \
   } \
