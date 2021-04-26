@@ -118,6 +118,8 @@ void libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( libxsmm
                                                                          const unsigned int                      i_mask_reg_1,
                                                                          const unsigned int                      i_mask_reg_2,
                                                                          const unsigned int                      i_mask_reg_3,
+                                                                         const unsigned int                      i_mask_reg_4,
+                                                                         const unsigned int                      i_mask_reg_5,
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
