@@ -164,13 +164,11 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
       else feature_os = LIBXSMM_TARGET_ARCH_GENERIC;
       has_context = (LIBXSMM_STATIC_TARGET_ARCH >= feature_cpu || feature_os >= feature_cpu) ? 1 : 0;
       if (LIBXSMM_TARGET_ARCH_UNKNOWN == result && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+# if !defined(LIBXSMM_TARGET_ARCH)
         const int target_vlen32 = libxsmm_cpuid_vlen32(feature_cpu);
         const char *const compiler_support = (libxsmm_cpuid_vlen32(LIBXSMM_MAX_STATIC_TARGET_ARCH) < target_vlen32
           ? "" : (((2 <= libxsmm_verbosity || 0 > libxsmm_verbosity) && LIBXSMM_MAX_STATIC_TARGET_ARCH < feature_cpu)
             ? "highly " : NULL));
-# if !defined(NDEBUG) && defined(__OPTIMIZE__)
-        fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
-# endif
         if (NULL != compiler_support) {
           const char *const name = libxsmm_cpuid_name( /* exclude MIC when running on Core processors */
             (((LIBXSMM_X86_AVX512_MIC == LIBXSMM_MAX_STATIC_TARGET_ARCH) ||
@@ -178,6 +176,10 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
               ? LIBXSMM_X86_AVX2 : LIBXSMM_MAX_STATIC_TARGET_ARCH);
           fprintf(stderr, "LIBXSMM WARNING: %soptimized non-JIT code paths are limited to \"%s\"!\n", compiler_support, name);
         }
+# endif
+# if !defined(NDEBUG) && defined(__OPTIMIZE__)
+        fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
+# endif
 # if !defined(__APPLE__) || !defined(__MACH__) /* permitted features */
         if (0 == has_context) {
           fprintf(stderr, "LIBXSMM WARNING: detected CPU features are not permitted by the OS!\n");
