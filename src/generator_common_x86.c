@@ -416,25 +416,34 @@ void libxsmm_generator_gelu_ps_minimax3_avx512( libxsmm_generated_code*         
     const unsigned int                             i_vec_c1,
     const unsigned int                             i_vec_c2 ) {
 
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
-      LIBXSMM_X86_INSTR_VRANGEPS, 'z',
-      i_vec_thres,
-      i_vec_x,
-      i_vec_xr,
-      0, 0, 8, 2);
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) {
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+        LIBXSMM_X86_INSTR_VRANGEPS, 'z',
+        i_vec_thres,
+        i_vec_x,
+        i_vec_xr,
+        0, 0, 8, 2);
 
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VPANDD,
-                                       'z',
-                                       i_vec_xr, i_vec_absmask, i_vec_xa );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VPANDD,
+                                         'z',
+                                         i_vec_xr, i_vec_absmask, i_vec_xa );
+  } else {
+    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64, 'z', i_vec_x, i_vec_xr );
+    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, 'z', i_vec_xr, i_vec_xr, 31 );
+    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'z', i_vec_xr, i_vec_xr, 31 );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, 'z', i_vec_x, i_vec_absmask, i_vec_xa );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMINPS, 'z',  i_vec_xa, i_vec_thres, i_vec_xa );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, 'z', i_vec_xr, i_vec_xa, i_vec_xr );
+  }
 
-   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VMOVDQU64,
                                        'z',
                                        i_vec_xa, i_vec_index );
 
-   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VFMADD213PS,
                                        'z',
                                        i_vec_shifter, i_vec_scale, i_vec_index );
@@ -498,25 +507,35 @@ void libxsmm_generator_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*     
     const unsigned int                             i_vec_c0,
     const unsigned int                             i_vec_c1,
     const unsigned int                             i_vec_c2 ) {
- libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
-      LIBXSMM_X86_INSTR_VRANGEPS, 'z',
-      i_vec_thres,
-      i_vec_x,
-      i_vec_xr,
-      0, 0, 8, 2);
+
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) {
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
+        LIBXSMM_X86_INSTR_VRANGEPS, 'z',
+        i_vec_thres,
+        i_vec_x,
+        i_vec_xr,
+        0, 0, 8, 2);
 
 
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VPANDD,
-                                       'z',
-                                       i_vec_xr, i_vec_absmask, i_vec_xa );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                         LIBXSMM_X86_INSTR_VPANDD,
+                                         'z',
+                                         i_vec_xr, i_vec_absmask, i_vec_xa );
+  } else {
+    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64, 'z', i_vec_x, i_vec_xr );
+    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I, 'z', i_vec_xr, i_vec_xr, 31 );
+    libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, 'z', i_vec_xr, i_vec_xr, 31 );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, 'z', i_vec_x, i_vec_absmask, i_vec_xa );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMINPS, 'z',  i_vec_xa, i_vec_thres, i_vec_xa );
+    libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, 'z', i_vec_xr, i_vec_xa, i_vec_xr );
+  }
 
-   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VMOVDQU64,
                                        'z',
                                        i_vec_xa, i_vec_index );
 
-   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                        LIBXSMM_X86_INSTR_VFMADD213PS,
                                        'z',
                                        i_vec_shifter, i_vec_scale, i_vec_index );
