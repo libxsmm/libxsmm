@@ -243,19 +243,6 @@ VERSION_RELEASED ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
 
-# no warning conversion for released versions
-ifneq (0,$(VERSION_RELEASED))
-  WERROR := 0
-endif
-# no warning conversion for non-x86
-ifneq (x86_64,$(MNAME))
-  WERROR := 0
-endif
-# no warning conversion
-ifneq (,$(filter-out 0 1,$(INTEL)))
-  WERROR := 0
-endif
-
 # explicitly target all objects
 ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
   TGT ?= 1
@@ -411,6 +398,7 @@ ifeq (,$(filter Darwin,$(UNAME)))
       OBJJITPROFILING := $(BLDDIR)/jitprofiling/*.o
       DFLAGS += -DLIBXSMM_VTUNE
       IFLAGS += -I$(call quote,$(VTUNEROOT)/include)
+      WERROR := 0
       ifneq (0,$(INTEL))
         CXXFLAGS += -diag-disable 271
         CFLAGS += -diag-disable 271
@@ -420,6 +408,19 @@ ifeq (,$(filter Darwin,$(UNAME)))
   endif
 endif
 endif
+endif
+
+# no warning conversion for released versions
+ifneq (0,$(VERSION_RELEASED))
+  WERROR := 0
+endif
+# no warning conversion for non-x86
+ifneq (x86_64,$(MNAME))
+  WERROR := 0
+endif
+# no warning conversion
+ifneq (,$(filter-out 0 1,$(INTEL)))
+  WERROR := 0
 endif
 
 information = \
