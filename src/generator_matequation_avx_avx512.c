@@ -23,7 +23,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
     libxsmm_matequation_kernel_config*    io_micro_kernel_config) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
-  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) {
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
     io_micro_kernel_config->instruction_set = io_generated_code->arch;
     io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
     io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
