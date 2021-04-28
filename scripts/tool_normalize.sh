@@ -25,7 +25,7 @@ CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
 # separate multiple patterns with space
 FMTDIRS=${2:-"samples src tests"}
-FMTXPAT="/gxm/"
+FMTXPAT="/gxm/ /mlpcell/"
 # limiter
 DIR=$1
 
