@@ -1,11 +1,13 @@
 blocked_gemm/blocked_gemm
 deeplearning/cnnlayer/layer_example_*
+deeplearning/convcaps/layer_example_*
 deeplearning/lstmdriver/lstmdriver_*
 deeplearning/mlpdriver/mlp_example_*
 deeplearning/mlp_tpp/mlp_example_*
 deeplearning/rnndriver/rnndriver_*
 deeplearning/fullyconnected_tpp/layer_example_*
 eltwise/eltwise_*
+equation/equation_*
 edge/asparse_packed_csr_*
 edge/bsparse_packed_csc_*
 edge/bsparse_packed_csr_*
