@@ -552,12 +552,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
   }
 #endif
 
-  libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
-  libxsmm_x86_instruction_alu_imm_i64( io_generated_code,  LIBXSMM_X86_INSTR_MOVQ,
-                                       i_gp_reg_mapping->gp_reg_help_2, 0xaaaaaaaa );
-  libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mapping->gp_reg_help_2, 7 );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
-
   for ( l_pass = 0; l_pass < 2; ++l_pass ) {
     /* Special case that arises in GEMMS from Resnet50 layers  */
     if (i_n_blocking == 7 && l_m_blocking == 4) {
@@ -581,7 +575,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
           if ( l_pass == 0 ) {
             /* we put "1" elements of B matrix into zmm l_n */
             libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                          i_micro_kernel_config->vector_name, l_n, l_n, 7, 1);
+                                                          i_micro_kernel_config->vector_name, l_n, l_n, 3, 1);
           } else {
             /* we put "0" elements of B matrix into zmm l_n */
             libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
@@ -622,7 +616,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
           if ( l_pass == 0 ) {
             /* we put "1" elements of B matrix into zmm l_n */
             libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                          i_micro_kernel_config->vector_name, l_n, l_n, 7, 1);
+                                                          i_micro_kernel_config->vector_name, l_n, l_n, 3, 1);
           } else {
             /* we put "0" elements of B matrix into zmm l_n */
             libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
@@ -642,19 +636,40 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
 
       /* load column vectors of A and multiply with all broadcasted row entries of B */
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            i_micro_kernel_config->a_vmove_instruction,
-            i_gp_reg_mapping->gp_reg_a,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
-            i_micro_kernel_config->vector_name,
-            3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
         if ( l_pass == 0 ) {
-          /* we put "1" elements of B matrix into zmm3 */
-          libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                        i_micro_kernel_config->vector_name, 3, 3, 7, 1);
+          if ( i_micro_kernel_config->use_masking_a_c != 0 ) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->a_vmove_instruction,
+                i_gp_reg_mapping->gp_reg_a,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+                i_micro_kernel_config->vector_name,
+                3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+
+            /* we put "1" elements of B matrix into zmm3 */
+            libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
+                                                          i_micro_kernel_config->vector_name, 3, 3, 3, 1);
+          } else {
+            /* we put "1" elements of B matrix into zmm3 */
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                LIBXSMM_X86_INSTR_VMOVDQU16_LD,
+                i_gp_reg_mapping->gp_reg_a,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+                i_micro_kernel_config->vector_name,
+                3, 3, 1, 0 );
+          }
         } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->a_vmove_instruction,
+              i_gp_reg_mapping->gp_reg_a,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+              i_micro_kernel_config->vector_name,
+              3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
           /* we put "0" elements of B matrix into zmm3 */
           libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
                                                         i_micro_kernel_config->vector_name, 3, 3, 16);
@@ -691,7 +706,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
           if ( l_pass == 0 ) {
             /* we put "1" elements of B matrix into zmm l_n-3 */
             libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                          i_micro_kernel_config->vector_name, l_n-3, l_n-3, 7, 1);
+                                                          i_micro_kernel_config->vector_name, l_n-3, l_n-3, 3, 1);
           } else {
             /* we put "0" elements of B matrix into zmm l_n-3 */
             libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
@@ -718,7 +733,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
           if ( l_pass == 0 ) {
             /* we put "1" elements of B matrix into zmm l_n-3 */
             libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                          i_micro_kernel_config->vector_name, l_n-3, l_n-3, 7, 1);
+                                                          i_micro_kernel_config->vector_name, l_n-3, l_n-3, 3, 1);
           } else {
             /* we put "0" elements of B matrix into zmm l_n-3 */
             libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
@@ -728,19 +743,40 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
       }
 
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            i_micro_kernel_config->a_vmove_instruction,
-            i_gp_reg_mapping->gp_reg_a,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
-            i_micro_kernel_config->vector_name,
-            3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
         if ( l_pass == 0 ) {
-          /* we put "1" elements of B matrix into zmm3 */
-          libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                        i_micro_kernel_config->vector_name, 3, 3, 7, 1);
+          if ( i_micro_kernel_config->use_masking_a_c != 0 ) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->a_vmove_instruction,
+                i_gp_reg_mapping->gp_reg_a,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+                i_micro_kernel_config->vector_name,
+                3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+
+            /* we put "1" elements of B matrix into zmm3 */
+            libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
+                                                          i_micro_kernel_config->vector_name, 3, 3, 3, 1);
+          } else {
+            /* we put "1" elements of B matrix into zmm3 */
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                LIBXSMM_X86_INSTR_VMOVDQU16_LD,
+                i_gp_reg_mapping->gp_reg_a,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+                i_micro_kernel_config->vector_name,
+                3, 3, 1, 0 );
+          }
         } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->a_vmove_instruction,
+              i_gp_reg_mapping->gp_reg_a,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+              i_micro_kernel_config->vector_name,
+              3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
           /* we put "0" elements of B matrix into zmm3 */
           libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
                                                         i_micro_kernel_config->vector_name, 3, 3, 16);
@@ -775,7 +811,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
           if ( l_pass == 0 ) {
             /* we put "1" elements of B matrix into zmm l_n-6 */
             libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                          i_micro_kernel_config->vector_name, l_n-6, l_n-6, 7, 1);
+                                                          i_micro_kernel_config->vector_name, l_n-6, l_n-6, 3, 1);
           } else {
             /* we put "0" elements of B matrix into zmm l_n-6 */
             libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
@@ -801,7 +837,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
           if ( l_pass == 0 ) {
             /* we put "1" elements of B matrix into zmm l_n-6 */
             libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                          i_micro_kernel_config->vector_name, l_n-6, l_n-6, 7, 1);
+                                                          i_micro_kernel_config->vector_name, l_n-6, l_n-6, 3, 1);
           } else {
             /* we put "0" elements of B matrix into zmm l_n-6 */
             libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
@@ -824,19 +860,41 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
       }
 
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            i_micro_kernel_config->a_vmove_instruction,
-            i_gp_reg_mapping->gp_reg_a,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
-            i_micro_kernel_config->vector_name,
-            3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
         if ( l_pass == 0 ) {
-          /* we put "1" elements of B matrix into zmm3 */
-          libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                        i_micro_kernel_config->vector_name, 3, 3, 7, 1);
+          if (  i_micro_kernel_config->use_masking_a_c != 0 ) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->a_vmove_instruction,
+                i_gp_reg_mapping->gp_reg_a,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+                i_micro_kernel_config->vector_name,
+                3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+
+            /* we put "1" elements of B matrix into zmm3 */
+            libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
+                                                          i_micro_kernel_config->vector_name, 3, 3, 3, 1);
+          } else {
+            /* we put "1" elements of B matrix into zmm3 */
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                LIBXSMM_X86_INSTR_VMOVDQU16_LD,
+                i_gp_reg_mapping->gp_reg_a,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+                i_micro_kernel_config->vector_name,
+                3, 3, 1, 0 );
+          }
         } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->a_vmove_instruction,
+              i_gp_reg_mapping->gp_reg_a,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+              i_micro_kernel_config->vector_name,
+              3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+
           /* we put "0" elements of B matrix into zmm3 */
           libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
                                                         i_micro_kernel_config->vector_name, 3, 3, 16);
@@ -864,19 +922,41 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
     } else {
       /* load column vectors of A upfront */
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            i_micro_kernel_config->instruction_set,
-            i_micro_kernel_config->a_vmove_instruction,
-            i_gp_reg_mapping->gp_reg_a,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
-            i_micro_kernel_config->vector_name,
-            1+l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
         if ( l_pass == 0 ) {
-          /* we put "1" elements of B matrix into zmm 1+l_m */
-          libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                        i_micro_kernel_config->vector_name, 1+l_m, 1+l_m, 7, 1);
+          if ( i_micro_kernel_config->use_masking_a_c != 0 ) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->a_vmove_instruction,
+              i_gp_reg_mapping->gp_reg_a,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+              i_micro_kernel_config->vector_name,
+              1+l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+
+            /* we put "1" elements of B matrix into zmm 1+l_m */
+            libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
+                                                          i_micro_kernel_config->vector_name, 1+l_m, 1+l_m, 3, 1);
+          } else {
+            /* we put "1" elements of B matrix into zmm 1+l_m */
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMOVDQU16_LD,
+              i_gp_reg_mapping->gp_reg_a,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+              i_micro_kernel_config->vector_name,
+              1+l_m, 3, 1, 0 );
+          }
         } else {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->a_vmove_instruction,
+              i_gp_reg_mapping->gp_reg_a,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
+              i_micro_kernel_config->vector_name,
+              1+l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+
           /* we put "0" elements of B matrix into zmm 1+l_m */
           libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
                                                         i_micro_kernel_config->vector_name, 1+l_m, 1+l_m, 16);
@@ -977,7 +1057,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
         if ( l_pass == 0 ) {
           /* we put "1" elements of B matrix into zmm0 */
           libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                        i_micro_kernel_config->vector_name, 0, 0, 7, 1);
+                                                        i_micro_kernel_config->vector_name, 0, 0, 3, 1);
         } else {
           /* we put "0" elements of B matrix into zmm0 */
           libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I,
@@ -1083,15 +1163,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                                          3 );
     /* setting vector length for a load to 'y' */
     l_vec_name_ld_a = 'y';
-  }
-  /* for flat VNNI layout kernel set masking register */
-  if ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
-         ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
-    libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
-    libxsmm_x86_instruction_alu_imm_i64( io_generated_code,  LIBXSMM_X86_INSTR_MOVQ,
-                                         i_gp_reg_mapping->gp_reg_help_2, 0xaaaaaaaa );
-    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mapping->gp_reg_help_2, 7 );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
   }
 
   /* apply k blocking */
@@ -1201,7 +1272,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
           i_micro_kernel_config->vector_name,
           l_k%2,
           l_k%2,
-          7,
+          3,
           1);
     }
 
@@ -1409,7 +1480,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                   i_micro_kernel_config->vector_name,
                   2,
                   2,
-                  7, 1);
+                  3, 1);
 
               /* perform fma operations for multiplying "1" elements of A and B */
               libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
