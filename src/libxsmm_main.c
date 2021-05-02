@@ -248,8 +248,6 @@ LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_med);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_mnk);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_gemv);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_meltw);
-LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_trsm);
-LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_trmm);
 LIBXSMM_APIVAR_DEFINE(unsigned int internal_statistic_num_user);
 LIBXSMM_APIVAR_DEFINE(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR_DEFINE(const char* internal_build_state);
@@ -1349,12 +1347,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             case LIBXSMM_KERNEL_KIND_MELTW: {
               ++internal_statistic_num_meltw;
             } break;
-            case LIBXSMM_KERNEL_KIND_TRSM: {
-              ++internal_statistic_num_trsm;
-            } break;
-            case LIBXSMM_KERNEL_KIND_TRMM: {
-              ++internal_statistic_num_trmm;
-            } break;
             case LIBXSMM_KERNEL_KIND_USER: {
               ++internal_statistic_num_user;
             } break;
@@ -1370,8 +1362,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
               fprintf(stderr, "LIBXSMM ERROR: code registry is corrupted!\n");
             }
             if (LIBXSMM_CAPACITY_REGISTRY == (rest + errors + internal_statistic_num_gemv +
-              internal_statistic_num_user + internal_statistic_num_meltw +
-              internal_statistic_num_trsm + internal_statistic_num_trmm))
+              internal_statistic_num_user + internal_statistic_num_meltw))
             {
               fprintf(stderr, "LIBXSMM WARNING: code registry was exhausted!\n");
             }
@@ -2138,85 +2129,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%u_eqn-idx%u.meltw", target_arch, tsizename,
             request->descriptor.meqn->m, request->descriptor.meqn->n, request->descriptor.meqn->ldo,
             (unsigned int)request->descriptor.meqn->eqn_idx );
-        }
-      }
-    } break;
-    case LIBXSMM_BUILD_KIND_PGEMM: { /* compact P/GEMM-kernel (packed) */
-      unsigned int tsize;
-      LIBXSMM_ASSERT(NULL != request->descriptor.pgemm);
-      tsize = (unsigned int)request->descriptor.pgemm->typesize;
-      if (4 == tsize || 8 == tsize) {
-        extra.nflops = 0; /* TODO */
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_pgemm_kernel, &generated_code, request->descriptor.pgemm, libxsmm_target_archid);
-# if !defined(LIBXSMM_VTUNE)
-        if (0 > libxsmm_verbosity)
-# endif
-        {
-          char tsizename[4];
-          internal_get_typesize_string(tsizename, sizeof(tsizename), tsize);
-          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%c%c%c_%ux%ux%u_%u_%u_%u_%i.pgemm", target_arch, tsizename,
-            request->descriptor.pgemm->transa, request->descriptor.pgemm->transb, request->descriptor.pgemm->layout,
-            request->descriptor.pgemm->m, request->descriptor.pgemm->n, request->descriptor.pgemm->k,
-            request->descriptor.pgemm->lda, request->descriptor.pgemm->ldb, request->descriptor.pgemm->ldc,
-            (int)request->descriptor.pgemm->alpha_val);
-        }
-      }
-    } break;
-    case LIBXSMM_BUILD_KIND_GETRF: { /* compact GETRF kernel (packed) */
-      unsigned int tsize;
-      LIBXSMM_ASSERT(NULL != request->descriptor.getrf);
-      tsize = (unsigned int)request->descriptor.getrf->typesize;
-      if (4 == tsize || 8 == tsize) {
-        extra.nflops = 0; /* TODO */
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_getrf_kernel, &generated_code, request->descriptor.getrf, libxsmm_target_archid);
-# if !defined(LIBXSMM_VTUNE)
-        if (0 > libxsmm_verbosity)
-# endif
-        {
-          char tsizename[4];
-          internal_get_typesize_string(tsizename, sizeof(tsizename), tsize);
-          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%c_%ux%u_%u.getrf", target_arch, tsizename,
-            request->descriptor.getrf->layout, request->descriptor.getrf->m, request->descriptor.getrf->n, request->descriptor.getrf->lda);
-        }
-      }
-    } break;
-    case LIBXSMM_BUILD_KIND_TRMM: { /* compact TRMM kernel (packed) */
-      unsigned int tsize;
-      LIBXSMM_ASSERT(NULL != request->descriptor.trmm);
-      tsize = (unsigned int)request->descriptor.trmm->typesize;
-      if (4 == tsize || 8 == tsize) {
-        extra.nflops = 0; /* TODO */
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_trmm_kernel, &generated_code, request->descriptor.trmm, target_arch);
-# if !defined(LIBXSMM_VTUNE)
-        if (0 > libxsmm_verbosity)
-# endif
-        {
-          char tsizename[4];
-          internal_get_typesize_string(tsizename, sizeof(tsizename), tsize);
-          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%c%c%c%c_%ux%u_%u_%u.trmm", target_arch, tsizename,
-            request->descriptor.trmm->transa, request->descriptor.trmm->layout, request->descriptor.trmm->side, request->descriptor.trmm->uplo,
-            request->descriptor.trmm->m, request->descriptor.trmm->n, request->descriptor.trmm->lda, request->descriptor.trmm->ldb); /* TODO: alpha */
-        }
-      }
-    } break;
-    case LIBXSMM_BUILD_KIND_TRSM: if (NULL != request->descriptor.trsm) { /* compact TRSM kernel (packed) */
-      const unsigned int tsize = (unsigned int)request->descriptor.trsm->typesize;
-      if (4 == tsize || 8 == tsize) {
-        extra.nflops = 0; /* TODO */
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_trsm_kernel, &generated_code, request->descriptor.trsm, target_arch);
-# if !defined(LIBXSMM_VTUNE)
-        if (0 > libxsmm_verbosity)
-# endif
-        {
-          char tsizename[4];
-          internal_get_typesize_string(tsizename, sizeof(tsizename), tsize);
-          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%c%c%c%c_%ux%u_%u_%u.trsm", target_arch, tsizename,
-            request->descriptor.trsm->transa, request->descriptor.trsm->layout, request->descriptor.trsm->side, request->descriptor.trsm->uplo,
-            request->descriptor.trsm->m, request->descriptor.trsm->n, request->descriptor.trsm->lda, request->descriptor.trsm->ldb); /* TODO: alpha */
         }
       }
     } break;
@@ -4509,102 +4421,6 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn(
     out_type, m, n, (ldo == NULL) ? m : *ldo, eqn_idx );
 
   return libxsmm_dispatch_matrix_eqn_desc( desc );
-}
-
-
-LIBXSMM_API libxsmm_pgemm_xfunction libxsmm_dispatch_pgemm(const libxsmm_pgemm_descriptor* descriptor)
-{
-  libxsmm_trmm_xfunction result;
-  LIBXSMM_INIT /* verbosity */
-#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-  LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
-#endif
-  if (NULL != descriptor) {
-    unsigned int hash;
-    libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
-#endif
-    LIBXSMM_ASSIGN127(&wrap.pgemm.desc, descriptor);
-    wrap.kind = LIBXSMM_KERNEL_KIND_PGEMM;
-    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xpgemm;
-  }
-  else {
-    result = NULL;
-  }
-  return result;
-}
-
-
-LIBXSMM_API libxsmm_getrf_xfunction libxsmm_dispatch_getrf(const libxsmm_getrf_descriptor* descriptor)
-{
-  libxsmm_trmm_xfunction result;
-  LIBXSMM_INIT /* verbosity */
-#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-  LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
-#endif
-  if (NULL != descriptor) {
-    unsigned int hash;
-    libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
-#endif
-    LIBXSMM_ASSIGN127(&wrap.getrf.desc, descriptor);
-    wrap.kind = LIBXSMM_KERNEL_KIND_GETRF;
-    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xgetrf;
-  }
-  else {
-    result = NULL;
-  }
-  return result;
-}
-
-
-LIBXSMM_API libxsmm_trmm_xfunction libxsmm_dispatch_trmm(const libxsmm_trmm_descriptor* descriptor)
-{
-  libxsmm_trmm_xfunction result;
-  LIBXSMM_INIT /* verbosity */
-#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-  LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
-#endif
-  if (NULL != descriptor) {
-    unsigned int hash;
-    libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
-#endif
-    LIBXSMM_ASSIGN127(&wrap.trmm.desc, descriptor);
-    wrap.kind = LIBXSMM_KERNEL_KIND_TRMM;
-    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xtrmm;
-  }
-  else {
-    result = NULL;
-  }
-  return result;
-}
-
-
-LIBXSMM_API libxsmm_trsm_xfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descriptor* descriptor)
-{
-  libxsmm_trsm_xfunction result;
-  LIBXSMM_INIT /* verbosity */
-#if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-  LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
-#endif
-  if (NULL != descriptor) {
-    unsigned int hash;
-    libxsmm_descriptor wrap;
-#if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
-#endif
-    LIBXSMM_ASSIGN127(&wrap.trsm.desc, descriptor);
-    wrap.kind = LIBXSMM_KERNEL_KIND_TRSM;
-    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xtrsm;
-  }
-  else {
-    result = NULL;
-  }
-  return result;
 }
 
 
