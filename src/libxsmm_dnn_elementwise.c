@@ -9,7 +9,6 @@
 /* Kunal Banerjee, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_elementwise.h"
-#include "libxsmm_blocked_gemm_types.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -283,57 +282,6 @@ extern double Gbl_t_input_total, Gbl_t_recur_total, Gbl_t_eltwise_total, Gbl_t_n
 extern unsigned long long Gbl_t_input, Gbl_t_recur, Gbl_t_eltwise, Gbl_t_nonlin;
 extern double Gbl_duration_input, Gbl_duration_recur, Gbl_duration_eltwise, Gbl_duration_nonlin;
 #endif
-
-LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_blocked_gemm_handle* handle, LIBXSMM_DNN_ELTWISE_FTYPE* u, LIBXSMM_DNN_ELTWISE_FTYPE* h, LIBXSMM_DNN_ELTWISE_FTYPE* op1, LIBXSMM_DNN_ELTWISE_FTYPE *op2,
-  LIBXSMM_DNN_ELTWISE_FTYPE *temp, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int act, libxsmm_blasint size, int start_thread, int tid)
-{
-  const int ltid = tid - start_thread;
-#if defined(LSTM_TIMING)
-  if (ltid == 0) { Gbl_t_recur = libxsmm_timer_tick(); }
-#endif
-  libxsmm_blocked_gemm_st(handle, u, h, op1, start_thread, ltid);
-#if defined(LSTM_TIMING)
-  if (ltid == 0) {
-    Gbl_duration_recur = libxsmm_timer_duration(Gbl_t_recur, libxsmm_timer_tick());
-    Gbl_t_recur_total += Gbl_duration_recur;
-    Gbl_t_eltwise = libxsmm_timer_tick();
-  }
-#endif
-  libxsmm_internal_matrix_add(size, op1, op2, temp, start_thread, ltid, handle->nthreads);
-#if defined(LSTM_TIMING)
-  libxsmm_barrier_wait(handle->barrier, ltid); /* Additional barrier introduced to measure time */
-  if (ltid == 0) {
-    Gbl_duration_eltwise = libxsmm_timer_duration(Gbl_t_eltwise, libxsmm_timer_tick());
-    Gbl_t_eltwise_total += Gbl_duration_eltwise;
-    Gbl_t_nonlin = libxsmm_timer_tick();
-  }
-#endif
-  switch (act) {
-    case 0:
-      /* do nothing */
-      dst = temp;
-      break;
-    case 1:
-      libxsmm_internal_matrix_relu(size, temp, dst, start_thread, tid, handle->nthreads);
-      break;
-    case 2:
-      libxsmm_internal_matrix_sigmoid(size, temp, dst, start_thread, tid, handle->nthreads);
-      break;
-    case 3:
-      libxsmm_internal_matrix_tanh(size, temp, dst, start_thread, tid, handle->nthreads);
-      break;
-    default:
-      /* fprintf(stdout, "Unsupported activation function: %d\n", act); */
-      dst = temp;
-  }
-#if defined(LSTM_TIMING)
-  libxsmm_barrier_wait(handle->barrier, ltid); /* Additional barrier introduced to measure time */
-  if (ltid == 0) {
-    Gbl_duration_nonlin = libxsmm_timer_duration(Gbl_t_nonlin, libxsmm_timer_tick());
-    Gbl_t_nonlin_total += Gbl_duration_nonlin;
-  }
-#endif
-}
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_zero_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst) {
   libxsmm_blasint i = 0, j;

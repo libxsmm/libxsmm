@@ -37,7 +37,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_ext.c" />
-    <ClCompile Include="..\src\libxsmm_ext_blocked_gemm.c" />
     <ClCompile Include="..\src\libxsmm_ext_gemm.c" />
     <ClCompile Include="..\src\libxsmm_ext_xcopy.c" />
   </ItemGroup>
