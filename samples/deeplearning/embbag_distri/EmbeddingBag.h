@@ -44,7 +44,11 @@ public:
     T(*__restrict output)[E] = (T(*)[*])output_;
     libxsmm_meltwfunction_reduce_cols_idx kernel;
     int _ld = E;
-    kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32) ;
+    if (sizeof(T) == 4) {
+      kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
+    } else {
+      kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F16, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
+    }
 #pragma omp parallel for
     for (int n = 0; n < N; n++)
     {
