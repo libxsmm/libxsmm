@@ -32,7 +32,7 @@ int my_rank = 0;
 int my_size = 1;
 
 struct EmbeddingInOut {
-  int N, NS, E;
+  int N, NS, E, U;
   ITyp *offsets;
   ITyp *indices;
   FTyp *output;
@@ -40,7 +40,60 @@ struct EmbeddingInOut {
   FTyp *grads;
 };
 
-void allocate_buffers_and_generte_rnd_input(int N, int P, EmbeddingBag *eb, EmbeddingInOut *eio)
+// based on https://www.csee.usf.edu/~kchriste/tools/genzipf.c
+int zipf_dist(double alpha, int M)
+{
+  static int init_done = 0;
+  static double k = 0;
+  static double *sum_probs;
+  static int prev_M = 0;
+  double z;
+  int value;
+  int    i;
+  int low, high, mid;
+
+  if (prev_M != M) {
+    init_done = 0;
+    prev_M = M;
+  }
+
+  if (!init_done) {
+    for (i=1; i<=M; i++)
+      k = k + (1.0 / pow((double) i, alpha));
+    k = 1.0 / k;
+
+    sum_probs = (double *) my_malloc((M+1)*sizeof(double), alignment);
+    sum_probs[0] = 0;
+    for (i=1; i<=M; i++) {
+      sum_probs[i] = sum_probs[i-1] + k / pow((double) i, alpha);
+    }
+    init_done = 1;
+  }
+
+  do {
+    drand48_r(&rand_buf, &z);
+  } while ((z == 0) || (z == 1));
+
+  low = 1, high = M, mid;
+  do {
+    mid = floor((low+high)/2);
+    if (sum_probs[mid] >= z && sum_probs[mid-1] < z) {
+      value = mid;
+      break;
+    } else if (sum_probs[mid] >= z) {
+      high = mid-1;
+    } else {
+      low = mid+1;
+    }
+  } while (low <= high);
+
+  assert((value >=1) && (value <= M));
+
+  return(value);
+}
+
+
+void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, EmbeddingBag *eb, EmbeddingInOut *eio)
 {
   int E = eb->E;
   int M = eb->M;
@@ -56,7 +109,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, EmbeddingBag *eb, Embe
   for(int i = 1; i <= N; i++) {
     double randval;
     drand48_r(&rand_buf, &randval);
-    int cp = (int)(randval * P);
+    int cp = (int)(randval * P * 2);
     if (cp == 0) cp = 1;
     NS += cp;
     eio->offsets[i] = NS;
@@ -70,15 +123,34 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, EmbeddingBag *eb, Embe
     int end = eio->offsets[n+1];
     for (int i = start; i < end; i++)
     {
-      double randval;
-      drand48_r(&rand_buf, &randval);
-      ITyp ind = (ITyp)(randval * M);
+      ITyp ind;
+      if (alpha == 0.0) {
+        double randval;
+        drand48_r(&rand_buf, &randval);
+        ind = (ITyp)(randval * M);
+      } else {
+        ind = (ITyp) zipf_dist(alpha, M);
+      }
+
       if (ind == M)
         ind--;
       eio->indices[i] = ind;
     }
     std::sort(&eio->indices[start], &eio->indices[end]);
   }
+
+  //inefficient way of finding unique indices (used for printing only)
+#ifdef CHECK_UNIQUE
+  int U = 0;
+  int i, j;
+  for (i = 0; i < NS; i++) {
+    for (j = i + 1; j < NS; j++) {
+      if (eio->indices[i] == eio->indices[j]) break;
+    }
+    if (j == NS) U++;
+  }
+  eio->U = U;
+#endif
 }
 
 void free_buffers(EmbeddingInOut *eio)
@@ -150,6 +222,7 @@ int E = 64;
 int P = 100;
 int M = 1000000;
 int S = 8;
+double alpha = 0.0;
 
 #define my_printf(fmt, args...) printf("[%d] " fmt, my_rank, args)
 
@@ -160,13 +233,14 @@ int main(int argc, char * argv[]) {
   my_size = dist_get_size();
 
   if(argc > 1 && strncmp(argv[1], "-h", 3) == 0) {
-    printf("Usage: %s iters N E M S P\n", argv[0]);
+    printf("Usage: %s iters N E M S P alpha \n", argv[0]);
     printf("iters: Number of iterations (= %d)\n", iters);
     printf("N: Minibatch (= %d)\n", N);
     printf("E: embedding row width (= %d)\n", E);
     printf("M: Number of rows per table (= %d)\n", M);
     printf("S: Number of Tables (= %d)\n", S);
     printf("P: Average number of indices per look up (= %d)\n", P);
+    printf("alpha: Alpha value for Zipf distribution to generate Indices. Use 0 for uniform distribution");
     dist_fini();
     exit(0);
   }
@@ -179,9 +253,10 @@ int main(int argc, char * argv[]) {
     if(argc > i) M = atoi(argv[i++]);
     if(argc > i) S = atoi(argv[i++]);
     if(argc > i) P = atoi(argv[i++]);
+    if(argc > i) alpha = atof(argv[i++]);
   }
 
-  printf("Using: iters: %d N: %d E: %d M: %d S: %d P: %d\n", iters, N, E, M, S, P);
+  printf("Using: iters: %d N: %d E: %d M: %d S: %d P: %d alpha: %f\n", iters, N, E, M, S, P, alpha);
 
 
 #if defined(USE_RTM) && defined(RTM_DEBUG)
@@ -199,6 +274,7 @@ int main(int argc, char * argv[]) {
   FTyp *A2Asrc, *A2Adst;
   FTyp *A2Agsrc, *A2Agdst;
   size_t tNS = 0;
+  size_t tU = 0;
 
   A2Asrc = (FTyp*)my_malloc(LS*N*E*sizeof(FTyp), alignment);
   A2Agsrc = (FTyp*)my_malloc(S*LN*E*sizeof(FTyp), alignment);
@@ -222,8 +298,9 @@ int main(int argc, char * argv[]) {
     for(int j = 0; j < iters; j++)
     {
       eio[j][i] = new EmbeddingInOut();
-      allocate_buffers_and_generte_rnd_input(N, P, eb[i], eio[j][i]);
+      allocate_buffers_and_generte_rnd_input(N, P, alpha, eb[i], eio[j][i]);
       tNS += eio[j][i]->NS;
+      tU += eio[j][i]->U;
     }
   }
 
@@ -283,7 +360,11 @@ int main(int argc, char * argv[]) {
   size_t updBytes = ((size_t)3*tNS*E) * sizeof(FTyp) + ((size_t)tNS) * sizeof(ITyp);
 
   my_printf("USE RTM = %d  STREAMING STORES = %d\n", use_rtm, rfo == 1 ? 1 : 0);
+#ifdef CHECK_UNIQUE
+  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
+#else
   my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), P);
+#endif
   //printf("Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f\n", fwdTime, bwdTime, updTime, t1-t0);
   my_printf("Per Iter  Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  A2A: %.3f ms Total: %.3f ms\n", fwdTime/(iters), bwdTime/(iters), updTime/(iters), (fwdA2ATime+bwdA2ATime+packTime+unpackTime)/(iters), (t1-t0)/(iters));
   my_printf("Per Table Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f ms\n", fwdTime/(iters*LS), bwdTime/(iters*LS), updTime/(iters*LS), (t1-t0)/(iters*LS));
