@@ -13,6 +13,7 @@
 #include <time.h>
 #include <sys/syscall.h>
 #include <algorithm>
+#include <parallel/algorithm>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -21,6 +22,14 @@
 #include "utils.h"
 #include "EmbeddingBag.h"
 #include "dist.h"
+
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#define omp_get_num_threads() (1)
+#define omp_get_thread_num() (0)
+#define omp_get_max_threads() (1)
+#endif
 
 #ifdef RTM_DEBUG
 int rtm_stats[1000][16];
@@ -92,6 +101,41 @@ int zipf_dist(double alpha, int M)
   return(value);
 }
 
+int find_unique(EmbeddingInOut *eio)
+{
+  int N = eio->N;
+  int NS = eio->NS;
+
+  std::vector<std::pair<int, int>> tmpBuf(NS);
+#pragma omp parallel for
+  for(int i = 0; i < N; i++) {
+    int start = eio->offsets[i];
+    int end = eio->offsets[i+1];
+    for (int j = start; j < end; j++) {
+      tmpBuf[j].first = eio->indices[j];
+      tmpBuf[j].second = i;
+    }
+  }
+  __gnu_parallel::sort(tmpBuf.begin(), tmpBuf.end(), [](const std::pair<int, int> &a, const std::pair<int, int> &b) { return a.first < b.first; });
+
+  int max_thds = omp_get_max_threads();
+  int num_uniq[max_thds];
+
+#pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+    num_uniq[tid] = 0;
+#pragma omp for schedule(static)
+    for (int i = 1; i < NS; i++) {
+      if (tmpBuf[i].first != tmpBuf[i-1].first) num_uniq[tid]++;
+    }
+  }
+  num_uniq[0] += 1;
+  for(int i = 1; i < max_thds; i++)
+    num_uniq[i] += num_uniq[i-1];
+  int U = num_uniq[max_thds-1];
+  return U;
+}
 
 void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, EmbeddingBag *eb, EmbeddingInOut *eio)
 {
@@ -139,18 +183,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
     std::sort(&eio->indices[start], &eio->indices[end]);
   }
 
-  //inefficient way of finding unique indices (used for printing only)
-#ifdef CHECK_UNIQUE
-  int U = 0;
-  int i, j;
-  for (i = 0; i < NS; i++) {
-    for (j = i + 1; j < NS; j++) {
-      if (eio->indices[i] == eio->indices[j]) break;
-    }
-    if (j == NS) U++;
-  }
-  eio->U = U;
-#endif
+  eio->U = find_unique(eio);
 }
 
 void free_buffers(EmbeddingInOut *eio)
@@ -354,17 +387,13 @@ int main(int argc, char * argv[]) {
   const size_t rfo = 2;
 #endif
 
-  size_t fwdBytes = ((size_t)tNS*E + (size_t)rfo*iters*LS*N*E) * sizeof(FTyp) + ((size_t)tNS + (size_t)iters*LS*N) * sizeof(ITyp);
+  size_t fwdBytes = ((size_t)tU*E + (size_t)rfo*iters*LS*N*E) * sizeof(FTyp) + ((size_t)tNS + (size_t)iters*LS*N) * sizeof(ITyp);
   int use_rtm = 1;
   size_t bwdBytes = ((size_t)rfo*tNS*E + (size_t)iters*LS*N*E) * sizeof(FTyp) + ((size_t)tNS) * sizeof(ITyp);
-  size_t updBytes = ((size_t)3*tNS*E) * sizeof(FTyp) + ((size_t)tNS) * sizeof(ITyp);
+  size_t updBytes = ((size_t)2*tU*E + (size_t)tNS*E) * sizeof(FTyp) + ((size_t)tNS) * sizeof(ITyp);
 
   my_printf("USE RTM = %d  STREAMING STORES = %d\n", use_rtm, rfo == 1 ? 1 : 0);
-#ifdef CHECK_UNIQUE
   my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
-#else
-  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), P);
-#endif
   //printf("Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f\n", fwdTime, bwdTime, updTime, t1-t0);
   my_printf("Per Iter  Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  A2A: %.3f ms Total: %.3f ms\n", fwdTime/(iters), bwdTime/(iters), updTime/(iters), (fwdA2ATime+bwdA2ATime+packTime+unpackTime)/(iters), (t1-t0)/(iters));
   my_printf("Per Table Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f ms\n", fwdTime/(iters*LS), bwdTime/(iters*LS), updTime/(iters*LS), (t1-t0)/(iters*LS));
