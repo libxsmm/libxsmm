@@ -1,4 +1,3 @@
-blocked_gemm/blocked_gemm
 deeplearning/cnnlayer/layer_example_*
 deeplearning/convcaps/layer_example_*
 deeplearning/lstmdriver/lstmdriver_*

@@ -133,14 +133,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor libxsmm_gemm_descriptor;
 /** Structure storing arguments of the matrix-eltw routine. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_descriptor libxsmm_meltw_descriptor;
-/** Structure storing arguments of packed TRSM. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor libxsmm_trsm_descriptor;
-/** Structure storing arguments of packed TRMM. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor libxsmm_trmm_descriptor;
-/** Structure storing arguments of packed GETRF. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_getrf_descriptor libxsmm_getrf_descriptor;
-/** Structure storing arguments of packed GEMM. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor libxsmm_pgemm_descriptor;
 /** Structure storing arguments of the matrix-equation routine. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meqn_descriptor libxsmm_meqn_descriptor;
 
@@ -338,8 +330,11 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNIT      = 31,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD   = 32,
   LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS             = 33,
-  LIBXSMM_MELTW_TYPE_UNARY_ELU                          = 34,
-  LIBXSMM_MELTW_TYPE_UNARY_ELU_INV                      = 35
+  LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU                   = 34,
+  LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV               = 35,
+  LIBXSMM_MELTW_TYPE_UNARY_ELU                          = 36,
+  LIBXSMM_MELTW_TYPE_UNARY_ELU_INV                      = 37,
+  LIBXSMM_MELTW_TYPE_UNARY_STOCHASTIC_ROUND             = 38
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -535,18 +530,10 @@ typedef enum libxsmm_kernel_kind {
   LIBXSMM_KERNEL_KIND_MELTW   = 1,
   /** Mateqn kernel kind */
   LIBXSMM_KERNEL_KIND_MEQN    = 2,
-  /** GEMM/packed kernel kind */
-  LIBXSMM_KERNEL_KIND_PGEMM   = 3,
-  /** GEMM/packed kernel kind */
-  LIBXSMM_KERNEL_KIND_GETRF   = 4,
-  /** TRMM kernel kind */
-  LIBXSMM_KERNEL_KIND_TRMM    = 5,
-  /** TRSM kernel kind */
-  LIBXSMM_KERNEL_KIND_TRSM    = 6,
   /** User-defined kernels */
-  LIBXSMM_KERNEL_KIND_USER    = 7,
+  LIBXSMM_KERNEL_KIND_USER    = 3,
   /** Not a JIT kernel */
-  LIBXSMM_KERNEL_UNREGISTERED = 8
+  LIBXSMM_KERNEL_UNREGISTERED = 4
 } libxsmm_kernel_kind;
 
 typedef enum libxsmm_dnn_tensor_format {
@@ -847,22 +834,6 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
 
 /* matrix equation function */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_matrix_eqn_function)(const libxsmm_matrix_eqn_param* in_struct);
-
-/** Specialized function for packed GEMM (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_pgemm_xfunction)(
-  const void* a, const void* b, void* c);
-
-/** Specialized function for packed GEMM (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_getrf_xfunction)(
-  const void* a, const void* b, void* c);
-
-/** Specialized function for TRMM (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_trmm_xfunction)(
-  const void* a, const void* b, void* c);
-
-/** Specialized function for TRSM (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_trsm_xfunction)(
-  const void* a, const void* b, void* c);
 
 /** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mmkernel_info {

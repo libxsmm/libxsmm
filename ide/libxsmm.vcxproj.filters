@@ -87,9 +87,6 @@
     <ClInclude Include="..\include\libxsmm_mhd.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_blocked_gemm.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_math.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -137,9 +134,6 @@
     </ClInclude>
     <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_blocked_gemm_types.h">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.h">
       <Filter>src</Filter>
@@ -428,9 +422,6 @@
     <ClCompile Include="..\src\libxsmm_fsspmdm.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_blocked_gemm.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_mhd.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -480,21 +471,6 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\transpose.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_blocked_gemm.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyin_a.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyin_b.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyin_c.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyout_c.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c">
@@ -576,12 +552,6 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_bwd_custom_generic.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_transpose_b.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_convert_b_to_a.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_fullyconnected.c">

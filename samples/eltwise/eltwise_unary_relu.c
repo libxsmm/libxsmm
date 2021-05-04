@@ -14,46 +14,68 @@
 #include <stdio.h>
 #include <math.h>
 
-void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, float *out, unsigned char *out_mask) {
+void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, float *out, float alpha, unsigned char *out_mask, unsigned char type) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
-      out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? 0.0f : in[(j*ldi) + i];
+      if ( type == 0 ) {
+        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? 0.0f : in[(j*ldi) + i];
+      } else if ( type == 1 ) {
+        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha*in[(j*ldi) + i] : in[(j*ldi) + i];
+      }
       out_mask[(j*ldo/8) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
     }
   }
 }
 
-void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned char *out_mask) {
+void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
-      out[(j*ldo) + i] = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0 : in[(j*ldi) + i];
+      if ( type == 0 ) {
+        out[(j*ldo) + i] = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0 : in[(j*ldi) + i];
+      } else if ( type == 1 ) {
+        union libxsmm_bfloat16_hp bf16_hp;
+        union libxsmm_bfloat16_hp bf16_hp_out;
+        bf16_hp.i[0] = 0;
+        bf16_hp.i[1] = in[(j*ldi) + i];
+        bf16_hp_out.f = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? alpha*bf16_hp.f : bf16_hp.f;
+        out[(j*ldo) + i] = bf16_hp_out.i[1];
+      }
       out_mask[(j*ldo/8) + i/8] |= (unsigned char)(( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0x0 : (1 << (i%8)) );
     }
   }
 }
 
-void relu_fwd_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, libxsmm_bfloat16 *out, unsigned char *out_mask) {
+void relu_fwd_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
       union libxsmm_bfloat16_hp bf16_hp;
       bf16_hp.f = in[(j*ldi) + i];
-      out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? 0 : bf16_hp.i[1];
+      if ( type == 0 ) {
+        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? 0 : bf16_hp.i[1];
+      } else if ( type == 1 ) {
+        bf16_hp.f = ( in[(j*ldi) + i] < 0.0f ) ? alpha*bf16_hp.f : bf16_hp.f;
+        out[(j*ldo) + i] = bf16_hp.i[1];
+      }
       out_mask[(j*ldo/8) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
     }
   }
 }
 
-void relu_fwd_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_bfloat16 *in, float *out, unsigned char *out_mask) {
+void relu_fwd_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_bfloat16 *in, float *out, float alpha, unsigned char *out_mask, unsigned char type) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
       union libxsmm_bfloat16_hp bf16_hp;
       bf16_hp.i[1] = in[(j*ldi) + i];
       bf16_hp.i[0] = 0;
-      out[(j*ldo) + i] = ( bf16_hp.f < 0.0f ) ? 0 : bf16_hp.f;
+      if ( type == 0 ) {
+        out[(j*ldo) + i] = ( bf16_hp.f < 0.0f ) ? 0 : bf16_hp.f;
+      } else if ( type == 1 ) {
+        out[(j*ldo) + i] = ( bf16_hp.f < 0.0f ) ? alpha*bf16_hp.f : bf16_hp.f;
+      }
       out_mask[(j*ldo/8) + i/8] |= (unsigned char)(( bf16_hp.f < 0.0f ) ? 0x0 : (1 << (i%8)) );
     }
   }
@@ -100,14 +122,16 @@ void relu_bwd_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   }
 }
 
-void test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+void test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned char type ) {
   float *in;
   float *out, *out_gold;
   unsigned char *mask, *mask_gold;
   unsigned int i, j;
   unsigned int s;
+  float alpha = 0.1f;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
+  libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
 
   if ( M > ldi ) {
@@ -150,14 +174,21 @@ void test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    relu_fwd_f32_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldo)/8] );
+    relu_fwd_f32_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
   unary_param.in.primary  = (void*)in;
+  unary_param.in.tertiary = (void*)(&alpha);
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  if ( type == 0 ) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  } else if ( type == 1 ) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU);
+  } else {
+    unary_kernel = 0;
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -212,14 +243,16 @@ void test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_free( mask_gold );
 }
 
-void test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+void test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned char type ) {
   libxsmm_bfloat16 *in;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned char *mask, *mask_gold;
   unsigned int i, j;
   unsigned int s;
+  float alpha = 0.1f;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
+  libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
 
@@ -264,14 +297,21 @@ void test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    relu_fwd_bf16_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldo)/8] );
+    relu_fwd_bf16_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
   unary_param.in.primary  = (void*)in;
+  unary_param.in.tertiary = (void*)(&alpha);
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  if ( type == 0 ) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  } else if ( type == 1 ) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU);
+  } else {
+    unary_kernel = 0;
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -327,14 +367,16 @@ void test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   libxsmm_free( mask_gold );
 }
 
-void test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+void test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned char type ) {
   float *in;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned char *mask, *mask_gold;
   unsigned int i, j;
   unsigned int s;
+  float alpha = 0.1f;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
+  libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
 
@@ -380,14 +422,21 @@ void test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    relu_fwd_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldo)/8] );
+    relu_fwd_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
   unary_param.in.primary  = (void*)in;
+  unary_param.in.tertiary = (void*)(&alpha);
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  if ( type == 0 ) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  } else if ( type == 1 ) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU);
+  } else {
+    unary_kernel = 0;
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -442,14 +491,16 @@ void test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   libxsmm_free( mask_gold );
 }
 
-void test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+void test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned char type ) {
   libxsmm_bfloat16 *in;
   float *out, *out_gold;
   unsigned char *mask, *mask_gold;
   unsigned int i, j;
   unsigned int s;
+  float alpha = 0.1f;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
+  libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
 
@@ -494,15 +545,22 @@ void test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    relu_fwd_bf16_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*ldo)/8] );
+    relu_fwd_bf16_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
   /* use jited relu */
   unary_param.in.primary  = (void*)in;
+  unary_param.in.tertiary = (void*)(&alpha);
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  if ( type == 0 ) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  } else if ( type == 1 ) {
+    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU);
+  } else {
+    unary_kernel = 0;
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -960,52 +1018,65 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint dtype_in;
   libxsmm_blasint dtype_out;
   char op;
+  char type;
   libxsmm_blasint bitm;
   libxsmm_blasint M;
   libxsmm_blasint N;
   libxsmm_blasint ldi;
   libxsmm_blasint ldo;
+  unsigned char itype;
 
-  if ( argc != 9 ) {
-    printf(" Error! Usage: %s [F/B] [bitmask: 0/1] [prec_in: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+  if ( argc != 10 ) {
+    printf(" Error! Usage: %s [D/L/E] [F/B] [bitmask: 0/1] [prec_in: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
-  op        = *(argv[1]);
-  bitm      = atoi(argv[2]);
-  dtype_in  = atoi(argv[3]);
-  dtype_out = atoi(argv[4]);
-  M         = atoi(argv[5]);
-  N         = atoi(argv[6]);
-  ldi       = atoi(argv[7]);
-  ldo       = atoi(argv[8]);
+  type      = *(argv[1]);
+  op        = *(argv[2]);
+  bitm      = atoi(argv[3]);
+  dtype_in  = atoi(argv[4]);
+  dtype_out = atoi(argv[5]);
+  M         = atoi(argv[6]);
+  N         = atoi(argv[7]);
+  ldi       = atoi(argv[8]);
+  ldo       = atoi(argv[9]);
+
+  if ( type == 'D' ) {
+    itype = 0;
+    printf("Testing ReLU\n");
+  } else if ( type == 'L' ) {
+    itype = 1;
+    printf("Testing Leaky ReLU\n");
+  } else {
+    itype = 0;
+  }
 
   if ( op == 'F' && dtype_in == 4 && dtype_out == 4  ) {
-    printf("Testing F32 F32 forward relu\n");
-    test_relu_f32_f32_fwd( bitm, M, N, ldi, ldo );
+    printf("Testing F32 F32 forward\n");
+    test_relu_f32_f32_fwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'F' && dtype_in == 2  && dtype_out == 2 ) {
-    printf("Testing BF16 BF16 forward relu\n");
-    test_relu_bf16_bf16_fwd( bitm, M, N, ldi, ldo );
+    printf("Testing BF16 BF16 forward\n");
+    test_relu_bf16_bf16_fwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'F' && dtype_in == 4  && dtype_out == 2 ) {
-    printf("Testing F32 BF16 forward relu\n");
-    test_relu_f32_bf16_fwd( bitm, M, N, ldi, ldo );
+    printf("Testing F32 BF16 forward\n");
+    test_relu_f32_bf16_fwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'F' && dtype_in == 2  && dtype_out == 4 ) {
-    printf("Testing BF16 F32 forward relu\n");
-    test_relu_bf16_f32_fwd( bitm, M, N, ldi, ldo );
+    printf("Testing BF16 F32 forward\n");
+    test_relu_bf16_f32_fwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'B' && dtype_in == 4 && dtype_out == 4 ) {
-    printf("Testing F32 F32 backward relu\n");
+    printf("Testing F32 F32 backward\n");
     test_relu_f32_f32_bwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'B' && dtype_in == 2 && dtype_out == 2 ) {
-    printf("Testing BF16 BF16 backward relu\n");
+    printf("Testing BF16 BF16 backward\n");
     test_relu_bf16_bf16_bwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'B' && dtype_in == 4 && dtype_out == 2 ) {
-    printf("Testing F32 BF16 backward relu\n");
+    printf("Testing F32 BF16 backward\n");
     test_relu_f32_bf16_bwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'B' && dtype_in == 2 && dtype_out == 4 ) {
-    printf("Testing BF16 F32 backward relu\n");
+    printf("Testing BF16 F32 backward\n");
     test_relu_bf16_f32_bwd( bitm, M, N, ldi, ldo );
   } else {
-    printf(" Not implemented case! Usage: %s [F/B] [bitmask: 0/1] [prec_in: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Not implemented case! Usage: %s [D/L/E] [F/B] [bitmask: 0/1] [prec_in: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 }

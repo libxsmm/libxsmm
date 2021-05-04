@@ -214,7 +214,7 @@ void test_elu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   }
 
   unary_param.in.primary  = (void*)in;
-  unary_param.in.secondary= (void*)&alpha;
+  unary_param.in.tertiary = (void*)&alpha;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -306,7 +306,7 @@ void test_elu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   }
 
   unary_param.in.primary  = (void*)in;
-  unary_param.in.secondary= (void*)&alpha;
+  unary_param.in.tertiary = (void*)&alpha;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -406,7 +406,7 @@ void test_elu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   }
 
   unary_param.in.primary  = (void*)in;
-  unary_param.in.secondary= (void*)&alpha;
+  unary_param.in.tertiary = (void*)&alpha;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -504,7 +504,7 @@ void test_elu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
 
   /* use jited elu */
   unary_param.in.primary  = (void*)in;
-  unary_param.in.secondary= (void*)&alpha;
+  unary_param.in.tertiary = (void*)&alpha;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;

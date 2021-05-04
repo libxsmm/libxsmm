@@ -214,12 +214,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmmnoblas", "libxsmmnob
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "blocked_gemm", "..\samples\blocked_gemm\blocked_gemm.vcxproj", "{C8835447-1AEF-4B54-B8A6-F75D0020B997}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "utilities", "utilities", "{FD191424-DD79-4B60-B004-7B6224898031}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mhd", "..\samples\utilities\mhd\mhd.vcxproj", "{54F8CC52-A93E-41BA-9AED-AFC609542A10}"

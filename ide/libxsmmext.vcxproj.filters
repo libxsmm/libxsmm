@@ -26,8 +26,5 @@
     <ClCompile Include="..\src\libxsmm_ext.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_ext_blocked_gemm.c">
-      <Filter>src</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

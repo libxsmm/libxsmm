@@ -906,8 +906,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_out;
   unsigned int gp_reg_ldo;
   unsigned int gp_reg_relumask;
-  unsigned int gp_reg_elumask;
-  unsigned int gp_reg_elu_alpha;
+  unsigned int gp_reg_fam_lualpha;
   unsigned int gp_reg_offset;
   unsigned int gp_reg_dropoutmask;
   unsigned int gp_reg_dropoutprob;
@@ -1018,6 +1017,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   int rbp_offs_scale;
   int rbp_offs_shifter;
   int rbp_offs_half;
+
+  /* Aux variables for relu variants */
+  unsigned int fam_lu_vreg_alpha;
 
   /* Aux variable for dropout */
   unsigned int prng_state0_vreg;

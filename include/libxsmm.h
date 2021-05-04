@@ -49,7 +49,6 @@
 #include "libxsmm_dnn_rnncell.h"
 #include "libxsmm_dnn_softmaxloss.h"
 #include "libxsmm_dnn_optimizer.h"
-#include "libxsmm_blocked_gemm.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
 #include "libxsmm_fsspmdm.h"
@@ -490,15 +489,6 @@ LIBXSMM_API void libxsmm_matrix_eqn_tree_print( const libxsmm_blasint idx );
 LIBXSMM_API void libxsmm_matrix_eqn_rpn_print( const libxsmm_blasint idx );
 LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const libxsmm_meqn_descriptor* descriptor );
 LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldo, const libxsmm_datatype out_type, const unsigned int eqn_idx );
-
-/** Code generation routine for GEMM/packed using a descriptor */
-LIBXSMM_API libxsmm_pgemm_xfunction libxsmm_dispatch_pgemm(const libxsmm_pgemm_descriptor* descriptor);
-/** Code generation routine for GETRF/packed using a descriptor */
-LIBXSMM_API libxsmm_getrf_xfunction libxsmm_dispatch_getrf(const libxsmm_getrf_descriptor* descriptor);
-/** Code generation routine for TRMM/packed using a descriptor */
-LIBXSMM_API libxsmm_trmm_xfunction libxsmm_dispatch_trmm(const libxsmm_trmm_descriptor* descriptor);
-/** Code generation routine for TRSM/packed using a descriptor */
-LIBXSMM_API libxsmm_trsm_xfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descriptor* descriptor);
 
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
