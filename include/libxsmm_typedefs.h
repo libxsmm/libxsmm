@@ -337,7 +337,9 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT      = 30,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNIT      = 31,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD   = 32,
-  LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS             = 33
+  LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS             = 33,
+  LIBXSMM_MELTW_TYPE_UNARY_ELU                          = 34,
+  LIBXSMM_MELTW_TYPE_UNARY_ELU_INV                      = 35
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
