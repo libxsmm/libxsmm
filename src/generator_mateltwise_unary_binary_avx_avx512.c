@@ -1090,6 +1090,8 @@ void libxsmm_compute_unary_2d_reg_block_elu( libxsmm_generated_code*            
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_mask_reg);
   LIBXSMM_UNUSED(i_vlen);
+  LIBXSMM_UNUSED(i_gp_reg_mapping);
+  LIBXSMM_UNUSED(i_mateltwise_desc);
 
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
@@ -1097,7 +1099,7 @@ void libxsmm_compute_unary_2d_reg_block_elu( libxsmm_generated_code*            
       unsigned int cur_mask_reg = i_micro_kernel_config->reserved_mask_regs + (in * i_m_blocking + im) % n_available_mask_regs;
       unsigned int l_vcmp_instr = LIBXSMM_X86_INSTR_VCMPPS;
       unsigned int l_vblend_instr =LIBXSMM_X86_INSTR_VPBLENDMD;
-      unsigned int l_mask_st_instr =  LIBXSMM_X86_INSTR_KMOVW_ST;
+      /*unsigned int l_mask_st_instr =  LIBXSMM_X86_INSTR_KMOVW_ST;*/
       unsigned int l_vlen = 16;
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
 
@@ -1187,7 +1189,7 @@ void libxsmm_compute_unary_2d_reg_block_elu_inv( libxsmm_generated_code*        
       unsigned int cur_mask_reg = i_micro_kernel_config->reserved_mask_regs + (in * i_m_blocking + im) % n_available_mask_regs;
       unsigned int l_vcmp_instr = LIBXSMM_X86_INSTR_VCMPPS;
       unsigned int l_vblend_instr = LIBXSMM_X86_INSTR_VPBLENDMD;
-      unsigned int l_mask_ld_instr =  LIBXSMM_X86_INSTR_KMOVW_LD;
+      /*unsigned int l_mask_ld_instr =  LIBXSMM_X86_INSTR_KMOVW_LD;*/
       unsigned int l_vlen = 16;
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
 
