@@ -35,7 +35,13 @@
 int rtm_stats[1000][16];
 #endif
 
-//#define USE_RTM
+#ifdef USE_FP16
+typedef Half DTyp;
+#else
+typedef FTyp DTyp;
+#endif
+
+typedef EmbeddingBagImpl<DTyp> EmbeddingBag;
 
 int my_rank = 0;
 int my_size = 1;
@@ -44,9 +50,9 @@ struct EmbeddingInOut {
   int N, NS, E, U;
   ITyp *offsets;
   ITyp *indices;
-  FTyp *output;
-  FTyp *gradout;
-  FTyp *grads;
+  DTyp *output;
+  DTyp *gradout;
+  DTyp *grads;
 };
 
 // based on https://www.csee.usf.edu/~kchriste/tools/genzipf.c
@@ -146,8 +152,8 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   eio->E = E;
 
   eio->offsets = (ITyp*)my_malloc((N+1) * sizeof(ITyp), alignment);
-  eio->output = (FTyp*)my_malloc(N * E * sizeof(FTyp), alignment);
-  eio->gradout = (FTyp*)my_malloc(N * E * sizeof(FTyp), alignment);
+  eio->output = (DTyp*)my_malloc(N * E * sizeof(DTyp), alignment);
+  eio->gradout = (DTyp*)my_malloc(N * E * sizeof(DTyp), alignment);
 
   eio-> offsets[0] = 0;
   for(int i = 1; i <= N; i++) {
@@ -160,7 +166,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   }
   eio->NS = NS;
   eio->indices = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
-  eio->grads = (FTyp*)my_malloc(NS * E * sizeof(FTyp), alignment);
+  eio->grads = (DTyp*)my_malloc(NS * E * sizeof(DTyp), alignment);
   for (int n = 0; n < N; n++)
   {
     int start = eio->offsets[n];
@@ -195,7 +201,7 @@ void free_buffers(EmbeddingInOut *eio)
   my_free(eio->offsets);
 }
 
-void pack_for_a2a(int LS, int N, int E, EmbeddingInOut **emb, FTyp *a2aSrc)
+void pack_for_a2a(int LS, int N, int E, EmbeddingInOut **emb, DTyp *a2aSrc)
 {
   for (int i = 0; i < LS; i++)
   {
@@ -209,7 +215,7 @@ void pack_for_a2a(int LS, int N, int E, EmbeddingInOut **emb, FTyp *a2aSrc)
   }
 }
 
-void unpack_from_a2a(int LS, int N, int E, EmbeddingInOut **emb, FTyp *a2aGDst)
+void unpack_from_a2a(int LS, int N, int E, EmbeddingInOut **emb, DTyp *a2aGDst)
 {
   for (int i = 0; i < LS; i++)
   {
@@ -223,23 +229,20 @@ void unpack_from_a2a(int LS, int N, int E, EmbeddingInOut **emb, FTyp *a2aGDst)
   }
 }
 
-void alltoall(size_t size, FTyp *src, FTyp *dst)
+void alltoall(size_t size, DTyp *src, DTyp *dst)
 {
   if (my_size <= 1)
     return;
   size_t sz = size / my_size;
-  if (sizeof(FTyp) == 4)
-  {
-    dist_alltoall(sz, src, dst);
-  }
-  else
-  {
-    printf("Datatype not supported\n");
+#ifdef USE_FP16
+    printf("Only FP32 Datatype supported in alltoall\n");
     exit(1);
-  }
+#else
+    dist_alltoall(sz, src, dst);
+#endif
 }
 
-double get_checksum(FTyp *buf, size_t sz)
+double get_checksum(DTyp *buf, size_t sz)
 {
   double sum = 0.0;
 #pragma omp parallel for reduction(+:sum)
@@ -304,20 +307,25 @@ int main(int argc, char * argv[]) {
 
   EmbeddingInOut *eio[iters][LS];
   EmbeddingBag *eb[LS];
-  FTyp *A2Asrc, *A2Adst;
-  FTyp *A2Agsrc, *A2Agdst;
+  DTyp *A2Asrc, *A2Adst;
+  DTyp *A2Agsrc, *A2Agdst;
   size_t tNS = 0;
   size_t tU = 0;
 
-  A2Asrc = (FTyp*)my_malloc(LS*N*E*sizeof(FTyp), alignment);
-  A2Agsrc = (FTyp*)my_malloc(S*LN*E*sizeof(FTyp), alignment);
+  A2Asrc = (DTyp*)my_malloc(LS*N*E*sizeof(DTyp), alignment);
+  A2Agsrc = (DTyp*)my_malloc(S*LN*E*sizeof(DTyp), alignment);
 
-  init_random(S*LN*E, A2Agsrc, -0.01f, 0.01f);
+#ifdef USE_FP16
+  DTyp low = 0, high = 128;
+#else
+  DTyp low = -0.01f, high = 0.01f;
+#endif
+  init_random<DTyp>(S*LN*E, A2Agsrc, low, high);
 
   if (my_size > 1)
   {
-    A2Adst = (FTyp *)my_malloc(S * LN * E * sizeof(FTyp), alignment);
-    A2Agdst = (FTyp *)my_malloc(LS * N * E * sizeof(FTyp), alignment);
+    A2Adst = (DTyp *)my_malloc(S * LN * E * sizeof(DTyp), alignment);
+    A2Agdst = (DTyp *)my_malloc(LS * N * E * sizeof(DTyp), alignment);
   }
   else
   {
@@ -387,10 +395,10 @@ int main(int argc, char * argv[]) {
   const size_t rfo = 2;
 #endif
 
-  size_t fwdBytes = ((size_t)tU*E + (size_t)rfo*iters*LS*N*E) * sizeof(FTyp) + ((size_t)tNS + (size_t)iters*LS*N) * sizeof(ITyp);
+  size_t fwdBytes = ((size_t)tU*E + (size_t)rfo*iters*LS*N*E) * sizeof(DTyp) + ((size_t)tNS + (size_t)iters*LS*N) * sizeof(ITyp);
   int use_rtm = 1;
-  size_t bwdBytes = ((size_t)rfo*tNS*E + (size_t)iters*LS*N*E) * sizeof(FTyp) + ((size_t)tNS) * sizeof(ITyp);
-  size_t updBytes = ((size_t)2*tU*E + (size_t)tNS*E) * sizeof(FTyp) + ((size_t)tNS) * sizeof(ITyp);
+  size_t bwdBytes = ((size_t)rfo*tNS*E + (size_t)iters*LS*N*E) * sizeof(DTyp) + ((size_t)tNS) * sizeof(ITyp);
+  size_t updBytes = ((size_t)2*tU*E + (size_t)tNS*E) * sizeof(DTyp) + ((size_t)tNS) * sizeof(ITyp);
 
   my_printf("USE RTM = %d  STREAMING STORES = %d\n", use_rtm, rfo == 1 ? 1 : 0);
   my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
