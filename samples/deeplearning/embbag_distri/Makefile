@@ -2,6 +2,7 @@ USE_RTM=1
 STREAMING_WRITES=1
 USE_MPI=1
 USE_CCL=0
+USE_FP16=0
 
 ifeq ($(USE_CCL),1)
 override USE_MPI=0
@@ -22,7 +23,7 @@ yesnolist += FWD_ROW_BLOCKING
 yesnolist += STREAMING_WRITES
 yesnolist += USE_MPI
 yesnolist += USE_CCL
-#yesnolist +=
+yesnolist += USE_FP16
 
 DEFS += $(strip $(foreach var, $(yesnolist), $(if $(filter 1, $($(var))), -D$(var))))
 DEFS += $(strip $(foreach var, $(deflist), $(if $($(var)), -D$(var)=$($(var)))))

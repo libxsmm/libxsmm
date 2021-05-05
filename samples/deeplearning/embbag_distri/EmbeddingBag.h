@@ -184,4 +184,3 @@ public:
   int E;
 };
 
-typedef EmbeddingBagImpl<FTyp> EmbeddingBag;
