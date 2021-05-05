@@ -3025,8 +3025,8 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
   unsigned int bcast_idx_instr = ( idx_tsize == 8 ) ? LIBXSMM_X86_INSTR_VPBROADCASTQ : LIBXSMM_X86_INSTR_VPBROADCASTD ;
   unsigned int gpr_bcast_idx_instr = ( idx_tsize == 8 ) ? LIBXSMM_X86_INSTR_VPBROADCASTQ_GPR : LIBXSMM_X86_INSTR_VPBROADCASTD_GPR ;
   const int rbp_offset_idx = -8;
-  const int rbp_offset_argop_ptr0 = -16;
-  const int rbp_offset_argop_ptr1 = -24;
+  int rbp_offset_argop_ptr0 = -16;
+  int rbp_offset_argop_ptr1 = -24;
   char vname_argop_bcast = 'z';
   unsigned int argop_mask = 3;
   unsigned int argop_mask_aux = 4;
@@ -3204,6 +3204,11 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
   if (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY) > 0) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX) > 0)) {
     vecidx_ind_base_param_offset = 48;
     vecidx_in_base_param_offset = 56;
+    if (record_argop_off_vec1 > 0) {
+      record_argop_off_vec0 = 1;
+      record_argop_off_vec1 = 0;
+      rbp_offset_argop_ptr0 = rbp_offset_argop_ptr1;
+    }
   }
 
   if (use_implicitly_indexed_vecidx == 0) {
