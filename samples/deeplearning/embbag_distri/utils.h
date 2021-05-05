@@ -27,6 +27,7 @@
 const int alignment = 64;
 typedef long ITyp;
 typedef float FTyp;
+typedef uint16_t Half;
 
 extern thread_local struct drand48_data rand_buf;
 
@@ -56,7 +57,7 @@ void init_zero(size_t sz, T *buf)
 }
 
 template<typename T>
-void init_random(size_t sz, T *buf, T low = -0.1, T high = 0.1)
+void init_random(size_t sz, T *buf, T low, T high)
 {
   T range = high - low;
 #pragma omp parallel for schedule(static)
