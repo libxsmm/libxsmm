@@ -879,12 +879,14 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
               cur_vreg,
               i_micro_kernel_config->tmp_vreg2,
               cur_vreg,
-              0, 0, 0, (i_micro_kernel_config->tmp_vreg) << 4);
+              0, 0, 0, (cur_mask_reg) << 4);
         } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU ) {
           if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) > 0 ) {
+            libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
             libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCMPPS, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_vreg, cur_vreg, cur_mask_reg, 6 );
             libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVMSKPS, i_micro_kernel_config->vector_name, cur_mask_reg, LIBXSMM_X86_VEC_REG_UNDEF, LIBXSMM_X86_GP_REG_RCX, 0 );
-            libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVB, i_gp_reg_mapping->gp_reg_relumask, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_mateltwise_desc->ldo)/8, LIBXSMM_X86_GP_REG_RCX,1);
+            libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVB, i_gp_reg_mapping->gp_reg_relumask, LIBXSMM_X86_GP_REG_UNDEF, 0, (im * l_vlen + in * i_mateltwise_desc->ldo)/8, LIBXSMM_X86_GP_REG_RCX, 1);
+            libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
           }
 
           /* ReLU */
@@ -1710,6 +1712,11 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
         i_micro_kernel_config->vec_tmp0 = i_micro_kernel_config->reserved_zmms;
         i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) const_mask_array, "const_mask_array", vname, i_micro_kernel_config->vec_tmp0 );
+      }
+    } else if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) && ((flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK) == 0) ) {
+      if ( op == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU ) {
+        i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
+        i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
       }
     }
 
