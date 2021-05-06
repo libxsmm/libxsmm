@@ -956,6 +956,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int dcvt_mask_aux1;
   unsigned int dcvt_zmm_aux0;
   unsigned int dcvt_zmm_aux1;
+  unsigned int inout_vreg_mask;
   unsigned int tmp_vreg;
   unsigned int tmp_vreg2;
   unsigned int tmp_vreg3;
@@ -1091,6 +1092,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int vlen_out;
   char vector_name;
   unsigned int                      is_head_reduce_to_scalar;
+  unsigned int                      inout_vreg_mask;
   unsigned int                      out_mask;
   unsigned int                      cvt_result_to_bf16;
   unsigned int                      use_fp32bf16_cvt_replacement;

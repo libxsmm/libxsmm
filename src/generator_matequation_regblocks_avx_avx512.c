@@ -326,8 +326,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
       libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, i_tmp_reg, mask_reg_in, mask_in_count, fake_dt);
       reserved_mask_regs++;
     } else {
-      mask_reg_in = i_micro_kernel_config->reserved_zmms;
-      i_micro_kernel_config->reserved_zmms =  i_micro_kernel_config->reserved_zmms + 1;
+      mask_reg_in = i_micro_kernel_config->inout_vreg_mask;
       libxsmm_generator_mateltwise_initialize_avx_mask(io_generated_code, mask_reg_in, i_m % i_vlen_in);
     }
   }
@@ -1241,6 +1240,12 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
 
   i_micro_kernel_config->reserved_zmms = meltw_config->reserved_zmms;
   i_micro_kernel_config->reserved_mask_regs = meltw_config->reserved_mask_regs;
+
+  /* Reserve in this case vreg mask*/
+  if ((io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mateqn_desc->m % i_micro_kernel_config->vlen_in != 0)) {
+    i_micro_kernel_config->inout_vreg_mask = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+  }
 
   /* Configure Reduce-to-scalar zmms and mask */
   i_micro_kernel_config->is_head_reduce_to_scalar = 0;
