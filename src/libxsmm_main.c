@@ -2154,7 +2154,11 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     /* attempt to create executable buffer */
     result = libxsmm_xmalloc((void**)code_buffer_result, generated_code.code_size, 0/*auto*/,
       /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
+# if defined(__APPLE__) && defined(__arm64__)
+      LIBXSMM_MALLOC_FLAG_RWX | MAP_JIT, &extra, sizeof(extra));
+# else
       LIBXSMM_MALLOC_FLAG_RWX, &extra, sizeof(extra));
+# endif
     if (EXIT_SUCCESS == result) { /* check for success */
       LIBXSMM_ASSERT(NULL != code_buffer);
 # if defined(__APPLE__) && defined(__arm64__)
@@ -2169,8 +2173,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       memcpy(code_buffer, generated_code.generated_code, generated_code.code_size);
 # endif
 # if defined(__APPLE__) && defined(__arm64__)
-      pthread_jit_write_protect_np(1/*true*/);
+      code->ptr = code_buffer; /* commit buffer */
+      LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
       sys_icache_invalidate(code_buffer, generated_code.code_size);
+      pthread_jit_write_protect_np(1/*true*/);
 # else
       /* attribute/protect buffer and revoke unnecessary flags */
       result = libxsmm_malloc_attrib((void**)code_buffer_result, LIBXSMM_MALLOC_FLAG_X, jit_name);
