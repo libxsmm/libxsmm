@@ -249,25 +249,10 @@
     <ClInclude Include="..\src\generator_packed_spgemm_csr_bsparse_avx_avx2_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_packed_trmm_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_trsm_dmacros.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_aarch64.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_gemm_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_aarch64.h">
@@ -277,9 +262,6 @@
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_packed_gemmnn.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_getrf_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse.h">
@@ -313,9 +295,6 @@
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_gemm_common_aarch64.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_aux.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_common_x86.h">
@@ -905,12 +884,6 @@
     <ClCompile Include="..\src\generator_packed_spgemm_csr_bsparse_avx_avx2_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_packed_trmm_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_packed_gemm_ac_rm.c">
       <Filter>src\generator</Filter>
     </ClCompile>
@@ -920,9 +893,6 @@
     <ClCompile Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_packed_gemm_avx_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_packed_gemm_bc_rm.c">
       <Filter>src\generator</Filter>
     </ClCompile>
@@ -930,9 +900,6 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_packed_getrf_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_packed_spgemm.c">
@@ -969,9 +936,6 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_common_aarch64.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_packed.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_common_x86.c">
