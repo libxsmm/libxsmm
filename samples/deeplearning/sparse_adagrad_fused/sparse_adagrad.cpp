@@ -37,6 +37,7 @@
 #endif
 
 #include "radix_sort.h"
+#include "ctevents.h"
 
 const int alignment = 64;
 typedef long ITyp;
@@ -416,9 +417,12 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   eio->mb_offsets = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
   eio->mb_indices = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
   eio->wt_indices = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
-  init_zero(NS, eio->mb_offsets);
-  init_zero(NS, eio->mb_indices);
-  init_zero(NS, eio->wt_indices);
+}
+
+void csr2csc(EmbeddingInOut *eio) {
+  init_zero(eio->NS, eio->mb_offsets);
+  init_zero(eio->NS, eio->mb_indices);
+  init_zero(eio->NS, eio->wt_indices);
   auto t0 = get_time();
   sparse_transpose_radix(eio);
   auto t1 = get_time();
@@ -513,6 +517,21 @@ int main(int argc, char * argv[]) {
       tU += eio[j][i]->U;
     }
   }
+  double csr2csc_time = get_time();
+  CTraceEvents::Scoped cevent("csr2csc", "", "", "", true);
+  int K = 100;
+  for (int k=0;k<K;k++)
+  for(int i = 0; i < LS; i++)
+  {
+    for(int j = 0; j < iters; j++)
+    {
+      csr2csc(eio[j][i]);
+    }
+  }
+  csr2csc_time = get_time()-csr2csc_time;
+  printf("csr2csc time = %.3f ms per table, %.3f total\n", csr2csc_time/(LS*iters*K), csr2csc_time/(iters*K));
+
+return 1;
   int warmup = (iters > 2 ? 2 : iters);
 
   for(int i = 0; i < warmup; i++) {
