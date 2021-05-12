@@ -66,7 +66,7 @@ void libxsmm_generator_transform_Xway_half_load_blend_avx512( libxsmm_generated_
                                                               const unsigned int      i_gp_reg_in,
                                                               const unsigned int      i_vec_reg_dst_start,
                                                               const unsigned int      i_ld,
-                                                              const unsigned int      i_ld_idx[32],
+                                                              const unsigned int*     i_ld_idx,
                                                               const unsigned int      i_blend_mult,
                                                               const unsigned int      i_ld_instr,
                                                               const unsigned int      i_ways,

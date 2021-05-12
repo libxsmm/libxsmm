@@ -17,7 +17,7 @@
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_unpack_network_avx_avx512( libxsmm_generated_code* io_generated_code,
                                                                  const char              i_vector_name,
-                                                                 const unsigned char     i_in_idx[16],
+                                                                 const unsigned char*    i_in_idx,
                                                                  const unsigned int      i_vec_reg_src_start,
                                                                  const unsigned int      i_vec_reg_dst_start,
                                                                  const unsigned int      i_out_offset,
