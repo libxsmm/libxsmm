@@ -19,6 +19,9 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+# if defined(__APPLE__) && defined(__arm64__)
+#include <pthread.h>
+# endif
 
 # define USE_OVERWRITE
 /*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
@@ -91,6 +94,14 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&norms_bwd);
   libxsmm_matdiff_clear(&norms_upd);
   libxsmm_matdiff_clear(&diff);
+
+# if defined(__APPLE__) && defined(__arm64__)
+#  if 1
+  pthread_set_qos_class_self_np( QOS_CLASS_USER_INTERACTIVE, 0 );
+#  else
+  pthread_set_qos_class_self_np( QOS_CLASS_BACKGROUND, 0 );
+#  endif
+# endif
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type format padding_mode\n", argv[0]);
