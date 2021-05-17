@@ -47,7 +47,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/encoder_x86 $(OUTDIR)/encoder_aarch64
+XFILES := $(OUTDIR)/encoder_x86 $(OUTDIR)/encoder_aarch64 $(OUTDIR)/jit_bigsur_test
 
 .PHONY: all
 all: $(XFILES)
@@ -60,6 +60,9 @@ $(OUTDIR)/encoder_x86: $(OUTDIR)/.make $(BLDDIR)/encoder_x86-c.o $(LIBDEP) $(EXT
 
 $(OUTDIR)/encoder_aarch64: $(OUTDIR)/.make $(BLDDIR)/encoder_aarch64-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/encoder_aarch64-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+
+$(OUTDIR)/jit_bigsur_test: $(OUTDIR)/.make $(BLDDIR)/jit_bigsur_test-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/jit_bigsur_test-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

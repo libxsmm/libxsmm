@@ -55,6 +55,9 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if defined(LIBXSMM_PLATFORM_AARCH64)
+#if defined(__APPLE__) && defined(__arm64__)
+  result = LIBXSMM_AARCH64_V81;
+#else
   if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* avoid redetecting features */
     void (*const handler)(int) = signal(SIGILL, internal_cpuid_arm_sigill);
     result = LIBXSMM_AARCH64_V81;
@@ -77,6 +80,7 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
     }
     if (NULL != info) LIBXSMM_MEMZERO127(info);
   }
+#endif
 #else
 # if !defined(NDEBUG)
   static int error_once = 0;
