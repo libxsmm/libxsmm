@@ -489,6 +489,98 @@ void tpp_groupnorm_bwd_fp32(long CP, long NB, long HW, long CB, long G, float *p
   }
 }
 
+void tpp_groupnorm_bwd_bf16(long CP, long NB, long HW, long CB, long G, libxsmm_bfloat16 *pdout, libxsmm_bfloat16 *pinp, float *mean, float *var, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pdin, float *pdgamma, float *pdbeta,
+    libxsmm_matrix_eqn_function dgamma_func, libxsmm_matrix_eqn_function dbeta_func, libxsmm_matrix_eqn_function db_func, libxsmm_matrix_eqn_function ds_func, libxsmm_matrix_eqn_function din_func) {
+
+  int cp, nb, hw, cb;
+  int group_size, g;
+  group_size = (CP*CB)/G;
+
+  float ds = 0.0f;
+  float db = 0.0f;
+  float final_ds = 0.0f;
+  float final_db = 0.0f;
+  const float scale = 1.0f / ((float)CP*HW*CB);
+
+  LIBXSMM_ALIGNED(float a[CP*CB], 64);
+  LIBXSMM_ALIGNED(float b[CP*CB], 64);
+  LIBXSMM_ALIGNED(float c[CP*CB], 64);
+
+  LIBXSMM_VLA_DECL(4, libxsmm_bfloat16, din, pdin, NB, HW, CB);
+  LIBXSMM_VLA_DECL(4, libxsmm_bfloat16, inp, pinp, NB, HW, CB);
+  LIBXSMM_VLA_DECL(4, libxsmm_bfloat16, dout, pdout, NB, HW, CB);
+  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, gamma, pgamma, CB);
+  LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, CB);
+  LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, CB);
+
+  libxsmm_matrix_eqn_param eqn_param;
+  libxsmm_matrix_arg arg_array[8];
+  eqn_param.inputs = arg_array;
+
+  for (nb = 0; nb < NB; nb++) {
+    // a = var[nb];
+    // b = -a*mean[nb];
+    for(g = 0; g < G; g++){                                                  // compute a and b for each channel from group means and variance
+      for(int j = 0; j < group_size; j++){
+        a[g*group_size + j] = var[nb*G + g];
+        b[g*group_size + j] = -a[g*group_size + j]*mean[nb*G + g];
+      }
+    }
+    for (cp = 0; cp < CP; cp++) {
+      arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, cp, nb, 0, 0, NB, HW, CB);
+      arg_array[1].primary = &a[cp*CB];
+      arg_array[2].primary = &b[cp*CB];
+      arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, cp, nb, 0, 0, NB, HW, CB);
+      arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
+      arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
+      arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+      arg_array[7].primary = &c[cp*CB];
+
+      eqn_param.output.primary = &ds;
+      ds_func(&eqn_param);
+
+      eqn_param.output.primary = &db;
+      db_func(&eqn_param);
+
+      eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
+      dgamma_func(&eqn_param);
+
+      eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
+      dbeta_func(&eqn_param);
+
+      final_ds += ds;
+      final_db += db;
+    }
+
+    ds = final_ds;
+    db = final_db;
+    final_ds = 0.0f;
+    final_db = 0.0f;
+    // b = (db * mean[nb] - ds) * a * a * a * scale;
+    // c = -b * mean[nb] - db * a * scale;
+
+    for(g = 0; g < G; g++){                                                  // compute b and c for each channel from group means and variance
+      for(int j = 0; j < group_size; j++){
+        b[g*group_size + j] = (db * mean[nb*G + g] - ds) * a[g*group_size + j] * a[g*group_size + j] * a[g*group_size + j] * scale;
+        c[g*group_size + j] = -b[g*group_size + j] * mean[nb*G + g] - db * a[g*group_size + j] * scale;
+      }
+    }
+
+    for (cp = 0; cp < CP; cp++) {
+      arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, cp, nb, 0, 0, NB, HW, CB);
+      arg_array[1].primary = &a[cp*CB];
+      arg_array[2].primary = &b[cp*CB];
+      arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, cp, nb, 0, 0, NB, HW, CB);
+      arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
+      arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
+      arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+      arg_array[7].primary = &c[cp*CB];
+      eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, cp, nb, 0, 0, NB, HW, CB);
+      din_func(&eqn_param);
+    }
+  }
+}
+
 void scaler_groupnorm_fwd_fp32(long CP, long NB, long HW, long CB, long G, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps){
 
   LIBXSMM_ALIGNED(float sum_X[G], 64);
@@ -738,7 +830,7 @@ int main( int argc, char* argv[] ) {
 
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
-  reduce_HW_kernel = libxsmm_dispatch_meltw_unary(CB, HW, &ld, &tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+  reduce_HW_kernel = libxsmm_dispatch_meltw_unary(CB, HW, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
 
   // TPP for reducing groups
   libxsmm_blasint group_size = (CP*CB)/G;
@@ -800,12 +892,12 @@ int main( int argc, char* argv[] ) {
     // tpp_layernorm_fwd_fp32(CP, NB, CB, inp, gamma, beta, mean, var, eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
   } else if (datatype_mode == 1) {
     // // vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
-    // tpp_groupnorm_fwd_bf16(CP, NB, HW, CB, G, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps, func10, reduce_HW_kernel, reduce_rows_kernel, reduce_groups_kernel);
-    // tpp_layernorm_fwd_bf16(CP, NB, CB, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
-    // for ( i = 0; i < CP*NB*CB; ++i ) {
-    //   out[i] = upconvert_bf16(bf16_out[i]);
-    //   eqn_out[i] = upconvert_bf16(bf16_eqn_out[i]);
-    // }
+    tpp_groupnorm_fwd_bf16(CP, NB, HW, CB, G, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps, func10, reduce_HW_kernel, reduce_rows_kernel, reduce_groups_kernel);
+    tpp_layernorm_fwd_bf16(CP, NB, CB, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
+    for ( i = 0; i < CP*NB*CB; ++i ) {
+      out[i] = upconvert_bf16(bf16_out[i]);
+      eqn_out[i] = upconvert_bf16(bf16_eqn_out[i]);
+    }
   }
 
   /* compare */
@@ -1000,11 +1092,12 @@ int main( int argc, char* argv[] ) {
     tpp_groupnorm_bwd_fp32(CP, NB, HW, CB, G, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func11, func12, func13, func14, func15);
   } else if (datatype_mode == 1) {
   //   vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta);
-  //   tpp_layernorm_bwd_bf16(S1, S2, S3, bf16_eqn_dout, bf16_inp, mean, var, bf16_gamma, bf16_eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
-  //   for ( i = 0; i < S1*S2*S3; ++i ) {
-  //     dinp[i] = upconvert_bf16(bf16_dinp[i]);
-  //     eqn_dinp[i] = upconvert_bf16(bf16_eqn_dinp[i]);
-  //   }
+    tpp_groupnorm_bwd_bf16(CP, NB, HW, CB, G, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta, func11, func12, func13, func14, func15);
+    tpp_layernorm_bwd_bf16(CP, NB, CB, bf16_eqn_dout, bf16_inp, mean, var, bf16_gamma, bf16_eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
+    for ( i = 0; i < CP*NB*CB; ++i ) {
+      dinp[i] = upconvert_bf16(bf16_dinp[i]);
+      eqn_dinp[i] = upconvert_bf16(bf16_eqn_dinp[i]);
+    }
   }
 
   /* compare */
