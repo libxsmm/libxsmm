@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <omp.h>
+#include <assert.h>
 #include "utils.h"
 #include "EmbeddingBag.h"
 #include "dist.h"
@@ -294,6 +295,11 @@ int main(int argc, char * argv[]) {
 
   printf("Using: iters: %d N: %d E: %d M: %d S: %d P: %d alpha: %f\n", iters, N, E, M, S, P, alpha);
 
+#ifdef USE_RTM
+  int use_rtm = 1;
+#else
+  int use_rtm = 0;
+#endif
 
 #if defined(USE_RTM) && defined(RTM_DEBUG)
   clear_rtm_stats();
@@ -320,6 +326,7 @@ int main(int argc, char * argv[]) {
 #else
   DTyp low = -0.01f, high = 0.01f;
 #endif
+
   init_random<DTyp>(S*LN*E, A2Agsrc, low, high);
 
   if (my_size > 1)
@@ -369,7 +376,7 @@ int main(int argc, char * argv[]) {
     }
     double t6 = get_time();
     for(int s = 0; s < LS; s++) {
-      eb[s]->update(eio[i][s]->NS, eio[i][s]->grads, eio[i][s]->indices, -0.1);
+      eb[s]->update(eio[i][s]->NS, eio[i][s]->grads, eio[i][s]->indices, -0.1, M, use_rtm);
     }
     double t7 = get_time();
     //printf("Iter %4d: F = %.3f   B = %.3f   U = %.3f\n", i, t1-t0, t2-t1, t3-t2);
@@ -384,7 +391,7 @@ int main(int argc, char * argv[]) {
   double t1 = get_time();
 #ifdef VERIFY_CORRECTNESS
   for(int s = 0; s < LS; s++) {
-    double psum = get_checksum(&weight[s][0][0], M*E);
+    double psum = get_checksum(eb[s]->weight_, M*E);
     //my_printf("PSUM %d: %g\n", SS+s, psum);
     checksum += psum;
   }
@@ -396,7 +403,6 @@ int main(int argc, char * argv[]) {
 #endif
 
   size_t fwdBytes = ((size_t)tU*E + (size_t)rfo*iters*LS*N*E) * sizeof(DTyp) + ((size_t)tNS + (size_t)iters*LS*N) * sizeof(ITyp);
-  int use_rtm = 1;
   size_t bwdBytes = ((size_t)rfo*tNS*E + (size_t)iters*LS*N*E) * sizeof(DTyp) + ((size_t)tNS) * sizeof(ITyp);
   size_t updBytes = ((size_t)2*tU*E + (size_t)tNS*E) * sizeof(DTyp) + ((size_t)tNS) * sizeof(ITyp);
 

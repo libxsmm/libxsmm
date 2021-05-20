@@ -1,8 +1,9 @@
-USE_RTM=1
+USE_RTM=0
 STREAMING_WRITES=1
 USE_MPI=1
 USE_CCL=0
 USE_FP16=0
+VERIFY_CORRECTNESS=0
 
 ifeq ($(USE_CCL),1)
 override USE_MPI=0
@@ -24,6 +25,7 @@ yesnolist += STREAMING_WRITES
 yesnolist += USE_MPI
 yesnolist += USE_CCL
 yesnolist += USE_FP16
+yesnolist += VERIFY_CORRECTNESS
 
 DEFS += $(strip $(foreach var, $(yesnolist), $(if $(filter 1, $($(var))), -D$(var))))
 DEFS += $(strip $(foreach var, $(deflist), $(if $($(var)), -D$(var)=$($(var)))))
