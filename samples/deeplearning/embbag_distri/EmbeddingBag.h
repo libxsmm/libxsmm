@@ -151,11 +151,9 @@ public:
 #pragma omp parallel num_threads(max_thr)
       {
         int tid = omp_get_thread_num();
-        long j_begin = (tid * M) / max_thr;
-        long j_end = ((tid+1) * M) / max_thr;
         for(long i = 0; i < NS; i++) {
           auto ind = indices[i];
-          if(ind >= j_begin && ind < j_end) {
+          if(ind % max_thr == tid) {
             libxsmm_meltw_binary_param binary_param;
             binary_param.in0.primary  = (void*)&lr;
             binary_param.in1.primary  = (void*)&grads[i][0];
@@ -197,11 +195,9 @@ public:
 #pragma omp parallel num_threads(max_thr)
       {
         int tid = omp_get_thread_num();
-        long j_begin = (tid * M) / max_thr;
-        long j_end = ((tid+1) * M) / max_thr;
         for(long i = 0; i < NS; i++) {
           auto ind = indices[i];
-          if(ind >= j_begin && ind < j_end) {
+          if(ind % max_thr == tid) {
 #pragma omp simd
             for (long v = 0; v < E; v++)
               weight[ind][v] += lr * grads[i][v];

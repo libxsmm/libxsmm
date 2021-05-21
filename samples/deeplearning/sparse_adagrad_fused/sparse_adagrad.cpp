@@ -391,26 +391,40 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   eio->indices = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
   eio->grads = (FTyp*)my_malloc(NS * E * sizeof(FTyp), alignment);
   init_zero(NS * E, eio->grads);
+#pragma omp parallel for
   for (int n = 0; n < N; n++)
   {
     int start = eio->offsets[n];
     int end = eio->offsets[n+1];
+    ITyp *tmp_ind = (ITyp*)my_malloc((end-start)*sizeof(ITyp), alignment);
+    int ind_cnt = 0, j;
     for (int i = start; i < end; i++)
     {
       ITyp ind;
-      if (alpha == 0.0) {
-        double randval;
-        drand48_r(&rand_buf, &randval);
-        ind = (ITyp)(randval * M);
-      } else {
-        ind = (ITyp) zipf_dist(alpha, M);
+      double randval;
+      bool found_uniq = false;
+      while(!found_uniq) {
+        if (alpha == 0.0) {
+          drand48_r(&rand_buf, &randval);
+          ind = (ITyp)(randval * M);
+        } else {
+          ind = (ITyp) zipf_dist(alpha, M);
+        }
+        for (j = 0; j < ind_cnt; j++){
+          if (ind == tmp_ind[j]) break;
+        }
+        if(j == ind_cnt) {
+          tmp_ind[ind_cnt] = ind;
+          found_uniq = true;
+        }
       }
-
       if (ind == M)
         ind--;
       eio->indices[i] = ind;
+      ind_cnt++;
     }
     std::sort(&eio->indices[start], &eio->indices[end]);
+    my_free(tmp_ind);
   }
   eio->U = -1;
   eio->mb_offsets = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
