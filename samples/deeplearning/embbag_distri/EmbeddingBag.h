@@ -145,7 +145,7 @@ public:
     T(*__restrict grads)[E] = (T(*)[*])grads_;
     int _ld = E;
     if(use_lock_free) {
-      //printf("Using lock free update\n");
+      /*printf("Using lock free update\n");*/
       int max_thr = omp_get_max_threads();
       if(M < max_thr) max_thr = M;
 #pragma omp parallel num_threads(max_thr)
