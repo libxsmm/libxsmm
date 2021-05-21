@@ -4,7 +4,7 @@ USE_MPI=0
 USE_CCL=0
 USE_FP16=0
 VERIFY_CORRECTNESS=1
-PRINT_UNIQUE=0
+COUNT_UNIQUE=1
 USE_LIBXSMM_JIT = 1
 
 ifeq ($(USE_CCL),1)
@@ -28,7 +28,7 @@ yesnolist += USE_MPI
 yesnolist += USE_CCL
 yesnolist += USE_FP16
 yesnolist += VERIFY_CORRECTNESS
-yesnolist += PRINT_UNIQUE
+yesnolist += COUNT_UNIQUE
 yesnolist += USE_LIBXSMM_JIT
 
 DEFS += $(strip $(foreach var, $(yesnolist), $(if $(filter 1, $($(var))), -D$(var))))

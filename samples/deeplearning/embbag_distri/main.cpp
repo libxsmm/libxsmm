@@ -198,7 +198,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
     //std::sort(&eio->indices[start], &eio->indices[end]);
   }
 
-#ifdef PRINT_UNIQUE
+#ifdef COUNT_UNIQUE
   eio->U = find_unique(eio);
 #endif
 }
@@ -418,7 +418,7 @@ int main(int argc, char * argv[]) {
   size_t updBytes = ((size_t)2*tU*E + (size_t)tNS*E) * sizeof(DTyp) + ((size_t)tNS) * sizeof(ITyp);
 
   my_printf("USE RTM = %d  STREAMING STORES = %d\n", use_rtm, rfo == 1 ? 1 : 0);
-#ifdef PRINT_UNIQUE
+#ifdef COUNT_UNIQUE
   my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
 #else
   my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), P);
