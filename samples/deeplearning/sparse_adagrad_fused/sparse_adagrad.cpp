@@ -13,6 +13,8 @@
 #include <time.h>
 #include <sys/syscall.h>
 #include <algorithm>
+#include <iterator>
+#include <set>
 #include <parallel/algorithm>
 #include <stdlib.h>
 #include <stdio.h>
@@ -396,35 +398,28 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   {
     int start = eio->offsets[n];
     int end = eio->offsets[n+1];
-    ITyp *tmp_ind = (ITyp*)my_malloc((end-start)*sizeof(ITyp), alignment);
-    int ind_cnt = 0, j;
-    for (int i = start; i < end; i++)
-    {
-      ITyp ind;
-      double randval;
-      bool found_uniq = false;
-      while(!found_uniq) {
-        if (alpha == 0.0) {
-          drand48_r(&rand_buf, &randval);
-          ind = (ITyp)(randval * M);
-        } else {
-          ind = (ITyp) zipf_dist(alpha, M);
-        }
-        for (j = 0; j < ind_cnt; j++){
-          if (ind == tmp_ind[j]) break;
-        }
-        if(j == ind_cnt) {
-          tmp_ind[ind_cnt] = ind;
-          found_uniq = true;
-        }
+    std::set<ITyp> s_ind;
+    ITyp ind;
+    double randval;
+    while(s_ind.size() < (end - start)) {
+      if (alpha == 0.0) {
+        drand48_r(&rand_buf, &randval);
+        ind = (ITyp)(randval * M);
+      } else {
+        ind = (ITyp) zipf_dist(alpha, M);
       }
       if (ind == M)
         ind--;
-      eio->indices[i] = ind;
-      ind_cnt++;
+      s_ind.insert(ind);
     }
-    std::sort(&eio->indices[start], &eio->indices[end]);
-    my_free(tmp_ind);
+
+    int i = start;
+    for (std::set<ITyp>::iterator itr = s_ind.begin(); itr != s_ind.end(); itr++, i++) {
+      eio->indices[i] = *itr;
+    }
+
+    //set iterator gives elements in sorted order
+    //std::sort(&eio->indices[start], &eio->indices[end]);
   }
   eio->U = -1;
   eio->mb_offsets = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);

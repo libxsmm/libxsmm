@@ -13,6 +13,8 @@
 #include <time.h>
 #include <sys/syscall.h>
 #include <algorithm>
+#include <iterator>
+#include <set>
 #include <parallel/algorithm>
 #include <stdlib.h>
 #include <stdio.h>
@@ -173,38 +175,32 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   {
     int start = eio->offsets[n];
     int end = eio->offsets[n+1];
-    ITyp *tmp_ind = (ITyp*)my_malloc((end-start)*sizeof(ITyp), alignment);
-    int ind_cnt = 0, j;
-    for (int i = start; i < end; i++)
-    {
-      ITyp ind;
-      double randval;
-      bool found_uniq = false;
-      while(!found_uniq) {
-        if (alpha == 0.0) {
-          drand48_r(&rand_buf, &randval);
-          ind = (ITyp)(randval * M);
-        } else {
-          ind = (ITyp) zipf_dist(alpha, M);
-        }
-        for (j = 0; j < ind_cnt; j++){
-          if (ind == tmp_ind[j]) break;
-        }
-        if(j == ind_cnt) {
-          tmp_ind[ind_cnt] = ind;
-          found_uniq = true;
-        }
+    std::set<ITyp> s_ind;
+    ITyp ind;
+    double randval;
+    while(s_ind.size() < (end - start)) {
+      if (alpha == 0.0) {
+        drand48_r(&rand_buf, &randval);
+        ind = (ITyp)(randval * M);
+      } else {
+        ind = (ITyp) zipf_dist(alpha, M);
       }
       if (ind == M)
         ind--;
-      eio->indices[i] = ind;
-      ind_cnt++;
+      s_ind.insert(ind);
     }
-    std::sort(&eio->indices[start], &eio->indices[end]);
-    my_free(tmp_ind);
+
+    int i = start;
+    for (std::set<ITyp>::iterator itr = s_ind.begin(); itr != s_ind.end(); itr++, i++) {
+      eio->indices[i] = *itr;
+    }
+    //set iterator gives elements in sorted order
+    //std::sort(&eio->indices[start], &eio->indices[end]);
   }
 
+#ifdef PRINT_UNIQUE
   eio->U = find_unique(eio);
+#endif
 }
 
 void free_buffers(EmbeddingInOut *eio)
@@ -422,8 +418,12 @@ int main(int argc, char * argv[]) {
   size_t updBytes = ((size_t)2*tU*E + (size_t)tNS*E) * sizeof(DTyp) + ((size_t)tNS) * sizeof(ITyp);
 
   my_printf("USE RTM = %d  STREAMING STORES = %d\n", use_rtm, rfo == 1 ? 1 : 0);
+#ifdef PRINT_UNIQUE
   my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
-  //printf("Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f\n", fwdTime, bwdTime, updTime, t1-t0);
+#else
+  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), P);
+#endif
+
   my_printf("Per Iter  Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  A2A: %.3f ms Total: %.3f ms\n", fwdTime/(iters), bwdTime/(iters), updTime/(iters), (fwdA2ATime+bwdA2ATime+packTime+unpackTime)/(iters), (t1-t0)/(iters));
   my_printf("Per Table Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f ms\n", fwdTime/(iters*LS), bwdTime/(iters*LS), updTime/(iters*LS), (t1-t0)/(iters*LS));
 
