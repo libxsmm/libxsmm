@@ -289,6 +289,9 @@ ABSDIR := $(call qapath,$(ROOTDIR))
 HOMEDIR := $(call qapath,$(HOME))
 HEREDIR := $(call qapath,.)
 
+# pick the last of wildcard's sorted results
+wildcard1 = $(strip $(lastword $(sort $(wildcard $1))))
+
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifeq (NaN,$(call qnum,$(OMP),NaN))
   OMPRT := $(patsubst lib%,%,$(OMP))
@@ -892,7 +895,10 @@ DYNAMIC ?= 0
 
 # enable MKL (if available)
 ifeq (,$(strip $(MKLROOT)))
-  BLAS_INCFILE := $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
+  BLAS_INCFILE := $(wildcard /opt/intel/oneapi/mkl/latest/include/mkl.h)
+  ifeq (,$(BLAS_INCFILE))
+    BLAS_INCFILE := $(call wildcard1,/opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)
+  endif
   ifneq (,$(BLAS_INCFILE))
     MKLROOT := $(call qapath,$(call qdir,$(BLAS_INCFILE))/..)
   endif

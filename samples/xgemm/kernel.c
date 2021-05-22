@@ -13,7 +13,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-
+# if defined(__APPLE__) && defined(__arm64__)
+#include <pthread.h>
+# endif
 
 typedef struct gemm_def {
   libxsmm_blasint m;
@@ -1934,6 +1936,14 @@ int main(int argc, char* argv []) {
   double l_total_max_error = 0.0;
 
   int l_tc_config = 0;
+
+# if defined(__APPLE__) && defined(__arm64__)
+#  if 1
+  pthread_set_qos_class_self_np( QOS_CLASS_USER_INTERACTIVE, 0 );
+#  else
+  pthread_set_qos_class_self_np( QOS_CLASS_BACKGROUND, 0 );
+#  endif
+# endif
 
   /* scaling factor */
   float l_scf = 1.0;
