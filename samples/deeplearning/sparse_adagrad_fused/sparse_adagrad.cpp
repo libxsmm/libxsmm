@@ -13,6 +13,8 @@
 #include <time.h>
 #include <sys/syscall.h>
 #include <algorithm>
+#include <iterator>
+#include <set>
 #include <parallel/algorithm>
 #include <stdlib.h>
 #include <stdio.h>
@@ -391,26 +393,33 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   eio->indices = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
   eio->grads = (FTyp*)my_malloc(NS * E * sizeof(FTyp), alignment);
   init_zero(NS * E, eio->grads);
+#pragma omp parallel for
   for (int n = 0; n < N; n++)
   {
     int start = eio->offsets[n];
     int end = eio->offsets[n+1];
-    for (int i = start; i < end; i++)
-    {
-      ITyp ind;
+    std::set<ITyp> s_ind;
+    ITyp ind;
+    double randval;
+    while(s_ind.size() < (end - start)) {
       if (alpha == 0.0) {
-        double randval;
         drand48_r(&rand_buf, &randval);
         ind = (ITyp)(randval * M);
       } else {
         ind = (ITyp) zipf_dist(alpha, M);
       }
-
       if (ind == M)
         ind--;
-      eio->indices[i] = ind;
+      s_ind.insert(ind);
     }
-    std::sort(&eio->indices[start], &eio->indices[end]);
+
+    int i = start;
+    for (std::set<ITyp>::iterator itr = s_ind.begin(); itr != s_ind.end(); itr++, i++) {
+      eio->indices[i] = *itr;
+    }
+
+    //set iterator gives elements in sorted order
+    //std::sort(&eio->indices[start], &eio->indices[end]);
   }
   eio->U = -1;
   eio->mb_offsets = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
