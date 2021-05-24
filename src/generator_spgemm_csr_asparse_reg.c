@@ -59,7 +59,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   unsigned int l_unique;
   unsigned int l_reg_num;
   unsigned int l_hit;
-  unsigned int l_n_blocking = 1;
+  unsigned int l_n_blocking;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
@@ -105,27 +105,41 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     return;
   }
 
+  /* Define the micro kernel code gen properties */
+  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
+
+  /* Inner chunk size */
+  if ( i_xgemm_desc->n == l_micro_kernel_config.vector_length ) {
+    l_n_blocking = 1;
+  } else if ( i_xgemm_desc->n == 2*l_micro_kernel_config.vector_length ) {
+    l_n_blocking = 2;
+  } else {
+      free(l_unique_values); free(l_unique_pos); free(l_unique_sgn);
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+      return;
+  }
+
   /* Init config */
   if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
-    l_breg_unique = 15;
-    l_base_acc_reg = 15;
+    l_breg_unique = 16 - l_n_blocking;
+    l_base_acc_reg = 16 - l_n_blocking;
     l_prefetch = 0;
 
     l_preg_unique = l_psreg_unique = 0;
     l_base_perm_reg = l_bcast_reg = (unsigned int)-1;
   } else {
-    l_breg_unique = 31;
-    l_base_acc_reg = 31;
+    l_breg_unique = 32 - l_n_blocking;
+    l_base_acc_reg = 32 - l_n_blocking;
     l_bcast_reg = l_base_acc_reg - 1;
     l_prefetch = 1;
 
     if ( l_fp64 ) {
-      l_preg_unique = (32 - 2 - 8)*8;
-      l_psreg_unique = (32 - 2)*8;
+      l_preg_unique = (32 - l_n_blocking - 1 - 8)*8;
+      l_psreg_unique = (32 - l_n_blocking - 1)*8;
       l_base_perm_reg = l_bcast_reg - 8;
     } else {
-      l_preg_unique = (32 - 2 - 16)*16;
-      l_psreg_unique = (32 - 2)*16;
+      l_preg_unique = (32 - l_n_blocking - 1 - 16)*16;
+      l_psreg_unique = (32 - l_n_blocking - 1)*16;
       l_base_perm_reg = l_bcast_reg - 16;
     }
   }
@@ -193,16 +207,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
-
-  /* define the micro kernel code gen properties */
-  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
-
-  /* inner chunk size */
-  if ( i_xgemm_desc->n != l_micro_kernel_config.vector_length ) {
-    free(l_unique_values); free(l_unique_pos); free(l_unique_sgn);
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
-    return;
-  }
 
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );

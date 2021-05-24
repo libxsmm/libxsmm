@@ -26,8 +26,8 @@ Keep the batch size as power of 2 with the MKLDNN backend (Conv1d) for optimal p
 """
 
 Input_width = 60400              # Width of the input signal track (60400)
-Channels = 15                    # Number of channels in the input (15)
-Filters = 15                     # Number of filter in the layer (15)
+Channels = 16                    # Number of channels in the input (15)
+Filters = 16                     # Number of filter in the layer (15)
 Dilation = 8                     # Amount of dilation (8)
 Kernel_size = 51                 # Size of each filter (51)
 enable_BF16 = False              # Enable layer compute in BFloat16 (Only works when Filters and channels are both even numbers)
@@ -106,11 +106,13 @@ for _ in range(N):                          # Optimized PyTorch layer Forward an
 print('Forward pass time (PyTorch layer): {:.3f} ms | Forward pass time (Optimized layer): {:.3f} ms'.format(forward1 * 1e3/N, forward2 * 1e3/N))
 print('Backward pass time (PyTorch layer): {:.3f} ms | Backward pass time (Optimized layer): {:.3f} ms'.format(backward1 * 1e3/N, backward2 * 1e3/N))
 
-forward1_flops = 2*Batch_size_1*Channels*Filters*Kernel_size*(Input_width - (Kernel_size - 1)*Dilation)/(forward1 * 1e3/N)
-backward1_flops = 2*2*Batch_size_1*Channels*Filters*Kernel_size*(Input_width - (Kernel_size - 1)*Dilation)/(backward1 * 1e3/N)
+forward1_flops = 2*Batch_size_1*Channels*Filters*Kernel_size*(Input_width - (Kernel_size - 1)*Dilation)/(forward1 / N)
+backward1_flops = 2*2*Batch_size_1*Channels*Filters*Kernel_size*(Input_width - (Kernel_size - 1)*Dilation)/(backward1 / N)
 
-forward2_flops = 2*Batch_size_2*Channels*Filters*Kernel_size*(Input_width - (Kernel_size - 1)*Dilation)/(forward2 * 1e3/N)
-backward2_flops = 2*2*Batch_size_2*Channels*Filters*Kernel_size*(Input_width - (Kernel_size - 1)*Dilation)/(backward2 * 1e3/N)
+forward2_flops = 2*Batch_size_2*Channels*Filters*Kernel_size*(Input_width - (Kernel_size - 1)*Dilation)/(forward2 / N)
+backward2_flops = 2*2*Batch_size_2*Channels*Filters*Kernel_size*(Input_width - (Kernel_size - 1)*Dilation)/(backward2 / N)
+
+
 
 print("\n")
 print('Forward pass flops (PyTorch layer): {:e} | Forward pass flops (Optimized layer): {:e} '.format(forward1_flops, forward2_flops))
