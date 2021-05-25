@@ -603,7 +603,7 @@ void scaler_groupnorm_fwd_fp32(long CP, long NB, long HW, long CB, long G, float
       sum_X[g] = 0.0f;
       sum_X2[g] = 0.0f;
     }
-    for(int cp = 0; cp < CP; cp++){
+    for(int cp = 0; cp < CP; cp++){                           /* Size = CP*HW*CB*4 */
       m = 0.0f;
       v = 0.0f;
       if (group_size >= CB){                                 /* Group size >= block size  (Ex.- CP = 4, CB = 16, G = 2, group_size = 32) */
@@ -631,7 +631,7 @@ void scaler_groupnorm_fwd_fp32(long CP, long NB, long HW, long CB, long G, float
       }
     }
 
-    for(g = 0; g < G; g++){                                                  /* mean and variance calculation */
+    for(g = 0; g < G; g++){                                                  /* mean and variance calculation */           /* Size = 2*CP*CB*4 */
       mean[nb*G + g] = sum_X[g] / ((float)group_size * HW);
       var[nb*G + g] = (sum_X2[g] / ((float)group_size * HW)) - (mean[nb*G + g]*mean[nb*G + g]);      /* var = E[X^2] - (E[X])^2        [G] */
 
@@ -641,7 +641,7 @@ void scaler_groupnorm_fwd_fp32(long CP, long NB, long HW, long CB, long G, float
       }
     }
 
-    for(int cp = 0; cp < CP; cp++){
+    for(int cp = 0; cp < CP; cp++){                                                     /* Size = 2*CP*HW*CB*4 + 2*CP*CB*4 */
       for(int cb = 0; cb < CB; cb++){
         for(int hw = 0; hw < HW; hw++){
           value = LIBXSMM_VLA_ACCESS(4, inp, cp, nb, hw, cb, NB, HW, CB);
@@ -683,7 +683,7 @@ void scaler_groupnorm_bwd_fp32(long CP, long NB, long HW, long CB, long G, float
     float ds = 0.0f;
     float db = 0.0f;
     float scale = 1.0f / (CP * HW* CB);
-    for (cp = 0; cp < CP; cp++) {                    /* dgamma += (a * inp + b) * dout , dbeta += dout, ds += dout * gamma * inp, db += dout * gamma */
+    for (cp = 0; cp < CP; cp++) {                    /* dgamma += (a * inp + b) * dout , dbeta += dout, ds += dout * gamma * inp, db += dout * gamma */    /* Size = 2*CP*HW*CB*4 */
       for (cb = 0; cb < CB; cb++) {
         /* a = ex_var[cp*CB + cb]; */
         /* b = -a * ex_mean[cp*CB + cb]; */
@@ -704,7 +704,7 @@ void scaler_groupnorm_bwd_fp32(long CP, long NB, long HW, long CB, long G, float
       }
     }
 
-    for (cp = 0; cp < CP; cp++) {                                                     /* din = dout * a * gamma + b * inp + c */
+    for (cp = 0; cp < CP; cp++) {                                                     /* din = dout * a * gamma + b * inp + c */  /* Size = 3*CP*HW*CB*4 */
       for (cb = 0; cb < CB; cb++) {
         /* b = (db * ex_mean[cp*CB + cb] - ds) * a * a * a * scale; */
         /* c = -b * ex_mean[cp*CB + cb] - db * a * scale; */
@@ -903,9 +903,9 @@ int main( int argc, char* argv[] ) {
   /* compare */
   printf("############################################\n");
   if (datatype_mode == 0) {
-    printf("# Correctness FP32 FWD Layernorm - Output  #\n");
+    printf("# Correctness FP32 FWD Groupnorm - Output  #\n");
   } else {
-    printf("# Correctness BF16 FWD Layernorm - Output  #\n");
+    printf("# Correctness BF16 FWD Groupnorm - Output  #\n");
   }
   printf("############################################\n");
   libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, CP*NB*HW*CB, 1, out, eqn_out, 0, 0);
@@ -932,7 +932,7 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP layernorm time FWD  = %.5g\n", ((double)(l_total)));
+    printf("Scaler time FWD  = %.5g\n", ((double)(l_total)));
     for (i = 0; i < 1024 * 1024; i++ ) {
       sum += cache_fl[i] + (float)l_total;
     }
@@ -943,28 +943,30 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP groupnprm time FWD  = %.5g\n", ((double)(l_total2)));
+    printf("TPP groupnorm time FWD  = %.5g\n", ((double)(l_total2)));
     printf("Speedup FWD is %.5g\n", l_total/l_total2);
   } else if (datatype_mode == 1) {
-    /*
     for (i = 0; i < 1024 * 1024; i++ ) {
       sum += cache_fl[i];
     }
-    vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
+    /* vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps); */
+    tpp_groupnorm_fwd_bf16(CP, NB, HW, CB, G, inp, gamma, beta, mean, var, eqn_out, eps, func10, reduce_HW_kernel, reduce_rows_kernel, reduce_groups_kernel);
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
-      vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
+      /* vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps); */
+      tpp_groupnorm_fwd_bf16(CP, NB, HW, CB, G, inp, gamma, beta, mean, var, eqn_out, eps, func10, reduce_HW_kernel, reduce_rows_kernel, reduce_groups_kernel);
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics layernorm time FWD  = %.5g\n", ((double)(l_total)));
+    printf("TPP groupnorm time FWD  = %.5g\n", ((double)(l_total)));
+    /*
     for (i = 0; i < 1024 * 1024; i++ ) {
       sum += cache_fl[i] + (float)l_total;
     }
-    tpp_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
+    tpp_layernorm_fwd_bf16(CP, NB, CB, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
-      tpp_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
+      tpp_layernorm_fwd_bf16(CP, NB, CB, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
@@ -1119,9 +1121,9 @@ int main( int argc, char* argv[] ) {
 
   printf("###########################################\n");
   if (datatype_mode == 0) {
-    printf("# Correctness FP32 BWD Layernorm - Dbeta  #\n");
+    printf("# Correctness FP32 BWD Groupnorm - Dbeta  #\n");
   } else {
-    printf("# Correctness BF16 BWD Layernorm - Dbeta  #\n");
+    printf("# Correctness BF16 BWD Groupnorm - Dbeta  #\n");
   }
   printf("###########################################\n");
   libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, CP*CB, 1, dbeta, eqn_dbeta, 0, 0);
@@ -1135,9 +1137,9 @@ int main( int argc, char* argv[] ) {
 
   printf("############################################\n");
   if (datatype_mode == 0) {
-    printf("# Correctness FP32 BWD Layernorm - Dgamma  #\n");
+    printf("# Correctness FP32 BWD Groupnorm - Dgamma  #\n");
   } else {
-    printf("# Correctness BF16 BWD Layernorm - Dgamma #\n");
+    printf("# Correctness BF16 BWD Groupnorm - Dgamma #\n");
   }
   printf("############################################\n");
   libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, CP*CB, 1, dgamma, eqn_dgamma, 0, 0);
@@ -1178,18 +1180,20 @@ int main( int argc, char* argv[] ) {
     printf("TPP groupnorm time BWD = %.5g\n", ((double)(l_total2)));
     printf("Speedup BWD is %.5g\n", l_total/l_total2);
   } else if (datatype_mode == 1) {
-    /*
     for (i = 0; i < 1024 * 1024; i++ ) {
       sum += cache_fl[i];
     }
-    vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta);
+    /* vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta); */
+    tpp_groupnorm_bwd_bf16(CP, NB, HW, CB, G, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta, func11, func12, func13, func14, func15);
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
-      vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta);
+      /* vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta); */
+      tpp_groupnorm_bwd_bf16(CP, NB, HW, CB, G, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta, func11, func12, func13, func14, func15);
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics layernorm time BWD  = %.5g\n", ((double)(l_total)));
+    printf("TPP groupnorm time BWD  = %.5g\n", ((double)(l_total)));
+    /*
     for (i = 0; i < 1024 * 1024; i++ ) {
       sum += cache_fl[i] + (float)l_total;
     }
