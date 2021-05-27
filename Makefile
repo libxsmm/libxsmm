@@ -741,10 +741,12 @@ $(1): $(2) $(3) $(dir $(1))/.make
 	@rm -f $(1)
 	-$(CC) $(4) $(if $(filter 0,$(WERROR)),$(NULL),$(WERROR_CFLAG)) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
-		echo "--------------------------------------------------------------"; \
-		echo "In case of assembler error, perhaps GNU Binutils are outdated."; \
-		echo "See https://github.com/hfp/libxsmm#outdated-binutils"; \
-		echo "--------------------------------------------------------------"; \
+		if [ "2" = "$(INTRINSICS)" ]; then \
+			echo "--------------------------------------------------------------"; \
+			echo "In case of assembler error, perhaps GNU Binutils are outdated."; \
+			echo "See https://github.com/hfp/libxsmm#outdated-binutils"; \
+			echo "--------------------------------------------------------------"; \
+		fi; \
 		false; \
 	fi
 endef
