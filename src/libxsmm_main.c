@@ -638,7 +638,16 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
   if (NULL != env_dump_files && '\0' != *env_dump_files && 0 == urgent) { /* dump per-node info */
     const char* filename = strtok(env_dump_files, INTERNAL_DELIMS);
     for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
-      FILE *const file = fopen(filename, "r");
+      FILE* file = fopen(filename, "r");
+      if (NULL == file) {
+        char buffer[1024];
+        const char *const pid = strstr(filename, "PID");
+        if (NULL != pid) { /* PID-keyword is present */
+          int n = (int)(pid - filename);
+          n = LIBXSMM_SNPRINTF(buffer, sizeof(buffer), "%.*s%u%s", n, filename, libxsmm_get_pid(), filename + n + 3);
+          if (0 < n && (int)sizeof(buffer) > n) file = fopen(buffer, "r");
+        }
+      }
       if (NULL != file) {
         int c = fgetc(file);
         fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
