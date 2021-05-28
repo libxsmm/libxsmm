@@ -81,51 +81,41 @@ float gelu_inv(float x) {
 }
 
 float fp32_unary_compute(float in, unsigned int op) {
-  float res;
+  float res = 0;
+
   if ( op == COPY_OP || op == REPLICATE_COL_VAR) {
     res = in;
-  }
-  if ( op == NEGATE_OP) {
+  } else if ( op == NEGATE_OP) {
     res = -1.0 * in;
-  }
-  if (op == X2_OP) {
+  } else if (op == X2_OP) {
     res = in * in;
-  }
-  if (op == XOR_OP) {
+  } else if (op == XOR_OP) {
     res = 0;
-  }
-  if (op == TANH_OP) {
+  } else if (op == TANH_OP) {
     res = tanhf(in);
-  }
-  if (op == SIGMOID_OP) {
+  } else if (op == SIGMOID_OP) {
     res = fsigmoid(in);
-  }
-  if (op == GELU_OP) {
+  } else if (op == GELU_OP) {
     res = gelu(in);
-  }
-  if (op == GELU_INV_OP) {
+  } else if (op == GELU_INV_OP) {
     res = gelu_inv(in);
-  }
-  if (op == TANH_INV_OP) {
+  } else if (op == TANH_INV_OP) {
     res = tanh_inv(in);
-  }
-  if (op == SIGMOID_INV_OP) {
+  } else if (op == SIGMOID_INV_OP) {
     res = fsigmoid_inv(in);
-  }
-  if (op == SQRT_OP) {
+  } else if (op == SQRT_OP) {
     res = sqrtf(in);
-  }
-  if (op == INC_OP) {
+  } else if (op == INC_OP) {
     res = in + 1.0;
-  }
-  if (op == RCP_OP) {
+  } else if (op == RCP_OP) {
     res = 1.0/in;
-  }
-  if (op == RCP_SQRT_OP) {
+  } else if (op == RCP_SQRT_OP) {
     res = 1.0/sqrtf(in);
-  }
-  if (op == EXP_OP) {
+  } else if (op == EXP_OP) {
     res = exp(in);
+  } else {
+    printf("Invalid OP\n");
+    exit(-1);
   }
 
   return res;
@@ -134,51 +124,39 @@ float fp32_unary_compute(float in, unsigned int op) {
 void set_opname(unsigned int op, char *opname) {
   if ( op == COPY_OP ) {
     sprintf(opname, "copy");
-  }
-  if ( op == REPLICATE_COL_VAR ) {
+  } else if ( op == REPLICATE_COL_VAR ) {
     sprintf(opname, "replicate_col_var");
-  }
-  if ( op == X2_OP ) {
+  } else if ( op == X2_OP ) {
     sprintf(opname, "x2");
-  }
-  if ( op == XOR_OP ) {
+  } else if ( op == XOR_OP ) {
     sprintf(opname, "xor");
-  }
-  if ( op == TANH_OP ) {
+  } else if ( op == TANH_OP ) {
     sprintf(opname, "tanh");
-  }
-  if ( op == SIGMOID_OP ) {
+  } else if ( op == SIGMOID_OP ) {
     sprintf(opname, "sigmoid");
-  }
-  if ( op == GELU_OP ) {
+  } else if ( op == GELU_OP ) {
     sprintf(opname, "gelu");
-  }
-  if ( op == GELU_INV_OP ) {
+  } else if ( op == GELU_INV_OP ) {
     sprintf(opname, "gelu_inv");
-  }
-  if ( op == TANH_INV_OP ) {
+  } else if ( op == TANH_INV_OP ) {
     sprintf(opname, "tanh_inv");
-  }
-  if ( op == SIGMOID_INV_OP ) {
+  } else if ( op == SIGMOID_INV_OP ) {
     sprintf(opname, "sigmoid_inv");
-  }
-  if ( op == SQRT_OP ) {
+  } else if ( op == SQRT_OP ) {
     sprintf(opname, "sqrt");
-  }
-  if ( op == NEGATE_OP ) {
+  } else if ( op == NEGATE_OP ) {
     sprintf(opname, "negate");
-  }
-  if (op == INC_OP) {
+  } else if (op == INC_OP) {
     sprintf(opname, "inc");
-  }
-  if (op == RCP_OP) {
+  } else if (op == RCP_OP) {
     sprintf(opname, "reciprocal");
-  }
-  if (op == RCP_SQRT_OP) {
+  } else if (op == RCP_SQRT_OP) {
     sprintf(opname, "reciprocal sqrt");
-  }
-  if (op == EXP_OP) {
+  } else if (op == EXP_OP) {
     sprintf(opname, "exp");
+  } else {
+    printf("Invalid OP\n");
+    exit(-1);
   }
 }
 
@@ -187,52 +165,41 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
 
   if ( op == COPY_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_IDENTITY;
-  }
-  if ( op == REPLICATE_COL_VAR ) {
+  } else if ( op == REPLICATE_COL_VAR ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR;
-  }
-  if ( op == X2_OP ) {
+  } else if ( op == X2_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_X2;
-  }
-  if ( op == XOR_OP ) {
+  } else if ( op == XOR_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_XOR;
-  }
-  if ( op == TANH_OP ) {
+  } else if ( op == TANH_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH;
-  }
-  if ( op == SIGMOID_OP ) {
+  } else if ( op == SIGMOID_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
-  }
-  if ( op == GELU_OP ) {
+  } else if ( op == GELU_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU;
-  }
-  if ( op == GELU_INV_OP ) {
+  } else if ( op == GELU_INV_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_GELU_INV;
-  }
-  if ( op == TANH_INV_OP ) {
+  } else if ( op == TANH_INV_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TANH_INV;
-  }
-  if ( op == SIGMOID_INV_OP ) {
+  } else if ( op == SIGMOID_INV_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV;
-  }
-  if ( op == SQRT_OP ) {
+  } else if ( op == SQRT_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_SQRT;
-  }
-  if ( op == NEGATE_OP ) {
+  } else if ( op == NEGATE_OP ) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_NEGATE;
-  }
-  if (op == INC_OP) {
+  } else if (op == INC_OP) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_INC;
-  }
-  if (op == RCP_OP) {
+  } else if (op == RCP_OP) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL;
-  }
-  if (op == EXP_OP) {
+  } else if (op == EXP_OP) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_EXP;
-  }
-  if (op == RCP_SQRT_OP) {
+  } else if (op == RCP_SQRT_OP) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT;
+  } else {
+    printf("Invalid OP\n");
+    exit(-1);
   }
+
   *type = unary_type;
 }
 
@@ -315,6 +282,7 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   _in       = in;
+  in_vector = NULL;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -466,6 +434,7 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   _in       = in;
+  in_vector = NULL;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -611,6 +580,7 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   _in       = in;
+  in_vector = NULL;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -753,6 +723,7 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   _in       = in;
+  in_vector = NULL;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {

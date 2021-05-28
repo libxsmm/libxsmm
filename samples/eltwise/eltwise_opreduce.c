@@ -178,16 +178,22 @@ int main(int argc, char* argv[])
   inp_matrix              = (float*) malloc(ld_in*n*sizeof(float) );
   result                  = (float*) malloc(ld_in*sizeof(float) );
   ref_result              = (float*) malloc(ld_in*sizeof(float) );
-  _vec_in                  = (float*) malloc(ld_in*sizeof(float) );
+  _vec_in                 = (float*) malloc(ld_in*sizeof(float) );
   cols_ind_array          = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
   all_ns                  = (unsigned long long*) malloc(n*sizeof(unsigned long long));
   scale_vals              = (float*) malloc(n_cols_idx*sizeof(float));
+  vec_in                  = NULL;
 
   if (use_bf16 == 1) {
-    inp_matrix_bf16              = (libxsmm_bfloat16*) malloc(ld_in*n*sizeof(libxsmm_bfloat16) );
-    result_bf16                  = (libxsmm_bfloat16*) malloc(ld_in*sizeof(libxsmm_bfloat16) );
-    _vec_in_bf16                 = (libxsmm_bfloat16*) malloc(ld_in*sizeof(libxsmm_bfloat16) );
-    scale_vals_bf16              = (libxsmm_bfloat16*) malloc(n_cols_idx*sizeof(libxsmm_bfloat16));
+    inp_matrix_bf16  = (libxsmm_bfloat16*) malloc(ld_in*n*sizeof(libxsmm_bfloat16) );
+    result_bf16      = (libxsmm_bfloat16*) malloc(ld_in*sizeof(libxsmm_bfloat16) );
+    _vec_in_bf16     = (libxsmm_bfloat16*) malloc(ld_in*sizeof(libxsmm_bfloat16) );
+    scale_vals_bf16  = (libxsmm_bfloat16*) malloc(n_cols_idx*sizeof(libxsmm_bfloat16));
+  } else {
+    inp_matrix_bf16  = NULL;
+    result_bf16      = NULL;
+    _vec_in_bf16     = NULL;
+    scale_vals_bf16  = NULL;
   }
 
   /* Fill matrices with random data */
@@ -213,7 +219,7 @@ int main(int argc, char* argv[])
 
   /* Calculate reference results...  */
   for (jj = 0; jj < n_cols_idx; jj++) {
-    float op_res;
+    float op_res = 0.0f;
     j = cols_ind_array[jj];
     for (i = 0; i < m; i++) {
       if (redop == REDOP_NONE) {
@@ -305,7 +311,7 @@ int main(int argc, char* argv[])
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
     for (jj = 0; jj < n_cols_idx; jj++) {
-      float op_res;
+      float op_res = 0.0f;
       j = cols_ind_array[jj];
       for (i = 0; i < m; i++) {
         if (redop == REDOP_NONE) {

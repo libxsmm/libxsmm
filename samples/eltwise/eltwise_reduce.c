@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 #endif
   unsigned long long *cols_ind_array;
   libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
   libxsmm_meltwfunction_unary kernel;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_redu_flags jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
@@ -108,6 +108,7 @@ int main(int argc, char* argv[])
   ref_result_reduce_elts = (float*) malloc(result_size*sizeof(float) );
   ref_result_reduce_elts_squared = (float*) malloc(result_size*sizeof(float) );
   cols_ind_array = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
+  result_reduce_elts_squared = NULL;
 
   /* Fill matrices with random data */
   sfill_matrix ( sinp, ld_in, m, n );
