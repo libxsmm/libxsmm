@@ -39,7 +39,7 @@ do
       do
         for BCAST_IN in 0 1 2 3
         do
-          ./eltwise_unary ${UNARY_OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} 100 100
+          ./eltwise_unary_simple ${UNARY_OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} 100 100
         done
       done
     done

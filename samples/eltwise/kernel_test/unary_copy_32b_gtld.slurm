@@ -33,7 +33,7 @@ do
   echo ${M} ${N} 100 100
   for BCAST_IN in 0 1 2 3
   do
-    ./eltwise_unary ${UNARY_OP} ${BCAST_IN} 4 4 4 ${M} ${N} 100 100
+    ./eltwise_unary_simple ${UNARY_OP} ${BCAST_IN} 4 4 4 ${M} ${N} 100 100
   done
 done
 
