@@ -22,22 +22,22 @@
 #define COL_BCAST 2
 #define SCALAR_BCAST 3
 
-#define COPY_OP 0
-#define X2_OP 2
-#define XOR_OP 3
-#define TANH_OP 4
-#define SIGMOID_OP 5
-#define GELU_OP 6
-#define GELU_INV_OP 7
+#define COPY_OP 1
+#define XOR_OP 2
+#define X2_OP 3
+#define SQRT_OP 4
+#define TANH_OP 7
 #define TANH_INV_OP 8
-#define SIGMOID_INV_OP 9
-#define SQRT_OP 10
-#define NEGATE_OP 11
-#define INC_OP 12
-#define RCP_OP 13
-#define RCP_SQRT_OP 14
-#define EXP_OP 15
-#define REPLICATE_COL_VAR 16
+#define SIGMOID_OP 9
+#define SIGMOID_INV_OP 10
+#define GELU_OP 11
+#define GELU_INV_OP 12
+#define NEGATE_OP 13
+#define INC_OP 14
+#define RCP_OP 15
+#define RCP_SQRT_OP 16
+#define EXP_OP 17
+#define REPLICATE_COL_VAR 27
 
 int unequal_fp32_vals(float a, float b) {
   if (fabs(a-b) < EPS) {
