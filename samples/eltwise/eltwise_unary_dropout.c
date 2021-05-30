@@ -835,7 +835,7 @@ void test_dropout_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   unsigned int *mask;
   unsigned char *mask_gold;
   unsigned int i, j;
-  unsigned int s;
+  unsigned int s = 0;
   float p = 0.3f;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
@@ -854,7 +854,7 @@ void test_dropout_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned int*) libxsmm_aligned_malloc( sizeof(unsigned int)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*(mask_ld+1), 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -871,19 +871,21 @@ void test_dropout_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
     out_gold[i] = 0;
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
+    if ( i % mask_ld == 0 ) { s = 0; }
     if ( bitm == 0 ) {
-      mask[i] = ( i % 2 == 1) ? 0x3f800000 : 0x0;
+      mask[i] = ( s % 2 == 1) ? 0x3f800000 : 0x0;
     } else {
       mask[i] = 0xaaaaaaaa;
     }
+    s++;
   }
-  for ( i = 0; i < N*(mask_ld+1); ++i ) {
+  for ( i = 0; i < N*mask_ld; ++i ) {
     mask_gold[i] = 0xaa;
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_bwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], p );
+    dropout_bwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[i*mask_ld], p );
   }
 
   /* use jited tranpose */
@@ -933,7 +935,7 @@ void test_dropout_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
   libxsmm_bfloat16 *mask;
   unsigned char *mask_gold;
   unsigned int i, j;
-  unsigned int s;
+  unsigned int s = 0;
   float p = 0.3f;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
@@ -954,7 +956,7 @@ void test_dropout_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
   out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   mask      = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*(mask_ld+1), 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -972,20 +974,22 @@ void test_dropout_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
     out_gold[i] = 0;
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
+    if ( i % mask_ld == 0 ) { s = 0; }
     if ( bitm == 0 ) {
       bf16_hp.f = 1.0f;
-      mask[i] = ( i % 2 == 1) ? bf16_hp.i[1] : 0;
+      mask[i] = ( s % 2 == 1) ? bf16_hp.i[1] : 0;
     } else {
       mask[i] = 0xaaaa;
     }
+    s++;
   }
-  for ( i = 0; i < N*(mask_ld+1); ++i ) {
+  for ( i = 0; i < N*mask_ld; ++i ) {
     mask_gold[i] = 0xaa;
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_bwd_bf16_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], p );
+    dropout_bwd_bf16_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[i*mask_ld], p );
   }
 
   /* use jited tranpose */
@@ -1039,7 +1043,7 @@ void test_dropout_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   unsigned int *mask;
   unsigned char *mask_gold;
   unsigned int i, j;
-  unsigned int s;
+  unsigned int s = 0;
   float p = 0.3f;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
@@ -1060,7 +1064,7 @@ void test_dropout_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   mask      = (unsigned int*) libxsmm_aligned_malloc( sizeof(unsigned int)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*(mask_ld+1), 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1077,19 +1081,21 @@ void test_dropout_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     out_gold[i] = 0;
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
+    if ( i % mask_ld == 0 ) { s = 0; }
     if ( bitm == 0 ) {
-      mask[i] = ( i % 2 == 1) ? 0x3f800000 : 0x0;
+      mask[i] = ( s % 2 == 1) ? 0x3f800000 : 0x0;
     } else {
       mask[i] = 0xaaaaaaaa;
     }
+    s++;
   }
-  for ( i = 0; i < N*(mask_ld+1); ++i ) {
+  for ( i = 0; i < N*mask_ld; ++i ) {
     mask_gold[i] = 0xaa;
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_bwd_f32_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], p );
+    dropout_bwd_f32_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[i*mask_ld], p );
   }
 
   /* use jited tranpose */
@@ -1143,7 +1149,7 @@ void test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   libxsmm_bfloat16 *mask;
   unsigned char*mask_gold;
   unsigned int i, j;
-  unsigned int s;
+  unsigned int s = 0;
   float p = 0.3f;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
@@ -1163,7 +1169,7 @@ void test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*(mask_ld+1), 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1181,20 +1187,22 @@ void test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     out_gold[i] = 0;
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
+    if ( i % mask_ld == 0 ) { s = 0; }
     if ( bitm == 0 ) {
       bf16_hp.f = 1.0f;
-      mask[i] = ( i % 2 == 1) ? bf16_hp.i[1] : 0;
+      mask[i] = ( s % 2 == 1) ? bf16_hp.i[1] : 0;
     } else {
       mask[i] = 0xaaaa;
     }
+    s++;
   }
-  for ( i = 0; i < N*(mask_ld+1); ++i ) {
+  for ( i = 0; i < N*mask_ld; ++i ) {
     mask_gold[i] = 0xaa;
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_bwd_bf16_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], p );
+    dropout_bwd_bf16_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[i*mask_ld], p );
   }
 
   /* use jited tranpose */
