@@ -330,7 +330,7 @@ void dropout_bwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out,
 }
 #endif
 
-void test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   float *out, *out_gold;
   unsigned char *mask, *mask_gold;
@@ -338,6 +338,7 @@ void test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   unsigned int i, j;
   unsigned int s;
   float p = 0.3f;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
@@ -419,6 +420,7 @@ void test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
   if ( bitm != 0 ) {
     for ( i = 0; i < N; ++i ) {
@@ -438,6 +440,7 @@ void test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
       printf("SUCCESS mask\n");
     } else {
       printf("FAILURE mask\n");
+      ret = EXIT_FAILURE;
     }
   }
 
@@ -449,9 +452,11 @@ void test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  return ret;
 }
 
-void test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   libxsmm_bfloat16 *in;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned char *mask, *mask_gold;
@@ -459,6 +464,7 @@ void test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
   unsigned int i, j;
   unsigned int s;
   float p = 0.3f;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   union libxsmm_bfloat16_hp bf16_hp;
@@ -547,6 +553,7 @@ void test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
   if ( bitm != 0 ) {
     for ( i = 0; i < N; ++i ) {
@@ -566,6 +573,7 @@ void test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
       printf("SUCCESS mask\n");
     } else {
       printf("FAILURE mask\n");
+      ret = EXIT_FAILURE;
     }
   }
 
@@ -577,9 +585,11 @@ void test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  return ret;
 }
 
-void test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned char *mask, *mask_gold;
@@ -587,6 +597,7 @@ void test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   unsigned int i, j;
   unsigned int s;
   float p = 0.3f;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   union libxsmm_bfloat16_hp bf16_hp;
@@ -674,6 +685,7 @@ void test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
   if ( bitm != 0 ) {
     for ( i = 0; i < N; ++i ) {
@@ -693,6 +705,7 @@ void test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
       printf("SUCCESS mask\n");
     } else {
       printf("FAILURE mask\n");
+      ret = EXIT_FAILURE;
     }
   }
 
@@ -704,9 +717,11 @@ void test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  return ret;
 }
 
-void test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   libxsmm_bfloat16 *in;
   float *out, *out_gold;
   unsigned char *mask, *mask_gold;
@@ -714,6 +729,7 @@ void test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   unsigned int i, j;
   unsigned int s;
   float p = 0.3f;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   union libxsmm_bfloat16_hp bf16_hp;
@@ -797,6 +813,7 @@ void test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
   if ( bitm != 0 ) {
     for ( i = 0; i < N; ++i ) {
@@ -816,6 +833,7 @@ void test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
       printf("SUCCESS mask\n");
     } else {
       printf("FAILURE mask\n");
+      ret = EXIT_FAILURE;
     }
   }
 
@@ -827,9 +845,11 @@ void test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  return ret;
 }
 
-void test_dropout_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_dropout_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   float *out, *out_gold;
   unsigned int *mask;
@@ -837,6 +857,7 @@ void test_dropout_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   unsigned int i, j;
   unsigned int s = 0;
   float p = 0.3f;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ldi/8;
@@ -920,6 +941,7 @@ void test_dropout_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -927,9 +949,11 @@ void test_dropout_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  return ret;
 }
 
-void test_dropout_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_dropout_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   libxsmm_bfloat16 *in;
   libxsmm_bfloat16 *out, *out_gold;
   libxsmm_bfloat16 *mask;
@@ -937,6 +961,7 @@ void test_dropout_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
   unsigned int i, j;
   unsigned int s = 0;
   float p = 0.3f;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   union libxsmm_bfloat16_hp bf16_hp;
@@ -1028,6 +1053,7 @@ void test_dropout_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -1035,9 +1061,11 @@ void test_dropout_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsm
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  return ret;
 }
 
-void test_dropout_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_dropout_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned int *mask;
@@ -1045,6 +1073,7 @@ void test_dropout_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   unsigned int i, j;
   unsigned int s = 0;
   float p = 0.3f;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   union libxsmm_bfloat16_hp bf16_hp;
@@ -1134,6 +1163,7 @@ void test_dropout_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -1141,9 +1171,11 @@ void test_dropout_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  return ret;
 }
 
-void test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   libxsmm_bfloat16 *in;
   float *out, *out_gold;
   libxsmm_bfloat16 *mask;
@@ -1151,6 +1183,7 @@ void test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   unsigned int i, j;
   unsigned int s = 0;
   float p = 0.3f;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   union libxsmm_bfloat16_hp bf16_hp;
@@ -1237,6 +1270,7 @@ void test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -1244,6 +1278,8 @@ void test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  return ret;
 }
 
 int main( int argc, char* argv[] ) {
@@ -1255,6 +1291,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint N;
   libxsmm_blasint ldi;
   libxsmm_blasint ldo;
+  int ret = EXIT_FAILURE;
 
   if ( argc != 9 ) {
     printf(" Error! Usage: %s [F/B] [bitmask: 0/1] [prec_in: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
@@ -1272,30 +1309,32 @@ int main( int argc, char* argv[] ) {
 
   if ( op == 'F' && dtype_in == 4 && dtype_out == 4  ) {
     printf("Testing F32 F32 forward dropout\n");
-    test_dropout_f32_f32_fwd( bitm, M, N, ldi, ldo );
+    ret = test_dropout_f32_f32_fwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'F' && dtype_in == 2  && dtype_out == 2 ) {
     printf("Testing BF16 BF16 forward dropout\n");
-    test_dropout_bf16_bf16_fwd( bitm, M, N, ldi, ldo );
+    ret = test_dropout_bf16_bf16_fwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'F' && dtype_in == 4  && dtype_out == 2 ) {
     printf("Testing F32 BF16 forward dropout\n");
-    test_dropout_f32_bf16_fwd( bitm, M, N, ldi, ldo );
+    ret = test_dropout_f32_bf16_fwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'F' && dtype_in == 2  && dtype_out == 4 ) {
     printf("Testing BF16 F32 forward dropout\n");
-    test_dropout_bf16_f32_fwd( bitm, M, N, ldi, ldo );
+    ret = test_dropout_bf16_f32_fwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'B' && dtype_in == 4 && dtype_out == 4 ) {
     printf("Testing F32 F32 backward dropout\n");
-    test_dropout_f32_f32_bwd( bitm, M, N, ldi, ldo );
+    ret = test_dropout_f32_f32_bwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'B' && dtype_in == 2 && dtype_out == 2 ) {
     printf("Testing BF16 BF16 backward dropout\n");
-    test_dropout_bf16_bf16_bwd( bitm, M, N, ldi, ldo );
+    ret = test_dropout_bf16_bf16_bwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'B' && dtype_in == 4 && dtype_out == 2 ) {
     printf("Testing F32 BF16 backward dropout\n");
-    test_dropout_f32_bf16_bwd( bitm, M, N, ldi, ldo );
+    ret = test_dropout_f32_bf16_bwd( bitm, M, N, ldi, ldo );
   } else if ( op == 'B' && dtype_in == 2 && dtype_out == 4 ) {
     printf("Testing BF16 F32 backward dropout\n");
-    test_dropout_bf16_f32_bwd( bitm, M, N, ldi, ldo );
+    ret = test_dropout_bf16_f32_bwd( bitm, M, N, ldi, ldo );
   } else {
     printf(" Not implemented case! Usage: %s [F/B] [bitmask: 0/1] [prec_in: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
+
+  return ret;
 }
