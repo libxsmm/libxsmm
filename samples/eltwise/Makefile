@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_opreduce_idxvecs $(OUTDIR)/eltwise_opreduce $(OUTDIR)/eltwise_binary $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform
+XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_opreduce_idxvecs $(OUTDIR)/eltwise_opreduce $(OUTDIR)/eltwise_binary_simple $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform
 .PHONY: all
 all: $(XFILES)
 
@@ -53,8 +53,8 @@ $(OUTDIR)/eltwise_opreduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_opreduce-c.o $(LIB
 $(OUTDIR)/eltwise_opreduce_idxvecs: $(OUTDIR)/.make $(BLDDIR)/eltwise_opreduce_idxvecs-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_opreduce_idxvecs-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/eltwise_binary: $(OUTDIR)/.make $(BLDDIR)/eltwise_binary-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/eltwise_binary-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/eltwise_binary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_binary_simple-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_binary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/eltwise_unary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_simple-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_unary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)

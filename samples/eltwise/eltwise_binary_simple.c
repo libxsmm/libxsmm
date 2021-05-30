@@ -22,11 +22,11 @@
 #define COL_BCAST_IN1 5
 #define SCALAR_BCAST_IN1 6
 
-#define ADD_OP 0
-#define SUB_OP 1
+#define ADD_OP 1
 #define MUL_OP 2
-#define DIV_OP 3
-#define MULADD_OP 4
+#define SUB_OP 3
+#define DIV_OP 4
+#define MULADD_OP 5
 #define EPS 1.19209290e-07F
 
 int unequal_fp32_vals(float a, float b) {
@@ -55,18 +55,17 @@ float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
 
   if ( op == ADD_OP) {
     res = in0 + in1;
-  }
-  if ( op == SUB_OP) {
+  } else  if ( op == SUB_OP) {
     res = in0 - in1;
-  }
-  if ( op == MUL_OP) {
+  } else if ( op == MUL_OP) {
     res = in0 * in1;
-  }
-  if ( op == DIV_OP) {
+  } else if ( op == DIV_OP) {
     res = in0 / in1;
-  }
-  if ( op == MULADD_OP) {
+  } else if ( op == MULADD_OP) {
     res += in0 * in1;
+  } else {
+    printf("Invalid OP\n");
+    exit(-1);
   }
 
   return res;
@@ -75,38 +74,38 @@ float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
 void set_opname(unsigned int op, char *opname) {
   if ( op == ADD_OP ) {
     sprintf(opname, "add");
-  }
-  if ( op == SUB_OP ) {
+  } else if ( op == SUB_OP ) {
     sprintf(opname, "sub");
-  }
-  if ( op == MUL_OP ) {
+  } else if ( op == MUL_OP ) {
     sprintf(opname, "mul");
-  }
-  if ( op == DIV_OP ) {
+  } else if ( op == DIV_OP ) {
     sprintf(opname, "div");
-  }
-  if ( op == MULADD_OP ) {
+  } else if ( op == MULADD_OP ) {
     sprintf(opname, "muladd");
+  } else {
+    printf("Invalid OP\n");
+    exit(-1);
   }
 }
 
 void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
   libxsmm_meltw_binary_type  binary_type;
+
   if ( op == ADD_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-  }
-  if ( op == SUB_OP ) {
+  } else if ( op == SUB_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_SUB;
-  }
-  if ( op == MUL_OP ) {
+  } else if ( op == MUL_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_MUL;
-  }
-  if ( op == DIV_OP ) {
+  } else if ( op == DIV_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
-  }
-  if ( op == MULADD_OP ) {
+  } else if ( op == MULADD_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
+  } else {
+    printf("Invalid OP\n");
+    exit(-1);
   }
+
   *type = binary_type;
 }
 
@@ -167,11 +166,12 @@ void binary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   }
 }
 
-void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
+int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   float *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
   float *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int res = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
   libxsmm_meltw_binary_type  binary_type;
@@ -343,6 +343,7 @@ void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    res = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -353,13 +354,16 @@ void test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     libxsmm_free( in_vector );
     libxsmm_free( in_vector2 );
   }
+
+  return res;
 }
 
-void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
+int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   libxsmm_bfloat16 *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int res = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
   libxsmm_meltw_binary_type  binary_type;
@@ -535,6 +539,7 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    res = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -545,13 +550,16 @@ void test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     libxsmm_free( in_vector );
     libxsmm_free( in_vector2 );
   }
+
+  return res;
 }
 
-void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast) {
+int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast) {
   float *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int res = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
   libxsmm_meltw_binary_type  binary_type;
@@ -721,6 +729,7 @@ void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    res = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -731,13 +740,16 @@ void test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     libxsmm_free( in_vector );
     libxsmm_free( in_vector2 );
   }
+
+  return res;
 }
 
-void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
+int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   libxsmm_bfloat16 *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
   float *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int res = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
   libxsmm_meltw_binary_type  binary_type;
@@ -911,6 +923,7 @@ void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    res = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -921,6 +934,8 @@ void test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     libxsmm_free( in_vector );
     libxsmm_free( in_vector2 );
   }
+
+  return res;
 }
 
 int main( int argc, char* argv[] ) {
@@ -935,6 +950,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint ldo;
   libxsmm_blasint valid_op;
   char opname[256];
+  int res = EXIT_FAILURE;
 
   if ( argc != 10 ) {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
@@ -942,7 +958,7 @@ int main( int argc, char* argv[] ) {
   }
 
   op         = atoi(argv[1]);
-  use_bcast       = atoi(argv[2]);
+  use_bcast  = atoi(argv[2]);
   dtype_in   = atoi(argv[3]);
   dtype_comp = atoi(argv[4]);
   dtype_out  = atoi(argv[5]);
@@ -978,18 +994,20 @@ int main( int argc, char* argv[] ) {
 
   if ( valid_op > 0 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 %s\n", opname);
-    test_binary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);
+    res = test_binary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing BF16 BF16 %s\n", opname);
-    test_binary_op_bf16_bf16( M, N, ldi, ldo, op, use_bcast);
+    res = test_binary_op_bf16_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing F32 BF16 %s\n", opname);
-    test_binary_op_f32_bf16( M, N, ldi, ldo, op, use_bcast);
+    res = test_binary_op_f32_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing BF16 F32 %s\n", opname);
-    test_binary_op_bf16_f32( M, N, ldi, ldo, op, use_bcast);
+    res = test_binary_op_bf16_f32( M, N, ldi, ldo, op, use_bcast);
   } else {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6]] [prec_in: 4/2] compute_prec: 4 [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
+
+  return res;
 }
