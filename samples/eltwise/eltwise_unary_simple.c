@@ -254,11 +254,12 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   }
 }
 
-void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast) {
+int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast) {
   float *in, *in_vector, *_in;
   float *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_type  unary_type;
@@ -388,6 +389,7 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -396,13 +398,16 @@ void test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   if (use_bcast != NO_BCAST) {
     libxsmm_free( in_vector );
   }
+
+  return ret;
 }
 
-void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
+int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   libxsmm_bfloat16 *in, *in_vector, *_in;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_type  unary_type;
@@ -542,6 +547,7 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -550,13 +556,16 @@ void test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   if (use_bcast != NO_BCAST) {
     libxsmm_free( in_vector );
   }
+
+  return ret;
 }
 
-void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
+int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   float *in, *in_vector, *_in;
   libxsmm_bfloat16 *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_type  unary_type;
@@ -685,6 +694,7 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -693,13 +703,16 @@ void test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   if (use_bcast != NO_BCAST) {
     libxsmm_free( in_vector );
   }
+
+  return ret;
 }
 
-void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
+int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   libxsmm_bfloat16 *in, *in_vector, *_in;
   float *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_type  unary_type;
@@ -831,6 +844,7 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     printf("SUCCESS output\n");
   } else {
     printf("FAILURE output\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -839,6 +853,8 @@ void test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   if (use_bcast != NO_BCAST) {
     libxsmm_free( in_vector );
   }
+
+  return ret;
 }
 
 int main( int argc, char* argv[] ) {
@@ -853,6 +869,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint ldo;
   libxsmm_blasint valid_op;
   char opname[256];
+  int ret = EXIT_FAILURE;
 
   if ( argc != 10 ) {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
@@ -893,32 +910,32 @@ int main( int argc, char* argv[] ) {
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 copy\n");
-    test_unary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);
+    ret = test_unary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);
   } else if ( op == COPY_OP && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing BF16 BF16 copy\n");
-    test_unary_op_bf16_bf16( M, N, ldi, ldo, op, use_bcast);
+    ret = test_unary_op_bf16_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( op == COPY_OP && dtype_in == 4 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing F32 BF16 copy\n");
-    test_unary_op_f32_bf16( M, N, ldi, ldo, op, use_bcast);
+    ret = test_unary_op_f32_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( op == COPY_OP && dtype_in == 2 && dtype_out == 4 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing BF16 F32 copy\n");
-    test_unary_op_bf16_f32( M, N, ldi, ldo, op, use_bcast);
+    ret = test_unary_op_bf16_f32( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing F32 F32 %s\n", opname);
-    test_unary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);
+    ret = test_unary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || (dtype_comp == 2 && op == XOR_OP)) ) {
     printf("Testing BF16 BF16 %s\n", opname);
-    test_unary_op_bf16_bf16( M, N, ldi, ldo, op, use_bcast);
+    ret = test_unary_op_bf16_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing F32 BF16 %s\n", opname);
-    test_unary_op_f32_bf16( M, N, ldi, ldo, op, use_bcast);
+    ret = test_unary_op_f32_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing BF16 F32 %s\n", opname);
-    test_unary_op_bf16_f32( M, N, ldi, ldo, op, use_bcast);
+    ret = test_unary_op_bf16_f32( M, N, ldi, ldo, op, use_bcast);
   } else {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
-  return 0;
+  return ret;
 }
