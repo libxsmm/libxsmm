@@ -61,23 +61,23 @@ int unequal_bf16_vals(libxsmm_bfloat16 a, libxsmm_bfloat16 b) {
 }
 
 float fsigmoid(float x) {
-  return (tanhf(x/2.0) + 1.0)/2.0;
+  return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
 }
 
 float fsigmoid_inv(float x) {
-  return fsigmoid(x) * (1.0-fsigmoid(x));
+  return fsigmoid(x) * (1.0f-fsigmoid(x));
 }
 
 float tanh_inv(float x) {
-  return 1.0-tanhf(x)*tanhf(x);
+  return 1.0f-LIBXSMM_TANHF(x)*LIBXSMM_TANHF(x);
 }
 
 float gelu(float x) {
-  return (erf(x/sqrtf(2.0)) + 1.0)*0.5*x;
+  return (LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + 1.0f)*0.5f*x;
 }
 
 float gelu_inv(float x) {
-  return (0.5 + 0.5 * erf(x/sqrtf(2.0)) + x/(sqrtf(2.0*PI))*exp(-0.5*x*x) );
+  return (0.5f + 0.5f * LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + x/(LIBXSMM_SQRTF(2.0f*PI))* LIBXSMM_EXPF(-0.5f*x*x) );
 }
 
 float fp32_unary_compute(float in, unsigned int op) {
@@ -86,13 +86,13 @@ float fp32_unary_compute(float in, unsigned int op) {
   if ( op == COPY_OP || op == REPLICATE_COL_VAR) {
     res = in;
   } else if ( op == NEGATE_OP) {
-    res = -1.0 * in;
+    res = -1.0f * in;
   } else if (op == X2_OP) {
     res = in * in;
   } else if (op == XOR_OP) {
     res = 0;
   } else if (op == TANH_OP) {
-    res = tanhf(in);
+    res = LIBXSMM_TANHF(in);
   } else if (op == SIGMOID_OP) {
     res = fsigmoid(in);
   } else if (op == GELU_OP) {
@@ -104,15 +104,15 @@ float fp32_unary_compute(float in, unsigned int op) {
   } else if (op == SIGMOID_INV_OP) {
     res = fsigmoid_inv(in);
   } else if (op == SQRT_OP) {
-    res = sqrtf(in);
+    res = LIBXSMM_SQRTF(in);
   } else if (op == INC_OP) {
-    res = in + 1.0;
+    res = in + 1.0f;
   } else if (op == RCP_OP) {
-    res = 1.0/in;
+    res = 1.0f/in;
   } else if (op == RCP_SQRT_OP) {
-    res = 1.0/sqrtf(in);
+    res = 1.0f/LIBXSMM_SQRTF(in);
   } else if (op == EXP_OP) {
-    res = exp(in);
+    res = LIBXSMM_EXPF(in);
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -257,8 +257,8 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast) {
   float *in, *in_vector, *_in;
   float *out, *out_gold;
-  unsigned int i, j;
-  unsigned int s;
+  libxsmm_blasint i, j;
+  libxsmm_blasint s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
@@ -405,8 +405,8 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
 int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   libxsmm_bfloat16 *in, *in_vector, *_in;
   libxsmm_bfloat16 *out, *out_gold;
-  unsigned int i, j;
-  unsigned int s;
+  libxsmm_blasint i, j;
+  libxsmm_blasint s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
@@ -563,8 +563,8 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   float *in, *in_vector, *_in;
   libxsmm_bfloat16 *out, *out_gold;
-  unsigned int i, j;
-  unsigned int s;
+  libxsmm_blasint i, j;
+  libxsmm_blasint s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
@@ -710,8 +710,8 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   libxsmm_bfloat16 *in, *in_vector, *_in;
   float *out, *out_gold;
-  unsigned int i, j;
-  unsigned int s;
+  libxsmm_blasint i, j;
+  libxsmm_blasint s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
@@ -876,7 +876,7 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
-  op         = atoi(argv[1]);
+  op         = (unsigned char)atoi(argv[1]);
   use_bcast  = atoi(argv[2]);
   dtype_in   = atoi(argv[3]);
   dtype_comp = atoi(argv[4]);
