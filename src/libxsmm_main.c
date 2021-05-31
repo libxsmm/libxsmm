@@ -654,14 +654,17 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
             }
           }
         }
-        else if (0 < seconds) {
+        else {
+          fprintf(stderr, "LIBXSMM INFO: PID=%u\n", libxsmm_get_pid());
+          if (0 < seconds) {
 #if defined(_WIN32)
-          Sleep((DWORD)(1000 * seconds));
+            Sleep((DWORD)(1000 * seconds));
 #else
-          LIBXSMM_EXPECT(EXIT_SUCCESS, sleep(seconds));
+            LIBXSMM_EXPECT(EXIT_SUCCESS, sleep(seconds));
 #endif
+          }
+          else for(;;) LIBXSMM_SYNC_YIELD;
         }
-        else for(;;) LIBXSMM_SYNC_YIELD;
       }
       if (NULL != file) {
         int c = fgetc(file);
