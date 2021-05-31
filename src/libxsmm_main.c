@@ -637,16 +637,31 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
   /* determine whether this instance is unique or not */
   if (NULL != env_dump_files && '\0' != *env_dump_files && 0 == urgent) { /* dump per-node info */
     const char* filename = strtok(env_dump_files, INTERNAL_DELIMS);
+    char buffer[1024];
     for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
       FILE* file = fopen(filename, "r");
-      if (NULL == file) {
-        char buffer[1024];
-        const char *const pid = strstr(filename, "PID");
-        if (NULL != pid) { /* PID-keyword is present */
-          int n = (int)(pid - filename);
-          n = LIBXSMM_SNPRINTF(buffer, sizeof(buffer), "%.*s%u%s", n, filename, libxsmm_get_pid(), filename + n + 3);
-          if (0 < n && (int)sizeof(buffer) > n) file = fopen(buffer, "r");
+      if (NULL != file) buffer[0] = '\0';
+      else { /* parse keywords */
+        const int seconds = atoi(filename);
+        if (0 == seconds) {
+          const char *const pid = strstr(filename, "PID");
+          if (NULL != pid) { /* PID-keyword is present */
+            int n = (int)(pid - filename);
+            n = LIBXSMM_SNPRINTF(buffer, sizeof(buffer), "%.*s%u%s", n, filename, libxsmm_get_pid(), filename + n + 3);
+            if (0 < n && (int)sizeof(buffer) > n) {
+              file = fopen(buffer, "r");
+              filename = buffer;
+            }
+          }
         }
+        else if (0 < seconds) {
+#if defined(_WIN32)
+          Sleep((DWORD)(1000 * seconds));
+#else
+          LIBXSMM_EXPECT(EXIT_SUCCESS, sleep(seconds));
+#endif
+        }
+        else for(;;) LIBXSMM_SYNC_YIELD;
       }
       if (NULL != file) {
         int c = fgetc(file);
