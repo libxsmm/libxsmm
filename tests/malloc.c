@@ -24,7 +24,7 @@
 #if defined(_DEBUG)
 # define FPRINTF(STREAM, ...) do { fprintf(STREAM, __VA_ARGS__); } while(0)
 #else
-# define FPRINTF(STREAM, ...)
+# define FPRINTF(STREAM, ...) do {} while(0)
 #endif
 
 
