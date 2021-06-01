@@ -55,7 +55,7 @@
 #if !defined(LIBXSMM_MALLOC_LIMIT)
 # define LIBXSMM_MALLOC_LIMIT (2U << 20) /* 2 MB */
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_REALLOC) && 1
+#if !defined(LIBXSMM_MALLOC_HOOK_REALLOC) && 0
 # define LIBXSMM_MALLOC_HOOK_REALLOC
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_CALLOC) && 1
