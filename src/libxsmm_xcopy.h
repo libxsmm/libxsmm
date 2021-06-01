@@ -38,7 +38,7 @@
 #   elif defined(NDEBUG)
 #     define LIBXSMM_XCOPY_JIT 0
 #   else
-#     define LIBXSMM_XCOPY_JIT 3
+#     define LIBXSMM_XCOPY_JIT 0/*3*/
 #   endif
 # endif
 #else
