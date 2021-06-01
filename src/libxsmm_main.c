@@ -58,9 +58,6 @@
 #if !defined(LIBXSMM_MALLOC_HOOK_ALIGN) && 1
 # define LIBXSMM_MALLOC_HOOK_ALIGN
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_INIT) && 0
-# define LIBXSMM_MALLOC_HOOK_INIT
-#endif
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
 # define LIBXSMM_ENABLE_DEREG
 #endif
@@ -291,8 +288,12 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
   void* result;
   LIBXSMM_ASSERT(LIBXSMM_ISPOT(alignment));
 #if defined(LIBXSMM_PLATFORM_X86) && !defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-  result = _mm_malloc(size, alignment);
-#elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  if (0 < libxsmm_ninit) {
+    result = _mm_malloc(size, alignment);
+  }
+  else
+#endif
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_memalign(alignment, size);
 #elif defined(LIBXSMM_BUILD) && ( /*C11*/ \
   defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__))
@@ -313,12 +314,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (
-# if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    1 < libxsmm_ninit &&
-# endif
-    NULL != libxsmm_malloc_fn.memalign.ptr)
-  {
+  if (NULL != libxsmm_malloc_fn.memalign.ptr) {
     result = libxsmm_malloc_fn.memalign.ptr(alignment, size);
   }
   else
@@ -335,20 +331,19 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
   result = __real_memalign(libxsmm_alignment(size, 0/*auto*/), size);
 #else
 # if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (
-#   if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    1 < libxsmm_ninit &&
-#   endif
-    NULL != libxsmm_malloc_fn.malloc.ptr)
-  {
+  if (NULL != libxsmm_malloc_fn.malloc.ptr) {
     LIBXSMM_ASSERT(malloc != libxsmm_malloc_fn.malloc.ptr);
     result = libxsmm_malloc_fn.malloc.ptr(size);
   }
   else
 # endif
 # if defined(LIBXSMM_PLATFORM_X86) && !defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-  result = _mm_malloc(size, libxsmm_alignment(size, 0/*auto*/));
-# elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  if (0 < libxsmm_ninit) {
+    result = _mm_malloc(size, libxsmm_alignment(size, 0/*auto*/));
+  }
+  else
+# endif
+# if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_malloc(size);
 # else
   result = malloc(size);
@@ -363,28 +358,25 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (
-# if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    1 < libxsmm_ninit &&
-# endif
-    NULL != libxsmm_malloc_fn.calloc.ptr)
-  {
+  if (NULL != libxsmm_malloc_fn.calloc.ptr) {
     LIBXSMM_ASSERT(calloc != libxsmm_malloc_fn.calloc.ptr);
     result = libxsmm_malloc_fn.calloc.ptr(num, size);
   }
   else
 #endif
-  {
 #if defined(LIBXSMM_PLATFORM_X86) && !defined(LIBXSMM_MALLOC_HOOK_REALLOC)
+  if (0 < libxsmm_ninit) {
     const size_t num_size = num * size;
     result = _mm_malloc(num_size, libxsmm_alignment(num_size, 0/*auto*/));
     if (NULL != result) memset(result, 0, num_size);
-#elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
-    result = __libc_calloc(num, size);
-#else
-    result = calloc(num, size);
-#endif
   }
+  else
+#endif
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  result = __libc_calloc(num, size);
+#else
+  result = calloc(num, size);
+#endif
   return result;
 }
 #endif
@@ -395,24 +387,17 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (
-# if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    1 < libxsmm_ninit &&
-# endif
-    NULL != libxsmm_malloc_fn.realloc.ptr)
-  {
+  if (NULL != libxsmm_malloc_fn.realloc.ptr) {
     LIBXSMM_ASSERT(realloc != libxsmm_malloc_fn.realloc.ptr);
     result = libxsmm_malloc_fn.realloc.ptr(ptr, size);
   }
   else
 #endif
-  {
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
-    result = __libc_realloc(ptr, size);
+  result = __libc_realloc(ptr, size);
 #else
-    result = realloc(ptr, size);
+  result = realloc(ptr, size);
 #endif
-  }
   return result;
 }
 #endif
@@ -422,20 +407,19 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
 {
   if (NULL != ptr) {
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-    if (
-# if defined(LIBXSMM_MALLOC_HOOK_INIT)
-      1 < libxsmm_ninit &&
-# endif
-      NULL != libxsmm_malloc_fn.free.ptr)
-    {
+    if (NULL != libxsmm_malloc_fn.free.ptr) {
       LIBXSMM_ASSERT(free != libxsmm_malloc_fn.free.ptr);
       libxsmm_malloc_fn.free.ptr(ptr);
     }
     else
 #endif
 #if defined(LIBXSMM_PLATFORM_X86) && !defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-    _mm_free(ptr);
-#elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+    if (0 < libxsmm_ninit) {
+      _mm_free(ptr);
+    }
+    else
+#endif
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
     __libc_free(ptr);
 #else
     free(ptr);
