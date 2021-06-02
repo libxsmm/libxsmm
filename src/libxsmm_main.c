@@ -55,13 +55,6 @@
 #if !defined(LIBXSMM_HASH_SEED)
 # define LIBXSMM_HASH_SEED 25071975
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_INTRINSIC) && 1
-# if defined(LIBXSMM_PLATFORM_X86) && \
-    !defined(LIBXSMM_MALLOC_HOOK_REALLOC) && \
-    !defined(LIBXSMM_MALLOC_MMAP)
-#   define LIBXSMM_MALLOC_HOOK_INTRINSIC
-# endif
-#endif
 #if !defined(LIBXSMM_MALLOC_HOOK_ALIGN) && 1
 # define LIBXSMM_MALLOC_HOOK_ALIGN
 #endif
