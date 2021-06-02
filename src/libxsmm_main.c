@@ -295,20 +295,15 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
   void* result;
   LIBXSMM_ASSERT(LIBXSMM_ISPOT(alignment));
 #if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
-  if (1/*0 < libxsmm_ninit*/) {
-    result = _mm_malloc(size, alignment);
-  }
-  else
-#endif
-#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  result = _mm_malloc(size, alignment);
+#elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_memalign(alignment, size);
 #elif defined(LIBXSMM_BUILD) && ( /*C11*/ \
   defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__))
   result = aligned_alloc(alignment, LIBXSMM_UP2(size, alignment));
 #elif (defined(_WIN32) || defined(__CYGWIN__))
-  { LIBXSMM_UNUSED(alignment);
-    result = malloc(size);
-  }
+  LIBXSMM_UNUSED(alignment);
+  result = malloc(size);
 #elif defined(NDEBUG)
   posix_memalign(&result, alignment, size);
 #else
@@ -346,12 +341,8 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
   else
 # endif
 # if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
-  if (1/*0 < libxsmm_ninit*/) {
-    result = _mm_malloc(size, libxsmm_alignment(size, 0/*auto*/));
-  }
-  else
-# endif
-# if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+  result = _mm_malloc(size, libxsmm_alignment(size, 0/*auto*/));
+# elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_malloc(size);
 # else
   result = malloc(size);
@@ -373,14 +364,11 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t
   else
 #endif
 #if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
-  if (1/*0 < libxsmm_ninit*/) {
-    const size_t num_size = num * size;
+  { const size_t num_size = num * size;
     result = _mm_malloc(num_size, libxsmm_alignment(num_size, 0/*auto*/));
     if (NULL != result) memset(result, 0, num_size);
   }
-  else
-#endif
-#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+#elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_calloc(num, size);
 #else
   result = calloc(num, size);
@@ -421,28 +409,23 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
     }
     else
 #endif
-    {
 #if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
-      if (1/*0 < libxsmm_ninit*/) {
-        static int recursive = 0;
-        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED)) _mm_free(ptr);
-        else {
-#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
-          __libc_free(ptr);
-#else
-          free(ptr);
-#endif
-        }
-        LIBXSMM_ATOMIC_SUB_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED);
+    { static int recursive = 0;
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED)) _mm_free(ptr);
+      else {
+# if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+        __libc_free(ptr);
+# else
+        free(ptr);
+# endif
       }
-      else
-#endif
-#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
-      __libc_free(ptr);
-#else
-      free(ptr);
-#endif
+      LIBXSMM_ATOMIC_SUB_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED);
     }
+#elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+    __libc_free(ptr);
+#else
+    free(ptr);
+#endif
   }
 }
 
