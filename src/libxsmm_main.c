@@ -295,7 +295,7 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
   void* result;
   LIBXSMM_ASSERT(LIBXSMM_ISPOT(alignment));
 #if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
-  if (0 < libxsmm_ninit) {
+  if (1/*0 < libxsmm_ninit*/) {
     result = _mm_malloc(size, alignment);
   }
   else
@@ -346,7 +346,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
   else
 # endif
 # if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
-  if (0 < libxsmm_ninit) {
+  if (1/*0 < libxsmm_ninit*/) {
     result = _mm_malloc(size, libxsmm_alignment(size, 0/*auto*/));
   }
   else
@@ -373,7 +373,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t
   else
 #endif
 #if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
-  if (0 < libxsmm_ninit) {
+  if (1/*0 < libxsmm_ninit*/) {
     const size_t num_size = num * size;
     result = _mm_malloc(num_size, libxsmm_alignment(num_size, 0/*auto*/));
     if (NULL != result) memset(result, 0, num_size);
@@ -421,17 +421,28 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
     }
     else
 #endif
+    {
 #if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
-    if (0 < libxsmm_ninit) {
-      _mm_free(ptr);
-    }
-    else
+      if (1/*0 < libxsmm_ninit*/) {
+        static int recursive = 0;
+        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED)) _mm_free(ptr);
+        else {
+#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+          __libc_free(ptr);
+#else
+          free(ptr);
+#endif
+        }
+        LIBXSMM_ATOMIC_SUB_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED);
+      }
+      else
 #endif
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
-    __libc_free(ptr);
+      __libc_free(ptr);
 #else
-    free(ptr);
+      free(ptr);
 #endif
+    }
   }
 }
 
