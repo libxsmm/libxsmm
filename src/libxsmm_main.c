@@ -55,6 +55,13 @@
 #if !defined(LIBXSMM_HASH_SEED)
 # define LIBXSMM_HASH_SEED 25071975
 #endif
+#if !defined(LIBXSMM_MALLOC_HOOK_INTRINSIC) && 1
+# if defined(LIBXSMM_PLATFORM_X86) && \
+    !defined(LIBXSMM_MALLOC_HOOK_REALLOC) && \
+    !defined(LIBXSMM_MALLOC_MMAP)
+#   define LIBXSMM_MALLOC_HOOK_INTRINSIC
+# endif
+#endif
 #if !defined(LIBXSMM_MALLOC_HOOK_ALIGN) && 1
 # define LIBXSMM_MALLOC_HOOK_ALIGN
 #endif
@@ -287,7 +294,7 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
 {
   void* result;
   LIBXSMM_ASSERT(LIBXSMM_ISPOT(alignment));
-#if defined(LIBXSMM_PLATFORM_X86) && !defined(LIBXSMM_MALLOC_HOOK_REALLOC)
+#if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
   if (0 < libxsmm_ninit) {
     result = _mm_malloc(size, alignment);
   }
@@ -338,7 +345,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
   }
   else
 # endif
-# if defined(LIBXSMM_PLATFORM_X86) && !defined(LIBXSMM_MALLOC_HOOK_REALLOC)
+# if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
   if (0 < libxsmm_ninit) {
     result = _mm_malloc(size, libxsmm_alignment(size, 0/*auto*/));
   }
@@ -365,7 +372,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t
   }
   else
 #endif
-#if defined(LIBXSMM_PLATFORM_X86) && !defined(LIBXSMM_MALLOC_HOOK_REALLOC)
+#if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
   if (0 < libxsmm_ninit) {
     const size_t num_size = num * size;
     result = _mm_malloc(num_size, libxsmm_alignment(num_size, 0/*auto*/));
@@ -414,7 +421,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
     }
     else
 #endif
-#if defined(LIBXSMM_PLATFORM_X86) && !defined(LIBXSMM_MALLOC_HOOK_REALLOC)
+#if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
     if (0 < libxsmm_ninit) {
       _mm_free(ptr);
     }
