@@ -173,15 +173,15 @@
           REAL(C_DOUBLE) norm1_abs, norm1_rel !! One-norm
           REAL(C_DOUBLE) normi_abs, normi_rel !! Infinity-norm
           REAL(C_DOUBLE) normf_rel            !! Froebenius-norm
-          !> Maximum difference, and L2-norm (both absolute and relative).
-          REAL(C_DOUBLE) linf_abs, linf_rel, l2_abs, l2_rel
+          !> Maximum difference, L2-norm (absolute and relative), and R-squared.
+          REAL(C_DOUBLE) linf_abs, linf_rel, l2_abs, l2_rel, rsq
           !> Statistics: sum/l1, min., max., arith. avg., and variance.
           REAL(C_DOUBLE) l1_ref, min_ref, max_ref, avg_ref, var_ref
           !> Statistics: sum/l1, min., max., arith. avg., and variance.
           REAL(C_DOUBLE) l1_tst, min_tst, max_tst, avg_tst, var_tst
-          !> Location (m, n) of largest difference (linf_abs).
           !> Values (v_ref, v_tst) and location (m, n) of largest linf_abs.
           REAL(C_DOUBLE) v_ref, v_tst
+          !> Location (m, n) of largest difference (linf_abs).
           INTEGER(LIBXSMM_BLASINT_KIND) m, n
         END TYPE
 
