@@ -194,18 +194,6 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #elif !defined(NDEBUG)
 # define LIBXSMM_MALLOC_DELETE_SAFE
 #endif
-/* map memory for scratch buffers */
-#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 1
-# define LIBXSMM_MALLOC_MMAP_SCRATCH
-#endif
-/* map memory for hooked allocation */
-#if !defined(LIBXSMM_MALLOC_MMAP_HOOK) && 1
-# define LIBXSMM_MALLOC_MMAP_HOOK
-#endif
-/* map memory also for non-executable buffers */
-#if !defined(LIBXSMM_MALLOC_MMAP) && 0
-# define LIBXSMM_MALLOC_MMAP
-#endif
 
 #define INTERNAL_MEMALIGN_REAL(RESULT, ALIGNMENT, SIZE) do { \
   const size_t internal_memalign_real_alignment_ = INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT); \
