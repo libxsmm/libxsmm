@@ -299,8 +299,9 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
   defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__))
   result = aligned_alloc(alignment, LIBXSMM_UP2(size, alignment));
 #elif (defined(_WIN32) || defined(__CYGWIN__))
-  LIBXSMM_UNUSED(alignment);
-  result = malloc(size);
+  { LIBXSMM_UNUSED(alignment);
+    result = malloc(size);
+  }
 #elif defined(NDEBUG)
   posix_memalign(&result, alignment, size);
 #else
