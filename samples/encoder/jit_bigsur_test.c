@@ -16,7 +16,9 @@
 # include <sys/stat.h>
 # include <unistd.h>
 # include <fcntl.h>
+# ifdef __APPLE__
 # include <libkern/OSCacheControl.h>
+# endif
 # include <pthread.h>
 
 # include <generator_aarch64_instructions.h>
@@ -80,7 +82,7 @@ void* dynamic_reset_zero_create() {
 
   printf(" attempting to create executable buffer...\n");
   char *kernelptr;
-#if 1
+#ifdef __APPLE__
   kernelptr = mmap( 0, mycode.code_size, PROT_WRITE | PROT_EXEC | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS | MAP_JIT, -1, 0);
   pthread_jit_write_protect_np(0/*false*/);
   { int i;

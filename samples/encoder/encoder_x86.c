@@ -832,7 +832,15 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VPSLLD_I", &mycode, LIBXSMM_X86_INSTR_VPSLLD_I, 1, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPSRAD_I", &mycode, LIBXSMM_X86_INSTR_VPSRAD_I, 1, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPSRLD_I", &mycode, LIBXSMM_X86_INSTR_VPSRLD_I, 1, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPSLLVW", &mycode, LIBXSMM_X86_INSTR_VPSLLVW, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPSLLVD", &mycode, LIBXSMM_X86_INSTR_VPSLLVD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPSLLVQ", &mycode, LIBXSMM_X86_INSTR_VPSLLVQ, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPSRAVW", &mycode, LIBXSMM_X86_INSTR_VPSRAVW, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPSRAVD", &mycode, LIBXSMM_X86_INSTR_VPSRAVD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPSRAVQ", &mycode, LIBXSMM_X86_INSTR_VPSRAVQ, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPSRLVW", &mycode, LIBXSMM_X86_INSTR_VPSRLVW, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPSRLVD", &mycode, LIBXSMM_X86_INSTR_VPSRLVD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPSRLVQ", &mycode, LIBXSMM_X86_INSTR_VPSRLVQ, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VXORPD", &mycode, LIBXSMM_X86_INSTR_VXORPD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VADDPD", &mycode, LIBXSMM_X86_INSTR_VADDPD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VMULPD", &mycode, LIBXSMM_X86_INSTR_VMULPD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
