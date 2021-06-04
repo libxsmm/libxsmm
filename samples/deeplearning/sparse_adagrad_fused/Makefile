@@ -17,11 +17,13 @@ VERIFY_CORRECTNESS = 1
 USE_LIBXSMM_JIT = 1
 USE_PERF_COUNTERS=1
 USE_LLC_COUNTERS=0
+DEBUG_TIME=0
 
 yesnolist += VERIFY_CORRECTNESS
 yesnolist += USE_LIBXSMM_JIT
 yesnolist += USE_PERF_COUNTERS
 yesnolist += USE_LLC_COUNTERS
+yesnolist += DEBUG_TIME
 #yesnolist +=
 
 DFLAGS += $(strip $(foreach var, $(yesnolist), $(if $(filter 1, $($(var))), -D$(var))))
