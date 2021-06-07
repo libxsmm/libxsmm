@@ -50,7 +50,7 @@ void tpp_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, float *pinp, floa
       sum_X_X2[j] = 0.0f;
       sum_X_X2[CP*CB + j] = 0.0f;
   }
-  
+
   #pragma omp parallel for reduction(+: sum_X_X2[:2*CP*CB])                   /* Parallelize over batches with multiple threads reducing to sum_X_X2 array */
   for(int n = 0; n < N; n++){
     libxsmm_meltw_unary_param m_reduce_rows_params, v_reduce_rows_params, reduce_HW_params;       /*Private params and tmp array */
@@ -66,7 +66,7 @@ void tpp_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, float *pinp, floa
       }
     }
   }
-  
+
 
   #pragma omp parallel for
   for(int j = 0; j < CP*CB; j++){
@@ -119,10 +119,10 @@ void tpp_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, flo
     d_array[CP*CB + j] = 0;
   }
 
-  
+
   double final_ds = 0.0f;                                     /* Double needed because reducing too many values */
   double final_db = 0.0f;
-  
+
   #pragma omp parallel for reduction(+: final_ds, final_db) reduction(+: d_array[:2*CP*CB])     /* Parallelize over batches and reduce the values into d_array, final_ds, final_db */
   for (int n = 0; n < N; n++) {
     float ds = 0.0f;
@@ -270,7 +270,7 @@ void scaler_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, 
     }
   }
 
-  
+
   double ds = 0.0f;                                               /* double needed because reducing too many values */
   double db = 0.0f;
   const float scale = 1.0f / ((float)N*HW);
@@ -324,7 +324,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_function func10, func11, func12, func13, func14, func15;
   libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltwfunction_unary reduce_rows_kernel, reduce_cols_kernel, reduce_HW_kernel;
+  libxsmm_meltwfunction_unary reduce_rows_kernel, reduce_HW_kernel;
 
   const float eps = FLT_EPSILON;
   libxsmm_blasint i, it, ld, tmp_ld, tmp_ld2;
@@ -460,7 +460,7 @@ int main( int argc, char* argv[] ) {
     scaler_batchnorm_fwd_fp32(N, CP, HW, CB, inp, gamma, beta, mean, var, out, eps);
     tpp_batchnorm_fwd_fp32(N, CP, HW, CB, inp, gamma, beta, mean, var, eqn_out, eps, func10, reduce_HW_kernel, reduce_rows_kernel);
   } else if (datatype_mode == 1) {
-    /* vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps); 
+    /* vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
     tpp_groupnorm_fwd_bf16(CP, NB, HW, CB, G, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps, func10, reduce_HW_kernel, reduce_rows_kernel, reduce_groups_kernel);
     tpp_layernorm_fwd_bf16(CP, NB, CB, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
     for ( i = 0; i < CP*NB*CB; ++i ) {
