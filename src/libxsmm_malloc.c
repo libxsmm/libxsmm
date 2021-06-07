@@ -194,18 +194,6 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #elif !defined(NDEBUG)
 # define LIBXSMM_MALLOC_DELETE_SAFE
 #endif
-/* map memory for scratch buffers */
-#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 1
-# define LIBXSMM_MALLOC_MMAP_SCRATCH
-#endif
-/* map memory for hooked allocation */
-#if !defined(LIBXSMM_MALLOC_MMAP_HOOK) && 1
-# define LIBXSMM_MALLOC_MMAP_HOOK
-#endif
-/* map memory also for non-executable buffers */
-#if !defined(LIBXSMM_MALLOC_MMAP) && 1
-# define LIBXSMM_MALLOC_MMAP
-#endif
 
 #define INTERNAL_MEMALIGN_REAL(RESULT, ALIGNMENT, SIZE) do { \
   const size_t internal_memalign_real_alignment_ = INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT); \
@@ -764,7 +752,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
           const size_t maxsize = LIBXSMM_MAX(scale_size, pool->instance.minsize) + incsize;
           const size_t limsize = LIBXSMM_MIN(maxsize, limit_size);
           const size_t minsize = limsize;
-          LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
+          assert(1 <= libxsmm_scratch_scale); /* !LIBXSMM_ASSERT */
           LIBXSMM_ASSERT(1 == counter);
           pool->instance.incsize = 0; /* reset */
           pool->instance.minsize = minsize;
@@ -1673,18 +1661,20 @@ LIBXSMM_API_INLINE void* internal_xrealloc(void** ptr, internal_malloc_info_type
   libxsmm_realloc_fun realloc_fn, libxsmm_free_fun free_fn)
 {
   char *const base = (char*)(NULL != *info ? (*info)->pointer : *ptr), *result;
-  LIBXSMM_ASSERT(NULL != *ptr);
-  /* may implicitly invalidate info */
-  result = (char*)realloc_fn(base, size);
+  LIBXSMM_ASSERT(NULL != *ptr && NULL != free_fn);
+  /* reallocation may implicitly invalidate info */
+  result = (char*)(NULL != realloc_fn ? realloc_fn(base, size) : __real_malloc(size));
   if (result == base) { /* signal no-copy */
     LIBXSMM_ASSERT(NULL != result);
     *info = NULL; /* no delete */
     *ptr = NULL; /* no copy */
   }
   else if (NULL != result) { /* copy */
-    const size_t offset_src = (const char*)*ptr - base;
-    *ptr = result + offset_src; /* copy */
-    *info = NULL; /* no delete */
+    if (NULL != realloc_fn) {
+      const size_t offset_src = (const char*)*ptr - base;
+      *ptr = result + offset_src; /* copy */
+      *info = NULL; /* no delete */
+    }
   }
 #if !defined(NDEBUG) && 0
   else { /* failed */
@@ -1724,7 +1714,7 @@ LIBXSMM_API_INTERN void* internal_xmalloc(void** ptr, internal_malloc_info_type*
 #if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
       result = internal_xrealloc(ptr, info, size, __real_realloc, __real_free);
 #else
-      result = internal_xrealloc(ptr, info, size, realloc, __real_free);
+      result = internal_xrealloc(ptr, info, size, NULL, __real_free);
 #endif
     }
     else { /* fallback with regular allocation */

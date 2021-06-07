@@ -14,11 +14,12 @@
 #include <stdio.h>
 #include <math.h>
 
-void test_normal_to_normalT_64bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_normal_to_normalT_64bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   double *in;
   double *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
 
   if ( M > ldi ) {
@@ -80,18 +81,22 @@ void test_normal_to_normalT_64bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm
     printf("SUCCESS 64bit\n");
   } else {
     printf("FAILURE 64bit\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
+
+  return ret;
 }
 
-void test_normal_to_normalT_32bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_normal_to_normalT_32bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   float *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
 
   if ( M > ldi ) {
@@ -153,18 +158,22 @@ void test_normal_to_normalT_32bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm
     printf("SUCCESS 32bit\n");
   } else {
     printf("FAILURE 32bit\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
+
+  return ret;
 }
 
-void test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
 
   if ( M > ldi ) {
@@ -226,18 +235,22 @@ void test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm
     printf("SUCCESS 16bit\n");
   } else {
     printf("FAILURE 16bit\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
+
+  return ret;
 }
 
-void test_normal_to_normalT_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_normal_to_normalT_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned char *in;
   unsigned char *out, *out_gold;
   unsigned int i, j;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
 
   if ( M > ldi ) {
@@ -299,19 +312,22 @@ void test_normal_to_normalT_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm
     printf("SUCCESS 08bit\n");
   } else {
     printf("FAILURE 08bit\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
+
+  return ret;
 }
 
-void test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in, *in_vnni;
   unsigned short *out, *out_gold, *out_vnni;
   unsigned int i, j, j2;
   unsigned int s;
-
+  int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
 
   if ( M > ldi ) {
@@ -392,6 +408,7 @@ void test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     printf("SUCCESS 16bit\n");
   } else {
     printf("FAILURE 16bit\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
@@ -399,13 +416,16 @@ void test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_free( out_vnni );
   libxsmm_free( in );
   libxsmm_free( in_vnni );
+
+  return ret;
 }
 
-void test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
   unsigned int i, j, j2;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = N + (N%2);
 
   libxsmm_meltw_unary_param unary_param;
@@ -482,11 +502,14 @@ void test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     printf("SUCCESS 16bit\n");
   } else {
     printf("FAILURE 16bit\n");
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
+
+  return ret;
 }
 
 #if 0
@@ -575,6 +598,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint N;
   libxsmm_blasint ldi;
   libxsmm_blasint ldo;
+  int ret = EXIT_FAILURE;
 
   if ( argc != 7 ) {
     printf(" Error! Usage: %s [T/V/R] [8/4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
@@ -590,24 +614,26 @@ int main( int argc, char* argv[] ) {
 
   if ( op == 'T' && dtype == 8 ) {
     printf("Testing 64bit Norm to Norm Transpose\n");
-    test_normal_to_normalT_64bit( M, N, ldi, ldo );
+    ret = test_normal_to_normalT_64bit( M, N, ldi, ldo );
   } else if ( op == 'T' && dtype == 4 ) {
     printf("Testing 32bit Norm to Norm Transpose\n");
-    test_normal_to_normalT_32bit( M, N, ldi, ldo );
+    ret = test_normal_to_normalT_32bit( M, N, ldi, ldo );
   } else if ( op == 'T' && dtype == 2 ) {
     printf("Testing 16bit Norm to Norm Transpose\n");
-    test_normal_to_normalT_16bit( M, N, ldi, ldo );
+    ret = test_normal_to_normalT_16bit( M, N, ldi, ldo );
   } else if ( op == 'T' && dtype == 1 ) {
     printf("Testing 08bit Norm to Norm Transpose\n");
-    test_normal_to_normalT_08bit( M, N, ldi, ldo );
+    ret = test_normal_to_normalT_08bit( M, N, ldi, ldo );
   } else if ( op == 'R' && dtype == 2 ) {
     printf("Testing 16bit VNNI to VNNI Transpose\n");
-    test_vnni_to_vnniT_16bit( M, N, ldi, ldo );
+    ret = test_vnni_to_vnniT_16bit( M, N, ldi, ldo );
   } else if ( op == 'V' && dtype == 2 ) {
     printf("Testing 16bit NORM to VNNI Reformat\n");
-    test_norm_to_vnni_16bit( M, N, ldi, ldo );
+    ret = test_norm_to_vnni_16bit( M, N, ldi, ldo );
   } else {
     printf(" Not implemented case! Usage: %s [T/V/R] [8/4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
+
+  return ret;
 }

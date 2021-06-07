@@ -55,15 +55,35 @@
 #if !defined(LIBXSMM_MALLOC_LIMIT)
 # define LIBXSMM_MALLOC_LIMIT (2U << 20) /* 2 MB */
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_REALLOC) && 1
-# define LIBXSMM_MALLOC_HOOK_REALLOC
+/* map memory also for non-executable buffers */
+#if !defined(LIBXSMM_MALLOC_MMAP) && 0
+# define LIBXSMM_MALLOC_MMAP
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_CALLOC) && 1
-# define LIBXSMM_MALLOC_HOOK_CALLOC
+/* map memory for hooked allocation */
+#if !defined(LIBXSMM_MALLOC_MMAP_HOOK) && 1
+# define LIBXSMM_MALLOC_MMAP_HOOK
+#endif
+/* map memory for scratch buffers */
+#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 1
+# define LIBXSMM_MALLOC_MMAP_SCRATCH
 #endif
 /* align even if interceptor is disabled at runtime */
 #if !defined(LIBXSMM_MALLOC_ALIGN_ALL) && 1
 # define LIBXSMM_MALLOC_ALIGN_ALL
+#endif
+#if !defined(LIBXSMM_MALLOC_HOOK_INTRINSIC) && 1
+# if defined(LIBXSMM_PLATFORM_X86) && defined(LIBXSMM_INTRINSICS_INCLUDE) && \
+    !defined(LIBXSMM_INTRINSICS_DEBUG) && !defined(LIBXSMM_MALLOC_MMAP)
+#   define LIBXSMM_MALLOC_HOOK_INTRINSIC
+# endif
+#endif
+#if !defined(LIBXSMM_MALLOC_HOOK_REALLOC) && 1
+# if !defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
+#   define LIBXSMM_MALLOC_HOOK_REALLOC
+# endif
+#endif
+#if !defined(LIBXSMM_MALLOC_HOOK_CALLOC) && 1
+# define LIBXSMM_MALLOC_HOOK_CALLOC
 #endif
 #if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER_ID)
 # define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)LIBXSMM_UNLIMITED)

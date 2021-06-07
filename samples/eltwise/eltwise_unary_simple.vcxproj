@@ -27,15 +27,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="eltwise_binary.c" />
+    <ClCompile Include="eltwise_unary_simple.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>eltwise_binary</ProjectName>
+    <ProjectName>eltwise_unary_simple</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectGuid>{7EC4C8A0-6818-488E-BF14-FF14FBBC2B5E}</ProjectGuid>
+    <ProjectGuid>{B037C179-AB6E-4042-919B-AEC6A3D64814}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

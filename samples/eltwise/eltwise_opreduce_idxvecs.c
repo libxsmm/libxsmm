@@ -234,8 +234,8 @@ int main(int argc, char* argv[])
   inp_matrix2             = (float*) malloc(ld_in*n*sizeof(float) );
   cols_ind_array          = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
   cols_ind_array2         = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
-  cols_ind_array_i32          = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
-  cols_ind_array2_i32         = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
+  cols_ind_array_i32      = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
+  cols_ind_array2_i32     = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
   all_ns                  = (unsigned long long*) malloc(n*sizeof(unsigned long long));
   scale_vals              = (float*) malloc(n_cols_idx*sizeof(float));
 
@@ -243,16 +243,21 @@ int main(int argc, char* argv[])
   ref_argop_off_vec_1     = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
   ref_argop_off_vec_0_i32 = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
   ref_argop_off_vec_1_i32 = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
-  argop_off_vec_0     = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
-  argop_off_vec_1     = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
-  argop_off_vec_0_i32 = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
-  argop_off_vec_1_i32 = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
+  argop_off_vec_0         = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
+  argop_off_vec_1         = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
+  argop_off_vec_0_i32     = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
+  argop_off_vec_1_i32     = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
 
   if (use_bf16 == 1) {
-    inp_matrix_bf16              = (libxsmm_bfloat16*) malloc(ld_in*n*sizeof(libxsmm_bfloat16) );
-    result_bf16                  = (libxsmm_bfloat16*) malloc(ld_in*sizeof(libxsmm_bfloat16) );
-    inp_matrix_bf162              = (libxsmm_bfloat16*) malloc(ld_in*n*sizeof(libxsmm_bfloat16) );
-    scale_vals_bf16              = (libxsmm_bfloat16*) malloc(n_cols_idx*sizeof(libxsmm_bfloat16));
+    inp_matrix_bf16  = (libxsmm_bfloat16*) malloc(ld_in*n*sizeof(libxsmm_bfloat16) );
+    result_bf16      = (libxsmm_bfloat16*) malloc(ld_in*sizeof(libxsmm_bfloat16) );
+    inp_matrix_bf162 = (libxsmm_bfloat16*) malloc(ld_in*n*sizeof(libxsmm_bfloat16) );
+    scale_vals_bf16  = (libxsmm_bfloat16*) malloc(n_cols_idx*sizeof(libxsmm_bfloat16));
+  } else {
+    inp_matrix_bf16  = NULL;
+    result_bf16      = NULL;
+    inp_matrix_bf162 = NULL;
+    scale_vals_bf16  = NULL;
   }
 
   /* Fill matrices with random data */
@@ -320,7 +325,7 @@ int main(int argc, char* argv[])
 
   /* Calculate reference results...  */
   for (jj = 0; jj < n_cols_idx; jj++) {
-    float op_res;
+    float op_res = 0.0f;
     j = cols_ind_array[jj];
     _j = cols_ind_array2[jj];
     for (i = 0; i < m; i++) {
@@ -491,7 +496,7 @@ int main(int argc, char* argv[])
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
     for (jj = 0; jj < n_cols_idx; jj++) {
-      float op_res;
+      float op_res = 0.0f;
       j = cols_ind_array[jj];
       _j = cols_ind_array2[jj];
       for (i = 0; i < m; i++) {

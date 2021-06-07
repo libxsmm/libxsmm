@@ -11,9 +11,9 @@
 #include <libxsmm_source.h>
 
 #if defined(_DEBUG)
-# define FPRINTF(STREAM, ...) fprintf(STREAM, __VA_ARGS__)
+# define FPRINTF(STREAM, ...) do { fprintf(STREAM, __VA_ARGS__); } while(0)
 #else
-# define FPRINTF(STREAM, ...)
+# define FPRINTF(STREAM, ...) do {} while(0)
 #endif
 
 #if !defined(ELEM_TYPE)

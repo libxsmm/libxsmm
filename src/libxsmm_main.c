@@ -58,9 +58,6 @@
 #if !defined(LIBXSMM_MALLOC_HOOK_ALIGN) && 1
 # define LIBXSMM_MALLOC_HOOK_ALIGN
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_INIT) && 0
-# define LIBXSMM_MALLOC_HOOK_INIT
-#endif
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
 # define LIBXSMM_ENABLE_DEREG
 #endif
@@ -285,11 +282,14 @@ LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_nosync);
 LIBXSMM_APIVAR_PRIVATE_DEF(LIBXSMM_TLS_TYPE libxsmm_tlskey);
 #endif
 
+
 LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size)
 {
   void* result;
   LIBXSMM_ASSERT(LIBXSMM_ISPOT(alignment));
-#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+#if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
+  result = _mm_malloc(size, alignment);
+#elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_memalign(alignment, size);
 #elif defined(LIBXSMM_BUILD) && ( /*C11*/ \
   defined(__STDC_VERSION__) && (201112L <= __STDC_VERSION__))
@@ -297,6 +297,8 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
 #elif (defined(_WIN32) || defined(__CYGWIN__))
   LIBXSMM_UNUSED(alignment);
   result = malloc(size);
+#elif defined(NDEBUG)
+  posix_memalign(&result, alignment, size);
 #else
   if (0 != posix_memalign(&result, alignment, size)) result = NULL;
 #endif
@@ -308,12 +310,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (
-# if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    1 < libxsmm_ninit &&
-# endif
-    NULL != libxsmm_malloc_fn.memalign.ptr)
-  {
+  if (NULL != libxsmm_malloc_fn.memalign.ptr) {
     result = libxsmm_malloc_fn.memalign.ptr(alignment, size);
   }
   else
@@ -327,22 +324,18 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_ALIGN)
-  const size_t alignment = libxsmm_alignment(size, 0/*auto*/);
-  result = __real_memalign(alignment, size);
+  result = __real_memalign(libxsmm_alignment(size, 0/*auto*/), size);
 #else
 # if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (
-#   if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    1 < libxsmm_ninit &&
-#   endif
-    NULL != libxsmm_malloc_fn.malloc.ptr)
-  {
+  if (NULL != libxsmm_malloc_fn.malloc.ptr) {
     LIBXSMM_ASSERT(malloc != libxsmm_malloc_fn.malloc.ptr);
     result = libxsmm_malloc_fn.malloc.ptr(size);
   }
   else
 # endif
-# if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+# if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
+  result = _mm_malloc(size, libxsmm_alignment(size, 0/*auto*/));
+# elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_malloc(size);
 # else
   result = malloc(size);
@@ -357,18 +350,18 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (
-# if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    1 < libxsmm_ninit &&
-# endif
-    NULL != libxsmm_malloc_fn.calloc.ptr)
-  {
+  if (NULL != libxsmm_malloc_fn.calloc.ptr) {
     LIBXSMM_ASSERT(calloc != libxsmm_malloc_fn.calloc.ptr);
     result = libxsmm_malloc_fn.calloc.ptr(num, size);
   }
   else
 #endif
-#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+#if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
+  { const size_t num_size = num * size;
+    result = _mm_malloc(num_size, libxsmm_alignment(num_size, 0/*auto*/));
+    if (NULL != result) memset(result, 0, num_size);
+  }
+#elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
   result = __libc_calloc(num, size);
 #else
   result = calloc(num, size);
@@ -383,12 +376,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (
-# if defined(LIBXSMM_MALLOC_HOOK_INIT)
-    1 < libxsmm_ninit &&
-# endif
-    NULL != libxsmm_malloc_fn.realloc.ptr)
-  {
+  if (NULL != libxsmm_malloc_fn.realloc.ptr) {
     LIBXSMM_ASSERT(realloc != libxsmm_malloc_fn.realloc.ptr);
     result = libxsmm_malloc_fn.realloc.ptr(ptr, size);
   }
@@ -408,18 +396,25 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
 {
   if (NULL != ptr) {
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-    if (
-# if defined(LIBXSMM_MALLOC_HOOK_INIT)
-      1 < libxsmm_ninit &&
-# endif
-      NULL != libxsmm_malloc_fn.free.ptr)
-    {
+    if (NULL != libxsmm_malloc_fn.free.ptr) {
       LIBXSMM_ASSERT(free != libxsmm_malloc_fn.free.ptr);
       libxsmm_malloc_fn.free.ptr(ptr);
     }
     else
 #endif
-#if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+#if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
+    { static int recursive = 0;
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED)) _mm_free(ptr);
+      else {
+# if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
+        __libc_free(ptr);
+# else
+        free(ptr);
+# endif
+      }
+      LIBXSMM_ATOMIC_SUB_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED);
+    }
+#elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
     __libc_free(ptr);
 #else
     free(ptr);
@@ -637,8 +632,35 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
   /* determine whether this instance is unique or not */
   if (NULL != env_dump_files && '\0' != *env_dump_files && 0 == urgent) { /* dump per-node info */
     const char* filename = strtok(env_dump_files, INTERNAL_DELIMS);
+    char buffer[1024];
     for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
-      FILE *const file = fopen(filename, "r");
+      FILE* file = fopen(filename, "r");
+      if (NULL != file) buffer[0] = '\0';
+      else { /* parse keywords */
+        const int seconds = atoi(filename);
+        if (0 == seconds) {
+          const char *const pid = strstr(filename, "PID");
+          if (NULL != pid) { /* PID-keyword is present */
+            int n = (int)(pid - filename);
+            n = LIBXSMM_SNPRINTF(buffer, sizeof(buffer), "%.*s%u%s", n, filename, libxsmm_get_pid(), filename + n + 3);
+            if (0 < n && (int)sizeof(buffer) > n) {
+              file = fopen(buffer, "r");
+              filename = buffer;
+            }
+          }
+        }
+        else {
+          fprintf(stderr, "LIBXSMM INFO: PID=%u\n", libxsmm_get_pid());
+          if (0 < seconds) {
+#if defined(_WIN32)
+            Sleep((DWORD)(1000 * seconds));
+#else
+            LIBXSMM_EXPECT(EXIT_SUCCESS, sleep(seconds));
+#endif
+          }
+          else for(;;) LIBXSMM_SYNC_YIELD;
+        }
+      }
       if (NULL != file) {
         int c = fgetc(file);
         fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
@@ -979,7 +1001,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.0, 10.0);
         /*libxsmm_scratch_scale_locked = 1;*/
       }
-      LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
+      assert(1 <= libxsmm_scratch_scale); /* !LIBXSMM_ASSERT */
     }
     libxsmm_set_scratch_limit(internal_parse_nbytes(getenv("LIBXSMM_SCRATCH_LIMIT"), LIBXSMM_SCRATCH_DEFAULT, NULL/*valid*/));
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/

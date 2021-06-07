@@ -13,6 +13,8 @@
 #include <time.h>
 #include <sys/syscall.h>
 #include <algorithm>
+#include <iterator>
+#include <set>
 #include <parallel/algorithm>
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,13 +25,6 @@
 #include <unistd.h>
 #include <assert.h>
 #include <immintrin.h>
-#ifdef _OPENMP
-#include <omp.h>
-#else
-#define omp_get_num_threads() (1)
-#define omp_get_thread_num() (0)
-#define omp_get_max_threads() (1)
-#endif
 #include <libxsmm.h>
 
 #ifdef USE_PERF_COUNTERS
@@ -37,6 +32,7 @@
 #endif
 
 #include "radix_sort.h"
+#include "utils.h"
 
 const int alignment = 64;
 typedef long ITyp;
@@ -51,21 +47,6 @@ void set_random_seed(int seed)
     int tid = omp_get_thread_num();
     srand48_r(seed+tid, &rand_buf);
   }
-}
-
-static double get_time() {
-  static bool init_done = false;
-  static struct timespec stp = {0,0};
-  struct timespec tp;
-  clock_gettime(CLOCK_REALTIME, &tp);
-  /*clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);*/
-
-  if(!init_done) {
-    init_done = true;
-    stp = tp;
-  }
-  double ret = (tp.tv_sec - stp.tv_sec) * 1e3 + (tp.tv_nsec - stp.tv_nsec)*1e-6;
-  return ret;
 }
 
 template<typename T>
@@ -255,12 +236,16 @@ void sparse_transpose_radix(EmbeddingInOut *eio)
     }
   }
   auto t1 = get_time();
-  //printf("Keypair buffer fill Time = %.3f ms\n", t1-t0);
+#ifdef DEBUG_TIME
+  printf("Keypair buffer fill Time = %.3f ms\n", t1-t0);
+#endif
 
   t0 = get_time();
   Key_Value_Pair<int>* tmpBuf2 = radix_sort_parallel<int>(&tmpBuf[0], &tmpBuf1[0], NS, M);
   t1 = get_time();
-  //printf("Radix Sort Time = %.3f ms\n", t1-t0);
+#ifdef DEBUG_TIME
+  printf("Radix Sort Time = %.3f ms\n", t1-t0);
+#endif
 
   int max_thds = omp_get_max_threads();
   int num_uniq[max_thds];
@@ -281,7 +266,9 @@ void sparse_transpose_radix(EmbeddingInOut *eio)
     num_uniq[i] += num_uniq[i-1];
   int U = num_uniq[max_thds-1];
   t1 = get_time();
-  //printf("Num Unique Index Time = %.3f ms\n", t1-t0);
+#ifdef DEBUG_TIME
+  printf("Num Unique Index Time = %.3f ms\n", t1-t0);
+#endif
 
   t0 = get_time();
   eio->mb_offsets[0] = 0;
@@ -304,7 +291,9 @@ void sparse_transpose_radix(EmbeddingInOut *eio)
     }
   }
   t1 = get_time();
-  //printf("Offset/Index array construction Time = %.3f ms\n", t1-t0);
+#ifdef DEBUG_TIME
+  printf("Offset/Index array construction Time = %.3f ms\n", t1-t0);
+#endif
   eio->mb_offsets[U] = NS;
   eio->U = U;
   my_free(tmpBuf);
@@ -391,26 +380,33 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   eio->indices = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
   eio->grads = (FTyp*)my_malloc(NS * E * sizeof(FTyp), alignment);
   init_zero(NS * E, eio->grads);
+#pragma omp parallel for
   for (int n = 0; n < N; n++)
   {
     int start = eio->offsets[n];
     int end = eio->offsets[n+1];
-    for (int i = start; i < end; i++)
-    {
-      ITyp ind;
+    std::set<ITyp> s_ind;
+    ITyp ind;
+    double randval;
+    while(s_ind.size() < (end - start)) {
       if (alpha == 0.0) {
-        double randval;
         drand48_r(&rand_buf, &randval);
         ind = (ITyp)(randval * M);
       } else {
         ind = (ITyp) zipf_dist(alpha, M);
       }
-
       if (ind == M)
         ind--;
-      eio->indices[i] = ind;
+      s_ind.insert(ind);
     }
-    std::sort(&eio->indices[start], &eio->indices[end]);
+
+    int i = start;
+    for (std::set<ITyp>::iterator itr = s_ind.begin(); itr != s_ind.end(); itr++, i++) {
+      eio->indices[i] = *itr;
+    }
+
+    //set iterator gives elements in sorted order
+    //std::sort(&eio->indices[start], &eio->indices[end]);
   }
   eio->U = -1;
   eio->mb_offsets = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
@@ -422,7 +418,9 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   auto t0 = get_time();
   sparse_transpose_radix(eio);
   auto t1 = get_time();
-  //printf("Trans Time = %.3f ms\n", t1-t0);
+#ifdef DEBUG_TIME
+  printf("Trans Time = %.3f ms\n", t1-t0);
+#endif
 }
 
 void free_buffers(EmbeddingInOut *eio)
@@ -508,7 +506,9 @@ int main(int argc, char * argv[]) {
       auto t0 = get_time();
       allocate_buffers_and_generte_rnd_input(N, P, alpha, eb[i], eio[j][i]);
       auto t1 = get_time();
-      //printf("Rand init time = %.3f ms\n", t1 - t0);
+#ifdef DEBUG_TIME
+      printf("Rand init time = %.3f ms\n", t1 - t0);
+#endif
       tNS += eio[j][i]->NS;
       tU += eio[j][i]->U;
     }
@@ -521,7 +521,9 @@ int main(int argc, char * argv[]) {
       eb[s]->fused_backward_update_adagrad(eio[i][s]->U, eio[i][s]->NS, N, eio[i][s]->mb_offsets, eio[i][s]->mb_indices, eio[i][s]->wt_indices, eio[i][s]->gradout, -0.1, 1.0e-6);
     }
     double t1 = get_time();
+#ifdef DEBUG_TIME
     printf("Warmup Iter %4d: Time = %.3f ms\n", i, t1-t0);
+#endif
   }
 
 #ifdef USE_PERF_COUNTERS
@@ -565,7 +567,6 @@ int main(int argc, char * argv[]) {
   size_t bwdupdBytesMax = bwdupdBytesMaxRd + bwdupdBytesMaxWr;
 
   my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %ld, avgU = %ld, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
-  //printf("Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f\n", fwdTime, bwdTime, updTime, t1-t0);
   my_printf("Per Iter  Time: %.3f ms  Total: %.3f ms\n", bwdupdTime/(iters), (t1-t0)/(iters));
   my_printf("Per Table Time: %.3f ms  Total: %.3f ms\n", bwdupdTime/(iters*LS), (t1-t0)/(iters*LS));
 

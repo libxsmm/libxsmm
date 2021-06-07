@@ -8,14 +8,12 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
 #include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <immintrin.h>
-#include "../../include/libxsmm_intrinsics_x86.h"
+#include <libxsmm_intrinsics_x86.h>
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
 
@@ -125,7 +123,7 @@ int main( int argc, char* argv[] ) {
   int M = 64;
   int N = 64;
   int ld = 64;
-  unsigned int correct = 1;
+  /*unsigned int correct = 1;*/
   libxsmm_matrix_eqn_param eqn_param;
   libxsmm_matrix_arg arg_array[4];
   libxsmm_matdiff_info norms_out;
@@ -185,7 +183,7 @@ int main( int argc, char* argv[] ) {
   arg_array[3].primary = (void*)bf16_dwt;
   eqn_param.inputs = arg_array;
   eqn_param.output.primary = (void*)eqn_wt_lo;
-  offset = (long long) ((void*)eqn_wt_hi - (void*)eqn_wt_lo);
+  offset = (long long) ((char*)eqn_wt_hi - (char*)eqn_wt_lo);
   eqn_param.output.secondary = (void*)offset;
   func0(&eqn_param);
 

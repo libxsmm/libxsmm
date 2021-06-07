@@ -79,9 +79,10 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
   libxsmm_dfsspmdm* new_handle = NULL;
-  libxsmm_dmmfunction k_sparse = NULL;
+  libxsmm_dmmfunction k_sparse1 = NULL;
+  libxsmm_dmmfunction k_sparse2 = NULL;
   libxsmm_dmmfunction k_dense = NULL;
-  int i, j, n, a_nnz, N_sparse, N_dense;
+  int i, j, n, a_nnz, N_sparse1, N_sparse2, N_dense, nkerns;
 
   /* internal lazy initialization */
   if (NULL == internal_fsspmdm_dperm) internal_dfsspmdm_init();
@@ -154,11 +155,22 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   a_csr_rowptr[M] = a_nnz;
 
   /* Attempt to JIT a sparse kernel */
-  N_sparse = libxsmm_cpuid_vlen32(libxsmm_cpuid()) / 2;
-  xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse, K,
-                                              0, ldb, ldc, one, beta, flags, prefetch);
+  N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_cpuid()) / 2;
+  xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
+                                             0, ldb, ldc, one, beta, flags, prefetch);
   if ( NULL != xgemm_desc ) {
-    k_sparse = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+    k_sparse1 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+  }
+
+  /* If that worked try to JIT a second (wider) sparse kernel */
+  N_sparse2 = N_sparse1*2;
+  if ( NULL != k_sparse1 && N_sparse2 <= N ) {
+    xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
+                                               0, ldb, ldc, one, beta, flags, prefetch);
+
+    if ( NULL != xgemm_desc ) {
+        k_sparse2 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+    }
   }
 
   /* Free CSR */
@@ -179,80 +191,100 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
   }
 
-  /* Sparse only */
-  if ( NULL != k_sparse && NULL == k_dense ) {
-    new_handle->N_chunksize = N_sparse;
-    new_handle->kernel = k_sparse;
-    libxsmm_free( aa_dense );
-  }
-  /* Dense only */
-  else if ( NULL != k_dense && NULL == k_sparse ) {
-    new_handle->N_chunksize = N_dense;
-    new_handle->kernel = k_dense;
-    new_handle->a_dense = aa_dense;
-  }
-  /* Both; benchmark */
-  else if ( NULL != k_dense && NULL != k_sparse ) {
-    int use_sparse = 1;
-    libxsmm_timer_tickint t1, t2, t3;
-    double* B = (double*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(double), 64);
-    double* C = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(double), 64);
+  /* Tally up how many kernels we got */
+  nkerns = !!k_dense + !!k_sparse1 + !!k_sparse2;
+
+  /* We have at least one kernel */
+  if ( nkerns ) {
+    libxsmm_timer_tickint t;
+    double *B = NULL, *C = NULL;
+    double dt_dense = ( NULL != k_dense ) ? 1e5 : 1e6;
+    double dt_sparse1 = ( NULL != k_sparse1 ) ? 1e5 : 1e6;
+    double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
     void* fp;
 
-    if ( NULL != B && NULL != C ) {
-      for ( i = 0; i < K; i++ ) {
-        for ( j = 0; j < N; j++ ) {
-          B[i*ldb + j] = 1;
-        }
-      }
-      for ( i = 0; i < M; i++ ) {
-        for ( j = 0; j < N; j++ ) {
-          C[i*ldc + j] = 1;
-        }
-      }
+    /* If we have two or more kernels then try to benchmark them */
+    if ( nkerns >= 2 ) {
+      B = (double*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(double), 64);
+      C = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(double), 64);
 
-      /* Benchmark sparse */
-      t1 = libxsmm_timer_tick();
-      for ( i = 0; i < 25; i++ ) {
-        for ( j = 0; j < N; j += N_sparse ) {
-          k_sparse( internal_fsspmdm_dperm, B + j, C + j );
+      if ( NULL != B && NULL != C ) {
+        for ( i = 0; i < K; i++ ) {
+          for ( j = 0; j < N; j++ ) {
+            B[i*ldb + j] = 1;
+          }
+        }
+        for ( i = 0; i < M; i++ ) {
+          for ( j = 0; j < N; j++ ) {
+            C[i*ldc + j] = 1;
+          }
         }
       }
-      t2 = libxsmm_timer_tick();
+    }
 
-      /* Benchmark dense */
-      for ( i = 0; i < 25; i++ ) {
+    /* Benchmark dense */
+    if ( NULL != k_dense && NULL != B && NULL != C ) {
+      t = libxsmm_timer_tick();
+      for ( i = 0; i < 250; i++ ) {
         for ( j = 0; j < N; j += N_dense ) {
           k_dense( B + j, aa_dense, C + j );
         }
       }
-      t3 = libxsmm_timer_tick();
-
-      /* Compare */
-      use_sparse = libxsmm_timer_duration( t1, t2 ) < libxsmm_timer_duration( t2, t3 );
+      dt_dense = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
-    /* Sparse faster */
-    if ( use_sparse ) {
-      new_handle->N_chunksize = N_sparse;
-      new_handle->kernel = k_sparse;
-
-      libxsmm_free( aa_dense );
+    /* Benchmark sparse (regular) */
+    if ( NULL != k_sparse1 && NULL != B && NULL != C ) {
+      t = libxsmm_timer_tick();
+      for ( i = 0; i < 250; i++ ) {
+        for ( j = 0; j < N; j += N_sparse1 ) {
+          k_sparse1( internal_fsspmdm_dperm, B + j, C + j );
+        }
+      }
+      dt_sparse1 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
-    /* Dense faster */
-    else {
+
+    /* Benchmark sparse (wide) */
+    if ( NULL != k_sparse2 && NULL != B && NULL != C ) {
+      t = libxsmm_timer_tick();
+      for ( i = 0; i < 250; i++ ) {
+        for ( j = 0; j < N; j += N_sparse2 ) {
+          k_sparse2( internal_fsspmdm_dperm, B + j, C + j );
+        }
+      }
+      dt_sparse2 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
+    }
+
+    /* Dense fastest */
+    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 ) {
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
       new_handle->a_dense = aa_dense;
+    } else {
+      libxsmm_free( aa_dense );
+    }
 
-      LIBXSMM_ASSIGN127( &fp, &k_sparse );
+    /* Sparse (regular) fastest */
+    if ( dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 ) {
+      new_handle->N_chunksize = N_sparse1;
+      new_handle->kernel = k_sparse1;
+    } else if ( NULL != k_sparse1 ) {
+      LIBXSMM_ASSIGN127( &fp, &k_sparse1 );
+      libxsmm_free( fp );
+    }
+
+    /* Sparse (wide) fastest */
+    if ( dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 ) {
+      new_handle->N_chunksize = N_sparse2;
+      new_handle->kernel = k_sparse2;
+    } else if ( NULL != k_sparse2 ) {
+      LIBXSMM_ASSIGN127( &fp, &k_sparse2 );
       libxsmm_free( fp );
     }
 
     libxsmm_free( B );
     libxsmm_free( C );
   }
-  /* Neither */
   else {
     libxsmm_free( aa_dense );
     free( new_handle );
@@ -279,9 +311,10 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
   libxsmm_sfsspmdm* new_handle = NULL;
-  libxsmm_smmfunction k_sparse = NULL;
+  libxsmm_smmfunction k_sparse1 = NULL;
+  libxsmm_smmfunction k_sparse2 = NULL;
   libxsmm_smmfunction k_dense = NULL;
-  int i, j, n, a_nnz, N_sparse, N_dense;
+  int i, j, n, a_nnz, N_sparse1, N_sparse2, N_dense, nkerns;
 
   /* internal lazy initialization */
   if (NULL == internal_fsspmdm_sperm) internal_sfsspmdm_init();
@@ -354,11 +387,22 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   a_csr_rowptr[M] = a_nnz;
 
   /* Attempt to JIT a sparse kernel */
-  N_sparse = libxsmm_cpuid_vlen32(libxsmm_cpuid());
-  xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse, K,
+  N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_cpuid());
+  xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
                                              0, ldb, ldc, one, beta, flags, prefetch);
   if ( NULL != xgemm_desc ) {
-    k_sparse = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+    k_sparse1 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+  }
+
+  /* If that worked try to JIT a second (wider) sparse kernel */
+  N_sparse2 = N_sparse1*2;
+  if ( NULL != k_sparse1 && N_sparse2 <= N ) {
+    xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
+                                               0, ldb, ldc, one, beta, flags, prefetch);
+
+    if ( NULL != xgemm_desc ) {
+      k_sparse2 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+    }
   }
 
   /* Free CSR */
@@ -379,80 +423,100 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
   }
 
-  /* Sparse only */
-  if ( NULL != k_sparse && NULL == k_dense ) {
-    new_handle->N_chunksize = N_sparse;
-    new_handle->kernel = k_sparse;
-    libxsmm_free( aa_dense );
-  }
-  /* Dense only */
-  else if ( NULL != k_dense && NULL == k_sparse ) {
-    new_handle->N_chunksize = N_dense;
-    new_handle->kernel = k_dense;
-    new_handle->a_dense = aa_dense;
-  }
-  /* Both; benchmark */
-  else if ( NULL != k_dense && NULL != k_sparse ) {
-    int use_sparse = 1;
-    libxsmm_timer_tickint t1, t2, t3;
-    float* B = (float*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(float), 64);
-    float* C = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(float), 64);
+  /* Tally up how many kernels we got */
+  nkerns = !!k_dense + !!k_sparse1 + !!k_sparse2;
+
+  /* We have at least one kernel */
+  if ( nkerns ) {
+    libxsmm_timer_tickint t;
+    float *B = NULL, *C = NULL;
+    double dt_dense = ( NULL != k_dense ) ? 1e5 : 1e6;
+    double dt_sparse1 = ( NULL != k_sparse1 ) ? 1e5 : 1e6;
+    double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
     void* fp;
 
-    if ( NULL != B && NULL != C ) {
-      for ( i = 0; i < K; i++ ) {
-        for ( j = 0; j < N; j++ ) {
-          B[i*ldb + j] = 1;
-        }
-      }
-      for ( i = 0; i < M; i++ ) {
-        for ( j = 0; j < N; j++ ) {
-          C[i*ldc + j] = 1;
-        }
-      }
+    /* If we have two or more kernels then try to benchmark them */
+    if ( nkerns >= 2 ) {
+      B = (float*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(float), 64);
+      C = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(float), 64);
 
-      /* Benchmark sparse */
-      t1 = libxsmm_timer_tick();
-      for ( i = 0; i < 25; i++ ) {
-        for ( j = 0; j < N; j += N_sparse ) {
-          k_sparse( internal_fsspmdm_sperm, B + j, C + j );
+      if ( NULL != B && NULL != C ) {
+        for ( i = 0; i < K; i++ ) {
+          for ( j = 0; j < N; j++ ) {
+            B[i*ldb + j] = 1;
+          }
+        }
+        for ( i = 0; i < M; i++ ) {
+          for ( j = 0; j < N; j++ ) {
+            C[i*ldc + j] = 1;
+          }
         }
       }
-      t2 = libxsmm_timer_tick();
+    }
 
-      /* Benchmark dense */
-      for ( i = 0; i < 25; i++ ) {
+    /* Benchmark dense */
+    if ( NULL != k_dense && NULL != B && NULL != C ) {
+      t = libxsmm_timer_tick();
+      for ( i = 0; i < 250; i++ ) {
         for ( j = 0; j < N; j += N_dense ) {
           k_dense( B + j, aa_dense, C + j );
         }
       }
-      t3 = libxsmm_timer_tick();
-
-      /* Compare */
-      use_sparse = libxsmm_timer_duration( t1, t2 ) < libxsmm_timer_duration( t2, t3 );
+      dt_dense = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
-    /* Sparse faster */
-    if ( use_sparse ) {
-      new_handle->N_chunksize = N_sparse;
-      new_handle->kernel = k_sparse;
-
-      libxsmm_free( aa_dense );
+    /* Benchmark sparse (regular) */
+    if ( NULL != k_sparse1 && NULL != B && NULL != C ) {
+      t = libxsmm_timer_tick();
+      for ( i = 0; i < 250; i++ ) {
+        for ( j = 0; j < N; j += N_sparse1 ) {
+          k_sparse1( internal_fsspmdm_sperm, B + j, C + j );
+        }
+      }
+      dt_sparse1 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
-    /* Dense faster */
-    else {
+
+    /* Benchmark sparse (wide) */
+    if ( NULL != k_sparse2 && NULL != B && NULL != C ) {
+      t = libxsmm_timer_tick();
+      for ( i = 0; i < 250; i++ ) {
+        for ( j = 0; j < N; j += N_sparse2 ) {
+          k_sparse2( internal_fsspmdm_sperm, B + j, C + j );
+        }
+      }
+      dt_sparse2 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
+    }
+
+    /* Dense fastest */
+    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 ) {
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
       new_handle->a_dense = aa_dense;
+    } else {
+      libxsmm_free( aa_dense );
+    }
 
-      LIBXSMM_ASSIGN127( &fp, &k_sparse );
+    /* Sparse (regular) fastest */
+    if ( dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 ) {
+      new_handle->N_chunksize = N_sparse1;
+      new_handle->kernel = k_sparse1;
+    } else if ( NULL != k_sparse1 ) {
+      LIBXSMM_ASSIGN127( &fp, &k_sparse1 );
+      libxsmm_free( fp );
+    }
+
+    /* Sparse (wide) fastest */
+    if ( dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 ) {
+      new_handle->N_chunksize = N_sparse2;
+      new_handle->kernel = k_sparse2;
+    } else if ( NULL != k_sparse2 ) {
+      LIBXSMM_ASSIGN127( &fp, &k_sparse2 );
       libxsmm_free( fp );
     }
 
     libxsmm_free( B );
     libxsmm_free( C );
   }
-  /* Neither */
   else {
     libxsmm_free( aa_dense );
     free( new_handle );

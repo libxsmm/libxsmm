@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +45,7 @@ int unequal_bf16_vals(libxsmm_bfloat16 a, libxsmm_bfloat16 b) {
 }
 
 float gelu(float x) {
-  return (erf(x/sqrtf(2.0)) + 1.0)*0.5*x;
+  return (LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + 1.0f)*0.5f*x;
 }
 
 void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, float *arg1, float *arg2, float*arg3, float *out) {
@@ -60,7 +59,7 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
       Arg2 = arg2[(i*ld)+j];
       Arg3 = arg3[(i*ld)+j];
 
-      out[(i*ld)+j]  = (float) ((float)Arg0 + (float)((float)1.0 + Arg1)) * (float) ((float)((float)tanhf((float)1.0/((float)Arg2))) + (float)Arg3);
+      out[(i*ld)+j] = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
     }
   }
 }
@@ -82,7 +81,7 @@ void eqn0_bf16bf16(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, lib
       bf16_hp.i[1] = bf16_arg3[(i*ld)+j];
       Arg3 = bf16_hp.f;
 
-      res = (Arg0 + (1.0 + Arg1)) * (tanhf(1.0/Arg2) + Arg3);
+      res = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
       libxsmm_rne_convert_fp32_bf16( &res, &bf16_out[(i*ld)+j], 1 );
     }
   }
@@ -104,7 +103,7 @@ void eqn0_bf16f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libx
       Arg2 = bf16_hp.f;
       bf16_hp.i[1] = bf16_arg3[(i*ld)+j];
       Arg3 = bf16_hp.f;
-      out[(i*ld)+j] = (Arg0 + (1.0 + Arg1)) * (tanhf(1.0/Arg2) + Arg3);
+      out[(i*ld)+j] = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
     }
   }
 }
@@ -119,7 +118,7 @@ void eqn0_f32bf16(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, floa
       Arg1 = arg1[(i*ld)+j];
       Arg2 = arg2[(i*ld)+j];
       Arg3 = arg3[(i*ld)+j];
-      res = (Arg0 + (1.0 + Arg1)) * (tanhf(1.0/Arg2) + Arg3);
+      res = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
       libxsmm_rne_convert_fp32_bf16( &res, &bf16_out[(i*ld)+j], 1 );
     }
   }
@@ -213,7 +212,7 @@ int main( int argc, char* argv[] ) {
 #if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      out[(i*ld)+j] = ((float) (arg0[(i*ld)+j] + tanhf(arg1[(i*ld)+j]))) / ((float) ( gelu((float)exp(arg2[(i*ld)+j])) + arg3[(i*ld)+j]));
+      out[(i*ld)+j] = ((float) (arg0[(i*ld)+j] + LIBXSMM_TANHF(arg1[(i*ld)+j]))) / ((float) ( gelu((float)exp(arg2[(i*ld)+j])) + arg3[(i*ld)+j]));
     }
   }
 
