@@ -435,7 +435,7 @@ void tpp_groupnorm_bwd_fp32(long CP, long NB, long HW, long CB, long G, float *p
       arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
       arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
       arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-      arg_array[7].primary = &c[cp*CB];
+      /* arg_array[7].primary = &c[cp*CB]; */
 
       eqn_param.output.primary = &ds;
       ds_func(&eqn_param);
@@ -472,8 +472,8 @@ void tpp_groupnorm_bwd_fp32(long CP, long NB, long HW, long CB, long G, float *p
       arg_array[1].primary = &a[cp*CB];
       arg_array[2].primary = &b[cp*CB];
       arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, cp, nb, 0, 0, NB, HW, CB);
-      arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
-      arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
+      /* arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB); */
+      /* arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB); */
       arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
       arg_array[7].primary = &c[cp*CB];
       eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, cp, nb, 0, 0, NB, HW, CB);
@@ -527,7 +527,7 @@ void tpp_groupnorm_bwd_bf16(long CP, long NB, long HW, long CB, long G, libxsmm_
       arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
       arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
       arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-      arg_array[7].primary = &c[cp*CB];
+      /* arg_array[7].primary = &c[cp*CB]; */
 
       eqn_param.output.primary = &ds;
       ds_func(&eqn_param);
@@ -564,8 +564,8 @@ void tpp_groupnorm_bwd_bf16(long CP, long NB, long HW, long CB, long G, libxsmm_
       arg_array[1].primary = &a[cp*CB];
       arg_array[2].primary = &b[cp*CB];
       arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, cp, nb, 0, 0, NB, HW, CB);
-      arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
-      arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
+      /* arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB); */
+      /* arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB); */
       arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
       arg_array[7].primary = &c[cp*CB];
       eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, cp, nb, 0, 0, NB, HW, CB);
@@ -1103,7 +1103,7 @@ int main( int argc, char* argv[] ) {
     printf("# Correctness BF16 BWD Groupnorm - Dinput  #\n");
   }
   printf("############################################\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, CP*NB*CB, 1, dinp, eqn_dinp, 0, 0);
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, CP*NB*HW*CB, 1, dinp, eqn_dinp, 0, 0);
   printf("L1 reference  : %.25g\n", norms_out.l1_ref);
   printf("L1 test       : %.25g\n", norms_out.l1_tst);
   printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
