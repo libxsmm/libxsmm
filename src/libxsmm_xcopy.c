@@ -95,8 +95,9 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
       }
     }
   }
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
-  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) { /* check if JIT-code generation is permitted */
+#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT)) && defined(LIBXSMM_PLATFORM_X86)
+  /* check if JIT-code generation is permitted */
+  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid && LIBXSMM_X86_ALLFEAT >= libxsmm_target_archid) {
     const char *const env_jit = getenv("LIBXSMM_XCOPY_JIT");
     libxsmm_xcopy_jit = ((NULL == env_jit || 0 == *env_jit) ? (LIBXSMM_XCOPY_JIT) : atoi(env_jit));
   }
