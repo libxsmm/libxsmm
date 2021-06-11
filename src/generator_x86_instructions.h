@@ -642,6 +642,16 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
                                                           const unsigned int i_vec_reg_number );
 
 /**
+ * Executes rdseed, checks carry, retries, and resets flags
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_gp_reg_number the destination of the rdseed
+*/
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_rdseed_load ( libxsmm_generated_code *io_generated_code,
+                                           const unsigned int      i_gp_reg_number );
+
+/**
  * Generates a sequence to load function arguments from the stack (arguments )
  *
  * @param io_generated_code pointer to the pointer of the generated code structure

@@ -4,6 +4,7 @@ copyright: Copyright (c) 2009-2021, LIBXSMM <a href="http://libxsmm.readthedocs.
 site_description: Library targeting Intel Architecture for specialized dense and sparse matrix operations, and deep learning primitives.
 repo_url: https://github.com/hfp/libxsmm/
 edit_uri: edit/master/documentation
+site_url: https://libxsmm.readthedocs.io/
 docs_dir: documentation
 
 markdown_extensions:

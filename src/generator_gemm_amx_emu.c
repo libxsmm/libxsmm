@@ -765,8 +765,11 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
               i_gp_reg_mapping->gp_reg_ldc,
               4,
               (i_n_offset * i_xgemm_desc->ldc + i_m_offset) * 4 /*i_micro_kernel_config->datatype_size*/,
-              im * n_tiles + in, i_micro_kernel_config, 0);
-
+              acc_id, i_micro_kernel_config, 0);
+          acc_id++;
+          if (n_tiles == 1) {
+            acc_id++;
+          }
           i_n_offset += n_blocking_info->sizes[in];
         }
         i_m_offset += m_blocking_info->sizes[im];

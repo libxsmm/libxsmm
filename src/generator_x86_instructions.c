@@ -4940,6 +4940,38 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
   }
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_rdseed_load ( libxsmm_generated_code *io_generated_code,
+                                           const unsigned int      i_gp_reg_number ) {
+  if ( io_generated_code->code_type > 1 )
+  {
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+
+    /* encode rdseed */
+    unsigned char l_rex = (i_gp_reg_number < 8) ? 0x48 : 0x49;
+    unsigned char l_pre = 0x0f;
+    unsigned char l_op  = 0xc7;
+    unsigned char l_modrm = (unsigned char)(0xf8 | (i_gp_reg_number & 0x7));
+    buf[i++] = l_rex;
+    buf[i++] = l_pre;
+    buf[i++] = l_op;
+    buf[i++] = l_modrm;
+
+    /* jnc back 6 bytes -> rdseed was not ready jump back and retry */
+    buf[i++] = 0x73;
+    buf[i++] = 0xfa;
+    /* reset CF, test al, al */
+    buf[i++] = 0x84;
+    buf[i++] = 0xc0;
+
+    io_generated_code->code_size = i;
+  } else {
+    /* general encoder error */
+    fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
+    exit(-1);
+  }
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_load_arg_to_reg( libxsmm_generated_code* io_generated_code,
