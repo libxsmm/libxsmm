@@ -19,7 +19,7 @@
 #if !defined(TEST_MCOPY)
 # define TEST_MCOPY
 #endif
-#if !defined(TEST_JIT) && defined(LIBXSMM_PLATFORM_X86)
+#if !defined(TEST_JIT)
 # define TEST_JIT
 #endif
 
@@ -146,8 +146,10 @@ int main(void)
         }
       }
 # endif
-# if defined(TEST_JIT) && (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-      if (0 == fun && LIBXSMM_X86_SSE3 <= libxsmm_get_target_archid()
+# if defined(TEST_JIT) && (0 != LIBXSMM_JIT) /* dispatch and check kernel */
+      if (0 == fun
+        && (LIBXSMM_X86_AVX2 <= libxsmm_get_target_archid() &&
+            LIBXSMM_AARCH64_ALLFEAT >= libxsmm_get_target_archid())
         && (/*LIBXSMM_DATATYPE_F64 == LIBXSMM_DATATYPE(ELEM_TYPE) ||*/
             LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE)))
       {
