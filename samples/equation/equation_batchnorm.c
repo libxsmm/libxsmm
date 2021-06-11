@@ -401,7 +401,7 @@ void scaler_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, float *pinp, f
       s[cp*CB + cb] = 1.0f / (sqrt(var[cp*CB + cb] + eps));                                             /* s = 1/sqrt(var(X) + eps)     [CP, CB] */
       b[cp*CB + cb] = -1 * mean[cp*CB + cb] * s[cp*CB + cb];                                            /* b = -E[X]/sqrt(var(X) + eps) [CP, CB] */
 
-      for(int n = 0; n < N; n++){
+      for(int n = 0; n < N; n++){                                                                       /* Data movement 2*N*CP*HW*CB */
         for(int hw = 0; hw < HW; hw++){
           value = LIBXSMM_VLA_ACCESS(4, inp, n, cp, hw, cb, CP, HW, CB);
           value = ((value * s[cp*CB + cb]) + b[cp*CB + cb]) * LIBXSMM_VLA_ACCESS(2, gamma, cp, cb, CB) + LIBXSMM_VLA_ACCESS(2, beta, cp, cb, CB);        /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
@@ -441,7 +441,7 @@ void scaler_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, 
   double db = 0.0f;
   const float scale = 1.0f / ((float)N*HW);
 
-  #pragma omp parallel for reduction(+: ds, db) reduction(+: d_array[:2*CP*CB])           /* Parallelize over batches and reduce to d_array, ds, and db */
+  #pragma omp parallel for reduction(+: ds, db) reduction(+: d_array[:2*CP*CB])           /* Parallelize over batches and reduce to d_array, ds, and db */   /* Data movement 2*N*CP*HW*CB */
   for(int n = 0; n < N; n++){
     for (int cp = 0; cp < CP; cp++) {                    /* dgamma += (a * inp + b) * dout , dbeta += dout, ds += dout * gamma * inp, db += dout * gamma */
       for (int cb = 0; cb < CB; cb++) {
@@ -474,7 +474,7 @@ void scaler_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, 
   }
 
   #pragma omp parallel for
-  for(int n = 0; n < N; n++){                                                             /* Parallelize over batches */
+  for(int n = 0; n < N; n++){                                                             /* Parallelize over batches */           /* Data movement 3*N*CP*HW*CB */
     for (int cp = 0; cp < CP; cp++) {                                                     /* din = dout * a * gamma + b * inp + c */
       for (int cb = 0; cb < CB; cb++) {
         for (int hw = 0; hw < HW; hw++){
