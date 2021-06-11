@@ -149,7 +149,7 @@ int main(void)
 # if defined(TEST_JIT) && (0 != LIBXSMM_JIT) /* dispatch and check kernel */
       if (0 == fun
         && (LIBXSMM_X86_AVX2 <= libxsmm_get_target_archid() &&
-            LIBXSMM_AARCH64_ALLFEAT >= libxsmm_get_target_archid())
+            LIBXSMM_X86_ALLFEAT >= libxsmm_get_target_archid())
         && (/*LIBXSMM_DATATYPE_F64 == LIBXSMM_DATATYPE(ELEM_TYPE) ||*/
             LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE)))
       {
