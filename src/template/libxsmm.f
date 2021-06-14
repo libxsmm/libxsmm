@@ -134,17 +134,24 @@
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_TARGET_ARCH_UNKNOWN = 0,                              &
      &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
-     &    LIBXSMM_X86_GENERIC     = 1002,                               &
-     &    LIBXSMM_X86_SSE3        = 1003,                               &
-     &    LIBXSMM_X86_SSE4        = 1004,                               &
-     &    LIBXSMM_X86_AVX         = 1005,                               &
-     &    LIBXSMM_X86_AVX2        = 1006,                               &
-     &    LIBXSMM_X86_AVX512      = 1007,                               &
-     &    LIBXSMM_X86_AVX512_MIC  = 1010,                               &
-     &    LIBXSMM_X86_AVX512_KNM  = 1011,                               &
-     &    LIBXSMM_X86_AVX512_CORE = 1020,                               &
-     &    LIBXSMM_X86_AVX512_CLX  = 1021,                               &
-     &    LIBXSMM_X86_AVX512_CPX  = 1022
+     &    LIBXSMM_X86_GENERIC         = 1002,                           &
+     &    LIBXSMM_X86_SSE3            = 1003,                           &
+     &    LIBXSMM_X86_SSE4            = 1004,                           &
+     &    LIBXSMM_X86_AVX             = 1005,                           &
+     &    LIBXSMM_X86_AVX2            = 1006,                           &
+     &    LIBXSMM_X86_AVX512_VL256    = 1007,                           &
+     &    LIBXSMM_X86_AVX512          = 1010,                           &
+     &    LIBXSMM_X86_AVX512_MIC      = 1011,                           &
+     &    LIBXSMM_X86_AVX512_KNM      = 1012,                           &
+     &    LIBXSMM_X86_AVX512_CORE     = 1020,                           &
+     &    LIBXSMM_X86_AVX512_CLX      = 1021,                           &
+     &    LIBXSMM_X86_AVX512_CPX      = 1022,                           &
+     &    LIBXSMM_X86_AVX512_SPR      = 1023,                           &
+     &    LIBXSMM_X86_ALLFEAT         = 1999,                           &
+     &    LIBXSMM_AARCH64_V81         = 2001,                           &
+     &    LIBXSMM_AARCH64_V82         = 2002,                           &
+     &    LIBXSMM_AARCH64_A64FX       = 2100,                           &
+     &    LIBXSMM_AARCH64_ALLFEAT     = 2999
 
         !> Generic function type (double-precision).
         TYPE, BIND(C) :: LIBXSMM_DMMFUNCTION
