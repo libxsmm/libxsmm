@@ -387,7 +387,7 @@ ifneq (,$(filter-out __INTEL_LLVM_COMPILER,$(shell echo "__INTEL_LLVM_COMPILER" 
 endif
 ifneq (,$(filter-out __INTEL_LLVM_COMPILER,$(shell echo "__INTEL_LLVM_COMPILER" \
         | $(FC) $(call ftest,$(FC),$(EFCFLAGS) $(EFLAGS)) -E -P /dev/stdin 2>/dev/null \
-        | sed "/^[[:space:]]*$$/d" 2>/dev/null)))
+        | sed "/^[[:space:]]*$$/d" 2>/dev/null); rm -f stdin.f))
   ICX := $(if $(filter 1,$(ICX)),2,1)
   FIXFC ?= 0
 endif
