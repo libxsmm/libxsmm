@@ -64,24 +64,30 @@
               LIBXSMM_GEMM_FLAG_ALIGN_C),                               &
      &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0 = IOR(              &
      &        LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,                       &
-     &        LIBXSMM_GEMM_FLAG_BETA_0)
+     &        LIBXSMM_GEMM_FLAG_BETA_0),                                &
+     &    LIBXSMM_GEMM_FLAG_INVALID = 131072
 
         !> Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
           ! Handle recorded batch unsynchronized-parallel.
-     &    LIBXSMM_MMBATCH_FLAG_DEFAULT      = 0,                        &
+     &    LIBXSMM_MMBATCH_FLAG_DEFAULT      = 0                         &
+     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
           ! Synchronize among C matrices.
-     &    LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = 512,                      &
+     &    LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = 1                         &
+     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
           ! Handle recorded batch sequentially.
-     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = 1024,                     &
+     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = 2                         &
+     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
           ! Only record a statistic of potential SMMs.
-     &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 2048
+     &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 4                         &
+     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
 
         !> Enumerates element/data types.
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_DATATYPE_F64  = 0,                                    &
      &    LIBXSMM_DATATYPE_F32  = 1,                                    &
      &    LIBXSMM_DATATYPE_BF16 = 2,                                    &
+     &    LIBXSMM_DATATYPE_F16  = 3,                                    &
      &    LIBXSMM_DATATYPE_I64  = 3,                                    &
      &    LIBXSMM_DATATYPE_I32  = 4,                                    &
      &    LIBXSMM_DATATYPE_I16  = 5,                                    &
@@ -94,6 +100,7 @@
      &    LIBXSMM_GEMM_PRECISION_F64  = LIBXSMM_DATATYPE_F64,           &
      &    LIBXSMM_GEMM_PRECISION_F32  = LIBXSMM_DATATYPE_F32,           &
      &    LIBXSMM_GEMM_PRECISION_BF16 = LIBXSMM_DATATYPE_BF16,          &
+     &    LIBXSMM_GEMM_PRECISION_F16  = LIBXSMM_DATATYPE_F16,           &
      &    LIBXSMM_GEMM_PRECISION_I32  = LIBXSMM_DATATYPE_I32,           &
      &    LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16,           &
      &    LIBXSMM_GEMM_PRECISION_I8   = LIBXSMM_DATATYPE_I8
