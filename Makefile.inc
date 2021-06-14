@@ -1888,9 +1888,9 @@ ifeq (0,$(COMPATIBLE))
     ifeq (,$(filter-out 0,$(PGI)))
       CXXFLAGS += -funroll-loops
       CFLAGS += -funroll-loops
-    endif
-    ifneq (,$(GFC)$(filter-out 0 1 2,$(XSMM_GCC)))
-      FCFLAGS += -funroll-loops
+      ifneq (,$(GFC)$(filter-out 0 1 2,$(XSMM_GCC)))
+        FCFLAGS += -funroll-loops
+      endif
     endif
     ifeq (,$(filter-out 0,$(PGI) $(INTEL) $(ICX)))
       CXXFLAGS += -ftree-vectorize
