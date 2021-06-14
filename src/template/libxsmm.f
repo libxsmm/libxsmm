@@ -54,14 +54,16 @@
 
         !> Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_GEMM_FLAG_NONE     = 0,                               &
-     &    LIBXSMM_GEMM_FLAG_TRANS_A  = 1,                               &
-     &    LIBXSMM_GEMM_FLAG_TRANS_B  = 2,                               &
-     &    LIBXSMM_GEMM_FLAG_TRANS_AB = IOR(                             &
+     &    LIBXSMM_GEMM_FLAG_NONE      = 0,                              &
+     &    LIBXSMM_GEMM_FLAG_TRANS_A   = 1,                              &
+     &    LIBXSMM_GEMM_FLAG_TRANS_B   = 2,                              &
+     &    LIBXSMM_GEMM_FLAG_TRANS_AB  = IOR(                            &
      &        LIBXSMM_GEMM_FLAG_TRANS_A, LIBXSMM_GEMM_FLAG_TRANS_B),    &
-     &    LIBXSMM_GEMM_FLAG_BETA_0   = 5,                               &
+     &    LIBXSMM_GEMM_FLAG_BETA_0    = 4,                              &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_A   = 8,                              &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_C   =16,                              &
      &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = IOR(1024,                &
-              LIBXSMM_GEMM_FLAG_ALIGN_C),                               &
+     &        LIBXSMM_GEMM_FLAG_ALIGN_C),                               &
      &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0 = IOR(              &
      &        LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,                       &
      &        LIBXSMM_GEMM_FLAG_BETA_0),                                &
@@ -80,7 +82,7 @@
      &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
           ! Only record a statistic of potential SMMs.
      &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 4                         &
-     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
+     &        * LIBXSMM_GEMM_FLAG_INVALID
 
         !> Enumerates element/data types.
         INTEGER(C_INT), PARAMETER ::                                    &
