@@ -207,7 +207,7 @@ def version_branch_from_file(version_filepath):
 
 def version_numbers(version, branch=None):
     version_list = version.split("-")
-    if not version_list[0][0].isdigit():
+    if version_list and not version_list[0][0].isdigit():
         vbranch = version_list[0]
     else:
         vbranch = "master"
