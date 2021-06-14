@@ -19,9 +19,9 @@
 #     define LIBXSMM_NO_TLS
 #     define LIBXSMM_TLS
 #   else
-#     if (defined(_WIN32) && !defined(__GNUC__) && !defined(__clang__)) /*|| (defined(__PGI) && !defined(__cplusplus))*/
+#     if (defined(_WIN32) && !defined(__GNUC__) && !defined(__clang__)) || (defined(__PGI) && !defined(__PGLLVM__))
 #       define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
-#     elif defined(__GNUC__) || defined(__clang__) || defined(_CRAYC)
+#     elif defined(__GNUC__) || defined(__clang__) || defined(__PGLLVM__) || defined(_CRAYC)
 #       define LIBXSMM_TLS __thread
 #     elif defined(__cplusplus)
 #       define LIBXSMM_TLS thread_local
