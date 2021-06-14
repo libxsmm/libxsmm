@@ -2182,13 +2182,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
     /* attempt to create executable buffer */
 # if defined(__APPLE__) && defined(__arm64__)
-    code_buffer = mmap( 0, generated_code.code_size, PROT_WRITE | PROT_EXEC | PROT_READ,
-                   MAP_PRIVATE | MAP_ANONYMOUS | MAP_JIT, -1, 0 );
-    if ( (long long)code_buffer >= 0 ) {
-      result = EXIT_SUCCESS;
-    } else {
-      result = EXIT_FAILURE;
-    }
+    code_buffer = (char*)mmap(0, generated_code.code_size, PROT_WRITE | PROT_EXEC | PROT_READ,
+      MAP_PRIVATE | MAP_ANONYMOUS | MAP_JIT, -1, 0);
+    result = ((0 <= (long long)code_buffer) ? EXIT_SUCCESS : EXIT_FAILURE);
 # else
     result = libxsmm_xmalloc((void**)code_buffer_result, generated_code.code_size, 0/*auto*/,
       /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
