@@ -56,6 +56,7 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if defined(LIBXSMM_PLATFORM_AARCH64)
 # if defined(__APPLE__) && defined(__arm64__)
+  /* TODO: integrate Apple specific flow into general flow (below) */
   if (NULL != info) LIBXSMM_MEMZERO127(info);
   result = LIBXSMM_AARCH64_V81;
 # else

@@ -2182,6 +2182,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
     /* attempt to create executable buffer */
 # if defined(__APPLE__) && defined(__arm64__)
+    /* TODO: proper buffer x-allocation provides kernel info, etc. */
     code_buffer = (char*)mmap(0, generated_code.code_size, PROT_WRITE | PROT_EXEC | PROT_READ,
       MAP_PRIVATE | MAP_ANONYMOUS | MAP_JIT, -1, 0);
     result = ((0 <= (long long)code_buffer) ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -2588,18 +2589,15 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
     }
     else {
 #if defined(__APPLE__) && defined(__arm64__)
-      info->iprecision = 1;
-      info->oprecision = 1;
-      info->prefetch = 1;
-      info->flags = 1;
-      info->lda = 1;
-      info->ldb = 1;
-      info->ldc = 1;
-      info->m = 1;
-      info->n = 1;
-      info->k = 1;
+      /* TODO: proper buffer x-allocation provides kernel info, etc. */
+      info->iprecision = LIBXSMM_GEMM_PRECISION_F32;
+      info->oprecision = LIBXSMM_GEMM_PRECISION_F32;
+      info->prefetch = LIBXSMM_GEMM_PREFETCH_SIGONLY;
+      info->flags = LIBXSMM_GEMM_FLAG_NONE;
+      info->lda = info->ldb = info->ldc = 1;
+      info->m = info->n = info->k = 1;
       result = EXIT_SUCCESS;
-# else
+#else
       if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
@@ -2611,7 +2609,7 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
         }
       }
       result = EXIT_FAILURE;
-# endif
+#endif
     }
   }
   else {
