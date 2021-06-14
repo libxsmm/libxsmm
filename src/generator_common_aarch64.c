@@ -265,7 +265,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
                                                  LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
                                                  l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
                                                  l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
-                                                 -1,
+                                                 (unsigned char)-1,
                                                  l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                  LIBXSMM_AARCH64_SVE_TYPE_D );

@@ -21,38 +21,39 @@
 #if defined(_MSC_VER) /*defined(_WIN32) && !defined(__GNUC__)*/
 #   define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
       unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
-      EAX = (int)libxsmm_xgetbv_; \
-      EDX = (int)(libxsmm_xgetbv_ >> 32); \
+      (EAX) = (int)libxsmm_xgetbv_; \
+      (EDX) = (int)(libxsmm_xgetbv_ >> 32); \
     }
 #   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) { \
       int libxsmm_cpuid_x86_[/*4*/] = { 0, 0, 0, 0 }; \
       __cpuidex(libxsmm_cpuid_x86_, FUNCTION, SUBFN); \
-      EAX = (unsigned int)libxsmm_cpuid_x86_[0]; \
-      EBX = (unsigned int)libxsmm_cpuid_x86_[1]; \
-      ECX = (unsigned int)libxsmm_cpuid_x86_[2]; \
-      EDX = (unsigned int)libxsmm_cpuid_x86_[3]; \
+      (EAX) = (unsigned int)libxsmm_cpuid_x86_[0]; \
+      (EBX) = (unsigned int)libxsmm_cpuid_x86_[1]; \
+      (ECX) = (unsigned int)libxsmm_cpuid_x86_[2]; \
+      (EDX) = (unsigned int)libxsmm_cpuid_x86_[3]; \
     }
 # elif defined(__GNUC__) || !defined(_CRAYC)
 #   if (64 > (LIBXSMM_BITS))
       LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid( /* prototype */
         unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
-#     define LIBXSMM_XGETBV(XCR, EAX, EDX) EAX = (EDX) = 0xFFFFFFFF
+#     define LIBXSMM_XGETBV(XCR, EAX, EDX) (EAX) = (EDX) = 0xFFFFFFFF
 #     define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
-        EAX = (EBX) = (EDX) = 0; ECX = (SUBFN); \
+        (EAX) = (EBX) = (EDX) = 0; ECX = (SUBFN); \
         __get_cpuid(FUNCTION, &(EAX), &(EBX), &(ECX), &(EDX))
 #   else /* 64-bit */
 #     define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
         ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
       )
 #     define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
+        (ECX) = (EDX) = 0; \
         __asm__ __volatile__ (".byte 0x0f, 0xa2" /*cpuid*/ \
         : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
         : "a"(FUNCTION), "b"(0), "c"(SUBFN), "d"(0) \
-      )
+      ); LIBXSMM_UNUSED(EDX)
 #   endif
 # else /* legacy Cray Compiler */
-#   define LIBXSMM_XGETBV(XCR, EAX, EDX) EAX = (EDX) = 0
-#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) EAX = (EBX) = (ECX) = (EDX) = 0
+#   define LIBXSMM_XGETBV(XCR, EAX, EDX) (EAX) = (EDX) = 0
+#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) (EAX) = (EBX) = (ECX) = (EDX) = 0
 # endif
 #endif
 

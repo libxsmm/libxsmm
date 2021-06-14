@@ -449,7 +449,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                                LIBXSMM_AARCH64_INSTR_SVE_FMLA_V,
                                                1 + l_m,
                                                0,
-                                               -1,
+                                               (unsigned char)-1,
                                                l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n),
                                                LIBXSMM_AARCH64_SVE_REG_P0,
                                                (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_SVE_TYPE_S : LIBXSMM_AARCH64_SVE_TYPE_D );
@@ -459,7 +459,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                                LIBXSMM_AARCH64_INSTR_SVE_FMLA_V,
                                                1 + l_m_blocks[0],
                                                0,
-                                               -1,
+                                               (unsigned char)-1,
                                                l_vec_reg_acc_start + (l_m_total_blocks * l_n) + l_m_blocks[0],
                                                LIBXSMM_AARCH64_SVE_REG_P1,
                                                (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_SVE_TYPE_S : LIBXSMM_AARCH64_SVE_TYPE_D );
