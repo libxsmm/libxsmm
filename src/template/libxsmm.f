@@ -59,8 +59,9 @@
      &    LIBXSMM_GEMM_FLAG_TRANS_B  = 2,                               &
      &    LIBXSMM_GEMM_FLAG_TRANS_AB = IOR(                             &
      &        LIBXSMM_GEMM_FLAG_TRANS_A, LIBXSMM_GEMM_FLAG_TRANS_B),    &
-     &    LIBXSMM_GEMM_FLAG_BETA_0   = 16,                              &
-     &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = 2176,                    &
+     &    LIBXSMM_GEMM_FLAG_BETA_0   = 5,                               &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = IOR(1024,                &
+              LIBXSMM_GEMM_FLAG_ALIGN_C),                               &
      &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0 = IOR(              &
      &        LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,                       &
      &        LIBXSMM_GEMM_FLAG_BETA_0)

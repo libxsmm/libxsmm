@@ -400,47 +400,37 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
   /** Transpose matrix A and B. */
   LIBXSMM_GEMM_FLAG_TRANS_AB = LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B,
-#if 0
-  /** Alpha=0|1 */
-  LIBXSMM_GEMM_FLAG_ALPHA_0 = 4,
-  /** Alpha=neg|pos */
-  LIBXSMM_GEMM_FLAG_ALPHA_S = 8,
-#endif
   /** Beta=0|1 */
-  LIBXSMM_GEMM_FLAG_BETA_0 = 16,
-#if 0
-  /** Beta=neg|pos */
-  LIBXSMM_GEMM_FLAG_BETA_S = 32,
-#endif
+  LIBXSMM_GEMM_FLAG_BETA_0 = 4,
   /** Generate aligned load instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
+  LIBXSMM_GEMM_FLAG_ALIGN_A = 8,
   /** Aligned load/store instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_C = 128,
+  LIBXSMM_GEMM_FLAG_ALIGN_C = 16,
   /** Batch-reduce Ai * Bi. */
   /** AMX hint to avoid tileconfig/release, it's negated bits, so that 0 is default "on" */
-  LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG = 4,
-  LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG = 8,
-  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS = 256,
+  LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG = 32,
+  LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG = 64,
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS = 128,
   /** Batch-reduce Ai * Bi. */
-  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET = 512,
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET = 256,
   /** Batch-reduce Ai * Bi. */
-  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE = 1024,
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE = 512,
   /** Aligned C matrix, but using NTS Hint when storing */
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = 2176,
+  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = 1024 | LIBXSMM_GEMM_FLAG_ALIGN_C,
   /* in case of integer GEMM, if A is unsigned */
-  LIBXSMM_GEMM_FLAG_A_UNSIGNED = 4096,
+  LIBXSMM_GEMM_FLAG_A_UNSIGNED = 2048,
   /* in case of integer GEMM, if B is unsigned */
-  LIBXSMM_GEMM_FLAG_B_UNSIGNED = 8192,
+  LIBXSMM_GEMM_FLAG_B_UNSIGNED = 4096,
   /* in case of integer GEMM, if C is unsigned */
-  LIBXSMM_GEMM_FLAG_C_UNSIGNED = 16384,
+  LIBXSMM_GEMM_FLAG_C_UNSIGNED = 8192,
   /* in case of integer GEMM, if A and B are unsigned */
   LIBXSMM_GEMM_FLAG_AB_UNSIGNED = LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_B_UNSIGNED,
   /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates A */
-  LIBXSMM_GEMM_FLAG_VNNI_A = 32768,
+  LIBXSMM_GEMM_FLAG_VNNI_A = 16384,
   /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates B */
-  LIBXSMM_GEMM_FLAG_VNNI_B = 65536,
+  LIBXSMM_GEMM_FLAG_VNNI_B = 32768,
   /* for low precision we also require post packed formats "VNNI" for best performance, this flag indicated C */
-  LIBXSMM_GEMM_FLAG_VNNI_C = 131072,
+  LIBXSMM_GEMM_FLAG_VNNI_C = 65536,
   /* combined types */
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0                      = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_ADDRESS        = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
@@ -471,7 +461,7 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_STRIDE_AB_UNSIGNED         = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE_AB_UNSIGNED  = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   /** Marker flag; do not use. */
-  LIBXSMM_GEMM_FLAG_INVALID = 262144
+  LIBXSMM_GEMM_FLAG_INVALID = 131072
 } libxsmm_gemm_flags;
 
 /** Flag enumeration which can be binary ORed. */
