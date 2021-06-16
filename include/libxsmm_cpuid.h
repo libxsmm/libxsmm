@@ -38,7 +38,9 @@
 #define LIBXSMM_X86_ALLFEAT      1999
 #define LIBXSMM_AARCH64_V81      2001 /* Baseline */
 #define LIBXSMM_AARCH64_V82      2002 /* A64FX minus SVE */
+#define LIBXSMM_AARCH64_V84      2004 /* M1 minus AMX */
 #define LIBXSMM_AARCH64_A64FX    2100 /* SVE */
+#define LIBXSMM_AARCH64_M1       2101 /* M1 with AMX */
 #define LIBXSMM_AARCH64_ALLFEAT  2999
 
 #if defined(LIBXSMM_PLATFORM_X86)

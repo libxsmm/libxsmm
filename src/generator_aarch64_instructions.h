@@ -205,6 +205,7 @@
 #define LIBXSMM_AARCH64_INSTR_GP_STP_I_PRE       0x29800007
 #define LIBXSMM_AARCH64_INSTR_GP_STNP_I_OFF      0x28000007
 /* define GP compute instructions */
+#define LIBXSMM_AARCH64_INSTR_GP_ORR_SR          0x2A000007
 #define LIBXSMM_AARCH64_INSTR_GP_ADD_I           0x11000006
 #define LIBXSMM_AARCH64_INSTR_GP_ADD_SR          0x0b000007
 #define LIBXSMM_AARCH64_INSTR_GP_SUB_I           0x51000006
@@ -264,6 +265,26 @@
 /* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403
+
+/* Descriptor
+ * bits 5-31: https://gist.github.com/dougallj/7a75a3be1ec69ca550e7c36dc75e0d6f
+ * bits 3-4: unused
+ * bits 0-2: number of valid bits in the operand.
+ */
+/* define AMX load / store instructions */
+#define LIBXSMM_AARCH64_INSTR_AMX_LDX            0x00201005
+#define LIBXSMM_AARCH64_INSTR_AMX_LDY            0x00201025
+#define LIBXSMM_AARCH64_INSTR_AMX_STX            0x00201045
+#define LIBXSMM_AARCH64_INSTR_AMX_STY            0x00201065
+#define LIBXSMM_AARCH64_INSTR_AMX_LDZ            0x00201085
+#define LIBXSMM_AARCH64_INSTR_AMX_STZ            0x002010A5
+
+/* define AMX compute instructions */
+#define LIBXSMM_AARCH64_INSTR_AMX_FMA64          0x00201145
+#define LIBXSMM_AARCH64_INSTR_AMX_FMA32          0x00201185
+
+/* define AMX on/off-switch */
+#define LIBXSMM_AARCH64_INSTR_AMX_ENABLE         0x00201221
 
 /**
  * shift mode */
@@ -501,6 +522,18 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
                                                const unsigned char               i_gp_reg_src_1,
                                                const libxsmm_aarch64_sve_pattern i_pattern,
                                                const libxsmm_aarch64_sve_type    i_type );
+
+/**
+ * Generates an AMX-instruction.
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure.
+ * @param i_instr AMX instruction.
+ * @param i_operand 64-bit GP-register for most, 0/1 for enable/disable.
+ **/
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_amx( libxsmm_generated_code* io_generated_code,
+                                      const unsigned int      i_instr,
+                                      const unsigned char     i_operand );
 
 /**
  * Generates alu memory movements like ldr, str,

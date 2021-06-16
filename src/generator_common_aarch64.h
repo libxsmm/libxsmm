@@ -29,6 +29,42 @@ void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_ge
                                                             int            i_n_bits,
                                                    unsigned char           i_gp_reg_scratch );
 
+/**
+ * Derives the operand-offset for AMX loads and stores.
+ * This combines the offset w.r.t. the address and the output-column.
+ *
+ * @param io_generated_code will be updated with respective instructions.
+ * @param i_gp_reg_amx will be set to combined offset for amx loads/stores.
+ * @param i_gp_reg_scratch will be used as scratch register.
+ * @param i_off_addr offset for the input address.
+ * @param i_off_reg offset regarding the column of the amx-register.
+ **/
+LIBXSMM_API_INTERN
+void libxsmm_generator_load_store_offset_aarch64_amx( libxsmm_generated_code* io_generated_code,
+                                                      unsigned char           i_gp_reg_amx,
+                                                      unsigned char           i_gp_reg_scratch,
+                                                      unsigned long long      i_off_addr,
+                                                      unsigned char           i_off_reg );
+
+/**
+ * Derives the operand for AMX compute operations.
+ * Currently limited to offsets w.r.t. the amx-registers.
+ *
+ * @param io_generated_code will be updated with respective instructions.
+ * @param i_gp_reg_amx will be set to operand for amx compute instructions.
+ * @param i_gp_reg_scratch will be used as scratch register.
+ * @param i_off_x x-offset (amx0) in bytes.
+ * @param i_off_y y-offset (amx1) in bytes.
+ * @param i_off_z z-offset (amx2) in bytes.
+ **/
+LIBXSMM_API_INTERN
+void libxsmm_generator_compute_operand_aarch64_amx( libxsmm_generated_code* io_generated_code,
+                                                    char                    i_gp_reg_amx,
+                                                    unsigned char           i_gp_reg_scratch,
+                                                    unsigned int            i_off_x,
+                                                    unsigned int            i_off_y,
+                                                    unsigned int            i_off_z );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_loop_header_aarch64( libxsmm_generated_code*     io_generated_code,
                                             libxsmm_loop_label_tracker* io_loop_label_tracker,

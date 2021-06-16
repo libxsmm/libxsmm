@@ -676,6 +676,34 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_amx( libxsmm_generated_code* io_generated_code,
+                                      const unsigned int      i_instr,
+                                      const unsigned char     i_operand ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int  code_head = io_generated_code->code_size / 4;
+    unsigned int* code      = (unsigned int *) io_generated_code->generated_code;
+
+    /* set LIBXSMM-internal bits to 0 */
+    code[code_head] = (unsigned int)(0xffffffe0 & i_instr);
+
+    /* derive mask selecting only valid bits of operand */
+    unsigned int n_bits = i_instr & 0x7;
+    unsigned int mask = ~0u;
+    mask = mask >> (32 - n_bits);
+
+    /* apply mask to operand and set resulting bits */
+    code[code_head] |= (unsigned int) (mask & i_operand);
+
+    /* increase code-size by 32 bits / 4 bytes */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_aarch64_instruction_amx: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_code,
                                            const unsigned int      i_move_instr,
                                            const unsigned int      i_gp_reg_addr,
@@ -1008,6 +1036,7 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
   }
 
   switch ( i_alu_instr ) {
+    case LIBXSMM_AARCH64_INSTR_GP_ORR_SR:
     case LIBXSMM_AARCH64_INSTR_GP_ADD_SR:
     case LIBXSMM_AARCH64_INSTR_GP_SUB_SR:
       break;

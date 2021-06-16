@@ -52,5 +52,15 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
                                                      const unsigned int                 i_m_blocking,
                                                      const unsigned int                 i_n_blocking );
 
+/**
+ * Determines if the given matrix kernel is supported by our M1 AMX kernels
+ *
+ * @param i_xgemm_desc description of the matrix kernel.
+ *
+ * @return 1 if supported, 0 otherwise.
+ **/
+LIBXSMM_API_INTERN
+int libxsmm_generator_gemm_aarch64_amx_support( const libxsmm_gemm_descriptor* i_xgemm_desc );
+
 #endif /* GENERATOR_GEMM_COMMON_AARCH64_H */
 

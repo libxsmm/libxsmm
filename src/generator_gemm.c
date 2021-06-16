@@ -99,6 +99,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_vector_length = 4;
   } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) && LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 2;
+  } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_M1 ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+     l_vector_length = 4; /* VL for standard asimd-kernels */
+  } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_M1 ) && LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+     l_vector_length = 2; /* VL for standard asimd-kernels */
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
     return;

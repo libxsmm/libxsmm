@@ -48,6 +48,75 @@ void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_ge
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_load_store_offset_aarch64_amx( libxsmm_generated_code* io_generated_code,
+                                                      unsigned char           i_gp_reg_amx,
+                                                      unsigned char           i_gp_reg_scratch,
+                                                      unsigned long long      i_off_addr,
+                                                      unsigned char           i_off_reg ) {
+  /* set register offset */
+  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code,
+                                             i_gp_reg_scratch,
+                                             i_off_reg );
+
+  libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code,
+                                                       LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
+                                                       LIBXSMM_AARCH64_GP_REG_XZR,
+                                                       i_gp_reg_scratch,
+                                                       i_gp_reg_amx,
+                                                       56,
+                                                       LIBXSMM_AARCH64_SHIFTMODE_LSL );
+
+  /* add address offset */
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                 LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                 i_gp_reg_amx,
+                                                 i_gp_reg_scratch,
+                                                 i_gp_reg_amx,
+                                                 i_off_addr );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_compute_operand_aarch64_amx( libxsmm_generated_code* io_generated_code,
+                                                    char                    i_gp_reg_amx,
+                                                    unsigned char           i_gp_reg_scratch,
+                                                    unsigned int            i_off_x,
+                                                    unsigned int            i_off_y,
+                                                    unsigned int            i_off_z ) {
+  // set y-offset
+  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code,
+                                             i_gp_reg_amx,
+                                             i_off_y );
+
+  // set x-offset
+  if( i_off_x > 0 ) {
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code,
+                                               i_gp_reg_scratch,
+                                               i_off_x );
+
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code,
+                                                         LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
+                                                         i_gp_reg_amx,
+                                                         i_gp_reg_scratch,
+                                                         i_gp_reg_amx,
+                                                         10,
+                                                         LIBXSMM_AARCH64_SHIFTMODE_LSL );
+  }
+  if( i_off_z > 0 ) {
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code,
+                                               i_gp_reg_scratch,
+                                               i_off_z );
+
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code,
+                                                         LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
+                                                         i_gp_reg_amx,
+                                                         i_gp_reg_scratch,
+                                                         i_gp_reg_amx,
+                                                         20,
+                                                         LIBXSMM_AARCH64_SHIFTMODE_LSL );
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_loop_header_aarch64( libxsmm_generated_code*     io_generated_code,
                                             libxsmm_loop_label_tracker* io_loop_label_tracker,
                                             const unsigned int          i_gp_reg_loop_cnt,
