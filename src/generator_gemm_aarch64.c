@@ -524,7 +524,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_amx_m1( libxsmm_generated_code* 
 
   unsigned char l_gp_reg_lsloop = LIBXSMM_AARCH64_GP_REG_X15;
   unsigned char l_gp_reg_mloop  = LIBXSMM_AARCH64_GP_REG_X16;
-  unsigned char l_gp_reg_nloop  = LIBXSMM_AARCH64_GP_REG_X17;
+  /* unsigned char l_gp_reg_nloop  = LIBXSMM_AARCH64_GP_REG_X17; */
   unsigned char l_gp_reg_kloop  = LIBXSMM_AARCH64_GP_REG_X18;
 
   unsigned int l_m = 0;
