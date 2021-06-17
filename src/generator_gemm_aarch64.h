@@ -45,7 +45,8 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
  * TODO: currently limited to SP, (64x16) += (64x64) X (64x16)^T
  **/
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_aarch64_microkernel_amx_m1( libxsmm_generated_code* io_generated_code );
+void libxsmm_generator_gemm_aarch64_microkernel_amx_m1( libxsmm_generated_code*        io_generated_code,
+                                                        const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io_generated_code,
