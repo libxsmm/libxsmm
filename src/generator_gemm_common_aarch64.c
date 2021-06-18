@@ -293,7 +293,7 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
 LIBXSMM_API_INTERN
 int libxsmm_generator_gemm_aarch64_amx_support( const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   if( i_xgemm_desc->m % 64 != 0 ) return 0;
-  if( i_xgemm_desc->n != 16 ) return 0;
+  if( i_xgemm_desc->n % 16 != 0 ) return 0;
   if( i_xgemm_desc->lda != i_xgemm_desc->m ) return 0;
   if( i_xgemm_desc->ldb != i_xgemm_desc->n ) return 0;
   if( i_xgemm_desc->ldc != i_xgemm_desc->m ) return 0;

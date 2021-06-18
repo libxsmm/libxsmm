@@ -524,9 +524,10 @@ void libxsmm_generator_gemm_aarch64_microkernel_amx_m1( libxsmm_generated_code* 
 
   unsigned char l_gp_reg_lsloop = LIBXSMM_AARCH64_GP_REG_X15;
   unsigned char l_gp_reg_mloop  = LIBXSMM_AARCH64_GP_REG_X16;
-  /* unsigned char l_gp_reg_nloop  = LIBXSMM_AARCH64_GP_REG_X17; */
+  unsigned char l_gp_reg_nloop  = LIBXSMM_AARCH64_GP_REG_X17;
   unsigned char l_gp_reg_kloop  = LIBXSMM_AARCH64_GP_REG_X18;
 
+  unsigned long long l_jump_c = 0;
   unsigned int l_m = 0;
 
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -577,6 +578,12 @@ void libxsmm_generator_gemm_aarch64_microkernel_amx_m1( libxsmm_generated_code* 
                                                        l_gp_reg_fma_ops[3][0],
                                                        0,
                                                        LIBXSMM_AARCH64_SHIFTMODE_LSL );
+
+  /* header of n-loop */
+  libxsmm_generator_loop_header_aarch64( io_generated_code,
+                                         &l_loop_label_tracker,
+                                         l_gp_reg_nloop,
+                                         i_xgemm_desc->n );
 
   /* header of m-loop */
   libxsmm_generator_loop_header_aarch64( io_generated_code,
@@ -675,13 +682,12 @@ void libxsmm_generator_gemm_aarch64_microkernel_amx_m1( libxsmm_generated_code* 
                                                            LIBXSMM_AARCH64_SHIFTMODE_LSL );
     }
     else {
-      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                     LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                     LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                      l_gp_reg_tmp_a[0][0],
+                                                     l_gp_reg_scratch,
                                                      l_gp_reg_tmp_a[0][0],
-                                                     i_xgemm_desc->m * l_bytes_per_val,
-                                                     0 );
-
+                                                     i_xgemm_desc->m * l_bytes_per_val );
     }
   }
 
@@ -690,12 +696,12 @@ void libxsmm_generator_gemm_aarch64_microkernel_amx_m1( libxsmm_generated_code* 
                                    LIBXSMM_AARCH64_INSTR_AMX_LDY,
                                    l_gp_reg_tmp_b[1] );
 
-  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                 LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                 LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                  l_gp_reg_tmp_b[0],
+                                                 l_gp_reg_scratch,
                                                  l_gp_reg_tmp_b[0],
-                                                 i_xgemm_desc->n * l_bytes_per_val,
-                                                 0 );
+                                                 i_xgemm_desc->n * l_bytes_per_val );
 
   /* do amx-fmas */
   libxsmm_aarch64_instruction_amx( io_generated_code,
@@ -781,6 +787,44 @@ void libxsmm_generator_gemm_aarch64_microkernel_amx_m1( libxsmm_generated_code* 
                                          &l_loop_label_tracker,
                                          l_gp_reg_mloop,
                                          l_vector_length*4 );
+
+  if( i_xgemm_desc->n > l_vector_length ) {
+    /* revese m-loop's jump in A */
+    if( i_xgemm_desc->m / l_vector_length > 4 ) {
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                     LIBXSMM_AARCH64_INSTR_GP_META_SUB,
+                                                     LIBXSMM_AARCH64_GP_REG_X0,
+                                                     l_gp_reg_scratch,
+                                                     LIBXSMM_AARCH64_GP_REG_X0,
+                                                     i_xgemm_desc->m * l_bytes_per_val );
+    }
+
+    /* jump in B */
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
+                                                   LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                   LIBXSMM_AARCH64_GP_REG_X1,
+                                                   LIBXSMM_AARCH64_GP_REG_X1,
+                                                   64,
+                                                   0 );
+
+    /* derive jump in C */
+    l_jump_c = i_xgemm_desc->m * l_bytes_per_val * 16;
+    if( i_xgemm_desc->m / l_vector_length > 4 ) {
+      l_jump_c -= i_xgemm_desc->m * l_bytes_per_val;
+    }
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                   LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                   LIBXSMM_AARCH64_GP_REG_X2,
+                                                   l_gp_reg_scratch,
+                                                   LIBXSMM_AARCH64_GP_REG_X2,
+                                                   l_jump_c );
+  }
+
+  /* footer of n-loop */
+  libxsmm_generator_loop_footer_aarch64( io_generated_code,
+                                         &l_loop_label_tracker,
+                                         l_gp_reg_nloop,
+                                         l_vector_length );
 
   /* disable amx */
   libxsmm_aarch64_instruction_amx( io_generated_code,
