@@ -1095,7 +1095,7 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&diff);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters MB  bn bk bc C1 C2 ... CN\n", argv[0]);
+    printf("Usage: %s iters MB bn bk bc C1 C2 ... CN\n", argv[0]);
     return 0;
   }
   libxsmm_rng_set_seed(1);
