@@ -753,7 +753,16 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     exit(-1);
   }
 }
-
+/*
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                LIBXSMM_X86_INSTR_VMOVDQU8,
+                i_gp_reg_mapping->gp_reg_c,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
+                'z',
+                0, 2, 1, 0 );
+*/
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code,
@@ -762,12 +771,12 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_gp_reg_base,
                                        const unsigned int      i_reg_idx,
                                        const unsigned int      i_scale,
-                                       const int               i_displacement,
-                                       const char              i_vector_name,
-                                       const unsigned int      i_vec_reg_number_0,
-                                       const unsigned int      i_mask_reg_number,
-                                       const unsigned int      i_use_zero_masking,
-                                       const unsigned int      i_is_store )
+                                       const int               i_displacement,// ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out)
+                                       const char              i_vector_name,//'z'
+                                       const unsigned int      i_vec_reg_number_0,//0
+                                       const unsigned int      i_mask_reg_number,//2
+                                       const unsigned int      i_use_zero_masking,//1
+                                       const unsigned int      i_is_store )//0
 {
   unsigned int l_vmove_instr;
 
