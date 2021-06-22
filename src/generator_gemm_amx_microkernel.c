@@ -44,118 +44,6 @@ void libxsmm_generator_gemm_footer_decompress_loop_amx( libxsmm_generated_code* 
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
-    const libxsmm_micro_kernel_config*             i_micro_kernel_config,
-    const unsigned int                             i_vec_x,
-    const unsigned int                             i_vec_x2,
-    const unsigned int                             i_vec_nom,
-    const unsigned int                             i_vec_denom,
-    const unsigned int                             i_mask_hi,
-    const unsigned int                             i_mask_lo,
-    const unsigned int                             i_vec_c0,
-    const unsigned int                             i_vec_c1,
-    const unsigned int                             i_vec_c2,
-    const unsigned int                             i_vec_c3,
-    const unsigned int                             i_vec_c1_d,
-    const unsigned int                             i_vec_c2_d,
-    const unsigned int                             i_vec_c3_d,
-    const unsigned int                             i_vec_hi_bound,
-    const unsigned int                             i_vec_lo_bound,
-    const unsigned int                             i_vec_ones,
-    const unsigned int                             i_vec_neg_ones
-    ) {
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                        LIBXSMM_X86_INSTR_VMULPS,
-                                        i_micro_kernel_config->vector_name,
-                                        i_vec_x, i_vec_x, i_vec_x2 );
-
-  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
-                                                LIBXSMM_X86_INSTR_VCMPPS,
-                                                i_micro_kernel_config->vector_name,
-                                                i_vec_hi_bound,
-                                                i_vec_x,
-                                                i_mask_hi, 17 );
-
-  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
-                                                LIBXSMM_X86_INSTR_VCMPPS,
-                                                i_micro_kernel_config->vector_name,
-                                                i_vec_lo_bound,
-                                                i_vec_x,
-                                                i_mask_lo, 30 );
-
-   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VMOVDQU64,
-                                       i_micro_kernel_config->vector_name,
-                                       i_vec_x2, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_nom );
-
-   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       i_micro_kernel_config->vector_name,
-                                       i_vec_c2, i_vec_c3, i_vec_nom );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       i_micro_kernel_config->vector_name,
-                                       i_vec_c1, i_vec_x2, i_vec_nom );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       i_micro_kernel_config->vector_name,
-                                       i_vec_c0, i_vec_x2, i_vec_nom );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                        LIBXSMM_X86_INSTR_VMULPS,
-                                        i_micro_kernel_config->vector_name,
-                                        i_vec_nom, i_vec_x, i_vec_nom );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VADDPS,
-                                       i_micro_kernel_config->vector_name,
-                                       i_vec_x2, i_vec_c3_d, i_vec_denom );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       i_micro_kernel_config->vector_name,
-                                       i_vec_c2_d, i_vec_x2, i_vec_denom );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       i_micro_kernel_config->vector_name,
-                                       i_vec_c1_d, i_vec_x2, i_vec_denom );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VFMADD213PS,
-                                       i_micro_kernel_config->vector_name,
-                                       i_vec_c0, i_vec_x2, i_vec_denom );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                       LIBXSMM_X86_INSTR_VRCP14PS,
-                                       i_micro_kernel_config->vector_name,
-                                       i_vec_denom, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_denom );
-
-  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                        LIBXSMM_X86_INSTR_VMULPS,
-                                        i_micro_kernel_config->vector_name,
-                                        i_vec_denom, i_vec_nom, i_vec_x );
-
-  libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
-                                                LIBXSMM_X86_INSTR_VBLENDMPS,
-                                                i_micro_kernel_config->vector_name,
-                                                i_vec_x,
-                                                i_vec_ones,
-                                                i_vec_x,
-                                                i_mask_hi, 0 );
-
-  libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
-                                                LIBXSMM_X86_INSTR_VBLENDMPS,
-                                                i_micro_kernel_config->vector_name,
-                                                i_vec_x,
-                                                i_vec_neg_ones,
-                                                i_vec_x,
-                                                i_mask_lo, 0 );
-}
-
-LIBXSMM_API_INTERN
 void fill_array_4_entries(int *array, int v0, int v1, int v2, int v3){
   array[0] = v0;
   array[1] = v1;
@@ -329,26 +217,13 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
 
     if (i_micro_kernel_config->fused_sigmoid == 1) {
       if (tile1 >= 0) {
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                              LIBXSMM_X86_INSTR_VMULPS,
-                                              i_micro_kernel_config->vector_name,
-                                              reg_0, i_micro_kernel_config->vec_halves, reg_0 );
-
-        libxsmm_generator_gemm_tanh_ps_rational_78_avx512(io_generated_code, i_micro_kernel_config, reg_0, i_micro_kernel_config->vec_x2,
-          i_micro_kernel_config->vec_nom, i_micro_kernel_config->vec_denom, i_micro_kernel_config->mask_hi, i_micro_kernel_config->mask_lo,
-          i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
-          i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
-          i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones, i_micro_kernel_config->vec_neg_ones);
-
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                              LIBXSMM_X86_INSTR_VADDPS,
-                                              i_micro_kernel_config->vector_name,
-                                              reg_0, i_micro_kernel_config->vec_ones, reg_0 );
-
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                              LIBXSMM_X86_INSTR_VMULPS,
-                                              i_micro_kernel_config->vector_name,
-                                              reg_0, i_micro_kernel_config->vec_halves, reg_0 );
+        libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, reg_0, i_micro_kernel_config->vec_x2,
+            i_micro_kernel_config->vec_nom, i_micro_kernel_config->vec_denom,
+            i_micro_kernel_config->mask_hi, i_micro_kernel_config->mask_lo,
+            i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
+            i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones,
+            i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves );
       }
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -360,26 +235,13 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
           i_micro_kernel_config->vector_name,
           reg_1, 0, 1, 0 );
 
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                            LIBXSMM_X86_INSTR_VMULPS,
-                                            i_micro_kernel_config->vector_name,
-                                            reg_1, i_micro_kernel_config->vec_halves, reg_1 );
-
-      libxsmm_generator_gemm_tanh_ps_rational_78_avx512(io_generated_code, i_micro_kernel_config, reg_1, i_micro_kernel_config->vec_x2,
-        i_micro_kernel_config->vec_nom, i_micro_kernel_config->vec_denom, i_micro_kernel_config->mask_hi, i_micro_kernel_config->mask_lo,
-        i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
-        i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
-        i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones, i_micro_kernel_config->vec_neg_ones);
-
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                            LIBXSMM_X86_INSTR_VADDPS,
-                                            i_micro_kernel_config->vector_name,
-                                            reg_1, i_micro_kernel_config->vec_ones, reg_1 );
-
-      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                            LIBXSMM_X86_INSTR_VMULPS,
-                                            i_micro_kernel_config->vector_name,
-                                            reg_1, i_micro_kernel_config->vec_halves, reg_1 );
+      libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, reg_1, i_micro_kernel_config->vec_x2,
+          i_micro_kernel_config->vec_nom, i_micro_kernel_config->vec_denom,
+          i_micro_kernel_config->mask_hi, i_micro_kernel_config->mask_lo,
+          i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
+          i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
+          i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones,
+          i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves );
 
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
                                                 i_micro_kernel_config->vector_name, reg_1, reg_0, reg_0 );
