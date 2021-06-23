@@ -891,7 +891,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
   }
 
   /* check that we are not masking 'y' */
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mask_reg_number != 0) ) {
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256) && (i_mask_reg_number != 0) ) {
     fprintf(stderr, "libxsmm_instruction_vec_move: Masking is only available for AVX512!\n");
     exit(-1);
   }
@@ -2056,6 +2056,9 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
       l_encoder_arch = 0;
     }
+    if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256) {
+      l_encoder_arch = 2;
+    }    
     if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;
     } else if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
@@ -3039,7 +3042,7 @@ void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_gener
                                                 const unsigned int      i_use_masking,
                                                 const unsigned int      i_mask_reg_number,
                                                 const unsigned int      i_is_store ) {
-  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+  if (( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) || ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 )) {
     if ( i_use_masking != 0 ) {
       libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_vmove_instr,
                                         i_gp_reg_base, i_reg_idx, i_scale, i_displacement,

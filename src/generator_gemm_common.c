@@ -1427,7 +1427,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 #endif
 #endif
 
-  if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) ) &&
+  if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX)|| (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256) ) &&
        ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
     /* init stack with helper variables for SW-based RNE rounding */
     /* push 0x7f800000 on the stack, naninf masking */
