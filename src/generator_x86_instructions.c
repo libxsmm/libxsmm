@@ -926,7 +926,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
       }
       if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256) {
         l_encoder_arch = 2;
-      }       
+      }
       if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
         l_encoder = 2;
       } else if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
@@ -2058,7 +2058,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     }
     if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256) {
       l_encoder_arch = 2;
-    }    
+    }
     if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;
     } else if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
