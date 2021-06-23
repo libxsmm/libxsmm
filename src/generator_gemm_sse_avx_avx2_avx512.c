@@ -643,8 +643,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_i
                                                      ( LIBXSMM_GEMM_PRECISION_I8   == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )     ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
     /* @TODO check if there is a better blocking strategy */
-    if ( i_xgemm_desc->m >= 64 ) {
-      l_m_blocking = 64;
+    if ( i_xgemm_desc->m >= 32 ) {
+      l_m_blocking = 32;
     } else {
       l_m_blocking = i_xgemm_desc->m;
       /* in case we don't have a full vector length, we use masking */
@@ -654,8 +654,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_i
     }
   } else if ( ( i_arch <= LIBXSMM_X86_AVX512_VL256 ) && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     /* @TODO check if there is a better blocking strategy */
-    if ( i_xgemm_desc->m >= 32 ) {
-      l_m_blocking = 32;
+    if ( i_xgemm_desc->m >= 16 ) {
+      l_m_blocking = 16;
     } else {
       l_m_blocking = i_xgemm_desc->m;
       /* in case we don't have a full vector length, we use masking */
