@@ -183,7 +183,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
          ( l_xgemm_desc_mod.m % 32 == 0 ) /*&& ( l_xgemm_desc_mod.k % 16 == 0 )*/) ||
         (( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&
          ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
-         ( l_xgemm_desc_mod.m % 32 == 0 ) && ( l_xgemm_desc_mod.k % 16 == 0 ))) {
+         ( l_xgemm_desc_mod.m % 32 == 0 ) /*&& ( l_xgemm_desc_mod.k % 16 == 0 )*/)) {
       if (l_emu_amx == 0) {
         libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_xgemm_desc_mod );
       } else {
