@@ -1776,7 +1776,9 @@ void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*     
   unsigned int l_mask;
 
   /* init full mask */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if(( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) && (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256 )) {
+    l_mask = 0xf;
+  } else if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     l_mask = 0xff;
   } else if(( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) && (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256 )) {
     l_mask = 0xff;
