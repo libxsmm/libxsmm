@@ -80,6 +80,16 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/4;
     l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/4;
   } else if ( ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) &&
+              ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256 ) && ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) {
+    l_vector_length = 8;
+    /* some checks as we cannot mask everything */
+    if ( (l_xgemm_desc_mod.k % 4 != 0) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
+    }
+    l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/4;
+    l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/4;
+  } else if ( ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) &&
               ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) && LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
     /* some checks as we cannot mask everything */
     if ( (l_xgemm_desc_mod.k % 2 != 0) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
