@@ -1380,7 +1380,6 @@ void libxsmm_generator_prepare_dropout_inv_avx_avx512( libxsmm_generated_code* i
                                             dropout_vreg_zero, dropout_vreg_zero, dropout_vreg_zero );
 }
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_x,

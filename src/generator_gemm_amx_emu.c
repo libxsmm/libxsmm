@@ -13,6 +13,7 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 #include "generator_gemm_amx.h"
+#include "generator_common_x86.h"
 #include "generator_gemm_amx_emu.h"
 #include "generator_gemm_amx_microkernel.h"
 #include "generator_gemm_amx_microkernel_emu.h"

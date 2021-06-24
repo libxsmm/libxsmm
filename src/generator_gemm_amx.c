@@ -13,6 +13,7 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 #include "generator_gemm_amx.h"
+#include "generator_common_x86.h"
 #include "generator_gemm_amx_microkernel.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

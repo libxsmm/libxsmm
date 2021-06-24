@@ -54,33 +54,42 @@
 
         !> Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_GEMM_FLAG_NONE     = 0,                               &
-     &    LIBXSMM_GEMM_FLAG_TRANS_A  = 1,                               &
-     &    LIBXSMM_GEMM_FLAG_TRANS_B  = 2,                               &
-     &    LIBXSMM_GEMM_FLAG_TRANS_AB = IOR(                             &
+     &    LIBXSMM_GEMM_FLAG_NONE      = 0,                              &
+     &    LIBXSMM_GEMM_FLAG_TRANS_A   = 1,                              &
+     &    LIBXSMM_GEMM_FLAG_TRANS_B   = 2,                              &
+     &    LIBXSMM_GEMM_FLAG_TRANS_AB  = IOR(                            &
      &        LIBXSMM_GEMM_FLAG_TRANS_A, LIBXSMM_GEMM_FLAG_TRANS_B),    &
-     &    LIBXSMM_GEMM_FLAG_BETA_0   = 16,                              &
-     &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = 2176,                    &
+     &    LIBXSMM_GEMM_FLAG_BETA_0    = 4,                              &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_A   = 8,                              &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_C   =16,                              &
+     &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = IOR(1024,                &
+     &        LIBXSMM_GEMM_FLAG_ALIGN_C),                               &
      &    LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0 = IOR(              &
      &        LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,                       &
-     &        LIBXSMM_GEMM_FLAG_BETA_0)
+     &        LIBXSMM_GEMM_FLAG_BETA_0),                                &
+     &    LIBXSMM_GEMM_FLAG_INVALID = 131072
 
         !> Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
           ! Handle recorded batch unsynchronized-parallel.
-     &    LIBXSMM_MMBATCH_FLAG_DEFAULT      = 0,                        &
+     &    LIBXSMM_MMBATCH_FLAG_DEFAULT      = 0                         &
+     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
           ! Synchronize among C matrices.
-     &    LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = 512,                      &
+     &    LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = 1                         &
+     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
           ! Handle recorded batch sequentially.
-     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = 1024,                     &
+     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = 2                         &
+     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
           ! Only record a statistic of potential SMMs.
-     &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 2048
+     &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 4                         &
+     &        * LIBXSMM_GEMM_FLAG_INVALID
 
         !> Enumerates element/data types.
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_DATATYPE_F64  = 0,                                    &
      &    LIBXSMM_DATATYPE_F32  = 1,                                    &
      &    LIBXSMM_DATATYPE_BF16 = 2,                                    &
+     &    LIBXSMM_DATATYPE_F16  = 3,                                    &
      &    LIBXSMM_DATATYPE_I64  = 3,                                    &
      &    LIBXSMM_DATATYPE_I32  = 4,                                    &
      &    LIBXSMM_DATATYPE_I16  = 5,                                    &
@@ -93,6 +102,7 @@
      &    LIBXSMM_GEMM_PRECISION_F64  = LIBXSMM_DATATYPE_F64,           &
      &    LIBXSMM_GEMM_PRECISION_F32  = LIBXSMM_DATATYPE_F32,           &
      &    LIBXSMM_GEMM_PRECISION_BF16 = LIBXSMM_DATATYPE_BF16,          &
+     &    LIBXSMM_GEMM_PRECISION_F16  = LIBXSMM_DATATYPE_F16,           &
      &    LIBXSMM_GEMM_PRECISION_I32  = LIBXSMM_DATATYPE_I32,           &
      &    LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16,           &
      &    LIBXSMM_GEMM_PRECISION_I8   = LIBXSMM_DATATYPE_I8
@@ -126,17 +136,24 @@
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_TARGET_ARCH_UNKNOWN = 0,                              &
      &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
-     &    LIBXSMM_X86_GENERIC     = 1002,                               &
-     &    LIBXSMM_X86_SSE3        = 1003,                               &
-     &    LIBXSMM_X86_SSE4        = 1004,                               &
-     &    LIBXSMM_X86_AVX         = 1005,                               &
-     &    LIBXSMM_X86_AVX2        = 1006,                               &
-     &    LIBXSMM_X86_AVX512      = 1007,                               &
-     &    LIBXSMM_X86_AVX512_MIC  = 1010,                               &
-     &    LIBXSMM_X86_AVX512_KNM  = 1011,                               &
-     &    LIBXSMM_X86_AVX512_CORE = 1020,                               &
-     &    LIBXSMM_X86_AVX512_CLX  = 1021,                               &
-     &    LIBXSMM_X86_AVX512_CPX  = 1022
+     &    LIBXSMM_X86_GENERIC         = 1002,                           &
+     &    LIBXSMM_X86_SSE3            = 1003,                           &
+     &    LIBXSMM_X86_SSE4            = 1004,                           &
+     &    LIBXSMM_X86_AVX             = 1005,                           &
+     &    LIBXSMM_X86_AVX2            = 1006,                           &
+     &    LIBXSMM_X86_AVX512_VL256    = 1007,                           &
+     &    LIBXSMM_X86_AVX512          = 1010,                           &
+     &    LIBXSMM_X86_AVX512_MIC      = 1011,                           &
+     &    LIBXSMM_X86_AVX512_KNM      = 1012,                           &
+     &    LIBXSMM_X86_AVX512_CORE     = 1020,                           &
+     &    LIBXSMM_X86_AVX512_CLX      = 1021,                           &
+     &    LIBXSMM_X86_AVX512_CPX      = 1022,                           &
+     &    LIBXSMM_X86_AVX512_SPR      = 1023,                           &
+     &    LIBXSMM_X86_ALLFEAT         = 1999,                           &
+     &    LIBXSMM_AARCH64_V81         = 2001,                           &
+     &    LIBXSMM_AARCH64_V82         = 2002,                           &
+     &    LIBXSMM_AARCH64_A64FX       = 2100,                           &
+     &    LIBXSMM_AARCH64_ALLFEAT     = 2999
 
         !> Generic function type (double-precision).
         TYPE, BIND(C) :: LIBXSMM_DMMFUNCTION

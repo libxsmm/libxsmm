@@ -157,8 +157,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
             }
             LIBXSMM_GEMM_PRINT2(stderr,
               LIBXSMM_GETENUM_INP(descriptor.datatype), LIBXSMM_GETENUM_OUT(descriptor.datatype), descriptor.flags, m, n, k,
-            /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & descriptor.flags) ? 0 : */1, NULL/*a*/, lda, NULL/*b*/, ldb,
-              0 != (LIBXSMM_GEMM_FLAG_BETA_0  & descriptor.flags) ? 0 : 1, NULL/*c*/, ldc);
+              1, NULL/*a*/, lda, NULL/*b*/, ldb, 0 != (LIBXSMM_GEMM_FLAG_BETA_0  & descriptor.flags) ? 0 : 1, NULL/*c*/, ldc);
             if (NULL != symbol && 0 != *symbol) {
               fprintf(stderr, ": %u%% [%s]\n", ciperc, symbol);
             }
@@ -336,8 +335,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       || ((unsigned int)*n) != libxsmm_mmbatch_desc.n
       || ((unsigned int)*k) != libxsmm_mmbatch_desc.k
       || (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)) != (int)(LIBXSMM_GEMM_FLAG_TRANS_AB & libxsmm_mmbatch_desc.flags)
-      || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_mmbatch_desc.flags) ? 0 : */1, *alpha)
-      || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta)))
+      || LIBXSMM_NEQ(1, *alpha) || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta)))
 #endif
     {
 #if defined(_DEBUG)
@@ -473,8 +471,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       || ((unsigned int)*n) != libxsmm_mmbatch_desc.n
       || ((unsigned int)*k) != libxsmm_mmbatch_desc.k
       || (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)) != (int)(LIBXSMM_GEMM_FLAG_TRANS_AB & libxsmm_mmbatch_desc.flags)
-      || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_mmbatch_desc.flags) ? 0 : */1, *alpha)
-      || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta)))
+      || LIBXSMM_NEQ(1, *alpha) || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta)))
 #endif
     {
 #if defined(_DEBUG)
