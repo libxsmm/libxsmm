@@ -753,16 +753,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     exit(-1);
   }
 }
-/*
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                i_micro_kernel_config->instruction_set,
-                LIBXSMM_X86_INSTR_VMOVDQU8,
-                i_gp_reg_mapping->gp_reg_c,
-                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
-                'z',
-                0, 2, 1, 0 );
-*/
+
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code,
@@ -771,12 +762,12 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_gp_reg_base,
                                        const unsigned int      i_reg_idx,
                                        const unsigned int      i_scale,
-                                       const int               i_displacement,// ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out)
-                                       const char              i_vector_name,//'z'
-                                       const unsigned int      i_vec_reg_number_0,//0
-                                       const unsigned int      i_mask_reg_number,//2
-                                       const unsigned int      i_use_zero_masking,//1
-                                       const unsigned int      i_is_store )//0
+                                       const int               i_displacement,
+                                       const char              i_vector_name,
+                                       const unsigned int      i_vec_reg_number_0,
+                                       const unsigned int      i_mask_reg_number,
+                                       const unsigned int      i_use_zero_masking,
+                                       const unsigned int      i_is_store )
 {
   unsigned int l_vmove_instr;
 
@@ -891,7 +882,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
   }
 
   /* check that we are not masking 'y' */
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256) && (i_mask_reg_number != 0) ) {
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mask_reg_number != 0) ) {
     fprintf(stderr, "libxsmm_instruction_vec_move: Masking is only available for AVX512!\n");
     exit(-1);
   }
@@ -918,14 +909,10 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
       unsigned int l_encoder_instr = ((i_vmove_instr >> 30) & 0x03);
 
       /* determine encoder */
-      //Change by D-
-      if ( io_generated_code->arch < LIBXSMM_X86_AVX512) {
+      if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
         l_encoder_arch = 1;
       } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
         l_encoder_arch = 0;
-      }
-      if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256) {
-        l_encoder_arch = 2;
       }
       if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
         l_encoder = 2;
@@ -1538,7 +1525,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
   }
 
   /* check that we are not masking 'y' */
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mask_reg_number != 0) ) {
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mask_reg_number != 0) ) {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: Masking is only available for AVX512!\n");
     exit(-1);
   }
@@ -1565,13 +1552,10 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     }
 
     /* determine encoder */
-    if ( io_generated_code->arch < LIBXSMM_X86_AVX512) {
+    if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
       l_encoder_arch = 1;
     } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
       l_encoder_arch = 0;
-    }
-    if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256) {
-      l_encoder_arch = 2;
     }
     if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;
@@ -2025,7 +2009,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
   }
 
   /* check that we are not masking 'y' */
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mask_reg_number != 0) ) {
+  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mask_reg_number != 0) ) {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: Masking is only available for AVX512!\n");
     exit(-1);
   }
@@ -2051,14 +2035,12 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     }
 
     /* determine encoder */
-    if ( io_generated_code->arch < LIBXSMM_X86_AVX512) {
+    if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
       l_encoder_arch = 1;
     } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
       l_encoder_arch = 0;
     }
-    if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256) {
-      l_encoder_arch = 2;
-    }
+
     if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;
     } else if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
@@ -2697,7 +2679,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
       break;
   }
 
-  if ( (i_instruction_set < LIBXSMM_X86_AVX512)  &&
+  if ( (i_instruction_set < LIBXSMM_X86_AVX512_VL256)  &&
        (i_use_broadcast != 0) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_AVX512_BCAST );
     return;
@@ -3042,7 +3024,7 @@ void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_gener
                                                 const unsigned int      i_use_masking,
                                                 const unsigned int      i_mask_reg_number,
                                                 const unsigned int      i_is_store ) {
-  if (( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) || ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 )) {
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
     if ( i_use_masking != 0 ) {
       libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_vmove_instr,
                                         i_gp_reg_base, i_reg_idx, i_scale, i_displacement,

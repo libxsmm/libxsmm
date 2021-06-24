@@ -1166,10 +1166,10 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   }
 
   /* set output variables */
-  *o_range_1 = l_N1; //78
-  *o_block_1 = l_n1; //6
-  *o_range_2 = l_N2; //5
-  *o_block_2 = l_n2;//5
+  *o_range_1 = l_N1;
+  *o_block_1 = l_n1;
+  *o_range_2 = l_N2;
+  *o_block_2 = l_n2;
 
   return l_ret;
 }
