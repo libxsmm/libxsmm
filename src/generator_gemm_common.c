@@ -1192,7 +1192,8 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   /* deriving register blocking from kernel config */
   l_m_blocking = ( i_m_blocking % i_micro_kernel_config->vector_length  == 0 ) ? i_m_blocking/i_micro_kernel_config->vector_length : (i_m_blocking/i_micro_kernel_config->vector_length)+1;
   /* start register of accumulator */
-  l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+  //comments by D-
+  l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking); //as per paper accum regsiters(6 4) 8 remain for a256 4for b broadcast
 
 #if !defined(NDEBUG)
   /* Do some test if it is possible to generate the requested code.
@@ -1777,6 +1778,8 @@ void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*     
   /* init full mask */
   if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     l_mask = 0xff;
+  } else if(( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) && (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256 )) {
+    l_mask = 0xff;
   } else {
     l_mask = 0xffff;
   }
@@ -1790,7 +1793,7 @@ void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*     
       i_gp_reg_tmp,
       l_mask );
 
-  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
         LIBXSMM_X86_INSTR_KMOVW_GPR_LD,
         i_gp_reg_tmp,
