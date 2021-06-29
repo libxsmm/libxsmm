@@ -26,7 +26,8 @@ EXT="c"
 if [ "${FIND}" ] && [ "${SORT}" ] && [ "${SED}" ] && [ -d ${SRC} ]; then
   export LC_ALL=C
   ENVARS="$(${FIND} ${SRC} -type f -name "*.${EXT}" -exec \
-    ${SED} -n "s/.*getenv[[:space:]]*([[:space:]]*\"\(.[^\"]*\)..*/\1/p" {} \; | \
+    ${SED} "s/getenv[[:space:]]*([[:space:]]*\".[^\"]*/\n&/g" {} \; | \
+    ${SED} -n "s/.*getenv[[:space:]]*([[:space:]]*\"\(.[^\"]*\)..*/\1/p" | \
     ${SORT} -u)"
   echo "============================="
   echo "Other environment variables"
