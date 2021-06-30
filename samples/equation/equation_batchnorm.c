@@ -450,6 +450,59 @@ void scaler_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, 
   }
 }
 
+void reference_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps){
+
+  const float nhw = (float)N * HW;
+  const float recp_nhw = 1.0f/((float)N*HW);
+
+  LIBXSMM_ALIGNED(float expectval_ptr[CP*CB], 64);
+  LIBXSMM_ALIGNED(float rcpstddev_ptr[CP*CB], 64);
+  LIBXSMM_ALIGNED(float variance_ptr[CP*CB], 64);
+
+  LIBXSMM_VLA_DECL(4, float, inp, pinp, CP, HW, CB);            /* [N, CP, HW, CB] */
+  LIBXSMM_VLA_DECL(4, float, out, pout, CP, HW, CB);            /* [N, CP, HW, CB] */
+  LIBXSMM_VLA_DECL(2, float, gamma, pgamma, CB);
+  LIBXSMM_VLA_DECL(2, float, beta, pbeta, CB);
+  int cb = 0;
+  for (int cp = 0; cp < CP; cp++) {
+    float ch_sum = 0.0f;
+    float ch_sumsq = 0.0f;
+    float tbmean = 0.0f;
+    float tbmeansq = 0.0f;
+    float tsqbmean = 0.0f;
+    float tbrstd = 0.0f;
+    float tvariance = 0.0f;
+
+    for (int n = 0; n < N; n++ ) {
+      for (int hw = 0; hw < HW; hw++){
+        const float input_val = LIBXSMM_VLA_ACCESS(4, inp, n, cp, hw, cb, CP, HW, CB);
+        ch_sum   += input_val;
+        ch_sumsq += (input_val * input_val);
+      }
+    }
+
+    tbmean = recp_nhw * ch_sum;
+    tbmeansq  = tbmean * tbmean;
+    tsqbmean = recp_nhw * ch_sumsq;
+    tvariance = tsqbmean - tbmeansq;
+    tbrstd = (float)(1.0/sqrt(tvariance + eps));
+    expectval_ptr[cp] = tbmean;
+    rcpstddev_ptr[cp] = tbrstd;
+    variance_ptr[cp] = tvariance;
+  }
+
+  for (int n = 0; n < N; n++ ) {
+    for (int cp = 0; cp < CP; cp++ ) {
+      for(int hw = 0; hw < HW; hw++){
+          const float  input_val     =  LIBXSMM_VLA_ACCESS(4, inp, n, cp, hw, cb, CP, HW, CB);
+
+          /* BN + scale (gamma, beta) */
+          LIBXSMM_VLA_ACCESS(4, out, n, cp, hw, cb, CP, HW, CB) = LIBXSMM_VLA_ACCESS(2, gamma, cp, cb, CB)*(input_val - expectval_ptr[cp])*rcpstddev_ptr[cp] + LIBXSMM_VLA_ACCESS(2, beta, cp, cb, CB);
+      }
+    }
+  }
+}
+
 int main( int argc, char* argv[] ) {
   libxsmm_blasint my_eqn10, my_eqn11, my_eqn12, my_eqn13, my_eqn14, my_eqn15;
   libxsmm_matrix_eqn_function func10, func11, func12, func13, func14, func15;
@@ -580,7 +633,11 @@ int main( int argc, char* argv[] ) {
 
   /* Check correctness */
   if (datatype_mode == 0) {
-    scaler_batchnorm_fwd_fp32(N, CP, HW, CB, inp, gamma, beta, mean, var, out, eps);
+    if(CB == 1)
+      reference_batchnorm_fwd_fp32(N, CP, HW, CB, inp, gamma, beta, mean, var, out, eps);
+    else
+      scaler_batchnorm_fwd_fp32(N, CP, HW, CB, inp, gamma, beta, mean, var, out, eps);
+
     tpp_batchnorm_fwd_fp32(N, CP, HW, CB, inp, gamma, beta, mean, var, eqn_out, eps, func10, reduce_HW_kernel);
   } else if (datatype_mode == 1) {
     scaler_batchnorm_fwd_fp32(N, CP, HW, CB, inp, gamma, beta, mean, var, out, eps);
