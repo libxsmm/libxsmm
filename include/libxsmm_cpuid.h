@@ -39,6 +39,7 @@
 #define LIBXSMM_AARCH64_V81      2001 /* Baseline */
 #define LIBXSMM_AARCH64_V82      2002 /* A64FX minus SVE */
 #define LIBXSMM_AARCH64_A64FX    2100 /* SVE */
+#define LIBXSMM_AARCH64_APPL_M1  2200 /* Apple M1 */
 #define LIBXSMM_AARCH64_ALLFEAT  2999
 
 #if defined(LIBXSMM_PLATFORM_X86)
