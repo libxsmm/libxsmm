@@ -16,6 +16,9 @@
 # if defined(__APPLE__) && defined(__arm64__)
 #include <pthread.h>
 # endif
+# if defined(_OPENMP)
+#include <omp.h>
+#endif
 
 int g_reps = 0;
 
@@ -84,6 +87,7 @@ int main(int argc, char* argv []) {
   FILE *l_file_handle = NULL;
   int l_run_check = 0;
   int l_tc_config = 0;
+  int l_n_threads = 1;
 
 # if defined(__APPLE__) && defined(__arm64__)
 #  if 1
@@ -241,7 +245,18 @@ int main(int argc, char* argv []) {
     exit(EXIT_FAILURE);
   }
 
- if ( l_file_input != 0 ) {
+  /* read the number of threads */
+#if defined(_OPENMP)
+  #pragma omp parallel
+  {
+    #pragma omp master
+    {
+      l_n_threads = omp_get_num_threads();
+    }
+  }
+#endif
+
+  if ( l_file_input != 0 ) {
     l_file_handle = fopen( l_file_name, "r" );
   } else {
     if ( l_trans_b == 0 ) {
@@ -288,7 +303,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -325,10 +340,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_b_d);
         libxsmm_free(l_c_d);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -367,7 +383,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -404,10 +420,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_b_d);
         libxsmm_free(l_c_d);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -446,7 +463,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -483,10 +500,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_b_f);
         libxsmm_free(l_c_f);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -525,7 +543,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -562,10 +580,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_b_f);
         libxsmm_free(l_c_f);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -603,7 +622,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -640,10 +659,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_b_w);
         libxsmm_free(l_c_w_i);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per oore for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per oore for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -681,7 +701,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -718,10 +738,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_sb_b);
         libxsmm_free(l_c_b_i);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -759,7 +780,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -796,10 +817,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_ub_b);
         libxsmm_free(l_c_b_i);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -837,7 +859,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -874,10 +896,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_ub_b);
         libxsmm_free(l_c_b_ub);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -915,7 +938,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -956,10 +979,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_b_bf);
         libxsmm_free(l_c_bf_f);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -997,7 +1021,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -1040,10 +1064,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_b_bf);
         libxsmm_free(l_c_bf);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -1081,7 +1106,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -1122,10 +1147,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_b_bf);
         libxsmm_free(l_c_bf_f);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -1163,7 +1189,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.tc_config = l_tc_config;
 
 #if defined(_OPENMP)
-#pragma omp parallel reduction(max:l_runtime_libxsmm)
+#pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
       {
         unsigned int l_r, l_i, l_j;
@@ -1206,10 +1232,11 @@ int main(int argc, char* argv []) {
         libxsmm_free(l_b_bf);
         libxsmm_free(l_c_bf);
       }
+      l_runtime_libxsmm /= (double)l_n_threads;
 
       if ( l_file_input == 0 ) {
-        printf("min %fs per core for libxsmm\n", l_runtime_libxsmm);
-        printf("min %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+        printf("avg %fs per core for libxsmm\n", l_runtime_libxsmm);
+        printf("avg %f GFLOPS per core for libxsmm\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
