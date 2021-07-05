@@ -2579,7 +2579,7 @@ void libxsmm_generator_transform_norm_padnm_mod2_16bit_avx512_microkernel( libxs
   if ( l_m_remainder_in > 0 ) {
     /* load mask */
     const unsigned long long l_load_mask = ( 1 << l_m_remainder_in ) - 1;
-    const unsigned long long l_store_mask = ( l_m_remainder_out == 32 ) ? 0xffffffff : ( 1 << l_m_remainder_out ) - 1;
+    const unsigned long long l_store_mask = ( l_m_remainder_out == 32 ) ? (unsigned long long)0xffffffff : (unsigned long long)(( 1 << l_m_remainder_out ) - 1);
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_load_mask );
     libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, i_mask_reg_0 );
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
