@@ -334,7 +334,10 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV               = 35,
   LIBXSMM_MELTW_TYPE_UNARY_ELU                          = 36,
   LIBXSMM_MELTW_TYPE_UNARY_ELU_INV                      = 37,
-  LIBXSMM_MELTW_TYPE_UNARY_STOCHASTIC_ROUND             = 38
+  LIBXSMM_MELTW_TYPE_UNARY_STOCHASTIC_ROUND             = 38,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2          = 39,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2          = 40,
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2         = 41
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
