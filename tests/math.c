@@ -284,6 +284,8 @@ int main(/*int argc, char* argv[]*/)
   /* find lower limited product */
   if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 1) != (3 * 7 * 11)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 5 * 7, 36, 1) != (2 * 5 * 7)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(23, 32, 1) != (2 * 23)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12, 32, 1) != (3 * 12)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 13, 13, 1) != 13) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(320, 300, 1) != 320) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(320, 65, 1) != 80) exit(EXIT_FAILURE);
