@@ -420,6 +420,18 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b)
 }
 
 
+LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b, unsigned int r)
+{
+  unsigned int c;
+  if (b < a && 0 != b) b = LIBXSMM_UP(a, b); /* normalize such that a <= b */
+  if (1 <= a) {
+    for (c = b; r < (c % a); c += b);
+  }
+  else c = a * b;
+  return c;
+}
+
+
 LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n32[])
 {
   unsigned int c = num, i;

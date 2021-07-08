@@ -65,6 +65,13 @@ LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n3
 LIBXSMM_API size_t libxsmm_shuffle(unsigned int n);
 
 /**
+ * Minimizes the waste if "a" quantities can only be processed in multiples "b".
+ * The remainder "r" is that (i * b) % a <= r with i := {1, ..., a}.
+ * For example, libxsmm_remainder(23, 32, 4) => 96.
+ */
+LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b, unsigned int r);
+
+/**
  * Divides the product into prime factors and selects factors such that the new product is within
  * the given limit (0/1-Knapsack problem), e.g., product=12=2*2*3 and limit=6 then result=2*3=6.
  * The limit is at least reached or exceeded with the minimal possible product (is_lower=true).
