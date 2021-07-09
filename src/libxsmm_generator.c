@@ -420,14 +420,23 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b)
 }
 
 
-LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b, unsigned int r)
+LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b,
+  const unsigned int* limit, const unsigned int* remainder)
 {
-  unsigned int c;
-  if (b < a && 0 != b) b = LIBXSMM_UP(a, b); /* normalize such that a <= b */
+  /* normalize such that a <= b */
+  unsigned int ci = ((b < a && 0 != b) ? LIBXSMM_UP(a, b) : b), c = a * ci;
   if (1 <= a) {
-    for (c = b; r < (c % a); c += b);
+    unsigned int r = a - 1;
+    for (; ((NULL != remainder ? *remainder : 0) < r)
+        &&  (NULL == limit || *limit >= ci); ci += b)
+    {
+      const unsigned int ri = ci % a;
+      if (ri < r) {
+        c = ci;
+        r = ri;
+      }
+    }
   }
-  else c = a * b;
   return c;
 }
 

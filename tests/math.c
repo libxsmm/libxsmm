@@ -271,14 +271,18 @@ int main(/*int argc, char* argv[]*/)
     if (libxsmm_shuffle(5) != 2) exit(EXIT_FAILURE);
   }
 
-  /* check procedure to minimize remainder */
-  if (libxsmm_remainder(23, 32, 0) != (32 * 23)) exit(EXIT_FAILURE);
-  if (libxsmm_remainder(23, 32, 4) != (32 * 3)) exit(EXIT_FAILURE);
-  if (libxsmm_remainder(23, 8, 0) != (23 * 24)) exit(EXIT_FAILURE);
-  if (libxsmm_remainder(0, 32, 0) != 0) exit(EXIT_FAILURE);
-  if (libxsmm_remainder(23, 0, 0) != 0) exit(EXIT_FAILURE);
-  if (libxsmm_remainder(0, 0, 0) != 0) exit(EXIT_FAILURE);
-  if (libxsmm_remainder(0, 0, 1) != 0) exit(EXIT_FAILURE);
+  { /* check procedure to minimize remainder */
+    unsigned int lim, rem;
+    if (libxsmm_remainder(23, 32, NULL, NULL) != (32 * 23)) exit(EXIT_FAILURE);
+    lim = 512; if (libxsmm_remainder(23, 32, &lim, NULL) != (32 * 13)) exit(EXIT_FAILURE);
+    rem = 4; if (libxsmm_remainder(23, 32, NULL, &rem) != (32 * 3)) exit(EXIT_FAILURE);
+    rem = 1; if (libxsmm_remainder(23, 32, &lim, &rem) != (32 * 13)) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(23, 8, NULL, NULL) != (23 * 8)) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(0, 32, NULL, NULL) != 0) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(23, 0, NULL, NULL) != 0) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(0, 0, NULL, NULL) != 0) exit(EXIT_FAILURE);
+    rem = 1;  if (libxsmm_remainder(0, 0, NULL, &rem) != 0) exit(EXIT_FAILURE);
+  }
 
   /* find upper limited product */
   if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 0) != (3 * 7 * 11)) exit(EXIT_FAILURE);

@@ -66,10 +66,14 @@ LIBXSMM_API size_t libxsmm_shuffle(unsigned int n);
 
 /**
  * Minimizes the waste if "a" quantities can only be processed in multiples "b".
- * The remainder "r" is that (i * b) % a <= r with i := {1, ..., a}.
- * For example, libxsmm_remainder(23, 32, 4) => 96.
+ * The remainder "r" is that ((i * b) % a) <= r with i := {1, ..., a}.
+ * For example: libxsmm_remainder(23, 8, NULL, NULL) => 184.
  */
-LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b, unsigned int r);
+LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b,
+  /** Optional limit such that (i * b) <= limit or ((i * b) % a) <= r. */
+  const unsigned int* limit,
+  /** Optional remainder limiting ((i * b) % a) <= r. */
+  const unsigned int* remainder);
 
 /**
  * Divides the product into prime factors and selects factors such that the new product is within
