@@ -405,7 +405,7 @@
 # endif
 #endif /*LIBXSMM_PRAGMA*/
 
-#if !defined(LIBXSMM_OPENMP_SIMD) && (defined(_OPENMP) && (201307 <= _OPENMP/*v4.0*/))
+#if !defined(LIBXSMM_OPENMP_SIMD)
 # if defined(LIBXSMM_INTEL_COMPILER)
 #   if (1500 <= LIBXSMM_INTEL_COMPILER)
 #     define LIBXSMM_OPENMP_SIMD
@@ -451,7 +451,7 @@
 # define LIBXSMM_PRAGMA_VALIGNED_VAR(A) LIBXSMM_ASSUME_ALIGNED(A, LIBXSMM_ALIGNMENT);
 /*# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))*/
 #else
-# if defined(LIBXSMM_OPENMP_SIMD) && (201811 <= _OPENMP/*v5.0*/)
+# if defined(LIBXSMM_OPENMP_SIMD) && (201811/*v5.0*/ <= _OPENMP)
 #   define LIBXSMM_PRAGMA_NONTEMPORAL(...) LIBXSMM_PRAGMA(omp simd nontemporal(__VA_ARGS__))
 # else
 #   define LIBXSMM_PRAGMA_NONTEMPORAL(...)
@@ -497,7 +497,7 @@
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-#if defined(_OPENMP) && (200805 <= _OPENMP/*v3.0*/) \
+#if defined(_OPENMP) && (200805/*v3.0*/ <= _OPENMP) \
  && defined(NDEBUG) /* CCE complains for debug builds */
 # define LIBXSMM_OPENMP_COLLAPSE(N) collapse(N)
 #else
