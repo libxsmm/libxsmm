@@ -125,7 +125,7 @@ void tpp_batchnorm_bwd_bf16(long N, long CP, long HW, long CB, libxsmm_bfloat16 
 
   #pragma omp parallel for reduction(+: pdgamma[:CP*CB]) reduction(+: pdbeta[:CP*CB]) reduction(+: ds[:CP*CB]) reduction(+: db[:CP*CB])     /* Parallelize over batches and reduce the values into d_array, final_ds, final_db */
   for (int n = 0; n < N; n++) {
-    libxsmm_matrix_arg arg_array[8];                                                           /* Private values of args and params */
+    libxsmm_matrix_arg arg_array[10];                                                           /* Private values of args and params */
     libxsmm_matrix_eqn_param eqn_param;
 
     for (int cp = 0; cp < CP; cp++) {
@@ -139,6 +139,8 @@ void tpp_batchnorm_bwd_bf16(long N, long CP, long HW, long CB, libxsmm_bfloat16 
       arg_array[5].primary = &pdbeta[cp*CB];
       arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
       /* arg_array[7].primary = &c[cp*CB]; */
+      arg_array[8].primary = &ds[cp*CB];
+      arg_array[9].primary = &db[cp*CB];
       eqn_param.inputs = arg_array;
 
       eqn_param.output.primary = &ds[cp*CB];
@@ -169,7 +171,7 @@ void tpp_batchnorm_bwd_bf16(long N, long CP, long HW, long CB, libxsmm_bfloat16 
 
   #pragma omp parallel for                                                                  /* Parallelize over batches */
   for(int n = 0; n < N; n++){
-    libxsmm_matrix_arg arg_array[8];                                                        /* Private eqn args and params */
+    libxsmm_matrix_arg arg_array[10];                                                        /* Private eqn args and params */
     libxsmm_matrix_eqn_param eqn_param;
     for (int cp = 0; cp < CP; cp++) {
       arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, 0, 0, CP, HW, CB);
@@ -180,6 +182,8 @@ void tpp_batchnorm_bwd_bf16(long N, long CP, long HW, long CB, libxsmm_bfloat16 
       /* arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);   */
       arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
       arg_array[7].primary = &c[cp*CB];
+      /* arg_array[8].primary = &ds[cp*CB]; */
+      /* arg_array[9].primary = &db[cp*CB]; */
       eqn_param.inputs = arg_array;
       eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, n, cp, 0, 0, CP, HW, CB);
       din_func(&eqn_param);                                                                 /* din = dout * a * gamma + b * inp + c */
@@ -201,8 +205,10 @@ void tpp_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, float *pinp, floa
 
   #pragma omp parallel for
   for(int j = 0; j < CP*CB; j++){                               /* Initialize sum and sum_square array */
-      sum_X_X2[j] = 0.0f;
-      sum_X_X2[CP*CB + j] = 0.0f;
+    sum_X_X2[j] = 0.0f;
+    sum_X_X2[CP*CB + j] = 0.0f;
+    s[j] = 0.0f;
+    b[j] = 0.0f;
   }
 
   #pragma omp parallel for reduction(+: sum_X_X2[:2*CP*CB])                   /* Parallelize over batches with multiple threads reducing to sum_X_X2 array */
@@ -226,7 +232,7 @@ void tpp_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, float *pinp, floa
   for(int j = 0; j < CP*CB; j++){
     mean[j] = sum_X_X2[j] / ((float)N * HW);                                           /* E[X] */
     var[j] = (sum_X_X2[CP*CB + j] / ((float)N * HW)) - (mean[j]*mean[j]);              /* var(X) = E[X^2] - (E[X])^2 */
-    s[j] = 1.0f / (sqrt(var[j] + eps));                                                /* s = 1/sqrt(var(X) + eps)     [CP, CB] */
+    s[j] = 1.0f / ((float)sqrt(var[j] + eps));                                                /* s = 1/sqrt(var(X) + eps)     [CP, CB] */
     b[j] = -1 * mean[j] * s[j];                                                        /* b = -E[X]/sqrt(var(X) + eps) [CP, CB] */
   }
 
@@ -278,7 +284,7 @@ void tpp_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, flo
 
   #pragma omp parallel for reduction(+: pdgamma[:CP*CB]) reduction(+: pdbeta[:CP*CB]) reduction(+: ds[:CP*CB]) reduction(+: db[:CP*CB])    /* Parallelize over batches and reduce the values into d_array, final_ds, final_db */
   for (int n = 0; n < N; n++) {
-    libxsmm_matrix_arg arg_array[8];                                                           /* Private values of args and params */
+    libxsmm_matrix_arg arg_array[10];                                                           /* Private values of args and params */
     libxsmm_matrix_eqn_param eqn_param;
 
     for (int cp = 0; cp < CP; cp++) {
@@ -292,6 +298,8 @@ void tpp_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, flo
       arg_array[5].primary = &pdbeta[cp*CB];
       arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
       /* arg_array[7].primary = &c[cp*CB]; */
+      arg_array[8].primary = &ds[cp*CB];
+      arg_array[9].primary = &db[cp*CB];
       eqn_param.inputs = arg_array;
 
       eqn_param.output.primary = &ds[cp*CB];
@@ -320,7 +328,7 @@ void tpp_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, flo
 
   #pragma omp parallel for                                                                  /* Parallelize over batches */
   for(int n = 0; n < N; n++){
-    libxsmm_matrix_arg arg_array[8];                                                        /* Private eqn args and params */
+    libxsmm_matrix_arg arg_array[10];                                                        /* Private eqn args and params */
     libxsmm_matrix_eqn_param eqn_param;
     for (int cp = 0; cp < CP; cp++) {
       arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, 0, 0, CP, HW, CB);
@@ -331,6 +339,8 @@ void tpp_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, flo
       /* arg_array[5].primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);   */
       arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
       arg_array[7].primary = &c[cp*CB];
+      /* arg_array[8].primary = &ds[cp*CB]; */
+      /* arg_array[9].primary = &db[cp*CB]; */
       eqn_param.inputs = arg_array;
       eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, n, cp, 0, 0, CP, HW, CB);
       din_func(&eqn_param);                                                                 /* din = dout * a * gamma + b * inp + c */
@@ -356,26 +366,39 @@ void scaler_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, float *pinp, f
     for(int cb = 0; cb < CB; cb++){
       sum_X[cp*CB + cb] = 0.0f;
       sum_X2[cp*CB + cb] = 0.0f;
+      s[cp*CB + cb] = 0.0f;
+      b[cp*CB + cb] = 0.0f;
     }
   }
 
-  #pragma omp parallel for collapse(2)                          /* Parallelize over all channels */
-  for(int cp = 0; cp < CP; cp++){
-    for(int cb = 0; cb < CB; cb++){
-      float value;
-      for(int n = 0; n < N; n++){
+  #pragma omp parallel for reduction(+: sum_X[:2*CP*CB]) reduction(+: sum_X2[:2*CP*CB])       /* Parallelize over batches with multiple threads reducing to sum_X_X2 array */
+  for(int n = 0; n < N; n++){
+    for(int cp = 0; cp < CP; cp++){
+      for(int cb = 0; cb < CB; cb++){
         for(int hw = 0; hw < HW; hw++){
           sum_X[cp*CB + cb] += LIBXSMM_VLA_ACCESS(4, inp, n, cp, hw, cb, CP, HW, CB);
           sum_X2[cp*CB + cb] += (LIBXSMM_VLA_ACCESS(4, inp, n, cp, hw, cb, CP, HW, CB)*LIBXSMM_VLA_ACCESS(4, inp, n, cp, hw, cb, CP, HW, CB));
         }
       }
+    }
+  }
+
+  #pragma omp parallel for collapse(2)
+  for(int cp = 0; cp < CP; cp++){
+    for(int cb = 0; cb < CB; cb++){
       mean[cp*CB + cb] = sum_X[cp*CB + cb] / ((float)N * HW);                                           /* E[X] */
       var[cp*CB + cb] = (sum_X2[cp*CB + cb] / ((float)N * HW)) - (mean[cp*CB + cb]*mean[cp*CB + cb]);   /* var(X) = E[X^2] - (E[X])^2 */
-      s[cp*CB + cb] = 1.0f / (sqrt(var[cp*CB + cb] + eps));                                             /* s = 1/sqrt(var(X) + eps)     [CP, CB] */
+      s[cp*CB + cb] = 1.0f / ((float)sqrt(var[cp*CB + cb] + eps));                                             /* s = 1/sqrt(var(X) + eps)     [CP, CB] */
       b[cp*CB + cb] = -1 * mean[cp*CB + cb] * s[cp*CB + cb];                                            /* b = -E[X]/sqrt(var(X) + eps) [CP, CB] */
+    }
+  }
 
-      for(int n = 0; n < N; n++){                                                                       /* Data movement 2*N*CP*HW*CB */
-        for(int hw = 0; hw < HW; hw++){
+  #pragma omp parallel for
+  for(int n = 0; n < N; n++){                                                                       /* Data movement 2*N*CP*HW*CB */
+    float value;
+    for(int hw = 0; hw < HW; hw++){
+      for(int cp = 0; cp < CP; cp++){
+        for(int cb = 0; cb < CB; cb++){
           value = LIBXSMM_VLA_ACCESS(4, inp, n, cp, hw, cb, CP, HW, CB);
           value = ((value * s[cp*CB + cb]) + b[cp*CB + cb]) * LIBXSMM_VLA_ACCESS(2, gamma, cp, cb, CB) + LIBXSMM_VLA_ACCESS(2, beta, cp, cb, CB);        /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
           LIBXSMM_VLA_ACCESS(4, out, n, cp, hw, cb, CP, HW, CB) = value;
@@ -428,6 +451,9 @@ void scaler_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, 
     }
   }
 
+  /* b = (db * mean[nb] - ds) * a * a * a * scale; */
+  /* c = -b * mean[nb] - db * a * scale; */
+
   #pragma omp parallel for collapse(2)
   for (int cp = 0; cp < CP; cp++) {
     for (int cb = 0; cb < CB; cb++){
@@ -437,6 +463,7 @@ void scaler_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, float *pdout, 
       c[cp*CB + cb] = -b[cp*CB + cb] * mean[cp*CB + cb] - db[cp*CB + cb] * a[cp*CB + cb] * scale;
     }
   }
+
 
   #pragma omp parallel for
   for(int n = 0; n < N; n++){                                                             /* Parallelize over batches */           /* Data movement 3*N*CP*HW*CB */
@@ -567,10 +594,10 @@ int main( int argc, char* argv[] ) {
   libxsmm_matdiff_info norms_out;
   float *inp, *out, *dinp, *dout, *eqn_dinp, *eqn_dout, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var, sum = 0.0;
   libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_dinp, *bf16_dout, *bf16_eqn_dinp, *bf16_eqn_dout, *bf16_gamma, *bf16_beta, *bf16_eqn_out;
-  int N = 28;
-  int CP = 32;
-  int HW = 784;
-  int CB = 16;
+  long N = 28;
+  long CP = 32;
+  long HW = 784;
+  long CB = 16;
   int iters = 100;
   int datatype_mode = 0;
   libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
@@ -786,29 +813,33 @@ int main( int argc, char* argv[] ) {
 
   /* dbeta function  */
   my_eqn12 = libxsmm_matrix_eqn_create();                                                       /* dbeta [CB] = dout [HW, CB] + dbeta [CB] */
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn12, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );      /* dbeta_tmp [HW, CB] */
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn12, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );                /* dbeta_tmp [HW, CB] */
   libxsmm_matrix_eqn_push_back_unary_op(my_eqn12, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32);  /* [HW, CB] -> [CB] */
   libxsmm_matrix_eqn_push_back_arg( my_eqn12, CB, HW, ld, 3, 0, in_dt );                        /* dout [HW, CB] */
   libxsmm_matrix_eqn_push_back_arg( my_eqn12, CB, 1, 1, 5, 0, LIBXSMM_DATATYPE_F32 );           /* dbeta [CB] */
   func12 = libxsmm_dispatch_matrix_eqn( CB, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn12 );      /* dbeta [CB] */
 
   /* db new equation */
-  my_eqn13 = libxsmm_matrix_eqn_create();                                                       /* db = (dout * gamma) */
+  my_eqn13 = libxsmm_matrix_eqn_create();                                                       /* db [CB] = (dout * gamma) [HW, CB] + db [CB]*/
+  libxsmm_matrix_eqn_push_back_binary_op(my_eqn13, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );                  /* db [CB] */
   libxsmm_matrix_eqn_push_back_unary_op(my_eqn13, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32);   /* [HW, CB] -> [CB] */
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn13, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn13, CB, HW, ld, 3, 0, in_dt );                        /* dout [HW, CB] */
   libxsmm_matrix_eqn_push_back_arg( my_eqn13, CB, 1, 1, 6, 0, in_dt );                          /* gamma [CB] */
-  func13 = libxsmm_dispatch_matrix_eqn( CB, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn13 );       /* db [CB] */
+  libxsmm_matrix_eqn_push_back_arg( my_eqn13, CB, 1, 1, 9, 0, LIBXSMM_DATATYPE_F32 );           /* db [CB] */
+  func13 = libxsmm_dispatch_matrix_eqn( CB, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn13 );      /* db [CB] */
 
   /* ds new equation */
-  my_eqn14 = libxsmm_matrix_eqn_create();                                                       /* ds = ((dout * gamma) * inp) */
+  my_eqn14 = libxsmm_matrix_eqn_create();                                                       /* ds [CB] = ((dout * gamma) * inp) [HW, CB] + ds [CB] */
+  libxsmm_matrix_eqn_push_back_binary_op(my_eqn14, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );                  /* ds [CB] */
   libxsmm_matrix_eqn_push_back_unary_op(my_eqn14, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32);   /* [HW, CB] -> [CB] */
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn14, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn14, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn14, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1, LIBXSMM_DATATYPE_F32 );       /*(dout * gamma)*/
   libxsmm_matrix_eqn_push_back_arg( my_eqn14, CB, HW, ld, 3, 0, in_dt );                        /* dout [HW, CB] */
   libxsmm_matrix_eqn_push_back_arg( my_eqn14, CB, 1, 1, 6, 0, in_dt );                          /* gamma [CB] */
   libxsmm_matrix_eqn_push_back_arg( my_eqn14, CB, HW, ld, 0, 0, in_dt );                        /* inp [HW, CB] */
-  func14 = libxsmm_dispatch_matrix_eqn( CB, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn14 );       /* ds [CB] */
+  libxsmm_matrix_eqn_push_back_arg( my_eqn14, CB, 1, 1, 8, 0, LIBXSMM_DATATYPE_F32 );           /* ds [CB] */
+  func14 = libxsmm_dispatch_matrix_eqn( CB, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn14 );      /* ds [CB] */
 
   /* db old equation */
   /* my_eqn13 = libxsmm_matrix_eqn_create();                                                       /* db = (dout * gamma) */
