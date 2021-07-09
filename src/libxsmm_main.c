@@ -1490,7 +1490,8 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_SSE3:
     case LIBXSMM_AARCH64_V81:
     case LIBXSMM_AARCH64_V82:
-    case LIBXSMM_AARCH64_A64FX: {
+    case LIBXSMM_AARCH64_A64FX:
+    case LIBXSMM_AARCH64_APPL_M1: {
       target_archid = id;
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC:
@@ -1612,6 +1613,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (arch == libxsmm_stristr(arch, "a64fx"))
     {
       target_archid = LIBXSMM_AARCH64_A64FX;
+    }
+    else if (arch == libxsmm_stristr(arch, "appl_m1"))
+    {
+      target_archid = LIBXSMM_AARCH64_APPL_M1;
     }
 #endif
     else if (arch == libxsmm_stristr(arch, "generic")) {

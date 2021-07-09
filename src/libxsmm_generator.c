@@ -420,6 +420,18 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b)
 }
 
 
+LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b, unsigned int r)
+{
+  unsigned int c;
+  if (b < a && 0 != b) b = LIBXSMM_UP(a, b); /* normalize such that a <= b */
+  if (1 <= a) {
+    for (c = b; r < (c % a); c += b);
+  }
+  else c = a * b;
+  return c;
+}
+
+
 LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n32[])
 {
   unsigned int c = num, i;
@@ -512,19 +524,25 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
   else {
     result = limit;
   }
-  if (0 != is_lower && limit < product) {
-    if (result < limit) {
-      result = internal_product_limit(product, 2 * limit - 1);
+  if (0 != is_lower) {
+    if (limit < product) {
+      if (result < limit) {
+        result = internal_product_limit(product, 2 * limit - 1);
+      }
+      if (result < limit) {
+        result = product;
+      }
+      LIBXSMM_ASSERT(limit <= result);
     }
-    if (result < limit) {
-      result = product;
+    else if (0 != product) {
+      result = LIBXSMM_UP(limit, product);
     }
-    LIBXSMM_ASSERT(limit <= result);
+    else result = 0;
   }
-  if (product < result) {
+  else if (product < result) {
     result = product;
   }
-  LIBXSMM_ASSERT(result <= product);
+  LIBXSMM_ASSERT(0 != is_lower || result <= product);
   return result;
 }
 
