@@ -900,14 +900,6 @@ int main( int argc, char* argv[] ) {
     }
   }
 
-  // printf("\n mean \n");
-  // for ( i = 0; i < NB*G; ++i )
-  //   printf("%f \t", mean[i]);
-
-  // printf("\n variance \n");
-  // for ( i = 0; i < NB*G; ++i )
-  //   printf("%f \t", var[i]);
-
   /* compare */
   printf("############################################\n");
   if (datatype_mode == 0) {
