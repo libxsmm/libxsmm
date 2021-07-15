@@ -277,7 +277,8 @@ int main(/*int argc, char* argv[]*/)
     lim = 512; if (libxsmm_remainder(23, 32, &lim, NULL) != (32 * 13)) exit(EXIT_FAILURE);
     rem = 4; if (libxsmm_remainder(23, 32, NULL, &rem) != (32 * 3)) exit(EXIT_FAILURE);
     rem = 1; if (libxsmm_remainder(23, 32, &lim, &rem) != (32 * 13)) exit(EXIT_FAILURE);
-    if (libxsmm_remainder(23, 8, NULL, NULL) != (23 * 8)) exit(EXIT_FAILURE);
+    lim = 32; if (libxsmm_remainder(23, 8, &lim, NULL) != (8 * 3)) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(23, 8, NULL, NULL) != (8 * 23)) exit(EXIT_FAILURE);
     if (libxsmm_remainder(0, 32, NULL, NULL) != 0) exit(EXIT_FAILURE);
     if (libxsmm_remainder(23, 0, NULL, NULL) != 0) exit(EXIT_FAILURE);
     if (libxsmm_remainder(0, 0, NULL, NULL) != 0) exit(EXIT_FAILURE);
