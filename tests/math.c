@@ -271,7 +271,7 @@ int main(/*int argc, char* argv[]*/)
     if (libxsmm_shuffle(5) != 2) exit(EXIT_FAILURE);
   }
 
-  { /* check procedure to minimize remainder */
+  { /* check libxsmm_remainder minimizing the remainder */
     unsigned int lim, rem;
     if (libxsmm_remainder(23, 32, NULL, NULL) != (32 * 23)) exit(EXIT_FAILURE);
     lim = 512; if (libxsmm_remainder(23, 32, &lim, NULL) != (32 * 13)) exit(EXIT_FAILURE);
