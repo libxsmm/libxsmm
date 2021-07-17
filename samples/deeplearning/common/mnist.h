@@ -83,7 +83,7 @@ void FlipLong(unsigned char * ptr)
 
 void read_mnist_char(char *file_path, int num_data, int len_info, int arr_n, unsigned char data_char[][arr_n], int info_arr[])
 {
-    int i, j, k, fd;
+    int i, fd;
     unsigned char *ptr;
 
     if ((fd = open(file_path, O_RDONLY)) == -1) {
@@ -186,11 +186,13 @@ void save_image(int n, char name[])
     fputs("# Created by Image Processing\n", fp);
     fprintf(fp, "%d %d\n", width[n], height[n]);
     fprintf(fp, "%d\n", MAX_BRIGHTNESS);
-    for (y=0; y<height[n]; y++)
-        for (x=0; x<width[n]; x++)
+    for (y=0; y<height[n]; y++) {
+        for (x=0; x<width[n]; x++) {
             fputc(image[n][x][y], fp);
-        fclose(fp);
-        printf("Image was saved successfully\n");
+        }
+    }
+    fclose(fp);
+    printf("Image was saved successfully\n");
 }
 
 
