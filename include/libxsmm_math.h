@@ -65,8 +65,10 @@ LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n3
 LIBXSMM_API size_t libxsmm_shuffle(unsigned int n);
 
 /**
- * Minimizes the waste if "a" quantities can only be processed in multiples "b".
- * The remainder "r" is that ((i * b) % a) <= r with i := {1, ..., a}.
+ * Minimizes the waste, if "a" can only be processed in multiples of "b".
+ * The remainder r is such that ((i * b) % a) <= r with i := {1, ..., a}.
+ * Returns the multiple of "b" minimizing the remainder accordingly.
+ * If no remainder is given (NULL), a value of zero is assumed.
  * For example: libxsmm_remainder(23, 8, NULL, NULL) => 184.
  */
 LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b,

@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
   libxsmm_bfloat16 *input_libxsmm, *filter_libxsmm, *filter_libxsmm_sparse, *delinput_libxsmm, *delfilter_libxsmm, *output_libxsmm, *deloutput_libxsmm, *bias_libxsmm, *delbias_libxsmm;
   unsigned char *relumask_libxsmm;
   unsigned int  *sparse_idx_libxsmm;
-  int __i, __j = 0, __k = 0;
 
   naive_fullyconnected_t naive_param;
   void* scratch;
