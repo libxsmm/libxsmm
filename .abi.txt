@@ -410,6 +410,7 @@ libxsmm_release_kernel_
 libxsmm_release_scratch
 libxsmm_release_smmkernel
 libxsmm_release_wimmkernel
+libxsmm_remainder
 libxsmm_rnaz_convert_fp32_bf16
 libxsmm_rne_convert_fp32_bf16
 libxsmm_rng_create_extstate
