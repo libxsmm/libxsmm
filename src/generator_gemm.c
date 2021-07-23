@@ -15,6 +15,7 @@
 #include "generator_gemm_amx_emu.h"
 #include "generator_gemm_aarch64.h"
 #include "generator_gemm_noarch.h"
+#include "generator_gemm_m1_amx.h"
 #include "libxsmm_main.h"
 
 LIBXSMM_API
@@ -211,7 +212,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   } else if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
     libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
-    libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
+    if( libxsmm_generator_gemm_m1_amx_kernel( io_generated_code, &l_xgemm_desc_mod ) ) {
+      libxsmm_generator_gemm_aarch64_kernel( io_generated_code, &l_xgemm_desc_mod );
+    }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
