@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_opreduce_idxvecs $(OUTDIR)/eltwise_opreduce $(OUTDIR)/eltwise_binary_simple $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform
+XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_opreduce_idxvecs $(OUTDIR)/eltwise_opreduce $(OUTDIR)/eltwise_binary_simple $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform $(OUTDIR)/eltwise_unary_quantization
 .PHONY: all
 all: $(XFILES)
 
@@ -67,6 +67,9 @@ $(OUTDIR)/eltwise_unary_dropout: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_dropout
 
 $(OUTDIR)/eltwise_unary_transform: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_transform-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_unary_transform-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_unary_quantization: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_quantization-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_quantization-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
