@@ -1008,6 +1008,7 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
   }
 
   switch ( i_alu_instr ) {
+    case LIBXSMM_AARCH64_INSTR_GP_ORR_SR:
     case LIBXSMM_AARCH64_INSTR_GP_ADD_SR:
     case LIBXSMM_AARCH64_INSTR_GP_SUB_SR:
       break;
