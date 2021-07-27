@@ -937,6 +937,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_in_base2;
   unsigned int gp_reg_in_pf2;
   unsigned int gp_reg_scale_base;
+  unsigned int gp_reg_quant_sf;
 } libxsmm_mateltwise_gp_reg_mapping;
 
 /* mateltwise kernel configuration */
@@ -1043,6 +1044,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int dropout_prob_vreg;
   unsigned int dropout_invprob_vreg;
   unsigned int dropout_vreg_avxmask;
+
+  /* aux variable for quantization */
+  unsigned int quant_vreg_scf;
 
   /* Misc aux variables  */
   unsigned int neg_signs_vreg;

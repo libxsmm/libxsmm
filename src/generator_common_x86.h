@@ -462,6 +462,18 @@ void libxsmm_generator_vcvtneps2bf16_avx512( libxsmm_generated_code* io_generate
                                              const unsigned int      io_mask_1 );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtneps2int_avx512( libxsmm_generated_code* io_generated_code,
+                                            const libxsmm_datatype  i_datatype,
+                                            const unsigned int      io_vec_reg,
+                                            const unsigned int      i_scf_vec_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtint2ps_avx512( libxsmm_generated_code* io_generated_code,
+                                          const libxsmm_datatype  i_datatype,
+                                          const unsigned int      io_vec_reg,
+                                          const unsigned int      i_scf_vec_reg );
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_generated_code,
                                                 const unsigned int      i_vmove_instr,
                                                 const unsigned int      i_gp_reg_base,
