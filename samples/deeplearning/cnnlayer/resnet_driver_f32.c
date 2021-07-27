@@ -30,6 +30,7 @@
     } \
   }
 
+void print_help_message();
 void print_help_message() {
   printf(
     "Usage: ./resnet_driver_f32 iters nImg activation_format filter_format buffer_format layer_mode [layer_mode_options]...\n");
@@ -43,7 +44,9 @@ void print_help_message() {
   printf("layer_mode_options(layer_mode = 'R')        =      range_start(1-48) range_end(1-48)\n");
 }
 
+void dump_layer_params(int (*layers)[11], int index, int MB, int iters);
 void dump_layer_params(int (*layers)[11], int index, int MB, int iters) {
+  LIBXSMM_UNUSED( iters );
   printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", layers[index][0], layers[index][1], MB,
     layers[index][2], layers[index][3], layers[index][5], layers[index][4], layers[index][1] / layers[index][10],
     layers[index][0] / layers[index][10], layers[index][10]);
@@ -64,8 +67,7 @@ int main(int argc, char* argv[]) {
   char buffer_format = 'R'; /* 'R' for ring buffer, 'N' for normal buffer */
   char layer_mode = 'A'; /* 'A' for all layers, 'S' for single layer mode, 'R' for a range of layers */
   int ifw, ifh, nIfm, nOfm, pad_w_in, pad_h_in, pad_w_out, pad_h_out, kw, kh, stride, range_start, range_end;
-  double(*per_layer_time)
-    [2]; //" and then within the openmp region you would do "if (tid == 0) { l_end = libxsmm_timer_tick(); per_layer_time[j][i] = libxsmm_timer_duration(per_layer_time[j][i-1], l_end); }"
+  double(*per_layer_time)[2];
 
   int layers[48][11] = {{56, 56, 64, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
     {56, 56, 64, 256, 1, 1, 0, 0, 0, 0, 1}, {56, 56, 256, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
@@ -85,7 +87,6 @@ int main(int argc, char* argv[]) {
     {7, 7, 512, 2048, 1, 1, 0, 0, 0, 0, 1}, {7, 7, 2048, 512, 1, 1, 0, 0, 1, 1, 1}, {7, 7, 512, 512, 3, 3, 1, 1, 0, 0, 1},
     {7, 7, 512, 2048, 1, 1, 0, 0, 0, 0, 1}};
 
-
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads(); /* number of threads */
 #else
@@ -94,9 +95,7 @@ int main(int argc, char* argv[]) {
 
   unsigned long long l_start, l_end;
   double l_total = 0.0;
-  double gflop = 0.0;
   int i, j;
-  double fil_size = 0.0;
   unsigned long long max_act_size = 0;
   unsigned long long max_scratch_size = 0;
 
@@ -277,7 +276,7 @@ int main(int argc, char* argv[]) {
     unsigned long long input_act_size, output_act_size;
 
     input_act_size = MB * (ifh + 2 * pad_h_in) * (ifw + 2 * pad_w_in) * nIfm * sizeof(float);
-    if (i == 0) max_act_size = input_act_size; //MB * (ifh + 2 * pad_h_in) * (ifw + 2 * pad_w_in) * ifm * sizeof(float);
+    if (i == 0) max_act_size = input_act_size; /* MB * (ifh + 2 * pad_h_in) * (ifw + 2 * pad_w_in) * ifm * sizeof(float); */
 
 
     if (buffer_format == 'N') {
@@ -337,8 +336,6 @@ int main(int argc, char* argv[]) {
     if (output_act_size > max_act_size) max_act_size = output_act_size;
   }
 
-
-  printf("max act size %ld\n", max_act_size);
   if (buffer_format == 'R') {
     act_ring_buffer[0] = (float*)libxsmm_aligned_malloc(max_act_size, 2097152);
     init_buf(act_ring_buffer[0], max_act_size / sizeof(float), 0, 0);
