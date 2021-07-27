@@ -30,6 +30,26 @@
     } \
   }
 
+void print_help_message() {
+  printf(
+    "Usage: ./resnet_driver_f32 iters nImg activation_format filter_format buffer_format layer_mode [layer_mode_options]...\n");
+  printf("activation_format         =      'T':  (TensorFlow) or  'L' (LIBXSMM)\n");
+  printf("filter_format             =      'T':  (TensorFlow) or  'L' (LIBXSMM)\n");
+  printf("buffer_format             =      'N':  (Normal)     or  'R' (Ring)\n");
+  printf("layer_mode                =      'S':  (Single layer )     or  'R' (Range of sequential resnet layers) or  'A' (All "
+         "Resnet layers)\n");
+  printf(
+    "layer_mode_options(layer_mode = 'S')        =      ifh ifw nIfm nOfm kw kw pad_w_in pad_h_in pad_w_out pad_h_out stride\n");
+  printf("layer_mode_options(layer_mode = 'R')        =      range_start(1-48) range_end(1-48)\n");
+}
+
+void dump_layer_params(int (*layers)[11], int index, int MB, int iters) {
+  printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", layers[index][0], layers[index][1], MB,
+    layers[index][2], layers[index][3], layers[index][5], layers[index][4], layers[index][1] / layers[index][10],
+    layers[index][0] / layers[index][10], layers[index][10]);
+}
+
+
 int main(int argc, char* argv[]) {
   void* scratch = NULL;
   size_t scratch_size = 0;
@@ -39,7 +59,13 @@ int main(int argc, char* argv[]) {
   int warm_up_iters = 10;
   int iters = 10; /* repetitions of benchmark */
   int MB = 1; /* mini-batch size, "N" */
-
+  char activation_format = 'T'; /* 'T' for TensorFlow(NHWC) and 'L' for LIBXSMM(NCbHWC) */
+  char filter_format = 'T'; /* 'T' for TensorFlow(RSCK) and 'L' for LIBXSMM (KbCbRSCK) */
+  char buffer_format = 'R'; /* 'R' for ring buffer, 'N' for normal buffer */
+  char layer_mode = 'A'; /* 'A' for all layers, 'S' for single layer mode, 'R' for a range of layers */
+  int ifw, ifh, nIfm, nOfm, pad_w_in, pad_h_in, pad_w_out, pad_h_out, kw, kh, stride, range_start, range_end;
+  double(*per_layer_time)
+    [2]; //" and then within the openmp region you would do "if (tid == 0) { l_end = libxsmm_timer_tick(); per_layer_time[j][i] = libxsmm_timer_duration(per_layer_time[j][i-1], l_end); }"
 
   int layers[48][11] = {{56, 56, 64, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
     {56, 56, 64, 256, 1, 1, 0, 0, 0, 0, 1}, {56, 56, 256, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
@@ -59,6 +85,7 @@ int main(int argc, char* argv[]) {
     {7, 7, 512, 2048, 1, 1, 0, 0, 0, 0, 1}, {7, 7, 2048, 512, 1, 1, 0, 0, 1, 1, 1}, {7, 7, 512, 512, 3, 3, 1, 1, 0, 0, 1},
     {7, 7, 512, 2048, 1, 1, 0, 0, 0, 0, 1}};
 
+
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads(); /* number of threads */
 #else
@@ -71,57 +98,148 @@ int main(int argc, char* argv[]) {
   int i, j;
   double fil_size = 0.0;
   unsigned long long max_act_size = 0;
+  unsigned long long max_scratch_size = 0;
 
-  libxsmm_dnn_fullyconnected_desc fullyconnected_desc;
-  libxsmm_dnn_fullyconnected** libxsmm_fc_layer;
-  libxsmm_dnn_optimizer_desc optimizer_desc;
-  libxsmm_dnn_optimizer** libxsmm_opt;
-  libxsmm_dnn_softmaxloss_desc softmaxloss_desc;
-  libxsmm_dnn_softmaxloss* libxsmm_softmax;
-  libxsmm_dnn_tensor** libxsmm_delact;
-  libxsmm_dnn_tensor** libxsmm_fil;
-  libxsmm_dnn_tensor** libxsmm_delfil;
-  libxsmm_dnn_tensor** libxsmm_bias;
-  libxsmm_dnn_tensor** libxsmm_delbias;
-  libxsmm_dnn_tensor** libxsmm_relumask;
-  libxsmm_dnn_tensor* libxsmm_label;
+  ifw = 56;
+  ifh = 56;
+  nIfm = 64;
+  nOfm = 64;
+  pad_w_in = 0;
+  pad_h_in = 0;
+  pad_w_out = 1;
+  pad_h_out = 1;
+  kw = 1;
+  kh = 1;
+  stride = 1;
+  range_start = 1;
+  range_end = 48;
+
+
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
   libxsmm_dnn_layer** libxsmm_conv_layers;
-  float* filter_rsck[48];
-  float* act_ring_buffer[2];
-  libxsmm_dnn_tensor* libxsmm_act[2];
-  libxsmm_dnn_tensor* libxsmm_filter[48];
 
-  libxsmm_conv_layers = (libxsmm_dnn_layer**)malloc(48 * sizeof(libxsmm_dnn_layer*));
+
+  if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
+    print_help_message();
+    return 0;
+  }
+
+
+  i = 1;
+
+
+  if (argc > i) iters = atoi(argv[i++]);
+  if (argc > i) MB = atoi(argv[i++]);
+  if (argc > i) activation_format = *(argv[i++]);
+  if (activation_format != 'T' && activation_format != 'L') {
+    printf("Wrong number and/or type of arguments\n");
+    print_help_message();
+    return 0;
+  }
+
+  if (argc > i) filter_format = *(argv[i++]);
+  if (filter_format != 'T' && filter_format != 'L') {
+    printf("Wrong number and/or type of arguments\n");
+    print_help_message();
+    return 0;
+  }
+
+  if (argc > i) buffer_format = *(argv[i++]);
+  if (buffer_format != 'N' && buffer_format != 'R') {
+    printf("Wrong number and/or type of arguments\n");
+    print_help_message();
+    return 0;
+  }
+
+
+  if (argc > i) layer_mode = *(argv[i++]);
+  if (layer_mode != 'S' && layer_mode != 'R' && layer_mode != 'A') {
+    printf("Wrong number and/or type of arguments\n");
+    print_help_message();
+    return 0;
+  }
+  if (argc > i) {
+    if (layer_mode == 'R') {
+      range_start = atoi(argv[i++]);
+      if (argc > i)
+        range_end = atoi(argv[i++]);
+      else
+        range_end = range_start;
+      if (range_start > 48 || range_start < 1 || range_end < range_start || range_end > 48) {
+        printf("Wrong number and/or type of arguments\n");
+        printf(
+          "range_start and range_end should be within 1 and 48 inclusive with range_end greater than or equal to range_start\n");
+        print_help_message();
+        return 0;
+      }
+    }
+    else if (layer_mode == 'S') {
+      range_start = 1;
+      range_end = 1;
+      if (argc > i) ifw = atoi(argv[i++]);
+      if (argc > i) ifh = atoi(argv[i++]);
+      if (argc > i) nIfm = atoi(argv[i++]);
+      if (argc > i) nOfm = atoi(argv[i++]);
+      if (argc > i) kw = atoi(argv[i++]);
+      if (argc > i) kh = atoi(argv[i++]);
+      if (argc > i) pad_w_in = atoi(argv[i++]);
+      if (argc > i) pad_h_in = atoi(argv[i++]);
+      if (argc > i) pad_w_out = atoi(argv[i++]);
+      if (argc > i) pad_h_out = atoi(argv[i++]);
+      if (argc > i) stride = atoi(argv[i++]);
+    }
+  }
+
+  float** filter;
+  float** act_ring_buffer;
+  libxsmm_dnn_tensor** libxsmm_act;
+  libxsmm_dnn_tensor** libxsmm_filter;
+
+  per_layer_time = (double(*)[2])malloc((range_end - range_start + 1) * (sizeof(double[2])));
+
+
+  libxsmm_conv_layers = (libxsmm_dnn_layer**)malloc((range_end - range_start + 1) * sizeof(libxsmm_dnn_layer*));
+  filter = (float**)malloc((range_end - range_start + 1) * sizeof(float*));
+  libxsmm_filter = (libxsmm_dnn_tensor**)malloc((range_end - range_start + 1) * sizeof(libxsmm_dnn_tensor*));
+
+  if (buffer_format == 'R') {
+    act_ring_buffer = (float**)malloc(2 * sizeof(float*));
+    libxsmm_act = (libxsmm_dnn_tensor**)malloc(2 * sizeof(libxsmm_dnn_tensor*));
+  }
+  else {
+    act_ring_buffer = (float**)malloc(2 * (range_end - range_start + 1) * sizeof(float*));
+    libxsmm_act = (libxsmm_dnn_tensor**)malloc(2 * (range_end - range_start + 1) * sizeof(libxsmm_dnn_tensor*));
+  }
 
   libxsmm_rng_set_seed(1);
-  for (i = 0; i < 48; ++i) {
-    int ifh = layers[i][0];
-    int ifw = layers[i][1];
-    int ifm = layers[i][2];
-    int ofm = layers[i][3];
-    int kh = layers[i][4];
-    int kw = layers[i][5];
-    int pad_h_in = layers[i][6];
-    int pad_w_in = layers[i][7];
-    int pad_h_out = layers[i][8];
-    int pad_w_out = layers[i][9];
-    int stride = layers[i][10];
-    libxsmm_dnn_conv_desc conv_desc;
-
+  for (i = range_start - 1; i <= range_end - 1; ++i) {
+    if (layer_mode != 'S') {
+      ifh = layers[i][0];
+      ifw = layers[i][1];
+      nIfm = layers[i][2];
+      nOfm = layers[i][3];
+      kh = layers[i][4];
+      kw = layers[i][5];
+      pad_h_in = layers[i][6];
+      pad_w_in = layers[i][7];
+      pad_h_out = layers[i][8];
+      pad_w_out = layers[i][9];
+      stride = layers[i][10];
+    }
     printf("\n");
     printf("##########################################\n");
     printf("#    Setting Up - (NHWC/RSCK-Storage)    #\n");
     printf("##########################################\n");
 
+    libxsmm_dnn_conv_desc conv_desc;
     /* setup LIBXSMM handle */
     conv_desc.N = MB;
-    conv_desc.C = ifm;
+    conv_desc.C = nIfm;
     conv_desc.H = ifh;
     conv_desc.W = ifw;
-    conv_desc.K = ofm;
+    conv_desc.K = nOfm;
     conv_desc.R = kh;
     conv_desc.S = kw;
     conv_desc.u = stride;
@@ -134,101 +252,165 @@ int main(int argc, char* argv[]) {
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
     conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
-    conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
-    conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_RSCK;
-#ifdef USE_OVERWRITE
+
+    if (activation_format == 'T')
+      conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
+    else
+      conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+
+
+    if (filter_format == 'T')
+      conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_RSCK;
+    else
+      conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
-#else
-    conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
-#endif
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
     conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
-    libxsmm_conv_layers[i] = libxsmm_dnn_create_conv_layer(conv_desc, &status);
+    libxsmm_conv_layers[i - range_start + 1] = libxsmm_dnn_create_conv_layer(conv_desc, &status);
     CHKERR_LIBXSMM_DNN(status);
-    filter_rsck[i] = (float*)libxsmm_aligned_malloc(ofm * ifm * kh * kw * sizeof(float), 2097152);
-    init_buf(filter_rsck[i], ofm * ifm * kh * kw, 0, 0);
+    filter[i - range_start + 1] = (float*)libxsmm_aligned_malloc(nOfm * nIfm * kh * kw * sizeof(float), 2097152);
+    init_buf(filter[i - range_start + 1], nOfm * nIfm * kh * kw, 0, 0);
 
-    unsigned long long layer_act_size;
+    unsigned long long input_act_size, output_act_size;
 
-    if (i == 0) {
-      max_act_size = MB * (ifh + 2 * pad_h_in) * (ifw + 2 * pad_w_in) * ifm * sizeof(float);
+    input_act_size = MB * (ifh + 2 * pad_h_in) * (ifw + 2 * pad_w_in) * nIfm * sizeof(float);
+    if (i == 0) max_act_size = input_act_size; //MB * (ifh + 2 * pad_h_in) * (ifw + 2 * pad_w_in) * ifm * sizeof(float);
 
-      printf("SIZE Input activations  %i (%dx%dx%dx%d): %10.2f MiB\n", i, MB, ifh + 2 * pad_h_in, ifw + 2 * pad_w_in, ifm,
-        (double)(max_act_size) / (1024.0 * 1024.0));
+
+    if (buffer_format == 'N') {
+      act_ring_buffer[2 * (i - range_start + 1)] = (float*)libxsmm_aligned_malloc(input_act_size, 2097152);
+      init_buf(act_ring_buffer[2 * (i - range_start + 1)], input_act_size / sizeof(float), 0, 0);
     }
 
-    layer_act_size = MB * (ifh / stride + 2 * pad_h_out) * (ifw / stride + 2 * pad_w_out) * ofm * sizeof(float);
 
-    printf("SIZE Output Activations  %i (%dx%dx%dx%d): %10.2f MiB\n", i, MB, ifh / stride + 2 * pad_h_out,
-      ifw / stride + 2 * pad_w_out, ofm, (double)(layer_act_size) / (1024.0 * 1024.0));
+    printf("SIZE Input activations  %i (%dx%dx%dx%d): %10.2f MiB\n", i - range_start + 1, MB, ifh + 2 * pad_h_in,
+      ifw + 2 * pad_w_in, nIfm, (double)(input_act_size) / (1024.0 * 1024.0));
 
-    if (layer_act_size > max_act_size) max_act_size = layer_act_size;
+    output_act_size = MB * (ifh / stride + 2 * pad_h_out) * (ifw / stride + 2 * pad_w_out) * nOfm * sizeof(float);
+
+    if (buffer_format == 'N') {
+      act_ring_buffer[2 * (i - range_start + 1) + 1] = (float*)libxsmm_aligned_malloc(output_act_size, 2097152);
+      zero_buf(act_ring_buffer[2 * (i - range_start + 1) + 1], output_act_size / sizeof(float));
+    }
+    printf("SIZE Output Activations  %i (%dx%dx%dx%d): %10.2f MiB\n", i - range_start + 1, MB, ifh / stride + 2 * pad_h_out,
+      ifw / stride + 2 * pad_w_out, nOfm, (double)(output_act_size) / (1024.0 * 1024.0));
+
+    if (buffer_format == 'N') {
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_INPUT, &status);
+      CHKERR_LIBXSMM_DNN(status);
+      libxsmm_act[2 * (i - range_start + 1)] = libxsmm_dnn_link_tensor(
+        libxsmm_layout, act_ring_buffer[2 * (i - range_start + 1)], &status);
+      CHKERR_LIBXSMM_DNN(status);
+      libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
+
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_OUTPUT, &status);
+      CHKERR_LIBXSMM_DNN(status);
+      libxsmm_act[2 * (i - range_start + 1) + 1] = libxsmm_dnn_link_tensor(
+        libxsmm_layout, act_ring_buffer[2 * (i - range_start + 1) + 1], &status);
+      CHKERR_LIBXSMM_DNN(status);
+      libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
+
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_FILTER, &status);
+      CHKERR_LIBXSMM_DNN(status);
+      libxsmm_filter[i - range_start + 1] = libxsmm_dnn_link_tensor(libxsmm_layout, filter[i - range_start + 1], &status);
+      CHKERR_LIBXSMM_DNN(status);
+      libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
+
+      /* bind buffers and filter to handle */
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor(
+        libxsmm_conv_layers[i - range_start + 1], libxsmm_act[2 * (i - range_start + 1)], LIBXSMM_DNN_REGULAR_INPUT));
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor(
+        libxsmm_conv_layers[i - range_start + 1], libxsmm_act[2 * (i - range_start + 1) + 1], LIBXSMM_DNN_REGULAR_OUTPUT));
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor(
+        libxsmm_conv_layers[i - range_start + 1], libxsmm_filter[i - range_start + 1], LIBXSMM_DNN_REGULAR_FILTER));
+
+      /* let's allocate and bind scratch */
+      scratch_size = libxsmm_dnn_get_scratch_size(libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_COMPUTE_KIND_ALL, &status);
+      CHKERR_LIBXSMM_DNN(status);
+    }
+
+
+    if (scratch_size > max_scratch_size) max_scratch_size = scratch_size;
+    if (output_act_size > max_act_size) max_act_size = output_act_size;
   }
+
 
   printf("max act size %ld\n", max_act_size);
-  act_ring_buffer[0] = (float*)libxsmm_aligned_malloc(max_act_size, 2097152);
-  init_buf(act_ring_buffer[0], max_act_size / sizeof(float), 0, 0);
-  act_ring_buffer[1] = (float*)libxsmm_aligned_malloc(max_act_size, 2097152);
-  zero_buf(act_ring_buffer[1], max_act_size / sizeof(float));
+  if (buffer_format == 'R') {
+    act_ring_buffer[0] = (float*)libxsmm_aligned_malloc(max_act_size, 2097152);
+    init_buf(act_ring_buffer[0], max_act_size / sizeof(float), 0, 0);
+    act_ring_buffer[1] = (float*)libxsmm_aligned_malloc(max_act_size, 2097152);
+    zero_buf(act_ring_buffer[1], max_act_size / sizeof(float));
 
-  for (i = 0; i < 48; ++i) {
-    /* setup LIBXSMM buffers */
-    if (i % 2 == 0) {
-      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i], LIBXSMM_DNN_INPUT, &status);
+    for (i = range_start - 1; i <= range_end - 1; ++i) {
+      /* setup LIBXSMM buffers */
+      if (i % 2 == 0) {
+        libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_INPUT, &status);
+        CHKERR_LIBXSMM_DNN(status);
+        libxsmm_act[0] = libxsmm_dnn_link_tensor(libxsmm_layout, act_ring_buffer[0], &status);
+        CHKERR_LIBXSMM_DNN(status);
+        libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
+
+        libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(
+          libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_OUTPUT, &status);
+        CHKERR_LIBXSMM_DNN(status);
+        libxsmm_act[1] = libxsmm_dnn_link_tensor(libxsmm_layout, act_ring_buffer[1], &status);
+        CHKERR_LIBXSMM_DNN(status);
+        libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
+      }
+      else {
+        libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_INPUT, &status);
+        CHKERR_LIBXSMM_DNN(status);
+        libxsmm_act[1] = libxsmm_dnn_link_tensor(libxsmm_layout, act_ring_buffer[1], &status);
+        CHKERR_LIBXSMM_DNN(status);
+        libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
+
+        libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(
+          libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_OUTPUT, &status);
+        CHKERR_LIBXSMM_DNN(status);
+        libxsmm_act[0] = libxsmm_dnn_link_tensor(libxsmm_layout, act_ring_buffer[0], &status);
+        CHKERR_LIBXSMM_DNN(status);
+        libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
+      }
+
+
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_FILTER, &status);
       CHKERR_LIBXSMM_DNN(status);
-      libxsmm_act[0] = libxsmm_dnn_link_tensor(libxsmm_layout, act_ring_buffer[0], &status);
+      libxsmm_filter[i - range_start + 1] = libxsmm_dnn_link_tensor(libxsmm_layout, filter[i - range_start + 1], &status);
       CHKERR_LIBXSMM_DNN(status);
       libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
 
-      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i], LIBXSMM_DNN_OUTPUT, &status);
-      CHKERR_LIBXSMM_DNN(status);
-      libxsmm_act[1] = libxsmm_dnn_link_tensor(libxsmm_layout, act_ring_buffer[1], &status);
-      CHKERR_LIBXSMM_DNN(status);
-      libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
+      if (i % 2 == 0) {
+        /* bind buffers and filter to handle */
+        CHKERR_LIBXSMM_DNN(
+          libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i - range_start + 1], libxsmm_act[0], LIBXSMM_DNN_REGULAR_INPUT));
+        CHKERR_LIBXSMM_DNN(
+          libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i - range_start + 1], libxsmm_act[1], LIBXSMM_DNN_REGULAR_OUTPUT));
+      }
+      else {
+        /* bind buffers and filter to handle */
+        CHKERR_LIBXSMM_DNN(
+          libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i - range_start + 1], libxsmm_act[1], LIBXSMM_DNN_REGULAR_INPUT));
+        CHKERR_LIBXSMM_DNN(
+          libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i - range_start + 1], libxsmm_act[0], LIBXSMM_DNN_REGULAR_OUTPUT));
+      }
+      CHKERR_LIBXSMM_DNN(
+        libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i - range_start + 1], libxsmm_filter[i], LIBXSMM_DNN_REGULAR_FILTER));
     }
-    else {
-      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i], LIBXSMM_DNN_INPUT, &status);
-      CHKERR_LIBXSMM_DNN(status);
-      libxsmm_act[1] = libxsmm_dnn_link_tensor(libxsmm_layout, act_ring_buffer[1], &status);
-      CHKERR_LIBXSMM_DNN(status);
-      libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
-
-      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i], LIBXSMM_DNN_OUTPUT, &status);
-      CHKERR_LIBXSMM_DNN(status);
-      libxsmm_act[0] = libxsmm_dnn_link_tensor(libxsmm_layout, act_ring_buffer[0], &status);
-      CHKERR_LIBXSMM_DNN(status);
-      libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
-    }
-
-
-    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout(libxsmm_conv_layers[i], LIBXSMM_DNN_FILTER, &status);
-    CHKERR_LIBXSMM_DNN(status);
-    libxsmm_filter[i] = libxsmm_dnn_link_tensor(libxsmm_layout, filter_rsck[i], &status);
-    CHKERR_LIBXSMM_DNN(status);
-    libxsmm_dnn_destroy_tensor_datalayout(libxsmm_layout);
-
-    if (i % 2 == 0) {
-      /* bind buffers and filter to handle */
-      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i], libxsmm_act[0], LIBXSMM_DNN_REGULAR_INPUT));
-      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i], libxsmm_act[1], LIBXSMM_DNN_REGULAR_OUTPUT));
-    }
-    else {
-      /* bind buffers and filter to handle */
-      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i], libxsmm_act[1], LIBXSMM_DNN_REGULAR_INPUT));
-      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i], libxsmm_act[0], LIBXSMM_DNN_REGULAR_OUTPUT));
-    }
-    CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor(libxsmm_conv_layers[i], libxsmm_filter[i], LIBXSMM_DNN_REGULAR_FILTER));
-
-    /* let's allocate and bind scratch */
-    scratch_size = libxsmm_dnn_get_scratch_size(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_ALL, &status);
-    CHKERR_LIBXSMM_DNN(status);
-    scratch = libxsmm_aligned_scratch(scratch_size, 2097152);
-    CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_scratch(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch));
-    /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
-    init_buf((float*)scratch, scratch_size / 4, 0, 0);
   }
+
+
+  /* let's allocate and bind scratch */
+  scratch = libxsmm_aligned_scratch(max_scratch_size, 2097152);
+  init_buf((float*)scratch, scratch_size / 4, 0, 0);
+
+  for (i = range_start - 1; i <= range_end - 1; ++i) {
+    CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_scratch(libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch));
+  }
+
 
   printf("Warming up..\n");
 
@@ -242,7 +424,7 @@ int main(int argc, char* argv[]) {
     const int tid = 0;
 #endif
     for (j = 0; j < warm_up_iters; ++j) {
-      for (i = 0; i < 48; ++i) {
+      for (i = 0; i < range_end - range_start + 1; ++i) {
         libxsmm_dnn_execute_st(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
       }
     }
@@ -253,6 +435,8 @@ int main(int argc, char* argv[]) {
   printf("#   Performance - FWD (NHWC/RSCK)   #\n");
   printf("##########################################\n");
   l_start = libxsmm_timer_tick();
+
+
 #if defined(_OPENMP)
 #  pragma omp parallel private(i, j)
 #endif
@@ -263,7 +447,7 @@ int main(int argc, char* argv[]) {
     const int tid = 0;
 #endif
     for (j = 0; j < iters; ++j) {
-      for (i = 0; i < 48; ++i) {
+      for (i = 0; i < range_end - range_start + 1; ++i) {
         libxsmm_dnn_execute_st(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
       }
     }
@@ -273,28 +457,52 @@ int main(int argc, char* argv[]) {
   double average_inference_time = (double)(l_total / iters);
 
 
-  for (j = 0; j < 48; ++j) {
-    l_start = libxsmm_timer_tick();
-    for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
-#  pragma omp parallel
+#  pragma omp parallel private(i, j)
 #endif
-      {
+  {
 #if defined(_OPENMP)
-        const int tid = omp_get_thread_num();
+    const int tid = omp_get_thread_num();
 #else
-        const int tid = 0;
+    const int tid = 0;
 #endif
+
+
+    for (j = 0; j < range_end - range_start + 1; ++j) {
+      if (tid == 0) {
+        per_layer_time[j][0] = libxsmm_timer_tick();
+      }
+      for (i = 1; i < iters + 1; ++i) {
         libxsmm_dnn_execute_st(libxsmm_conv_layers[j], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
       }
+
+      if (tid == 0) {
+        l_end = libxsmm_timer_tick();
+        per_layer_time[j][1] = libxsmm_timer_duration(per_layer_time[j][0], l_end);
+      }
     }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    double flops = (double)MB * (double)layers[j][2] * (double)layers[j][3] * (double)(layers[j][0] / layers[j][10]) *
-                   (double)(layers[j][1] / layers[j][10]) * (double)(2 * layers[j][4] * layers[j][5]) * (double)iters;
-    printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", layers[j][1], layers[j][0], MB,
-      layers[j][2], layers[j][3], layers[j][4], layers[j][5], layers[j][0] / layers[j][10], layers[j][1] / layers[j][10],
-      layers[j][10]);
+  }
+
+
+  for (j = 0; j < range_end - range_start + 1; ++j) {
+    double l_total = per_layer_time[j][1];
+
+    double flops;
+
+    if (layer_mode == 'S') {
+      flops = (double)MB * (double)nIfm * (double)nOfm * (double)(ifw / stride) * (double)(ifh / stride) * (double)(2 * kw * kh) *
+              (double)iters;
+      printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", ifw, ifh, MB, nIfm, nOfm, kh, kw,
+        ifh / stride, ifw / stride, stride);
+    }
+    else {
+      flops = (double)MB * (double)layers[j + range_start - 1][2] * (double)layers[j + range_start - 1][3] *
+              (double)(layers[j + range_start - 1][0] / layers[j + range_start - 1][10]) *
+              (double)(layers[j + range_start - 1][1] / layers[j + range_start - 1][10]) *
+              (double)(2 * layers[j + range_start - 1][4] * layers[j + range_start - 1][5]) * (double)iters;
+
+      dump_layer_params((int(*)[11])layers, j + range_start - 1, MB, iters);
+    }
     printf("PARAMS: ITERS:%d\n", iters);
     printf("Threads:%d\n", nThreads);
     printf("GFLOP for layer%d (NHWC,RSCK)  = %.5g\n", j, flops * 1e-9 / (double)iters);
@@ -306,7 +514,7 @@ int main(int argc, char* argv[]) {
   printf("\nAverage Inference time = %.5gs\n", average_inference_time);
 
 
-  for (i = 0; i < 48; ++i) {
+  for (i = 0; i < range_end - range_start + 1; ++i) {
     /* clean-up */
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_release_scratch(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_ALL));
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_release_tensor(libxsmm_conv_layers[i], LIBXSMM_DNN_REGULAR_INPUT));
@@ -315,23 +523,38 @@ int main(int argc, char* argv[]) {
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_conv_layer(libxsmm_conv_layers[i]));
   }
 
-  for (i = 0; i < 48; ++i) {
+  for (i = 0; i < range_end - range_start + 1; ++i) {
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_tensor(libxsmm_filter[i]));
   }
 
+  if (buffer_format == 'R') {
+    CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_tensor(libxsmm_act[0]));
+    CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_tensor(libxsmm_act[1]));
 
-  CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_tensor(libxsmm_act[0]));
-  CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_tensor(libxsmm_act[1]));
+    libxsmm_free(act_ring_buffer[0]);
+    libxsmm_free(act_ring_buffer[1]);
+  }
+  else {
+    for (i = 0; i < range_end - range_start + 1; ++i) {
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_tensor(libxsmm_act[2 * i]));
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_tensor(libxsmm_act[2 * i + 1]));
+      libxsmm_free(act_ring_buffer[2 * i]);
+      libxsmm_free(act_ring_buffer[2 * i + 1]);
+    }
+  }
 
   /* deallocate data */
   libxsmm_free(scratch);
-  for (i = 0; i < 48; ++i) {
-    libxsmm_free(filter_rsck[i]);
+  for (i = 0; i < range_end - range_start + 1; ++i) {
+    libxsmm_free(filter[i]);
   }
-  libxsmm_free(act_ring_buffer[0]);
-  libxsmm_free(act_ring_buffer[1]);
 
-
+  free(libxsmm_filter);
+  free(filter);
+  free(act_ring_buffer);
+  free(per_layer_time);
+  free(libxsmm_act);
+  free(libxsmm_conv_layers);
   /* some empty lines at the end */
   printf("\n\n\n");
 
