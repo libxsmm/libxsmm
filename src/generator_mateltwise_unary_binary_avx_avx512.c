@@ -627,7 +627,7 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
         }
 
         /* If compute is in F32 and output is BF16 (or input is F32 and output is BF16), then downconvert BF16 -> FP32 */
-        if ( (cur_vreg == cur_vreg_real) ) {
+        if ( cur_vreg == cur_vreg_real ) {
           if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
                LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ) {
             if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX ) {
