@@ -498,7 +498,7 @@ int main(int argc, char* argv[]) {
       double l_total = per_layer_time[i][0][1];
       double l_min = l_total;
       double l_max = l_total;
-      for (int j = 1; j < iters; ++j) {
+      for (j = 1; j < iters; ++j) {
         l_total += per_layer_time[i][j][1];
         if (l_min > per_layer_time[i][j][1])
           l_min = per_layer_time[i][j][1];
