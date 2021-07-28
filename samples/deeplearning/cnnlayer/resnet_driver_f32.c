@@ -39,18 +39,28 @@ void print_help_message() {
   printf("buffer_format             =      'N':  (Normal)     or  'R' (Ring)\n");
   printf("layer_mode                =      'S':  (Single layer )     or  'R' (Range of sequential resnet layers) or  'A' (All "
          "Resnet layers)\n");
-  printf(
-    "layer_mode_options(layer_mode = 'S')        =      ifh ifw nIfm nOfm kw kw pad_w_in pad_h_in pad_w_out pad_h_out stride\n");
+  printf("layer_mode_options(layer_mode = 'S')        =      ifh ifw nIfm nOfm kw kw pad_w_in pad_h_in pad_w_out pad_h_out stride\n");
   printf("layer_mode_options(layer_mode = 'R')        =      range_start(1-48) range_end(1-48)\n");
 }
 
-void dump_layer_params(int (*layers)[11], int index, int MB, int iters);
-void dump_layer_params(int (*layers)[11], int index, int MB, int iters) {
-  LIBXSMM_UNUSED( iters );
+void dump_layer_params(int (*layers)[11], int index, int MB);
+void dump_layer_params(int (*layers)[11], int index, int MB) {
   printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", layers[index][0], layers[index][1], MB,
     layers[index][2], layers[index][3], layers[index][5], layers[index][4], layers[index][1] / layers[index][10],
     layers[index][0] / layers[index][10], layers[index][10]);
 }
+
+
+void write_perf_to_csv_file(int layer, FILE* f, double min_time, double max_time, double average_time, double flops, int ifw,
+int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride);
+
+void write_perf_to_csv_file(int layer, FILE* f, double min_time, double max_time, double average_time, double flops, int ifw,
+  int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride) {
+  fprintf(f, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f\n", layer, nImg, nOfm, nIfm, ifh, ifw, kh, kw, stride, min_time, max_time,
+    average_time, flops);
+}
+
+
 
 
 int main(int argc, char* argv[]) {
@@ -67,7 +77,7 @@ int main(int argc, char* argv[]) {
   char buffer_format = 'R'; /* 'R' for ring buffer, 'N' for normal buffer */
   char layer_mode = 'A'; /* 'A' for all layers, 'S' for single layer mode, 'R' for a range of layers */
   int ifw, ifh, nIfm, nOfm, pad_w_in, pad_h_in, pad_w_out, pad_h_out, kw, kh, stride, range_start, range_end;
-  double(*per_layer_time)[2];
+  double(**per_layer_time)[2];
 
   int layers[48][11] = {{56, 56, 64, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
     {56, 56, 64, 256, 1, 1, 0, 0, 0, 0, 1}, {56, 56, 256, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
@@ -195,9 +205,13 @@ int main(int argc, char* argv[]) {
   float** act_ring_buffer;
   libxsmm_dnn_tensor** libxsmm_act;
   libxsmm_dnn_tensor** libxsmm_filter;
+  FILE* f;
+  per_layer_time = (double(**)[2])malloc((range_end - range_start + 1) * (sizeof(double(*)[2])));
 
-  per_layer_time = (double(*)[2])malloc((range_end - range_start + 1) * (sizeof(double[2])));
+  for (i = 0; i < range_end - range_start + 1; ++i) per_layer_time[i] = (double(*)[2])malloc(iters * (sizeof(double[2])));
 
+  f = fopen("results.csv", "w");
+  fprintf(f, "layer,N,K,C,H,W,R,S,stride,min time,max time,average time,flops\n");
 
   libxsmm_conv_layers = (libxsmm_dnn_layer**)malloc((range_end - range_start + 1) * sizeof(libxsmm_dnn_layer*));
   filter = (float**)malloc((range_end - range_start + 1) * sizeof(float*));
@@ -453,7 +467,6 @@ int main(int argc, char* argv[]) {
   l_total = libxsmm_timer_duration(l_start, l_end);
   double average_inference_time = (double)(l_total / iters);
 
-
 #if defined(_OPENMP)
 #  pragma omp parallel private(i, j)
 #endif
@@ -464,48 +477,66 @@ int main(int argc, char* argv[]) {
     const int tid = 0;
 #endif
 
+    for (j = 0; j < iters; ++j) {
+      for (i = 0; i < range_end - range_start + 1; ++i) {
+        if (tid == 0) {
+          per_layer_time[i][j][0] = libxsmm_timer_tick();
+        }
+        libxsmm_dnn_execute_st(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
 
-    for (j = 0; j < range_end - range_start + 1; ++j) {
-      if (tid == 0) {
-        per_layer_time[j][0] = libxsmm_timer_tick();
-      }
-      for (i = 1; i < iters + 1; ++i) {
-        libxsmm_dnn_execute_st(libxsmm_conv_layers[j], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
-      }
-
-      if (tid == 0) {
-        l_end = libxsmm_timer_tick();
-        per_layer_time[j][1] = libxsmm_timer_duration(per_layer_time[j][0], l_end);
+        if (tid == 0) {
+          l_end = libxsmm_timer_tick();
+          per_layer_time[i][j][1] = libxsmm_timer_duration(per_layer_time[i][j][0], l_end);
+        }
       }
     }
   }
 
 
-  for (j = 0; j < range_end - range_start + 1; ++j) {
-    double l_total = per_layer_time[j][1];
+  for (i = 0; i < range_end - range_start + 1; ++i) {
+    if (iters > 0) {
+      double l_total = per_layer_time[i][0][1];
+      double l_min = l_total;
+      double l_max = l_total;
+      for (int j = 1; j < iters; ++j) {
+        l_total += per_layer_time[i][j][1];
+        if (l_min > per_layer_time[i][j][1])
+          l_min = per_layer_time[i][j][1];
+        if (l_max < per_layer_time[i][j][1])
+          l_max = per_layer_time[i][j][1];
+      }
 
-    double flops;
+      double flops;
 
-    if (layer_mode == 'S') {
+      if (layer_mode == 'S') {
+        printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", ifw, ifh, MB, nIfm, nOfm, kh, kw,
+          ifh / stride, ifw / stride, stride);
+      }
+      else {
+        ifw = layers[i + range_start - 1][0];
+        ifh = layers[i + range_start - 1][1];
+        nIfm = layers[i + range_start - 1][2];
+        nOfm = layers[i + range_start - 1][3];
+        kw = layers[i + range_start - 1][4];
+        kh = layers[i + range_start - 1][5];
+        stride = layers[i + range_start - 1][10];
+        dump_layer_params((int(*)[11])layers, i + range_start - 1, MB);
+      }
       flops = (double)MB * (double)nIfm * (double)nOfm * (double)(ifw / stride) * (double)(ifh / stride) * (double)(2 * kw * kh) *
               (double)iters;
-      printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", ifw, ifh, MB, nIfm, nOfm, kh, kw,
-        ifh / stride, ifw / stride, stride);
-    }
-    else {
-      flops = (double)MB * (double)layers[j + range_start - 1][2] * (double)layers[j + range_start - 1][3] *
-              (double)(layers[j + range_start - 1][0] / layers[j + range_start - 1][10]) *
-              (double)(layers[j + range_start - 1][1] / layers[j + range_start - 1][10]) *
-              (double)(2 * layers[j + range_start - 1][4] * layers[j + range_start - 1][5]) * (double)iters;
 
-      dump_layer_params((int(*)[11])layers, j + range_start - 1, MB, iters);
+      printf("l_total:%f\n", l_total);
+      printf("PARAMS: ITERS:%d\n", iters);
+      printf("Threads:%d\n", nThreads);
+      printf("GFLOP for layer%d (NHWC,RSCK)  = %.5g\n", i, flops * 1e-9 / (double)iters);
+      printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total / iters)));
+      printf("GFLOPS (NHWC,RSCK) = %.5g\n\n", (flops * 1e-9) / l_total);
+      write_perf_to_csv_file(
+        i, f, l_min, l_max, (double)(l_total / iters), (flops * 1e-9) / l_total, ifw, ifh, MB, nIfm, nOfm, kw, kh, stride);
     }
-    printf("PARAMS: ITERS:%d\n", iters);
-    printf("Threads:%d\n", nThreads);
-    printf("GFLOP for layer%d (NHWC,RSCK)  = %.5g\n", j, flops * 1e-9 / (double)iters);
-    printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total / iters)));
-    printf("GFLOPS (NHWC,RSCK) = %.5g\n\n", (flops * 1e-9) / l_total);
   }
+
+
 
 
   printf("\nAverage Inference time = %.5gs\n", average_inference_time);
@@ -518,6 +549,7 @@ int main(int argc, char* argv[]) {
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_release_tensor(libxsmm_conv_layers[i], LIBXSMM_DNN_REGULAR_OUTPUT));
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_release_tensor(libxsmm_conv_layers[i], LIBXSMM_DNN_REGULAR_FILTER));
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_conv_layer(libxsmm_conv_layers[i]));
+    free(per_layer_time[i]);
   }
 
   for (i = 0; i < range_end - range_start + 1; ++i) {
@@ -552,6 +584,7 @@ int main(int argc, char* argv[]) {
   free(per_layer_time);
   free(libxsmm_act);
   free(libxsmm_conv_layers);
+  fclose(f);
   /* some empty lines at the end */
   printf("\n\n\n");
 
