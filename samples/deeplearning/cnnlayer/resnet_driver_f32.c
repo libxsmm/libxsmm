@@ -8,8 +8,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
 
+#if 0
+#define USE_CORE_PERF_COUNTERS
+#endif
+
+#include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -17,7 +21,10 @@
 #if defined(_OPENMP)
 #  include <omp.h>
 #endif
-
+#if defined(USE_CORE_PERF_COUNTERS)
+#  include "../../external_aux/counters_skx.h"
+#endif
+#include <sys/time.h>
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
@@ -30,6 +37,14 @@
     } \
   }
 
+
+inline double sec(struct timeval start, struct timeval end);
+
+inline double sec(struct timeval start, struct timeval end) {
+  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
+}
+
+
 void print_help_message();
 void print_help_message() {
   printf(
@@ -39,7 +54,8 @@ void print_help_message() {
   printf("buffer_format             =      'N':  (Normal)     or  'R' (Ring)\n");
   printf("layer_mode                =      'S':  (Single layer )     or  'R' (Range of sequential resnet layers) or  'A' (All "
          "Resnet layers)\n");
-  printf("layer_mode_options(layer_mode = 'S')        =      ifh ifw nIfm nOfm kw kw pad_w_in pad_h_in pad_w_out pad_h_out stride\n");
+  printf(
+    "layer_mode_options(layer_mode = 'S')        =      ifh ifw nIfm nOfm kw kw pad_w_in pad_h_in pad_w_out pad_h_out stride\n");
   printf("layer_mode_options(layer_mode = 'R')        =      range_start(1-48) range_end(1-48)\n");
 }
 
@@ -52,15 +68,17 @@ void dump_layer_params(int (*layers)[11], int index, int MB) {
 
 
 void write_perf_to_csv_file(int layer, FILE* f, double min_time, double max_time, double average_time, double flops, int ifw,
-int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride);
+  int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride, double bw_min, double bw_max, double bw_avg);
 
 void write_perf_to_csv_file(int layer, FILE* f, double min_time, double max_time, double average_time, double flops, int ifw,
-  int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride) {
-  fprintf(f, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f\n", layer, nImg, nOfm, nIfm, ifh, ifw, kh, kw, stride, min_time, max_time,
-    average_time, flops);
+  int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride, double bw_min, double bw_max, double bw_avg) {
+  if (bw_min >= 0 && bw_max >= 0 && bw_avg >= 0)
+    fprintf(f, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f\n", layer, nImg, nOfm, nIfm, ifh, ifw, kh, kw, stride, min_time,
+      max_time, average_time, flops, bw_min, bw_max, bw_avg);
+  else
+    fprintf(f, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f\n", layer, nImg, nOfm, nIfm, ifh, ifw, kh, kw, stride, min_time, max_time,
+      average_time, flops);
 }
-
-
 
 
 int main(int argc, char* argv[]) {
@@ -70,14 +88,21 @@ int main(int argc, char* argv[]) {
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
   int warm_up_iters = 10;
-  int iters = 10; /* repetitions of benchmark */
+  int iters = 1000; /* repetitions of benchmark */
   int MB = 1; /* mini-batch size, "N" */
   char activation_format = 'T'; /* 'T' for TensorFlow(NHWC) and 'L' for LIBXSMM(NCbHWC) */
   char filter_format = 'T'; /* 'T' for TensorFlow(RSCK) and 'L' for LIBXSMM (KbCbRSCK) */
   char buffer_format = 'R'; /* 'R' for ring buffer, 'N' for normal buffer */
   char layer_mode = 'A'; /* 'A' for all layers, 'S' for single layer mode, 'R' for a range of layers */
   int ifw, ifh, nIfm, nOfm, pad_w_in, pad_h_in, pad_w_out, pad_h_out, kw, kh, stride, range_start, range_end;
-  double(**per_layer_time)[2];
+  double** per_layer_time;
+
+#if defined(USE_CORE_PERF_COUNTERS)
+  bw_gibs bw_tot;
+  ctrs_skx_core s;
+  ctrs_skx_core(**a)[2];
+#endif
+
 
   int layers[48][11] = {{56, 56, 64, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
     {56, 56, 64, 256, 1, 1, 0, 0, 0, 0, 1}, {56, 56, 256, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
@@ -206,13 +231,31 @@ int main(int argc, char* argv[]) {
   libxsmm_dnn_tensor** libxsmm_act;
   libxsmm_dnn_tensor** libxsmm_filter;
   FILE* f;
-  per_layer_time = (double(**)[2])malloc((range_end - range_start + 1) * (sizeof(double(*)[2])));
-
-  for (i = 0; i < range_end - range_start + 1; ++i) per_layer_time[i] = (double(*)[2])malloc(iters * (sizeof(double[2])));
+  per_layer_time = (double(**))malloc((range_end - range_start + 1) * (sizeof(double(*))));
 
   f = fopen("results.csv", "w");
-  fprintf(f, "layer,N,K,C,H,W,R,S,stride,min time,max time,average time,flops\n");
 
+  for (i = 0; i < range_end - range_start + 1; ++i) per_layer_time[i] = (double(*))malloc(iters * (sizeof(double)));
+
+#if defined(USE_CORE_PERF_COUNTERS)
+
+  a = (ctrs_skx_core(**)[2])malloc((range_end - range_start + 1) * (sizeof(ctrs_skx_core(*)[2])));
+
+  for (i = 0; i < range_end - range_start + 1; ++i) {
+    a[i] = (ctrs_skx_core(*)[2])malloc(iters * (sizeof(ctrs_skx_core[2])));
+    for (j = 0; j < iters; j++) {
+      zero_skx_core_ctrs(&a[i][j][0]);
+      zero_skx_core_ctrs(&a[i][j][1]);
+    }
+  }
+
+  zero_skx_core_ctrs(&s);
+
+  setup_skx_core_ctrs(CTRS_EXP_L2_BW);
+  fprintf(f, "layer,N,K,C,H,W,R,S,stride,min time,max time,average time,flops, min bw, max bw, avg bw\n");
+#else
+  fprintf(f, "layer,N,K,C,H,W,R,S,stride,min time,max time,average time,flops\n");
+#endif
   libxsmm_conv_layers = (libxsmm_dnn_layer**)malloc((range_end - range_start + 1) * sizeof(libxsmm_dnn_layer*));
   filter = (float**)malloc((range_end - range_start + 1) * sizeof(float*));
   libxsmm_filter = (libxsmm_dnn_tensor**)malloc((range_end - range_start + 1) * sizeof(libxsmm_dnn_tensor*));
@@ -479,14 +522,21 @@ int main(int argc, char* argv[]) {
 
     for (j = 0; j < iters; ++j) {
       for (i = 0; i < range_end - range_start + 1; ++i) {
+        unsigned long long start, end;
         if (tid == 0) {
-          per_layer_time[i][j][0] = libxsmm_timer_tick();
+#if defined(USE_CORE_PERF_COUNTERS)
+          read_skx_core_ctrs(&a[i][j][0]);
+#endif
+          start = libxsmm_timer_tick();
         }
         libxsmm_dnn_execute_st(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
 
         if (tid == 0) {
-          l_end = libxsmm_timer_tick();
-          per_layer_time[i][j][1] = libxsmm_timer_duration(per_layer_time[i][j][0], l_end);
+          end = libxsmm_timer_tick();
+#if defined(USE_CORE_PERF_COUNTERS)
+          read_skx_core_ctrs(&a[i][j][1]);
+#endif
+          per_layer_time[i][j] = libxsmm_timer_duration(start, end);
         }
       }
     }
@@ -495,15 +545,42 @@ int main(int argc, char* argv[]) {
 
   for (i = 0; i < range_end - range_start + 1; ++i) {
     if (iters > 0) {
-      double l_total = per_layer_time[i][0][1];
+      double l_total = per_layer_time[i][0];
       double l_min = l_total;
       double l_max = l_total;
+      double bwmax = -1.0;
+      double bwmin = -1.0;
+      double bwtotal = -1.0;
+
+
+#if defined(USE_CORE_PERF_COUNTERS)
+
+
+      difa_skx_core_ctrs(&a[i][0][0], &a[i][0][1], &s);
+      get_l2_bw_skx(&s, l_total, &bw_tot);
+      zero_skx_core_ctrs(&s);
+      bwmax = bw_tot.rd;
+      bwmin = bw_tot.rd;
+      bwtotal = bw_tot.rd;
+#endif
       for (j = 1; j < iters; ++j) {
-        l_total += per_layer_time[i][j][1];
-        if (l_min > per_layer_time[i][j][1])
-          l_min = per_layer_time[i][j][1];
-        if (l_max < per_layer_time[i][j][1])
-          l_max = per_layer_time[i][j][1];
+        l_total += per_layer_time[i][j];
+        if (l_min > per_layer_time[i][j]) l_min = per_layer_time[i][j];
+        if (l_max < per_layer_time[i][j]) l_max = per_layer_time[i][j];
+
+#if defined(USE_CORE_PERF_COUNTERS)
+
+        difa_skx_core_ctrs(&a[i][j][0], &a[i][j][1], &s);
+        double bwcurr;
+        bw_gibs bw_curr;
+        get_l2_bw_skx(&s, per_layer_time[i][j], &bw_curr);
+        zero_skx_core_ctrs(&s);
+        bwcurr = bw_curr.rd;
+
+        bwtotal += bwcurr;
+        if (bwmin > bwcurr) bwmin = bwcurr;
+        if (bwmax < bwcurr) bwmax = bwcurr;
+#endif
       }
 
       double flops;
@@ -531,12 +608,10 @@ int main(int argc, char* argv[]) {
       printf("GFLOP for layer%d (NHWC,RSCK)  = %.5g\n", i, flops * 1e-9 / (double)iters);
       printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total / iters)));
       printf("GFLOPS (NHWC,RSCK) = %.5g\n\n", (flops * 1e-9) / l_total);
-      write_perf_to_csv_file(
-        i, f, l_min, l_max, (double)(l_total / iters), (flops * 1e-9) / l_total, ifw, ifh, MB, nIfm, nOfm, kw, kh, stride);
+      write_perf_to_csv_file(i, f, l_min, l_max, (double)(l_total / iters), (flops * 1e-9) / l_total, ifw, ifh, MB, nIfm, nOfm, kw,
+        kh, stride, bwmin, bwmax, (double)(bwtotal / iters));
     }
   }
-
-
 
 
   printf("\nAverage Inference time = %.5gs\n", average_inference_time);
@@ -550,6 +625,9 @@ int main(int argc, char* argv[]) {
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_release_tensor(libxsmm_conv_layers[i], LIBXSMM_DNN_REGULAR_FILTER));
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_destroy_conv_layer(libxsmm_conv_layers[i]));
     free(per_layer_time[i]);
+#if defined(USE_CORE_PERF_COUNTERS)
+    free(a[i]);
+#endif
   }
 
   for (i = 0; i < range_end - range_start + 1; ++i) {
@@ -582,6 +660,9 @@ int main(int argc, char* argv[]) {
   free(filter);
   free(act_ring_buffer);
   free(per_layer_time);
+#if defined(USE_CORE_PERF_COUNTERS)
+  free(a);
+#endif
   free(libxsmm_act);
   free(libxsmm_conv_layers);
   fclose(f);
