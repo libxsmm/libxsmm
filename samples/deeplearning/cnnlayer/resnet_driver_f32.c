@@ -103,7 +103,6 @@ int main(int argc, char* argv[]) {
   ctrs_skx_core(**a)[2];
 #endif
 
-
   int layers[48][11] = {{56, 56, 64, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
     {56, 56, 64, 256, 1, 1, 0, 0, 0, 0, 1}, {56, 56, 256, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
     {56, 56, 64, 256, 1, 1, 0, 0, 0, 0, 1}, {56, 56, 256, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
@@ -148,21 +147,17 @@ int main(int argc, char* argv[]) {
   range_start = 1;
   range_end = 48;
 
-
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
   libxsmm_dnn_layer** libxsmm_conv_layers;
-
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     print_help_message();
     return 0;
   }
 
-
   i = 1;
-
 
   if (argc > i) iters = atoi(argv[i++]);
   if (argc > i) MB = atoi(argv[i++]);
@@ -186,7 +181,6 @@ int main(int argc, char* argv[]) {
     print_help_message();
     return 0;
   }
-
 
   if (argc > i) layer_mode = *(argv[i++]);
   if (layer_mode != 'S' && layer_mode != 'R' && layer_mode != 'A') {
@@ -239,9 +233,9 @@ int main(int argc, char* argv[]) {
 
 #if defined(USE_CORE_PERF_COUNTERS)
 
-  a = (ctrs_skx_core(**)[2])malloc((range_end - range_start + 1) * (sizeof(ctrs_skx_core(*)[2])));
+  a = (ctrs_skx_core(**)[2])malloc((range_end - range_start + 2) * (sizeof(ctrs_skx_core(*)[2])));
 
-  for (i = 0; i < range_end - range_start + 1; ++i) {
+  for (i = 0; i < range_end - range_start + 2; ++i) {
     a[i] = (ctrs_skx_core(*)[2])malloc(iters * (sizeof(ctrs_skx_core[2])));
     for (j = 0; j < iters; j++) {
       zero_skx_core_ctrs(&a[i][j][0]);
@@ -270,6 +264,11 @@ int main(int argc, char* argv[]) {
   }
 
   libxsmm_rng_set_seed(1);
+  printf("\n");
+  printf("##########################################\n");
+  printf("#            Setting Up ...              #\n");
+  printf("##########################################\n");
+
   for (i = range_start - 1; i <= range_end - 1; ++i) {
     if (layer_mode != 'S') {
       ifh = layers[i][0];
@@ -284,11 +283,6 @@ int main(int argc, char* argv[]) {
       pad_w_out = layers[i][9];
       stride = layers[i][10];
     }
-    printf("\n");
-    printf("##########################################\n");
-    printf("#    Setting Up - (NHWC/RSCK-Storage)    #\n");
-    printf("##########################################\n");
-
     libxsmm_dnn_conv_desc conv_desc;
     /* setup LIBXSMM handle */
     conv_desc.N = MB;
@@ -456,7 +450,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-
   /* let's allocate and bind scratch */
   scratch = libxsmm_aligned_scratch(max_scratch_size, 2097152);
   init_buf((float*)scratch, scratch_size / 4, 0, 0);
@@ -465,8 +458,15 @@ int main(int argc, char* argv[]) {
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_scratch(libxsmm_conv_layers[i - range_start + 1], LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch));
   }
 
+  printf("\n");
+  printf("##########################################\n");
+  printf("#         Setting Up ... done            #\n");
+  printf("##########################################\n");
 
-  printf("Warming up..\n");
+  printf("\n");
+  printf("##########################################\n");
+  printf("#            Warming Up ...              #\n");
+  printf("##########################################\n");
 
 #if defined(_OPENMP)
 #  pragma omp parallel private(i, j)
@@ -484,13 +484,17 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  printf("\n");
+  printf("##########################################\n");
+  printf("#          Warming Up ... done           #\n");
+  printf("##########################################\n");
 
+  printf("\n");
   printf("##########################################\n");
-  printf("#   Performance - FWD (NHWC/RSCK)   #\n");
+  printf("#  Performance: One OpenMP, full topo    #\n");
   printf("##########################################\n");
+
   l_start = libxsmm_timer_tick();
-
-
 #if defined(_OPENMP)
 #  pragma omp parallel private(i, j)
 #endif
@@ -505,11 +509,48 @@ int main(int argc, char* argv[]) {
         libxsmm_dnn_execute_st(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
       }
     }
+#if defined(_OPENMP)
+  }
+#endif
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  double average_inference_time_a = (double)(l_total / iters);
+  printf("\nAverage Inference time (one   OpenMP region) = %.5gs\n", average_inference_time_a);
+
+  printf("\n");
+  printf("##########################################\n");
+  printf("# Performance: Single OpenMP, full topo  #\n");
+  printf("##########################################\n");
+
+  l_start = libxsmm_timer_tick();
+  for (j = 0; j < iters; ++j) {
+    for (i = 0; i < range_end - range_start + 1; ++i) {
+#if defined(_OPENMP)
+#  pragma omp parallel
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+        libxsmm_dnn_execute_st(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
+#if defined(_OPENMP)
+      }
+#endif
+    }
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  double average_inference_time = (double)(l_total / iters);
+  double average_inference_time_b = (double)(l_total / iters);
+  printf("\nAverage Inference time (layer OpenMP region) = %.5gs\n", average_inference_time_b);
 
+  printf("\n");
+  printf("##########################################\n");
+  printf("# Performance: Single OpenMP, layerwise  #\n");
+  printf("##########################################\n");
+
+  l_start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #  pragma omp parallel private(i, j)
 #endif
@@ -521,27 +562,31 @@ int main(int argc, char* argv[]) {
 #endif
 
     for (j = 0; j < iters; ++j) {
-      for (i = 0; i < range_end - range_start + 1; ++i) {
-        unsigned long long start, end;
-        if (tid == 0) {
+      unsigned long long start, end;
+      if (tid == 0) {
 #if defined(USE_CORE_PERF_COUNTERS)
-          read_skx_core_ctrs(&a[i][j][0]);
+        read_skx_core_ctrs(&a[0][j][0]);
 #endif
-          start = libxsmm_timer_tick();
-        }
+        start = libxsmm_timer_tick();
+      }
+      for (i = 0; i < range_end - range_start + 1; ++i) {
         libxsmm_dnn_execute_st(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
 
         if (tid == 0) {
           end = libxsmm_timer_tick();
 #if defined(USE_CORE_PERF_COUNTERS)
-          read_skx_core_ctrs(&a[i][j][1]);
+          read_skx_core_ctrs(&a[i+1][j][0]);
 #endif
           per_layer_time[i][j] = libxsmm_timer_duration(start, end);
+          start = end;
         }
       }
     }
   }
-
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  double average_inference_time_c = (double)(l_total / iters);
+  printf("\nAverage Inference time (layerwise measuremenr execution) = %.5gs\n", average_inference_time_c);
 
   for (i = 0; i < range_end - range_start + 1; ++i) {
     if (iters > 0) {
@@ -552,11 +597,8 @@ int main(int argc, char* argv[]) {
       double bwmin = -1.0;
       double bwtotal = -1.0;
 
-
 #if defined(USE_CORE_PERF_COUNTERS)
-
-
-      difa_skx_core_ctrs(&a[i][0][0], &a[i][0][1], &s);
+      difa_skx_core_ctrs(&a[i][0][0], &a[i+1][0][0], &s);
       get_l2_bw_skx(&s, l_total, &bw_tot);
       zero_skx_core_ctrs(&s);
       bwmax = bw_tot.rd;
@@ -569,8 +611,7 @@ int main(int argc, char* argv[]) {
         if (l_max < per_layer_time[i][j]) l_max = per_layer_time[i][j];
 
 #if defined(USE_CORE_PERF_COUNTERS)
-
-        difa_skx_core_ctrs(&a[i][j][0], &a[i][j][1], &s);
+        difa_skx_core_ctrs(&a[i][j][0], &a[i+1][j][0], &s);
         double bwcurr;
         bw_gibs bw_curr;
         get_l2_bw_skx(&s, per_layer_time[i][j], &bw_curr);
@@ -586,8 +627,10 @@ int main(int argc, char* argv[]) {
       double flops;
 
       if (layer_mode == 'S') {
+#if 0
         printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", ifw, ifh, MB, nIfm, nOfm, kh, kw,
           ifh / stride, ifw / stride, stride);
+#endif
       }
       else {
         ifw = layers[i + range_start - 1][0];
@@ -597,25 +640,32 @@ int main(int argc, char* argv[]) {
         kw = layers[i + range_start - 1][4];
         kh = layers[i + range_start - 1][5];
         stride = layers[i + range_start - 1][10];
+#if 0
         dump_layer_params((int(*)[11])layers, i + range_start - 1, MB);
+#endif
       }
       flops = (double)MB * (double)nIfm * (double)nOfm * (double)(ifw / stride) * (double)(ifh / stride) * (double)(2 * kw * kh) *
               (double)iters;
 
+#if 0
       printf("l_total:%f\n", l_total);
       printf("PARAMS: ITERS:%d\n", iters);
       printf("Threads:%d\n", nThreads);
       printf("GFLOP for layer%d (NHWC,RSCK)  = %.5g\n", i, flops * 1e-9 / (double)iters);
       printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total / iters)));
       printf("GFLOPS (NHWC,RSCK) = %.5g\n\n", (flops * 1e-9) / l_total);
+#endif
       write_perf_to_csv_file(i, f, l_min, l_max, (double)(l_total / iters), (flops * 1e-9) / l_total, ifw, ifh, MB, nIfm, nOfm, kw,
         kh, stride, bwmin, bwmax, (double)(bwtotal / iters));
     }
   }
 
+  printf("dumped layer-wise results into results.csv\n");
 
-  printf("\nAverage Inference time = %.5gs\n", average_inference_time);
-
+  printf("\n");
+  printf("##########################################\n");
+  printf("#              Cleaning up               #\n");
+  printf("##########################################\n");
 
   for (i = 0; i < range_end - range_start + 1; ++i) {
     /* clean-up */
