@@ -1963,7 +1963,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_prec
             fprintf(stderr, "LIBXSMM WARNING: ");
             libxsmm_gemm_print2(stderr, iprec, oprec, transa, transb, &m, &n, &k,
               alpha, NULL/*a*/, lda, NULL/*b*/, ldb, beta, NULL/*c*/, ldc);
-            fprintf(stderr, " => batched GEMM was falling back to BLAS!\n");
+            fprintf(stderr, " => batched GEMM was falling back!\n");
             LIBXSMM_STDIO_RELEASE();
             threshold_max = threshold;
           }
