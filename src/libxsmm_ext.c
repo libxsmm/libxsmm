@@ -70,6 +70,8 @@ void LIBXSMM_FSYMBOL(dgemm)(const char* transa, const char* transb,
   }
   else {
     libxsmm_blas_error("dgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_INLINE_XGEMM(double, double, /* try producing a result even if LIBXSMM_INLINE_XGEMM is limited */
+      transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
 }
 
@@ -86,6 +88,8 @@ void LIBXSMM_FSYMBOL(sgemm)(const char* transa, const char* transb,
   }
   else {
     libxsmm_blas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_INLINE_XGEMM(float, float, /* try producing a result even if LIBXSMM_INLINE_XGEMM is limited */
+      transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
 }
 
