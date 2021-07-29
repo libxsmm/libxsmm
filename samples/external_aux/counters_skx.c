@@ -37,6 +37,8 @@
 #include <unistd.h>
 #include <syscall.h>
 #include <linux/perf_event.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
 
 #include "counters_skx.h"
 
@@ -87,6 +89,8 @@ static perf_skx_uc_fd gbl_uc_perf_fd;
 static perf_skx_core_fd gbl_core_perf_fd;
 
 static int perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
+                int cpu, int group_fd, unsigned long flags);
+static int perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
                 int cpu, int group_fd, unsigned long flags) {
   int ret;
   ret = syscall(__NR_perf_event_open, hw_event, pid, cpu,
@@ -94,9 +98,14 @@ static int perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
   return ret;
 }
 
+void evsetup(const char *ename, int *fd, unsigned int event, unsigned int umask, unsigned int filter0, unsigned int filter1, int core );
 void evsetup(const char *ename, int *fd, unsigned int event, unsigned int umask, unsigned int filter0, unsigned int filter1, int core ) {
   char fname[1024];
+#if 0
   snprintf(fname, sizeof(fname), "%s/type", ename);
+#else
+  sprintf(fname, "%s/type", ename);
+#endif
   FILE *fp = fopen(fname, "r");
   if (fp == 0) {
     err(1, "open %s", fname);
@@ -150,7 +159,7 @@ void evsetup(const char *ename, int *fd, unsigned int event, unsigned int umask,
 
   *fd = perf_event_open(&hw, pid, cpu, -1, 0);
   if (*fd == -1) {
-    err(1, "CPU %d, box %s, event 0x%lx", cpu, ename, hw.config);
+    err(1, "CPU %d, box %s, event 0x%llu", cpu, ename, hw.config);
   }
 }
 
@@ -160,7 +169,11 @@ void setup_skx_uc_ctrs( ctrs_skx_uc_exp exp ) {
   int mc, cha;
 
   for ( mc = 0; mc < SKX_NIMC; ++mc ) {
+#if 0
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_imc_%d",mc);
+#else
+    sprintf(fname, "/sys/devices/uncore_imc_%d", mc);
+#endif
     if ( exp == CTRS_EXP_DRAM_ACT ) {
       evsetup(fname, &gbl_uc_perf_fd.fd_act_rd[mc], 0x01, 0x01, 0x00, 0x00, -1);
       evsetup(fname, &gbl_uc_perf_fd.fd_act_wr[mc], 0x01, 0x02, 0x00, 0x00, -1);
@@ -175,7 +188,11 @@ void setup_skx_uc_ctrs( ctrs_skx_uc_exp exp ) {
   }
 
   for ( cha = 0; cha < SKX_NCHA; ++cha ) {
+#if 0
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_cha_%d",cha);
+#else
+    sprintf(fname, "/sys/devices/uncore_cha_%d", cha);
+#endif
     if ( exp == CTRS_EXP_CHA_ACT ) {
       evsetup(fname, &gbl_uc_perf_fd.fd_cha_rd[cha], 0x50, 0x03, 0x00, 0x00, -1);
       evsetup(fname, &gbl_uc_perf_fd.fd_cha_wr[cha], 0x50, 0x0C, 0x00, 0x00, -1);
@@ -237,7 +254,12 @@ void setup_skx_core_ctrs( ctrs_skx_core_exp exp ) {
   char fname[1024];
   int core;
 
+#if 0
   snprintf(fname, sizeof(fname), "/sys/devices/cpu");
+#else
+  sprintf(fname, "/sys/devices/cpu");
+#endif
+
   for ( core = 0; core < SKX_NCORE; ++core ) {
     if ( exp == CTRS_EXP_L2_BW ) {
       evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_in[core], 0xf1, 0x1f, 0x00, 0x00, core);
