@@ -44,7 +44,6 @@ inline double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
-
 void print_help_message();
 void print_help_message() {
   printf(
@@ -68,13 +67,13 @@ void dump_layer_params(int (*layers)[11], int index, int MB) {
 
 
 void write_perf_to_csv_file(int layer, FILE* f, double min_time, double max_time, double average_time, double flops, int ifw,
-  int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride, double bw_min, double bw_max, double bw_avg);
+  int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride, double bw_min, double bw_max, double bw_avg, double cyc_avg, double bw_bc_min, double bw_bc_max, double bw_bc_avg);
 
 void write_perf_to_csv_file(int layer, FILE* f, double min_time, double max_time, double average_time, double flops, int ifw,
-  int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride, double bw_min, double bw_max, double bw_avg) {
-  if (bw_min >= 0 && bw_max >= 0 && bw_avg >= 0)
-    fprintf(f, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f\n", layer, nImg, nOfm, nIfm, ifh, ifw, kh, kw, stride, min_time,
-      max_time, average_time, flops, bw_min, bw_max, bw_avg);
+  int ifh, int nImg, int nIfm, int nOfm, int kw, int kh, int stride, double bw_min, double bw_max, double bw_avg, double cyc_avg, double bw_bc_min, double bw_bc_max, double bw_bc_avg) {
+  if (bw_min >= 0 && bw_max >= 0 && bw_avg >= 0 )
+    fprintf(f, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", layer, nImg, nOfm, nIfm, ifh, ifw, kh, kw, stride, min_time,
+      max_time, average_time, flops, bw_min, bw_max, bw_avg, cyc_avg, bw_bc_min, bw_bc_max, bw_bc_avg);
   else
     fprintf(f, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f\n", layer, nImg, nOfm, nIfm, ifh, ifw, kh, kw, stride, min_time, max_time,
       average_time, flops);
@@ -99,6 +98,7 @@ int main(int argc, char* argv[]) {
 
 #if defined(USE_CORE_PERF_COUNTERS)
   bw_gibs bw_tot;
+  bw_bc bw_bc_tot;
   ctrs_skx_core s;
   ctrs_skx_core(**a)[2];
 #endif
@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
 
 #if defined(USE_CORE_PERF_COUNTERS)
 
-  a = (ctrs_skx_core(**)[2])malloc((range_end - range_start + 2) * (sizeof(ctrs_skx_core(*)[2])));
+  a = (ctrs_skx_core(**)[2])malloc((range_end - range_start + 1) * (sizeof(ctrs_skx_core(*)[2])));
 
   for (i = 0; i < range_end - range_start + 2; ++i) {
     a[i] = (ctrs_skx_core(*)[2])malloc(iters * (sizeof(ctrs_skx_core[2])));
@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) {
   zero_skx_core_ctrs(&s);
 
   setup_skx_core_ctrs(CTRS_EXP_L2_BW);
-  fprintf(f, "layer,N,K,C,H,W,R,S,stride,min time,max time,average time,flops, min bw, max bw, avg bw\n");
+  fprintf(f, "layer,N,K,C,H,W,R,S,stride,min time,max time,average time,flops,min bw,max bw,avg bw,avg cycles,min bw bc,max bw bc,avg bw bc\n");
 #else
   fprintf(f, "layer,N,K,C,H,W,R,S,stride,min time,max time,average time,flops\n");
 #endif
@@ -307,7 +307,6 @@ int main(int argc, char* argv[]) {
       conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
     else
       conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
-
 
     if (filter_format == 'T')
       conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_RSCK;
@@ -551,36 +550,33 @@ int main(int argc, char* argv[]) {
   printf("##########################################\n");
 
   l_start = libxsmm_timer_tick();
-#if defined(_OPENMP)
-#  pragma omp parallel private(i, j)
+  for (j = 0; j < iters; ++j) {
+    unsigned long long start, end;
+    start = libxsmm_timer_tick();
+    for (i = 0; i < range_end - range_start + 1; ++i) {
+#if 0
+      read_skx_core_ctrs(&a[i][j][0]);
 #endif
-  {
 #if defined(_OPENMP)
-    const int tid = omp_get_thread_num();
+#  pragma omp parallel
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
 #else
-    const int tid = 0;
+        const int tid = 0;
 #endif
 
-    for (j = 0; j < iters; ++j) {
-      unsigned long long start, end;
-      if (tid == 0) {
-#if defined(USE_CORE_PERF_COUNTERS)
-        read_skx_core_ctrs(&a[0][j][0]);
-#endif
-        start = libxsmm_timer_tick();
-      }
-      for (i = 0; i < range_end - range_start + 1; ++i) {
         libxsmm_dnn_execute_st(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
-
-        if (tid == 0) {
-          end = libxsmm_timer_tick();
-#if defined(USE_CORE_PERF_COUNTERS)
-          read_skx_core_ctrs(&a[i+1][j][0]);
-#endif
-          per_layer_time[i][j] = libxsmm_timer_duration(start, end);
-          start = end;
-        }
+#if defined(_OPENMP)
       }
+#endif
+      end = libxsmm_timer_tick();
+#if 0
+      read_skx_core_ctrs(&a[i][j][1]);
+#endif
+      per_layer_time[i][j] = libxsmm_timer_duration(start, end);
+      start = end;
     }
   }
   l_end = libxsmm_timer_tick();
@@ -588,6 +584,30 @@ int main(int argc, char* argv[]) {
   double average_inference_time_c = (double)(l_total / iters);
   printf("\nAverage Inference time (layerwise measuremenr execution) = %.5gs\n", average_inference_time_c);
 
+#if defined(USE_CORE_PERF_COUNTERS)
+  for (j = 0; j < iters; ++j) {
+    for (i = 0; i < range_end - range_start + 1; ++i) {
+      read_skx_core_ctrs(&a[i][j][0]);
+#if defined(_OPENMP)
+#  pragma omp parallel
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+
+        libxsmm_dnn_execute_st(libxsmm_conv_layers[i], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
+#if defined(_OPENMP)
+      }
+#endif
+      read_skx_core_ctrs(&a[i][j][1]);
+    }
+  }
+#endif
+
+  average_inference_time_c = 0.0;
   for (i = 0; i < range_end - range_start + 1; ++i) {
     if (iters > 0) {
       double l_total = per_layer_time[i][0];
@@ -596,14 +616,23 @@ int main(int argc, char* argv[]) {
       double bwmax = -1.0;
       double bwmin = -1.0;
       double bwtotal = -1.0;
+      double bcmax = -1.0;
+      double bcmin = -1.0;
+      double bctotal = -1.0;
+      double bccyc = -1.0;
 
 #if defined(USE_CORE_PERF_COUNTERS)
-      difa_skx_core_ctrs(&a[i][0][0], &a[i+1][0][0], &s);
+      difa_skx_core_ctrs(&a[i][0][0], &a[i][0][1], &s);
       get_l2_bw_skx(&s, l_total, &bw_tot);
+      get_l2_bytecycle_skx(&s, &bw_bc_tot);
       zero_skx_core_ctrs(&s);
       bwmax = bw_tot.rd;
       bwmin = bw_tot.rd;
       bwtotal = bw_tot.rd;
+      bccyc = bw_bc_tot.cyc;
+      bcmax = bw_bc_tot.rd;
+      bcmin = bw_bc_tot.rd;
+      bctotal = bw_bc_tot.rd;
 #endif
       for (j = 1; j < iters; ++j) {
         l_total += per_layer_time[i][j];
@@ -611,56 +640,49 @@ int main(int argc, char* argv[]) {
         if (l_max < per_layer_time[i][j]) l_max = per_layer_time[i][j];
 
 #if defined(USE_CORE_PERF_COUNTERS)
-        difa_skx_core_ctrs(&a[i][j][0], &a[i+1][j][0], &s);
+        difa_skx_core_ctrs(&a[i][j][0], &a[i][j][1], &s);
         double bwcurr;
+        double bccurr;
         bw_gibs bw_curr;
+        bw_bc bw_bc_curr;
         get_l2_bw_skx(&s, per_layer_time[i][j], &bw_curr);
+        get_l2_bytecycle_skx(&s, &bw_bc_curr);
         zero_skx_core_ctrs(&s);
-        bwcurr = bw_curr.rd;
 
+        bwcurr = bw_curr.rd;
         bwtotal += bwcurr;
+
+        bccurr = bw_bc_curr.rd;
+        bctotal += bccurr;
+        bccyc += bw_bc_curr.cyc;
+
         if (bwmin > bwcurr) bwmin = bwcurr;
         if (bwmax < bwcurr) bwmax = bwcurr;
+        if (bcmin > bccurr) bcmin = bccurr;
+        if (bcmax < bccurr) bcmax = bccurr;
 #endif
       }
 
       double flops;
+      ifw = layers[i + range_start - 1][0];
+      ifh = layers[i + range_start - 1][1];
+      nIfm = layers[i + range_start - 1][2];
+      nOfm = layers[i + range_start - 1][3];
+      kw = layers[i + range_start - 1][4];
+      kh = layers[i + range_start - 1][5];
+      stride = layers[i + range_start - 1][10];
 
-      if (layer_mode == 'S') {
-#if 0
-        printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", ifw, ifh, MB, nIfm, nOfm, kh, kw,
-          ifh / stride, ifw / stride, stride);
-#endif
-      }
-      else {
-        ifw = layers[i + range_start - 1][0];
-        ifh = layers[i + range_start - 1][1];
-        nIfm = layers[i + range_start - 1][2];
-        nOfm = layers[i + range_start - 1][3];
-        kw = layers[i + range_start - 1][4];
-        kh = layers[i + range_start - 1][5];
-        stride = layers[i + range_start - 1][10];
-#if 0
-        dump_layer_params((int(*)[11])layers, i + range_start - 1, MB);
-#endif
-      }
       flops = (double)MB * (double)nIfm * (double)nOfm * (double)(ifw / stride) * (double)(ifh / stride) * (double)(2 * kw * kh) *
               (double)iters;
 
-#if 0
-      printf("l_total:%f\n", l_total);
-      printf("PARAMS: ITERS:%d\n", iters);
-      printf("Threads:%d\n", nThreads);
-      printf("GFLOP for layer%d (NHWC,RSCK)  = %.5g\n", i, flops * 1e-9 / (double)iters);
-      printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total / iters)));
-      printf("GFLOPS (NHWC,RSCK) = %.5g\n\n", (flops * 1e-9) / l_total);
-#endif
       write_perf_to_csv_file(i, f, l_min, l_max, (double)(l_total / iters), (flops * 1e-9) / l_total, ifw, ifh, MB, nIfm, nOfm, kw,
-        kh, stride, bwmin, bwmax, (double)(bwtotal / iters));
+        kh, stride, bwmin, bwmax, (double)(bwtotal / iters), (double)(bccyc / iters), bcmin, bcmax, (double)(bctotal / iters));
+
+      average_inference_time_c += ((double)l_total / (double)iters);
     }
   }
-
   printf("dumped layer-wise results into results.csv\n");
+  printf("Average Inference time (layerwise measuremenr execution) = %.5gs\n", average_inference_time_c);
 
   printf("\n");
   printf("##########################################\n");
