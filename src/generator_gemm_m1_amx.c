@@ -340,12 +340,12 @@ void libxsmm_generator_gemm_m1_amx_kloop( uint8_t                  i_bytes_per_v
                                                          LIBXSMM_AARCH64_SHIFTMODE_LSL );
   }
 
-  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                 LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                 LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                  l_gp_tmp_a[0] + l_off_xview,
+                                                 l_gp_scratch[0],
                                                  l_gp_tmp_a[0] + l_off_xview,
-                                                 i_lda * i_bytes_per_val,
-                                                 0 );
+                                                 i_lda * i_bytes_per_val );
 
   // load B-row
   libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code,
@@ -370,12 +370,12 @@ void libxsmm_generator_gemm_m1_amx_kloop( uint8_t                  i_bytes_per_v
                                                          LIBXSMM_AARCH64_SHIFTMODE_LSL );
   }
 
-  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                 LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                 LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                  l_gp_tmp_b[0] + l_off_xview,
+                                                 l_gp_scratch[0],
                                                  l_gp_tmp_b[0] + l_off_xview,
-                                                 i_ldb * i_bytes_per_val,
-                                                 0 );
+                                                 i_ldb * i_bytes_per_val );
 
   // do the FMAs
   for( unsigned short l_in = 0; l_in < i_block_m*i_block_n; l_in++ ) {
@@ -531,19 +531,19 @@ void libxsmm_generator_gemm_m1_amx_generic( uint8_t                  i_bytes_per
                                          i_ldc,
                                          io_generated_code );
 
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                   LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                   LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                    l_gp_tmp_a + l_off_xview,
+                                                   l_gp_scratch[0] + l_off_xview,
                                                    l_gp_tmp_a + l_off_xview,
-                                                   l_block_m*l_vec_length*i_bytes_per_val,
-                                                   0 );
+                                                   l_block_m*l_vec_length*i_bytes_per_val );
 
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
-                                                   LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                   LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                    l_gp_tmp_c + l_off_xview,
+                                                   l_gp_scratch[0] + l_off_xview,
                                                    l_gp_tmp_c + l_off_xview,
-                                                   l_block_m*l_vec_length*i_bytes_per_val,
-                                                   0 );
+                                                   l_block_m*l_vec_length*i_bytes_per_val );
 
     // end of loop over m
     libxsmm_generator_loop_footer_aarch64( io_generated_code,
