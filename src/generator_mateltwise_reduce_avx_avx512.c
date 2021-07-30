@@ -3335,7 +3335,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
       reduceop_instr = LIBXSMM_X86_INSTR_VRANGEPS;
       reduceop_imm = 5;
       argop_cmp_imm = 6;
-      if (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE) {
+      if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
         reduceop_instr = LIBXSMM_X86_INSTR_VMAXPS;
         reduceop_imm = 0;
       }
@@ -3343,7 +3343,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
       reduceop_instr = LIBXSMM_X86_INSTR_VRANGEPS;
       reduceop_imm = 4;
       argop_cmp_imm = 9;
-      if (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE) {
+      if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
         reduceop_instr = LIBXSMM_X86_INSTR_VMINPS;
         reduceop_imm = 0;
       }
