@@ -96,6 +96,7 @@ typedef enum ctrs_skx_core_exp {
 } ctrs_skx_core_exp;
 
 typedef struct ctrs_skx_core {
+  uint64_t clockticks[SKX_NCORE];
   uint64_t l2_lines_in[SKX_NCORE];
   uint64_t l2_lines_out_ns[SKX_NCORE];
   uint64_t idi_misc_wb_up[SKX_NCORE];
@@ -110,6 +111,15 @@ typedef struct bw_gibs {
   double wr2;
   double wr3;
 } bw_gibs;
+
+typedef struct bw_bc {
+  double cyc;
+  double rd;
+  double rd2;
+  double wr;
+  double wr2;
+  double wr3;
+} bw_bc;
 
 void setup_skx_uc_ctrs( ctrs_skx_uc_exp exp );
 void read_skx_uc_ctrs( ctrs_skx_uc *c );
@@ -126,6 +136,7 @@ void zero_skx_core_ctrs( ctrs_skx_core *c );
 void divi_skx_core_ctrs( ctrs_skx_core *c, uint64_t div );
 void difa_skx_core_ctrs( const ctrs_skx_core *a, const ctrs_skx_core *b, ctrs_skx_core* c );
 void get_l2_bw_skx( const ctrs_skx_core *c, const double t, bw_gibs* bw );
+void get_l2_bytecycle_skx( const ctrs_skx_core *c, bw_bc* bw );
 
 #ifdef __cplusplus
 }

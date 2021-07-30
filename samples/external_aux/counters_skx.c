@@ -78,6 +78,7 @@ typedef struct perf_skx_uc_fd {
 
 typedef struct perf_skx_core_fd
 {
+  int fd_clockticks[SKX_NCORE];
   int fd_l2_lines_in[SKX_NCORE];
   int fd_l2_lines_out_ns[SKX_NCORE];
   int fd_idi_misc_wb_up[SKX_NCORE];
@@ -262,6 +263,8 @@ void setup_skx_core_ctrs( ctrs_skx_core_exp exp ) {
 
   for ( core = 0; core < SKX_NCORE; ++core ) {
     if ( exp == CTRS_EXP_L2_BW ) {
+      evsetup(fname, &gbl_core_perf_fd.fd_clockticks[core], 0x3c, 0x00, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_in[core], 0xf1, 0x1f, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_in[core], 0xf1, 0x1f, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_out_ns[core], 0xf2, 0x02, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_idi_misc_wb_up[core], 0xfe, 0x02, 0x00, 0x00, core);
@@ -361,10 +364,18 @@ void read_skx_core_ctrs( ctrs_skx_core *c ) {
   int core;
   for ( core = 0; core < SKX_NCORE; ++core ) {
     if ( gbl_core_perf_fd.exp == CTRS_EXP_L2_BW ) {
+      c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
+#if 1
       c->l2_lines_in[core] = readctr(gbl_core_perf_fd.fd_l2_lines_in[core]);
       c->l2_lines_out_ns[core] = readctr(gbl_core_perf_fd.fd_l2_lines_out_ns[core]);
       c->idi_misc_wb_up[core] = readctr(gbl_core_perf_fd.fd_idi_misc_wb_up[core]);
       c->idi_misc_wb_down[core] = readctr(gbl_core_perf_fd.fd_idi_misc_wb_down[core]);
+#else
+      c->l2_lines_in[core] = 0;
+      c->l2_lines_out_ns[core] = 0;
+      c->idi_misc_wb_up[core] = 0;
+      c->idi_misc_wb_down[core] = 0;
+#endif
     } else {
       /* nothing */
     }
@@ -411,6 +422,7 @@ void zero_skx_uc_ctrs( ctrs_skx_uc *c ) {
 void zero_skx_core_ctrs( ctrs_skx_core *c ) {
   int core;
   for ( core = 0; core < SKX_NCORE; ++core ) {
+    c->clockticks[core] = 0;
     c->l2_lines_in[core] = 0;
     c->l2_lines_out_ns[core] = 0;
     c->idi_misc_wb_up[core] = 0;
@@ -456,6 +468,7 @@ void divi_skx_uc_ctrs( ctrs_skx_uc *c, uint64_t div ) {
 void divi_skx_core_ctrs( ctrs_skx_core *c, uint64_t div ) {
   int core;
   for ( core = 0; core < SKX_NCORE; ++core ) {
+    c->clockticks[core] /= div;
     c->l2_lines_in[core] /= div;
     c->l2_lines_out_ns[core] /= div;
     c->idi_misc_wb_up[core] /= div;
@@ -515,6 +528,7 @@ void difa_skx_core_ctrs( const ctrs_skx_core *a, const ctrs_skx_core *b, ctrs_sk
   }
 
   for ( core = 0; core < SKX_NCORE; ++core ) {
+    c->clockticks[core] += b->clockticks[core] - a->clockticks[core];
     c->l2_lines_in[core] += b->l2_lines_in[core] - a->l2_lines_in[core];
     c->l2_lines_out_ns[core] += b->l2_lines_out_ns[core] - a->l2_lines_out_ns[core];
     c->idi_misc_wb_up[core] += b->idi_misc_wb_up[core] - a->idi_misc_wb_up[core];
@@ -642,6 +656,50 @@ void get_l2_bw_skx( const ctrs_skx_core *c, const double t, bw_gibs* bw ) {
   bw->wr = (((double)write_bytes1)/t)/(1024.0*1024.0*1024.0);
   bw->wr2 = (((double)write_bytes2)/t)/(1024.0*1024.0*1024.0);
   bw->wr3 = (((double)write_bytes3)/t)/(1024.0*1024.0*1024.0);
+}
+
+void get_l2_bytecycle_skx( const ctrs_skx_core *c, bw_bc* bw ) {
+  uint64_t total_cycles;
+  uint64_t read_bytes;
+  uint64_t write_bytes1;
+  uint64_t write_bytes2;
+  uint64_t write_bytes3;
+  double   avg_cycles;
+  int core;
+
+  total_cycles = 0;
+  avg_cycles = 0;
+  read_bytes  = 0;
+  write_bytes1 = 0;
+  write_bytes2 = 0;
+  write_bytes3 = 0;
+
+  if ( c->exp != CTRS_EXP_L2_BW ) {
+    printf("exp type need to be CTRS_EXP_L2_BW!\n");
+    bw->rd = 0;
+    bw->rd2 = 0;
+    bw->wr = 0;
+    bw->wr2 = 0;
+    bw->wr3 = 0;
+    return;
+  }
+
+  for ( core = 0; core < SKX_NCORE; ++core ) {
+    total_cycles += c->clockticks[core];
+    read_bytes   += c->l2_lines_in[core]*64;
+    write_bytes1 += c->l2_lines_out_ns[core]*64;
+    write_bytes2 += c->idi_misc_wb_up[core]*64;
+    write_bytes3 += c->idi_misc_wb_down[core]*64;
+  }
+
+  avg_cycles = ((double)total_cycles/(double)SKX_NCORE);
+
+  bw->cyc = avg_cycles;
+  bw->rd = ((double)read_bytes/avg_cycles);
+  bw->rd2 = 0;
+  bw->wr = ((double)write_bytes1/avg_cycles);
+  bw->wr2 = ((double)write_bytes2/avg_cycles);
+  bw->wr3 = ((double)write_bytes3/avg_cycles);
 }
 
 #ifdef __cplusplus
