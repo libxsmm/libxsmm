@@ -80,7 +80,7 @@ void tpp_batchnorm_fwd_bf16(long N, long CP, long HW, long CB, long num_HW_block
         float *sum_ncp_ptr = &sum_N[cp*N*CB + n*CB];
         float *sumsq_ncp_ptr = &sumsq_N[cp*N*CB + n*CB];
 
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           sum_ncp_ptr[cb] = 0.0f;
           sumsq_ncp_ptr[cb] = 0.0f;
@@ -107,14 +107,14 @@ void tpp_batchnorm_fwd_bf16(long N, long CP, long HW, long CB, long num_HW_block
 
     #pragma omp for
     for (int cp = 0; cp < CP; cp++) {
-      #pragma simd
+      #pragma omp simd
       for (int cb = 0; cb < CB; cb++) {
         sum_X_X2[cp*CB + cb] = 0.0f;
         sum_X_X2[CP*CB + (cp*CB + cb)] = 0.0f;
       }
 
       for(int n = 0; n < N; n++){
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           sum_X_X2[cp*CB + cb] += sum_N[cp*N*CB + n*CB + cb];
           sum_X_X2[CP*CB + (cp*CB + cb)] += sumsq_N[cp*N*CB + n*CB + cb];
@@ -239,7 +239,7 @@ void tpp_batchnorm_bwd_bf16(long N, long CP, long HW, long CB, long num_HW_block
         float *ds_ncp_ptr = &ds_N[cp*N*CB + n*CB];
         float *db_ncp_ptr = &db_N[cp*N*CB + n*CB];
 
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           lcl_dgamma_ptr[cb] = 0.0f;
           lcl_dbeta_ptr[cb] = 0.0f;
@@ -277,7 +277,7 @@ void tpp_batchnorm_bwd_bf16(long N, long CP, long HW, long CB, long num_HW_block
           db_func(&eqn_param);                                                                /* db += dout * gamma */
         }
 
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           dgamma_ncp_ptr[cb] = lcl_dgamma_ptr[cb];
           dbeta_ncp_ptr[cb] = lcl_dbeta_ptr[cb];
@@ -291,7 +291,7 @@ void tpp_batchnorm_bwd_bf16(long N, long CP, long HW, long CB, long num_HW_block
 
     #pragma omp for
     for (int cp = 0; cp < CP; cp++) {
-      #pragma simd
+      #pragma omp simd
       for (int cb = 0; cb < CB; cb++) {
         pdgamma[cp*CB + cb] = 0.0f;
         pdbeta[cp*CB + cb] = 0.0f;
@@ -300,7 +300,7 @@ void tpp_batchnorm_bwd_bf16(long N, long CP, long HW, long CB, long num_HW_block
       }
 
       for(int n = 0; n < N; n++){
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           pdgamma[cp*CB + cb] += dgamma_N[cp*N*CB + n*CB + cb];
           pdbeta[cp*CB + cb] += dbeta_N[cp*N*CB + n*CB + cb];
@@ -390,7 +390,7 @@ void tpp_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, long num_HW_block
         float *sum_ncp_ptr = &sum_N[cp*N*CB + n*CB];
         float *sumsq_ncp_ptr = &sumsq_N[cp*N*CB + n*CB];
 
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           sum_ncp_ptr[cb] = 0.0f;
           sumsq_ncp_ptr[cb] = 0.0f;
@@ -404,6 +404,7 @@ void tpp_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, long num_HW_block
           reduce_HW_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
           reduce_HW_kernel(&reduce_HW_params);                                                       /* [HW, CB] -----> [2 * CB] */
 
+          #pragma omp simd
           for (int cb = 0; cb < CB; cb++) {
             sum_ncp_ptr[cb] += lcl_sum_X_X2[cb];
             sumsq_ncp_ptr[cb] += lcl_sum_X_X2[CB + cb];
@@ -416,7 +417,7 @@ void tpp_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, long num_HW_block
 
     #pragma omp for
     for (int cp = 0; cp < CP; cp++) {
-      #pragma simd
+      #pragma omp simd
       for (int cb = 0; cb < CB; cb++) {
         sum_X_X2[cp*CB + cb] = 0.0f;
         sum_X_X2[CP*CB + (cp*CB + cb)] = 0.0f;
@@ -424,7 +425,7 @@ void tpp_batchnorm_fwd_fp32(long N, long CP, long HW, long CB, long num_HW_block
 
       for(int n = 0; n < N; n++){
 
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           sum_X_X2[cp*CB + cb] += sum_N[cp*N*CB + n*CB + cb];
           sum_X_X2[CP*CB + (cp*CB + cb)] += sumsq_N[cp*N*CB + n*CB + cb];
@@ -547,7 +548,7 @@ void tpp_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, long num_HW_block
         float *ds_ncp_ptr = &ds_N[cp*N*CB + n*CB];
         float *db_ncp_ptr = &db_N[cp*N*CB + n*CB];
 
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           lcl_dgamma_ptr[cb] = 0.0f;
           lcl_dbeta_ptr[cb] = 0.0f;
@@ -585,7 +586,7 @@ void tpp_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, long num_HW_block
           db_func(&eqn_param);                                                                /* db += dout * gamma */
         }
 
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           dgamma_ncp_ptr[cb] = lcl_dgamma_ptr[cb];
           dbeta_ncp_ptr[cb] = lcl_dbeta_ptr[cb];
@@ -600,7 +601,7 @@ void tpp_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, long num_HW_block
     #pragma omp for
     for (int cp = 0; cp < CP; cp++) {
 
-      #pragma simd
+      #pragma omp simd
       for (int cb = 0; cb < CB; cb++) {
         pdgamma[cp*CB + cb] = 0.0f;
         pdbeta[cp*CB + cb] = 0.0f;
@@ -610,7 +611,7 @@ void tpp_batchnorm_bwd_fp32(long N, long CP, long HW, long CB, long num_HW_block
 
       for(int n = 0; n < N; n++){
 
-        #pragma simd
+        #pragma omp simd
         for (int cb = 0; cb < CB; cb++) {
           pdgamma[cp*CB + cb] += dgamma_N[cp*N*CB + n*CB + cb];
           pdbeta[cp*CB + cb] += dbeta_N[cp*N*CB + n*CB + cb];
@@ -1011,9 +1012,9 @@ int main( int argc, char* argv[] ) {
   float *inp, *out, *dinp, *dout, *eqn_dinp, *eqn_dout, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var, sum = 0.0;
   libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_dinp, *bf16_dout, *bf16_eqn_dinp, *bf16_eqn_dout, *bf16_gamma, *bf16_beta, *bf16_eqn_out;
   long N = 28;
-  long CP = 32;
+  long CP = 8;
   long HW = 784;
-  long CB = 16;
+  long CB = 64;
   long num_HW_blocks = 4;
   int iters = 100;
   int datatype_mode = 0;
