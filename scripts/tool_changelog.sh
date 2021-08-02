@@ -17,7 +17,7 @@ GIT=$(command -v git)
 if [ "${GREP}"   ] && [ "${UNIQ}"  ] && [ "${GIT}" ];
 then
   LASTRELEASE=$(${GIT} describe --match "[0-9]*" --abbrev=0)
-  ${GIT} shortlog ${LASTRELEASE}..HEAD \
+  ${GIT} shortlog "${LASTRELEASE}..HEAD" \
   | ${GREP} -v "Merge branch " \
   | ${GREP} -v "Merge pull request " \
   | ${UNIQ}
