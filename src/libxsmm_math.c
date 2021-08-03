@@ -169,12 +169,6 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     if (output->linf_abs < input->linf_abs) {
       output->linf_abs = input->linf_abs;
       output->linf_rel = input->linf_rel;
-      output->v_ref = input->v_ref;
-      output->v_tst = input->v_tst;
-      LIBXSMM_ASSERT(0 <= input->m);
-      output->m = input->m;
-      LIBXSMM_ASSERT(0 <= input->n);
-      output->n = input->n;
     }
     if (output->norm1_abs < input->norm1_abs) {
       output->norm1_abs = input->norm1_abs;
@@ -211,6 +205,12 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     }
     if (output->rsq > input->rsq) {
       output->rsq = input->rsq;
+      output->v_ref = input->v_ref;
+      output->v_tst = input->v_tst;
+      LIBXSMM_ASSERT(0 <= input->m);
+      output->m = input->m;
+      LIBXSMM_ASSERT(0 <= input->n);
+      output->n = input->n;
     }
     output->avg_ref = 0.5 * (output->avg_ref + input->avg_ref);
     output->avg_tst = 0.5 * (output->avg_tst + input->avg_tst);
@@ -238,7 +238,8 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
     /* initial minimum/maximum of reference/test */
     info->min_ref = info->min_tst = +inf.value;
     info->max_ref = info->max_tst = -inf.value;
-    info->rsq = 1.0;
+    /* invalid rather than 1.0 */
+    info->rsq = inf.value;
   }
 }
 
