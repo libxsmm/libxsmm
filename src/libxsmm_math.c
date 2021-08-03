@@ -187,7 +187,6 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     if (output->l2_abs < input->l2_abs) {
       output->l2_abs = input->l2_abs;
       output->l2_rel = input->l2_rel;
-      output->rsq = input->rsq;
     }
     if (output->normf_rel < input->normf_rel) {
       output->normf_rel = input->normf_rel;
@@ -209,6 +208,9 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     }
     if (output->min_tst > input->min_tst) {
       output->min_tst = input->min_tst;
+    }
+    if (output->rsq > input->rsq) {
+      output->rsq = input->rsq;
     }
     output->avg_ref = 0.5 * (output->avg_ref + input->avg_ref);
     output->avg_tst = 0.5 * (output->avg_tst + input->avg_tst);
