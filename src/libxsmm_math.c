@@ -219,9 +219,7 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
       output->rsq = input->rsq;
       output->v_ref = input->v_ref;
       output->v_tst = input->v_tst;
-      LIBXSMM_ASSERT(0 <= input->m);
       output->m = input->m;
-      LIBXSMM_ASSERT(0 <= input->n);
       output->n = input->n;
       output->i = input->r;
     }
