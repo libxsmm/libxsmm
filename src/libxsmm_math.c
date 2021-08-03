@@ -238,6 +238,7 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
     /* initial minimum/maximum of reference/test */
     info->min_ref = info->min_tst = +inf.value;
     info->max_ref = info->max_tst = -inf.value;
+    info->rsq = 1.0;
   }
 }
 
