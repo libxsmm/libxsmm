@@ -199,9 +199,9 @@
           REAL(C_DOUBLE) l1_tst, min_tst, max_tst, avg_tst, var_tst
           !> Values (v_ref, v_tst) and location (m, n) of largest linf_abs.
           REAL(C_DOUBLE) v_ref, v_tst
-          !> Values (v_ref, v_tst), location (m, n), and zero-based i-th
-          !> reduction (libxsmm_matdiff_reduce) of smallest R-squared.
-          INTEGER(LIBXSMM_BLASINT_KIND) m, n, i
+          !> Values (v_ref, v_tst), location (m, n), and zero-based i-th of
+          !> r reductions (libxsmm_matdiff_reduce) of smallest R-squared.
+          INTEGER(LIBXSMM_BLASINT_KIND) m, n, i, r
         END TYPE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize

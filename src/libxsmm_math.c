@@ -211,11 +211,13 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
       output->m = input->m;
       LIBXSMM_ASSERT(0 <= input->n);
       output->n = input->n;
+      output->i = input->r;
     }
     output->avg_ref = 0.5 * (output->avg_ref + input->avg_ref);
     output->avg_tst = 0.5 * (output->avg_tst + input->avg_tst);
     output->l1_ref += input->l1_ref;
     output->l1_tst += input->l1_tst;
+    ++output->r;
   }
   else {
     libxsmm_matdiff_clear(output);
@@ -234,7 +236,7 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 #endif
     memset(info, 0, sizeof(*info)); /* nullify */
     /* no location discovered yet with a difference */
-    info->m = info->n = -1;
+    info->m = info->n = info->i = -1;
     /* initial minimum/maximum of reference/test */
     info->min_ref = info->min_tst = +inf.value;
     info->max_ref = info->max_tst = -inf.value;
