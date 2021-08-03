@@ -90,6 +90,8 @@ for (i = 0; i < nn; ++i) {
     else { /* NaN */
       result_nan = ((LIBXSMM_NOTNAN(ri) && inf > ra) ? 1 : 2);
       info->m = j; info->n = i;
+      info->v_ref = ri;
+      info->v_tst = ti;
       break;
     }
   }
