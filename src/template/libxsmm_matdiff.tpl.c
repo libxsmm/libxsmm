@@ -21,7 +21,7 @@ for (i = 0; i < nn; ++i) {
   double v0, v1;
 
   for (j = 0; j < mm; ++j) {
-    const double ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
+    const double ti = (NULL != real_tst ? real_tst[i*ldt+j] : 0);
     const double ri = real_ref[i*ldr+j];
     const double ta = LIBXSMM_ABS(ti);
     const double ra = LIBXSMM_ABS(ri);
@@ -31,7 +31,7 @@ for (i = 0; i < nn; ++i) {
     if (ri > info->max_ref) info->max_ref = ri;
 
     if (LIBXSMM_NOTNAN(ti) && inf > ta) {
-      const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
+      const double di = (NULL != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
 
       /* minimum/maximum of test set */
       if (ti < info->min_tst) info->min_tst = ti;
@@ -136,8 +136,8 @@ if (0 == result_nan) {
     double normri = 0, normti = 0, norm1 = 0;
 
     for (i = 0; i < nn; ++i) {
-      const double ri = real_ref[i*ldr + j], ti = (0 != real_tst ? real_tst[i*ldt + j] : 0);
-      const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
+      const double ri = real_ref[i*ldr + j], ti = (NULL != real_tst ? real_tst[i*ldt + j] : 0);
+      const double di = (NULL != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
       const double rd = ri - info->avg_ref, td = ti - info->avg_tst;
       const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
 
