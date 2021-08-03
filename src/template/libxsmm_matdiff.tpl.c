@@ -88,8 +88,8 @@ for (i = 0; i < nn; ++i) {
       }
     }
     else { /* NaN */
-      info->m = j; info->n = i;
       result_nan = ((LIBXSMM_NOTNAN(ri) && inf > ra) ? 1 : 2);
+      info->m = j; info->n = i;
       break;
     }
   }
