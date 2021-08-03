@@ -133,13 +133,23 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         info->l2_abs = libxsmm_dsqrt(info->l2_abs);
         info->l2_rel = libxsmm_dsqrt(info->l2_rel);
       }
-      else if (1 == result_nan) {
+      else if (0 != result_nan) {
         /* in case of NaN (in test-set), initialize statistics to either Infinity or NaN */
         info->norm1_abs = info->norm1_rel = info->normi_abs = info->normi_rel = info->normf_rel
                         = info->linf_abs = info->linf_rel = info->l2_abs = info->l2_rel
-                        = info->l1_tst = info->var_tst
                         = inf;
-        info->min_tst = info->max_tst = info->avg_tst = /*NaN*/info->v_tst;
+        if (1 == result_nan) {
+          info->l1_tst = info->var_tst = inf;
+          info->avg_tst = /*NaN*/info->v_tst;
+          info->min_tst = +inf;
+          info->max_tst = -inf;
+        }
+        else {
+          info->l1_ref = info->var_ref = inf;
+          info->avg_ref = /*NaN*/info->v_ref;
+          info->min_ref = +inf;
+          info->max_ref = -inf;
+        }
       }
       if (1 == n) LIBXSMM_ISWAP(info->m, info->n);
       if (0 != result_swap) {
