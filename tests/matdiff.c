@@ -149,7 +149,7 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.linf_abs - 2.0000000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.2222222)) result = EXIT_FAILURE;
     /* R-squared */
-    if (0.0000001 < LIBXSMM_ABS(diff.rsq - 0.9991717)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.rsq - 0.9490077)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
     if (0 != diff.m || 2 != diff.n) result = EXIT_FAILURE;
     if (x[3*diff.m+diff.n] != diff.v_ref) result = EXIT_FAILURE;
