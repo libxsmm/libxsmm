@@ -198,11 +198,6 @@ else
   KNC ?= 0
 endif
 
-CODE_BUF_MAXSIZE ?= 0
-ifneq (0,$(CODE_BUF_MAXSIZE))
-  DFLAGS += -DLIBXSMM_CODE_MAXSIZE=$(CODE_BUF_MAXSIZE)
-endif
-
 DEPDIR ?= $(ROOTDIR)
 ifeq (0,$(KNC))
   LIBNAME ?= $(DEPDIR)/lib/libxsmm
