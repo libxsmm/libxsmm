@@ -678,6 +678,9 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
                 acc_id);
 
             acc_id++;
+            if (n_tiles == 1) {
+              acc_id++;
+            }
             i_n_offset += n_blocking_info->sizes[in];
           }
           i_m_offset += m_blocking_info->sizes[im];
@@ -763,6 +766,9 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
                 acc_id);
 
             acc_id++;
+            if (n_tiles == 1) {
+              acc_id++;
+            }
             i_n_offset += n_blocking_info->sizes[in];
           }
           i_m_offset += m_blocking_info->sizes[im];

@@ -827,6 +827,9 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
                 acc_id, i_micro_kernel_config, 1);
 
             acc_id++;
+            if (n_tiles == 1) {
+              acc_id++;
+            }
             i_n_offset += n_blocking_info->sizes[in];
           }
           i_m_offset += m_blocking_info->sizes[im];
@@ -912,6 +915,9 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
                 acc_id, i_micro_kernel_config, 1);
 
             acc_id++;
+            if (n_tiles == 1) {
+              acc_id++;
+            }
             i_n_offset += n_blocking_info->sizes[in];
           }
           i_m_offset += m_blocking_info->sizes[im];
