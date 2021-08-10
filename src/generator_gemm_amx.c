@@ -1858,6 +1858,16 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
             i_gp_reg_mapping->gp_reg_b,
             0 );
       } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) {
+        /* Calculate to reg_b the proper address based on the reduce loop index  */
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            i_gp_reg_mapping->gp_reg_b_offset,
+            i_gp_reg_mapping->gp_reg_reduce_loop, 8,
+            0,
+            i_gp_reg_mapping->gp_reg_b,
+            0 );
+        libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b_base, i_gp_reg_mapping->gp_reg_b);
+
         /* Calculate to reg_a the proper address based on the reduce loop index  */
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_micro_kernel_config->alu_mov_instruction,
@@ -1882,16 +1892,6 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
         } else {
           libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a_base, i_gp_reg_mapping->gp_reg_a);
         }
-
-        /* Calculate to reg_b the proper address based on the reduce loop index  */
-        libxsmm_x86_instruction_alu_mem( io_generated_code,
-            i_micro_kernel_config->alu_mov_instruction,
-            i_gp_reg_mapping->gp_reg_b_offset,
-            i_gp_reg_mapping->gp_reg_reduce_loop, 8,
-            0,
-            i_gp_reg_mapping->gp_reg_b,
-            0 );
-        libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b_base, i_gp_reg_mapping->gp_reg_b);
       } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
         libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_reduce_loop, i_gp_reg_mapping->gp_reg_a);
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_a, i_xgemm_desc->c1);
