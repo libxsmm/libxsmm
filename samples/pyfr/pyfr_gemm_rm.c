@@ -12,13 +12,16 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
-#include <mkl.h>
 #include <sys/time.h>
 
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl.h>
+#else /* prototypes for GEMM */
+void dgemm_(const char*, const char*, const int*, const int*, const int*,
+  const double*, const double*, const int*, const double*, const int*,
+  const double*, double*, const int*);
+#endif
 
-static double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
-}
 
 int main(int argc, char *argv[])
 {
@@ -28,13 +31,13 @@ int main(int argc, char *argv[])
   double* b;
   double* c1;
   double* c2;
-  struct timeval l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total = 0.0;
   int reps, i, j;
   const int nblock = 16;
   double alpha = 1.0, beta = 1.0;
   char transa = 'N', transb = 'N';
-  libxsmm_gemm_prefetch_type l_prefetch_op = LIBXSMM_PREFETCH_NONE;
+  int l_prefetch_op = LIBXSMM_PREFETCH_NONE;
   libxsmm_dmmfunction kernel = NULL;
 
   if (argc != 5) {
@@ -94,26 +97,26 @@ int main(int argc, char *argv[])
     c2[i] = 0;
   }
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( j = 0; j < reps; j++ ) {
     dgemm(&transb, &transa, &n, &m, &k, &alpha, b, &ldb, a, &lda, &beta, c1, &ldc);
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
 
   fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, l_total/(double)reps );
   fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, (2.0 * (double)m * (double)n * (double)k * (double)reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, ((double)sizeof(double) * (((double)m * (double)n) + ((double)k * (double)n)) * (double)reps * 1.0e-9) / l_total );
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( j = 0; j < reps; j++ ) {
     #pragma omp parallel for private(i)
     for ( i = 0; i < n; i+=nblock) {
       kernel( b+i, a, c2+i, NULL, NULL, NULL );
     }
-    gettimeofday(&l_end, NULL);
+    l_end = libxsmm_timer_tick();
   }
-  l_total = sec(l_start, l_end);
+  l_total = libxsmm_timer_duration(l_start, l_end);
 
   fprintf(stdout, "time[s] libxsmm (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, l_total/(double)reps );
   fprintf(stdout, "GFLOPS  libxsmm (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, (2.0 * (double)m * (double)n * (double)k * (double)reps * 1.0e-9) / l_total );
@@ -128,4 +131,3 @@ int main(int argc, char *argv[])
   }
   printf("max error: %f\n\n", max_error);
 }
-
