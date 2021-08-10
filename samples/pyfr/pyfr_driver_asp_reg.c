@@ -14,15 +14,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include <sys/time.h>
 
 #define REPS 100
-
 #define REALTYPE double
 
-static double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
-}
 
 int my_csr_reader( const char*           i_csr_file_in,
                     unsigned int**        o_row_idx,
@@ -153,18 +148,18 @@ int main(int argc, char* argv[]) {
   REALTYPE* l_c_dense_betaone;
   REALTYPE* l_c_dense_betazero;
   REALTYPE l_max_error = 0.0;
-  unsigned int l_m;
-  unsigned int l_n;
-  unsigned int l_k;
+  int l_m;
+  int l_n;
+  int l_k;
 
-  unsigned int l_i;
-  unsigned int l_j;
-  unsigned int l_z;
+  int l_i;
+  int l_j;
+  int l_z;
   unsigned int l_elems;
   unsigned int l_reps;
   unsigned int l_n_block;
 
-  struct timeval l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total;
 
   double alpha = 1.0;
@@ -327,7 +322,7 @@ int main(int argc, char* argv[]) {
   printf("max error beta=1 (dense vs. gold): %f\n", l_max_error);
 
   /* Let's measure performance */
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
 #ifdef _OPENMP
     #pragma omp parallel for private(l_z)
@@ -336,14 +331,14 @@ int main(int argc, char* argv[]) {
       libxsmm_dfsspmdm_execute( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * (((double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
 #ifdef _OPENMP
     #pragma omp parallel for private(l_z)
@@ -352,31 +347,31 @@ int main(int argc, char* argv[]) {
       libxsmm_dfsspmdm_execute( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   beta = 0.0;
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
     dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   beta = 1.0;
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
     dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
@@ -385,4 +380,3 @@ int main(int argc, char* argv[]) {
   libxsmm_dfsspmdm_destroy( gemm_op_betazero );
   libxsmm_dfsspmdm_destroy( gemm_op_betaone );
 }
-

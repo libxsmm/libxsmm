@@ -72,8 +72,8 @@ $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h $(SRCDIR)/../../external_aux/counters_skx.h
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
-$(BLDDIR)/counters_skx.o: $(SRCDIR)/../../external_aux/counters_skx.c $(SRCDIR)/../../external_aux/counters_skx.h
-	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $(SRCDIR)/../../external_aux/counters_skx.c -o $(BLDDIR)/counters_skx.o 
+$(BLDDIR)/counters_skx.o: $(SRCDIR)/../../external_aux/counters_skx.c $(SRCDIR)/../../external_aux/counters_skx.h .state $(BLDDIR)/.make
+	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
 $(OUTDIR)/resnet_driver_f32: $(OUTDIR)/.make $(BLDDIR)/resnet_driver_f32-c.o $(BLDDIR)/counters_skx.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/resnet_driver_f32-c.o $(BLDDIR)/counters_skx.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
