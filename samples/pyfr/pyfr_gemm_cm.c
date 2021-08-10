@@ -8,12 +8,13 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/time.h>
-#include <mkl.h>
 #include <libxsmm.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <stdio.h>
+#include <mkl.h>
+#include <sys/time.h>
+
 
 static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
@@ -37,7 +38,8 @@ int main(int argc, char *argv[])
   libxsmm_dmmfunction kernel = NULL;
 
   if (argc != 5) {
-    fprintf(stderr, "Invalid ./a,out M N K reps\n");
+    assert(0 < argc);
+    fprintf(stderr, "Invalid: try %s M N K reps\n", argv[0]);
     exit(-1);
   }
 
@@ -51,7 +53,7 @@ int main(int argc, char *argv[])
   ldc = m;
 
   if (n % nblock != 0) {
-    fprintf(stderr, "N needs to be divisable by %i\n", nblock);
+    fprintf(stderr, "N needs to be divisible by %i\n", nblock);
     exit(-1);
   }
 
