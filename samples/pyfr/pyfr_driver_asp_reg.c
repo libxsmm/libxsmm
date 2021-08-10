@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include <sys/time.h>
 
 #define REPS 100
 #define REALTYPE double

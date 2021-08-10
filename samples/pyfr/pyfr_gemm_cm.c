@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
-#include <sys/time.h>
 
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
