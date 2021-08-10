@@ -865,11 +865,11 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
     if (i_micro_kernel_config->decompress_A == 1) {
       /* Decompress first block of A */
       if ((_A_tile_id_load[i] > 0) && (_A_tile_id_load[i] % 2 == 0) && (i_brgemm_loop <= 0)) {
-        decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], 0);
+        decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], 0, 0);
       }
       /* Check if SW pipelining is doable for the A decompression...  */
       if ((_A_tile_id_load[i] > 0) && (_A_tile_id_load[i] % 2 == 0) && (i_brgemm_loop >= 0) && (i_brgemm_loop < i_xgemm_desc->c3 - 1) && (fully_unrolled_brloop == 1)) {
-        decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], i_xgemm_desc->c1);
+        decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], i_xgemm_desc->c1, 0);
       }
     }
 

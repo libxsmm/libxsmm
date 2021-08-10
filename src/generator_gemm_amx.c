@@ -1777,15 +1777,6 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
               i_gp_reg_mapping->gp_reg_b,
               0 );
         } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) {
-          /* Calculate to reg_a the proper address based on the reduce loop index  */
-          libxsmm_x86_instruction_alu_mem( io_generated_code,
-              i_micro_kernel_config->alu_mov_instruction,
-              i_gp_reg_mapping->gp_reg_a_offset,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              i*8,
-              i_gp_reg_mapping->gp_reg_a,
-              0 );
-          libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a_base, i_gp_reg_mapping->gp_reg_a);
           /* Calculate to reg_b the proper address based on the reduce loop index  */
           libxsmm_x86_instruction_alu_mem( io_generated_code,
               i_micro_kernel_config->alu_mov_instruction,
@@ -1795,6 +1786,31 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
               i_gp_reg_mapping->gp_reg_b,
               0 );
           libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b_base, i_gp_reg_mapping->gp_reg_b);
+
+          /* Calculate to reg_a the proper address based on the reduce loop index  */
+          libxsmm_x86_instruction_alu_mem( io_generated_code,
+              i_micro_kernel_config->alu_mov_instruction,
+              i_gp_reg_mapping->gp_reg_a_offset,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              i*8,
+              i_gp_reg_mapping->gp_reg_a,
+              0 );
+
+          if (i_micro_kernel_config->decompress_A == 1) {
+            libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+            libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0);
+            libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BITMAP_PTR, i_gp_reg_mapping->gp_reg_bitmap_a );
+            libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF, i_gp_reg_mapping->gp_reg_decompressed_a);
+            libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, i_gp_reg_mapping->gp_reg_help_0, i_micro_kernel_config->sparsity_factor_A);
+            libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_decompressed_a);
+            libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SARQ, i_gp_reg_mapping->gp_reg_help_0, 4);
+            libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_bitmap_a);
+            libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a_base, i_gp_reg_mapping->gp_reg_a);
+            libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+          } else {
+            libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a_base, i_gp_reg_mapping->gp_reg_a);
+          }
+          i_micro_kernel_config->br_loop_index = i;
         } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
           A_offs = i * i_xgemm_desc->c1;
           B_offs = i * i_xgemm_desc->c2;
@@ -1824,7 +1840,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
       }
 
       if (i_xgemm_desc->c3 > 0) {
-        if (!(i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
+        if (!((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0 || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0)) {
           libxsmm_generator_gemm_store_C_amx( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count] );
         }
       }

@@ -3653,6 +3653,29 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_offs libxsmm_bmmdispatch_reducebatch
   return result.bmro;
 }
 
+LIBXSMM_API libxsmm_bmmfunction_reducebatch_offs_meltwfused libxsmm_bmmdispatch_reducebatch_offs_meltwfused_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const float* alpha, const float* beta, const int* flags, const int* prefetch,
+  libxsmm_meltw_operation meltw_op, libxsmm_datatype meltw_dt, libxsmm_meltw_flags meltw_flags, unsigned char meltw_param, unsigned int meltw_ldx, unsigned int meltw_ldy, unsigned int meltw_ldz)
+{
+  const int gemm_flags = (NULL == flags ? (LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_VNNI_A) : *flags);
+  libxsmm_descriptor_blob blob;
+  /*const*/ libxsmm_gemm_descriptor *const desc = libxsmm_bgemm_descriptor_init(&blob, m, n, k,
+    NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
+    NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
+    NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
+    gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET, libxsmm_get_gemm_xprefetch(prefetch));
+  desc->meltw_datatype_aux = (unsigned char)meltw_dt;
+  desc->meltw_flags = (unsigned short)meltw_flags;
+  desc->meltw_operation = (unsigned char)meltw_op;
+  desc->meltw_param = (unsigned char)meltw_param;
+  desc->meltw_ldx = (unsigned int) meltw_ldx;
+  desc->meltw_ldy = (unsigned int) meltw_ldy;
+  desc->meltw_ldz = (unsigned int) meltw_ldz;
+  desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  return result.bmro_meltwfused;
+}
 
 LIBXSMM_API libxsmm_wimmfunction_reducebatch_offs libxsmm_wimmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
