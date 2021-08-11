@@ -2350,10 +2350,8 @@ int main(int argc, char* argv[])
 #endif
 #if defined(USE_UNCORE_PERF_COUNTERS)
     get_cas_ddr_bw_uncore_ctrs( &s, (double)(l_total/iters), &bw_avg );
-    printf("AVG GiB/s (IN   L2): %f\n", bw_avg.rd);
-    printf("AVG GiB/s (OUT  L2): %f\n", bw_avg.wr);
-    printf("AVG GiB/s (DEM  L2): %f\n", bw_avg.wr2);
-    printf("AVG GiB/s (DROP L2): %f\n", bw_avg.wr3);
+    printf("AVG GiB/s (IN  iMC): %f\n", bw_avg.rd);
+    printf("AVG GiB/s (OUT iMC): %f\n", bw_avg.wr);
 #endif
   }
 
