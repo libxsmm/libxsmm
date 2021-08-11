@@ -21,6 +21,12 @@
  * */
 LIBXSMM_API unsigned int* libxsmm_rng_create_extstate(unsigned int/*uint32_t*/ seed);
 
+/*
+ * return the size of the state such that users can save it and recrate the
+ * same sequence of PRNG numbers
+ */
+LIBXSMM_API unsigned int libxsmm_rng_get_extstate_size();
+
 /** free a previously created rng_avx512_extstate */
 LIBXSMM_API void libxsmm_rng_destroy_extstate(unsigned int* stateptr);
 
