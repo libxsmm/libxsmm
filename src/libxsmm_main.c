@@ -328,7 +328,6 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
 #else
 # if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (NULL != libxsmm_malloc_fn.malloc.ptr) {
-    LIBXSMM_ASSERT(malloc != libxsmm_malloc_fn.malloc.ptr);
     result = libxsmm_malloc_fn.malloc.ptr(size);
   }
   else
@@ -351,7 +350,6 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (NULL != libxsmm_malloc_fn.calloc.ptr) {
-    LIBXSMM_ASSERT(calloc != libxsmm_malloc_fn.calloc.ptr);
     result = libxsmm_malloc_fn.calloc.ptr(num, size);
   }
   else
@@ -377,7 +375,6 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (NULL != libxsmm_malloc_fn.realloc.ptr) {
-    LIBXSMM_ASSERT(realloc != libxsmm_malloc_fn.realloc.ptr);
     result = libxsmm_malloc_fn.realloc.ptr(ptr, size);
   }
   else
@@ -397,7 +394,6 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
   if (NULL != ptr) {
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
     if (NULL != libxsmm_malloc_fn.free.ptr) {
-      LIBXSMM_ASSERT(free != libxsmm_malloc_fn.free.ptr);
       libxsmm_malloc_fn.free.ptr(ptr);
     }
     else
