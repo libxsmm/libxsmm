@@ -31,7 +31,7 @@
 #include "../common/dnn_common.h"
 
 #if defined(USE_CORE_PERF_COUNTERS) || defined(USE_UNCORE_PERF_COUNTERS)
-#  include "../../external_aux/counters_skx.h"
+#  include "../../external_aux/perf_counter_markers.h"
 #endif
 
 #define CHECK_L1
@@ -2042,23 +2042,23 @@ int main(int argc, char* argv[])
 
 #if defined(USE_CORE_PERF_COUNTERS)
   bw_gibs bw_avg;
-  ctrs_skx_core a, b, s;
+  ctrs_core a, b, s;
 
-  zero_skx_core_ctrs( &a );
-  zero_skx_core_ctrs( &b );
-  zero_skx_core_ctrs( &s );
+  zero_core_ctrs( &a );
+  zero_core_ctrs( &b );
+  zero_core_ctrs( &s );
 
-  setup_skx_core_ctrs(CTRS_EXP_L2_BW);
+  setup_core_ctrs(CTRS_EXP_L2_BW);
 #endif
 #if defined(USE_UNCORE_PERF_COUNTERS)
   bw_gibs bw_avg;
-  ctrs_skx_uc a, b, s;
+  ctrs_uncore a, b, s;
 
-  zero_skx_uc_ctrs( &a );
-  zero_skx_uc_ctrs( &b );
-  zero_skx_uc_ctrs( &s );
+  zero_uncore_ctrs( &a );
+  zero_uncore_ctrs( &b );
+  zero_uncore_ctrs( &s );
 
-  setup_skx_uc_ctrs( CTRS_EXP_DRAM_CAS );
+  setup_uncore_ctrs( CTRS_EXP_DRAM_CAS );
 #endif
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
@@ -2294,10 +2294,10 @@ int main(int argc, char* argv[])
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
 #if defined(USE_CORE_PERF_COUNTERS)
-    read_skx_core_ctrs( &a );
+    read_core_ctrs( &a );
 #endif
 #if defined(USE_UNCORE_PERF_COUNTERS)
-    read_skx_uc_ctrs( &a );
+    read_uncore_ctrs( &a );
 #endif
     l_start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -2318,14 +2318,14 @@ int main(int argc, char* argv[])
     }
     l_end = libxsmm_timer_tick();
 #if defined(USE_CORE_PERF_COUNTERS)
-    read_skx_core_ctrs( &b );
-    difa_skx_core_ctrs( &a, &b, &s );
-    divi_skx_core_ctrs( &s, iters );
+    read_core_ctrs( &b );
+    difa_core_ctrs( &a, &b, &s );
+    divi_core_ctrs( &s, iters );
 #endif
 #if defined(USE_UNCORE_PERF_COUNTERS)
-    read_skx_uc_ctrs( &b );
-    difa_skx_uc_ctrs( &a, &b, &s );
-    divi_skx_uc_ctrs( &s, iters );
+    read_uncore_ctrs( &b );
+    difa_uncore_ctrs( &a, &b, &s );
+    divi_uncore_ctrs( &s, iters );
 #endif
     l_total = libxsmm_timer_duration(l_start, l_end);
 
@@ -2342,14 +2342,14 @@ int main(int argc, char* argv[])
     }
     printf("%f,%f\n", ((double)(l_total/iters)), gflop/l_total);
 #if defined(USE_CORE_PERF_COUNTERS)
-    get_l2_bw_skx( &s, (double)(l_total/iters), &bw_avg );
+    get_l2_bw_core_ctrs( &s, (double)(l_total/iters), &bw_avg );
     printf("AVG GiB/s (IN   L2): %f\n", bw_avg.rd);
     printf("AVG GiB/s (OUT  L2): %f\n", bw_avg.wr);
     printf("AVG GiB/s (DEM  L2): %f\n", bw_avg.wr2);
     printf("AVG GiB/s (DROP L2): %f\n", bw_avg.wr3);
 #endif
 #if defined(USE_UNCORE_PERF_COUNTERS)
-    get_cas_ddr_bw_skx( &s, (double)(l_total/iters), &bw_avg );
+    get_cas_ddr_bw_uncore_ctrs( &s, (double)(l_total/iters), &bw_avg );
     printf("AVG GiB/s (IN   L2): %f\n", bw_avg.rd);
     printf("AVG GiB/s (OUT  L2): %f\n", bw_avg.wr);
     printf("AVG GiB/s (DEM  L2): %f\n", bw_avg.wr2);

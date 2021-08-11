@@ -40,54 +40,54 @@
 #include <sys/types.h>
 #include <sys/syscall.h>
 
-#include "counters_skx.h"
+#include "perf_counter_markers.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct perf_skx_uc_fd {
-  int fd_act_rd[SKX_NIMC];
-  int fd_act_wr[SKX_NIMC];
-  int fd_cas_rd[SKX_NIMC];
-  int fd_cas_wr[SKX_NIMC];
-  int fd_imc_clockticks[SKX_NIMC];
-  int fd_cha_rd[SKX_NCHA];
-  int fd_cha_wr[SKX_NCHA];
-  int fd_vert_bl_ring_in_use[SKX_NCHA];
-  int fd_horz_bl_ring_in_use[SKX_NCHA];
-  int fd_vert_ak_ring_in_use[SKX_NCHA];
-  int fd_horz_ak_ring_in_use[SKX_NCHA];
-  int fd_vert_iv_ring_in_use[SKX_NCHA];
-  int fd_horz_iv_ring_in_use[SKX_NCHA];
-  int fd_llc_lookup_rd[SKX_NCHA];
-  int fd_llc_lookup_wr[SKX_NCHA];
-  int fd_llc_victims[SKX_NCHA];
-  int fd_xsnp_resp[SKX_NCHA];
-  int fd_core_snp[SKX_NCHA];
-  int fd_snoops_sent[SKX_NCHA];
-  int fd_snoop_resp[SKX_NCHA];
-  int fd_snoop_resp_local[SKX_NCHA];
-  int fd_osb[SKX_NCHA];
-  int fd_tor_inserts[SKX_NCHA];
-  int fd_tor_occupancy[SKX_NCHA];
-  int fd_cha_clockticks[SKX_NCHA];
-  int fd_cms_clockticks[SKX_NCHA];
-  ctrs_skx_uc_exp exp;
-} perf_skx_uc_fd;
+typedef struct perf_uncore_fd {
+  int fd_act_rd[CTRS_NIMC];
+  int fd_act_wr[CTRS_NIMC];
+  int fd_cas_rd[CTRS_NIMC];
+  int fd_cas_wr[CTRS_NIMC];
+  int fd_imc_clockticks[CTRS_NIMC];
+  int fd_cha_rd[CTRS_NCHA];
+  int fd_cha_wr[CTRS_NCHA];
+  int fd_vert_bl_ring_in_use[CTRS_NCHA];
+  int fd_horz_bl_ring_in_use[CTRS_NCHA];
+  int fd_vert_ak_ring_in_use[CTRS_NCHA];
+  int fd_horz_ak_ring_in_use[CTRS_NCHA];
+  int fd_vert_iv_ring_in_use[CTRS_NCHA];
+  int fd_horz_iv_ring_in_use[CTRS_NCHA];
+  int fd_llc_lookup_rd[CTRS_NCHA];
+  int fd_llc_lookup_wr[CTRS_NCHA];
+  int fd_llc_victims[CTRS_NCHA];
+  int fd_xsnp_resp[CTRS_NCHA];
+  int fd_core_snp[CTRS_NCHA];
+  int fd_snoops_sent[CTRS_NCHA];
+  int fd_snoop_resp[CTRS_NCHA];
+  int fd_snoop_resp_local[CTRS_NCHA];
+  int fd_osb[CTRS_NCHA];
+  int fd_tor_inserts[CTRS_NCHA];
+  int fd_tor_occupancy[CTRS_NCHA];
+  int fd_cha_clockticks[CTRS_NCHA];
+  int fd_cms_clockticks[CTRS_NCHA];
+  ctrs_uncore_exp exp;
+} perf_uncore_fd;
 
-typedef struct perf_skx_core_fd
+typedef struct perf_core_fd
 {
-  int fd_clockticks[SKX_NCORE];
-  int fd_l2_lines_in[SKX_NCORE];
-  int fd_l2_lines_out_ns[SKX_NCORE];
-  int fd_idi_misc_wb_up[SKX_NCORE];
-  int fd_idi_misc_wb_down[SKX_NCORE];
-  ctrs_skx_core_exp exp;
-} perf_skx_core_fd;
+  int fd_clockticks[CTRS_NCORE];
+  int fd_l2_lines_in[CTRS_NCORE];
+  int fd_l2_lines_out_ns[CTRS_NCORE];
+  int fd_idi_misc_wb_up[CTRS_NCORE];
+  int fd_idi_misc_wb_down[CTRS_NCORE];
+  ctrs_core_exp exp;
+} perf_core_fd;
 
-static perf_skx_uc_fd gbl_uc_perf_fd;
-static perf_skx_core_fd gbl_core_perf_fd;
+static perf_uncore_fd gbl_uncore_perf_fd;
+static perf_core_fd gbl_core_perf_fd;
 
 static int perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
                 int cpu, int group_fd, unsigned long flags);
@@ -164,93 +164,97 @@ void evsetup(const char *ename, int *fd, unsigned int event, unsigned int umask,
   }
 }
 
-void setup_skx_uc_ctrs( ctrs_skx_uc_exp exp ) {
+void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
   int ret;
   char fname[1024];
   int mc, cha;
 
-  for ( mc = 0; mc < SKX_NIMC; ++mc ) {
+  for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
 #if 0
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_imc_%d",mc);
 #else
     sprintf(fname, "/sys/devices/uncore_imc_%d", mc);
 #endif
+#ifdef CTRS_CPU_SKX 
     if ( exp == CTRS_EXP_DRAM_ACT ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_act_rd[mc], 0x01, 0x01, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_act_wr[mc], 0x01, 0x02, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_imc_clockticks[mc], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_act_rd[mc], 0x01, 0x01, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_act_wr[mc], 0x01, 0x02, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_imc_clockticks[mc], 0x00, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_DRAM_CAS ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_cas_rd[mc], 0x04, 0x03, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cas_wr[mc], 0x04, 0x0C, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_imc_clockticks[mc], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cas_rd[mc], 0x04, 0x03, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cas_wr[mc], 0x04, 0x0C, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_imc_clockticks[mc], 0x00, 0x00, 0x00, 0x00, -1);
     } else {
       /* nothing */
     }
+#endif
   }
 
-  for ( cha = 0; cha < SKX_NCHA; ++cha ) {
+  for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
 #if 0
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_cha_%d",cha);
 #else
     sprintf(fname, "/sys/devices/uncore_cha_%d", cha);
 #endif
+#ifdef CTRS_CPU_SKX
     if ( exp == CTRS_EXP_CHA_ACT ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_rd[cha], 0x50, 0x03, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_wr[cha], 0x50, 0x0C, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_rd[cha], 0x50, 0x03, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_wr[cha], 0x50, 0x0C, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CMS_BL ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_vert_bl_ring_in_use[cha], 0xAA, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_horz_bl_ring_in_use[cha], 0xAB, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cms_clockticks[cha], 0xc0, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_vert_bl_ring_in_use[cha], 0xAA, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_horz_bl_ring_in_use[cha], 0xAB, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cms_clockticks[cha], 0xc0, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CMS_AK ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_vert_ak_ring_in_use[cha], 0xA8, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_horz_ak_ring_in_use[cha], 0xA9, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cms_clockticks[cha], 0xc0, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_vert_ak_ring_in_use[cha], 0xA8, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_horz_ak_ring_in_use[cha], 0xA9, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cms_clockticks[cha], 0xc0, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CMS_IV ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_vert_iv_ring_in_use[cha], 0xAC, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_horz_iv_ring_in_use[cha], 0xAD, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cms_clockticks[cha], 0xc0, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_vert_iv_ring_in_use[cha], 0xAC, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_horz_iv_ring_in_use[cha], 0xAD, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cms_clockticks[cha], 0xc0, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CMS_AK_IV ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_vert_ak_ring_in_use[cha], 0xA8, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_horz_ak_ring_in_use[cha], 0xA9, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_vert_iv_ring_in_use[cha], 0xAC, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_horz_iv_ring_in_use[cha], 0xAD, 0x0f, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cms_clockticks[cha], 0xc0, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_vert_ak_ring_in_use[cha], 0xA8, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_horz_ak_ring_in_use[cha], 0xA9, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_vert_iv_ring_in_use[cha], 0xAC, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_horz_iv_ring_in_use[cha], 0xAD, 0x0f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cms_clockticks[cha], 0xc0, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_llc_lookup_rd[cha], 0x34, 0x03, 0x01e20000, 0x10, -1); /* F,M,E,S,I LLC and NM */
-      evsetup(fname, &gbl_uc_perf_fd.fd_llc_lookup_wr[cha], 0x34, 0x05, 0x01e20000, 0x3b, -1); /* F,M,E,S,I LLC and NM */
-      evsetup(fname, &gbl_uc_perf_fd.fd_llc_victims[cha],   0x37, 0x2f, 0x00000000, 0x00, -1); /* F,M,E,S,I LLC and NM */
-      /*evsetup(fname, &gbl_uc_perf_fd.fd_llc_victims[cha],   0x34, 0x11, 0x01e20000, 0x10, -1);*/ /* F,M,E,S,I LLC and NM */
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_llc_lookup_rd[cha], 0x34, 0x03, 0x01e20000, 0x10, -1); /* F,M,E,S,I LLC and NM */
+      evsetup(fname, &gbl_uncore_perf_fd.fd_llc_lookup_wr[cha], 0x34, 0x05, 0x01e20000, 0x3b, -1); /* F,M,E,S,I LLC and NM */
+      evsetup(fname, &gbl_uncore_perf_fd.fd_llc_victims[cha],   0x37, 0x2f, 0x00000000, 0x00, -1); /* F,M,E,S,I LLC and NM */
+      /*evsetup(fname, &gbl_uncore_perf_fd.fd_llc_victims[cha],   0x34, 0x11, 0x01e20000, 0x10, -1);*/ /* F,M,E,S,I LLC and NM */
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CHA_XSNP_RESP ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_xsnp_resp[cha], 0x32, 0xff, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_xsnp_resp[cha], 0x32, 0xff, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CHA_CORE_SNP ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_core_snp[cha], 0x33, 0xe7, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_core_snp[cha], 0x33, 0xe7, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CHA_SNOOPS_SENT ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_snoops_sent[cha], 0x51, 0x01, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_snoops_sent[cha], 0x51, 0x01, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CHA_SNOOP_RESP_ALL ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_snoop_resp[cha], 0x5c, 0xff, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_snoop_resp_local[cha], 0x5d, 0xff, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_snoop_resp[cha], 0x5c, 0xff, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_snoop_resp_local[cha], 0x5d, 0xff, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CHA_OSB ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_osb[cha], 0x55, 0x00, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_osb[cha], 0x55, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CHA_TOR ) {
-      evsetup(fname, &gbl_uc_perf_fd.fd_tor_inserts[cha], 0x35, 0x25, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_tor_occupancy[cha], 0x36, 0x24, 0x00, 0x00, -1);
-      evsetup(fname, &gbl_uc_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_tor_inserts[cha], 0x35, 0x25, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_tor_occupancy[cha], 0x36, 0x24, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else {
       /* nothing */
     }
+#endif
   }
 
-  gbl_uc_perf_fd.exp = exp;
+  gbl_uncore_perf_fd.exp = exp;
 }
 
-void setup_skx_core_ctrs( ctrs_skx_core_exp exp ) {
+void setup_core_ctrs( ctrs_core_exp exp ) {
   int ret;
   char fname[1024];
   int core;
@@ -261,7 +265,8 @@ void setup_skx_core_ctrs( ctrs_skx_core_exp exp ) {
   sprintf(fname, "/sys/devices/cpu");
 #endif
 
-  for ( core = 0; core < SKX_NCORE; ++core ) {
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
+#ifdef CTRS_CPU_SKX
     if ( exp == CTRS_EXP_L2_BW ) {
       evsetup(fname, &gbl_core_perf_fd.fd_clockticks[core], 0x3c, 0x00, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_in[core], 0xf1, 0x1f, 0x00, 0x00, core);
@@ -272,6 +277,7 @@ void setup_skx_core_ctrs( ctrs_skx_core_exp exp ) {
     } else {
       /* nothing */
     }
+#endif
   }
 
   gbl_core_perf_fd.exp = exp;
@@ -288,81 +294,81 @@ static uint64_t readctr(int fd) {
   return data;
 }
 
-void read_skx_uc_ctrs( ctrs_skx_uc *c ) {
+void read_uncore_ctrs( ctrs_uncore *c ) {
   int mc, cha;
-  for ( mc = 0; mc < SKX_NIMC; ++mc ) {
-    if ( gbl_uc_perf_fd.exp == CTRS_EXP_DRAM_ACT ) {
-      c->act_rd[mc] = readctr(gbl_uc_perf_fd.fd_act_rd[mc]);
-      c->act_wr[mc] = readctr(gbl_uc_perf_fd.fd_act_wr[mc]);
-      c->imc_clockticks[mc] = readctr(gbl_uc_perf_fd.fd_imc_clockticks[mc]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_DRAM_CAS ) {
-      c->cas_rd[mc] = readctr(gbl_uc_perf_fd.fd_cas_rd[mc]);
-      c->cas_wr[mc] = readctr(gbl_uc_perf_fd.fd_cas_wr[mc]);
-      c->imc_clockticks[mc] = readctr(gbl_uc_perf_fd.fd_imc_clockticks[mc]);
+  for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
+    if ( gbl_uncore_perf_fd.exp == CTRS_EXP_DRAM_ACT ) {
+      c->act_rd[mc] = readctr(gbl_uncore_perf_fd.fd_act_rd[mc]);
+      c->act_wr[mc] = readctr(gbl_uncore_perf_fd.fd_act_wr[mc]);
+      c->imc_clockticks[mc] = readctr(gbl_uncore_perf_fd.fd_imc_clockticks[mc]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_DRAM_CAS ) {
+      c->cas_rd[mc] = readctr(gbl_uncore_perf_fd.fd_cas_rd[mc]);
+      c->cas_wr[mc] = readctr(gbl_uncore_perf_fd.fd_cas_wr[mc]);
+      c->imc_clockticks[mc] = readctr(gbl_uncore_perf_fd.fd_imc_clockticks[mc]);
     } else {
       /* nothing */
     }
   }
 
-  for ( cha = 0; cha < SKX_NCHA; ++cha ) {
-    if ( gbl_uc_perf_fd.exp == CTRS_EXP_CHA_ACT ) {
-      c->cha_rd[cha] = readctr(gbl_uc_perf_fd.fd_cha_rd[cha]);
-      c->cha_wr[cha] = readctr(gbl_uc_perf_fd.fd_cha_wr[cha]);
-      c->cha_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cha_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CMS_BL ) {
-      c->vert_bl_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_vert_bl_ring_in_use[cha]);
-      c->horz_bl_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_horz_bl_ring_in_use[cha]);
-      c->cms_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cms_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CMS_AK ) {
-      c->vert_ak_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_vert_ak_ring_in_use[cha]);
-      c->horz_ak_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_horz_ak_ring_in_use[cha]);
-      c->cms_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cms_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CMS_IV ) {
-      c->vert_iv_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_vert_iv_ring_in_use[cha]);
-      c->horz_iv_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_horz_iv_ring_in_use[cha]);
-      c->cms_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cms_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CMS_AK_IV ) {
-      c->vert_ak_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_vert_ak_ring_in_use[cha]);
-      c->horz_ak_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_horz_ak_ring_in_use[cha]);
-      c->vert_iv_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_vert_iv_ring_in_use[cha]);
-      c->horz_iv_ring_in_use[cha] = readctr(gbl_uc_perf_fd.fd_horz_iv_ring_in_use[cha]);
-      c->cms_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cms_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS ) {
-      c->llc_lookup_rd[cha] = readctr(gbl_uc_perf_fd.fd_llc_lookup_rd[cha]);
-      c->llc_lookup_wr[cha] = readctr(gbl_uc_perf_fd.fd_llc_lookup_wr[cha]);
-      c->llc_victims[cha] = readctr(gbl_uc_perf_fd.fd_llc_victims[cha]);
-      c->cha_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cha_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CHA_XSNP_RESP ) {
-      c->xsnp_resp[cha] = readctr(gbl_uc_perf_fd.fd_xsnp_resp[cha]);
-      c->cha_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cha_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CHA_CORE_SNP ) {
-      c->core_snp[cha] = readctr(gbl_uc_perf_fd.fd_core_snp[cha]);
-      c->cha_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cha_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CHA_SNOOPS_SENT ) {
-      c->snoops_sent[cha] = readctr(gbl_uc_perf_fd.fd_snoops_sent[cha]);
-      c->cha_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cha_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CHA_SNOOP_RESP_ALL ) {
-      c->snoop_resp[cha] = readctr(gbl_uc_perf_fd.fd_snoop_resp[cha]);
-      c->snoop_resp_local[cha] = readctr(gbl_uc_perf_fd.fd_snoop_resp_local[cha]);
-      c->cha_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cha_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CHA_OSB ) {
-      c->osb[cha] = readctr(gbl_uc_perf_fd.fd_osb[cha]);
-      c->cha_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cha_clockticks[cha]);
-    } else if ( gbl_uc_perf_fd.exp == CTRS_EXP_CHA_TOR ) {
-      c->tor_inserts[cha] = readctr(gbl_uc_perf_fd.fd_tor_inserts[cha]);
-      c->tor_occupancy[cha] = readctr(gbl_uc_perf_fd.fd_tor_occupancy[cha]);
-      c->cha_clockticks[cha] = readctr(gbl_uc_perf_fd.fd_cha_clockticks[cha]);
+  for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
+    if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_ACT ) {
+      c->cha_rd[cha] = readctr(gbl_uncore_perf_fd.fd_cha_rd[cha]);
+      c->cha_wr[cha] = readctr(gbl_uncore_perf_fd.fd_cha_wr[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CMS_BL ) {
+      c->vert_bl_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_vert_bl_ring_in_use[cha]);
+      c->horz_bl_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_horz_bl_ring_in_use[cha]);
+      c->cms_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cms_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CMS_AK ) {
+      c->vert_ak_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_vert_ak_ring_in_use[cha]);
+      c->horz_ak_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_horz_ak_ring_in_use[cha]);
+      c->cms_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cms_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CMS_IV ) {
+      c->vert_iv_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_vert_iv_ring_in_use[cha]);
+      c->horz_iv_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_horz_iv_ring_in_use[cha]);
+      c->cms_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cms_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CMS_AK_IV ) {
+      c->vert_ak_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_vert_ak_ring_in_use[cha]);
+      c->horz_ak_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_horz_ak_ring_in_use[cha]);
+      c->vert_iv_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_vert_iv_ring_in_use[cha]);
+      c->horz_iv_ring_in_use[cha] = readctr(gbl_uncore_perf_fd.fd_horz_iv_ring_in_use[cha]);
+      c->cms_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cms_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS ) {
+      c->llc_lookup_rd[cha] = readctr(gbl_uncore_perf_fd.fd_llc_lookup_rd[cha]);
+      c->llc_lookup_wr[cha] = readctr(gbl_uncore_perf_fd.fd_llc_lookup_wr[cha]);
+      c->llc_victims[cha] = readctr(gbl_uncore_perf_fd.fd_llc_victims[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_XSNP_RESP ) {
+      c->xsnp_resp[cha] = readctr(gbl_uncore_perf_fd.fd_xsnp_resp[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_CORE_SNP ) {
+      c->core_snp[cha] = readctr(gbl_uncore_perf_fd.fd_core_snp[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_SNOOPS_SENT ) {
+      c->snoops_sent[cha] = readctr(gbl_uncore_perf_fd.fd_snoops_sent[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_SNOOP_RESP_ALL ) {
+      c->snoop_resp[cha] = readctr(gbl_uncore_perf_fd.fd_snoop_resp[cha]);
+      c->snoop_resp_local[cha] = readctr(gbl_uncore_perf_fd.fd_snoop_resp_local[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_OSB ) {
+      c->osb[cha] = readctr(gbl_uncore_perf_fd.fd_osb[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_TOR ) {
+      c->tor_inserts[cha] = readctr(gbl_uncore_perf_fd.fd_tor_inserts[cha]);
+      c->tor_occupancy[cha] = readctr(gbl_uncore_perf_fd.fd_tor_occupancy[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
     } else {
       /* nothing */
     }
   }
 
-  c->exp = gbl_uc_perf_fd.exp;
+  c->exp = gbl_uncore_perf_fd.exp;
 }
 
-void read_skx_core_ctrs( ctrs_skx_core *c ) {
+void read_core_ctrs( ctrs_core *c ) {
   int core;
-  for ( core = 0; core < SKX_NCORE; ++core ) {
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
     if ( gbl_core_perf_fd.exp == CTRS_EXP_L2_BW ) {
       c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
 #if 1
@@ -384,9 +390,9 @@ void read_skx_core_ctrs( ctrs_skx_core *c ) {
   c->exp = gbl_core_perf_fd.exp;
 }
 
-void zero_skx_uc_ctrs( ctrs_skx_uc *c ) {
+void zero_uncore_ctrs( ctrs_uncore *c ) {
   int mc, cha;
-  for ( mc = 0; mc < SKX_NIMC; ++mc ) {
+  for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
     c->act_rd[mc] = 0;
     c->act_wr[mc] = 0;
     c->cas_rd[mc] = 0;
@@ -394,7 +400,7 @@ void zero_skx_uc_ctrs( ctrs_skx_uc *c ) {
     c->imc_clockticks[mc] = 0;
   }
 
-  for ( cha = 0; cha < SKX_NCHA; ++cha ) {
+  for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
     c->cha_rd[cha] = 0;
     c->cha_wr[cha] = 0;
     c->vert_bl_ring_in_use[cha] = 0;
@@ -419,9 +425,9 @@ void zero_skx_uc_ctrs( ctrs_skx_uc *c ) {
   }
 }
 
-void zero_skx_core_ctrs( ctrs_skx_core *c ) {
+void zero_core_ctrs( ctrs_core *c ) {
   int core;
-  for ( core = 0; core < SKX_NCORE; ++core ) {
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
     c->clockticks[core] = 0;
     c->l2_lines_in[core] = 0;
     c->l2_lines_out_ns[core] = 0;
@@ -430,9 +436,9 @@ void zero_skx_core_ctrs( ctrs_skx_core *c ) {
   }
 }
 
-void divi_skx_uc_ctrs( ctrs_skx_uc *c, uint64_t div ) {
+void divi_uncore_ctrs( ctrs_uncore *c, uint64_t div ) {
   int mc, cha;
-  for ( mc = 0; mc < SKX_NIMC; ++mc ) {
+  for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
     c->act_rd[mc] /= div;
     c->act_wr[mc] /= div;
     c->cas_rd[mc] /= div;
@@ -440,7 +446,7 @@ void divi_skx_uc_ctrs( ctrs_skx_uc *c, uint64_t div ) {
     c->imc_clockticks[mc] /= div;
   }
 
-  for ( cha = 0; cha < SKX_NCHA; ++cha ) {
+  for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
     c->cha_rd[cha] /= div;
     c->cha_wr[cha] /= div;
     c->vert_bl_ring_in_use[cha] /= div;
@@ -465,9 +471,9 @@ void divi_skx_uc_ctrs( ctrs_skx_uc *c, uint64_t div ) {
   }
 }
 
-void divi_skx_core_ctrs( ctrs_skx_core *c, uint64_t div ) {
+void divi_core_ctrs( ctrs_core *c, uint64_t div ) {
   int core;
-  for ( core = 0; core < SKX_NCORE; ++core ) {
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
     c->clockticks[core] /= div;
     c->l2_lines_in[core] /= div;
     c->l2_lines_out_ns[core] /= div;
@@ -476,7 +482,7 @@ void divi_skx_core_ctrs( ctrs_skx_core *c, uint64_t div ) {
   }
 }
 
-void difa_skx_uc_ctrs( const ctrs_skx_uc *a, const ctrs_skx_uc *b, ctrs_skx_uc* c ) {
+void difa_uncore_ctrs( const ctrs_uncore *a, const ctrs_uncore *b, ctrs_uncore* c ) {
   int mc, cha;
 
   if ( a->exp != b->exp ) {
@@ -484,7 +490,7 @@ void difa_skx_uc_ctrs( const ctrs_skx_uc *a, const ctrs_skx_uc *b, ctrs_skx_uc* 
     return;
   }
 
-  for ( mc = 0; mc < SKX_NIMC; ++mc ) {
+  for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
     c->act_rd[mc] += b->act_rd[mc] - a->act_rd[mc];
     c->act_wr[mc] += b->act_wr[mc] - a->act_wr[mc];
     c->cas_rd[mc] += b->cas_rd[mc] - a->cas_rd[mc];
@@ -492,7 +498,7 @@ void difa_skx_uc_ctrs( const ctrs_skx_uc *a, const ctrs_skx_uc *b, ctrs_skx_uc* 
     c->imc_clockticks[mc] += b->imc_clockticks[mc] - a->imc_clockticks[mc];
   }
 
-  for ( cha = 0; cha < SKX_NCHA; ++cha ) {
+  for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
     c->cha_rd[cha] += b->cha_rd[cha] - a->cha_rd[cha];
     c->cha_wr[cha] += b->cha_wr[cha] - a->cha_wr[cha];
     c->vert_bl_ring_in_use[cha] += b->vert_bl_ring_in_use[cha] - a->vert_bl_ring_in_use[cha];
@@ -519,7 +525,7 @@ void difa_skx_uc_ctrs( const ctrs_skx_uc *a, const ctrs_skx_uc *b, ctrs_skx_uc* 
   c->exp = a->exp;
 }
 
-void difa_skx_core_ctrs( const ctrs_skx_core *a, const ctrs_skx_core *b, ctrs_skx_core* c ) {
+void difa_core_ctrs( const ctrs_core *a, const ctrs_core *b, ctrs_core* c ) {
   int core;
 
   if ( a->exp != b->exp ) {
@@ -527,7 +533,7 @@ void difa_skx_core_ctrs( const ctrs_skx_core *a, const ctrs_skx_core *b, ctrs_sk
     return;
   }
 
-  for ( core = 0; core < SKX_NCORE; ++core ) {
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
     c->clockticks[core] += b->clockticks[core] - a->clockticks[core];
     c->l2_lines_in[core] += b->l2_lines_in[core] - a->l2_lines_in[core];
     c->l2_lines_out_ns[core] += b->l2_lines_out_ns[core] - a->l2_lines_out_ns[core];
@@ -538,7 +544,7 @@ void difa_skx_core_ctrs( const ctrs_skx_core *a, const ctrs_skx_core *b, ctrs_sk
   c->exp = a->exp;
 }
 
-void get_cas_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
+void get_cas_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw ) {
   uint64_t read_bytes;
   uint64_t write_bytes;
   int mc;
@@ -555,7 +561,7 @@ void get_cas_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
     return;
   }
 
-  for ( mc = 0; mc < SKX_NIMC; ++mc ) {
+  for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
     read_bytes  += c->cas_rd[mc]*64;
     write_bytes += c->cas_wr[mc]*64;
   }
@@ -565,7 +571,7 @@ void get_cas_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
   bw->wr2 = 0;
 }
 
-void get_act_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
+void get_act_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw ) {
   uint64_t read_bytes;
   uint64_t write_bytes;
   int mc;
@@ -582,7 +588,7 @@ void get_act_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
     return;
   }
 
-  for ( mc = 0; mc < SKX_NIMC; ++mc ) {
+  for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
     read_bytes  += c->act_rd[mc]*64;
     write_bytes += c->act_wr[mc]*64;
   }
@@ -592,7 +598,7 @@ void get_act_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
   bw->wr2 = 0;
 }
 
-void get_llc_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
+void get_llc_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw ) {
   uint64_t read_bytes;
   uint64_t write_bytes;
   uint64_t victim_bytes;
@@ -611,7 +617,7 @@ void get_llc_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
     return;
   }
 
-  for ( cha = 0; cha < SKX_NCHA; ++cha ) {
+  for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
     read_bytes  += c->llc_lookup_rd[cha]*64;
     write_bytes += c->llc_lookup_wr[cha]*64;
     victim_bytes += c->llc_victims[cha]*64;
@@ -622,7 +628,7 @@ void get_llc_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw ) {
   bw->wr2 = (((double)victim_bytes)/t)/(1024.0*1024.0*1024.0);
 }
 
-void get_l2_bw_skx( const ctrs_skx_core *c, const double t, bw_gibs* bw ) {
+void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw ) {
   uint64_t read_bytes;
   uint64_t write_bytes1;
   uint64_t write_bytes2;
@@ -644,7 +650,7 @@ void get_l2_bw_skx( const ctrs_skx_core *c, const double t, bw_gibs* bw ) {
     return;
   }
 
-  for ( core = 0; core < SKX_NCORE; ++core ) {
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
     read_bytes   += c->l2_lines_in[core]*64;
     write_bytes1 += c->l2_lines_out_ns[core]*64;
     write_bytes2 += c->idi_misc_wb_up[core]*64;
@@ -658,7 +664,7 @@ void get_l2_bw_skx( const ctrs_skx_core *c, const double t, bw_gibs* bw ) {
   bw->wr3 = (((double)write_bytes3)/t)/(1024.0*1024.0*1024.0);
 }
 
-void get_l2_bytecycle_skx( const ctrs_skx_core *c, bw_bc* bw ) {
+void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw ) {
   uint64_t total_cycles;
   uint64_t read_bytes;
   uint64_t write_bytes1;
@@ -684,7 +690,7 @@ void get_l2_bytecycle_skx( const ctrs_skx_core *c, bw_bc* bw ) {
     return;
   }
 
-  for ( core = 0; core < SKX_NCORE; ++core ) {
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
     total_cycles += c->clockticks[core];
     read_bytes   += c->l2_lines_in[core]*64;
     write_bytes1 += c->l2_lines_out_ns[core]*64;
@@ -692,7 +698,7 @@ void get_l2_bytecycle_skx( const ctrs_skx_core *c, bw_bc* bw ) {
     write_bytes3 += c->idi_misc_wb_down[core]*64;
   }
 
-  avg_cycles = ((double)total_cycles/(double)SKX_NCORE);
+  avg_cycles = ((double)total_cycles/(double)CTRS_NCORE);
 
   bw->cyc = avg_cycles;
   bw->rd = ((double)read_bytes/avg_cycles);

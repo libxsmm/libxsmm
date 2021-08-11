@@ -22,7 +22,7 @@
 #  include <omp.h>
 #endif
 #if defined(USE_CORE_PERF_COUNTERS)
-#  include "../../external_aux/counters_skx.h"
+#  include "../../external_aux/perf_counter_markers.h"
 #endif
 #include <sys/time.h>
 /* include c-based dnn library */
@@ -99,8 +99,8 @@ int main(int argc, char* argv[]) {
 #if defined(USE_CORE_PERF_COUNTERS)
   bw_gibs bw_tot;
   bw_bc bw_bc_tot;
-  ctrs_skx_core s;
-  ctrs_skx_core(**a)[2];
+  ctrs_core s;
+  ctrs_core(**a)[2];
 #endif
 
   int layers[48][11] = {{56, 56, 64, 64, 1, 1, 0, 0, 1, 1, 1}, {56, 56, 64, 64, 3, 3, 1, 1, 0, 0, 1},
@@ -233,19 +233,19 @@ int main(int argc, char* argv[]) {
 
 #if defined(USE_CORE_PERF_COUNTERS)
 
-  a = (ctrs_skx_core(**)[2])malloc((range_end - range_start + 1) * (sizeof(ctrs_skx_core(*)[2])));
+  a = (ctrs_core(**)[2])malloc((range_end - range_start + 1) * (sizeof(ctrs_core(*)[2])));
 
   for (i = 0; i < range_end - range_start + 2; ++i) {
-    a[i] = (ctrs_skx_core(*)[2])malloc(iters * (sizeof(ctrs_skx_core[2])));
+    a[i] = (ctrs_core(*)[2])malloc(iters * (sizeof(ctrs_core[2])));
     for (j = 0; j < iters; j++) {
-      zero_skx_core_ctrs(&a[i][j][0]);
-      zero_skx_core_ctrs(&a[i][j][1]);
+      zero_core_ctrs(&a[i][j][0]);
+      zero_core_ctrs(&a[i][j][1]);
     }
   }
 
-  zero_skx_core_ctrs(&s);
+  zero_core_ctrs(&s);
 
-  setup_skx_core_ctrs(CTRS_EXP_L2_BW);
+  setup_core_ctrs(CTRS_EXP_L2_BW);
   fprintf(f, "layer,N,K,C,H,W,R,S,stride,min time,max time,average time,flops,min bw,max bw,avg bw,avg cycles,min bw bc,max bw bc,avg bw bc\n");
 #else
   fprintf(f, "layer,N,K,C,H,W,R,S,stride,min time,max time,average time,flops\n");
@@ -555,7 +555,7 @@ int main(int argc, char* argv[]) {
     start = libxsmm_timer_tick();
     for (i = 0; i < range_end - range_start + 1; ++i) {
 #if 0
-      read_skx_core_ctrs(&a[i][j][0]);
+      read_core_ctrs(&a[i][j][0]);
 #endif
 #if defined(_OPENMP)
 #  pragma omp parallel
@@ -573,7 +573,7 @@ int main(int argc, char* argv[]) {
 #endif
       end = libxsmm_timer_tick();
 #if 0
-      read_skx_core_ctrs(&a[i][j][1]);
+      read_core_ctrs(&a[i][j][1]);
 #endif
       per_layer_time[i][j] = libxsmm_timer_duration(start, end);
       start = end;
@@ -587,7 +587,7 @@ int main(int argc, char* argv[]) {
 #if defined(USE_CORE_PERF_COUNTERS)
   for (j = 0; j < iters; ++j) {
     for (i = 0; i < range_end - range_start + 1; ++i) {
-      read_skx_core_ctrs(&a[i][j][0]);
+      read_core_ctrs(&a[i][j][0]);
 #if defined(_OPENMP)
 #  pragma omp parallel
 #endif
@@ -602,7 +602,7 @@ int main(int argc, char* argv[]) {
 #if defined(_OPENMP)
       }
 #endif
-      read_skx_core_ctrs(&a[i][j][1]);
+      read_core_ctrs(&a[i][j][1]);
     }
   }
 #endif
@@ -622,10 +622,10 @@ int main(int argc, char* argv[]) {
       double bccyc = -1.0;
 
 #if defined(USE_CORE_PERF_COUNTERS)
-      difa_skx_core_ctrs(&a[i][0][0], &a[i][0][1], &s);
-      get_l2_bw_skx(&s, l_total, &bw_tot);
-      get_l2_bytecycle_skx(&s, &bw_bc_tot);
-      zero_skx_core_ctrs(&s);
+      difa_core_ctrs(&a[i][0][0], &a[i][0][1], &s);
+      get_l2_bw_core_ctrs(&s, l_total, &bw_tot);
+      get_l2_bytecycle_core_ctrs(&s, &bw_bc_tot);
+      zero_core_ctrs(&s);
       bwmax = bw_tot.rd;
       bwmin = bw_tot.rd;
       bwtotal = bw_tot.rd;
@@ -640,14 +640,14 @@ int main(int argc, char* argv[]) {
         if (l_max < per_layer_time[i][j]) l_max = per_layer_time[i][j];
 
 #if defined(USE_CORE_PERF_COUNTERS)
-        difa_skx_core_ctrs(&a[i][j][0], &a[i][j][1], &s);
+        difa_core_ctrs(&a[i][j][0], &a[i][j][1], &s);
         double bwcurr;
         double bccurr;
         bw_gibs bw_curr;
         bw_bc bw_bc_curr;
-        get_l2_bw_skx(&s, per_layer_time[i][j], &bw_curr);
-        get_l2_bytecycle_skx(&s, &bw_bc_curr);
-        zero_skx_core_ctrs(&s);
+        get_l2_bw_core_ctrs(&s, per_layer_time[i][j], &bw_curr);
+        get_l2_bytecycle_core_ctrs(&s, &bw_bc_curr);
+        zero_core_ctrs(&s);
 
         bwcurr = bw_curr.rd;
         bwtotal += bwcurr;

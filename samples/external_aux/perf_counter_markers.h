@@ -29,19 +29,27 @@
 /* Sanchit Misra (Intel Corp), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef COUNTERS_SKX_H
-#define COUNTERS_SKX_H
+#ifndef PERF_COUNTER_MARKERS_H
+#define PERF_COUNTER_MARKERS_H
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SKX_NCORE 28
-#define SKX_NIMC 6
-#define SKX_NCHA SKX_NCORE
+#define CTRS_CPU_SKX
 
-typedef enum ctrs_skx_uc_exp {
+#ifdef CTRS_CPU_SKX
+#define CTRS_NCORE 28
+#define CTRS_NIMC 6
+#define CTRS_NCHA CTRS_NCORE
+#endif
+
+#ifndef CTRS_NCORE
+#error no CTRS_CPU_[NAME] was specified
+#endif
+
+typedef enum ctrs_uncore_exp {
   CTRS_EXP_DRAM_ACT,
   CTRS_EXP_DRAM_CAS,
   CTRS_EXP_CHA_ACT,
@@ -57,52 +65,52 @@ typedef enum ctrs_skx_uc_exp {
   CTRS_EXP_CMS_IV,
   CTRS_EXP_CMS_AK_IV,
   CTRS_EXP_CMS_TXR_CYCLES_FULL
-} ctrs_skx_uc_exp;
+} ctrs_uncore_exp;
 
-typedef struct ctrs_skx_uc {
-  uint64_t act_rd[SKX_NIMC];
-  uint64_t act_wr[SKX_NIMC];
-  uint64_t cas_rd[SKX_NIMC];
-  uint64_t cas_wr[SKX_NIMC];
-  uint64_t imc_clockticks[SKX_NIMC];
-  uint64_t cha_rd[SKX_NCHA];
-  uint64_t cha_wr[SKX_NCHA];
-  uint64_t vert_bl_ring_in_use[SKX_NCHA];
-  uint64_t horz_bl_ring_in_use[SKX_NCHA];
-  uint64_t vert_ak_ring_in_use[SKX_NCHA];
-  uint64_t horz_ak_ring_in_use[SKX_NCHA];
-  uint64_t vert_iv_ring_in_use[SKX_NCHA];
-  uint64_t horz_iv_ring_in_use[SKX_NCHA];
-  uint64_t vert_txr_cycle_full[SKX_NCHA];
-  uint64_t horz_txr_cycle_full[SKX_NCHA];
-  uint64_t llc_lookup_rd[SKX_NCHA];
-  uint64_t llc_lookup_wr[SKX_NCHA];
-  uint64_t llc_victims[SKX_NCHA];
-  uint64_t xsnp_resp[SKX_NCHA];
-  uint64_t core_snp[SKX_NCHA];
-  uint64_t snoops_sent[SKX_NCHA];
-  uint64_t snoop_resp[SKX_NCHA];
-  uint64_t snoop_resp_local[SKX_NCHA];
-  uint64_t osb[SKX_NCHA];
-  uint64_t tor_inserts[SKX_NCHA];
-  uint64_t tor_occupancy[SKX_NCHA];
-  uint64_t cha_clockticks[SKX_NCHA];
-  uint64_t cms_clockticks[SKX_NCHA];
-  ctrs_skx_uc_exp exp;
-} ctrs_skx_uc;
+typedef struct ctrs_uncore {
+  uint64_t act_rd[CTRS_NIMC];
+  uint64_t act_wr[CTRS_NIMC];
+  uint64_t cas_rd[CTRS_NIMC];
+  uint64_t cas_wr[CTRS_NIMC];
+  uint64_t imc_clockticks[CTRS_NIMC];
+  uint64_t cha_rd[CTRS_NCHA];
+  uint64_t cha_wr[CTRS_NCHA];
+  uint64_t vert_bl_ring_in_use[CTRS_NCHA];
+  uint64_t horz_bl_ring_in_use[CTRS_NCHA];
+  uint64_t vert_ak_ring_in_use[CTRS_NCHA];
+  uint64_t horz_ak_ring_in_use[CTRS_NCHA];
+  uint64_t vert_iv_ring_in_use[CTRS_NCHA];
+  uint64_t horz_iv_ring_in_use[CTRS_NCHA];
+  uint64_t vert_txr_cycle_full[CTRS_NCHA];
+  uint64_t horz_txr_cycle_full[CTRS_NCHA];
+  uint64_t llc_lookup_rd[CTRS_NCHA];
+  uint64_t llc_lookup_wr[CTRS_NCHA];
+  uint64_t llc_victims[CTRS_NCHA];
+  uint64_t xsnp_resp[CTRS_NCHA];
+  uint64_t core_snp[CTRS_NCHA];
+  uint64_t snoops_sent[CTRS_NCHA];
+  uint64_t snoop_resp[CTRS_NCHA];
+  uint64_t snoop_resp_local[CTRS_NCHA];
+  uint64_t osb[CTRS_NCHA];
+  uint64_t tor_inserts[CTRS_NCHA];
+  uint64_t tor_occupancy[CTRS_NCHA];
+  uint64_t cha_clockticks[CTRS_NCHA];
+  uint64_t cms_clockticks[CTRS_NCHA];
+  ctrs_uncore_exp exp;
+} ctrs_uncore;
 
-typedef enum ctrs_skx_core_exp {
+typedef enum ctrs_core_exp {
   CTRS_EXP_L2_BW
-} ctrs_skx_core_exp;
+} ctrs_core_exp;
 
-typedef struct ctrs_skx_core {
-  uint64_t clockticks[SKX_NCORE];
-  uint64_t l2_lines_in[SKX_NCORE];
-  uint64_t l2_lines_out_ns[SKX_NCORE];
-  uint64_t idi_misc_wb_up[SKX_NCORE];
-  uint64_t idi_misc_wb_down[SKX_NCORE];
-  ctrs_skx_core_exp exp;
-} ctrs_skx_core;
+typedef struct ctrs_core {
+  uint64_t clockticks[CTRS_NCORE];
+  uint64_t l2_lines_in[CTRS_NCORE];
+  uint64_t l2_lines_out_ns[CTRS_NCORE];
+  uint64_t idi_misc_wb_up[CTRS_NCORE];
+  uint64_t idi_misc_wb_down[CTRS_NCORE];
+  ctrs_core_exp exp;
+} ctrs_core;
 
 typedef struct bw_gibs {
   double rd;
@@ -121,26 +129,26 @@ typedef struct bw_bc {
   double wr3;
 } bw_bc;
 
-void setup_skx_uc_ctrs( ctrs_skx_uc_exp exp );
-void read_skx_uc_ctrs( ctrs_skx_uc *c );
-void zero_skx_uc_ctrs( ctrs_skx_uc *c );
-void divi_skx_uc_ctrs( ctrs_skx_uc *c, uint64_t div );
-void difa_skx_uc_ctrs( const ctrs_skx_uc *a, const ctrs_skx_uc *b, ctrs_skx_uc* c );
-void get_act_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw );
-void get_cas_ddr_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw );
-void get_llc_bw_skx( const ctrs_skx_uc *c, const double t, bw_gibs* bw );
+void setup_uncore_ctrs( ctrs_uncore_exp exp );
+void read_uncore_ctrs( ctrs_uncore *c );
+void zero_uncore_ctrs( ctrs_uncore *c );
+void divi_uncore_ctrs( ctrs_uncore *c, uint64_t div );
+void difa_uncore_ctrs( const ctrs_uncore *a, const ctrs_uncore *b, ctrs_uncore* c );
+void get_act_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw );
+void get_cas_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw );
+void get_llc_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw );
 
-void setup_skx_core_ctrs( ctrs_skx_core_exp exp );
-void read_skx_core_ctrs( ctrs_skx_core *c );
-void zero_skx_core_ctrs( ctrs_skx_core *c );
-void divi_skx_core_ctrs( ctrs_skx_core *c, uint64_t div );
-void difa_skx_core_ctrs( const ctrs_skx_core *a, const ctrs_skx_core *b, ctrs_skx_core* c );
-void get_l2_bw_skx( const ctrs_skx_core *c, const double t, bw_gibs* bw );
-void get_l2_bytecycle_skx( const ctrs_skx_core *c, bw_bc* bw );
+void setup_core_ctrs( ctrs_core_exp exp );
+void read_core_ctrs( ctrs_core *c );
+void zero_core_ctrs( ctrs_core *c );
+void divi_core_ctrs( ctrs_core *c, uint64_t div );
+void difa_core_ctrs( const ctrs_core *a, const ctrs_core *b, ctrs_core* c );
+void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw );
+void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* COUNTERS_SKX_H */
+#endif /* PERF_COUNTER_MARKERS_H */
 
