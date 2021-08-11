@@ -97,10 +97,10 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* Get the number of non-zeros */
   a_nnz = 0;
-  for (i = 0; i < M; i++) {
+  for (i = 0; i < M; ++i) {
     for (j = 0; j < K; j++) {
       if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0)) {
-        a_nnz++;
+        ++a_nnz;
       }
     }
   }
@@ -142,13 +142,14 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   }
 
   /* Populate CSR structure */
-  for (i = 0, n = 0; i < M; i++) {
+  for (i = 0, n = 0; i < M; ++i) {
     a_csr_rowptr[i] = n;
     for (j = 0; j < K; j++) {
       if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0)) {
+        assert(n < a_nnz);
         a_csr_values[n] = alpha*a_dense[(i*lda) + j];
         a_csr_colidx[n] = j;
-        n++;
+        ++n;
       }
     }
   }
@@ -209,13 +210,13 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       C = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(double), LIBXSMM_ALIGNMENT);
 
       if ( NULL != B && NULL != C ) {
-        for ( i = 0; i < K; i++ ) {
-          for ( j = 0; j < N; j++ ) {
+        for ( i = 0; i < K; ++i ) {
+          for ( j = 0; j < N; ++j ) {
             B[i*ldb + j] = 1;
           }
         }
-        for ( i = 0; i < M; i++ ) {
-          for ( j = 0; j < N; j++ ) {
+        for ( i = 0; i < M; ++i ) {
+          for ( j = 0; j < N; ++j ) {
             C[i*ldc + j] = 1;
           }
         }
@@ -225,7 +226,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     /* Benchmark dense */
     if ( NULL != k_dense && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
-      for ( i = 0; i < 250; i++ ) {
+      for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_dense ) {
           k_dense( B + j, aa_dense, C + j );
         }
@@ -236,7 +237,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     /* Benchmark sparse (regular) */
     if ( NULL != k_sparse1 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
-      for ( i = 0; i < 250; i++ ) {
+      for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse1 ) {
           k_sparse1( internal_fsspmdm_dperm, B + j, C + j );
         }
@@ -247,7 +248,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     /* Benchmark sparse (wide) */
     if ( NULL != k_sparse2 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
-      for ( i = 0; i < 250; i++ ) {
+      for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse2 ) {
           k_sparse2( internal_fsspmdm_dperm, B + j, C + j );
         }
@@ -329,10 +330,10 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* Get the number of non-zeros */
   a_nnz = 0;
-  for (i = 0; i < M; i++) {
+  for (i = 0; i < M; ++i) {
     for (j = 0; j < K; j++) {
       if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0)) {
-        a_nnz++;
+        ++a_nnz;
       }
     }
   }
@@ -374,13 +375,14 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   }
 
   /* Populate CSR structure */
-  for (i = 0, n = 0; i < M; i++) {
+  for (i = 0, n = 0; i < M; ++i) {
     a_csr_rowptr[i] = n;
     for (j = 0; j < K; j++) {
       if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0f)) {
+        assert(n < a_nnz);
         a_csr_values[n] = alpha*a_dense[(i*lda) + j];
         a_csr_colidx[n] = j;
-        n++;
+        ++n;
       }
     }
   }
@@ -441,13 +443,13 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       C = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(float), LIBXSMM_ALIGNMENT);
 
       if ( NULL != B && NULL != C ) {
-        for ( i = 0; i < K; i++ ) {
-          for ( j = 0; j < N; j++ ) {
+        for ( i = 0; i < K; ++i ) {
+          for ( j = 0; j < N; ++j ) {
             B[i*ldb + j] = 1;
           }
         }
-        for ( i = 0; i < M; i++ ) {
-          for ( j = 0; j < N; j++ ) {
+        for ( i = 0; i < M; ++i ) {
+          for ( j = 0; j < N; ++j ) {
             C[i*ldc + j] = 1;
           }
         }
@@ -457,7 +459,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     /* Benchmark dense */
     if ( NULL != k_dense && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
-      for ( i = 0; i < 250; i++ ) {
+      for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_dense ) {
           k_dense( B + j, aa_dense, C + j );
         }
@@ -468,7 +470,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     /* Benchmark sparse (regular) */
     if ( NULL != k_sparse1 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
-      for ( i = 0; i < 250; i++ ) {
+      for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse1 ) {
           k_sparse1( internal_fsspmdm_sperm, B + j, C + j );
         }
@@ -479,7 +481,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     /* Benchmark sparse (wide) */
     if ( NULL != k_sparse2 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
-      for ( i = 0; i < 250; i++ ) {
+      for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse2 ) {
           k_sparse2( internal_fsspmdm_sperm, B + j, C + j );
         }
