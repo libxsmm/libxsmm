@@ -75,7 +75,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   unsigned int* a_csr_colidx = NULL;
   double* aa_dense = NULL;
   int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
   libxsmm_dfsspmdm* new_handle = NULL;
@@ -181,7 +181,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* Also generate a dense kernel */
   N_dense = 8;
-  k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)&prefetch);
+  k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, &prefetch);
 
   if ( NULL != k_dense ) {
     /* copy A over */
@@ -308,7 +308,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   unsigned int* a_csr_colidx = NULL;
   float* aa_dense = NULL;
   int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
   libxsmm_sfsspmdm* new_handle = NULL;
@@ -414,7 +414,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* Also generate a dense kernel */
   N_dense = 16;
-  k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)&prefetch);
+  k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, &prefetch);
 
   if ( NULL != k_dense ) {
     /* copy A over */
