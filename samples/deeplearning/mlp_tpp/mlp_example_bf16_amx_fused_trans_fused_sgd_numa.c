@@ -8,6 +8,14 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+
+#if 0
+#define USE_CORE_PERF_COUNTERS
+#endif
+#if 0
+#define USE_UNCORE_PERF_COUNTERS
+#endif
+
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
 
@@ -21,6 +29,10 @@
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
+
+#if defined(USE_CORE_PERF_COUNTERS) || defined(USE_UNCORE_PERF_COUNTERS)
+#  include "../../external_aux/counters_skx.h"
+#endif
 
 #define CHECK_L1
 #define OVERWRITE_DOUTPUT_BWDUPD
@@ -2028,6 +2040,27 @@ int main(int argc, char* argv[])
 
   char* env_threads_per_numa;
 
+#if defined(USE_CORE_PERF_COUNTERS)
+  bw_gibs bw_avg;
+  ctrs_skx_core a, b, s;
+
+  zero_skx_core_ctrs( &a );
+  zero_skx_core_ctrs( &b );
+  zero_skx_core_ctrs( &s );
+
+  setup_skx_core_ctrs(CTRS_EXP_L2_BW);
+#endif
+#if defined(USE_UNCORE_PERF_COUNTERS)
+  bw_gibs bw_avg;
+  ctrs_skx_uc a, b, s;
+
+  zero_skx_uc_ctrs( &a );
+  zero_skx_uc_ctrs( &b );
+  zero_skx_uc_ctrs( &s );
+
+  setup_skx_uc_ctrs( CTRS_EXP_DRAM_CAS );
+#endif
+
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters MB fuse_type type bn bk bc C1 C2 ... CN\n", argv[0]);
     return 0;
@@ -2260,6 +2293,12 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
+#if defined(USE_CORE_PERF_COUNTERS)
+    read_skx_core_ctrs( &a );
+#endif
+#if defined(USE_UNCORE_PERF_COUNTERS)
+    read_skx_uc_ctrs( &a );
+#endif
     l_start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #   pragma omp parallel private(i,j)
@@ -2278,6 +2317,16 @@ int main(int argc, char* argv[])
       }
     }
     l_end = libxsmm_timer_tick();
+#if defined(USE_CORE_PERF_COUNTERS)
+    read_skx_core_ctrs( &b );
+    difa_skx_core_ctrs( &a, &b, &s );
+    divi_skx_core_ctrs( &s, iters );
+#endif
+#if defined(USE_UNCORE_PERF_COUNTERS)
+    read_skx_uc_ctrs( &b );
+    difa_skx_uc_ctrs( &a, &b, &s );
+    divi_skx_uc_ctrs( &s, iters );
+#endif
     l_total = libxsmm_timer_duration(l_start, l_end);
 
     gflop = 0.0;
@@ -2292,6 +2341,20 @@ int main(int argc, char* argv[])
       printf("%i,", C[i] );
     }
     printf("%f,%f\n", ((double)(l_total/iters)), gflop/l_total);
+#if defined(USE_CORE_PERF_COUNTERS)
+    get_l2_bw_skx( &s, (double)(l_total/iters), &bw_avg );
+    printf("AVG GiB/s (IN   L2): %f\n", bw_avg.rd);
+    printf("AVG GiB/s (OUT  L2): %f\n", bw_avg.wr);
+    printf("AVG GiB/s (DEM  L2): %f\n", bw_avg.wr2);
+    printf("AVG GiB/s (DROP L2): %f\n", bw_avg.wr3);
+#endif
+#if defined(USE_UNCORE_PERF_COUNTERS)
+    get_cas_ddr_bw_skx( &s, (double)(l_total/iters), &bw_avg );
+    printf("AVG GiB/s (IN   L2): %f\n", bw_avg.rd);
+    printf("AVG GiB/s (OUT  L2): %f\n", bw_avg.wr);
+    printf("AVG GiB/s (DEM  L2): %f\n", bw_avg.wr2);
+    printf("AVG GiB/s (DROP L2): %f\n", bw_avg.wr3);
+#endif
   }
 
   if (type == 'B') {

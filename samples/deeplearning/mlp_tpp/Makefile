@@ -59,6 +59,9 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
+$(BLDDIR)/counters_skx.o: $(SRCDIR)/../../external_aux/counters_skx.c $(SRCDIR)/../../external_aux/counters_skx.h
+	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $(SRCDIR)/../../external_aux/counters_skx.c -o $(BLDDIR)/counters_skx.o 
+
 $(OUTDIR)/mlp_example_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_example_f32-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/mlp_example_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
@@ -89,8 +92,8 @@ $(OUTDIR)/mlp_example_bf16_amx_fused_trans_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_e
 $(OUTDIR)/mlp_example_bf16_avx512_fused_trans_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_avx512_fused_trans_numa-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_avx512_fused_trans_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa-c.o $(BLDDIR)/counters_skx.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa-c.o $(BLDDIR)/counters_skx.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/mlp_mnist_bf16_amx_fused_trans_fused_sgd_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_mnist_bf16_amx_fused_trans_fused_sgd_numa-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/mlp_mnist_bf16_amx_fused_trans_fused_sgd_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
