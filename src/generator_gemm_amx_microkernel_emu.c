@@ -869,7 +869,11 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
       }
       /* Check if SW pipelining is doable for the A decompression...  */
       if ((_A_tile_id_load[i] > 0) && (_A_tile_id_load[i] % 2 == 0) && (i_brgemm_loop >= 0) && (i_brgemm_loop < i_xgemm_desc->c3 - 1) && (fully_unrolled_brloop == 1)) {
-        decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], i_xgemm_desc->c1, 0);
+        if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
+          decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], i_xgemm_desc->c1, 0);
+        } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) {
+          decompress_32x32_A_block(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, _A_offsets[i], 0, i_brgemm_loop+1);
+        }
       }
     }
 
@@ -982,6 +986,10 @@ void libxsmm_generator_gemm_amx_kernel_kloop_emu( libxsmm_generated_code*       
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {
     i_brgemm_loop = A_offs/((unsigned int)i_xgemm_desc->c1);
+  }
+
+  if (((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) && (fully_unrolled_brloop == 1)) {
+    i_brgemm_loop = i_micro_kernel_config->br_loop_index;
   }
 
   while (i_xgemm_desc->k % l_k_blocking != 0) {
