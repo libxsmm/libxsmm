@@ -132,7 +132,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   a_csr_colidx = (unsigned int*)malloc((size_t)a_nnz * sizeof(unsigned int));
 
   /* Allocate dense storage */
-  aa_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), 64);
+  aa_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), LIBXSMM_ALIGNMENT);
 
   if ( NULL == a_csr_values || NULL == a_csr_rowptr || NULL == a_csr_colidx || NULL == aa_dense ) {
     free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
@@ -180,7 +180,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* Also generate a dense kernel */
   N_dense = 8;
-  k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
+  k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)&prefetch);
 
   if ( NULL != k_dense ) {
     /* copy A over */
@@ -205,8 +205,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
     /* If we have two or more kernels then try to benchmark them */
     if ( nkerns >= 2 ) {
-      B = (double*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(double), 64);
-      C = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(double), 64);
+      B = (double*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(double), LIBXSMM_ALIGNMENT);
+      C = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(double), LIBXSMM_ALIGNMENT);
 
       if ( NULL != B && NULL != C ) {
         for ( i = 0; i < K; i++ ) {
@@ -364,7 +364,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   a_csr_colidx = (unsigned int*)malloc((size_t)a_nnz * sizeof(unsigned int));
 
   /* Allocate dense storage */
-  aa_dense = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(float), 64);
+  aa_dense = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(float), LIBXSMM_ALIGNMENT);
 
   if ( NULL == a_csr_values || NULL == a_csr_rowptr || NULL == a_csr_colidx || NULL == aa_dense ) {
     free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
@@ -412,7 +412,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* Also generate a dense kernel */
   N_dense = 16;
-  k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
+  k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, (const int*)&prefetch);
 
   if ( NULL != k_dense ) {
     /* copy A over */
@@ -437,8 +437,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
     /* If we have two or more kernels then try to benchmark them */
     if ( nkerns >= 2 ) {
-      B = (float*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(float), 64);
-      C = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(float), 64);
+      B = (float*)libxsmm_aligned_malloc((size_t)K * (size_t)ldb * sizeof(float), LIBXSMM_ALIGNMENT);
+      C = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)ldc * sizeof(float), LIBXSMM_ALIGNMENT);
 
       if ( NULL != B && NULL != C ) {
         for ( i = 0; i < K; i++ ) {
