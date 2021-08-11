@@ -33,6 +33,7 @@ LIBXSMM_API_INTERN void internal_dfsspmdm_init(void)
     14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15
   };
   LIBXSMM_ASSERT(NULL == internal_fsspmdm_dperm);
+  LIBXSMM_INIT
   internal_fsspmdm_dperm = (const double*)((const void*)dperm);
 }
 
@@ -59,6 +60,7 @@ LIBXSMM_API_INTERN void internal_sfsspmdm_init(void)
     15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15
   };
   LIBXSMM_ASSERT(NULL == internal_fsspmdm_sperm);
+  LIBXSMM_INIT
   internal_fsspmdm_sperm = (const float*)((const void*)sperm);
 }
 
@@ -83,16 +85,16 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_dmmfunction k_sparse2 = NULL;
   libxsmm_dmmfunction k_dense = NULL;
   int i, j, n, a_nnz, nkerns;
-  const int N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_cpuid()) / 2;
+  const int N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_target_archid) / 4;
   const int N_sparse2 = N_sparse1 * 2;
-  const int N_dense = 8;
+  const int N_dense = N_sparse2;
 
   /* internal lazy initialization */
   if (NULL == internal_fsspmdm_dperm) internal_dfsspmdm_init();
 
   /* some checks... */
-  assert(N % 8 == 0);
-  assert(N >= 8);
+  assert(N % N_dense == 0);
+  assert(N >= N_dense);
   assert(LIBXSMM_FEQ(beta, 1.0) || LIBXSMM_FEQ(beta, 0.0));
   assert(K <= lda);
   assert(N <= ldc);
@@ -325,16 +327,16 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_smmfunction k_sparse2 = NULL;
   libxsmm_smmfunction k_dense = NULL;
   int i, j, n, a_nnz, nkerns;
-  const int N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_cpuid());
+  const int N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_target_archid) / 2;
   const int N_sparse2 = N_sparse1 * 2;
-  const int N_dense = 16;
+  const int N_dense = N_sparse2;
 
   /* internal lazy initialization */
   if (NULL == internal_fsspmdm_sperm) internal_sfsspmdm_init();
 
   /* some checks... */
-  assert(N % 16 == 0);
-  assert(N >= 16);
+  assert(N % N_dense == 0);
+  assert(N >= N_dense);
   assert(LIBXSMM_FEQ(beta, 1.0f) || LIBXSMM_FEQ(beta, 0.0f));
   assert(K <= lda);
   assert(N <= ldc);
