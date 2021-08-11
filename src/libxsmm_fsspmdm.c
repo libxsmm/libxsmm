@@ -82,7 +82,10 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_dmmfunction k_sparse1 = NULL;
   libxsmm_dmmfunction k_sparse2 = NULL;
   libxsmm_dmmfunction k_dense = NULL;
-  int i, j, n, a_nnz, N_sparse1, N_sparse2, N_dense, nkerns;
+  int i, j, n, a_nnz, nkerns;
+  const int N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_cpuid()) / 2;
+  const int N_sparse2 = N_sparse1 * 2;
+  const int N_dense = 8;
 
   /* internal lazy initialization */
   if (NULL == internal_fsspmdm_dperm) internal_dfsspmdm_init();
@@ -131,10 +134,12 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   a_csr_rowptr = (unsigned int*)malloc(((size_t)M + 1) * sizeof(unsigned int));
   a_csr_colidx = (unsigned int*)malloc((size_t)a_nnz * sizeof(unsigned int));
 
-  /* Allocate dense storage */
-  aa_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), LIBXSMM_ALIGNMENT);
+  /* Consider dense case */
+  if ( N_dense <= N ) {
+    aa_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), LIBXSMM_ALIGNMENT);
+  }
 
-  if ( NULL == a_csr_values || NULL == a_csr_rowptr || NULL == a_csr_colidx || NULL == aa_dense ) {
+  if ( NULL == a_csr_values || NULL == a_csr_rowptr || NULL == a_csr_colidx ) {
     free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
     free( new_handle );
     libxsmm_free( aa_dense );
@@ -156,19 +161,18 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   a_csr_rowptr[M] = a_nnz;
 
   /* Attempt to JIT a sparse kernel */
-  N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_cpuid()) / 2;
-  xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
-                                             0, ldb, ldc, one, beta, flags, prefetch);
-  if ( NULL != xgemm_desc ) {
-    k_sparse1 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+  if ( N_sparse1 <= N ) {
+    xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
+                                               0, ldb, ldc, one, beta, flags, prefetch);
+    if ( NULL != xgemm_desc ) {
+      k_sparse1 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+    }
   }
 
   /* If that worked try to JIT a second (wider) sparse kernel */
-  N_sparse2 = N_sparse1*2;
   if ( NULL != k_sparse1 && N_sparse2 <= N ) {
     xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
                                                0, ldb, ldc, one, beta, flags, prefetch);
-
     if ( NULL != xgemm_desc ) {
         k_sparse2 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
@@ -180,10 +184,12 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   free( a_csr_colidx );
 
   /* Also generate a dense kernel */
-  N_dense = 8;
-  k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, &prefetch);
+  if ( NULL != aa_dense ) {
+    k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, &prefetch);
+  }
 
   if ( NULL != k_dense ) {
+    assert(NULL != aa_dense);
     /* copy A over */
     for ( i = 0; i < M; ++i ) {
       for ( j = 0; j < K; ++j ) {
@@ -315,7 +321,10 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_smmfunction k_sparse1 = NULL;
   libxsmm_smmfunction k_sparse2 = NULL;
   libxsmm_smmfunction k_dense = NULL;
-  int i, j, n, a_nnz, N_sparse1, N_sparse2, N_dense, nkerns;
+  int i, j, n, a_nnz, nkerns;
+  const int N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_cpuid());
+  const int N_sparse2 = N_sparse1 * 2;
+  const int N_dense = 16;
 
   /* internal lazy initialization */
   if (NULL == internal_fsspmdm_sperm) internal_sfsspmdm_init();
@@ -364,10 +373,12 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   a_csr_rowptr = (unsigned int*)malloc(((size_t)M + 1) * sizeof(unsigned int));
   a_csr_colidx = (unsigned int*)malloc((size_t)a_nnz * sizeof(unsigned int));
 
-  /* Allocate dense storage */
-  aa_dense = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(float), LIBXSMM_ALIGNMENT);
+  /* Consider dense case */
+  if ( N_dense <= N ) {
+    aa_dense = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(float), LIBXSMM_ALIGNMENT);
+  }
 
-  if ( NULL == a_csr_values || NULL == a_csr_rowptr || NULL == a_csr_colidx || NULL == aa_dense ) {
+  if ( NULL == a_csr_values || NULL == a_csr_rowptr || NULL == a_csr_colidx ) {
     free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
     free( new_handle );
     libxsmm_free( aa_dense );
@@ -389,19 +400,18 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   a_csr_rowptr[M] = a_nnz;
 
   /* Attempt to JIT a sparse kernel */
-  N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_cpuid());
-  xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
-                                             0, ldb, ldc, one, beta, flags, prefetch);
-  if ( NULL != xgemm_desc ) {
-    k_sparse1 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+  if ( N_sparse1 <= N ) {
+    xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
+                                               0, ldb, ldc, one, beta, flags, prefetch);
+    if ( NULL != xgemm_desc ) {
+      k_sparse1 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+    }
   }
 
   /* If that worked try to JIT a second (wider) sparse kernel */
-  N_sparse2 = N_sparse1*2;
   if ( NULL != k_sparse1 && N_sparse2 <= N ) {
     xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
                                                0, ldb, ldc, one, beta, flags, prefetch);
-
     if ( NULL != xgemm_desc ) {
       k_sparse2 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
@@ -413,10 +423,12 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   free( a_csr_colidx );
 
   /* Also generate a dense kernel */
-  N_dense = 16;
-  k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, &prefetch);
+  if ( NULL != aa_dense ) {
+    k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, &prefetch);
+  }
 
   if ( NULL != k_dense ) {
+    assert(NULL != aa_dense);
     /* copy A over */
     for ( i = 0; i < M; ++i ) {
       for ( j = 0; j < K; ++j ) {
