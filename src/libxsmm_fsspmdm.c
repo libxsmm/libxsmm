@@ -85,8 +85,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_dmmfunction k_sparse2 = NULL;
   libxsmm_dmmfunction k_dense = NULL;
   int i, j, n, a_nnz, nkerns;
-  const int vlen32 = libxsmm_cpuid_vlen32(libxsmm_target_archid);
-  const int N_sparse1 = (vlen32 + 1) / 2;
+  const int vlen = LIBXSMM_UPDIV(libxsmm_cpuid_vlen32(libxsmm_target_archid), 2);
+  const int N_sparse1 = (vlen + 1) / 2;
   const int N_sparse2 = N_sparse1 * 2;
   const int N_dense = N_sparse2;
 
@@ -94,8 +94,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   if (NULL == internal_fsspmdm_dperm) internal_dfsspmdm_init();
 
   /* some checks... */
-  assert(N % N_dense == 0);
-  assert(N >= N_dense);
+  assert(N % vlen == 0);
   assert(LIBXSMM_FEQ(beta, 1.0) || LIBXSMM_FEQ(beta, 0.0));
   assert(K <= lda);
   assert(N <= ldc);
@@ -328,8 +327,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_smmfunction k_sparse2 = NULL;
   libxsmm_smmfunction k_dense = NULL;
   int i, j, n, a_nnz, nkerns;
-  const int vlen32 = libxsmm_cpuid_vlen32(libxsmm_target_archid);
-  const int N_sparse1 = vlen32;
+  const int vlen = libxsmm_cpuid_vlen32(libxsmm_target_archid);
+  const int N_sparse1 = vlen;
   const int N_sparse2 = N_sparse1 * 2;
   const int N_dense = N_sparse2;
 
@@ -337,8 +336,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   if (NULL == internal_fsspmdm_sperm) internal_sfsspmdm_init();
 
   /* some checks... */
-  assert(N % N_dense == 0);
-  assert(N >= N_dense);
+  assert(N % vlen == 0);
   assert(LIBXSMM_FEQ(beta, 1.0f) || LIBXSMM_FEQ(beta, 0.0f));
   assert(K <= lda);
   assert(N <= ldc);
