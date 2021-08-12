@@ -15,6 +15,7 @@
 #include "generator_gemm_amx.h"
 #include "generator_common_x86.h"
 #include "generator_gemm_amx_microkernel.h"
+#include "generator_mateltwise_sse_avx_avx512.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -581,12 +582,12 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
             /* load 16 bit values into ymm portion of the register */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
-                i_micro_kernel_config->c_vmove_instruction,
+                LIBXSMM_X86_INSTR_VMOVDQU16,
                 i_gp_reg_mapping->gp_reg_c,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 ( ((i_n_offset+col) * i_xgemm_desc->ldc) + i_m_offset) * 2/*(i_micro_kernel_config->datatype_size/2)*/,
                 'y',
-                zmm_reg, 0, 1, 0 );
+                zmm_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
             /* convert 16 bit values into 32 bit (integer convert) */
             libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                 LIBXSMM_X86_INSTR_VPMOVSXWD,
@@ -607,7 +608,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 ((i_n_offset+col) * i_xgemm_desc->ldc + i_m_offset) * 4/*i_micro_kernel_config->datatype_size*/,
                 i_micro_kernel_config->vector_name,
-                zmm_reg, 0, 1, 1 );
+                zmm_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 0, 1 );
           }
           /* Move zmm registers stored in GEMM scratch to the proper tile */
           libxsmm_x86_instruction_tile_move( io_generated_code,
@@ -719,12 +720,12 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
           /* load 16 bit values into ymm portion of the register */
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->c_vmove_instruction,
+              LIBXSMM_X86_INSTR_VMOVDQU16,
               gp_reg_bias,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               i_m_offset * 2/*(i_micro_kernel_config->datatype_size/2)*/,
               'y',
-              zmm_reg, 0, 1, 0 );
+              zmm_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
           /* convert 16 bit values into 32 bit (integer convert) */
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
               LIBXSMM_X86_INSTR_VPMOVSXWD,
@@ -745,7 +746,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               i_m_offset * 4/*i_micro_kernel_config->datatype_size*/,
               i_micro_kernel_config->vector_name,
-              zmm_reg, 0, 1, 1 );
+              zmm_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 0, 1 );
 
           i_m_offset += m_blocking_info->sizes[im];
         }
@@ -918,11 +919,15 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   i_micro_kernel_config->fused_sigmoid      = 0;
   i_micro_kernel_config->overwrite_C        = 0;
   i_micro_kernel_config->vnni_format_C      = 0;
+  i_micro_kernel_config->mask_m_fp32        = 0;
+  i_micro_kernel_config->mask_m_bf16        = 0;
 
   if (i_micro_kernel_config->m_remainder > 0) {
     reserved_mask_regs  += 2;
     i_micro_kernel_config->mask_m_fp32  = reserved_mask_regs - 1;
     i_micro_kernel_config->mask_m_bf16  = reserved_mask_regs - 2;
+    libxsmm_generator_mateltwise_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_fp32, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_F32);
+    libxsmm_generator_mateltwise_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_bf16, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_BF16);
   }
 
   /* TODO: Add support fror more fusions  */

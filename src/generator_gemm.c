@@ -188,7 +188,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     /* @TODO check for VNNI format */
     if ( (( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&
          ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
-         ( l_xgemm_desc_mod.m % 32 == 0 ) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0)) ||
+         /*( l_xgemm_desc_mod.m % 32 == 0 ) &&*/ ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0)) ||
         (( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&
          ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
          ( l_xgemm_desc_mod.m % 32 == 0 ) && ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0))) {
