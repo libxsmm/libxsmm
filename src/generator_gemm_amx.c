@@ -1411,6 +1411,10 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
+  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDX );
+  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
 
   /* The stack at exit of setup looks like this:
    *
@@ -1446,7 +1450,10 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
     const libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
   LIBXSMM_UNUSED(i_xgemm_desc);
   LIBXSMM_UNUSED(i_gp_reg_mapping);
-
+  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDX );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
@@ -1465,7 +1472,27 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
   /* open asm */
   libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
-  libxsmm_generator_gemm_amx_kernel_patch( io_generated_code, &l_xgemm_desc_mod );
+  if ((i_xgemm_desc->m % 16 == 0) || (i_xgemm_desc->m <= 32)) {
+    libxsmm_generator_gemm_amx_kernel_patch( io_generated_code, &l_xgemm_desc_mod );
+  } else {
+    unsigned int m0 = i_xgemm_desc->m - (i_xgemm_desc->m % 32);
+    unsigned int m1 = i_xgemm_desc->m - m0;
+
+    /* make sure we configure the tiles for each patch  */
+    l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG;
+    l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
+    l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags ^ LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG;
+    l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags ^ LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
+
+    l_xgemm_desc_mod.m = m0;
+    libxsmm_generator_gemm_amx_kernel_patch( io_generated_code, &l_xgemm_desc_mod );
+
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RDX, m0*2);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RDI, m0*4);
+
+    l_xgemm_desc_mod.m = m1;
+    libxsmm_generator_gemm_amx_kernel_patch( io_generated_code, &l_xgemm_desc_mod );
+  }
 
   /* close asm */
   libxsmm_x86_instruction_close_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
