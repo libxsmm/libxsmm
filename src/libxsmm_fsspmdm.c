@@ -10,7 +10,7 @@
 ******************************************************************************/
 #include "generator_spgemm_csr_asparse_reg.h"
 #include <libxsmm_fsspmdm.h>
-#include "libxsmm_main.h"
+#include "generator_common.h"
 
 
 /* Double precision AVX-512 lane broadcasts */
@@ -162,23 +162,27 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   }
   a_csr_rowptr[M] = a_nnz;
 
-  /* Attempt to JIT a sparse kernel */
-  if ( N_sparse1 <= N ) {
-    xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
-                                               0, ldb, ldc, one, beta, flags, prefetch);
-    if ( NULL != xgemm_desc ) {
-      k_sparse1 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+  LIBXSMM_HANDLE_ERROR_OFF_BEGIN();
+  {
+    /* Attempt to JIT a sparse kernel */
+    if ( N_sparse1 <= N ) {
+      xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
+                                                 0, ldb, ldc, one, beta, flags, prefetch);
+      if ( NULL != xgemm_desc ) {
+        k_sparse1 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+      }
     }
-  }
 
-  /* If that worked try to JIT a second (wider) sparse kernel */
-  if ( NULL != k_sparse1 && N_sparse2 <= N ) {
-    xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
-                                               0, ldb, ldc, one, beta, flags, prefetch);
-    if ( NULL != xgemm_desc ) {
-        k_sparse2 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+    /* If that worked try to JIT a second (wider) sparse kernel */
+    if ( NULL != k_sparse1 && N_sparse2 <= N ) {
+      xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
+                                                 0, ldb, ldc, one, beta, flags, prefetch);
+      if ( NULL != xgemm_desc ) {
+          k_sparse2 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+      }
     }
   }
+  LIBXSMM_HANDLE_ERROR_OFF_END();
 
   /* Free CSR */
   free( a_csr_values );
@@ -404,23 +408,26 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   }
   a_csr_rowptr[M] = a_nnz;
 
-  /* Attempt to JIT a sparse kernel */
-  if ( N_sparse1 <= N ) {
-    xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
-                                               0, ldb, ldc, one, beta, flags, prefetch);
-    if ( NULL != xgemm_desc ) {
-      k_sparse1 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+  LIBXSMM_HANDLE_ERROR_OFF_BEGIN();
+  {
+    /* Attempt to JIT a sparse kernel */
+    if ( N_sparse1 <= N ) {
+      xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
+                                                 0, ldb, ldc, one, beta, flags, prefetch);
+      if ( NULL != xgemm_desc ) {
+        k_sparse1 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+      }
     }
-  }
 
-  /* If that worked try to JIT a second (wider) sparse kernel */
-  if ( NULL != k_sparse1 && N_sparse2 <= N ) {
-    xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
-                                               0, ldb, ldc, one, beta, flags, prefetch);
-    if ( NULL != xgemm_desc ) {
-      k_sparse2 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+    /* If that worked try to JIT a second (wider) sparse kernel */
+    if ( NULL != k_sparse1 && N_sparse2 <= N ) {
+      xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
+                                                 0, ldb, ldc, one, beta, flags, prefetch);
+      if ( NULL != xgemm_desc ) {
+        k_sparse2 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+      }
     }
-  }
+  } LIBXSMM_HANDLE_ERROR_OFF_END();
 
   /* Free CSR */
   free( a_csr_values );
