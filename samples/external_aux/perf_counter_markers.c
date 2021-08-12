@@ -727,6 +727,7 @@ void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw ) {
   write_bytes1 = 0;
   write_bytes2 = 0;
   write_bytes3 = 0;
+  write_bytes4 = 0;
 
   if ( c->exp != CTRS_EXP_L2_BW ) {
     printf("exp type need to be CTRS_EXP_L2_BW!\n");
