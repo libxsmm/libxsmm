@@ -2057,7 +2057,7 @@ int main(int argc, char* argv[])
 #if defined(USE_CORE_PERF_L2IN)
   setup_core_ctrs(CTRS_EXP_L2_BW);
 #endif
-#if defined(USE_CORE_PERF_L2IN)
+#if defined(USE_CORE_PERF_SNP)
   setup_core_ctrs(CTRS_EXP_CORE_SNP_RSP);
 #endif
 #endif
