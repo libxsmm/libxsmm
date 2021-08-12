@@ -809,6 +809,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int perm_table_vnni_hi;
   unsigned int norm_to_normT_mask_reg_0;
   unsigned int norm_to_normT_mask_reg_1;
+  unsigned int mask_m_fp32;
+  unsigned int mask_m_bf16;
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
   int use_paired_tilestores;
@@ -835,6 +837,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   libxsmm_loop_label_tracker *io_loop_label_tracker;
 
   /* Auxiliary fields to propagate kernel info */
+  unsigned int m_remainder;
   unsigned int br_loop_index;
   unsigned int k_amx_microkernel;
   unsigned int B_offs_trans;

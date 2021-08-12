@@ -919,6 +919,12 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   i_micro_kernel_config->overwrite_C        = 0;
   i_micro_kernel_config->vnni_format_C      = 0;
 
+  if (i_micro_kernel_config->m_remainder > 0) {
+    reserved_mask_regs  += 2;
+    i_micro_kernel_config->mask_m_fp32  = reserved_mask_regs - 1;
+    i_micro_kernel_config->mask_m_bf16  = reserved_mask_regs - 2;
+  }
+
   /* TODO: Add support fror more fusions  */
   if ((i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) || (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A) ||
       (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_ACT_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER)) {
@@ -1516,6 +1522,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
 
   /* Here compute the 2D blocking info based on the M and N values  */
   /* For now super simple, rudimentary logic, to be generalized later on  */
+  l_micro_kernel_config.m_remainder  = 0;
   m_blocking = 32;
   while (i_xgemm_desc->m % m_blocking != 0) {
     m_blocking--;
@@ -1525,12 +1532,14 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
     m_blocking_info[0].block_size = i_xgemm_desc->m;
     m_blocking_info[0].tiles = 1;
     m_blocking_info[0].sizes[0] = m_blocking;
+    l_micro_kernel_config.m_remainder  = m_blocking_info[0].sizes[0] % 16;
   } else {
     m_blocking_info[0].blocking = m_blocking;
     m_blocking_info[0].block_size = i_xgemm_desc->m;
     m_blocking_info[0].tiles = 2;
-    m_blocking_info[0].sizes[0] = (m_blocking+1)/2;
+    m_blocking_info[0].sizes[0] = 16 /*(m_blocking+1)/2*/;
     m_blocking_info[0].sizes[1] = m_blocking - m_blocking_info[0].sizes[0];
+    l_micro_kernel_config.m_remainder  = m_blocking_info[0].sizes[1] % 16;
   }
 
   n_blocking = 32;
@@ -1560,6 +1569,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
     m_blocking_info[0].block_size = i_xgemm_desc->m;
     m_blocking_info[0].tiles = 1;
     m_blocking_info[0].sizes[0] = m_blocking;
+    l_micro_kernel_config.m_remainder  = m_blocking_info[0].sizes[0] % 16;
     if (i_xgemm_desc->n == 49) {
       n_blocking_info[0].blocking = 49;
       n_blocking_info[0].block_size = 49;

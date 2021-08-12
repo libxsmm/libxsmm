@@ -189,7 +189,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           (col + n_cols) * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
           i_micro_kernel_config->vector_name,
-          reg_0, 0, 1, 0 );
+          reg_0, i_micro_kernel_config->mask_m_fp32, 1, 0 );
     }
 
     /* In this case also save the result before doing any eltwise */

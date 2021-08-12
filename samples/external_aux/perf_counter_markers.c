@@ -175,7 +175,7 @@ void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
 #else
     sprintf(fname, "/sys/devices/uncore_imc_%d", mc);
 #endif
-#ifdef CTRS_CPU_SKX 
+#ifdef CTRS_CPU_SKX
     if ( exp == CTRS_EXP_DRAM_ACT ) {
       evsetup(fname, &gbl_uncore_perf_fd.fd_act_rd[mc], 0x01, 0x01, 0x00, 0x00, -1);
       evsetup(fname, &gbl_uncore_perf_fd.fd_act_wr[mc], 0x01, 0x02, 0x00, 0x00, -1);
