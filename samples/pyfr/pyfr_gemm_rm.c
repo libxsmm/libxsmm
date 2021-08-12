@@ -59,10 +59,10 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
-  a  = (double*)_mm_malloc(lda*m*sizeof(double), 64);
-  b  = (double*)_mm_malloc(ldb*k*sizeof(double), 64);
-  c1 = (double*)_mm_malloc(ldc*m*sizeof(double), 64);
-  c2 = (double*)_mm_malloc(ldc*m*sizeof(double), 64);
+  a  = (double*)libxsmm_aligned_malloc(sizeof(double)*lda*m, 64);
+  b  = (double*)libxsmm_aligned_malloc(sizeof(double)*ldb*k, 64);
+  c1 = (double*)libxsmm_aligned_malloc(sizeof(double)*ldc*m, 64);
+  c2 = (double*)libxsmm_aligned_malloc(sizeof(double)*ldc*m, 64);
 
   #pragma omp parallel for
   for (i = 0; i < lda*m; i++) {

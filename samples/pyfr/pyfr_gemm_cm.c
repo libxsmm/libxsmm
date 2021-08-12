@@ -59,10 +59,10 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
-  a  = (double*)_mm_malloc(lda*k*sizeof(double), 64);
-  b  = (double*)_mm_malloc(ldb*n*sizeof(double), 64);
-  c1 = (double*)_mm_malloc(ldc*n*sizeof(double), 64);
-  c2 = (double*)_mm_malloc(ldc*n*sizeof(double), 64);
+  a  = (double*)libxsmm_aligned_malloc(sizeof(double)*lda*k, 64);
+  b  = (double*)libxsmm_aligned_malloc(sizeof(double)*ldb*n, 64);
+  c1 = (double*)libxsmm_aligned_malloc(sizeof(double)*ldc*n, 64);
+  c2 = (double*)libxsmm_aligned_malloc(sizeof(double)*ldc*n, 64);
 
   #pragma omp parallel for
   for (i = 0; i < lda*k; i++) {
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
   for ( j = 0; j < reps; j++ ) {
     #pragma omp parallel for private(i)
     for ( i = 0; i < n; i+=nblock) {
-      kernel( a, b+(ldb*i), c2+(ldc*i), NULL, NULL, NULL );
+      kernel( a, &b[ldb*i], &c2[ldc*i], NULL, NULL, NULL );
     }
     l_end = libxsmm_timer_tick();
   }
