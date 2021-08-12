@@ -1458,6 +1458,21 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  /* Apply overrides  */
+  libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
+  libxsmm_gp_reg_mapping l_gp_reg_mapping;
+
+  /* open asm */
+  libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+
+  libxsmm_generator_gemm_amx_kernel_patch( io_generated_code, &l_xgemm_desc_mod );
+
+  /* close asm */
+  libxsmm_x86_instruction_close_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_kernel_patch( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
@@ -1668,8 +1683,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
     libxsmm_setup_tile(7, k_blocking, n_blocking_info[0].sizes[3], &tile_config);
   }
 
-  /* open asm */
-  libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
   /* Setup stack frame...  */
   libxsmm_generator_gemm_amx_setup_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config, m_tiles, n_tiles );
   libxsmm_generator_gemm_amx_setup_fusion_infra( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
@@ -1709,8 +1722,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
 
   /* Properly destroy stack frame...  */
   libxsmm_generator_gemm_amx_destroy_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
-  /* close asm */
-  libxsmm_x86_instruction_close_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 }
 
 

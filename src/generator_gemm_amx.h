@@ -104,6 +104,9 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
                                                   const libxsmm_micro_kernel_config*  i_micro_kernel_config );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_kernel_patch( libxsmm_generated_code*        io_generated_code,
+                                        const libxsmm_gemm_descriptor* i_xgemm_desc );
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*        io_generated_code,
                                         const libxsmm_gemm_descriptor* i_xgemm_desc );
 
