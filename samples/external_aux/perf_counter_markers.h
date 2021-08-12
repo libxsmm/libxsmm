@@ -100,15 +100,21 @@ typedef struct ctrs_uncore {
 } ctrs_uncore;
 
 typedef enum ctrs_core_exp {
-  CTRS_EXP_L2_BW
+  CTRS_EXP_L2_BW,
+  CTRS_EXP_CORE_SNP_RSP
 } ctrs_core_exp;
 
 typedef struct ctrs_core {
   uint64_t clockticks[CTRS_NCORE];
   uint64_t l2_lines_in[CTRS_NCORE];
+  uint64_t l2_lines_out_s[CTRS_NCORE];
   uint64_t l2_lines_out_ns[CTRS_NCORE];
   uint64_t idi_misc_wb_up[CTRS_NCORE];
   uint64_t idi_misc_wb_down[CTRS_NCORE];
+  uint64_t core_snp_rsp_ihiti[CTRS_NCORE];
+  uint64_t core_snp_rsp_ihitfse[CTRS_NCORE];
+  uint64_t core_snp_rsp_ifwdm[CTRS_NCORE];
+  uint64_t core_snp_rsp_ifwdfe[CTRS_NCORE];
   ctrs_core_exp exp;
 } ctrs_core;
 
@@ -118,6 +124,7 @@ typedef struct bw_gibs {
   double wr;
   double wr2;
   double wr3;
+  double wr4;
 } bw_gibs;
 
 typedef struct bw_bc {
@@ -127,7 +134,16 @@ typedef struct bw_bc {
   double wr;
   double wr2;
   double wr3;
+  double wr4;
 } bw_bc;
+
+typedef struct snp_rsp {
+  double cyc;
+  double ihiti;
+  double ihitfse;
+  double ifwdm;
+  double ifwdfe;
+} snp_rsp;
 
 void setup_uncore_ctrs( ctrs_uncore_exp exp );
 void read_uncore_ctrs( ctrs_uncore *c );
@@ -145,6 +161,7 @@ void divi_core_ctrs( ctrs_core *c, uint64_t div );
 void difa_core_ctrs( const ctrs_core *a, const ctrs_core *b, ctrs_core* c );
 void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw );
 void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw );
+void get_snp_rsp_core_ctrs( const ctrs_core *c, snp_rsp* rsp );
 
 #ifdef __cplusplus
 }

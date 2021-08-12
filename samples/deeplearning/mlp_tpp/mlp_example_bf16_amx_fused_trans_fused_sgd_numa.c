@@ -11,6 +11,12 @@
 
 #if 0
 #define USE_CORE_PERF_COUNTERS
+#if 0
+#define USE_CORE_PERF_SNP
+#endif
+#if 1
+#define USE_CORE_PERF_L2IN
+#endif
 #endif
 #if 0
 #define USE_UNCORE_PERF_COUNTERS
@@ -2042,13 +2048,18 @@ int main(int argc, char* argv[])
 
 #if defined(USE_CORE_PERF_COUNTERS)
   bw_gibs bw_avg;
+  snp_rsp rsp;
   ctrs_core a, b, s;
 
   zero_core_ctrs( &a );
   zero_core_ctrs( &b );
   zero_core_ctrs( &s );
-
+#if defined(USE_CORE_PERF_L2IN)
   setup_core_ctrs(CTRS_EXP_L2_BW);
+#endif
+#if defined(USE_CORE_PERF_L2IN)
+  setup_core_ctrs(CTRS_EXP_CORE_SNP_RSP);
+#endif
 #endif
 #if defined(USE_UNCORE_PERF_COUNTERS)
   bw_gibs bw_avg;
@@ -2342,11 +2353,26 @@ int main(int argc, char* argv[])
     }
     printf("%f,%f\n", ((double)(l_total/iters)), gflop/l_total);
 #if defined(USE_CORE_PERF_COUNTERS)
+#if defined(USE_CORE_PERF_L2IN)
     get_l2_bw_core_ctrs( &s, (double)(l_total/iters), &bw_avg );
-    printf("AVG GiB/s (IN   L2): %f\n", bw_avg.rd);
-    printf("AVG GiB/s (OUT  L2): %f\n", bw_avg.wr);
-    printf("AVG GiB/s (DEM  L2): %f\n", bw_avg.wr2);
-    printf("AVG GiB/s (DROP L2): %f\n", bw_avg.wr3);
+    printf("AVG GiB/s (IN    L2): %f\n", bw_avg.rd);
+    printf("AVG GiB/s (OUTS  L2): %f\n", bw_avg.wr);
+    printf("AVG GiB/s (OUTNS L2): %f\n", bw_avg.wr2);
+    printf("AVG GiB/s (DEM   L2): %f\n", bw_avg.wr3);
+    printf("AVG GiB/s (DROP  L2): %f\n", bw_avg.wr4);
+#endif
+#if defined(USE_CORE_PERF_SNP)
+    get_snp_rsp_core_ctrs( &s, &rsp );
+    printf("average #cycles per iteration : %f\n", rsp.cyc );
+    printf("SNOOP RESP IHITI              : %f\n", rsp.ihiti );
+    printf("SNOOP RESP IHITFSE            : %f\n", rsp.ihitfse );
+    printf("SNOOP RESP IFWDM              : %f\n", rsp.ifwdm );
+    printf("SNOOP RESP IFWDFE             : %f\n", rsp.ifwdfe );
+    printf("avg SNOOP RESP IHITI / cycle  : %f\n", rsp.ihiti/rsp.cyc );
+    printf("avg SNOOP RESP IHITFSE / cycle: %f\n", rsp.ihitfse/rsp.cyc );
+    printf("avg SNOOP RESP IFWDM / cycle  : %f\n", rsp.ifwdm/rsp.cyc );
+    printf("avg SNOOP RESP IFWDFE / cycle : %f\n", rsp.ifwdfe/rsp.cyc );
+#endif
 #endif
 #if defined(USE_UNCORE_PERF_COUNTERS)
     get_cas_ddr_bw_uncore_ctrs( &s, (double)(l_total/iters), &bw_avg );

@@ -76,13 +76,17 @@ typedef struct perf_uncore_fd {
   ctrs_uncore_exp exp;
 } perf_uncore_fd;
 
-typedef struct perf_core_fd
-{
+typedef struct perf_core_fd {
   int fd_clockticks[CTRS_NCORE];
   int fd_l2_lines_in[CTRS_NCORE];
+  int fd_l2_lines_out_s[CTRS_NCORE];
   int fd_l2_lines_out_ns[CTRS_NCORE];
   int fd_idi_misc_wb_up[CTRS_NCORE];
   int fd_idi_misc_wb_down[CTRS_NCORE];
+  int fd_core_snp_rsp_ihiti[CTRS_NCORE];
+  int fd_core_snp_rsp_ihitfse[CTRS_NCORE];
+  int fd_core_snp_rsp_ifwdm[CTRS_NCORE];
+  int fd_core_snp_rsp_ifwdfe[CTRS_NCORE];
   ctrs_core_exp exp;
 } perf_core_fd;
 
@@ -170,12 +174,12 @@ void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
   int mc, cha;
 
   for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
+#ifdef CTRS_CPU_SKX
 #if 0
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_imc_%d",mc);
 #else
     sprintf(fname, "/sys/devices/uncore_imc_%d", mc);
 #endif
-#ifdef CTRS_CPU_SKX 
     if ( exp == CTRS_EXP_DRAM_ACT ) {
       evsetup(fname, &gbl_uncore_perf_fd.fd_act_rd[mc], 0x01, 0x01, 0x00, 0x00, -1);
       evsetup(fname, &gbl_uncore_perf_fd.fd_act_wr[mc], 0x01, 0x02, 0x00, 0x00, -1);
@@ -191,12 +195,12 @@ void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
   }
 
   for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
+#ifdef CTRS_CPU_SKX
 #if 0
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_cha_%d",cha);
 #else
     sprintf(fname, "/sys/devices/uncore_cha_%d", cha);
 #endif
-#ifdef CTRS_CPU_SKX
     if ( exp == CTRS_EXP_CHA_ACT ) {
       evsetup(fname, &gbl_uncore_perf_fd.fd_cha_rd[cha], 0x50, 0x03, 0x00, 0x00, -1);
       evsetup(fname, &gbl_uncore_perf_fd.fd_cha_wr[cha], 0x50, 0x0C, 0x00, 0x00, -1);
@@ -259,10 +263,12 @@ void setup_core_ctrs( ctrs_core_exp exp ) {
   char fname[1024];
   int core;
 
+#ifdef CTRS_CPU_SKX
 #if 0
   snprintf(fname, sizeof(fname), "/sys/devices/cpu");
 #else
   sprintf(fname, "/sys/devices/cpu");
+#endif
 #endif
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
@@ -270,10 +276,16 @@ void setup_core_ctrs( ctrs_core_exp exp ) {
     if ( exp == CTRS_EXP_L2_BW ) {
       evsetup(fname, &gbl_core_perf_fd.fd_clockticks[core], 0x3c, 0x00, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_in[core], 0xf1, 0x1f, 0x00, 0x00, core);
-      evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_in[core], 0xf1, 0x1f, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_out_s[core], 0xf2, 0x01, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_out_ns[core], 0xf2, 0x02, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_idi_misc_wb_up[core], 0xfe, 0x02, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_idi_misc_wb_down[core], 0xfe, 0x04, 0x00, 0x00, core);
+    } else if ( exp == CTRS_EXP_CORE_SNP_RSP ) {
+      evsetup(fname, &gbl_core_perf_fd.fd_clockticks[core], 0x3c, 0x00, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_core_snp_rsp_ihiti[core], 0xef, 0x01, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_core_snp_rsp_ihitfse[core], 0xef, 0x02, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_core_snp_rsp_ifwdm[core], 0xef, 0x10, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_core_snp_rsp_ifwdfe[core], 0xef, 0x20, 0x00, 0x00, core);
     } else {
       /* nothing */
     }
@@ -371,17 +383,17 @@ void read_core_ctrs( ctrs_core *c ) {
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     if ( gbl_core_perf_fd.exp == CTRS_EXP_L2_BW ) {
       c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
-#if 1
       c->l2_lines_in[core] = readctr(gbl_core_perf_fd.fd_l2_lines_in[core]);
+      c->l2_lines_out_s[core] = readctr(gbl_core_perf_fd.fd_l2_lines_out_s[core]);
       c->l2_lines_out_ns[core] = readctr(gbl_core_perf_fd.fd_l2_lines_out_ns[core]);
       c->idi_misc_wb_up[core] = readctr(gbl_core_perf_fd.fd_idi_misc_wb_up[core]);
       c->idi_misc_wb_down[core] = readctr(gbl_core_perf_fd.fd_idi_misc_wb_down[core]);
-#else
-      c->l2_lines_in[core] = 0;
-      c->l2_lines_out_ns[core] = 0;
-      c->idi_misc_wb_up[core] = 0;
-      c->idi_misc_wb_down[core] = 0;
-#endif
+    } else if (  gbl_core_perf_fd.exp == CTRS_EXP_CORE_SNP_RSP ) {
+      c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
+      c->core_snp_rsp_ihiti[core] = readctr(gbl_core_perf_fd.fd_core_snp_rsp_ihiti[core]);
+      c->core_snp_rsp_ihitfse[core] = readctr(gbl_core_perf_fd.fd_core_snp_rsp_ihitfse[core]);
+      c->core_snp_rsp_ifwdm[core] = readctr(gbl_core_perf_fd.fd_core_snp_rsp_ifwdm[core]);
+      c->core_snp_rsp_ifwdfe[core] = readctr(gbl_core_perf_fd.fd_core_snp_rsp_ifwdfe[core]);
     } else {
       /* nothing */
     }
@@ -430,9 +442,14 @@ void zero_core_ctrs( ctrs_core *c ) {
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     c->clockticks[core] = 0;
     c->l2_lines_in[core] = 0;
+    c->l2_lines_out_s[core] = 0;
     c->l2_lines_out_ns[core] = 0;
     c->idi_misc_wb_up[core] = 0;
     c->idi_misc_wb_down[core] = 0;
+    c->core_snp_rsp_ihiti[core] = 0;
+    c->core_snp_rsp_ihitfse[core] = 0;
+    c->core_snp_rsp_ifwdm[core] = 0;
+    c->core_snp_rsp_ifwdfe[core] = 0;
   }
 }
 
@@ -476,9 +493,14 @@ void divi_core_ctrs( ctrs_core *c, uint64_t div ) {
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     c->clockticks[core] /= div;
     c->l2_lines_in[core] /= div;
+    c->l2_lines_out_s[core] /= div;
     c->l2_lines_out_ns[core] /= div;
     c->idi_misc_wb_up[core] /= div;
     c->idi_misc_wb_down[core] /= div;
+    c->core_snp_rsp_ihiti[core] /= div;
+    c->core_snp_rsp_ihitfse[core] /= div;
+    c->core_snp_rsp_ifwdm[core] /= div;
+    c->core_snp_rsp_ifwdfe[core] /= div;
   }
 }
 
@@ -536,9 +558,14 @@ void difa_core_ctrs( const ctrs_core *a, const ctrs_core *b, ctrs_core* c ) {
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     c->clockticks[core] += b->clockticks[core] - a->clockticks[core];
     c->l2_lines_in[core] += b->l2_lines_in[core] - a->l2_lines_in[core];
+    c->l2_lines_out_s[core] += b->l2_lines_out_s[core] - a->l2_lines_out_s[core];
     c->l2_lines_out_ns[core] += b->l2_lines_out_ns[core] - a->l2_lines_out_ns[core];
     c->idi_misc_wb_up[core] += b->idi_misc_wb_up[core] - a->idi_misc_wb_up[core];
     c->idi_misc_wb_down[core] += b->idi_misc_wb_down[core] - a->idi_misc_wb_down[core];
+    c->core_snp_rsp_ihiti[core] += b->core_snp_rsp_ihiti[core] - a->core_snp_rsp_ihiti[core];
+    c->core_snp_rsp_ihitfse[core] += b->core_snp_rsp_ihitfse[core] - a->core_snp_rsp_ihitfse[core];
+    c->core_snp_rsp_ifwdm[core] += b->core_snp_rsp_ifwdm[core] - a->core_snp_rsp_ifwdm[core];
+    c->core_snp_rsp_ifwdfe[core] += b->core_snp_rsp_ifwdfe[core] - a->core_snp_rsp_ifwdfe[core];
   }
 
   c->exp = a->exp;
@@ -558,6 +585,8 @@ void get_cas_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* 
     bw->rd2 = 0;
     bw->wr = 0;
     bw->wr2 = 0;
+    bw->wr3 = 0;
+    bw->wr4 = 0;
     return;
   }
 
@@ -567,8 +596,11 @@ void get_cas_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* 
   }
 
   bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
+  bw->rd2 = 0;
   bw->wr = (((double)write_bytes)/t)/(1024.0*1024.0*1024.0);
   bw->wr2 = 0;
+  bw->wr3 = 0;
+  bw->wr4 = 0;
 }
 
 void get_act_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw ) {
@@ -585,6 +617,8 @@ void get_act_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* 
     bw->rd2 = 0;
     bw->wr = 0;
     bw->wr2 = 0;
+    bw->wr3 = 0;
+    bw->wr4 = 0;
     return;
   }
 
@@ -594,8 +628,11 @@ void get_act_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* 
   }
 
   bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
+  bw->rd2 = 0;
   bw->wr = (((double)write_bytes)/t)/(1024.0*1024.0*1024.0);
   bw->wr2 = 0;
+  bw->wr3 = 0;
+  bw->wr4 = 0;
 }
 
 void get_llc_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw ) {
@@ -614,6 +651,8 @@ void get_llc_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw )
     bw->rd2 = 0;
     bw->wr = 0;
     bw->wr2 = 0;
+    bw->wr3 = 0;
+    bw->wr4 = 0;
     return;
   }
 
@@ -624,8 +663,11 @@ void get_llc_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw )
   }
 
   bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
+  bw->rd2 = 0;
   bw->wr = (((double)write_bytes)/t)/(1024.0*1024.0*1024.0);
   bw->wr2 = (((double)victim_bytes)/t)/(1024.0*1024.0*1024.0);
+  bw->wr3 = 0;
+  bw->wr4 = 0;
 }
 
 void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw ) {
@@ -633,12 +675,14 @@ void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw ) {
   uint64_t write_bytes1;
   uint64_t write_bytes2;
   uint64_t write_bytes3;
+  uint64_t write_bytes4;
   int core;
 
   read_bytes  = 0;
   write_bytes1 = 0;
   write_bytes2 = 0;
   write_bytes3 = 0;
+  write_bytes4 = 0;
 
   if ( c->exp != CTRS_EXP_L2_BW ) {
     printf("exp type need to be CTRS_EXP_L2_BW!\n");
@@ -647,14 +691,16 @@ void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw ) {
     bw->wr = 0;
     bw->wr2 = 0;
     bw->wr3 = 0;
+    bw->wr4 = 0;
     return;
   }
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     read_bytes   += c->l2_lines_in[core]*64;
-    write_bytes1 += c->l2_lines_out_ns[core]*64;
-    write_bytes2 += c->idi_misc_wb_up[core]*64;
-    write_bytes3 += c->idi_misc_wb_down[core]*64;
+    write_bytes1 += c->l2_lines_out_s[core]*64;
+    write_bytes2 += c->l2_lines_out_ns[core]*64;
+    write_bytes3 += c->idi_misc_wb_up[core]*64;
+    write_bytes4 += c->idi_misc_wb_down[core]*64;
   }
 
   bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
@@ -662,6 +708,7 @@ void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw ) {
   bw->wr = (((double)write_bytes1)/t)/(1024.0*1024.0*1024.0);
   bw->wr2 = (((double)write_bytes2)/t)/(1024.0*1024.0*1024.0);
   bw->wr3 = (((double)write_bytes3)/t)/(1024.0*1024.0*1024.0);
+  bw->wr4 = (((double)write_bytes4)/t)/(1024.0*1024.0*1024.0);
 }
 
 void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw ) {
@@ -670,6 +717,7 @@ void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw ) {
   uint64_t write_bytes1;
   uint64_t write_bytes2;
   uint64_t write_bytes3;
+  uint64_t write_bytes4;
   double   avg_cycles;
   int core;
 
@@ -687,15 +735,17 @@ void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw ) {
     bw->wr = 0;
     bw->wr2 = 0;
     bw->wr3 = 0;
+    bw->wr4 = 0;
     return;
   }
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     total_cycles += c->clockticks[core];
     read_bytes   += c->l2_lines_in[core]*64;
-    write_bytes1 += c->l2_lines_out_ns[core]*64;
-    write_bytes2 += c->idi_misc_wb_up[core]*64;
-    write_bytes3 += c->idi_misc_wb_down[core]*64;
+    write_bytes1 += c->l2_lines_out_s[core]*64;
+    write_bytes2 += c->l2_lines_out_ns[core]*64;
+    write_bytes3 += c->idi_misc_wb_up[core]*64;
+    write_bytes4 += c->idi_misc_wb_down[core]*64;
   }
 
   avg_cycles = ((double)total_cycles/(double)CTRS_NCORE);
@@ -706,6 +756,50 @@ void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw ) {
   bw->wr = ((double)write_bytes1/avg_cycles);
   bw->wr2 = ((double)write_bytes2/avg_cycles);
   bw->wr3 = ((double)write_bytes3/avg_cycles);
+  bw->wr3 = ((double)write_bytes4/avg_cycles);
+}
+
+void get_snp_rsp_core_ctrs( const ctrs_core *c, snp_rsp* rsp ) {
+  uint64_t total_cycles;
+  uint64_t total_ihiti;
+  uint64_t total_ihitfse;
+  uint64_t total_ifwdm;
+  uint64_t total_ifwdfe;
+  double   avg_cycles;
+  int core;
+
+  total_cycles = 0;
+  avg_cycles = 0;
+  total_ihiti  = 0;
+  total_ihitfse = 0;
+  total_ifwdm = 0;
+  total_ifwdfe = 0;
+
+  if ( c->exp != CTRS_EXP_CORE_SNP_RSP ) {
+    printf("exp type need to be CTRS_EXP_CORE_SNP_RSP!\n");
+    rsp->cyc = 0;
+    rsp->ihiti = 0;
+    rsp->ihitfse = 0;
+    rsp->ifwdm = 0;
+    rsp->ifwdfe = 0;
+    return;
+  }
+
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
+    total_cycles += c->clockticks[core];
+    total_ihiti   += c->core_snp_rsp_ihiti[core];
+    total_ihitfse += c->core_snp_rsp_ihitfse[core];
+    total_ifwdm += c->core_snp_rsp_ifwdm[core];
+    total_ifwdfe += c->core_snp_rsp_ifwdfe[core];
+  }
+
+  avg_cycles = ((double)total_cycles/(double)CTRS_NCORE);
+
+  rsp->cyc = avg_cycles;
+  rsp->ihiti = (double)total_ihiti;
+  rsp->ihitfse = (double)total_ihitfse;
+  rsp->ifwdm = (double)total_ifwdm;
+  rsp->ifwdfe = (double)total_ifwdfe;
 }
 
 #ifdef __cplusplus
