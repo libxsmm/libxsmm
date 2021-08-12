@@ -85,7 +85,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_dmmfunction k_sparse2 = NULL;
   libxsmm_dmmfunction k_dense = NULL;
   int i, j, n, a_nnz, nkerns;
-  const int N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_target_archid) / 4;
+  const int vlen32 = libxsmm_cpuid_vlen32(libxsmm_target_archid);
+  const int N_sparse1 = (vlen32 + 1) / 2;
   const int N_sparse2 = N_sparse1 * 2;
   const int N_dense = N_sparse2;
 
@@ -327,7 +328,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_smmfunction k_sparse2 = NULL;
   libxsmm_smmfunction k_dense = NULL;
   int i, j, n, a_nnz, nkerns;
-  const int N_sparse1 = libxsmm_cpuid_vlen32(libxsmm_target_archid) / 2;
+  const int vlen32 = libxsmm_cpuid_vlen32(libxsmm_target_archid);
+  const int N_sparse1 = vlen32;
   const int N_sparse2 = N_sparse1 * 2;
   const int N_dense = N_sparse2;
 
