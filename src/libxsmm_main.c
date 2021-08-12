@@ -651,7 +651,7 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
 #if defined(_WIN32)
             Sleep((DWORD)(1000 * seconds));
 #else
-            LIBXSMM_EXPECT(EXIT_SUCCESS, sleep(seconds));
+            LIBXSMM_EXPECT(EXIT_SUCCESS == sleep(seconds));
 #endif
           }
           else for(;;) LIBXSMM_SYNC_YIELD;
@@ -962,7 +962,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         && (NULL == omp_proc_bind || 0 == *omp_proc_bind))
       {
         static char affinity[] = "OMP_PROC_BIND=TRUE";
-        LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(affinity));
+        LIBXSMM_EXPECT(EXIT_SUCCESS == LIBXSMM_PUTENV(affinity));
         if (LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
           fprintf(stderr, "LIBXSMM: prepared to pin threads.\n");
         }
@@ -971,7 +971,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 # if defined(LIBXSMM_INTERCEPT_DYNAMIC) && 1
     else if (NULL == getenv("I_MPI_SHM_HEAP")) {
       static char shmheap[] = "I_MPI_SHM_HEAP=1";
-      LIBXSMM_EXPECT(EXIT_SUCCESS, LIBXSMM_PUTENV(shmheap));
+      LIBXSMM_EXPECT(EXIT_SUCCESS == LIBXSMM_PUTENV(shmheap));
     }
 # endif
 #endif
@@ -1415,7 +1415,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #endif
                 nchar = LIBXSMM_SNPRINTF(name, sizeof(name), "%010u.user", id);
                 if (0 < nchar && (int)sizeof(name) > nchar) {
-                  LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_dump("LIBXSMM-USER-DUMP", name, code.ptr_const, size, 0/*unique*/));
+                  LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_dump("LIBXSMM-USER-DUMP", name, code.ptr_const, size, 0/*unique*/));
                 }
               }
 #if !defined(NDEBUG)
