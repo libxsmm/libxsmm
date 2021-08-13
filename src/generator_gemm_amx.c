@@ -902,6 +902,24 @@ void libxsmm_setup_tile( unsigned int tile_id, unsigned int n_rows, unsigned int
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_setup_masking_infra( libxsmm_generated_code* io_generated_code, libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+
+  unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
+  unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
+  i_micro_kernel_config->mask_m_fp32        = 0;
+  i_micro_kernel_config->mask_m_bf16        = 0;
+
+  if (i_micro_kernel_config->m_remainder > 0) {
+    reserved_mask_regs  += 2;
+    i_micro_kernel_config->mask_m_fp32  = reserved_mask_regs - 1;
+    i_micro_kernel_config->mask_m_bf16  = reserved_mask_regs - 2;
+    libxsmm_generator_mateltwise_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_fp32, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_F32);
+    libxsmm_generator_mateltwise_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_bf16, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_BF16);
+  }
+  i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*            io_generated_code,
                                                     const libxsmm_gemm_descriptor*      i_xgemm_desc,
                                                     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
@@ -919,16 +937,6 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   i_micro_kernel_config->fused_sigmoid      = 0;
   i_micro_kernel_config->overwrite_C        = 0;
   i_micro_kernel_config->vnni_format_C      = 0;
-  i_micro_kernel_config->mask_m_fp32        = 0;
-  i_micro_kernel_config->mask_m_bf16        = 0;
-
-  if (i_micro_kernel_config->m_remainder > 0) {
-    reserved_mask_regs  += 2;
-    i_micro_kernel_config->mask_m_fp32  = reserved_mask_regs - 1;
-    i_micro_kernel_config->mask_m_bf16  = reserved_mask_regs - 2;
-    libxsmm_generator_mateltwise_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_fp32, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_F32);
-    libxsmm_generator_mateltwise_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_bf16, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_BF16);
-  }
 
   /* TODO: Add support fror more fusions  */
   if ((i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) || (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A) ||
@@ -1411,10 +1419,6 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDX );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
 
   /* The stack at exit of setup looks like this:
    *
@@ -1442,7 +1446,6 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
 
 }
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
@@ -1450,10 +1453,6 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
     const libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
   LIBXSMM_UNUSED(i_xgemm_desc);
   LIBXSMM_UNUSED(i_gp_reg_mapping);
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDX );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
@@ -1464,49 +1463,142 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  /* Apply overrides  */
-  libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
-  libxsmm_gp_reg_mapping l_gp_reg_mapping;
+void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking( libxsmm_generated_code*            io_generated_code,
+    libxsmm_gemm_descriptor*      i_xgemm_desc,
+    libxsmm_micro_kernel_config*  i_micro_kernel_config,
+    libxsmm_blocking_info_t*      m_blocking_info,
+    libxsmm_blocking_info_t*      n_blocking_info,
+    libxsmm_tile_config*          tile_config ) {
+  unsigned int im = 0, in = 0, m_blocking = 0, n_blocking = 0, k_blocking = 0, ii = 0, m_tiles = 0, n_tiles = 0;
 
-  /* open asm */
-  libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
-
-  if ((i_xgemm_desc->m % 16 == 0) || (i_xgemm_desc->m <= 32)) {
-    libxsmm_generator_gemm_amx_kernel_patch( io_generated_code, &l_xgemm_desc_mod );
+  i_micro_kernel_config->m_remainder  = 0;
+  m_blocking = 32;
+  while (i_xgemm_desc->m % m_blocking != 0) {
+    m_blocking--;
+  }
+  if (m_blocking <= 16) {
+    m_blocking_info[0].blocking = m_blocking;
+    m_blocking_info[0].block_size = i_xgemm_desc->m;
+    m_blocking_info[0].tiles = 1;
+    m_blocking_info[0].sizes[0] = m_blocking;
+    i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[0] % 16;
   } else {
-    unsigned int m0 = i_xgemm_desc->m - (i_xgemm_desc->m % 32);
-    unsigned int m1 = i_xgemm_desc->m - m0;
-
-    /* make sure we configure the tiles for each patch  */
-    l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG;
-    l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
-    l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags ^ LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG;
-    l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags ^ LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
-
-    l_xgemm_desc_mod.m = m0;
-    libxsmm_generator_gemm_amx_kernel_patch( io_generated_code, &l_xgemm_desc_mod );
-
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RDX, m0*2);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RDI, m0*4);
-
-    l_xgemm_desc_mod.m = m1;
-    libxsmm_generator_gemm_amx_kernel_patch( io_generated_code, &l_xgemm_desc_mod );
+    m_blocking_info[0].blocking = m_blocking;
+    m_blocking_info[0].block_size = i_xgemm_desc->m;
+    m_blocking_info[0].tiles = 2;
+    m_blocking_info[0].sizes[0] = 16 /*(m_blocking+1)/2*/;
+    m_blocking_info[0].sizes[1] = m_blocking - m_blocking_info[0].sizes[0];
+    i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[1] % 16;
   }
 
-  /* close asm */
-  libxsmm_x86_instruction_close_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  n_blocking = 32;
+  while (i_xgemm_desc->n % n_blocking != 0) {
+    n_blocking--;
+  }
+  if (n_blocking <= 16) {
+    n_blocking_info[0].blocking = n_blocking;
+    n_blocking_info[0].block_size = i_xgemm_desc->n;
+    n_blocking_info[0].tiles = 1;
+    n_blocking_info[0].sizes[0] = n_blocking;
+  } else {
+    n_blocking_info[0].blocking = n_blocking;
+    n_blocking_info[0].block_size = i_xgemm_desc->n;
+    n_blocking_info[0].tiles = 2;
+    n_blocking_info[0].sizes[0] = (n_blocking+1)/2;
+    n_blocking_info[0].sizes[1] = n_blocking - n_blocking_info[0].sizes[0];
+  }
+
+  /* Special case when N = 49 or N = 61 -- we do 1x4 blocking */
+  if (i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61) {
+    m_blocking = 16;
+    while (i_xgemm_desc->m % m_blocking != 0) {
+      m_blocking--;
+    }
+    m_blocking_info[0].blocking = m_blocking;
+    m_blocking_info[0].block_size = i_xgemm_desc->m;
+    m_blocking_info[0].tiles = 1;
+    m_blocking_info[0].sizes[0] = m_blocking;
+    i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[0] % 16;
+    if (i_xgemm_desc->n == 49) {
+      n_blocking_info[0].blocking = 49;
+      n_blocking_info[0].block_size = 49;
+      n_blocking_info[0].tiles = 4;
+      /* I.e. N = 49 = 3 * 13 + 10 */
+      n_blocking_info[0].sizes[0] = 13;
+      n_blocking_info[0].sizes[1] = 13;
+      n_blocking_info[0].sizes[2] = 13;
+      n_blocking_info[0].sizes[3] = 10;
+    }
+    if (i_xgemm_desc->n == 61) {
+      n_blocking_info[0].blocking = 61;
+      n_blocking_info[0].block_size = 61;
+      n_blocking_info[0].tiles = 4;
+      /* I.e. N = 61 = 3 * 16 + 13 */
+      n_blocking_info[0].sizes[0] = 16;
+      n_blocking_info[0].sizes[1] = 16;
+      n_blocking_info[0].sizes[2] = 16;
+      n_blocking_info[0].sizes[3] = 13;
+    }
+  }
+
+  /* Find K blocking  */
+  k_blocking = 16;
+  while (i_xgemm_desc->k % k_blocking != 0) {
+    k_blocking--;
+  }
+
+  /* First init all tiles with default value 16 */
+  for (im = 0; im < 8; im++) {
+    libxsmm_setup_tile(im, 16, 16, tile_config);
+  }
+
+  /* For now introduce here tileconfig redundantly -- want to move it externally somewhere... */
+  /* Create array with tileconfig */
+  /* TODO: revisit */
+  tile_config->palette_id = 1;
+  /* First configure the accumulator tiles 0-4 */
+  m_tiles = m_blocking_info[0].tiles;
+  n_tiles = n_blocking_info[0].tiles;
+  ii = 0;
+  for (im = 0; im < m_tiles; im++) {
+    for (in = 0; in < n_tiles; in++) {
+      libxsmm_setup_tile(ii, m_blocking_info[0].sizes[im], n_blocking_info[0].sizes[in], tile_config);
+      ii++;
+      if (n_tiles == 1) {
+        ii++;
+      }
+    }
+  }
+  /* Configure tiles for A */
+  libxsmm_setup_tile(4, m_blocking_info[0].sizes[0], k_blocking, tile_config);
+  if (m_tiles == 2) {
+    libxsmm_setup_tile(5, m_blocking_info[0].sizes[1], k_blocking, tile_config);
+  }
+  /* Configure tiles for B */
+  libxsmm_setup_tile(6, k_blocking, n_blocking_info[0].sizes[0], tile_config);
+  if (n_tiles == 2) {
+    libxsmm_setup_tile(7, k_blocking, n_blocking_info[0].sizes[1], tile_config);
+  }
+  if (n_tiles == 4) {
+    libxsmm_setup_tile(7, k_blocking, n_blocking_info[0].sizes[3], tile_config);
+  }
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_kernel_patch( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_code, const libxsmm_gemm_descriptor* i_xgemm_desc_const ) {
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
+  /* Allow descriptor to be modified if need be  */
+  libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc_const;
+  libxsmm_gemm_descriptor *i_xgemm_desc = &l_xgemm_desc_mod;
+  unsigned int m0 = 0, m1 = 0;
 
   /* AMX specific blocking info */
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
   unsigned int m_blocking, n_blocking, k_blocking, ii = 0, m_tiles, n_tiles, im, in;
+  unsigned int n_gemm_code_blocks = 0;
+
   libxsmm_tile_config tile_config;
   LIBXSMM_MEMZERO127(&tile_config);
 
@@ -1567,155 +1659,34 @@ void libxsmm_generator_gemm_amx_kernel_patch( libxsmm_generated_code* io_generat
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
+  /* First stamp out a nice GEMM and the if need be take care of remainder handling    */
+  if ((i_xgemm_desc->m % 16 == 0) || (i_xgemm_desc->m <= 32)) {
+    /* Nothing to do here  */
+    n_gemm_code_blocks = 1;
+  } else {
+    /* Need to stamp out a remainder handling gemm */
+    m0 = i_xgemm_desc->m - (i_xgemm_desc->m % 32);
+    m1 = i_xgemm_desc->m - m0;
+    i_xgemm_desc->m = m0;
+    n_gemm_code_blocks = 2;
+  }
+
   /* Here compute the 2D blocking info based on the M and N values  */
-  /* For now super simple, rudimentary logic, to be generalized later on  */
-  l_micro_kernel_config.m_remainder  = 0;
-  m_blocking = 32;
-  while (i_xgemm_desc->m % m_blocking != 0) {
-    m_blocking--;
-  }
-  if (m_blocking <= 16) {
-    m_blocking_info[0].blocking = m_blocking;
-    m_blocking_info[0].block_size = i_xgemm_desc->m;
-    m_blocking_info[0].tiles = 1;
-    m_blocking_info[0].sizes[0] = m_blocking;
-    l_micro_kernel_config.m_remainder  = m_blocking_info[0].sizes[0] % 16;
-  } else {
-    m_blocking_info[0].blocking = m_blocking;
-    m_blocking_info[0].block_size = i_xgemm_desc->m;
-    m_blocking_info[0].tiles = 2;
-    m_blocking_info[0].sizes[0] = 16 /*(m_blocking+1)/2*/;
-    m_blocking_info[0].sizes[1] = m_blocking - m_blocking_info[0].sizes[0];
-    l_micro_kernel_config.m_remainder  = m_blocking_info[0].sizes[1] % 16;
-  }
+  libxsmm_generator_gemm_init_micro_kernel_config_tileblocking( io_generated_code,  i_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
 
-  n_blocking = 32;
-  while (i_xgemm_desc->n % n_blocking != 0) {
-    n_blocking--;
-  }
-  if (n_blocking <= 16) {
-    n_blocking_info[0].blocking = n_blocking;
-    n_blocking_info[0].block_size = i_xgemm_desc->n;
-    n_blocking_info[0].tiles = 1;
-    n_blocking_info[0].sizes[0] = n_blocking;
-  } else {
-    n_blocking_info[0].blocking = n_blocking;
-    n_blocking_info[0].block_size = i_xgemm_desc->n;
-    n_blocking_info[0].tiles = 2;
-    n_blocking_info[0].sizes[0] = (n_blocking+1)/2;
-    n_blocking_info[0].sizes[1] = n_blocking - n_blocking_info[0].sizes[0];
-  }
-
-  /* Special case when N = 49 or N = 61 -- we do 1x4 blocking */
-  if (i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61) {
-    m_blocking = 16;
-    while (i_xgemm_desc->m % m_blocking != 0) {
-      m_blocking--;
-    }
-    m_blocking_info[0].blocking = m_blocking;
-    m_blocking_info[0].block_size = i_xgemm_desc->m;
-    m_blocking_info[0].tiles = 1;
-    m_blocking_info[0].sizes[0] = m_blocking;
-    l_micro_kernel_config.m_remainder  = m_blocking_info[0].sizes[0] % 16;
-    if (i_xgemm_desc->n == 49) {
-      n_blocking_info[0].blocking = 49;
-      n_blocking_info[0].block_size = 49;
-      n_blocking_info[0].tiles = 4;
-      /* I.e. N = 49 = 3 * 13 + 10 */
-      n_blocking_info[0].sizes[0] = 13;
-      n_blocking_info[0].sizes[1] = 13;
-      n_blocking_info[0].sizes[2] = 13;
-      n_blocking_info[0].sizes[3] = 10;
-    }
-    if (i_xgemm_desc->n == 61) {
-      n_blocking_info[0].blocking = 61;
-      n_blocking_info[0].block_size = 61;
-      n_blocking_info[0].tiles = 4;
-      /* I.e. N = 61 = 3 * 16 + 13 */
-      n_blocking_info[0].sizes[0] = 16;
-      n_blocking_info[0].sizes[1] = 16;
-      n_blocking_info[0].sizes[2] = 16;
-      n_blocking_info[0].sizes[3] = 13;
-    }
-  }
-
-#if 0
-  if (i_xgemm_desc->n == 49) {
-    n_blocking_info[0].blocking = 19;
-    n_blocking_info[0].block_size = 38;
-    n_blocking_info[0].tiles = 2;
-    n_blocking_info[0].sizes[0] = 11;
-    n_blocking_info[0].sizes[1] = 8;
-
-    n_blocking_info[1].blocking = 11;
-    n_blocking_info[1].block_size = 11;
-    n_blocking_info[1].tiles = 1;
-    n_blocking_info[1].sizes[0] = 11;
-    n_blocking_info[1].sizes[1] = 11;
-  }
-
-  if (i_xgemm_desc->n == 61) {
-    n_blocking_info[0].blocking = 25;
-    n_blocking_info[0].block_size = 50;
-    n_blocking_info[0].tiles = 2;
-    n_blocking_info[0].sizes[0] = 11;
-    n_blocking_info[0].sizes[1] = 14;
-
-    n_blocking_info[1].blocking = 11;
-    n_blocking_info[1].block_size = 11;
-    n_blocking_info[1].tiles = 1;
-    n_blocking_info[1].sizes[0] = 11;
-    n_blocking_info[1].sizes[1] = 11;
-  }
-#endif
-
-  /* Find K blocking  */
-  k_blocking = 16;
-  while (i_xgemm_desc->k % k_blocking != 0) {
-    k_blocking--;
-  }
-
-  /* First init all tiles with default value 16 */
-  for (im = 0; im < 8; im++) {
-    libxsmm_setup_tile(im, 16, 16, &tile_config);
-  }
-
-  /* For now introduce here tileconfig redundantly -- want to move it externally somewhere... */
-  /* Create array with tileconfig */
-  /* TODO: revisit */
-  tile_config.palette_id = 1;
-  /* First configure the accumulator tiles 0-4 */
-  m_tiles = m_blocking_info[0].tiles;
-  n_tiles = n_blocking_info[0].tiles;
-  for (im = 0; im < m_tiles; im++) {
-    for (in = 0; in < n_tiles; in++) {
-      libxsmm_setup_tile(ii, m_blocking_info[0].sizes[im], n_blocking_info[0].sizes[in], &tile_config);
-      ii++;
-      if (n_tiles == 1) {
-        ii++;
-      }
-    }
-  }
-  /* Configure tiles for A */
-  libxsmm_setup_tile(4, m_blocking_info[0].sizes[0], k_blocking, &tile_config);
-  if (m_tiles == 2) {
-    libxsmm_setup_tile(5, m_blocking_info[0].sizes[1], k_blocking, &tile_config);
-  }
-  /* Configure tiles for B */
-  libxsmm_setup_tile(6, k_blocking, n_blocking_info[0].sizes[0], &tile_config);
-  if (n_tiles == 2) {
-    libxsmm_setup_tile(7, k_blocking, n_blocking_info[0].sizes[1], &tile_config);
-  }
-  if (n_tiles == 4) {
-    libxsmm_setup_tile(7, k_blocking, n_blocking_info[0].sizes[3], &tile_config);
-  }
+  /* open asm */
+  libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
   /* Setup stack frame...  */
+  m_tiles = m_blocking_info[0].tiles;
+  n_tiles = n_blocking_info[0].tiles;
   libxsmm_generator_gemm_amx_setup_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config, m_tiles, n_tiles );
   libxsmm_generator_gemm_amx_setup_fusion_infra( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
+  libxsmm_generator_gemm_amx_setup_masking_infra( io_generated_code, &l_micro_kernel_config );
 
   if ((((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
-      (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0))    ) {
+      (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
+      (n_gemm_code_blocks > 1)    ) {
     libxsmm_x86_instruction_tile_control( io_generated_code,
         0,
         l_micro_kernel_config.instruction_set,
@@ -1732,12 +1703,71 @@ void libxsmm_generator_gemm_amx_kernel_patch( libxsmm_generated_code* io_generat
     libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_ldb, (i_xgemm_desc->ldb * 4/*l_micro_kernel_config.datatype_size*/)/4);
     libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_ldc, (i_xgemm_desc->ldc * 4/*l_micro_kernel_config.datatype_size*/)/4);
 
+    /* Load the actual batch-reduce trip count */
+    if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+          l_micro_kernel_config.alu_mov_instruction,
+          l_gp_reg_mapping.gp_reg_reduce_count,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          0,
+          l_gp_reg_mapping.gp_reg_reduce_count,
+          0 );
+    }
+
     libxsmm_generator_gemm_amx_kernel_nloop(io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info);
   }
 
   /* Conditionally perform a tilerelease */
   if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0)) ||
-      (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0))    ) {
+      (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
+      (n_gemm_code_blocks > 1)   ) {
+    libxsmm_x86_instruction_tile_control( io_generated_code,
+        0,
+        l_micro_kernel_config.instruction_set,
+        LIBXSMM_X86_INSTR_TILERELEASE,
+        LIBXSMM_X86_GP_REG_UNDEF,
+        0,
+        &tile_config );
+  }
+
+  if (n_gemm_code_blocks > 1) {
+    i_xgemm_desc->m = m1;
+    l_micro_kernel_config.m_remainder  = 0;
+
+    /* Here compute the 2D blocking info based on the M and N values  */
+    libxsmm_generator_gemm_init_micro_kernel_config_tileblocking( io_generated_code,  i_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
+    libxsmm_generator_gemm_amx_setup_masking_infra( io_generated_code, &l_micro_kernel_config );
+
+    libxsmm_x86_instruction_tile_control( io_generated_code,
+        0,
+        l_micro_kernel_config.instruction_set,
+        LIBXSMM_X86_INSTR_LDTILECFG,
+        LIBXSMM_X86_GP_REG_UNDEF,
+        0,
+        &tile_config );
+
+    if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
+      (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))     ) {
+#if 1
+       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RDX, m0*2);
+       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RDI, m0*4);
+#endif
+      if (l_micro_kernel_config.n_loop_exists > 0) {
+        /* We should adjust n advancements in C/B etc. Also advance by M since all M adjustments have been revoked by the n loop footer */
+      } else if (l_micro_kernel_config.m_loop_exists == 0) {
+        /* We should advance by M since no advancements have been made  */
+      } else {
+        /* Nothing should be done since the M loop exists and has made the proper advancements in the M direction */
+      }
+
+      libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_lda, (i_xgemm_desc->lda * 4/*l_micro_kernel_config.datatype_size*/)/4);
+      libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_ldb, (i_xgemm_desc->ldb * 4/*l_micro_kernel_config.datatype_size*/)/4);
+      libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_ldc, (i_xgemm_desc->ldc * 4/*l_micro_kernel_config.datatype_size*/)/4);
+
+
+      libxsmm_generator_gemm_amx_kernel_nloop(io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info);
+    }
+
     libxsmm_x86_instruction_tile_control( io_generated_code,
         0,
         l_micro_kernel_config.instruction_set,
@@ -1749,8 +1779,10 @@ void libxsmm_generator_gemm_amx_kernel_patch( libxsmm_generated_code* io_generat
 
   /* Properly destroy stack frame...  */
   libxsmm_generator_gemm_amx_destroy_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
-}
 
+  /* close asm */
+  libxsmm_x86_instruction_close_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*            io_generated_code,
@@ -2065,17 +2097,6 @@ void libxsmm_generator_gemm_amx_kernel_nloop( libxsmm_generated_code*           
 
   i_micro_kernel_config->m_loop_exists = m_assembly_loop_exists;
   i_micro_kernel_config->n_loop_exists = n_assembly_loop_exists;
-
-  /* Load the actual batch-reduce trip count */
-  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
-    libxsmm_x86_instruction_alu_mem( io_generated_code,
-        i_micro_kernel_config->alu_mov_instruction,
-        i_gp_reg_mapping->gp_reg_reduce_count,
-        LIBXSMM_X86_GP_REG_UNDEF, 0,
-        0,
-        i_gp_reg_mapping->gp_reg_reduce_count,
-        0 );
-  }
 
   /* apply n_blocking */
   while (l_n_done != (unsigned int)i_xgemm_desc->n) {
