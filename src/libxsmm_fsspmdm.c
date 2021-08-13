@@ -195,7 +195,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   LIBXSMM_HANDLE_ERROR_OFF_BEGIN();
   {
     /* Attempt to JIT a sparse kernel */
-    if ( N_sparse1 <= N && (M * N_sparse1) <= nperm ) {
+    if ( N_sparse1 <= N && (M * K) <= nperm ) {
       xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
       if ( NULL != xgemm_desc ) {
@@ -204,7 +204,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* If that worked try to JIT a second (wider) sparse kernel */
-    if ( NULL != k_sparse1 && N_sparse2 <= N && (M * N_sparse2) <= nperm ) {
+    if ( NULL != k_sparse1 && N_sparse2 <= N && (M * K) <= nperm ) {
       xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
       if ( NULL != xgemm_desc ) {
@@ -471,7 +471,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   LIBXSMM_HANDLE_ERROR_OFF_BEGIN();
   {
     /* Attempt to JIT a sparse kernel */
-    if ( N_sparse1 <= N && (M * N_sparse1) <= nperm ) {
+    if ( N_sparse1 <= N && (M * K) <= nperm ) {
       xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
       if ( NULL != xgemm_desc ) {
@@ -480,7 +480,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* If that worked try to JIT a second (wider) sparse kernel */
-    if ( NULL != k_sparse1 && N_sparse2 <= N && (M * N_sparse2) <= nperm ) {
+    if ( NULL != k_sparse1 && N_sparse2 <= N && (M * K) <= nperm ) {
       xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
       if ( NULL != xgemm_desc ) {
