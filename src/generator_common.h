@@ -706,14 +706,17 @@
 #define LIBXSMM_ERR_VNNI_B                90042
 #define LIBXSMM_ERR_NO_AVX512VL           90043
 
-#if defined(LIBXSMM_HANDLE_ERROR_QUIET)
-# define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE)
-# define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE)
+#define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
+#define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1)
+
+#if defined(NDEBUG)
+# define LIBXSMM_HANDLE_ERROR_OFF_BEGIN() libxsmm_set_handle_error(0)
+# define LIBXSMM_HANDLE_ERROR_OFF_END() libxsmm_set_handle_error(1)
 #else
-# define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
-# define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1)
+# define LIBXSMM_HANDLE_ERROR_OFF_BEGIN()
+# define LIBXSMM_HANDLE_ERROR_OFF_END()
 #endif
 
 /* tile config structure */
@@ -1401,6 +1404,12 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code );
+
+LIBXSMM_API_INTERN
+int libxsmm_get_handle_error(void);
+
+LIBXSMM_API_INTERN
+void libxsmm_set_handle_error(int enable);
 
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,

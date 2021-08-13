@@ -62,7 +62,10 @@ typedef struct perf_uncore_fd {
   int fd_horz_iv_ring_in_use[CTRS_NCHA];
   int fd_llc_lookup_rd[CTRS_NCHA];
   int fd_llc_lookup_wr[CTRS_NCHA];
-  int fd_llc_victims[CTRS_NCHA];
+  int fd_llc_victims_e[CTRS_NCHA];
+  int fd_llc_victims_f[CTRS_NCHA];
+  int fd_llc_victims_m[CTRS_NCHA];
+  int fd_llc_victims_s[CTRS_NCHA];
   int fd_xsnp_resp[CTRS_NCHA];
   int fd_core_snp[CTRS_NCHA];
   int fd_snoops_sent[CTRS_NCHA];
@@ -76,13 +79,18 @@ typedef struct perf_uncore_fd {
   ctrs_uncore_exp exp;
 } perf_uncore_fd;
 
-typedef struct perf_core_fd
-{
+typedef struct perf_core_fd {
   int fd_clockticks[CTRS_NCORE];
+  int fd_instrs[CTRS_NCORE];
   int fd_l2_lines_in[CTRS_NCORE];
+  int fd_l2_lines_out_s[CTRS_NCORE];
   int fd_l2_lines_out_ns[CTRS_NCORE];
   int fd_idi_misc_wb_up[CTRS_NCORE];
   int fd_idi_misc_wb_down[CTRS_NCORE];
+  int fd_core_snp_rsp_ihiti[CTRS_NCORE];
+  int fd_core_snp_rsp_ihitfse[CTRS_NCORE];
+  int fd_core_snp_rsp_ifwdm[CTRS_NCORE];
+  int fd_core_snp_rsp_ifwdfe[CTRS_NCORE];
   ctrs_core_exp exp;
 } perf_core_fd;
 
@@ -170,12 +178,12 @@ void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
   int mc, cha;
 
   for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
+#ifdef CTRS_CPU_SKX
 #if 0
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_imc_%d",mc);
 #else
     sprintf(fname, "/sys/devices/uncore_imc_%d", mc);
 #endif
-#ifdef CTRS_CPU_SKX
     if ( exp == CTRS_EXP_DRAM_ACT ) {
       evsetup(fname, &gbl_uncore_perf_fd.fd_act_rd[mc], 0x01, 0x01, 0x00, 0x00, -1);
       evsetup(fname, &gbl_uncore_perf_fd.fd_act_wr[mc], 0x01, 0x02, 0x00, 0x00, -1);
@@ -191,12 +199,12 @@ void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
   }
 
   for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
+#ifdef CTRS_CPU_SKX
 #if 0
     snprintf(fname, sizeof(fname), "/sys/devices/uncore_cha_%d",cha);
 #else
     sprintf(fname, "/sys/devices/uncore_cha_%d", cha);
 #endif
-#ifdef CTRS_CPU_SKX
     if ( exp == CTRS_EXP_CHA_ACT ) {
       evsetup(fname, &gbl_uncore_perf_fd.fd_cha_rd[cha], 0x50, 0x03, 0x00, 0x00, -1);
       evsetup(fname, &gbl_uncore_perf_fd.fd_cha_wr[cha], 0x50, 0x0C, 0x00, 0x00, -1);
@@ -222,8 +230,10 @@ void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
     } else if ( exp == CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS ) {
       evsetup(fname, &gbl_uncore_perf_fd.fd_llc_lookup_rd[cha], 0x34, 0x03, 0x01e20000, 0x10, -1); /* F,M,E,S,I LLC and NM */
       evsetup(fname, &gbl_uncore_perf_fd.fd_llc_lookup_wr[cha], 0x34, 0x05, 0x01e20000, 0x3b, -1); /* F,M,E,S,I LLC and NM */
-      evsetup(fname, &gbl_uncore_perf_fd.fd_llc_victims[cha],   0x37, 0x2f, 0x00000000, 0x00, -1); /* F,M,E,S,I LLC and NM */
-      /*evsetup(fname, &gbl_uncore_perf_fd.fd_llc_victims[cha],   0x34, 0x11, 0x01e20000, 0x10, -1);*/ /* F,M,E,S,I LLC and NM */
+      evsetup(fname, &gbl_uncore_perf_fd.fd_llc_victims_e[cha], 0x37, 0x02, 0x00000000, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_llc_victims_f[cha], 0x37, 0x08, 0x00000000, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_llc_victims_m[cha], 0x37, 0x01, 0x00000000, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_llc_victims_s[cha], 0x37, 0x04, 0x00000000, 0x00, -1);
       evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else if ( exp == CTRS_EXP_CHA_XSNP_RESP ) {
       evsetup(fname, &gbl_uncore_perf_fd.fd_xsnp_resp[cha], 0x32, 0xff, 0x00, 0x00, -1);
@@ -259,21 +269,34 @@ void setup_core_ctrs( ctrs_core_exp exp ) {
   char fname[1024];
   int core;
 
+#ifdef CTRS_CPU_SKX
 #if 0
   snprintf(fname, sizeof(fname), "/sys/devices/cpu");
 #else
   sprintf(fname, "/sys/devices/cpu");
 #endif
+#endif
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
 #ifdef CTRS_CPU_SKX
-    if ( exp == CTRS_EXP_L2_BW ) {
+    if ( exp == CTRS_EXP_CPI ) {
       evsetup(fname, &gbl_core_perf_fd.fd_clockticks[core], 0x3c, 0x00, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_instrs[core], 0xc0, 0x00, 0x00, 0x00, core);
+    } else if ( exp == CTRS_EXP_L2_BW ) {
+      evsetup(fname, &gbl_core_perf_fd.fd_clockticks[core], 0x3c, 0x00, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_instrs[core], 0xc0, 0x00, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_in[core], 0xf1, 0x1f, 0x00, 0x00, core);
-      evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_in[core], 0xf1, 0x1f, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_out_s[core], 0xf2, 0x01, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_l2_lines_out_ns[core], 0xf2, 0x02, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_idi_misc_wb_up[core], 0xfe, 0x02, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_idi_misc_wb_down[core], 0xfe, 0x04, 0x00, 0x00, core);
+    } else if ( exp == CTRS_EXP_CORE_SNP_RSP ) {
+      evsetup(fname, &gbl_core_perf_fd.fd_clockticks[core], 0x3c, 0x00, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_instrs[core], 0xc0, 0x00, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_core_snp_rsp_ihiti[core], 0xef, 0x01, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_core_snp_rsp_ihitfse[core], 0xef, 0x02, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_core_snp_rsp_ifwdm[core], 0xef, 0x10, 0x00, 0x00, core);
+      evsetup(fname, &gbl_core_perf_fd.fd_core_snp_rsp_ifwdfe[core], 0xef, 0x20, 0x00, 0x00, core);
     } else {
       /* nothing */
     }
@@ -336,7 +359,10 @@ void read_uncore_ctrs( ctrs_uncore *c ) {
     } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS ) {
       c->llc_lookup_rd[cha] = readctr(gbl_uncore_perf_fd.fd_llc_lookup_rd[cha]);
       c->llc_lookup_wr[cha] = readctr(gbl_uncore_perf_fd.fd_llc_lookup_wr[cha]);
-      c->llc_victims[cha] = readctr(gbl_uncore_perf_fd.fd_llc_victims[cha]);
+      c->llc_victims_e[cha] = readctr(gbl_uncore_perf_fd.fd_llc_victims_e[cha]);
+      c->llc_victims_f[cha] = readctr(gbl_uncore_perf_fd.fd_llc_victims_f[cha]);
+      c->llc_victims_m[cha] = readctr(gbl_uncore_perf_fd.fd_llc_victims_m[cha]);
+      c->llc_victims_s[cha] = readctr(gbl_uncore_perf_fd.fd_llc_victims_s[cha]);
       c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
     } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_XSNP_RESP ) {
       c->xsnp_resp[cha] = readctr(gbl_uncore_perf_fd.fd_xsnp_resp[cha]);
@@ -369,19 +395,24 @@ void read_uncore_ctrs( ctrs_uncore *c ) {
 void read_core_ctrs( ctrs_core *c ) {
   int core;
   for ( core = 0; core < CTRS_NCORE; ++core ) {
-    if ( gbl_core_perf_fd.exp == CTRS_EXP_L2_BW ) {
+    if ( gbl_core_perf_fd.exp == CTRS_EXP_CPI ) {
       c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
-#if 1
+      c->instrs[core] = readctr(gbl_core_perf_fd.fd_instrs[core]);
+    } else if ( gbl_core_perf_fd.exp == CTRS_EXP_L2_BW ) {
+      c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
+      c->instrs[core] = readctr(gbl_core_perf_fd.fd_instrs[core]);
       c->l2_lines_in[core] = readctr(gbl_core_perf_fd.fd_l2_lines_in[core]);
+      c->l2_lines_out_s[core] = readctr(gbl_core_perf_fd.fd_l2_lines_out_s[core]);
       c->l2_lines_out_ns[core] = readctr(gbl_core_perf_fd.fd_l2_lines_out_ns[core]);
       c->idi_misc_wb_up[core] = readctr(gbl_core_perf_fd.fd_idi_misc_wb_up[core]);
       c->idi_misc_wb_down[core] = readctr(gbl_core_perf_fd.fd_idi_misc_wb_down[core]);
-#else
-      c->l2_lines_in[core] = 0;
-      c->l2_lines_out_ns[core] = 0;
-      c->idi_misc_wb_up[core] = 0;
-      c->idi_misc_wb_down[core] = 0;
-#endif
+    } else if (  gbl_core_perf_fd.exp == CTRS_EXP_CORE_SNP_RSP ) {
+      c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
+      c->instrs[core] = readctr(gbl_core_perf_fd.fd_instrs[core]);
+      c->core_snp_rsp_ihiti[core] = readctr(gbl_core_perf_fd.fd_core_snp_rsp_ihiti[core]);
+      c->core_snp_rsp_ihitfse[core] = readctr(gbl_core_perf_fd.fd_core_snp_rsp_ihitfse[core]);
+      c->core_snp_rsp_ifwdm[core] = readctr(gbl_core_perf_fd.fd_core_snp_rsp_ifwdm[core]);
+      c->core_snp_rsp_ifwdfe[core] = readctr(gbl_core_perf_fd.fd_core_snp_rsp_ifwdfe[core]);
     } else {
       /* nothing */
     }
@@ -411,7 +442,10 @@ void zero_uncore_ctrs( ctrs_uncore *c ) {
     c->horz_iv_ring_in_use[cha] = 0;
     c->llc_lookup_rd[cha] = 0;
     c->llc_lookup_wr[cha] = 0;
-    c->llc_victims[cha] = 0;
+    c->llc_victims_e[cha] = 0;
+    c->llc_victims_f[cha] = 0;
+    c->llc_victims_m[cha] = 0;
+    c->llc_victims_s[cha] = 0;
     c->xsnp_resp[cha] = 0;
     c->core_snp[cha] = 0;
     c->snoops_sent[cha] = 0;
@@ -429,10 +463,16 @@ void zero_core_ctrs( ctrs_core *c ) {
   int core;
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     c->clockticks[core] = 0;
+    c->instrs[core] = 0;
     c->l2_lines_in[core] = 0;
+    c->l2_lines_out_s[core] = 0;
     c->l2_lines_out_ns[core] = 0;
     c->idi_misc_wb_up[core] = 0;
     c->idi_misc_wb_down[core] = 0;
+    c->core_snp_rsp_ihiti[core] = 0;
+    c->core_snp_rsp_ihitfse[core] = 0;
+    c->core_snp_rsp_ifwdm[core] = 0;
+    c->core_snp_rsp_ifwdfe[core] = 0;
   }
 }
 
@@ -457,7 +497,10 @@ void divi_uncore_ctrs( ctrs_uncore *c, uint64_t div ) {
     c->horz_iv_ring_in_use[cha] /= div;
     c->llc_lookup_rd[cha] /= div;
     c->llc_lookup_wr[cha] /= div;
-    c->llc_victims[cha] /= div;
+    c->llc_victims_e[cha] /= div;
+    c->llc_victims_f[cha] /= div;
+    c->llc_victims_m[cha] /= div;
+    c->llc_victims_s[cha] /= div;
     c->xsnp_resp[cha] /= div;
     c->core_snp[cha] /= div;
     c->snoops_sent[cha] /= div;
@@ -475,10 +518,16 @@ void divi_core_ctrs( ctrs_core *c, uint64_t div ) {
   int core;
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     c->clockticks[core] /= div;
+    c->instrs[core] /= div;
     c->l2_lines_in[core] /= div;
+    c->l2_lines_out_s[core] /= div;
     c->l2_lines_out_ns[core] /= div;
     c->idi_misc_wb_up[core] /= div;
     c->idi_misc_wb_down[core] /= div;
+    c->core_snp_rsp_ihiti[core] /= div;
+    c->core_snp_rsp_ihitfse[core] /= div;
+    c->core_snp_rsp_ifwdm[core] /= div;
+    c->core_snp_rsp_ifwdfe[core] /= div;
   }
 }
 
@@ -509,7 +558,10 @@ void difa_uncore_ctrs( const ctrs_uncore *a, const ctrs_uncore *b, ctrs_uncore* 
     c->horz_iv_ring_in_use[cha] += b->horz_iv_ring_in_use[cha] - a->horz_iv_ring_in_use[cha];
     c->llc_lookup_rd[cha] += b->llc_lookup_rd[cha] - a->llc_lookup_rd[cha];
     c->llc_lookup_wr[cha] += b->llc_lookup_wr[cha] - a->llc_lookup_wr[cha];
-    c->llc_victims[cha] += b->llc_victims[cha] - a->llc_victims[cha];
+    c->llc_victims_e[cha] += b->llc_victims_e[cha] - a->llc_victims_e[cha];
+    c->llc_victims_f[cha] += b->llc_victims_f[cha] - a->llc_victims_f[cha];
+    c->llc_victims_m[cha] += b->llc_victims_m[cha] - a->llc_victims_m[cha];
+    c->llc_victims_s[cha] += b->llc_victims_s[cha] - a->llc_victims_s[cha];
     c->xsnp_resp[cha] += b->xsnp_resp[cha] - a->xsnp_resp[cha];
     c->core_snp[cha] += b->core_snp[cha] - a->core_snp[cha];
     c->snoops_sent[cha] += b->snoops_sent[cha] - a->snoops_sent[cha];
@@ -535,29 +587,35 @@ void difa_core_ctrs( const ctrs_core *a, const ctrs_core *b, ctrs_core* c ) {
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     c->clockticks[core] += b->clockticks[core] - a->clockticks[core];
+    c->instrs[core] += b->instrs[core] - a->instrs[core];
     c->l2_lines_in[core] += b->l2_lines_in[core] - a->l2_lines_in[core];
+    c->l2_lines_out_s[core] += b->l2_lines_out_s[core] - a->l2_lines_out_s[core];
     c->l2_lines_out_ns[core] += b->l2_lines_out_ns[core] - a->l2_lines_out_ns[core];
     c->idi_misc_wb_up[core] += b->idi_misc_wb_up[core] - a->idi_misc_wb_up[core];
     c->idi_misc_wb_down[core] += b->idi_misc_wb_down[core] - a->idi_misc_wb_down[core];
+    c->core_snp_rsp_ihiti[core] += b->core_snp_rsp_ihiti[core] - a->core_snp_rsp_ihiti[core];
+    c->core_snp_rsp_ihitfse[core] += b->core_snp_rsp_ihitfse[core] - a->core_snp_rsp_ihitfse[core];
+    c->core_snp_rsp_ifwdm[core] += b->core_snp_rsp_ifwdm[core] - a->core_snp_rsp_ifwdm[core];
+    c->core_snp_rsp_ifwdfe[core] += b->core_snp_rsp_ifwdfe[core] - a->core_snp_rsp_ifwdfe[core];
   }
 
   c->exp = a->exp;
 }
 
 void get_cas_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw ) {
-  uint64_t read_bytes;
-  uint64_t write_bytes;
-  int mc;
+  uint64_t read_bytes = 0;
+  uint64_t write_bytes = 0;
+  int mc = 0;
 
-  read_bytes  = 0;
-  write_bytes = 0;
+  bw->rd = 0;
+  bw->rd2 = 0;
+  bw->wr = 0;
+  bw->wr2 = 0;
+  bw->wr3 = 0;
+  bw->wr4 = 0;
 
   if ( c->exp != CTRS_EXP_DRAM_CAS ) {
     printf("exp type need to be CTRS_EXP_DRAM_CAS!\n");
-    bw->rd = 0;
-    bw->rd2 = 0;
-    bw->wr = 0;
-    bw->wr2 = 0;
     return;
   }
 
@@ -568,23 +626,22 @@ void get_cas_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* 
 
   bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
   bw->wr = (((double)write_bytes)/t)/(1024.0*1024.0*1024.0);
-  bw->wr2 = 0;
 }
 
 void get_act_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw ) {
-  uint64_t read_bytes;
-  uint64_t write_bytes;
-  int mc;
+  uint64_t read_bytes = 0;
+  uint64_t write_bytes = 0;
+  int mc = 0;
 
-  read_bytes  = 0;
-  write_bytes = 0;
+  bw->rd = 0;
+  bw->rd2 = 0;
+  bw->wr = 0;
+  bw->wr2 = 0;
+  bw->wr3 = 0;
+  bw->wr4 = 0;
 
   if ( c->exp != CTRS_EXP_DRAM_ACT ) {
     printf("exp type need to be CTRS_EXP_DRAM_CAS!\n");
-    bw->rd = 0;
-    bw->rd2 = 0;
-    bw->wr = 0;
-    bw->wr2 = 0;
     return;
   }
 
@@ -595,117 +652,226 @@ void get_act_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* 
 
   bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
   bw->wr = (((double)write_bytes)/t)/(1024.0*1024.0*1024.0);
-  bw->wr2 = 0;
 }
 
-void get_llc_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw ) {
-  uint64_t read_bytes;
-  uint64_t write_bytes;
-  uint64_t victim_bytes;
-  int cha;
+void get_llc_victim_bw_uncore_ctrs( const ctrs_uncore *c, const double t, llc_victims* llc_vic ) {
+  uint64_t read_bytes = 0;
+  uint64_t write_bytes = 0;
+  uint64_t victim_bytes_e = 0;
+  uint64_t victim_bytes_f = 0;
+  uint64_t victim_bytes_m = 0;
+  uint64_t victim_bytes_s = 0;
+  int cha = 0;
 
-  read_bytes  = 0;
-  write_bytes = 0;
-  victim_bytes = 0;
+  llc_vic->rd_bw = 0;
+  llc_vic->wr_bw = 0;
+  llc_vic->bw_vic_e = 0;
+  llc_vic->bw_vic_f = 0;
+  llc_vic->bw_vic_m = 0;
+  llc_vic->bw_vic_s = 0;
+  llc_vic->tot_vic_e = 0;
+  llc_vic->tot_vic_f = 0;
+  llc_vic->tot_vic_m = 0;
+  llc_vic->tot_vic_s = 0;
 
   if ( c->exp != CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS ) {
-    printf("exp type need to be CTRS_EXP_CHA_LLC_LOOKUP!\n");
-    bw->rd = 0;
-    bw->rd2 = 0;
-    bw->wr = 0;
-    bw->wr2 = 0;
+    printf("exp type need to be CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS!\n");
     return;
   }
 
   for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
     read_bytes  += c->llc_lookup_rd[cha]*64;
     write_bytes += c->llc_lookup_wr[cha]*64;
-    victim_bytes += c->llc_victims[cha]*64;
+    victim_bytes_e += c->llc_victims_e[cha]*64;
+    victim_bytes_f += c->llc_victims_f[cha]*64;
+    victim_bytes_m += c->llc_victims_m[cha]*64;
+    victim_bytes_s += c->llc_victims_s[cha]*64;
   }
 
-  bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
-  bw->wr = (((double)write_bytes)/t)/(1024.0*1024.0*1024.0);
-  bw->wr2 = (((double)victim_bytes)/t)/(1024.0*1024.0*1024.0);
+  llc_vic->rd_bw = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
+  llc_vic->wr_bw = (((double)write_bytes)/t)/(1024.0*1024.0*1024.0);
+  llc_vic->bw_vic_e = (((double)victim_bytes_e)/t)/(1024.0*1024.0*1024.0);
+  llc_vic->bw_vic_f = (((double)victim_bytes_f)/t)/(1024.0*1024.0*1024.0);
+  llc_vic->bw_vic_m = (((double)victim_bytes_m)/t)/(1024.0*1024.0*1024.0);
+  llc_vic->bw_vic_s = (((double)victim_bytes_s)/t)/(1024.0*1024.0*1024.0);
+  llc_vic->tot_vic_e = (double)(victim_bytes_e/64);
+  llc_vic->tot_vic_f = (double)(victim_bytes_f/64);
+  llc_vic->tot_vic_m = (double)(victim_bytes_m/64);
+  llc_vic->tot_vic_s = (double)(victim_bytes_s/64);
 }
 
 void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw ) {
-  uint64_t read_bytes;
-  uint64_t write_bytes1;
-  uint64_t write_bytes2;
-  uint64_t write_bytes3;
-  int core;
+  uint64_t read_bytes = 0;
+  uint64_t write_bytes1 = 0;
+  uint64_t write_bytes2 = 0;
+  uint64_t write_bytes3 = 0;
+  uint64_t write_bytes4 = 0;
+  int core = 0;
 
-  read_bytes  = 0;
-  write_bytes1 = 0;
-  write_bytes2 = 0;
-  write_bytes3 = 0;
+  bw->rd = 0;
+  bw->rd2 = 0;
+  bw->wr = 0;
+  bw->wr2 = 0;
+  bw->wr3 = 0;
+  bw->wr4 = 0;
 
   if ( c->exp != CTRS_EXP_L2_BW ) {
     printf("exp type need to be CTRS_EXP_L2_BW!\n");
-    bw->rd = 0;
-    bw->rd2 = 0;
-    bw->wr = 0;
-    bw->wr2 = 0;
-    bw->wr3 = 0;
     return;
   }
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     read_bytes   += c->l2_lines_in[core]*64;
-    write_bytes1 += c->l2_lines_out_ns[core]*64;
-    write_bytes2 += c->idi_misc_wb_up[core]*64;
-    write_bytes3 += c->idi_misc_wb_down[core]*64;
+    write_bytes1 += c->l2_lines_out_s[core]*64;
+    write_bytes2 += c->l2_lines_out_ns[core]*64;
+    write_bytes3 += c->idi_misc_wb_up[core]*64;
+    write_bytes4 += c->idi_misc_wb_down[core]*64;
   }
 
   bw->rd = (((double)read_bytes )/t)/(1024.0*1024.0*1024.0);
-  bw->rd2 = 0;
   bw->wr = (((double)write_bytes1)/t)/(1024.0*1024.0*1024.0);
   bw->wr2 = (((double)write_bytes2)/t)/(1024.0*1024.0*1024.0);
   bw->wr3 = (((double)write_bytes3)/t)/(1024.0*1024.0*1024.0);
+  bw->wr4 = (((double)write_bytes4)/t)/(1024.0*1024.0*1024.0);
 }
 
 void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw ) {
-  uint64_t total_cycles;
-  uint64_t read_bytes;
-  uint64_t write_bytes1;
-  uint64_t write_bytes2;
-  uint64_t write_bytes3;
-  double   avg_cycles;
-  int core;
+  uint64_t total_cycles = 0;
+  uint64_t read_bytes = 0;
+  uint64_t write_bytes1 = 0;
+  uint64_t write_bytes2 = 0;
+  uint64_t write_bytes3 = 0;
+  uint64_t write_bytes4 = 0;
+  double   avg_cycles = 0;
+  int core = 0;
 
-  total_cycles = 0;
-  avg_cycles = 0;
-  read_bytes  = 0;
-  write_bytes1 = 0;
-  write_bytes2 = 0;
-  write_bytes3 = 0;
+  bw->rd = 0;
+  bw->rd2 = 0;
+  bw->wr = 0;
+  bw->wr2 = 0;
+  bw->wr3 = 0;
+  bw->wr4 = 0;
 
   if ( c->exp != CTRS_EXP_L2_BW ) {
     printf("exp type need to be CTRS_EXP_L2_BW!\n");
-    bw->rd = 0;
-    bw->rd2 = 0;
-    bw->wr = 0;
-    bw->wr2 = 0;
-    bw->wr3 = 0;
     return;
   }
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     total_cycles += c->clockticks[core];
     read_bytes   += c->l2_lines_in[core]*64;
-    write_bytes1 += c->l2_lines_out_ns[core]*64;
-    write_bytes2 += c->idi_misc_wb_up[core]*64;
-    write_bytes3 += c->idi_misc_wb_down[core]*64;
+    write_bytes1 += c->l2_lines_out_s[core]*64;
+    write_bytes2 += c->l2_lines_out_ns[core]*64;
+    write_bytes3 += c->idi_misc_wb_up[core]*64;
+    write_bytes4 += c->idi_misc_wb_down[core]*64;
   }
 
   avg_cycles = ((double)total_cycles/(double)CTRS_NCORE);
 
   bw->cyc = avg_cycles;
   bw->rd = ((double)read_bytes/avg_cycles);
-  bw->rd2 = 0;
   bw->wr = ((double)write_bytes1/avg_cycles);
   bw->wr2 = ((double)write_bytes2/avg_cycles);
   bw->wr3 = ((double)write_bytes3/avg_cycles);
+  bw->wr3 = ((double)write_bytes4/avg_cycles);
+}
+
+void get_snp_rsp_core_ctrs( const ctrs_core *c, snp_rsp* rsp ) {
+  uint64_t total_cycles = 0;
+  uint64_t total_ihiti = 0;
+  uint64_t total_ihitfse = 0;
+  uint64_t total_ifwdm = 0;
+  uint64_t total_ifwdfe = 0;
+  double   avg_cycles = 0;
+  int core = 0;
+
+  rsp->cyc = 0;
+  rsp->ihiti = 0;
+  rsp->ihitfse = 0;
+  rsp->ifwdm = 0;
+  rsp->ifwdfe = 0;
+
+  if ( c->exp != CTRS_EXP_CORE_SNP_RSP ) {
+    printf("exp type need to be CTRS_EXP_CORE_SNP_RSP!\n");
+    return;
+  }
+
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
+    total_cycles += c->clockticks[core];
+    total_ihiti   += c->core_snp_rsp_ihiti[core];
+    total_ihitfse += c->core_snp_rsp_ihitfse[core];
+    total_ifwdm += c->core_snp_rsp_ifwdm[core];
+    total_ifwdfe += c->core_snp_rsp_ifwdfe[core];
+  }
+
+  avg_cycles = ((double)total_cycles/(double)CTRS_NCORE);
+
+  rsp->cyc = avg_cycles;
+  rsp->ihiti = (double)total_ihiti;
+  rsp->ihitfse = (double)total_ihitfse;
+  rsp->ifwdm = (double)total_ifwdm;
+  rsp->ifwdfe = (double)total_ifwdfe;
+}
+
+void get_cpi_core_ctr( const ctrs_core *c, cpi_rate* cpi ) {
+  uint64_t total_cycles = 0;
+  uint64_t total_instrs = 0;
+  int core = 0;
+
+  cpi->cyc = 0;
+  cpi->instrs_core = 0;
+  cpi->instrs = 0;
+  cpi->cpi_core = 0;
+  cpi->cpi = 0;
+
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
+    total_cycles += c->clockticks[core];
+    total_instrs += c->instrs[core];
+  }
+
+  cpi->cyc = ((double)total_cycles/(double)CTRS_NCORE);
+  cpi->instrs_core = ((double)total_instrs/(double)CTRS_NCORE);
+  cpi->instrs = (double)total_instrs;
+  cpi->cpi_core = cpi->instrs_core/cpi->cyc;
+  cpi->cpi = cpi->instrs/cpi->cyc;
+}
+
+void get_l2_llc_misses_uncore_core_ctr( const ctrs_core *cc, const ctrs_uncore *uc, cache_miss_rate* mrate ) {
+  uint64_t total_cycles = 0;
+  uint64_t total_instrs = 0;
+  uint64_t miss_lines_l2 = 0;
+  uint64_t miss_lines_llc = 0;
+  int core = 0;
+  int mc = 0;
+
+  mrate->cyc = 0;
+  mrate->instrs = 0;
+  mrate->llc_rd_acc = 0;
+  mrate->dram_rd_acc = 0;
+  mrate->l2_miss_rate = 0;
+  mrate->llc_miss_rate = 0;
+
+  if ( cc->exp != CTRS_EXP_L2_BW || uc->exp != CTRS_EXP_DRAM_CAS ) {
+    printf("exp type need to be CTRS_EXP_L2_BW for core and CTRS_EXP_DRAM_CAS for uncore!\n");
+    return;
+  }
+
+  for ( core = 0; core < CTRS_NCORE; ++core ) {
+    total_cycles += cc->clockticks[core];
+    total_instrs += cc->instrs[core];
+    miss_lines_l2 += cc->l2_lines_in[core];
+  }
+
+  for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
+    miss_lines_llc += uc->cas_rd[mc];
+  }
+
+  mrate->cyc = ((double)total_cycles/(double)CTRS_NCORE);
+  mrate->instrs = (double)total_instrs;
+  mrate->llc_rd_acc = (double)miss_lines_l2;
+  mrate->dram_rd_acc = (double)miss_lines_llc;
+  mrate->l2_miss_rate = mrate->llc_rd_acc/mrate->instrs;
+  mrate->llc_miss_rate = mrate->dram_rd_acc/mrate->instrs;
 }
 
 #ifdef __cplusplus

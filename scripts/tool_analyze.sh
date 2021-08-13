@@ -26,7 +26,10 @@ then
     ARG=lib
   fi
   ${MAKE} -e CXX="${CXX}" CC="${CC}" FC= FORCE_CXX=1 DBG=1 ILP64=1 EFLAGS="--analyze" ${ARG} 2> .analyze.log
-  ISSUES=$(${GREP} -e "error:" -e "warning:" .analyze.log | ${GREP} -v "is never read" | ${SORT} -u)
+  ISSUES=$(${GREP} -e "error:" -e "warning:" .analyze.log \
+    | ${GREP} -v "make:" \
+    | ${GREP} -v "is never read" \
+    | ${SORT} -u)
   echo
   echo   "================================================================================"
   if [ "" = "${ISSUES}" ]; then

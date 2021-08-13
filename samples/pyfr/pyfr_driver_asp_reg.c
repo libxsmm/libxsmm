@@ -8,12 +8,19 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include <libxsmm.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <stdio.h>
 #include <math.h>
-#include <assert.h>
+
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl.h>
+#else /* prototypes for GEMM */
+void dgemm_(const char*, const char*, const int*, const int*, const int*,
+  const double*, const double*, const int*, const double*, const int*,
+  const double*, double*, const int*);
+#endif
 
 #define REPS 100
 #define REALTYPE double
@@ -54,10 +61,10 @@ int my_csr_reader( const char*           i_csr_file_in,
             0 != *o_row_count && 0 != *o_column_count && 0 != *o_element_count)
         {
           /* allocate CSC datastructure matching mtx file */
-          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
-          *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count + 1));
-          *o_values = (REALTYPE*) malloc(sizeof(double) * (*o_element_count));
-          l_row_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count));
+          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_element_count));
+          *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_row_count + 1));
+          *o_values = (REALTYPE*) malloc(sizeof(double) * ((size_t)*o_element_count));
+          l_row_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_row_count));
 
           /* check if mallocs were successful */
           if ( ( *o_row_idx == NULL )      ||
@@ -69,10 +76,10 @@ int my_csr_reader( const char*           i_csr_file_in,
           }
 
           /* set everything to zero for init */
-          memset(*o_row_idx, 0, sizeof(unsigned int)*(*o_row_count + 1));
-          memset(*o_column_idx, 0, sizeof(unsigned int)*(*o_element_count));
-          memset(*o_values, 0, sizeof(double)*(*o_element_count));
-          memset(l_row_idx_id, 0, sizeof(unsigned int)*(*o_row_count));
+          memset(*o_row_idx, 0, sizeof(unsigned int)*((size_t)*o_row_count + 1));
+          memset(*o_column_idx, 0, sizeof(unsigned int)*((size_t)*o_element_count));
+          memset(*o_values, 0, sizeof(double)*((size_t)*o_element_count));
+          memset(l_row_idx_id, 0, sizeof(unsigned int)*((size_t)*o_row_count));
 
           /* init column idx */
           for ( l_i = 0; l_i < (*o_row_count + 1); l_i++)
@@ -120,6 +127,7 @@ int my_csr_reader( const char*           i_csr_file_in,
 
   /* let's handle empty rows */
   for ( l_i = 0; l_i < (*o_row_count); l_i++) {
+    assert(NULL != l_row_idx_id);
     if ( l_row_idx_id[l_i] == 0 ) {
       (*o_row_idx)[l_i+1] = (*o_row_idx)[l_i];
     }
@@ -155,9 +163,9 @@ int main(int argc, char* argv[]) {
   int l_i;
   int l_j;
   int l_z;
-  unsigned int l_elems;
-  unsigned int l_reps;
-  unsigned int l_n_block;
+  int l_elems;
+  int l_reps;
+  int l_n_block;
 
   libxsmm_timer_tickint l_start, l_end;
   double l_total;
@@ -193,14 +201,14 @@ int main(int argc, char* argv[]) {
   printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_elements);
 
   /* allocate dense matrices */
-  l_a_dense = (REALTYPE*)_mm_malloc(l_k * l_m * sizeof(REALTYPE), 64);
-  l_b = (REALTYPE*)_mm_malloc(l_k * l_n * sizeof(REALTYPE), 64);
-  l_c_betazero = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_betaone = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_gold_betazero = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_gold_betaone = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_dense_betazero = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_dense_betaone = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
+  l_a_dense = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_k * l_m, 64);
+  l_b = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_k * l_n, 64);
+  l_c_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_gold_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_gold_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_dense_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_dense_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
 
   /* touch B */
   for ( l_i = 0; l_i < l_k*l_n; l_i++) {
@@ -379,4 +387,6 @@ int main(int argc, char* argv[]) {
   /* free */
   libxsmm_dfsspmdm_destroy( gemm_op_betazero );
   libxsmm_dfsspmdm_destroy( gemm_op_betaone );
+
+  return EXIT_SUCCESS;
 }
