@@ -1463,8 +1463,7 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking( libxsmm_generated_code*            io_generated_code,
-    libxsmm_gemm_descriptor*      i_xgemm_desc,
+void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_descriptor*      i_xgemm_desc,
     libxsmm_micro_kernel_config*  i_micro_kernel_config,
     libxsmm_blocking_info_t*      m_blocking_info,
     libxsmm_blocking_info_t*      n_blocking_info,
@@ -1847,7 +1846,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
 
   /* AMX specific blocking info */
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
-  unsigned int m_blocking, n_blocking, k_blocking, ii = 0, m_tiles, n_tiles, im, in;
+  unsigned int m_tiles, n_tiles;
   unsigned int n_gemm_code_blocks = 0;
 
   libxsmm_tile_config tile_config;
@@ -1923,7 +1922,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
   }
 
   /* Here compute the 2D blocking info based on the M and N values  */
-  libxsmm_generator_gemm_init_micro_kernel_config_tileblocking( io_generated_code,  i_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
+  libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(i_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
 
   /* open asm */
   libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
@@ -1986,7 +1985,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
     l_micro_kernel_config.m_remainder  = 0;
 
     /* Here compute the 2D blocking info based on the M and N values  */
-    libxsmm_generator_gemm_init_micro_kernel_config_tileblocking( io_generated_code,  i_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
+    libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(i_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
     libxsmm_generator_gemm_amx_setup_masking_infra( io_generated_code, &l_micro_kernel_config );
 
     libxsmm_x86_instruction_tile_control( io_generated_code,
