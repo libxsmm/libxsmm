@@ -16,6 +16,9 @@
 #define USE_CORE_PERF_L2IN
 #endif
 #if 0
+#define USE_CORE_PERF_IPC
+#endif
+#if 0
 #define USE_UNCORE_PERF_DRAM_BW
 #endif
 #if 0
@@ -36,7 +39,7 @@
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
-#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC) || defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
 #  include "../../external_aux/perf_counter_markers.h"
 #endif
 
@@ -378,7 +381,14 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.fwd_2d_blocking = 1;
     res.fwd_col_teams = 2;
     res.fwd_row_teams = 7;
-  } else if (threads == 56) {
+  } else if (threads == 28) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 1;
+    res.fwd_row_teams = 14;
+    res.fwd_M_hyperpartitions = 1;
+    res.fwd_N_hyperpartitions = 2;
+   } else if (threads == 56) {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 1;
     res.fwd_col_teams = 1;
@@ -2046,7 +2056,7 @@ int main(int argc, char* argv[])
 
   char* env_threads_per_numa;
 
-#if defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_SNP)
+#if defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_IPC)
   ctrs_core cc_a, cc_b, cc_s;
   zero_core_ctrs( &cc_a );
   zero_core_ctrs( &cc_b );
@@ -2057,6 +2067,9 @@ int main(int argc, char* argv[])
 #endif
 #if defined(USE_CORE_PERF_SNP)
   setup_core_ctrs(CTRS_EXP_CORE_SNP_RSP);
+#endif
+#if defined(USE_CORE_PERF_IPC)
+  setup_core_ctrs(CTRS_EXP_IPC);
 #endif
 #endif
 #if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
@@ -2305,7 +2318,7 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
-#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN)
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC)
     read_core_ctrs( &cc_a );
 #endif
 #if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
@@ -2329,7 +2342,7 @@ int main(int argc, char* argv[])
       }
     }
     l_end = libxsmm_timer_tick();
-#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN)
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC)
     read_core_ctrs( &cc_b );
     difa_core_ctrs( &cc_a, &cc_b, &cc_s );
     divi_core_ctrs( &cc_s, iters );
@@ -2377,6 +2390,17 @@ int main(int argc, char* argv[])
       printf("avg SNOOP RESP IHITFSE / cycle: %f\n", rsp.ihitfse/rsp.cyc );
       printf("avg SNOOP RESP IFWDM / cycle  : %f\n", rsp.ifwdm/rsp.cyc );
       printf("avg SNOOP RESP IFWDFE / cycle : %f\n", rsp.ifwdfe/rsp.cyc );
+    }
+#endif
+#if defined(USE_CORE_PERF_IPC)
+    {
+      ipc_rate ipc;
+      get_ipc_core_ctr( &cc_s, &ipc );
+      printf("average #cycles per iteration : %f\n", ipc.cyc );
+      printf("#intrs/core per iteration     : %f\n", ipc.instrs_core );
+      printf("total #instr per iteration    : %f\n", ipc.instrs );
+      printf("IPC per core                  : %f\n", ipc.ipc_core );
+      printf("IPC per SOC                   : %f\n", ipc.ipc );
     }
 #endif
 #if defined(USE_UNCORE_PERF_DRAM_BW)

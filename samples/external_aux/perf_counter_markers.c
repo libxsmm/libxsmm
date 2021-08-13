@@ -279,7 +279,7 @@ void setup_core_ctrs( ctrs_core_exp exp ) {
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
 #ifdef CTRS_CPU_SKX
-    if ( exp == CTRS_EXP_CPI ) {
+    if ( exp == CTRS_EXP_IPC ) {
       evsetup(fname, &gbl_core_perf_fd.fd_clockticks[core], 0x3c, 0x00, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_instrs[core], 0xc0, 0x00, 0x00, 0x00, core);
     } else if ( exp == CTRS_EXP_L2_BW ) {
@@ -395,7 +395,7 @@ void read_uncore_ctrs( ctrs_uncore *c ) {
 void read_core_ctrs( ctrs_core *c ) {
   int core;
   for ( core = 0; core < CTRS_NCORE; ++core ) {
-    if ( gbl_core_perf_fd.exp == CTRS_EXP_CPI ) {
+    if ( gbl_core_perf_fd.exp == CTRS_EXP_IPC ) {
       c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
       c->instrs[core] = readctr(gbl_core_perf_fd.fd_instrs[core]);
     } else if ( gbl_core_perf_fd.exp == CTRS_EXP_L2_BW ) {
@@ -813,27 +813,27 @@ void get_snp_rsp_core_ctrs( const ctrs_core *c, snp_rsp* rsp ) {
   rsp->ifwdfe = (double)total_ifwdfe;
 }
 
-void get_cpi_core_ctr( const ctrs_core *c, cpi_rate* cpi ) {
+void get_ipc_core_ctr( const ctrs_core *c, ipc_rate* ipc ) {
   uint64_t total_cycles = 0;
   uint64_t total_instrs = 0;
   int core = 0;
 
-  cpi->cyc = 0;
-  cpi->instrs_core = 0;
-  cpi->instrs = 0;
-  cpi->cpi_core = 0;
-  cpi->cpi = 0;
+  ipc->cyc = 0;
+  ipc->instrs_core = 0;
+  ipc->instrs = 0;
+  ipc->ipc_core = 0;
+  ipc->ipc = 0;
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     total_cycles += c->clockticks[core];
     total_instrs += c->instrs[core];
   }
 
-  cpi->cyc = ((double)total_cycles/(double)CTRS_NCORE);
-  cpi->instrs_core = ((double)total_instrs/(double)CTRS_NCORE);
-  cpi->instrs = (double)total_instrs;
-  cpi->cpi_core = cpi->instrs_core/cpi->cyc;
-  cpi->cpi = cpi->instrs/cpi->cyc;
+  ipc->cyc = ((double)total_cycles/(double)CTRS_NCORE);
+  ipc->instrs_core = ((double)total_instrs/(double)CTRS_NCORE);
+  ipc->instrs = (double)total_instrs;
+  ipc->ipc_core = ipc->instrs_core/ipc->cyc;
+  ipc->ipc = ipc->instrs/ipc->cyc;
 }
 
 void get_l2_llc_misses_uncore_core_ctr( const ctrs_core *cc, const ctrs_uncore *uc, cache_miss_rate* mrate ) {

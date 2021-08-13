@@ -103,7 +103,7 @@ typedef struct ctrs_uncore {
 } ctrs_uncore;
 
 typedef enum ctrs_core_exp {
-  CTRS_EXP_CPI,
+  CTRS_EXP_IPC,
   CTRS_EXP_L2_BW,
   CTRS_EXP_CORE_SNP_RSP
 } ctrs_core_exp;
@@ -163,13 +163,13 @@ typedef struct snp_rsp {
   double ifwdfe;
 } snp_rsp;
 
-typedef struct cpi_rate {
+typedef struct ipc_rate {
   double cyc;
   double instrs_core;
   double instrs;
-  double cpi_core;
-  double cpi;
-} cpi_rate;
+  double ipc_core;
+  double ipc;
+} ipc_rate;
 
 typedef struct cache_miss_rate {
   double cyc;
@@ -197,7 +197,7 @@ void difa_core_ctrs( const ctrs_core *a, const ctrs_core *b, ctrs_core* c );
 void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw );
 void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw );
 void get_snp_rsp_core_ctrs( const ctrs_core *c, snp_rsp* rsp );
-void get_cpi_core_ctr( const ctrs_core *c, cpi_rate* cpi );
+void get_ipc_core_ctr( const ctrs_core *c, ipc_rate* ipc );
 
 void get_l2_llc_misses_uncore_core_ctr( const ctrs_core *cc, const ctrs_uncore *uc, cache_miss_rate* mrate );
 
