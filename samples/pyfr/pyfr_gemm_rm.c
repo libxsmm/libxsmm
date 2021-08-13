@@ -129,4 +129,6 @@ int main(int argc, char *argv[])
     }
   }
   printf("max error: %f\n\n", max_error);
+
+  return EXIT_SUCCESS;
 }

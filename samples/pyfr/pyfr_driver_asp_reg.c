@@ -387,4 +387,6 @@ int main(int argc, char* argv[]) {
   /* free */
   libxsmm_dfsspmdm_destroy( gemm_op_betazero );
   libxsmm_dfsspmdm_destroy( gemm_op_betaone );
+
+  return EXIT_SUCCESS;
 }
