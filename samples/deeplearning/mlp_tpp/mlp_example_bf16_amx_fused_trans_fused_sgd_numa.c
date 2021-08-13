@@ -10,16 +10,16 @@
 ******************************************************************************/
 
 #if 0
-#define USE_CORE_PERF_COUNTERS
-#if 0
 #define USE_CORE_PERF_SNP
 #endif
-#if 1
+#if 0
 #define USE_CORE_PERF_L2IN
 #endif
+#if 0
+#define USE_UNCORE_PERF_DRAM_BW
 #endif
 #if 0
-#define USE_UNCORE_PERF_COUNTERS
+#define USE_UNCORE_PERF_LLC_VICTIMS
 #endif
 
 #include <libxsmm.h>
@@ -36,7 +36,7 @@
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
-#if defined(USE_CORE_PERF_COUNTERS) || defined(USE_UNCORE_PERF_COUNTERS)
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
 #  include "../../external_aux/perf_counter_markers.h"
 #endif
 
@@ -2046,14 +2046,12 @@ int main(int argc, char* argv[])
 
   char* env_threads_per_numa;
 
-#if defined(USE_CORE_PERF_COUNTERS)
-  bw_gibs bw_avg;
-  snp_rsp rsp;
-  ctrs_core a, b, s;
+#if defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_SNP)
+  ctrs_core cc_a, cc_b, cc_s;
+  zero_core_ctrs( &cc_a );
+  zero_core_ctrs( &cc_b );
+  zero_core_ctrs( &cc_s );
 
-  zero_core_ctrs( &a );
-  zero_core_ctrs( &b );
-  zero_core_ctrs( &s );
 #if defined(USE_CORE_PERF_L2IN)
   setup_core_ctrs(CTRS_EXP_L2_BW);
 #endif
@@ -2061,15 +2059,18 @@ int main(int argc, char* argv[])
   setup_core_ctrs(CTRS_EXP_CORE_SNP_RSP);
 #endif
 #endif
-#if defined(USE_UNCORE_PERF_COUNTERS)
-  bw_gibs bw_avg;
-  ctrs_uncore a, b, s;
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
+  ctrs_uncore uc_a, uc_b, uc_s;
+  zero_uncore_ctrs( &uc_a );
+  zero_uncore_ctrs( &uc_b );
+  zero_uncore_ctrs( &uc_s );
 
-  zero_uncore_ctrs( &a );
-  zero_uncore_ctrs( &b );
-  zero_uncore_ctrs( &s );
-
+#if defined(USE_UNCORE_PERF_DRAM_BW)
   setup_uncore_ctrs( CTRS_EXP_DRAM_CAS );
+#endif
+#if defined(USE_UNCORE_PERF_LLC_VICTIMS)
+  setup_uncore_ctrs( CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS );
+#endif
 #endif
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
@@ -2304,11 +2305,11 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
-#if defined(USE_CORE_PERF_COUNTERS)
-    read_core_ctrs( &a );
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN)
+    read_core_ctrs( &cc_a );
 #endif
-#if defined(USE_UNCORE_PERF_COUNTERS)
-    read_uncore_ctrs( &a );
+#if defined(USE_UNCORE_PERF_DRAM_BW)
+    read_uncore_ctrs( &uc_a );
 #endif
     l_start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -2328,15 +2329,15 @@ int main(int argc, char* argv[])
       }
     }
     l_end = libxsmm_timer_tick();
-#if defined(USE_CORE_PERF_COUNTERS)
-    read_core_ctrs( &b );
-    difa_core_ctrs( &a, &b, &s );
-    divi_core_ctrs( &s, iters );
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN)
+    read_core_ctrs( &cc_b );
+    difa_core_ctrs( &cc_a, &cc_b, &cc_s );
+    divi_core_ctrs( &cc_s, iters );
 #endif
-#if defined(USE_UNCORE_PERF_COUNTERS)
-    read_uncore_ctrs( &b );
-    difa_uncore_ctrs( &a, &b, &s );
-    divi_uncore_ctrs( &s, iters );
+#if defined(USE_UNCORE_PERF_DRAM_BW)
+    read_uncore_ctrs( &uc_b );
+    difa_uncore_ctrs( &uc_a, &uc_b, &uc_s );
+    divi_uncore_ctrs( &uc_s, iters );
 #endif
     l_total = libxsmm_timer_duration(l_start, l_end);
 
@@ -2352,32 +2353,67 @@ int main(int argc, char* argv[])
       printf("%i,", C[i] );
     }
     printf("%f,%f\n", ((double)(l_total/iters)), gflop/l_total);
-#if defined(USE_CORE_PERF_COUNTERS)
 #if defined(USE_CORE_PERF_L2IN)
-    get_l2_bw_core_ctrs( &s, (double)(l_total/iters), &bw_avg );
-    printf("AVG GiB/s (IN    L2): %f\n", bw_avg.rd);
-    printf("AVG GiB/s (OUTS  L2): %f\n", bw_avg.wr);
-    printf("AVG GiB/s (OUTNS L2): %f\n", bw_avg.wr2);
-    printf("AVG GiB/s (DEM   L2): %f\n", bw_avg.wr3);
-    printf("AVG GiB/s (DROP  L2): %f\n", bw_avg.wr4);
+    {
+      bw_gibs bw_avg;
+      get_l2_bw_core_ctrs( &cc_s, (double)(l_total/iters), &bw_avg );
+      printf("AVG GiB/s (IN    L2): %f\n", bw_avg.rd);
+      printf("AVG GiB/s (OUTS  L2): %f\n", bw_avg.wr);
+      printf("AVG GiB/s (OUTNS L2): %f\n", bw_avg.wr2);
+      printf("AVG GiB/s (DEM   L2): %f\n", bw_avg.wr3);
+      printf("AVG GiB/s (DROP  L2): %f\n", bw_avg.wr4);
+    }
 #endif
 #if defined(USE_CORE_PERF_SNP)
-    get_snp_rsp_core_ctrs( &s, &rsp );
-    printf("average #cycles per iteration : %f\n", rsp.cyc );
-    printf("SNOOP RESP IHITI              : %f\n", rsp.ihiti );
-    printf("SNOOP RESP IHITFSE            : %f\n", rsp.ihitfse );
-    printf("SNOOP RESP IFWDM              : %f\n", rsp.ifwdm );
-    printf("SNOOP RESP IFWDFE             : %f\n", rsp.ifwdfe );
-    printf("avg SNOOP RESP IHITI / cycle  : %f\n", rsp.ihiti/rsp.cyc );
-    printf("avg SNOOP RESP IHITFSE / cycle: %f\n", rsp.ihitfse/rsp.cyc );
-    printf("avg SNOOP RESP IFWDM / cycle  : %f\n", rsp.ifwdm/rsp.cyc );
-    printf("avg SNOOP RESP IFWDFE / cycle : %f\n", rsp.ifwdfe/rsp.cyc );
+    {
+      snp_rsp rsp;
+      get_snp_rsp_core_ctrs( &cc_s, &rsp );
+      printf("average #cycles per iteration : %f\n", rsp.cyc );
+      printf("SNOOP RESP IHITI              : %f\n", rsp.ihiti );
+      printf("SNOOP RESP IHITFSE            : %f\n", rsp.ihitfse );
+      printf("SNOOP RESP IFWDM              : %f\n", rsp.ifwdm );
+      printf("SNOOP RESP IFWDFE             : %f\n", rsp.ifwdfe );
+      printf("avg SNOOP RESP IHITI / cycle  : %f\n", rsp.ihiti/rsp.cyc );
+      printf("avg SNOOP RESP IHITFSE / cycle: %f\n", rsp.ihitfse/rsp.cyc );
+      printf("avg SNOOP RESP IFWDM / cycle  : %f\n", rsp.ifwdm/rsp.cyc );
+      printf("avg SNOOP RESP IFWDFE / cycle : %f\n", rsp.ifwdfe/rsp.cyc );
+    }
 #endif
+#if defined(USE_UNCORE_PERF_DRAM_BW)
+    {
+      bw_gibs bw_avg;
+      get_cas_ddr_bw_uncore_ctrs( &uc_s, (double)(l_total/iters), &bw_avg );
+      printf("AVG GiB/s (IN  iMC): %f\n", bw_avg.rd);
+      printf("AVG GiB/s (OUT iMC): %f\n", bw_avg.wr);
+    }
 #endif
-#if defined(USE_UNCORE_PERF_COUNTERS)
-    get_cas_ddr_bw_uncore_ctrs( &s, (double)(l_total/iters), &bw_avg );
-    printf("AVG GiB/s (IN  iMC): %f\n", bw_avg.rd);
-    printf("AVG GiB/s (OUT iMC): %f\n", bw_avg.wr);
+#if defined(USE_UNCORE_PERF_LLC_VICTIMS)
+    {
+      llc_victims llc;
+      get_llc_victim_bw_uncore_ctrs( &uc_s, (double)(l_total/iters), &llc );
+      printf("LLC Lookup rd GiB/s : %f\n", llc.rd_bw );
+      printf("LLC Lookup wr GiB/s : %f\n", llc.wr_bw );
+      printf("LLC Victim E GiB/s  : %f\n", llc.bw_vic_e );
+      printf("LLC Victim F GiB/s  : %f\n", llc.bw_vic_f );
+      printf("LLC Victim M GiB/s  : %f\n", llc.bw_vic_m );
+      printf("LLC Victim S GiB/s  : %f\n", llc.bw_vic_s );
+      printf("LLC Victim E Count  : %f\n", llc.tot_vic_e );
+      printf("LLC Victim F Count  : %f\n", llc.tot_vic_e );
+      printf("LLC Victim M Count  : %f\n", llc.tot_vic_e );
+      printf("LLC Victim S Count  : %f\n", llc.tot_vic_e );
+    }
+#endif
+#if defined(USE_CORE_PERF_L2IN) && defined(USE_UNCORE_PERF_DRAM_BW)
+    {
+      cache_miss_rate mrate;
+      get_l2_llc_misses_uncore_core_ctr( &cc_s, &uc_s, &mrate );
+      printf("average #cycles per iteration  : %f\n", mrate.cyc );
+      printf("average #instrs per iteration  : %f\n", mrate.instrs );
+      printf("acc. #L2 misses per iteration  : %f\n", mrate.llc_rd_acc );
+      printf("acc. #LLC misses per iteration : %f\n", mrate.dram_rd_acc );
+      printf("L2 Miss Rate                   : %f\n", mrate.l2_miss_rate );
+      printf("LLC Miss Rate                  : %f\n", mrate.llc_miss_rate );
+    }
 #endif
   }
 

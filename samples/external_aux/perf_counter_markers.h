@@ -85,7 +85,10 @@ typedef struct ctrs_uncore {
   uint64_t horz_txr_cycle_full[CTRS_NCHA];
   uint64_t llc_lookup_rd[CTRS_NCHA];
   uint64_t llc_lookup_wr[CTRS_NCHA];
-  uint64_t llc_victims[CTRS_NCHA];
+  uint64_t llc_victims_e[CTRS_NCHA];
+  uint64_t llc_victims_f[CTRS_NCHA];
+  uint64_t llc_victims_m[CTRS_NCHA];
+  uint64_t llc_victims_s[CTRS_NCHA];
   uint64_t xsnp_resp[CTRS_NCHA];
   uint64_t core_snp[CTRS_NCHA];
   uint64_t snoops_sent[CTRS_NCHA];
@@ -100,12 +103,14 @@ typedef struct ctrs_uncore {
 } ctrs_uncore;
 
 typedef enum ctrs_core_exp {
+  CTRS_EXP_CPI,
   CTRS_EXP_L2_BW,
   CTRS_EXP_CORE_SNP_RSP
 } ctrs_core_exp;
 
 typedef struct ctrs_core {
   uint64_t clockticks[CTRS_NCORE];
+  uint64_t instrs[CTRS_NCORE];
   uint64_t l2_lines_in[CTRS_NCORE];
   uint64_t l2_lines_out_s[CTRS_NCORE];
   uint64_t l2_lines_out_ns[CTRS_NCORE];
@@ -137,6 +142,19 @@ typedef struct bw_bc {
   double wr4;
 } bw_bc;
 
+typedef struct llc_victims {
+  double rd_bw;
+  double wr_bw;
+  double bw_vic_e;
+  double bw_vic_f;
+  double bw_vic_m;
+  double bw_vic_s;
+  double tot_vic_e;
+  double tot_vic_f;
+  double tot_vic_m;
+  double tot_vic_s;
+} llc_victims;
+
 typedef struct snp_rsp {
   double cyc;
   double ihiti;
@@ -145,6 +163,23 @@ typedef struct snp_rsp {
   double ifwdfe;
 } snp_rsp;
 
+typedef struct cpi_rate {
+  double cyc;
+  double instrs_core;
+  double instrs;
+  double cpi_core;
+  double cpi;
+} cpi_rate;
+
+typedef struct cache_miss_rate {
+  double cyc;
+  double instrs;
+  double llc_rd_acc;
+  double dram_rd_acc;
+  double l2_miss_rate;
+  double llc_miss_rate;
+} cache_miss_rate;
+
 void setup_uncore_ctrs( ctrs_uncore_exp exp );
 void read_uncore_ctrs( ctrs_uncore *c );
 void zero_uncore_ctrs( ctrs_uncore *c );
@@ -152,7 +187,7 @@ void divi_uncore_ctrs( ctrs_uncore *c, uint64_t div );
 void difa_uncore_ctrs( const ctrs_uncore *a, const ctrs_uncore *b, ctrs_uncore* c );
 void get_act_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw );
 void get_cas_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw );
-void get_llc_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw );
+void get_llc_victim_bw_uncore_ctrs( const ctrs_uncore *c, const double t, llc_victims* llc_vic );
 
 void setup_core_ctrs( ctrs_core_exp exp );
 void read_core_ctrs( ctrs_core *c );
@@ -162,6 +197,9 @@ void difa_core_ctrs( const ctrs_core *a, const ctrs_core *b, ctrs_core* c );
 void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw );
 void get_l2_bytecycle_core_ctrs( const ctrs_core *c, bw_bc* bw );
 void get_snp_rsp_core_ctrs( const ctrs_core *c, snp_rsp* rsp );
+void get_cpi_core_ctr( const ctrs_core *c, cpi_rate* cpi );
+
+void get_l2_llc_misses_uncore_core_ctr( const ctrs_core *cc, const ctrs_uncore *uc, cache_miss_rate* mrate );
 
 #ifdef __cplusplus
 }
