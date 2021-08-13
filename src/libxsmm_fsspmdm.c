@@ -102,7 +102,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_dfsspmdm_create cannot handle the given input!\n");
+      fprintf(stderr, "LIBXSMM ERROR (libxsmm_dfsspmdm_create): cannot handle the given input!\n");
     }
     return NULL;
   }
@@ -119,10 +119,10 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* Empty matrix */
   if (0 == a_nnz) {
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_dfsspmdm_create discovered an empty matrix!\n");
+    { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM WARNING (libxsmm_dfsspmdm_create): discovered an empty matrix!\n");
     }
     return NULL;
   }
@@ -133,7 +133,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_dfsspmdm_create failed to allocate handle!\n");
+      fprintf(stderr, "LIBXSMM ERROR (libxsmm_dfsspmdm_create): failed to allocate handle!\n");
     }
     return NULL;
   }
@@ -166,7 +166,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_dfsspmdm_create failed to allocate temporary buffers!\n");
+      fprintf(stderr, "LIBXSMM ERROR (libxsmm_dfsspmdm_create): failed to allocate temporary buffers!\n");
     }
     free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
     free( new_handle );
@@ -329,10 +329,10 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     libxsmm_free( C );
   }
   else {
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_dfsspmdm_create failed to provide a kernel!\n");
+    { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM WARNING (libxsmm_dfsspmdm_create): failed to provide a kernel!\n");
     }
     libxsmm_free( aa_dense );
     free( new_handle );
@@ -378,7 +378,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_dfsspmdm_create cannot handle the given input!\n");
+      fprintf(stderr, "LIBXSMM ERROR (libxsmm_dfsspmdm_create): cannot handle the given input!\n");
     }
     return NULL;
   }
@@ -395,10 +395,10 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* Empty matrix */
   if (0 == a_nnz) {
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_sfsspmdm_create discovered an empty matrix!\n");
+    { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM WARNING (libxsmm_sfsspmdm_create): discovered an empty matrix!\n");
     }
     return NULL;
   }
@@ -409,7 +409,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_sfsspmdm_create failed to allocate handle!\n");
+      fprintf(stderr, "LIBXSMM ERROR (libxsmm_sfsspmdm_create): failed to allocate handle!\n");
     }
     return NULL;
   }
@@ -442,7 +442,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_sfsspmdm_create failed to allocate temporary buffers!\n");
+      fprintf(stderr, "LIBXSMM ERROR (libxsmm_sfsspmdm_create): failed to allocate temporary buffers!\n");
     }
     free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
     free( new_handle );
@@ -604,10 +604,10 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     libxsmm_free( C );
   }
   else {
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_sfsspmdm_create failed to provide a kernel!\n");
+    { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM WARNING (libxsmm_sfsspmdm_create): failed to provide a kernel!\n");
     }
     libxsmm_free( aa_dense );
     free( new_handle );
