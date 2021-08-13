@@ -32,7 +32,8 @@ LIBXSMM_API_INTERN const double* internal_dfsspmdm_init(int* nperm)
     result = (const double*)((const void*)perm);
     LIBXSMM_INIT
   }
-  if (NULL != nperm) *nperm = sizeof(perm) / sizeof(double);
+  /* extra parentheses to mute Clang compiler warning */
+  if (NULL != nperm) *nperm = sizeof(perm) / (sizeof(double));
   return result;
 }
 
@@ -64,7 +65,8 @@ LIBXSMM_API_INTERN const float* internal_sfsspmdm_init(int* nperm)
     result = (const float*)((const void*)perm);
     LIBXSMM_INIT
   }
-  if (NULL != nperm) *nperm = sizeof(perm) / sizeof(double);
+  /* extra parentheses to mute Clang compiler warning */
+  if (NULL != nperm) *nperm = sizeof(perm) / (sizeof(float));
   return result;
 }
 
