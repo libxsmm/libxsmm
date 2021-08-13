@@ -2308,7 +2308,7 @@ int main(int argc, char* argv[])
 #if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN)
     read_core_ctrs( &cc_a );
 #endif
-#if defined(USE_UNCORE_PERF_DRAM_BW)
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
     read_uncore_ctrs( &uc_a );
 #endif
     l_start = libxsmm_timer_tick();
@@ -2334,7 +2334,7 @@ int main(int argc, char* argv[])
     difa_core_ctrs( &cc_a, &cc_b, &cc_s );
     divi_core_ctrs( &cc_s, iters );
 #endif
-#if defined(USE_UNCORE_PERF_DRAM_BW)
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
     read_uncore_ctrs( &uc_b );
     difa_uncore_ctrs( &uc_a, &uc_b, &uc_s );
     divi_uncore_ctrs( &uc_s, iters );
@@ -2398,9 +2398,9 @@ int main(int argc, char* argv[])
       printf("LLC Victim M GiB/s  : %f\n", llc.bw_vic_m );
       printf("LLC Victim S GiB/s  : %f\n", llc.bw_vic_s );
       printf("LLC Victim E Count  : %f\n", llc.tot_vic_e );
-      printf("LLC Victim F Count  : %f\n", llc.tot_vic_e );
-      printf("LLC Victim M Count  : %f\n", llc.tot_vic_e );
-      printf("LLC Victim S Count  : %f\n", llc.tot_vic_e );
+      printf("LLC Victim F Count  : %f\n", llc.tot_vic_f );
+      printf("LLC Victim M Count  : %f\n", llc.tot_vic_m );
+      printf("LLC Victim S Count  : %f\n", llc.tot_vic_s );
     }
 #endif
 #if defined(USE_CORE_PERF_L2IN) && defined(USE_UNCORE_PERF_DRAM_BW)

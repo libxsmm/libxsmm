@@ -859,7 +859,7 @@ void get_l2_llc_misses_uncore_core_ctr( const ctrs_core *cc, const ctrs_uncore *
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     total_cycles += cc->clockticks[core];
     total_instrs += cc->instrs[core];
-    miss_lines_l2 += cc->l2_lines_in[core]*64;
+    miss_lines_l2 += cc->l2_lines_in[core];
   }
 
   for ( mc = 0; mc < CTRS_NIMC; ++mc ) {
