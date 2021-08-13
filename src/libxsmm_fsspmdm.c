@@ -13,8 +13,8 @@
 #include "generator_common.h"
 
 
-LIBXSMM_API_INTERN const double* internal_dfsspmdm_init(int* nperm);
-LIBXSMM_API_INTERN const double* internal_dfsspmdm_init(int* nperm)
+LIBXSMM_API_INTERN const double* internal_dfsspmdm_init(void);
+LIBXSMM_API_INTERN const double* internal_dfsspmdm_init(void)
 {
   /* Double precision AVX-512 lane broadcasts */
   LIBXSMM_ALIGNED(static const unsigned int perm[], LIBXSMM_ALIGNMENT) = {
@@ -32,14 +32,12 @@ LIBXSMM_API_INTERN const double* internal_dfsspmdm_init(int* nperm)
     result = (const double*)((const void*)perm);
     LIBXSMM_INIT
   }
-  /* extra parentheses to mute Clang compiler warning */
-  if (NULL != nperm) *nperm = sizeof(perm) / (sizeof(double));
   return result;
 }
 
 
-LIBXSMM_API_INTERN const float* internal_sfsspmdm_init(int* nperm);
-LIBXSMM_API_INTERN const float* internal_sfsspmdm_init(int* nperm)
+LIBXSMM_API_INTERN const float* internal_sfsspmdm_init(void);
+LIBXSMM_API_INTERN const float* internal_sfsspmdm_init(void)
 {
   /* Single precision AVX-512 lane broadcasts */
   LIBXSMM_ALIGNED(static const unsigned int perm[], LIBXSMM_ALIGNMENT) = {
@@ -65,8 +63,6 @@ LIBXSMM_API_INTERN const float* internal_sfsspmdm_init(int* nperm)
     result = (const float*)((const void*)perm);
     LIBXSMM_INIT
   }
-  /* extra parentheses to mute Clang compiler warning */
-  if (NULL != nperm) *nperm = sizeof(perm) / (sizeof(float));
   return result;
 }
 
@@ -77,8 +73,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   const double alpha, const double beta, libxsmm_blasint c_is_nt,
   const double* a_dense)
 {
-  int nperm;
-  const double *const perm = internal_dfsspmdm_init(&nperm); /* shall be first */
+  const double *const perm = internal_dfsspmdm_init(); /* shall be first */
   const double one = 1.0;
   double* a_csr_values = NULL;
   unsigned int* a_csr_rowptr = NULL;
@@ -195,7 +190,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   LIBXSMM_HANDLE_ERROR_OFF_BEGIN();
   {
     /* Attempt to JIT a sparse kernel */
-    if ( N_sparse1 <= N && (M * K) <= nperm ) {
+    if ( N_sparse1 <= N ) {
       xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
       if ( NULL != xgemm_desc ) {
@@ -204,7 +199,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* If that worked try to JIT a second (wider) sparse kernel */
-    if ( NULL != k_sparse1 && N_sparse2 <= N && (M * K) <= nperm ) {
+    if ( NULL != k_sparse1 && N_sparse2 <= N ) {
       xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
       if ( NULL != xgemm_desc ) {
@@ -353,8 +348,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   const float alpha, const float beta, libxsmm_blasint c_is_nt,
   const float* a_dense)
 {
-  int nperm;
-  const float *const perm = internal_sfsspmdm_init(&nperm); /* shall be first */
+  const float *const perm = internal_sfsspmdm_init(); /* shall be first */
   const float one = 1.0f;
   float* a_csr_values = NULL;
   unsigned int* a_csr_rowptr = NULL;
@@ -471,7 +465,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   LIBXSMM_HANDLE_ERROR_OFF_BEGIN();
   {
     /* Attempt to JIT a sparse kernel */
-    if ( N_sparse1 <= N && (M * K) <= nperm ) {
+    if ( N_sparse1 <= N ) {
       xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
       if ( NULL != xgemm_desc ) {
@@ -480,7 +474,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* If that worked try to JIT a second (wider) sparse kernel */
-    if ( NULL != k_sparse1 && N_sparse2 <= N && (M * K) <= nperm ) {
+    if ( NULL != k_sparse1 && N_sparse2 <= N ) {
       xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
       if ( NULL != xgemm_desc ) {
@@ -628,7 +622,7 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
   assert( handle != NULL );
 
   if ( handle->a_dense == NULL ) {
-    const double *const perm = internal_dfsspmdm_init(NULL/*nperm*/);
+    const double *const perm = internal_dfsspmdm_init();
     for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
       handle->kernel( perm, B+i, C+i );
     }
@@ -646,7 +640,7 @@ LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const
   assert( handle != NULL );
 
   if ( handle->a_dense == NULL ) {
-    const float *const perm = internal_sfsspmdm_init(NULL/*nperm*/);
+    const float *const perm = internal_sfsspmdm_init();
     for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
       handle->kernel( perm, B+i, C+i );
     }
