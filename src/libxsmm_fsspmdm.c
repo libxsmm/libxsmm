@@ -191,7 +191,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* Also generate a dense kernel */
   if ( NULL != aa_dense ) {
-    k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, &prefetch);
+    k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc,
+      &one, &beta, &flags, NULL/*auto-prefetch*/);
   }
 
   if ( NULL != k_dense ) {
@@ -436,7 +437,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* Also generate a dense kernel */
   if ( NULL != aa_dense ) {
-    k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc, &one, &beta, &flags, &prefetch);
+    k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc,
+      &one, &beta, &flags, NULL/*auto-prefetch*/);
   }
 
   if ( NULL != k_dense ) {
