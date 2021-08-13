@@ -24,6 +24,9 @@
 #if 0
 #define USE_UNCORE_PERF_LLC_VICTIMS
 #endif
+#if 0
+#define USE_UNCORE_PERF_CHA_UTIL
+#endif
 
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
@@ -39,7 +42,7 @@
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
-#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC) || defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC) || defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL)
 #  include "../../external_aux/perf_counter_markers.h"
 #endif
 
@@ -2072,7 +2075,7 @@ int main(int argc, char* argv[])
   setup_core_ctrs(CTRS_EXP_IPC);
 #endif
 #endif
-#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL)
   ctrs_uncore uc_a, uc_b, uc_s;
   zero_uncore_ctrs( &uc_a );
   zero_uncore_ctrs( &uc_b );
@@ -2083,6 +2086,9 @@ int main(int argc, char* argv[])
 #endif
 #if defined(USE_UNCORE_PERF_LLC_VICTIMS)
   setup_uncore_ctrs( CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS );
+#endif
+#if defined(USE_UNCORE_PERF_CHA_UTIL)
+  setup_uncore_ctrs( CTRS_EXP_CHA_UTIL );
 #endif
 #endif
 
@@ -2321,7 +2327,7 @@ int main(int argc, char* argv[])
 #if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC)
     read_core_ctrs( &cc_a );
 #endif
-#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL)
     read_uncore_ctrs( &uc_a );
 #endif
     l_start = libxsmm_timer_tick();
@@ -2347,7 +2353,7 @@ int main(int argc, char* argv[])
     difa_core_ctrs( &cc_a, &cc_b, &cc_s );
     divi_core_ctrs( &cc_s, iters );
 #endif
-#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS)
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL)
     read_uncore_ctrs( &uc_b );
     difa_uncore_ctrs( &uc_a, &uc_b, &uc_s );
     divi_uncore_ctrs( &uc_s, iters );
@@ -2425,6 +2431,15 @@ int main(int argc, char* argv[])
       printf("LLC Victim F Count  : %f\n", llc.tot_vic_f );
       printf("LLC Victim M Count  : %f\n", llc.tot_vic_m );
       printf("LLC Victim S Count  : %f\n", llc.tot_vic_s );
+    }
+#endif
+#if defined(USE_UNCORE_PERF_CHA_UTIL)
+    {
+      cha_util util;
+      get_cha_util_uncore_ctrs( &uc_s, &util );
+      printf("average #cycles per iteration : %f\n", util.cyc );
+      printf("#intrs/cha per iteration      : %f\n", util.instrs_cha );
+      printf("CHA Util                      : %f\n", util.util_cha );
     }
 #endif
 #if defined(USE_CORE_PERF_L2IN) && defined(USE_UNCORE_PERF_DRAM_BW)

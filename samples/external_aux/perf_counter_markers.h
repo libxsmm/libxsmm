@@ -54,6 +54,7 @@ typedef enum ctrs_uncore_exp {
   CTRS_EXP_DRAM_CAS,
   CTRS_EXP_CHA_ACT,
   CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS,
+  CTRS_EXP_CHA_UTIL,
   CTRS_EXP_CHA_XSNP_RESP,
   CTRS_EXP_CHA_CORE_SNP,
   CTRS_EXP_CHA_SNOOPS_SENT,
@@ -97,6 +98,7 @@ typedef struct ctrs_uncore {
   uint64_t osb[CTRS_NCHA];
   uint64_t tor_inserts[CTRS_NCHA];
   uint64_t tor_occupancy[CTRS_NCHA];
+  uint64_t cha_instrs[CTRS_NCHA];
   uint64_t cha_clockticks[CTRS_NCHA];
   uint64_t cms_clockticks[CTRS_NCHA];
   ctrs_uncore_exp exp;
@@ -171,6 +173,12 @@ typedef struct ipc_rate {
   double ipc;
 } ipc_rate;
 
+typedef struct cha_util {
+  double cyc;
+  double instrs_cha;
+  double util_cha;
+} cha_util;
+
 typedef struct cache_miss_rate {
   double cyc;
   double instrs;
@@ -188,6 +196,7 @@ void difa_uncore_ctrs( const ctrs_uncore *a, const ctrs_uncore *b, ctrs_uncore* 
 void get_act_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw );
 void get_cas_ddr_bw_uncore_ctrs( const ctrs_uncore *c, const double t, bw_gibs* bw );
 void get_llc_victim_bw_uncore_ctrs( const ctrs_uncore *c, const double t, llc_victims* llc_vic );
+void get_cha_util_uncore_ctrs( const ctrs_uncore *c, cha_util* util );
 
 void setup_core_ctrs( ctrs_core_exp exp );
 void read_core_ctrs( ctrs_core *c );
