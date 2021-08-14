@@ -74,6 +74,7 @@ typedef struct perf_uncore_fd {
   int fd_osb[CTRS_NCHA];
   int fd_tor_inserts[CTRS_NCHA];
   int fd_tor_occupancy[CTRS_NCHA];
+  int fd_cha_instrs[CTRS_NCHA];
   int fd_cha_clockticks[CTRS_NCHA];
   int fd_cms_clockticks[CTRS_NCHA];
   ctrs_uncore_exp exp;
@@ -255,6 +256,9 @@ void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
       evsetup(fname, &gbl_uncore_perf_fd.fd_tor_inserts[cha], 0x35, 0x25, 0x00, 0x00, -1);
       evsetup(fname, &gbl_uncore_perf_fd.fd_tor_occupancy[cha], 0x36, 0x24, 0x00, 0x00, -1);
       evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
+    } else if ( exp == CTRS_EXP_CHA_UTIL ) {
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_instrs[cha], 0x50, 0x3f, 0x00, 0x00, -1);
+      evsetup(fname, &gbl_uncore_perf_fd.fd_cha_clockticks[cha], 0x00, 0x00, 0x00, 0x00, -1);
     } else {
       /* nothing */
     }
@@ -279,7 +283,7 @@ void setup_core_ctrs( ctrs_core_exp exp ) {
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
 #ifdef CTRS_CPU_SKX
-    if ( exp == CTRS_EXP_CPI ) {
+    if ( exp == CTRS_EXP_IPC ) {
       evsetup(fname, &gbl_core_perf_fd.fd_clockticks[core], 0x3c, 0x00, 0x00, 0x00, core);
       evsetup(fname, &gbl_core_perf_fd.fd_instrs[core], 0xc0, 0x00, 0x00, 0x00, core);
     } else if ( exp == CTRS_EXP_L2_BW ) {
@@ -384,6 +388,9 @@ void read_uncore_ctrs( ctrs_uncore *c ) {
       c->tor_inserts[cha] = readctr(gbl_uncore_perf_fd.fd_tor_inserts[cha]);
       c->tor_occupancy[cha] = readctr(gbl_uncore_perf_fd.fd_tor_occupancy[cha]);
       c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
+    } else if ( gbl_uncore_perf_fd.exp == CTRS_EXP_CHA_UTIL ) {
+      c->cha_instrs[cha] = readctr(gbl_uncore_perf_fd.fd_cha_instrs[cha]);
+      c->cha_clockticks[cha] = readctr(gbl_uncore_perf_fd.fd_cha_clockticks[cha]);
     } else {
       /* nothing */
     }
@@ -395,7 +402,7 @@ void read_uncore_ctrs( ctrs_uncore *c ) {
 void read_core_ctrs( ctrs_core *c ) {
   int core;
   for ( core = 0; core < CTRS_NCORE; ++core ) {
-    if ( gbl_core_perf_fd.exp == CTRS_EXP_CPI ) {
+    if ( gbl_core_perf_fd.exp == CTRS_EXP_IPC ) {
       c->clockticks[core] = readctr(gbl_core_perf_fd.fd_clockticks[core]);
       c->instrs[core] = readctr(gbl_core_perf_fd.fd_instrs[core]);
     } else if ( gbl_core_perf_fd.exp == CTRS_EXP_L2_BW ) {
@@ -454,6 +461,7 @@ void zero_uncore_ctrs( ctrs_uncore *c ) {
     c->osb[cha] = 0;
     c->tor_inserts[cha] = 0;
     c->tor_occupancy[cha] = 0;
+    c->cha_instrs[cha] = 0;
     c->cha_clockticks[cha] = 0;
     c->cms_clockticks[cha] = 0;
   }
@@ -509,6 +517,7 @@ void divi_uncore_ctrs( ctrs_uncore *c, uint64_t div ) {
     c->osb[cha] /= div;
     c->tor_inserts[cha] /= div;
     c->tor_occupancy[cha] /= div;
+    c->cha_instrs[cha] /= div;
     c->cha_clockticks[cha] /= div;
     c->cms_clockticks[cha] /= div;
   }
@@ -570,6 +579,7 @@ void difa_uncore_ctrs( const ctrs_uncore *a, const ctrs_uncore *b, ctrs_uncore* 
     c->osb[cha] += b->osb[cha] - a->osb[cha];
     c->tor_inserts[cha] += b->tor_inserts[cha] - a->tor_inserts[cha];
     c->tor_occupancy[cha] += b->tor_occupancy[cha] - a->tor_occupancy[cha];
+    c->cha_instrs[cha] += b->cha_instrs[cha] - a->cha_instrs[cha];
     c->cha_clockticks[cha] += b->cha_clockticks[cha] - a->cha_clockticks[cha];
     c->cms_clockticks[cha] += b->cms_clockticks[cha] - a->cms_clockticks[cha];
   }
@@ -700,6 +710,25 @@ void get_llc_victim_bw_uncore_ctrs( const ctrs_uncore *c, const double t, llc_vi
   llc_vic->tot_vic_s = (double)(victim_bytes_s/64);
 }
 
+void get_cha_util_uncore_ctrs( const ctrs_uncore *c, cha_util* util ) {
+  uint64_t total_cycles = 0;
+  uint64_t total_instrs = 0;
+  int cha = 0;
+
+  util->cyc = 0;
+  util->instrs_cha = 0;
+  util->util_cha = 0;
+
+  for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
+    total_cycles += c->cha_clockticks[cha];
+    total_instrs += c->cha_instrs[cha];
+  }
+
+  util->cyc = ((double)total_cycles/(double)CTRS_NCHA);
+  util->instrs_cha = ((double)total_instrs/(double)CTRS_NCHA);
+  util->util_cha = util->instrs_cha/util->cyc;
+}
+
 void get_l2_bw_core_ctrs( const ctrs_core *c, const double t, bw_gibs* bw ) {
   uint64_t read_bytes = 0;
   uint64_t write_bytes1 = 0;
@@ -813,27 +842,27 @@ void get_snp_rsp_core_ctrs( const ctrs_core *c, snp_rsp* rsp ) {
   rsp->ifwdfe = (double)total_ifwdfe;
 }
 
-void get_cpi_core_ctr( const ctrs_core *c, cpi_rate* cpi ) {
+void get_ipc_core_ctr( const ctrs_core *c, ipc_rate* ipc ) {
   uint64_t total_cycles = 0;
   uint64_t total_instrs = 0;
   int core = 0;
 
-  cpi->cyc = 0;
-  cpi->instrs_core = 0;
-  cpi->instrs = 0;
-  cpi->cpi_core = 0;
-  cpi->cpi = 0;
+  ipc->cyc = 0;
+  ipc->instrs_core = 0;
+  ipc->instrs = 0;
+  ipc->ipc_core = 0;
+  ipc->ipc = 0;
 
   for ( core = 0; core < CTRS_NCORE; ++core ) {
     total_cycles += c->clockticks[core];
     total_instrs += c->instrs[core];
   }
 
-  cpi->cyc = ((double)total_cycles/(double)CTRS_NCORE);
-  cpi->instrs_core = ((double)total_instrs/(double)CTRS_NCORE);
-  cpi->instrs = (double)total_instrs;
-  cpi->cpi_core = cpi->instrs_core/cpi->cyc;
-  cpi->cpi = cpi->instrs/cpi->cyc;
+  ipc->cyc = ((double)total_cycles/(double)CTRS_NCORE);
+  ipc->instrs_core = ((double)total_instrs/(double)CTRS_NCORE);
+  ipc->instrs = (double)total_instrs;
+  ipc->ipc_core = ipc->instrs_core/ipc->cyc;
+  ipc->ipc = ipc->instrs/ipc->cyc;
 }
 
 void get_l2_llc_misses_uncore_core_ctr( const ctrs_core *cc, const ctrs_uncore *uc, cache_miss_rate* mrate ) {
