@@ -27,6 +27,13 @@
 #if 0
 #define USE_UNCORE_PERF_CHA_UTIL
 #endif
+#if 0
+#define USE_UNCORE_PREF_AK_UTIL
+#endif
+#if 0
+#define USE_UNCORE_PREF_IV_UTIL
+#endif
+
 
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
@@ -42,7 +49,7 @@
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
-#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC) || defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL)
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC) || defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL) || defined(USE_UNCORE_PREF_AK_UTIL) || defined(USE_UNCORE_PREF_IV_UTIL)
 #  include "../../external_aux/perf_counter_markers.h"
 #endif
 
@@ -2075,7 +2082,7 @@ int main(int argc, char* argv[])
   setup_core_ctrs(CTRS_EXP_IPC);
 #endif
 #endif
-#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL)
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL) || defined(USE_UNCORE_PREF_AK_UTIL) || defined(USE_UNCORE_PREF_IV_UTIL)
   ctrs_uncore uc_a, uc_b, uc_s;
   zero_uncore_ctrs( &uc_a );
   zero_uncore_ctrs( &uc_b );
@@ -2089,6 +2096,12 @@ int main(int argc, char* argv[])
 #endif
 #if defined(USE_UNCORE_PERF_CHA_UTIL)
   setup_uncore_ctrs( CTRS_EXP_CHA_UTIL );
+#endif
+#if defined(USE_UNCORE_PREF_AK_UTIL)
+  setup_uncore_ctrs( CTRS_EXP_CMS_AK );
+#endif
+#if defined(USE_UNCORE_PREF_IV_UTIL)
+  setup_uncore_ctrs( CTRS_EXP_CMS_IV );
 #endif
 #endif
 
@@ -2327,7 +2340,7 @@ int main(int argc, char* argv[])
 #if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC)
     read_core_ctrs( &cc_a );
 #endif
-#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL)
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL) || defined(USE_UNCORE_PREF_AK_UTIL) || defined(USE_UNCORE_PREF_IV_UTIL)
     read_uncore_ctrs( &uc_a );
 #endif
     l_start = libxsmm_timer_tick();
@@ -2353,7 +2366,7 @@ int main(int argc, char* argv[])
     difa_core_ctrs( &cc_a, &cc_b, &cc_s );
     divi_core_ctrs( &cc_s, iters );
 #endif
-#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL)
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL) || defined(USE_UNCORE_PREF_AK_UTIL) || defined(USE_UNCORE_PREF_IV_UTIL)
     read_uncore_ctrs( &uc_b );
     difa_uncore_ctrs( &uc_a, &uc_b, &uc_s );
     divi_uncore_ctrs( &uc_s, iters );
@@ -2440,6 +2453,22 @@ int main(int argc, char* argv[])
       printf("average #cycles per iteration : %f\n", util.cyc );
       printf("#intrs/cha per iteration      : %f\n", util.instrs_cha );
       printf("CHA Util                      : %f\n", util.util_cha );
+    }
+#endif
+#if defined(USE_UNCORE_PREF_AK_UTIL)
+    {
+      int cha = 0;
+      for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
+        printf("CHA %i: CMS cyc: %lld, AK_VERT: %lld, AK_HORZ: %lld\n", cha, uc_s.cms_clockticks[cha], uc_s.vert_ak_ring_in_use[cha], uc_s.horz_ak_ring_in_use[cha] );
+      }
+    }
+#endif
+#if defined(USE_UNCORE_PREF_IV_UTIL)
+    {
+      int cha = 0;
+      for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
+        printf("CHA %i: CMS cyc: %lld, IV_VERT: %lld, IV_HORZ: %lld\n", cha, uc_s.cms_clockticks[cha], uc_s.vert_iv_ring_in_use[cha], uc_s.horz_iv_ring_in_use[cha] );
+      }
     }
 #endif
 #if defined(USE_CORE_PERF_L2IN) && defined(USE_UNCORE_PERF_DRAM_BW)
