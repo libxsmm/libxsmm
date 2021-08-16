@@ -746,6 +746,19 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_loop_label_tracker_struct {
   unsigned int label_count;
 } libxsmm_loop_label_tracker;
 
+/* structure to save jump properties to the same destination */
+LIBXSMM_EXTERN_C typedef struct libxsmm_jump_source_struct {
+  unsigned int instr_type[512];
+  unsigned int instr_addr[512];
+  unsigned int ref_count;
+} libxsmm_jump_source;
+
+/* structure for tracking arbitrary jump labels in assembly code */
+LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
+  unsigned int        label_address[512];
+  libxsmm_jump_source label_source[512];
+} libxsmm_jump_label_tracker;
+
 /* micro kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
@@ -842,6 +855,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   /* Auxiliary fields to propagate kernel info */
   unsigned int m_remainder;
   unsigned int br_loop_index;
+  libxsmm_jump_label_tracker *p_jump_label_tracker;
+  unsigned int loop_label_id;
   unsigned int k_amx_microkernel;
   unsigned int B_offs_trans;
   unsigned int stride_b_trans;
@@ -1159,19 +1174,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_kernel_config_struct {
   char vector_name;
 } libxsmm_transpose_kernel_config;
 
-/* structure to save jump properties to the same destination */
-LIBXSMM_EXTERN_C typedef struct libxsmm_jump_source_struct {
-  unsigned int instr_type[512];
-  unsigned int instr_addr[512];
-  unsigned int ref_count;
-} libxsmm_jump_source;
-
-/* structure for tracking arbitrary jump labels in assembly code */
-LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
-  unsigned int        label_address[512];
-  libxsmm_jump_source label_source[512];
-} libxsmm_jump_label_tracker;
-
 LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
   unsigned int tiles;
   unsigned int sizes[4];
@@ -1257,7 +1259,8 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF = 16,
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B    = 17,
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C    = 18,
-  LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR    = 19
+  LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR    = 19,
+  LIBXSMM_GEMM_STACK_VAR_BRCOUNT                 = 20
 } libxsmm_gemm_stack_var;
 
 #if 0

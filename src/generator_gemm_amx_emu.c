@@ -1272,7 +1272,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame_emu( libxsmm_generated_code*  
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 80 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 88 );
 
   if (is_brgemm == 0) {
     /* GEMM (A, B, C, [scf, eltwise_struct, Apf, Bpf] */
@@ -1330,6 +1330,11 @@ void libxsmm_generator_gemm_amx_setup_stack_frame_emu( libxsmm_generated_code*  
       }
     }
   } else {
+    if (i_micro_kernel_config->decompress_A == 1) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RCX, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, temp_reg, 0 );
+      libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, temp_reg );
+    }
+
     if ((is_stride_brgemm == 1) || (is_address_brgemm == 1)) {
       /* BRGEMM_ADDR/STRIDE (A, B, C, cnt, [scf, eltwise_struct, Apf, Bpf] */
       if (has_scf == 1) {
@@ -1866,6 +1871,8 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
   libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
   l_generator_kloop = libxsmm_generator_gemm_amx_kernel_kloop_emu;
   i_micro_kernel_config->B_offs_trans = 0;
+  i_micro_kernel_config->loop_label_id = 2;
+  i_micro_kernel_config->p_jump_label_tracker = p_jump_label_tracker;
 
   /* apply m_blocking */
   while (l_m_done != (unsigned int)i_xgemm_desc->m) {
@@ -1882,6 +1889,9 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
     if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
       /* Compare actual trip count to the hint value. If equal jump to UNROLL START LABEL*/
       if (i_xgemm_desc->c3 > 0) {
+        if (i_micro_kernel_config->decompress_A == 1) {
+          libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, i_gp_reg_mapping->gp_reg_reduce_count );
+        }
         libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_reduce_count, i_xgemm_desc->c3);
         libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JNE, NON_UNROLLED_BR_LOOP_LABEL_START, p_jump_label_tracker);
       }
