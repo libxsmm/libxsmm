@@ -148,7 +148,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   /* generate hoisted BF16 emulation mask for AVX512 */
   if ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) &&
-         (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_CPX) && 
+         (io_generated_code->arch != LIBXSMM_X86_AVX512_CPX) &&
+         (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX) &&
          (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) ) {
     libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_2 );
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code,  LIBXSMM_X86_INSTR_MOVQ,
@@ -446,8 +447,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
 
   /* in case of 1d blocking and KNL/KNM we unroll aggressively */
 
-  if ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX) && ( i_m_blocking <= 16) && ( LIBXSMM_GEMM_PRECISION_F64 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) ) {
-    l_k_blocking = 2;
+   if ( (( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) ||
+         ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256)
+        ) && ( i_m_blocking <= 16) && ( LIBXSMM_GEMM_PRECISION_F64 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype))
+      ) {
+    l_k_blocking = 4;
     l_k_threshold = 12;
   } else
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( io_generated_code->arch <= LIBXSMM_X86_AVX512_KNM ) && ( l_m_vector == 1 ) ) {
