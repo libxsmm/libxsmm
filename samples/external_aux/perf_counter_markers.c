@@ -121,13 +121,12 @@ void evsetup(const char *ename, int *fd, unsigned int event, unsigned int umask,
     err(1, "open %s", fname);
   }
   int type;
-  int ret = fscanf(fp, "%d", &type);
   uint64_t filter0_64;
   uint64_t filter1_64;
   int cpu;
   int pid;
 
-  assert(ret == 1);
+  fscanf(fp, "%d", &type);
   fclose(fp);
 #if 0
   printf("Using PMU type %d from %s\n", type, ename);
@@ -174,7 +173,6 @@ void evsetup(const char *ename, int *fd, unsigned int event, unsigned int umask,
 }
 
 void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
-  int ret;
   char fname[1024];
   int mc, cha;
 
@@ -269,7 +267,6 @@ void setup_uncore_ctrs( ctrs_uncore_exp exp ) {
 }
 
 void setup_core_ctrs( ctrs_core_exp exp ) {
-  int ret;
   char fname[1024];
   int core;
 
