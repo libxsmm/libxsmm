@@ -292,7 +292,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        8,
+        16,
         temp_reg,
         0 );
     libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg );
@@ -303,7 +303,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          16,
+          24,
           temp_reg,
           0 );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, temp_reg );
@@ -684,7 +684,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
         l_kernel_config.alu_mov_instruction,
         l_gp_reg_mapping.gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        8,
+        16,
         temp_reg,
         1 );
 

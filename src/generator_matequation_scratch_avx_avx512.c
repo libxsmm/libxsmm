@@ -79,7 +79,7 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          0,
+          8,
           temp_reg,
           0 );
       libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -114,7 +114,7 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        8,
+        16,
         temp_reg,
         0 );
   } else {

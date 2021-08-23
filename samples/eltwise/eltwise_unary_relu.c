@@ -281,8 +281,8 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
     relu_fwd_f32_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
-  unary_param.in.primary  = (void*)in;
-  unary_param.in.tertiary = (void*)(&alpha);
+  unary_param.op.primary = (void*)(&alpha);
+  unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -415,8 +415,8 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
     relu_fwd_bf16_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
-  unary_param.in.primary  = (void*)in;
-  unary_param.in.tertiary = (void*)(&alpha);
+  unary_param.op.primary = (void*)(&alpha);
+  unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -565,8 +565,8 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     relu_fwd_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
-  unary_param.in.primary  = (void*)in;
-  unary_param.in.tertiary = (void*)(&alpha);
+  unary_param.op.primary = (void*)(&alpha);
+  unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -706,8 +706,8 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   }
 
   /* use jited relu */
-  unary_param.in.primary  = (void*)in;
-  unary_param.in.tertiary = (void*)(&alpha);
+  unary_param.op.primary = (void*)(&alpha);
+  unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -847,9 +847,9 @@ int test_relu_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   }
 
   /* use jited relu */
+  unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
-  unary_param.in.tertiary   = (void*)(&alpha);
   unary_param.out.primary   = (void*)out;
 
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -967,9 +967,9 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   }
 
   /* use jited relu */
+  unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
-  unary_param.in.tertiary   = (void*)(&alpha);
   unary_param.out.primary   = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   if ( type == 0 ) {
@@ -1097,9 +1097,9 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   }
 
   /* use jited relu */
+  unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
-  unary_param.in.tertiary   = (void*)(&alpha);
   unary_param.out.primary   = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   if ( type == 0 ) {
@@ -1222,9 +1222,9 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   }
 
   /* use jited relu */
+  unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
-  unary_param.in.tertiary   = (void*)(&alpha);
   unary_param.out.primary   = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   if ( type == 0 ) {

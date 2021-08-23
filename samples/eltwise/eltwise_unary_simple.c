@@ -343,7 +343,7 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unsigned long long _N = N;
-    unary_param.out.secondary = (void*) &_N;
+    unary_param.op.primary = (void*) &_N;
   }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
@@ -501,7 +501,7 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unsigned long long _N = N;
-    unary_param.out.secondary = (void*) &_N;
+    unary_param.op.primary = (void*) &_N;
   }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
@@ -648,7 +648,7 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unsigned long long _N = N;
-    unary_param.out.secondary = (void*) &_N;
+    unary_param.op.primary = (void*) &_N;
   }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
@@ -797,7 +797,7 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unsigned long long _N = N;
-    unary_param.out.secondary = (void*) &_N;
+    unary_param.op.primary = (void*) &_N;
   }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {

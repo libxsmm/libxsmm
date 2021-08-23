@@ -388,9 +388,9 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   }
 
   /* use jited tranpose */
+  unary_param.op.primary = (void*)&p;
+  unary_param.op.secondary = (void*)rng_state;
   unary_param.in.primary  = (void*)in;
-  unary_param.in.secondary = (void*)rng_state;
-  unary_param.in.tertiary = (void*)&p;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -517,9 +517,9 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   }
 
   /* use jited tranpose */
+  unary_param.op.primary = (void*)&p;
+  unary_param.op.secondary = (void*)rng_state;
   unary_param.in.primary  = (void*)in;
-  unary_param.in.secondary = (void*)rng_state;
-  unary_param.in.tertiary = (void*)&p;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -649,9 +649,9 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   }
 
   /* use jited tranpose */
+  unary_param.op.primary = (void*)&p;
+  unary_param.op.secondary = (void*)rng_state;
   unary_param.in.primary  = (void*)in;
-  unary_param.in.secondary = (void*)rng_state;
-  unary_param.in.tertiary = (void*)&p;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -781,9 +781,9 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   }
 
   /* use jited tranpose */
+  unary_param.op.primary = (void*)&p;
+  unary_param.op.secondary = (void*)rng_state;
   unary_param.in.primary  = (void*)in;
-  unary_param.in.secondary = (void*)rng_state;
-  unary_param.in.tertiary = (void*)&p;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -910,9 +910,9 @@ int test_dropout_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   }
 
   /* use jited tranpose */
+  unary_param.op.primary = (void*)&p;
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary = (void*)mask;
-  unary_param.in.tertiary = (void*)&p;
   unary_param.out.primary = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV);
@@ -1018,9 +1018,9 @@ int test_dropout_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   }
 
   /* use jited tranpose */
+  unary_param.op.primary = (void*)&p;
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary = (void*)mask;
-  unary_param.in.tertiary = (void*)&p;
   unary_param.out.primary = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV);
@@ -1128,9 +1128,9 @@ int test_dropout_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   }
 
   /* use jited tranpose */
+  unary_param.op.primary = (void*)&p;
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary = (void*)mask;
-  unary_param.in.tertiary = (void*)&p;
   unary_param.out.primary = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV);
@@ -1239,9 +1239,9 @@ int test_dropout_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   }
 
   /* use jited tranpose */
+  unary_param.op.primary = (void*)&p;
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary = (void*)mask;
-  unary_param.in.tertiary = (void*)&p;
   unary_param.out.primary = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV);

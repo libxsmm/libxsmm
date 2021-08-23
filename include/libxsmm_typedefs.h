@@ -676,6 +676,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
   void* tertiary;
 } libxsmm_matrix_arg;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_op_arg {
+  void* primary;
+  void* secondary;
+  void* tertiary;
+  void* quaternary;
+} libxsmm_matrix_op_arg;
+
 /** argument struct for matrix-eltwise: reduce */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_cols_idx_param {
   unsigned long long n;
@@ -700,12 +707,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs
 
 /** argument struct for matrix-eltwise: unary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_param {
+  libxsmm_matrix_op_arg op;   /* op state & parameters */
   libxsmm_matrix_arg in;      /* input  */
   libxsmm_matrix_arg out;     /* output */
 } libxsmm_meltw_unary_param;
 
 /** argument struct for matrix-eltwise: binary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_param {
+  libxsmm_matrix_op_arg op;   /* op state & paramters */
   libxsmm_matrix_arg in0;     /* 1st input  */
   libxsmm_matrix_arg in1;     /* 2nd input  */
   libxsmm_matrix_arg out;     /* output     */
@@ -713,6 +722,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_param 
 
 /** argument struct for matrix-eltwise: ternary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_param {
+  libxsmm_matrix_op_arg op;   /* op state & parameters */
   libxsmm_matrix_arg in0;     /* 1st input  */
   libxsmm_matrix_arg in1;     /* 2nd input  */
   libxsmm_matrix_arg in2;     /* 3rd input  */
@@ -721,8 +731,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_param
 
 /** argument struct for matrix equation */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_param {
-  const libxsmm_matrix_arg* inputs;      /* array of input args */
-  libxsmm_matrix_arg        output;      /* output arg */
+  const libxsmm_matrix_op_arg* ops_args;    /* op state & parameters */
+  const libxsmm_matrix_arg*    inputs;      /* array of input args */
+  libxsmm_matrix_arg           output;      /* output arg */
 } libxsmm_matrix_eqn_param;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_gemm_param {
