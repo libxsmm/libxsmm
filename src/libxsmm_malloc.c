@@ -2215,7 +2215,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
         LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
         if (name && *name) { /* profiler support requested */
           if (0 > libxsmm_verbosity) { /* avoid dump if just the profiler is enabled */
-            LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_dump("LIBXSMM-JIT-DUMP", name, code_ptr, size, 1/*unique*/));
+            LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_dump("LIBXSMM-JIT-DUMP", name, code_ptr, size, 1/*unique*/));
           }
 #if defined(LIBXSMM_VTUNE)
           if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
@@ -2455,7 +2455,7 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
       else break; /* early exit */
     }
   }
-  LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_get_scratch_info(&scratch_info));
+  LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info));
   if (0 != scratch_info.npending && /* library code is expected to be mute */
     (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
   {

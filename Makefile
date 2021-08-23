@@ -66,6 +66,11 @@ PRECISION ?= 0
 # Specify the size of a cacheline (Bytes)
 CACHELINE ?= 64
 
+CODE_BUF_MAXSIZE ?= 0
+ifneq (0,$(CODE_BUF_MAXSIZE))
+  DFLAGS += -DLIBXSMM_CODE_MAXSIZE=$(CODE_BUF_MAXSIZE)
+endif
+
 # Alpha argument of GEMM
 # Supported: 1.0
 ALPHA ?= 1
@@ -996,7 +1001,6 @@ DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /edge/repro/ \
 	| grep -v /encoder/ \
 	| grep -v /packed/ \
-	| grep -v /pyfr/ \
 	$(NULL)))
 
 .PHONY: samples $(DIRS_SAMPLES)

@@ -1,66 +1,89 @@
+ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+DEPDIR = ../..
+SRCDIR = .
+INCDIR = .
+BLDDIR = obj
+OUTDIR = .
 
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-#     * Redistributions of source code must retain the above copyright notice,
-#       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Intel Corporation nor the names of its contributors
-#       may be used to endorse or promote products derived from this software
-#       without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##################################################################################
-# Alexander Heinecke (Intel Corp.)
-##################################################################################
+CXXFLAGS = $(NULL)
+CFLAGS = $(NULL)
+DFLAGS = $(NULL)
 
-AVX?=3
-CC=icc
-CFLAGS=-qopenmp -O2 -mkl -I./../../include/ -c
-LDFLAGS=-mkl -L./../../lib -lxsmm
+BLAS = 2
+SYM = 1
+OMP = 1
 
-ifeq ($(AVX), 1)
-CXXFLAGS+=-mavx
-endif
-ifeq ($(AVX), 2)
-CXXFLAGS+=-xCORE-AVX2 -fma
-endif
-ifeq ($(AVX), 3)
-CXXFLAGS+=-xCOMMON-AVX512 -fma
-endif
+# explore AVX/ARCH=native
+SSE = 0
 
-default: pyfr_gemm_cm pyfr_gemm_rm pyfr_driver_asp_reg
+# include common Makefile artifacts
+include $(DEPDIR)/Makefile.inc
 
-pyfr_gemm_cm.o: pyfr_gemm_cm.c
-	$(CC) $(CFLAGS) pyfr_gemm_cm.c
+# necessary include directories
+IFLAGS += -I$(call quote,$(INCDIR))
+IFLAGS += -I$(call quote,$(DEPDIR)/include)
 
-pyfr_gemm_rm.o: pyfr_gemm_rm.c
-	$(CC) $(CFLAGS) pyfr_gemm_rm.c
+OUTNAME := $(shell basename "$(ROOTDIR)")
+HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
+           $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
+           $(DEPDIR)/include/libxsmm_source.h
+CPPSRCS := $(wildcard $(SRCDIR)/*.cpp)
+CXXSRCS := $(wildcard $(SRCDIR)/*.cxx)
+CCXSRCS := $(wildcard $(SRCDIR)/*.cc)
+CSOURCS := $(wildcard $(SRCDIR)/*.c)
+CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
+CXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
+CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
+COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
+SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
+OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
+XFILES := $(OUTDIR)/$(OUTNAME)_driver_asp_reg \
+          $(OUTDIR)/$(OUTNAME)_gemm_cm \
+          $(OUTDIR)/$(OUTNAME)_gemm_rm \
+          $(NULL)
 
-pyfr_driver_asp_reg.o : pyfr_driver_asp_reg.c
-	$(CC) $(CFLAGS) pyfr_driver_asp_reg.c
+.PHONY: all
+all: $(XFILES)
 
-pyfr_gemm_cm: pyfr_gemm_cm.o
-	$(CC) pyfr_gemm_cm.o $(LDFLAGS) -o pyfr_gemm_cm
+.PHONY: compile
+compile: $(OBJECTS)
 
-pyfr_gemm_rm: pyfr_gemm_rm.o
-	$(CC) pyfr_gemm_rm.o $(LDFLAGS) -o pyfr_gemm_rm
+$(OUTDIR)/$(OUTNAME)_driver_asp_reg: $(BLDDIR)/$(OUTNAME)_driver_asp_reg-c.o $(OUTDIR)/.make $(LIBDEP)
+	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-pyfr_driver_asp_reg: pyfr_driver_asp_reg.o
-	$(CC) pyfr_driver_asp_reg.o $(LDFLAGS) -mkl -o pyfr_driver_asp_reg
+$(OUTDIR)/$(OUTNAME)_gemm_cm: $(BLDDIR)/$(OUTNAME)_gemm_cm-c.o $(OUTDIR)/.make $(LIBDEP)
+	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
+$(OUTDIR)/$(OUTNAME)_gemm_rm: $(BLDDIR)/$(OUTNAME)_gemm_rm-c.o $(OUTDIR)/.make $(LIBDEP)
+	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+
+$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
+	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
+
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
+	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
+
+.PHONY: clean
 clean:
-	rm -rf *.o kernel.c
-	rm -rf pyfr_gemm_cm pyfr_gemm_rm
+ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
+	@rm -rf $(BLDDIR)
+endif
+endif
+ifneq (,$(wildcard $(BLDDIR))) # still exists
+	@rm -f $(OBJECTS) $(OBJECTX) fit.log *.dat
+	@rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
+endif
+	@rm -f .make .state
+
+.PHONY: realclean
+realclean: clean
+ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
+ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
+	@rm -rf $(OUTDIR)
+endif
+endif
+ifneq (,$(wildcard $(OUTDIR))) # still exists
+	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
+	@rm -f $(XFILES)
+endif
