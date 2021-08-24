@@ -54,78 +54,90 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
    *
    *      Return address                            <-- RBP+8
    *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr11                        <-- RBP-8
-   *      Param_struct_ptr10                        <-- RBP-16
-   *      Param_struct_ptr9                         <-- RBP-24
-   *      Param_struct_ptr8                         <-- RBP-32
-   *      Param_struct_ptr7                         <-- RBP-40
-   *      Param_struct_ptr6                         <-- RBP-48
-   *      Param_struct_ptr5                         <-- RBP-56
-   *      Param_struct_ptr4                         <-- RBP-64
-   *      Param_struct_ptr3                         <-- RBP-72
-   *      Param_struct_ptr2                         <-- RBP-80
-   *      Param_struct_ptr1                         <-- RBP-88
-   *      Param_struct_ptr0                         <-- RBP-96
-   *      Scratch ptr in stack (to be filled)       <-- RBP-104
-   *      Address scratch ptrin stack (to be filled)<-- RBP-112
-   *      Saved equation output ptr                 <-- RBP-120
-   *      Const_0                                   <-- RBP-128
+   *      Param_struct_ptr15                        <-- RBP-8
+   *      Param_struct_ptr14                        <-- RBP-16
+   *      Param_struct_ptr13                        <-- RBP-24
+   *      Param_struct_ptr12                        <-- RBP-32
+   *      Param_struct_ptr11                        <-- RBP-40
+   *      Param_struct_ptr10                        <-- RBP-48
+   *      Param_struct_ptr9                         <-- RBP-56
+   *      Param_struct_ptr8                         <-- RBP-64
+   *      Param_struct_ptr7                         <-- RBP-72
+   *      Param_struct_ptr6                         <-- RBP-80
+   *      Param_struct_ptr5                         <-- RBP-88
+   *      Param_struct_ptr4                         <-- RBP-96
+   *      Param_struct_ptr3                         <-- RBP-104
+   *      Param_struct_ptr2                         <-- RBP-112
+   *      Param_struct_ptr1                         <-- RBP-120
+   *      Param_struct_ptr0                         <-- RBP-128
+   *      Scratch ptr in stack (to be filled)       <-- RBP-136
+   *      Address scratch ptrin stack (to be filled)<-- RBP-144
+   *      Saved equation output ptr                 <-- RBP-152
+   *      Const_0                                   <-- RBP-160
    *      ...
-   *      Const_9                                   <-- RBP-200
+   *      Const_9                                   <-- RBP-232
    *
    * * */
 
   switch ( stack_var ) {
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0:
-      return -96;
+      return -128;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1:
-      return -88;
+      return -120;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR2:
-      return -80;
+      return -112;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR3:
-      return -72;
+      return -104;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR4:
-      return -64;
+      return -96;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR5:
-      return -56;
+      return -88;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR6:
-      return -48;
+      return -80;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR7:
-      return -40;
+      return -72;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR8:
-      return -32;
+      return -64;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9:
-      return -24;
+      return -56;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10:
-      return -16;
+      return -48;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11:
+      return -40;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR12:
+      return -32;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR13:
+      return -24;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR14:
+      return -16;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR15:
       return -8;
     case LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR:
-      return -104;
-    case LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR:
-      return -112;
-    case LIBXSMM_MEQN_STACK_VAR_OUT_PTR:
-      return -120;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_0:
-      return -128;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_1:
       return -136;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_2:
+    case LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR:
       return -144;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_3:
+    case LIBXSMM_MEQN_STACK_VAR_OUT_PTR:
       return -152;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_4:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_0:
       return -160;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_5:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_1:
       return -168;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_6:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_2:
       return -176;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_7:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_3:
       return -184;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_8:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_4:
       return -192;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_9:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_5:
       return -200;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_6:
+      return -208;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_7:
+      return -216;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_8:
+      return -224;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_9:
+      return -232;
     default:
       return 0;
   }
@@ -204,30 +216,35 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
   i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 200 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 232 );
 
   /* The stack at exit of setup looks like this:
    *
    *      Return address                            <-- RBP+8
    *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr11                        <-- RBP-8
-   *      Param_struct_ptr10                        <-- RBP-16
-   *      Param_struct_ptr9                         <-- RBP-24
-   *      Param_struct_ptr8                         <-- RBP-32
-   *      Param_struct_ptr7                         <-- RBP-40
-   *      Param_struct_ptr6                         <-- RBP-48
-   *      Param_struct_ptr5                         <-- RBP-56
-   *      Param_struct_ptr4                         <-- RBP-64
-   *      Param_struct_ptr3                         <-- RBP-72
-   *      Param_struct_ptr2                         <-- RBP-80
-   *      Param_struct_ptr1                         <-- RBP-88
-   *      Param_struct_ptr0                         <-- RBP-96
-   *      Scratch ptr in stack (to be filled)       <-- RBP-104
-   *      Address scratch ptrin stack (to be filled)<-- RBP-112
-   *      Saved equation output ptr                 <-- RBP-120
-   *      Const_0                                   <-- RBP-128
+   *      Param_struct_ptr15                        <-- RBP-8
+   *      Param_struct_ptr14                        <-- RBP-16
+   *      Param_struct_ptr13                        <-- RBP-24
+   *      Param_struct_ptr12                        <-- RBP-32
+   *      Param_struct_ptr11                        <-- RBP-40
+   *      Param_struct_ptr10                        <-- RBP-48
+   *      Param_struct_ptr9                         <-- RBP-56
+   *      Param_struct_ptr8                         <-- RBP-64
+   *      Param_struct_ptr7                         <-- RBP-72
+   *      Param_struct_ptr6                         <-- RBP-80
+   *      Param_struct_ptr5                         <-- RBP-88
+   *      Param_struct_ptr4                         <-- RBP-96
+   *      Param_struct_ptr3                         <-- RBP-104
+   *      Param_struct_ptr2                         <-- RBP-112
+   *      Param_struct_ptr1                         <-- RBP-120
+   *      Param_struct_ptr0                         <-- RBP-128
+   *      Scratch ptr in stack (to be filled)       <-- RBP-136
+   *      Address scratch ptrin stack (to be filled)<-- RBP-144
+   *      Saved equation output ptr                 <-- RBP-152
+   *      Const_0                                   <-- RBP-160
    *      ...
-   *      Const_9                                   <-- RBP-200
+   *      Const_9                                   <-- RBP-232
+   *
    * * */
 
   if (allocate_scratch > 0) {
@@ -309,30 +326,6 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, temp_reg );
     }
   }
-
-  /* The stack at exit of setup looks like this:
-   *
-   *      Return address                            <-- RBP+8
-   *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr11                        <-- RBP-8
-   *      Param_struct_ptr10                        <-- RBP-16
-   *      Param_struct_ptr9                         <-- RBP-24
-   *      Param_struct_ptr8                         <-- RBP-32
-   *      Param_struct_ptr7                         <-- RBP-40
-   *      Param_struct_ptr6                         <-- RBP-48
-   *      Param_struct_ptr5                         <-- RBP-56
-   *      Param_struct_ptr4                         <-- RBP-64
-   *      Param_struct_ptr3                         <-- RBP-72
-   *      Param_struct_ptr2                         <-- RBP-80
-   *      Param_struct_ptr1                         <-- RBP-88
-   *      Param_struct_ptr0                         <-- RBP-96
-   *      Scratch ptr in stack (to be filled)       <-- RBP-104
-   *      Address scratch ptrin stack (to be filled)<-- RBP-112
-   *      Saved equation output ptr                 <-- RBP-120
-   *      [ Potential  pad for 64b align ]
-   *      Scratch, 64b aligned
-   *      Callee-saved registers                    <-- RSP
-   * * */
 }
 
 LIBXSMM_API_INTERN
