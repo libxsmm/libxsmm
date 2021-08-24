@@ -60,7 +60,7 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 $(BLDDIR)/perf_counter_markers.o: $(SRCDIR)/../../external_aux/perf_counter_markers.c $(SRCDIR)/../../external_aux/perf_counter_markers.h
-	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $(SRCDIR)/../../external_aux/perf_counter_markers.c -o $(BLDDIR)/perf_counter_markers.o 
+	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $(SRCDIR)/../../external_aux/perf_counter_markers.c -o $(BLDDIR)/perf_counter_markers.o
 
 $(OUTDIR)/mlp_example_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_example_f32-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/mlp_example_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
