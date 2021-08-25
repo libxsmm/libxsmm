@@ -676,6 +676,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
   void* tertiary;
 } libxsmm_matrix_arg;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_op_arg {
+  void* primary;
+  void* secondary;
+  void* tertiary;
+  void* quaternary;
+} libxsmm_matrix_op_arg;
+
 /** argument struct for matrix-eltwise: reduce */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_cols_idx_param {
   unsigned long long n;
@@ -700,12 +707,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs
 
 /** argument struct for matrix-eltwise: unary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_param {
+  libxsmm_matrix_op_arg op;   /* op state & parameters */
   libxsmm_matrix_arg in;      /* input  */
   libxsmm_matrix_arg out;     /* output */
 } libxsmm_meltw_unary_param;
 
 /** argument struct for matrix-eltwise: binary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_param {
+  libxsmm_matrix_op_arg op;   /* op state & paramters */
   libxsmm_matrix_arg in0;     /* 1st input  */
   libxsmm_matrix_arg in1;     /* 2nd input  */
   libxsmm_matrix_arg out;     /* output     */
@@ -713,6 +722,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_param 
 
 /** argument struct for matrix-eltwise: ternary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_param {
+  libxsmm_matrix_op_arg op;   /* op state & parameters */
   libxsmm_matrix_arg in0;     /* 1st input  */
   libxsmm_matrix_arg in1;     /* 2nd input  */
   libxsmm_matrix_arg in2;     /* 3rd input  */
@@ -721,8 +731,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_param
 
 /** argument struct for matrix equation */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_param {
-  const libxsmm_matrix_arg* inputs;      /* array of input args */
-  libxsmm_matrix_arg        output;      /* output arg */
+  const libxsmm_matrix_op_arg* ops_args;    /* op state & parameters */
+  const libxsmm_matrix_arg*    inputs;      /* array of input args */
+  libxsmm_matrix_arg           output;      /* output arg */
 } libxsmm_matrix_eqn_param;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_gemm_param {
@@ -805,6 +816,8 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uubimmfunction_redu
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sububmmfunction_reducebatch_strd)(const          char* a, const unsigned char* b, unsigned char* c, const unsigned long long* count, float* scf, ...);
 
 /* GEMM fused with elwise */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmmfunction_reducebatch_offs_meltwfused)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, libxsmm_bfloat16* c, const unsigned long long* count, const unsigned long long* a_offs, const unsigned long long* b_offs, const libxsmm_meltw_gemm_param* meltw_param, ...);
+
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmmfunction_reducebatch_strd_meltwfused)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, libxsmm_bfloat16* c, const unsigned long long* count, const libxsmm_meltw_gemm_param* meltw_param, ...);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction_reducebatch_strd_meltwfused)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, float* c, const unsigned long long* count, const libxsmm_meltw_gemm_param* meltw_param, ...);
 
@@ -824,6 +837,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   libxsmm_wimmfunction_reducebatch_strd wimrs; libxsmm_ssbimmfunction_reducebatch_strd ssbimrs; libxsmm_usbimmfunction_reducebatch_strd usbimrs; libxsmm_subimmfunction_reducebatch_strd subimrs; libxsmm_uubimmfunction_reducebatch_strd uubimrs;
   libxsmm_sububmmfunction_reducebatch_strd sububmrs;
   libxsmm_bmmfunction_reducebatch_strd_meltwfused bmrs_meltwfused;
+  libxsmm_bmmfunction_reducebatch_offs_meltwfused bmro_meltwfused;
   libxsmm_bsmmfunction_reducebatch_strd_meltwfused bsmrs_meltwfused;
 } libxsmm_xmmfunction;
 

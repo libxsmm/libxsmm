@@ -175,7 +175,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
     i_micro_kernel_config->alu_mov_instruction,
     i_gp_reg_mapping->gp_reg_param_struct,
     LIBXSMM_X86_GP_REG_UNDEF, 0,
-    32,
+    0,
     i_gp_reg_mapping->gp_reg_n,
     0 );
 
@@ -194,7 +194,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      0,
+      32,
       i_gp_reg_mapping->gp_reg_in,
       0 );
 
@@ -202,7 +202,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      24,
+      56,
       i_gp_reg_mapping->gp_reg_out,
       0 );
 

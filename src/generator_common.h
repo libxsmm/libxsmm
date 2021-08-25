@@ -706,14 +706,17 @@
 #define LIBXSMM_ERR_VNNI_B                90042
 #define LIBXSMM_ERR_NO_AVX512VL           90043
 
-#if defined(LIBXSMM_HANDLE_ERROR_QUIET)
-# define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE)
-# define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE)
+#define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
+#define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1)
+
+#if defined(NDEBUG)
+# define LIBXSMM_HANDLE_ERROR_OFF_BEGIN() libxsmm_set_handle_error(0)
+# define LIBXSMM_HANDLE_ERROR_OFF_END() libxsmm_set_handle_error(1)
 #else
-# define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
-# define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1)
+# define LIBXSMM_HANDLE_ERROR_OFF_BEGIN()
+# define LIBXSMM_HANDLE_ERROR_OFF_END()
 #endif
 
 /* tile config structure */
@@ -742,6 +745,19 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_loop_label_tracker_struct {
   unsigned int label_address[512];
   unsigned int label_count;
 } libxsmm_loop_label_tracker;
+
+/* structure to save jump properties to the same destination */
+LIBXSMM_EXTERN_C typedef struct libxsmm_jump_source_struct {
+  unsigned int instr_type[512];
+  unsigned int instr_addr[512];
+  unsigned int ref_count;
+} libxsmm_jump_source;
+
+/* structure for tracking arbitrary jump labels in assembly code */
+LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
+  unsigned int        label_address[512];
+  libxsmm_jump_source label_source[512];
+} libxsmm_jump_label_tracker;
 
 /* micro kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
@@ -809,6 +825,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int perm_table_vnni_hi;
   unsigned int norm_to_normT_mask_reg_0;
   unsigned int norm_to_normT_mask_reg_1;
+  unsigned int mask_m_fp32;
+  unsigned int mask_m_bf16;
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
   int use_paired_tilestores;
@@ -835,6 +853,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   libxsmm_loop_label_tracker *io_loop_label_tracker;
 
   /* Auxiliary fields to propagate kernel info */
+  unsigned int m_remainder;
+  unsigned int br_loop_index;
+  libxsmm_jump_label_tracker *p_jump_label_tracker;
+  unsigned int loop_label_id;
   unsigned int k_amx_microkernel;
   unsigned int B_offs_trans;
   unsigned int stride_b_trans;
@@ -1152,19 +1174,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_kernel_config_struct {
   char vector_name;
 } libxsmm_transpose_kernel_config;
 
-/* structure to save jump properties to the same destination */
-LIBXSMM_EXTERN_C typedef struct libxsmm_jump_source_struct {
-  unsigned int instr_type[512];
-  unsigned int instr_addr[512];
-  unsigned int ref_count;
-} libxsmm_jump_source;
-
-/* structure for tracking arbitrary jump labels in assembly code */
-LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
-  unsigned int        label_address[512];
-  libxsmm_jump_source label_source[512];
-} libxsmm_jump_label_tracker;
-
 LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
   unsigned int tiles;
   unsigned int sizes[4];
@@ -1197,7 +1206,11 @@ typedef enum libxsmm_meltw_stack_var {
   LIBXSMM_MELTW_STACK_VAR_CONST_6         =  20,
   LIBXSMM_MELTW_STACK_VAR_CONST_7         =  21,
   LIBXSMM_MELTW_STACK_VAR_CONST_8         =  22,
-  LIBXSMM_MELTW_STACK_VAR_CONST_9         =  23
+  LIBXSMM_MELTW_STACK_VAR_CONST_9         =  23,
+  LIBXSMM_MELTW_STACK_VAR_OP_ARG_0        =  24,
+  LIBXSMM_MELTW_STACK_VAR_OP_ARG_1        =  25,
+  LIBXSMM_MELTW_STACK_VAR_OP_ARG_2        =  26,
+  LIBXSMM_MELTW_STACK_VAR_OP_ARG_3        =  27
 } libxsmm_meltw_stack_var;
 
 typedef enum libxsmm_meqn_stack_var {
@@ -1217,16 +1230,20 @@ typedef enum libxsmm_meqn_stack_var {
   LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9  =  13,
   LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10 =  14,
   LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11 =  15,
-  LIBXSMM_MEQN_STACK_VAR_CONST_0            =  16,
-  LIBXSMM_MEQN_STACK_VAR_CONST_1            =  17,
-  LIBXSMM_MEQN_STACK_VAR_CONST_2            =  18,
-  LIBXSMM_MEQN_STACK_VAR_CONST_3            =  19,
-  LIBXSMM_MEQN_STACK_VAR_CONST_4            =  20,
-  LIBXSMM_MEQN_STACK_VAR_CONST_5            =  21,
-  LIBXSMM_MEQN_STACK_VAR_CONST_6            =  22,
-  LIBXSMM_MEQN_STACK_VAR_CONST_7            =  23,
-  LIBXSMM_MEQN_STACK_VAR_CONST_8            =  24,
-  LIBXSMM_MEQN_STACK_VAR_CONST_9            =  25
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR12 =  16,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR13 =  17,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR14 =  18,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR15 =  19,
+  LIBXSMM_MEQN_STACK_VAR_CONST_0            =  20,
+  LIBXSMM_MEQN_STACK_VAR_CONST_1            =  21,
+  LIBXSMM_MEQN_STACK_VAR_CONST_2            =  22,
+  LIBXSMM_MEQN_STACK_VAR_CONST_3            =  23,
+  LIBXSMM_MEQN_STACK_VAR_CONST_4            =  24,
+  LIBXSMM_MEQN_STACK_VAR_CONST_5            =  25,
+  LIBXSMM_MEQN_STACK_VAR_CONST_6            =  26,
+  LIBXSMM_MEQN_STACK_VAR_CONST_7            =  27,
+  LIBXSMM_MEQN_STACK_VAR_CONST_8            =  28,
+  LIBXSMM_MEQN_STACK_VAR_CONST_9            =  29
 } libxsmm_meqn_stack_var;
 
 /* Auxiliary stack variable enumeration in GEMM */
@@ -1250,7 +1267,8 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF = 16,
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B    = 17,
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C    = 18,
-  LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR    = 19
+  LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR    = 19,
+  LIBXSMM_GEMM_STACK_VAR_BRCOUNT                 = 20
 } libxsmm_gemm_stack_var;
 
 #if 0
@@ -1397,6 +1415,12 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code );
+
+LIBXSMM_API_INTERN
+int libxsmm_get_handle_error(void);
+
+LIBXSMM_API_INTERN
+void libxsmm_set_handle_error(int enable);
 
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,

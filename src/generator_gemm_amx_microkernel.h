@@ -67,7 +67,8 @@ void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
     int                                a_offs,
-    unsigned int                       a_lookahead_offs);
+    unsigned int                       a_lookahead_offs,
+    unsigned int                       a_lookahead_br_index);
 
 LIBXSMM_API_INTERN
 void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,

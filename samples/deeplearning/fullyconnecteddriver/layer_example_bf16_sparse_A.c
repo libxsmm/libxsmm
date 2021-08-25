@@ -370,6 +370,7 @@ int main(int argc, char* argv[])
     /* Sparsify filters to requested level */
     memset(filter_libxsmm_sparse, 0, nIFm * nOFm * sizeof(libxsmm_bfloat16));
 #if defined(__AVX512VBMI2__) || (defined(__AVX512BW__) && defined(LIBXSMM_INTEL_COMPILER))
+    int __i = 0, __j = 0, __k = 0;
     for (__i = 0; __i < nIFm * nOFm; __i+= 32 ) {
       unsigned int  cur_mask_int    = random_mask_half_full(sparsity_factor);
       __mmask32     cur_mask        = _cvtu32_mask32(cur_mask_int);
