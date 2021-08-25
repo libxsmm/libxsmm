@@ -148,7 +148,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
         /* assume FXSAVE, which should be fine
          * 16 years after the first x86_64 OS
          */
-        feature_os = LIBXSMM_X86_SSE42;
+        feature_os = LIBXSMM_X86_SSE4;
       }
       else feature_os = LIBXSMM_TARGET_ARCH_GENERIC;
       has_context = (LIBXSMM_STATIC_TARGET_ARCH >= feature_cpu || feature_os >= feature_cpu) ? 1 : 0;
