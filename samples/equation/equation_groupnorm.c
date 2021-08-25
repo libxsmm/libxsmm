@@ -13,7 +13,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <libxsmm_intrinsics_x86.h>
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
 #define USE_VECTORIZED_PATH 1
