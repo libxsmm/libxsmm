@@ -144,6 +144,12 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_x86_info* info)
           }
         }
       }
+      else if (LIBXSMM_X86_GENERIC <= feature_cpu) {
+        /* assume FXSAVE, which should be fine
+         * 16 years after the first x86_64 OS
+         */
+        feature_os = LIBXSMM_X86_SSE42;
+      }
       else feature_os = LIBXSMM_TARGET_ARCH_GENERIC;
       has_context = (LIBXSMM_STATIC_TARGET_ARCH >= feature_cpu || feature_os >= feature_cpu) ? 1 : 0;
       if (LIBXSMM_TARGET_ARCH_UNKNOWN == result && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
