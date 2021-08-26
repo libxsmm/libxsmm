@@ -257,6 +257,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lstmdriver_nc_ck_bf16", "..\samples\deeplearning\lstmdriver\lstmdriver_nc_ck_bf16.vcxproj", "{5A6F2BEB-65C8-4D93-9A5A-E2AA05466719}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rng", "..\samples\utilities\rng\rng.vcxproj", "{68BC613E-743B-45DE-B6AA-B9D04A3B7CAD}"
@@ -320,6 +321,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lstmdriver_nc_kcck_bf16", "..\samples\deeplearning\lstmdriver\lstmdriver_nc_kcck_bf16.vcxproj", "{B0027BD6-DCDF-4DCD-8D1B-4FB8BCA1EE9F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fusedbndriver", "fusedbndriver", "{F97A06B1-22C1-44B8-99E4-F7E9BA3D659D}"
@@ -417,11 +419,13 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lstmdriver_nc_ck_f32", "..\samples\deeplearning\lstmdriver\lstmdriver_nc_ck_f32.vcxproj", "{368B8E7B-305A-4736-A196-B236B0172BA7}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lstmdriver_nc_kcck_f32", "..\samples\deeplearning\lstmdriver\lstmdriver_nc_kcck_f32.vcxproj", "{4B1FF769-DEE3-441D-9939-C60F5487F2A0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "eltwise", "eltwise", "{64AB68CC-6836-4246-908C-42CBCEBE972E}"

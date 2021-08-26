@@ -18,10 +18,12 @@
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
 #define USE_VECTORIZED_PATH 1
 
+#if defined(__AVX512F__)
 inline __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
 inline __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
 inline void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) { _mm256_storeu_si256((__m256i*)mem_addr, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
 inline void _mm512_mask_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __mmask16 k, __m512 a) { _mm256_mask_storeu_epi16((__m256i*)mem_addr, k, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
+#endif
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
   union libxsmm_bfloat16_hp bf16_hp;
@@ -31,12 +33,12 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
 }
 
 void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps) {
+#if defined(__AVX512F__)
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, beta, pbeta, S3);
-#if defined(__AVX512F__)
   for (s2 = 0; s2 < S2; s2++) {
     __m512 vm = _mm512_setzero_ps();
     __m512 vv = _mm512_setzero_ps();
@@ -87,10 +89,21 @@ void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
     }
   }
 #else
+  LIBXSMM_UNUSED( S1 );
+  LIBXSMM_UNUSED( S2 );
+  LIBXSMM_UNUSED( S3 );
+  LIBXSMM_UNUSED( pinp );
+  LIBXSMM_UNUSED( pgamma );
+  LIBXSMM_UNUSED( pbeta );
+  LIBXSMM_UNUSED( mean );
+  LIBXSMM_UNUSED( var );
+  LIBXSMM_UNUSED( pout );
+  LIBXSMM_UNUSED( eps );
 #endif
 }
 
 void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, libxsmm_bfloat16 *pinp, float *mean, float *var, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pdin, float *pdgamma, float *pdbeta) {
+#if defined(__AVX512F__)
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, din, pdin, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
@@ -98,7 +111,6 @@ void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, S3);
-#if defined(__AVX512F__)
   for (s2 = 0; s2 < S2; s2++) {
     float a = var[s2];
     float b = -a*mean[s2];
@@ -166,6 +178,17 @@ void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
     }
   }
 #else
+  LIBXSMM_UNUSED( S1 );
+  LIBXSMM_UNUSED( S2 );
+  LIBXSMM_UNUSED( S3 );
+  LIBXSMM_UNUSED( pdout );
+  LIBXSMM_UNUSED( pinp );
+  LIBXSMM_UNUSED( mean );
+  LIBXSMM_UNUSED( var );
+  LIBXSMM_UNUSED( pgamma );
+  LIBXSMM_UNUSED( pdin );
+  LIBXSMM_UNUSED( pdgamma );
+  LIBXSMM_UNUSED( pdbeta );
 #endif
 }
 
