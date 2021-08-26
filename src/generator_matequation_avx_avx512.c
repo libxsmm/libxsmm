@@ -260,20 +260,26 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
       unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
-      scratch_size = tmp_size * 3 * n_tmp;
+      scratch_size = tmp_size * n_tmp;
       i_micro_kernel_config->tmp_size = tmp_size;
       /* make scratch size multiple of 64b */
       scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "JITing Matrix Equation with STACK-ALLOCATED TEMPS (n_tmp = %d , stack_scratch_size = %.5g KB)\n", n_tmp, (1.0*scratch_size)/1024.0 );
+      }
     } else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS){
       unsigned int n_args = i_eqn->eqn_root->n_args;
       i_micro_kernel_config->n_args = n_args;
-      addr_scratch_size = n_args * 3 * 8;
+      addr_scratch_size = n_args * 8;
       /* make addr scratch size multiple of 64b */
       addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, addr_scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "JITing Matrix Equation with REGISTER-BLOCK TEMPS (n_args = %d , addr_scratch_size = %.5g KB)\n", n_args, (1.0*addr_scratch_size)/1024.0 );
+      }
     } else if (i_strategy == JIT_STRATEGY_HYBRID) {
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
       unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
@@ -281,16 +287,19 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
       i_micro_kernel_config->tmp_size = tmp_size;
       /* make scratch size multiple of 64b */
-      scratch_size = tmp_size * 3 * n_tmp;
+      scratch_size = tmp_size * n_tmp;
       scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
       /* make addr scratch size multiple of 64b */
       i_micro_kernel_config->n_args = n_args;
-      addr_scratch_size = n_args * 3 * 8;
+      addr_scratch_size = n_args * 8;
       addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, addr_scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "JITing Matrix Equation with HYBRID STRATEGY for TEMPS (n_tmp = %d , stack_scratch_size = %.5g KB , addr_scratch_size = %.5g KB)\n", n_tmp, (1.0*scratch_size)/1024.0, (1.0*addr_scratch_size)/1024.0 );
+      }
     }
   }
 
@@ -669,7 +678,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     if (eqn_tree_id == (queue_size - 1)) {
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg);
     } else {
-      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * 3 * l_kernel_config.tmp_size, temp_reg);
+      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, temp_reg);
       copy_mateqn_desc.datatype = cur_eqn->eqn_root->tmp.dtype;
     }
 
@@ -689,6 +698,9 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       printf("\nJITing tree with scratch %d\n", eqn_tree_id);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
+      if (eqn_tree_id < queue_size - 1) {
+        copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
+      }
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
@@ -703,7 +715,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
         copy_mateqn_desc.n = cur_eqn->eqn_root->tmp.n;
       }
       if (eqn_tree_id < queue_size - 1) {
-        copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.ld;
+        copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
       }
       /* If head of equaiton is unpack_to_blocks, then make sure we load the block offset from the stack */
       if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
