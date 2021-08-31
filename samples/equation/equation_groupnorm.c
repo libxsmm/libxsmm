@@ -307,11 +307,11 @@ void tpp_groupnorm_bwd_fp32(long NP, long CP, long NB, long HW, long CB, long G,
             eqn_param.output.primary = &db[cp*CB];
             db_func(&eqn_param);
 
-            // eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
+            /* eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB); */
             eqn_param.output.primary = &dgamma_NP[np*CP*CB + cp*CB];
             dgamma_func(&eqn_param);
 
-            // eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
+            /* eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB); */
             eqn_param.output.primary = &dbeta_NP[np*CP*CB + cp*CB];
             dbeta_func(&eqn_param);
           }
