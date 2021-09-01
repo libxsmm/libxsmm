@@ -111,7 +111,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* block according to the number of available registers or given limits */
-  if ( i_xgemm_desc->n == 7 && io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 && io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
+  if ( i_xgemm_desc->n == 7 && io_generated_code->arch > LIBXSMM_X86_AVX512_VL256 && io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CLX
+        && io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX && io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
     libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 7, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
   } else {
     unsigned int max_n_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_max_n_blocking( &l_micro_kernel_config, i_xgemm_desc, io_generated_code->arch );
@@ -121,9 +122,18 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     {
       const unsigned int init_m_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, i_xgemm_desc, io_generated_code->arch );
       const unsigned int init_m_blocks = LIBXSMM_UPDIV(init_m_blocking, l_micro_kernel_config.vector_length);
-      while ((init_m_blocks * max_n_blocking + init_m_blocks + 1) > l_micro_kernel_config.vector_reg_count) {
-        max_n_blocking--;
+/* ************************ To DO refactor the if condition code ********************************/
+      if(io_generated_code->arch == LIBXSMM_X86_AVX512_VL256 || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX
+          || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX){
+        while ((init_m_blocks * max_n_blocking + max_n_blocking + 1) > l_micro_kernel_config.vector_reg_count) {
+          max_n_blocking--;
+        }
+      } else {
+        while ((init_m_blocks * max_n_blocking + init_m_blocks + 1) > l_micro_kernel_config.vector_reg_count) {
+          max_n_blocking--;
+        }
       }
+
     }
     libxsmm_compute_equalized_blocking( i_xgemm_desc->n, max_n_blocking, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
   }
@@ -450,7 +460,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
 
    if ( (( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) ||
          ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256)
-        ) && ( i_m_blocking <= 16) && ( LIBXSMM_GEMM_PRECISION_F64 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype))
+        ) && ( LIBXSMM_GEMM_PRECISION_F64 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype))
       ) {
     l_k_blocking = 4;
     l_k_threshold = 12;
@@ -651,8 +661,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_i
                   ( LIBXSMM_GEMM_PRECISION_I8   == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )     ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
     /* @TODO check if there is a better blocking strategy */
-    if ( i_xgemm_desc->m >= 32 ) {
-      l_m_blocking = 32;
+    if ( i_xgemm_desc->m >= 64 ) {
+      l_m_blocking = 64;
     } else {
       l_m_blocking = i_xgemm_desc->m;
       /* in case we don't have a full vector length, we use masking */
