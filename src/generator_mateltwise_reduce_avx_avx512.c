@@ -3357,6 +3357,9 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
     }
   } else {
     vecin_offset    = vecout_offset;
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY) > 0) {
+      vecidxin_offset = vecout_offset;
+    }
   }
 
   m                 = i_mateltwise_desc->m;
