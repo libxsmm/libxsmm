@@ -108,7 +108,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
       }
 
       if (downconvert_input_f32f16 > 0) {
-         libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, 'z', im, im );
+         libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, 'z', im, im, 0x0 );
       }
     }
   }
