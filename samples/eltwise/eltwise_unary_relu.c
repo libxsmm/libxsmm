@@ -462,7 +462,7 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.005 ) {
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -618,7 +618,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.005 ) {
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -758,7 +758,7 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.005 ) {
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -1035,7 +1035,7 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.005 ) {
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -1171,7 +1171,7 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.005 ) {
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -1295,7 +1295,7 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.005 ) {
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
