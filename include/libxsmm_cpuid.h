@@ -70,10 +70,18 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
  */
 LIBXSMM_API int libxsmm_cpuid(void);
 
-/** Names the CPU architecture given by CPUID. */
+/**
+ * Names the CPU architecture given by CPUID.
+ * Do not use libxsmm_cpuid() to match the current CPU!
+ * Use libxsmm_get_target_archid() instead.
+ */
 LIBXSMM_API const char* libxsmm_cpuid_name(int id);
 
-/** SIMD vector length (VLEN) in 32-bit elements. */
+/**
+ * SIMD vector length (VLEN) in 32-bit elements.
+ * Do not use libxsmm_cpuid() to match the current CPU!
+ * Use libxsmm_get_target_archid() instead.
+ */
 LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
 
 #endif /*LIBXSMM_CPUID_H*/

@@ -1382,7 +1382,6 @@ void libxsmm_generator_prepare_dropout_inv_avx_avx512( libxsmm_generated_code* i
                                             dropout_vreg_zero, dropout_vreg_zero, dropout_vreg_zero );
 }
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_x,
@@ -1841,5 +1840,53 @@ void libxsmm_generator_vcvtneps2bf16_avx512( libxsmm_generated_code* io_generate
                                                        io_vec_tmp_0, io_vec_tmp_1, io_mask_0, io_mask_1 );
 
   libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, io_gp_reg );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtneps2int_avx512( libxsmm_generated_code* io_generated_code,
+                                            const libxsmm_datatype  i_datatype,
+                                            const unsigned int      io_vec_reg,
+                                            const unsigned int      i_scf_vec_reg ) {
+  /* scale value */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, 'z', io_vec_reg, i_scf_vec_reg, io_vec_reg );
+
+  /* convert to int */
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2DQ, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
+
+  if ( i_datatype == LIBXSMM_DATATYPE_I16 ) {
+    /* @TODO: add rouding */
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVDW, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
+  } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
+    /* @TODO: add rouding */
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVDB, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
+  } else if ( i_datatype == LIBXSMM_DATATYPE_I32 ) {
+    /* nothing to do */
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtint2ps_avx512( libxsmm_generated_code* io_generated_code,
+                                          const libxsmm_datatype  i_datatype,
+                                          const unsigned int      io_vec_reg,
+                                          const unsigned int      i_scf_vec_reg ) {
+  if ( i_datatype == LIBXSMM_DATATYPE_I16 ) {
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXWD, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
+  } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBD, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
+  } else if ( i_datatype == LIBXSMM_DATATYPE_I32 ) {
+    /* nothing to do */
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
+  }
+
+  /* convert to int */
+  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTDQ2PS, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
+
+  /* scale value */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMULPS, 'z', io_vec_reg, i_scf_vec_reg, io_vec_reg );
 }
 

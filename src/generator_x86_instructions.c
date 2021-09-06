@@ -1048,7 +1048,8 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
               (io_generated_code->code_type > 1 ) ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    int l_aligned=0, l_forced_offset=0;
+    int l_forced_offset = 0;
+    /*int l_aligned = 0;*/
     int l_num=0, l_sizereg=1;
     int l_scaleadj = 0;
     int l_insert_extra_byte = 0;
@@ -1107,10 +1108,9 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           fprintf(stderr, "libxsmm_instruction_vec_move: Exactly what sort of fp regs are you using?\n");
           exit(-1);
     }
-    if ( i_is_store == 1 )
-    {
+    /*if (i_is_store == 1) {
        l_aligned += 1;
-    }
+    }*/
     {
         /* SSE3 code */
         int l_vecgrp0 = 0;

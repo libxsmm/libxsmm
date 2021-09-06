@@ -490,7 +490,7 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
                                    const unsigned int, const unsigned int );
 
   /* select micro kernel based on aarch64 variant */
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 ) {
+  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
     l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_asimd_neoverse;
   } else if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
     l_generator_microkernel = libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx;
@@ -667,7 +667,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
                                                l_gp_reg_mapping.gp_reg_mloop, l_m_done - l_m_done_old );
         /* load block of C */
-        if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 ) {
+        if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
           libxsmm_generator_load_2dregblock_aarch64_asimd( io_generated_code, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                            l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                            i_xgemm_desc->ldc * l_micro_kernel_config.datatype_size_out,
@@ -767,7 +767,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         }
 
         /* store block of C */
-        if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 ) {
+        if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
           libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                             l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                             i_xgemm_desc->ldc * l_micro_kernel_config.datatype_size_out );

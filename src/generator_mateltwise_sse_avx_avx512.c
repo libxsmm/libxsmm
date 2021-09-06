@@ -22,52 +22,60 @@
 LIBXSMM_API_INTERN
 int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var stack_var ) {
   switch ( stack_var ) {
-    case LIBXSMM_MELTW_STACK_VAR_INP0_PTR0:
+    case LIBXSMM_MELTW_STACK_VAR_OP_ARG_0:
       return -8;
-    case LIBXSMM_MELTW_STACK_VAR_INP0_PTR1:
+    case LIBXSMM_MELTW_STACK_VAR_OP_ARG_1:
       return -16;
-    case LIBXSMM_MELTW_STACK_VAR_INP0_PTR2:
+    case LIBXSMM_MELTW_STACK_VAR_OP_ARG_2:
       return -24;
-    case LIBXSMM_MELTW_STACK_VAR_INP1_PTR0:
+    case LIBXSMM_MELTW_STACK_VAR_OP_ARG_3:
       return -32;
-    case LIBXSMM_MELTW_STACK_VAR_INP1_PTR1:
+    case LIBXSMM_MELTW_STACK_VAR_INP0_PTR0:
       return -40;
-    case LIBXSMM_MELTW_STACK_VAR_INP1_PTR2:
+    case LIBXSMM_MELTW_STACK_VAR_INP0_PTR1:
       return -48;
-    case LIBXSMM_MELTW_STACK_VAR_INP2_PTR0:
+    case LIBXSMM_MELTW_STACK_VAR_INP0_PTR2:
       return -56;
-    case LIBXSMM_MELTW_STACK_VAR_INP2_PTR1:
+    case LIBXSMM_MELTW_STACK_VAR_INP1_PTR0:
       return -64;
-    case LIBXSMM_MELTW_STACK_VAR_INP2_PTR2:
+    case LIBXSMM_MELTW_STACK_VAR_INP1_PTR1:
       return -72;
-    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR0:
+    case LIBXSMM_MELTW_STACK_VAR_INP1_PTR2:
       return -80;
-    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR1:
+    case LIBXSMM_MELTW_STACK_VAR_INP2_PTR0:
       return -88;
-    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR2:
+    case LIBXSMM_MELTW_STACK_VAR_INP2_PTR1:
       return -96;
-    case LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR:
+    case LIBXSMM_MELTW_STACK_VAR_INP2_PTR2:
       return -104;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_0:
+    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR0:
       return -112;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_1:
+    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR1:
       return -120;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_2:
+    case LIBXSMM_MELTW_STACK_VAR_OUT_PTR2:
       return -128;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_3:
+    case LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR:
       return -136;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_4:
+    case LIBXSMM_MELTW_STACK_VAR_CONST_0:
       return -144;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_5:
+    case LIBXSMM_MELTW_STACK_VAR_CONST_1:
       return -152;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_6:
+    case LIBXSMM_MELTW_STACK_VAR_CONST_2:
       return -160;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_7:
+    case LIBXSMM_MELTW_STACK_VAR_CONST_3:
       return -168;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_8:
+    case LIBXSMM_MELTW_STACK_VAR_CONST_4:
       return -176;
-    case LIBXSMM_MELTW_STACK_VAR_CONST_9:
+    case LIBXSMM_MELTW_STACK_VAR_CONST_5:
       return -184;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_6:
+      return -192;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_7:
+      return -200;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_8:
+      return -208;
+    case LIBXSMM_MELTW_STACK_VAR_CONST_9:
+      return -216;
     default:
       return 0;
   }
@@ -126,7 +134,7 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
   if (use_stack_vars > 0) {
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 184 );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 216 );
   }
 
   if ((io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY)) {
@@ -639,7 +647,10 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
                     (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT)    ||
                     (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT)    ||
                     (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNIT)    ||
-                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD)    ) {
+                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD) ||
+                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2)        ||
+                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2)        ||
+                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2)          ) {
           libxsmm_generator_transform_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
         } else {
           libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
