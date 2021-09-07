@@ -62,7 +62,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
 
   if ( (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256)
         || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) ) {
-    libxsmm_generator_gemm_avx512_microkernel_avx256vl_nofsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+    libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
                                                                   i_xgemm_desc, i_m_blocking, i_n_blocking, i_offset );
     return;
   }
@@ -535,7 +535,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
   }
 }
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_avx256vl_nofsdbcst( libxsmm_generated_code*            io_generated_code,
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( libxsmm_generated_code*            io_generated_code,
                                                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                                       const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,

@@ -242,7 +242,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
         io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
       }
     }
-  } else if ( i_arch <= LIBXSMM_X86_AVX512_VL256 ||  i_arch == LIBXSMM_X86_AVX512_VL256_CLX  ||  i_arch == LIBXSMM_X86_AVX512_VL256_CPX ) {
+  } else if ( i_arch < LIBXSMM_X86_AVX512) {
     io_micro_kernel_config->instruction_set = i_arch;
     io_micro_kernel_config->vector_reg_count = 32;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
@@ -1207,19 +1207,18 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
-  } else if ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_VL256 ) {
-    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (l_m_blocking != 1) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-      return;
-    }
   } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256 ||i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256_CLX
               ||i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256_CPX) {
     if ( (i_n_blocking > 28) || (i_n_blocking < 1) || (l_m_blocking < 1) || (l_m_blocking > 8) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
-    /* change by D- for m8 blocking*/
-  } else if ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX512_VL256 ) {
+  } else if ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_CORE ) {
+    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (l_m_blocking != 1) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      return;
+    }
+  } else if ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (l_m_blocking < 1) || (l_m_blocking > 6) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
@@ -1260,7 +1259,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
                 'x',
-                0, 2, 1, 0 );
+                0, 0, 1, 0 );
           }
           /* convert 16 bit values into 32 bit (integer convert) */
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
@@ -1277,7 +1276,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
               16);
         }
       }
-    /* pure int8 kernel */
+    /* pure BF16 kernel */
     } else if ( ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE) && (i_micro_kernel_config->instruction_set <= LIBXSMM_X86_ALLFEAT) ) &&
                 ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
       /* we add when scaling during conversion to FP32 */

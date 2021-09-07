@@ -21,11 +21,11 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
-#define block64
-#if defined block64
-# define blocksize 64
+#define LIBXSMM_BLOCK64
+#if defined LIBXSMM_BLOCK64
+# define LIBXSMM_BLOCK_SIZE 64
 #else
-# define blocksize 32
+# define LIBXSMM_BLOCK_SIZE 32
 #endif
 
 LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch)
@@ -55,7 +55,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
   if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CLX) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CPX)
           || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256)
         ){
-    tmp_max_c_block = blocksize;
+    tmp_max_c_block = LIBXSMM_BLOCK_SIZE;
   } else if ( ((libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) && (datatype_in == LIBXSMM_DNN_DATATYPE_BF16)) ||
        (libxsmm_target_archid < LIBXSMM_X86_AVX512 ) ) {
     tmp_max_c_block = 32;
@@ -74,7 +74,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
   if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CLX) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CPX)
         || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256)
       ){
-    tmp_max_k_block = blocksize;
+    tmp_max_k_block = LIBXSMM_BLOCK_SIZE;
   } else if ( ((libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) && (datatype_in == LIBXSMM_DNN_DATATYPE_BF16)) ||
        (libxsmm_target_archid < LIBXSMM_X86_AVX512 ) ) {
     tmp_max_k_block = 32;
