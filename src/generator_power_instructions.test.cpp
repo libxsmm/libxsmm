@@ -226,7 +226,7 @@ TEST_CASE( "Tests libxsmm_power_instruction_vsx_storage_access", "[power][vsx_st
                                                           LIBXSMM_POWER_GPR_R5 );
   REQUIRE( l_instr == 0x7e202e18 );
 
-  // lxvw4x 53, 19, 21 
+  // lxvw4x 53, 19, 21
   l_instr = libxsmm_power_instruction_vsx_storage_access( LIBXSMM_POWER_INSTR_VSX_LXVW4X,
                                                           LIBXSMM_POWER_VSR_VS53,
                                                           LIBXSMM_POWER_GPR_R19,
@@ -436,7 +436,7 @@ TEST_CASE( "Tests libxsmm_power_instruction_generic", "[power][libxsmm_power_ins
   REQUIRE( l_instr == 0x7fc059ce );
 
 
-  // lxvw4x 53, 19, 21 
+  // lxvw4x 53, 19, 21
   l_instr = libxsmm_power_instruction_generic_3( LIBXSMM_POWER_INSTR_VSX_LXVW4X,
                                                  LIBXSMM_POWER_VSR_VS53,
                                                  LIBXSMM_POWER_GPR_R19,
