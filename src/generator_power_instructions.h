@@ -17,7 +17,7 @@
 
 /* general purpose registers */
 #define LIBXSMM_POWER_GPR_R0   0
-#define LIBXSMM_POWER_GPR_R1   1 
+#define LIBXSMM_POWER_GPR_R1   1
 #define LIBXSMM_POWER_GPR_R2   2
 #define LIBXSMM_POWER_GPR_R3   3
 #define LIBXSMM_POWER_GPR_R4   4
@@ -54,7 +54,7 @@
 
 /* floating-point registers */
 #define LIBXSMM_POWER_FPR_F0   0
-#define LIBXSMM_POWER_FPR_F1   1 
+#define LIBXSMM_POWER_FPR_F1   1
 #define LIBXSMM_POWER_FPR_F2   2
 #define LIBXSMM_POWER_FPR_F3   3
 #define LIBXSMM_POWER_FPR_F4   4
@@ -88,7 +88,7 @@
 
 /* vector status and control register */
 #define LIBXSMM_POWER_VSR_VS0   0
-#define LIBXSMM_POWER_VSR_VS1   1 
+#define LIBXSMM_POWER_VSR_VS1   1
 #define LIBXSMM_POWER_VSR_VS2   2
 #define LIBXSMM_POWER_VSR_VS3   3
 #define LIBXSMM_POWER_VSR_VS4   4

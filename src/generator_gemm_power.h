@@ -36,7 +36,7 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
                                                            unsigned int             i_m_blocking_full,
                                                            unsigned int             i_n_blocking,
                                                            unsigned int             i_remainder_size,
-                                                           unsigned int             i_stride,                                                          
+                                                           unsigned int             i_stride,
                                                            unsigned char            i_load_store,
                                                            unsigned char            i_precision,
                                                            unsigned char            i_endianness,
@@ -70,7 +70,8 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code        * io_generated_code,
                                                    libxsmm_gemm_descriptor const * i_xgemm_desc,
                                                    unsigned int                    i_m_blocking,
-                                                   unsigned int                    i_n_blocking );
+                                                   unsigned int                    i_n_blocking,
+                                                   unsigned int                    i_k_blocking );
 
 /**
  * Genrates a matrix kernel for POWER.
