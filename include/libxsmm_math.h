@@ -28,9 +28,12 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
   double l1_ref, min_ref, max_ref, avg_ref, var_ref;
   /** Statistics: sum/l1, min., max., arith. avg., and variance. */
   double l1_tst, min_tst, max_tst, avg_tst, var_tst;
-  /** Values (v_ref, v_tst) and location (m, n) of largest linf_abs. */
+  /**
+   * Values (v_ref, v_tst), location (m, n), and zero-based i-th of
+   * r reductions (libxsmm_matdiff_reduce) of smallest R-squared.
+   */
   double v_ref, v_tst;
-  libxsmm_blasint m, n;
+  libxsmm_blasint m, n, i, r;
 } libxsmm_matdiff_info;
 
 /**
@@ -63,6 +66,19 @@ LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n3
 
 /** Calculate co-prime number <= n/2 (except: libxsmm_shuffle(0|1) == 0). */
 LIBXSMM_API size_t libxsmm_shuffle(unsigned int n);
+
+/**
+ * Minimizes the waste, if "a" can only be processed in multiples of "b".
+ * The remainder r is such that ((i * b) % a) <= r with i := {1, ..., a}.
+ * Returns the multiple of "b" minimizing the remainder accordingly.
+ * If no remainder is given (NULL), a value of zero is assumed.
+ * For example: libxsmm_remainder(23, 8, NULL, NULL) => 184.
+ */
+LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b,
+  /** Optional limit such that (i * b) <= limit or ((i * b) % a) <= r. */
+  const unsigned int* limit,
+  /** Optional remainder limiting ((i * b) % a) <= r. */
+  const unsigned int* remainder);
 
 /**
  * Divides the product into prime factors and selects factors such that the new product is within

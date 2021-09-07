@@ -1424,6 +1424,9 @@ else # GCC assumed
       else
         CXXFLAGS += -std=c++11
       endif
+      ifneq (0,$(shell echo "$$((40000<=$(CC_VERSION_NUM)))"))
+        CFLAGS += -Wno-pass-failed
+      endif
     else ifneq (,$(filter-out 2 3,$(XSMM_GCC)))
       CXXFLAGS += -std=c++11
     endif

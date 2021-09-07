@@ -210,6 +210,8 @@ int main(int argc, char* argv[])
     fullyconnected_desc.bk = bk;
     fullyconnected_desc.bc = bc;
     fullyconnected_desc.threads = nThreads;
+    fullyconnected_desc.compressed_A = 0;
+    fullyconnected_desc.sparsity_factor_A = 1;
     fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 

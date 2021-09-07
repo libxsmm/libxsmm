@@ -309,12 +309,12 @@ if __name__ == "__main__":
             elif 4 == arg1:
                 print(patch)
             elif "" != branch:
-                print("{}-{}".format(branch, realversion))
+                print("{0}-{1}".format(branch, realversion))
             else:
                 print(realversion)
     else:
         sys.tracebacklimit = 0
         raise ValueError(
-            "{}: wrong ({}) number of arguments ('{}') given!".format(
+            "{0}: wrong ({1}) number of arguments ('{2}') given!".format(
                 sys.argv[0], argc - 1, " ".join(sys.argv[1:]))
         )

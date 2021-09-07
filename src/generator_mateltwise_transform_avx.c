@@ -454,12 +454,12 @@ void libxsmm_generator_transform_avx_microkernel( libxsmm_generated_code*       
   /* load pointers from struct */
   libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_param_struct,
-                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 32,
                                    l_gp_reg_in, 0 );
 
   libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_param_struct,
-                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 24,
+                                   LIBXSMM_X86_GP_REG_UNDEF, 0, 56,
                                    l_gp_reg_out, 0 );
 
   /* check leading dimnesions and sizes */

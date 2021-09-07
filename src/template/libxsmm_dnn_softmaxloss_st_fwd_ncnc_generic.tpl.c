@@ -152,7 +152,7 @@ if ( ltid == 0 ) {
       libxsmm_blasint ifm1b = ifm/bc;
       libxsmm_blasint ifm2b = ifm%bc;
       float val = ( LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) > FLT_MIN ) ? LIBXSMM_VLA_ACCESS( 4, output, img1, ifm1b, img2, ifm2b, Bc, bn, bc ) : FLT_MIN;
-      handle->loss = LIBXSMM_LOGF( val );
+      handle->loss += LIBXSMM_LOGF( val );
     }
   }
   handle->loss = ((-1.0f)*handle->loss)/handle->desc.N;

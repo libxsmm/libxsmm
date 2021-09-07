@@ -33,7 +33,7 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
    *      Eltwise output_ptr                        <-- RBP-64
    *      Eltwise buf1_ptr                          <-- RBP-72
    *      Eltwise buf2_ptr                          <-- RBP-80
-   *
+   *      Batch-reduce count                        <-- RBP-88
    * */
 
   switch ( stack_var ) {
@@ -61,6 +61,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -72;
     case LIBXSMM_GEMM_STACK_VAR_ELT_BUF2:
       return -80;
+    case LIBXSMM_GEMM_STACK_VAR_BRCOUNT:
+      return -88;
     case LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B:
       return -72;
     case LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C:

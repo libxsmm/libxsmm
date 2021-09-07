@@ -281,8 +281,8 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
     relu_fwd_f32_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
-  unary_param.in.primary  = (void*)in;
-  unary_param.in.tertiary = (void*)(&alpha);
+  unary_param.op.primary = (void*)(&alpha);
+  unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -315,7 +315,7 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.000001 ) {
+  if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -349,6 +349,12 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary relu fwd fp32 fp32\n");
+  } else {
+    printf("FAILURE unary relu fwd fp32 fp32\n");
+  }
 
   return ret;
 }
@@ -415,8 +421,8 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
     relu_fwd_bf16_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
-  unary_param.in.primary  = (void*)in;
-  unary_param.in.tertiary = (void*)(&alpha);
+  unary_param.op.primary = (void*)(&alpha);
+  unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -456,7 +462,7 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.01 ) {
+  if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -498,6 +504,12 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary relu fwd bf16 bf16\n");
+  } else {
+    printf("FAILURE unary relu fwd bf16 bf16\n");
+  }
 
   return ret;
 }
@@ -565,8 +577,8 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     relu_fwd_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
   }
 
-  unary_param.in.primary  = (void*)in;
-  unary_param.in.tertiary = (void*)(&alpha);
+  unary_param.op.primary = (void*)(&alpha);
+  unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -606,7 +618,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.01 ) {
+  if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -642,6 +654,12 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary relu fwd fp32 bf16\n");
+  } else {
+    printf("FAILURE unary relu fwd fp32 bf16\n");
+  }
 
   return ret;
 }
@@ -706,8 +724,8 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   }
 
   /* use jited relu */
-  unary_param.in.primary  = (void*)in;
-  unary_param.in.tertiary = (void*)(&alpha);
+  unary_param.op.primary = (void*)(&alpha);
+  unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -740,7 +758,7 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.01 ) {
+  if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -774,6 +792,12 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary relu fwd bf16 fp32\n");
+  } else {
+    printf("FAILURE unary relu fwd bf16 fp32\n");
+  }
 
   return ret;
 }
@@ -847,9 +871,9 @@ int test_relu_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   }
 
   /* use jited relu */
+  unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
-  unary_param.in.tertiary   = (void*)(&alpha);
   unary_param.out.primary   = (void*)out;
 
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
@@ -893,6 +917,12 @@ int test_relu_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary relu bwd fp32 fp32\n");
+  } else {
+    printf("FAILURE unary relu bwd fp32 fp32\n");
+  }
 
   return ret;
 }
@@ -967,9 +997,9 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   }
 
   /* use jited relu */
+  unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
-  unary_param.in.tertiary   = (void*)(&alpha);
   unary_param.out.primary   = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   if ( type == 0 ) {
@@ -1009,7 +1039,7 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.01 ) {
+  if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -1021,6 +1051,12 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary relu bwd bf16 bf16\n");
+  } else {
+    printf("FAILURE unary relu bwd bf16 bf16\n");
+  }
 
   return ret;
 }
@@ -1097,9 +1133,9 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   }
 
   /* use jited relu */
+  unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
-  unary_param.in.tertiary   = (void*)(&alpha);
   unary_param.out.primary   = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   if ( type == 0 ) {
@@ -1139,7 +1175,7 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.01 ) {
+  if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -1151,6 +1187,12 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary relu bwd fp32 bf16\n");
+  } else {
+    printf("FAILURE unary relu bwd fp32 bf16\n");
+  }
 
   return ret;
 }
@@ -1222,9 +1264,9 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   }
 
   /* use jited relu */
+  unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
-  unary_param.in.tertiary   = (void*)(&alpha);
   unary_param.out.primary   = (void*)out;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
   if ( type == 0 ) {
@@ -1257,7 +1299,7 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.01 ) {
+  if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -1267,6 +1309,12 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_free( in );
   libxsmm_free( mask );
   libxsmm_free( mask_gold );
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary relu bwd bf16 fp32\n");
+  } else {
+    printf("FAILURE unary relu bwd bf16 fp32\n");
+  }
 
   return ret;
 }
@@ -1301,41 +1349,42 @@ int main( int argc, char* argv[] ) {
 
   if ( type == 'D' ) {
     itype = 0;
-    printf("Testing ReLU\n");
+    printf("Testing ReLU ");
   } else if ( type == 'L' ) {
     itype = 1;
-    printf("Testing Leaky ReLU\n");
+    printf("Testing Leaky ReLU ");
   } else if ( type == 'E' ) {
     itype = 2;
     bitm = 0;
-    printf("Testing ELU (disabling bitmask support)\n");
+    printf("Testing ELU (disabling bitmask support) ");
   } else {
     itype = 0;
+    printf("Testing ReLU ");
   }
 
   if ( op == 'F' && dtype_in == 4 && dtype_out == 4  ) {
-    printf("Testing F32 F32 forward\n");
+    printf("F32 F32 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_relu_f32_f32_fwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'F' && dtype_in == 2  && dtype_out == 2 ) {
-    printf("Testing BF16 BF16 forward\n");
+    printf("BF16 BF16 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_relu_bf16_bf16_fwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'F' && dtype_in == 4  && dtype_out == 2 ) {
-    printf("Testing F32 BF16 forward\n");
+    printf("F32 BF16 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_relu_f32_bf16_fwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'F' && dtype_in == 2  && dtype_out == 4 ) {
-    printf("Testing BF16 F32 forward\n");
+    printf("BF16 F32 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_relu_bf16_f32_fwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'B' && dtype_in == 4 && dtype_out == 4 ) {
-    printf("Testing F32 F32 backward\n");
+    printf("F32 F32 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_relu_f32_f32_bwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'B' && dtype_in == 2 && dtype_out == 2 ) {
-    printf("Testing BF16 BF16 backward\n");
+    printf("BF16 BF16 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_relu_bf16_bf16_bwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'B' && dtype_in == 4 && dtype_out == 2 ) {
-    printf("Testing F32 BF16 backward\n");
+    printf("F32 BF16 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_relu_f32_bf16_bwd( bitm, M, N, ldi, ldo, itype );
   } else if ( op == 'B' && dtype_in == 2 && dtype_out == 4 ) {
-    printf("Testing BF16 F32 backward\n");
+    printf("BF16 F32 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_relu_bf16_f32_bwd( bitm, M, N, ldi, ldo, itype );
   } else {
     printf(" Not implemented case! Usage: %s [D/L/E] [F/B] [bitmask: 0/1] [prec_in: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
