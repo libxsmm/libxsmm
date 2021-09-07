@@ -124,7 +124,8 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code        * io_generated_code,
                                                    libxsmm_gemm_descriptor const * i_xgemm_desc,
                                                    unsigned int                    i_m_blocking,
-                                                   unsigned int                    i_n_blocking ) {
+                                                   unsigned int                    i_n_blocking,
+                                                   unsigned int                    i_k_blocking ) {
   unsigned int l_vector_length = 4;
 
   unsigned char l_gpr_a = LIBXSMM_POWER_GPR_R3;
@@ -163,7 +164,7 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
   unsigned char l_vsr_a_first = l_vsr_c_first + l_n_vsr_c;
 
   /* iterate over K */
-  for( unsigned short l_k = 0; l_k < i_xgemm_desc->k; l_k++ ) {
+  for( unsigned short l_k = 0; l_k < i_k_blocking; l_k++ ) {
     /* load (partial) column of A */
     unsigned int l_n_vsr_a = 0;
     l_n_vsr_a = libxsmm_generator_gemm_power_load_store_vsx( io_generated_code,
@@ -187,14 +188,14 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
     unsigned char l_vsr_b = l_vsr_a_first + l_n_vsr_a;
 
     /* iterate over entries of B */
-    for( unsigned short l_n = 0; l_n < i_xgemm_desc->n; l_n++ ) {
+    for( unsigned short l_n = 0; l_n < i_n_blocking; l_n++ ) {
       /* bcast entry of B */
       libxsmm_power_instruction_3( io_generated_code,
                                    LIBXSMM_POWER_INSTR_VSX_LXVWSX,
                                    l_vsr_b,
                                    0,
                                    l_gpr_b );
-      if( l_n != i_xgemm_desc->n-1 ) {
+      if( l_n != i_n_blocking-1 ) {
         libxsmm_power_instruction_3( io_generated_code,
                                      LIBXSMM_POWER_INSTR_FIP_ADDI,
                                      LIBXSMM_POWER_GPR_R4,
@@ -206,7 +207,7 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
                                      LIBXSMM_POWER_INSTR_FIP_ADDI,
                                      LIBXSMM_POWER_GPR_R4,
                                      LIBXSMM_POWER_GPR_R4,
-                                     -(i_xgemm_desc->n-1)*l_stride_b + l_bytes_per_val );
+                                     -(i_n_blocking-1)*l_stride_b + l_bytes_per_val );
       }
 
       /* perform FMAs */
@@ -252,7 +253,8 @@ int libxsmm_generator_gemm_power_kernel( libxsmm_generated_code        * io_gene
   libxsmm_generator_gemm_power_microkernel_vsx( io_generated_code,
                                                 i_xgemm_desc,
                                                 i_xgemm_desc->m,
-                                                i_xgemm_desc->n );
+                                                i_xgemm_desc->n,
+                                                i_xgemm_desc->k );
 
   libxsmm_power_instruction_close_stream( io_generated_code,
                                           31,
