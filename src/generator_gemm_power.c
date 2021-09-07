@@ -22,7 +22,7 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
                                                            unsigned char            i_precision,
                                                            unsigned char            i_endianness,
                                                            unsigned char            i_gpr_ptr,
-                                                           unsigned char            i_gpr_scratch[3],
+                                                           unsigned char          * i_gpr_scratch,
                                                            unsigned char            i_vsr_first ) {
   unsigned int l_vsr = i_vsr_first;
 
@@ -47,23 +47,38 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
   if( i_remainder_size > 0 ) {
     libxsmm_power_instruction_3( io_generated_code,
                                  LIBXSMM_POWER_INSTR_FIP_ADDI,
-                                 i_gpr_scratch[2],
+                                 i_gpr_scratch[1],
                                  0,
                                  i_remainder_size );
     libxsmm_power_instruction_4( io_generated_code,
                                  LIBXSMM_POWER_INSTR_FIP_RLDICR,
-                                 i_gpr_scratch[2],
-                                 i_gpr_scratch[2],
+                                 i_gpr_scratch[1],
+                                 i_gpr_scratch[1],
                                  64-8,
                                  63 );
   }
 
   for( unsigned int l_bn = 0; l_bn < i_n_blocking; l_bn++ ) {
-    libxsmm_power_instruction_3( io_generated_code,
-                                 LIBXSMM_POWER_INSTR_FIP_ORI,
-                                 i_gpr_scratch[1],
-                                 i_gpr_scratch[0],
-                                 0 );
+    /* prep the GPRs for the storage accesses */
+    unsigned int l_n_ops = i_m_blocking_full;
+    if( i_remainder_size > 0 ) {
+      l_n_ops++;
+    }
+    for( unsigned int l_gp = 0; l_gp < l_n_ops; l_gp++ ) {
+      libxsmm_power_instruction_3( io_generated_code,
+                                   LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                   i_gpr_scratch[2+l_gp],
+                                   i_gpr_scratch[0],
+                                   16*l_gp );
+    }
+
+    if( l_bn != i_n_blocking - 1 ) {
+      libxsmm_power_instruction_3( io_generated_code,
+                                  LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                  i_gpr_scratch[0],
+                                  i_gpr_scratch[0],
+                                  i_stride );
+    }
 
     /* 128bit loads/stores */
     for( unsigned int l_bm = 0; l_bm < i_m_blocking_full; l_bm++ ) {
@@ -71,14 +86,7 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
                                    l_ops_vsx[0],
                                    l_vsr,
                                    0,
-                                   i_gpr_scratch[1] );
-
-      libxsmm_power_instruction_3( io_generated_code,
-                                   LIBXSMM_POWER_INSTR_FIP_ADDI,
-                                   i_gpr_scratch[1],
-                                   i_gpr_scratch[1],
-                                   16 );
-
+                                   i_gpr_scratch[2+l_bm] );
       l_vsr++;
     }
 
@@ -96,8 +104,8 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
       libxsmm_power_instruction_3( io_generated_code,
                                    l_ops_vsx[1],
                                    l_vsr,
-                                   i_gpr_scratch[1],
-                                   i_gpr_scratch[2] );
+                                   i_gpr_scratch[2+i_m_blocking_full],
+                                   i_gpr_scratch[1] );
 
       /* reverse byte-order after loading for LE */
       if( i_endianness == 0 &&
@@ -109,12 +117,6 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
       }
       l_vsr++;
     }
-
-    libxsmm_power_instruction_3( io_generated_code,
-                                 LIBXSMM_POWER_INSTR_FIP_ADDI,
-                                 i_gpr_scratch[0],
-                                 i_gpr_scratch[0],
-                                 i_stride );
   }
 
   return l_vsr - i_vsr_first;
@@ -132,7 +134,9 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
   unsigned char l_gpr_b = LIBXSMM_POWER_GPR_R4;
   unsigned char l_gpr_c = LIBXSMM_POWER_GPR_R5;
 
-  unsigned char l_gpr_scratch[3] = { 6, 7, 8 };
+  unsigned char l_gpr_scratch[12] = {  6,  7,  8,  9,
+                                      10, 11, 12, 13,
+                                      14, 15, 16, 17 };
 
   unsigned int l_bytes_per_val = 4;
 
@@ -187,28 +191,29 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
 
     unsigned char l_vsr_b = l_vsr_a_first + l_n_vsr_a;
 
-    /* iterate over entries of B */
+    /* prepare the GPRs for the loads of B */
+    for( unsigned short l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      libxsmm_power_instruction_3( io_generated_code,
+                                   LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                   l_gpr_scratch[l_n],
+                                   l_gpr_b,
+                                   l_stride_b*l_n );
+    }
+    if( l_k != i_k_blocking-1 ) {
+      libxsmm_power_instruction_3( io_generated_code,
+                                   LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                   l_gpr_b,
+                                   l_gpr_b,
+                                   l_bytes_per_val );
+    }
+
     for( unsigned short l_n = 0; l_n < i_n_blocking; l_n++ ) {
       /* bcast entry of B */
       libxsmm_power_instruction_3( io_generated_code,
                                    LIBXSMM_POWER_INSTR_VSX_LXVWSX,
                                    l_vsr_b,
                                    0,
-                                   l_gpr_b );
-      if( l_n != i_n_blocking-1 ) {
-        libxsmm_power_instruction_3( io_generated_code,
-                                     LIBXSMM_POWER_INSTR_FIP_ADDI,
-                                     LIBXSMM_POWER_GPR_R4,
-                                     LIBXSMM_POWER_GPR_R4,
-                                     l_stride_b );
-      }
-      else {
-        libxsmm_power_instruction_3( io_generated_code,
-                                     LIBXSMM_POWER_INSTR_FIP_ADDI,
-                                     LIBXSMM_POWER_GPR_R4,
-                                     LIBXSMM_POWER_GPR_R4,
-                                     -(i_n_blocking-1)*l_stride_b + l_bytes_per_val );
-      }
+                                   l_gpr_scratch[l_n] );
 
       /* perform FMAs */
       unsigned int l_n_ops = l_m_blocking_full;
@@ -245,10 +250,47 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
 LIBXSMM_API_INTERN
 int libxsmm_generator_gemm_power_kernel( libxsmm_generated_code        * io_generated_code,
                                          libxsmm_gemm_descriptor const * i_xgemm_desc ) {
+  // unsigned int l_bytes_per_val = 0;
+  unsigned int l_vector_length = 0;
+  if( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    // l_bytes_per_val = 4;
+    l_vector_length = 4;
+  }
+  else if( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    // l_bytes_per_val = 8;
+    l_vector_length = 2;
+  }
+  else {
+    return 1;
+  }
+
+  /*
+   * derive number of required VS-registers
+   */
+  unsigned int l_n_vs_m = i_xgemm_desc->m;
+  l_n_vs_m += l_vector_length-1;
+  l_n_vs_m /= l_vector_length;
+
+  unsigned int l_n_vs_all = l_n_vs_m * (i_xgemm_desc->n + 1); /* acc block and A-col */
+  l_n_vs_all += 1; /* B bcast-register */
+
+  unsigned short l_gprMax = 7;
+  if( l_n_vs_m > i_xgemm_desc->n ) {
+    l_gprMax += l_n_vs_m;
+  }
+  else {
+    l_gprMax += i_xgemm_desc->n;
+  }
+  unsigned short l_fprMax = (l_n_vs_all < 32) ? l_n_vs_all - 1 : 31;
+  unsigned short l_vsrMax = (l_n_vs_all < 33) ? 0 : l_n_vs_all - 33;
+
+  /*
+   * Generate machine code.
+   */
   libxsmm_power_instruction_open_stream( io_generated_code,
-                                         31,
-                                         31,
-                                         31 );
+                                         l_gprMax,
+                                         l_fprMax,
+                                         l_vsrMax );
 
   libxsmm_generator_gemm_power_microkernel_vsx( io_generated_code,
                                                 i_xgemm_desc,
@@ -257,8 +299,8 @@ int libxsmm_generator_gemm_power_kernel( libxsmm_generated_code        * io_gene
                                                 i_xgemm_desc->k );
 
   libxsmm_power_instruction_close_stream( io_generated_code,
-                                          31,
-                                          31,
-                                          31 );
+                                          l_gprMax,
+                                          l_fprMax,
+                                          l_vsrMax );
   return 0;
 }
