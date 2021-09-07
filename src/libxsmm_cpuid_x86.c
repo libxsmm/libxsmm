@@ -157,9 +157,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
         }
       }
       else if (LIBXSMM_X86_GENERIC <= feature_cpu) {
-        /* assume FXSAVE, which should be fine
-         * 16 years after the first x86_64 OS
-         */
+        /* assume FXSAVE-enabled/manual state-saving OS,
+           as it was introduced 1999 even for 32bit */
         feature_os = LIBXSMM_X86_SSE42;
       }
       else feature_os = LIBXSMM_TARGET_ARCH_GENERIC;
