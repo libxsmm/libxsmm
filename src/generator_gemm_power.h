@@ -28,6 +28,7 @@
  * @param i_endianness 0: little endian, !=0 big endian.
  * @param i_gpr_ptr GPR which has the address from which we load or to which we store data.
  * @param i_gpr_scratch GPRs which are used as scratch registers.
+ *                      2+#chunks are required (see chunk desc. below).
  * @param i_vsr_first first VSR to which data is loaded or to which data is written.
  * @return number of VSR which were written.
  **/
@@ -41,7 +42,7 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
                                                            unsigned char            i_precision,
                                                            unsigned char            i_endianness,
                                                            unsigned char            i_gpr_ptr,
-                                                           unsigned char            i_gpr_scratch[3],
+                                                           unsigned char          * i_gpr_scratch,
                                                            unsigned char            i_vsr_first );
 
 /**
