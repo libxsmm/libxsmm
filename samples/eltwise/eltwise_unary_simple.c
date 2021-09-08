@@ -369,7 +369,7 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.0005 ) {
+  if ( norms_out.normf_rel > 0.0007 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -539,7 +539,7 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.005 ) {
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -700,7 +700,7 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.005 ) {
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -854,7 +854,7 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.005 ) {
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 

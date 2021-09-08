@@ -96,7 +96,7 @@ template <typename T>
 class EmbeddingBagImpl
 {
 public:
-  EmbeddingBagImpl(int M, int E) : M(M), E(E)
+  EmbeddingBagImpl(long M, long E) : M(M), E(E)
   {
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
     h = (T*)my_malloc((size_t)M * sizeof(T), alignment);
@@ -117,14 +117,15 @@ public:
     h = 0;
   }
 
-  void init(T low = -0.1, T high = 0.1)
+  void init(T low = -0.01, T high = 0.01)
   {
     //init_random(M * E, weight_, low, high);
     init_zero(M * E, weight_);
+    //init_random(M, h, low, high);
     init_zero(M, h);
   }
 
-  void fused_backward_update_adagrad(int U, int NS, int N, long *mb_offsets, long *mb_indices, long *wt_indices, T *outGrad_, float lr, float eps)
+  void fused_backward_update_adagrad(long U, long NS, long N, long *mb_offsets, long *mb_indices, long *wt_indices, T *outGrad_, float lr, float eps)
   {
     DECL_VLA_PTR(T, outGrad, [E], outGrad_);
     DECL_VLA_PTR(T, wt, [E], weight_);
@@ -191,8 +192,8 @@ public:
 
   T *weight_;
   T *h;
-  int M;
-  int E;
+  long M;
+  long E;
 
 #ifdef USE_LIBXSMM_JIT
   int _ld;
@@ -211,7 +212,7 @@ struct EmbeddingInOut {
   ITyp *indices;
   FTyp *output;
   FTyp *gradout;
-  FTyp *grads;
+  //FTyp *grads;
   ITyp * mb_offsets;
   ITyp * mb_indices;
   ITyp * wt_indices;
@@ -308,7 +309,7 @@ int zipf_dist(double alpha, int M)
   static double *sum_probs;
   static int prev_M = 0;
   double z;
-  int value;
+  int value  = 0;
   int    i;
   int low, high, mid;
 
@@ -352,11 +353,11 @@ int zipf_dist(double alpha, int M)
   return(value);
 }
 
-void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, EmbeddingBag *eb, EmbeddingInOut *eio)
+void allocate_buffers_and_generte_rnd_input(long N, long P, double alpha, EmbeddingBag *eb, EmbeddingInOut *eio)
 {
-  int E = eb->E;
-  int M = eb->M;
-  int NS = 0;
+  long E = eb->E;
+  long M = eb->M;
+  long NS = 0;
   eio->M = M;
   eio->N = N;
   eio->E = E;
@@ -367,7 +368,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   init_zero(N * E, eio->output);
   init_random(N * E, eio->gradout, -0.01f, 0.01f);
 
-  eio-> offsets[0] = 0;
+  eio->offsets[0] = 0;
   for(int i = 1; i <= N; i++) {
     double randval;
     drand48_r(&rand_buf, &randval);
@@ -378,8 +379,8 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
   }
   eio->NS = NS;
   eio->indices = (ITyp*)my_malloc(NS * sizeof(ITyp), alignment);
-  eio->grads = (FTyp*)my_malloc(NS * E * sizeof(FTyp), alignment);
-  init_zero(NS * E, eio->grads);
+  //eio->grads = (FTyp*)my_malloc(NS * E * sizeof(FTyp), alignment);
+  //init_zero(NS * E, eio->grads);
 #pragma omp parallel for
   for (int n = 0; n < N; n++)
   {
@@ -425,7 +426,7 @@ void allocate_buffers_and_generte_rnd_input(int N, int P, double alpha, Embeddin
 
 void free_buffers(EmbeddingInOut *eio)
 {
-  my_free(eio->grads);
+  //my_free(eio->grads);
   my_free(eio->indices);
   my_free(eio->gradout);
   my_free(eio->output);
@@ -550,7 +551,7 @@ int main(int argc, char * argv[]) {
 #endif
 #ifdef VERIFY_CORRECTNESS
   for(int s = 0; s < LS; s++) {
-    double psum = get_checksum(eb[s]->weight_, M*E);
+    double psum = get_checksum(eb[s]->weight_, (size_t)M*E);
     //my_printf("PSUM %d: %g\n", s, psum);
     checksum += psum;
   }
