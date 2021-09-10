@@ -1274,13 +1274,12 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
   if (n != 1) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, 0xff00 );
     libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVW_GPR_LD, LIBXSMM_X86_GP_REG_RAX, 7 );
-  }
-
-  if (n_full_trips >= 1) {
     if ((use_m_masking > 0) && ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX) > 0 )) {
       libxsmm_generator_load_vreg_minus_infinity(io_generated_code, 'z', LIBXSMM_X86_GP_REG_RAX, aux_vreg);
     }
+  }
 
+  if (n_full_trips >= 1) {
     if (n_full_trips > 1) {
       /* open n loop */
       libxsmm_generator_mateltwise_header_n_loop(  io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop );
