@@ -961,6 +961,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_in_pf2;
   unsigned int gp_reg_scale_base;
   unsigned int gp_reg_quant_sf;
+  unsigned int gp_reg_scratch_0;
+  unsigned int gp_reg_scratch_1;
 } libxsmm_mateltwise_gp_reg_mapping;
 
 /* mateltwise kernel configuration */
