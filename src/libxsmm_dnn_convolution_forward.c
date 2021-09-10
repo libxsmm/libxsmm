@@ -30,7 +30,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_f32_f32(libxsmm_dnn_
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-#if 1
+#if 0
   typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function_addr;
   const libxsmm_blasint ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
   const libxsmm_blasint ldA = handle->ofmblock;
@@ -384,7 +384,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-#if 1
+#if 0
       typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function_addr;
       const libxsmm_blasint ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
       const libxsmm_blasint ldA = handle->ofmblock;
