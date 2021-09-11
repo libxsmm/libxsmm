@@ -229,11 +229,18 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned sh
     _mm256_storeu_ps(out+i, vout);
     out_mask[i/8] = _mm256_movemask_ps( vmsk );
   }
-#if 0
   if (i < M) {
     int rem = M - i;
+    __m256 rnd = LIBXSMM_INTRINSICS_MM256_RNG_EXTSTATE_PS(rng_state);
+    __m256i memmsk = _mm256_set_epi32( (rem == 8) ? 0xffffffff : 0x00000000, (rem >= 7) ? 0xffffffff : 0x00000000, (rem >= 6) ? 0xffffffff : 0x00000000, (rem >= 5) ? 0xffffffff : 0x00000000,
+                                       (rem >= 4) ? 0xffffffff : 0x00000000, (rem >= 3) ? 0xffffffff : 0x00000000, (rem >= 2) ? 0xffffffff : 0x00000000, (rem >= 1) ? 0xffffffff : 0x00000000  );
+    __m256 vin = _mm256_maskload_ps(in+i, memmsk);
+    __m256 vmsk = _mm256_cmp_ps(vp, rnd, 0x06);
+    __m256 vout = _mm256_mul_ps(vin, vpi);
+    vout = _mm256_blendv_ps( vzero, vout, vmsk );
+    _mm256_maskstore_ps(out+i, memmsk, vout);
+    out_mask[i/8] = _mm256_movemask_ps( vmsk );
   }
-#endif
 }
 
 void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
@@ -252,11 +259,18 @@ void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned sh
     vout = _mm256_blendv_ps( vzero, vout, _mm256_castsi256_ps(vmask) );
     _mm256_storeu_ps(out+i, vout);
   }
-#if 0
   if (i < M) {
     int rem = M - i;
+    __m256i memmsk = _mm256_set_epi32( (rem == 8) ? 0xffffffff : 0x00000000, (rem >= 7) ? 0xffffffff : 0x00000000, (rem >= 6) ? 0xffffffff : 0x00000000, (rem >= 5) ? 0xffffffff : 0x00000000,
+                                       (rem >= 4) ? 0xffffffff : 0x00000000, (rem >= 3) ? 0xffffffff : 0x00000000, (rem >= 2) ? 0xffffffff : 0x00000000, (rem >= 1) ? 0xffffffff : 0x00000000  );
+    __m256 vin = _mm256_maskload_ps(in+i, memmsk);
+    __m256i vmask = _mm256_set1_epi8( out_mask[i/8] );
+    vmask = _mm256_and_si256( vmask, vand );
+    vmask = _mm256_cmpeq_epi32( vmask, vand );
+    __m256 vout = _mm256_mul_ps(vin, vpi);
+    vout = _mm256_blendv_ps( vzero, vout, _mm256_castsi256_ps(vmask) );
+    _mm256_maskstore_ps(out+i, memmsk, vout);
   }
-#endif
 }
 #else
 void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
