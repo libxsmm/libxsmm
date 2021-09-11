@@ -22,6 +22,10 @@
 #endif
 #endif
 
+#if 0
+#define USE_ZERO_RNG_STATE_UNITTEST
+#endif
+
 #define LIBXSMM_ALIGNDOWN(N, A) ((N) & ~((A)-1))
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
@@ -404,6 +408,11 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   rng_state = libxsmm_rng_create_extstate( 555 );
   rng_state_gold = libxsmm_rng_create_extstate( 555 );
 
+#ifdef USE_ZERO_RNG_STATE_UNITTEST
+  memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
+  memset( (void*)rng_state_gold, 0, libxsmm_rng_get_extstate_size() );
+#endif
+
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
     dropout_fwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], rng_state_gold, p );
@@ -539,6 +548,11 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
 
   rng_state = libxsmm_rng_create_extstate( 555 );
   rng_state_gold = libxsmm_rng_create_extstate( 555 );
+
+#ifdef USE_ZERO_RNG_STATE_UNITTEST
+  memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
+  memset( (void*)rng_state_gold, 0, libxsmm_rng_get_extstate_size() );
+#endif
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
@@ -683,6 +697,11 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   rng_state = libxsmm_rng_create_extstate( 555 );
   rng_state_gold = libxsmm_rng_create_extstate( 555 );
 
+#ifdef USE_ZERO_RNG_STATE_UNITTEST
+  memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
+  memset( (void*)rng_state_gold, 0, libxsmm_rng_get_extstate_size() );
+#endif
+
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
     dropout_fwd_f32_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*ldo)/8], rng_state_gold, p );
@@ -824,6 +843,11 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
 
   rng_state = libxsmm_rng_create_extstate( 555 );
   rng_state_gold = libxsmm_rng_create_extstate( 555 );
+
+#ifdef USE_ZERO_RNG_STATE_UNITTEST
+  memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
+  memset( (void*)rng_state_gold, 0, libxsmm_rng_get_extstate_size() );
+#endif
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
