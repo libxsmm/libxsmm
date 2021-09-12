@@ -12,6 +12,7 @@
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_transform_common_x86.h"
 #include "generator_mateltwise_transform_avx.h"
+#include "generator_mateltwise_transform_sse.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
@@ -502,6 +503,30 @@ void libxsmm_generator_transform_avx_microkernel( libxsmm_generated_code*       
               LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
     if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
       libxsmm_generator_transform_norm_to_normt_32bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                       l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                       i_micro_kernel_config, i_mateltwise_desc );
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
+  } else if ( (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )  &&
+               LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ||
+              (LIBXSMM_GEMM_PRECISION_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )  &&
+               LIBXSMM_GEMM_PRECISION_F16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ||
+              (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
+               LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))   ) {
+    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
+      libxsmm_generator_transform_norm_to_normt_16bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                       l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                       i_micro_kernel_config, i_mateltwise_desc );
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
+  } else if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
+              LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
+    if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
+      libxsmm_generator_transform_norm_to_normt_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                        i_micro_kernel_config, i_mateltwise_desc );
     } else {
