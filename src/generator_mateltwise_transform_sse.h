@@ -24,7 +24,6 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_sse_microkernel( libx
                                                                             const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                             const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_64bit_sse_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                       libxsmm_loop_label_tracker*             io_loop_label_tracker,
