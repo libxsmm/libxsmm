@@ -706,6 +706,7 @@
 #define LIBXSMM_ERR_VNNI_B                90042
 #define LIBXSMM_ERR_NO_AVX512VL           90043
 #define LIBXSMM_ERR_BITMASK_ELTWISE       90044
+#define LIBXSMM_ERR_GP_TEMP_MAPPING       90045
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
@@ -961,6 +962,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_in_pf2;
   unsigned int gp_reg_scale_base;
   unsigned int gp_reg_quant_sf;
+  unsigned int gp_reg_scratch_0;
+  unsigned int gp_reg_scratch_1;
 } libxsmm_mateltwise_gp_reg_mapping;
 
 /* mateltwise kernel configuration */
