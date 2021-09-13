@@ -345,6 +345,9 @@ int main(int argc, char* argv[])
       _j = cols_ind_array2[jj];
     }
     for (i = 0; i < m; i++) {
+      if (redop == REDOP_NONE) {
+        inp_matrix2[_j * ld_in + i] = ref_result[i];
+      }
       if (op != OP_COPY) {
         if (op == OP_ADD) {
           op_res = inp_matrix[j * ld_in + i] + inp_matrix2[_j * ld_in + i];
@@ -529,6 +532,9 @@ int main(int argc, char* argv[])
         _j = cols_ind_array2[jj];
       }
       for (i = 0; i < m; i++) {
+        if (redop == REDOP_NONE) {
+          inp_matrix2[_j * ld_in + i] = ref_result[i];
+        }
         if (op != OP_COPY) {
           if (op == OP_ADD) {
             op_res = inp_matrix[j * ld_in + i] + inp_matrix2[_j * ld_in + i];
