@@ -103,9 +103,9 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS quant FP32 -> int8\n");
+    printf("SUCCESS unary quant FP32 -> int8\n");
   } else {
-    printf("FAILURE quant FP32 -> int8\n");
+    printf("FAILURE unary quant FP32 -> int8\n");
     ret = EXIT_FAILURE;
   }
   s = 0;
@@ -118,9 +118,9 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS quant int8 -> FP32\n");
+    printf("SUCCESS unary quant int8 -> FP32\n");
   } else {
-    printf("FAILURE quant int8 -> FP32\n");
+    printf("FAILURE unary quant int8 -> FP32\n");
     ret = EXIT_FAILURE;
   }
 
@@ -221,9 +221,9 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS quant FP32 -> int16\n");
+    printf("SUCCESS unary quant FP32 -> int16\n");
   } else {
-    printf("FAILURE quant FP32 -> int16\n");
+    printf("FAILURE unary quant FP32 -> int16\n");
     ret = EXIT_FAILURE;
   }
   s = 0;
@@ -236,9 +236,9 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS quant int16 -> FP32\n");
+    printf("SUCCESS unary quant int16 -> FP32\n");
   } else {
-    printf("FAILURE quant int16 -> FP32\n");
+    printf("FAILURE unary quant int16 -> FP32\n");
     ret = EXIT_FAILURE;
   }
 
@@ -339,9 +339,9 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS quant FP32 -> int32\n");
+    printf("SUCCESS unary quant FP32 -> int32\n");
   } else {
-    printf("FAILURE quant FP32 -> int32\n");
+    printf("FAILURE unary quant FP32 -> int32\n");
     ret = EXIT_FAILURE;
   }
   s = 0;
@@ -354,9 +354,9 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS quant int32 -> FP32\n");
+    printf("SUCCESS unary quant int32 -> FP32\n");
   } else {
-    printf("FAILURE quant int32 -> FP32\n");
+    printf("FAILURE unary quant int32 -> FP32\n");
     ret = EXIT_FAILURE;
   }
 
@@ -391,13 +391,13 @@ int main( int argc, char* argv[] ) {
   ldo       = atoi(argv[6]);
 
   if ( dtype_one == 4 && dtype_two == 1 ) {
-    printf("Testing FP32 <-> int8 quant\n");
+    printf("Testing FP32 <-> int8 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int8_to_float( M, N, ldi, ldo );
   } else if ( dtype_one == 4 && dtype_two == 2 ) {
-    printf("Testing FP32 <-> int16 quant\n");
+    printf("Testing FP32 <-> int16 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int16_to_float( M, N, ldi, ldo );
   } else if ( dtype_one == 4 && dtype_two == 4 ) {
-    printf("Testing FP32 <-> int32 quant\n");
+    printf("Testing FP32 <-> int32 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int32_to_float( M, N, ldi, ldo );
   } else {
     printf(" Not implemented case! Usage: %s [8/4/2/1] [8/4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );

@@ -18,7 +18,7 @@ template <typename T>
 class EmbeddingBagImpl
 {
 public:
-  EmbeddingBagImpl(int M, int E) : M(M), E(E)
+  EmbeddingBagImpl(long M, long E) : M(M), E(E)
   {
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
 
@@ -47,7 +47,7 @@ public:
   }
 
 #ifdef USE_LIBXSMM_JIT
-  void forward(int N, int NS, const long *offsets, const long *indices, T *output_)
+  void forward(long N, long NS, const long *offsets, const long *indices, T *output_)
   {
     T(*__restrict weight)[E] = (T(*)[*])weight_;
     T(*__restrict output)[E] = (T(*)[*])output_;
@@ -66,13 +66,13 @@ public:
     }
   }
 #else
-  void forward(int N, int NS, const long *offsets, const long *indices, T *output_)
+  void forward(long N, long NS, const long *offsets, const long *indices, T *output_)
   {
     T(*__restrict weight)[E] = (T(*)[*])weight_;
     T(*__restrict output)[E] = (T(*)[*])output_;
 
 #pragma omp parallel for
-    for (int n = 0; n < N; n++)
+    for (long n = 0; n < N; n++)
     {
       auto start = offsets[n];
       auto end = (n < N - 1 ? offsets[n + 1] : NS);
@@ -93,13 +93,13 @@ public:
 #endif
 
 #ifdef USE_LIBXSMM_JIT
-  void backward(int N, int NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
+  void backward(long N, long NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
   {
     T(*__restrict gradout)[E] = (T(*)[*])gradout_;
     T(*__restrict values)[E] = (T(*)[*])values_;
     int _ld = E;
 #pragma omp parallel for
-    for (int n = 0; n < N; n++)
+    for (long n = 0; n < N; n++)
     {
       libxsmm_meltw_unary_param unary_param;
       auto start = offsets[n];
@@ -108,19 +108,19 @@ public:
 
       unary_param.in.primary    = (void*)&gradout[n][0];
       unary_param.out.primary   = (void*)&values[start][0];
-      unary_param.out.secondary = (void*)&_N;
+      unary_param.op.primary = (void*)&_N;
 
       kernel1(&unary_param);
     }
   }
 #else
-  void backward(int N, int NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
+  void backward(long N, long NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
   {
     T(*__restrict gradout)[E] = (T(*)[*])gradout_;
     T(*__restrict values)[E] = (T(*)[*])values_;
 
 #pragma omp parallel for
-    for (int n = 0; n < N; n++)
+    for (long n = 0; n < N; n++)
     {
       auto start = offsets[n];
       auto end = (n < N - 1 ? offsets[n + 1] : NS);
@@ -138,7 +138,7 @@ public:
 #endif
 
 #ifdef USE_LIBXSMM_JIT
-  void update(int NS, const T *grads_, const long *indices, float lr, int M, int use_rtm)
+  void update(long NS, const T *grads_, const long *indices, float lr, long M, int use_rtm)
   {
     int use_lock_free = use_rtm == 0 ? 1: 0;
     T(*__restrict weight)[E] = (T(*)[*])weight_;
@@ -182,7 +182,7 @@ public:
     }
   }
 #else
-  void update(int NS, const T *grads_, const long *indices, float lr, int M, int use_rtm)
+  void update(long NS, const T *grads_, const long *indices, float lr, long M, int use_rtm)
   {
     T(*__restrict weight)[E] = (T(*)[*])weight_;
     T(*__restrict grads)[E] = (T(*)[*])grads_;
@@ -222,8 +222,8 @@ public:
 #endif
 
   T *weight_;
-  int M;
-  int E;
+  long M;
+  long E;
 
 #ifdef USE_LIBXSMM_JIT
   int _ld;

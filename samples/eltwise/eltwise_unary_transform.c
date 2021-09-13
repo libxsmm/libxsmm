@@ -78,9 +78,9 @@ int test_normal_to_normalT_64bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS 64bit\n");
+    printf("SUCCESS unary transpose 64bit\n");
   } else {
-    printf("FAILURE 64bit\n");
+    printf("FAILURE unary transpose 64bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -155,9 +155,9 @@ int test_normal_to_normalT_32bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS 32bit\n");
+    printf("SUCCESS unary tranpose 32bit\n");
   } else {
-    printf("FAILURE 32bit\n");
+    printf("FAILURE unary transose 32bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -232,9 +232,9 @@ int test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS 16bit\n");
+    printf("SUCCESS unary transpose 16bit\n");
   } else {
-    printf("FAILURE 16bit\n");
+    printf("FAILURE unary transpose 16bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -309,9 +309,9 @@ int test_normal_to_normalT_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS 08bit\n");
+    printf("SUCCESS unary transpose 08bit\n");
   } else {
-    printf("FAILURE 08bit\n");
+    printf("FAILURE unary transpose 08bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -405,9 +405,9 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS 16bit\n");
+    printf("SUCCESS unary VNNI transpose 16bit\n");
   } else {
-    printf("FAILURE 16bit\n");
+    printf("FAILURE unary VNNI transpose 16bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -499,9 +499,9 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS 16bit\n");
+    printf("SUCCESS unary VNNI transform 16bit\n");
   } else {
-    printf("FAILURE 16bit\n");
+    printf("FAILURE unary VNNI transform 16bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -580,9 +580,9 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS 16bit\n");
+    printf("SUCCESS unary mod2 padn 16bit\n");
   } else {
-    printf("FAILURE 16bit\n");
+    printf("FAILURE unary mod2 padn 16bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -661,9 +661,9 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS 16bit\n");
+    printf("SUCCESS unary mod2 padm 16bit\n");
   } else {
-    printf("FAILURE 16bit\n");
+    printf("FAILURE unary mod2 padm 16bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -743,9 +743,9 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS 16bit\n");
+    printf("SUCCESS unary mod2 padnm 16bit\n");
   } else {
-    printf("FAILURE 16bit\n");
+    printf("FAILURE unary mod2 padnm 16bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -857,31 +857,31 @@ int main( int argc, char* argv[] ) {
   ldo   = atoi(argv[6]);
 
   if ( op == 'T' && dtype == 8 ) {
-    printf("Testing 64bit Norm to Norm Transpose\n");
+    printf("Testing 64bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_normal_to_normalT_64bit( M, N, ldi, ldo );
   } else if ( op == 'T' && dtype == 4 ) {
-    printf("Testing 32bit Norm to Norm Transpose\n");
+    printf("Testing 32bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_normal_to_normalT_32bit( M, N, ldi, ldo );
   } else if ( op == 'T' && dtype == 2 ) {
-    printf("Testing 16bit Norm to Norm Transpose\n");
+    printf("Testing 16bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_normal_to_normalT_16bit( M, N, ldi, ldo );
   } else if ( op == 'T' && dtype == 1 ) {
-    printf("Testing 08bit Norm to Norm Transpose\n");
+    printf("Testing 08bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_normal_to_normalT_08bit( M, N, ldi, ldo );
   } else if ( op == 'R' && dtype == 2 ) {
-    printf("Testing 16bit VNNI to VNNI Transpose\n");
+    printf("Testing 16bit VNNI to VNNI Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_vnni_to_vnniT_16bit( M, N, ldi, ldo );
   } else if ( op == 'V' && dtype == 2 ) {
-    printf("Testing 16bit NORM to VNNI Reformat\n");
+    printf("Testing 16bit NORM to VNNI Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_to_vnni_16bit( M, N, ldi, ldo );
   } else if ( op == 'X' && dtype == 2 ) {
-    printf("Testing 16bit NORM PADN Mod2 Reformat\n");
+    printf("Testing 16bit NORM PADN Mod2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padn_mod2_16bit( M, N, ldi, ldo );
   } else if ( op == 'Y' && dtype == 2 ) {
-    printf("Testing 16bit NORM PADM Mod2 Reformat\n");
+    printf("Testing 16bit NORM PADM Mod2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padm_mod2_16bit( M, N, ldi, ldo );
   } else if ( op == 'Z' && dtype == 2 ) {
-    printf("Testing 16bit NORM PADNM Mod2 Reformat\n");
+    printf("Testing 16bit NORM PADNM Mod2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padnm_mod2_16bit( M, N, ldi, ldo );
   } else {
     printf(" Not implemented case! Usage: %s [T/V/R/X/Y/Z] [8/4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
