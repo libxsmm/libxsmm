@@ -1504,6 +1504,8 @@ void libxsmm_generator_transform_norm_to_normt_08bit_avx512_microkernel( libxsmm
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   LIBXSMM_UNUSED( i_mask_reg_0 );
   LIBXSMM_UNUSED( i_mask_reg_1 );
+  LIBXSMM_UNUSED( i_mask_reg_2 );
+  LIBXSMM_UNUSED( i_mask_reg_3 );
   LIBXSMM_UNUSED( i_gp_reg_mask );
 
 #if 0
