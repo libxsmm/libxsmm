@@ -28,9 +28,10 @@
 #define REDOP_SUM   1
 #define REDOP_MAX   2
 #define REDOP_MIN   3
+#define OFFSET 1.0
 
 LIBXSMM_INLINE
-void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n )
+void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n, unsigned int avoid_small_vals )
 {
   unsigned int i, j;
   double dtmp;
@@ -46,6 +47,14 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
      for ( i = 1; i <= ld; i++ )
      {
         dtmp = 1.0 - 2.0*libxsmm_rng_f64();
+        if (avoid_small_vals > 0) {
+          if (dtmp < 0.0 && dtmp > -1.0 * OFFSET) {
+             dtmp = dtmp - OFFSET;
+          }
+          if (dtmp > 0.0 && dtmp <  OFFSET) {
+             dtmp = dtmp + OFFSET;
+          }
+        }
         matrix [ (j-1)*ld + (i-1) ] = (float) dtmp;
      }
   }
@@ -93,6 +102,7 @@ int main(int argc, char* argv[])
   unsigned int argop_vec_0;
   unsigned int argop_vec_1;
   libxsmm_datatype idx_dtype;
+  unsigned int avoid_small_vals = 0;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -115,6 +125,8 @@ int main(int argc, char* argv[])
   if ( argc > 12 ) idx_mode        = atoi(argv[12]);
   if ( argc > 13 ) iters       = atoi(argv[13]);
   if ( argc > 14 ) use_bf16    = atoi(argv[14]);
+
+  if (op == OP_DIV)  avoid_small_vals = 1;
 
   /* Some basic arg checking... */
   if ((use_regular_vecin > 0) && (argop_mode > 0)) {
@@ -327,11 +339,11 @@ int main(int argc, char* argv[])
     cols_ind_array2_i32[i] = (unsigned int) cols_ind_array2[i];
   }
 
-  sfill_matrix ( inp_matrix, ld_in, m, n );
-  sfill_matrix ( inp_matrix2, ld_in, m, _n );
-  sfill_matrix ( ref_result, ld_in, m, 1 );
+  sfill_matrix ( inp_matrix, ld_in, m, n, avoid_small_vals );
+  sfill_matrix ( inp_matrix2, ld_in, m, _n, avoid_small_vals );
+  sfill_matrix ( ref_result, ld_in, m, 1, avoid_small_vals );
   memcpy(result, ref_result, ld_in * sizeof(float));
-  sfill_matrix ( scale_vals, n_cols_idx, n_cols_idx, 1 );
+  sfill_matrix ( scale_vals, n_cols_idx, n_cols_idx, 1, avoid_small_vals );
 
   if (use_bf16 == 1) {
     libxsmm_rne_convert_fp32_bf16( inp_matrix, inp_matrix_bf16, ld_in*n );
