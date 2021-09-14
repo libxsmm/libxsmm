@@ -88,6 +88,8 @@ int main(int argc, char* argv[])
   unsigned int use_bf16 = 0;
   unsigned int argop_mode = 0;
   unsigned int idx_mode = 0;
+  unsigned int use_regular_vecin = 0;
+  unsigned int _n = 0;
   unsigned int argop_vec_0;
   unsigned int argop_vec_1;
   libxsmm_datatype idx_dtype;
@@ -107,11 +109,18 @@ int main(int argc, char* argv[])
   if ( argc > 6 ) op_order    = atoi(argv[6]);
   if ( argc > 7 ) scale_op_res= atoi(argv[7]);
   if ( argc > 8 ) redop       = atoi(argv[8]);
-  if ( argc > 9 ) use_implicit_idx = atoi(argv[9]);
-  if ( argc > 10 ) argop_mode      = atoi(argv[10]);
-  if ( argc > 11 ) idx_mode        = atoi(argv[11]);
-  if ( argc > 12 ) iters       = atoi(argv[12]);
-  if ( argc > 13 ) use_bf16    = atoi(argv[13]);
+  if ( argc > 9 ) use_regular_vecin = atoi(argv[9]);
+  if ( argc > 10 ) use_implicit_idx = atoi(argv[10]);
+  if ( argc > 11 ) argop_mode      = atoi(argv[11]);
+  if ( argc > 12 ) idx_mode        = atoi(argv[12]);
+  if ( argc > 13 ) iters       = atoi(argv[13]);
+  if ( argc > 14 ) use_bf16    = atoi(argv[14]);
+
+  /* Some basic arg checking... */
+  if ((use_regular_vecin > 0) && (argop_mode > 0)) {
+    fprintf(stderr, "When using resular vec_in (i.e. non-indexed) using argop params is meaningless...\n");
+    exit(EXIT_FAILURE);
+  }
 
   if (argop_mode == 1) {
     argop_vec_0 = 1;
@@ -197,10 +206,12 @@ int main(int argc, char* argv[])
   }
 
   if (op != OP_COPY) {
-    if (use_implicit_idx > 0) {
-      opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC;
-    } else {
-      opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC;
+    if (use_regular_vecin == 0) {
+      if (use_implicit_idx > 0) {
+        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC;
+      } else {
+        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC;
+      }
     }
   }
 
@@ -225,13 +236,14 @@ int main(int argc, char* argv[])
   }
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
+  _n = (use_regular_vecin > 0) ? 1 : n;
   ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
 
   /* Allocate arrays  */
   inp_matrix              = (float*) malloc(ld_in*n*sizeof(float) );
   result                  = (float*) malloc(ld_in*sizeof(float) );
   ref_result              = (float*) malloc(ld_in*sizeof(float) );
-  inp_matrix2             = (float*) malloc(ld_in*n*sizeof(float) );
+  inp_matrix2             = (float*) malloc(ld_in*_n*sizeof(float) );
   cols_ind_array          = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
   cols_ind_array2         = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
   cols_ind_array_i32      = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
@@ -295,7 +307,7 @@ int main(int argc, char* argv[])
   }
 
   sfill_matrix ( inp_matrix, ld_in, m, n );
-  sfill_matrix ( inp_matrix2, ld_in, m, n );
+  sfill_matrix ( inp_matrix2, ld_in, m, _n );
   sfill_matrix ( ref_result, ld_in, m, 1 );
   memcpy(result, ref_result, ld_in * sizeof(float));
   sfill_matrix ( scale_vals, n_cols_idx, n_cols_idx, 1 );
@@ -303,8 +315,8 @@ int main(int argc, char* argv[])
   if (use_bf16 == 1) {
     libxsmm_rne_convert_fp32_bf16( inp_matrix, inp_matrix_bf16, ld_in*n );
     libxsmm_convert_bf16_f32( inp_matrix_bf16, inp_matrix, ld_in*n );
-    libxsmm_rne_convert_fp32_bf16( inp_matrix2, inp_matrix_bf162, ld_in*n );
-    libxsmm_convert_bf16_f32( inp_matrix_bf162, inp_matrix2, ld_in*n );
+    libxsmm_rne_convert_fp32_bf16( inp_matrix2, inp_matrix_bf162, ld_in*_n );
+    libxsmm_convert_bf16_f32( inp_matrix_bf162, inp_matrix2, ld_in*_n );
     libxsmm_rne_convert_fp32_bf16( scale_vals, scale_vals_bf16, n_cols_idx );
     libxsmm_convert_bf16_f32( scale_vals_bf16, scale_vals, n_cols_idx);
     libxsmm_rne_convert_fp32_bf16( result, result_bf16, ld_in );
@@ -327,7 +339,11 @@ int main(int argc, char* argv[])
   for (jj = 0; jj < n_cols_idx; jj++) {
     float op_res = 0.0f;
     j = cols_ind_array[jj];
-    _j = cols_ind_array2[jj];
+    if (use_regular_vecin == 1) {
+      _j = 0;
+    } else {
+      _j = cols_ind_array2[jj];
+    }
     for (i = 0; i < m; i++) {
       if (op != OP_COPY) {
         if (op == OP_ADD) {
@@ -422,12 +438,20 @@ int main(int argc, char* argv[])
     params.in_matrix    = inp_matrix;
     params.out_vec      = result;
     params.scale_vals   = scale_vals;
-    params.in_matrix2    = inp_matrix2;
+    if (use_regular_vecin == 1) {
+      params.in_vec       = (redop == REDOP_NONE) ? result : inp_matrix2;
+    } else {
+      params.in_matrix2    = inp_matrix2;
+    }
   } else {
     params.in_matrix    = inp_matrix_bf16;
     params.out_vec      = result_bf16;
     params.scale_vals   = scale_vals_bf16;
-    params.in_matrix2    = inp_matrix_bf162;
+    if (use_regular_vecin == 1) {
+      params.in_vec       = (redop == REDOP_NONE) ? result_bf16 : inp_matrix_bf162;
+    } else {
+      params.in_matrix2    = inp_matrix_bf162;
+    }
   }
 
   if ( idx_mode == 0 ) {
@@ -450,6 +474,7 @@ int main(int argc, char* argv[])
   /* compare */
   printf("#   Correctness  #\n");
   printf("OP=%s, OPORDER=%s, SCALE_OP_RES=%s, REDOP=%s\n", opname, opordername, scaleopresname, redopname);
+  printf("IDX_VEC_IN=%d, IMPLICIT_IDX_VEC_IN=%d, ARGOP_MODE=%d, IDX_SIZE=%d\n", (use_regular_vecin > 0) ? 0 : 1, use_implicit_idx, argop_mode, (idx_mode == 0) ? 4 : 8);
   printf("##########################################\n");
   if (use_bf16 == 1) {
     libxsmm_convert_bf16_f32( result_bf16, result, ld_in);
@@ -498,7 +523,11 @@ int main(int argc, char* argv[])
     for (jj = 0; jj < n_cols_idx; jj++) {
       float op_res = 0.0f;
       j = cols_ind_array[jj];
-      _j = cols_ind_array2[jj];
+      if (use_regular_vecin == 1) {
+        _j = 0;
+      } else {
+        _j = cols_ind_array2[jj];
+      }
       for (i = 0; i < m; i++) {
         if (op != OP_COPY) {
           if (op == OP_ADD) {
