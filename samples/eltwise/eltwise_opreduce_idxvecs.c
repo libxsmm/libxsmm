@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 {
   unsigned int m = 64, n = 64, i, j, jj, k, iters = 10000, n_cols_idx = 32, op = 0, op_order = 0, scale_op_res = 0, redop = 0, use_implicit_idx = 0, _j = 0;
   libxsmm_blasint ld_in = 64;
-  float  *inp_matrix, *result, *ref_result, *inp_matrix2, *scale_vals;
+  float  *inp_matrix, *result, *ref_result, *inp_matrix2, *scale_vals, *vec_in;
   libxsmm_bfloat16 *inp_matrix_bf16, *result_bf16, *inp_matrix_bf162, *scale_vals_bf16;
   unsigned long long *cols_ind_array, *cols_ind_array2, *all_ns;
   unsigned long long *argop_off_vec_0, *argop_off_vec_1, *ref_argop_off_vec_0, *ref_argop_off_vec_1;
@@ -118,7 +118,28 @@ int main(int argc, char* argv[])
 
   /* Some basic arg checking... */
   if ((use_regular_vecin > 0) && (argop_mode > 0)) {
-    fprintf(stderr, "When using resular vec_in (i.e. non-indexed) using argop params is meaningless...\n");
+    fprintf(stderr, "When using regular vec_in (i.e. non-indexed) using argop params is meaningless...\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if ((op == 0) && (op_order == 0) && (use_regular_vecin > 0)) {
+    fprintf(stderr, "When using COPY OP and regular vec_in, only supported OP order is VECIDX_VECIN...\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if ((op == 0) && (argop_mode > 0)) {
+    if ((op_order == 0) && (argop_mode == 1 || argop_mode == 3)) {
+      fprintf(stderr, "When using COPY OP and and order VECIN_VECIDX the only argop_modes that make sense are 2 or 0...\n");
+      exit(EXIT_FAILURE);
+    }
+    if ((op_order == 1) && (argop_mode == 2 || argop_mode == 3)) {
+      fprintf(stderr, "When using COPY OP and and order VECIDX_VECIN the only argop_modes that make sense are 1 or 0...\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  if ((redop == 0) && (use_regular_vecin == 0)) {
+    fprintf(stderr, "If redop is NONE only regular_vec_in makes sense...\n");
     exit(EXIT_FAILURE);
   }
 
@@ -346,42 +367,46 @@ int main(int argc, char* argv[])
     }
     for (i = 0; i < m; i++) {
       if (redop == REDOP_NONE) {
-        inp_matrix2[_j * ld_in + i] = ref_result[i];
+        vec_in = ref_result;
+      } else {
+        vec_in = inp_matrix2;
       }
+
       if (op != OP_COPY) {
         if (op == OP_ADD) {
-          op_res = inp_matrix[j * ld_in + i] + inp_matrix2[_j * ld_in + i];
+          op_res = inp_matrix[j * ld_in + i] + vec_in[_j * ld_in + i];
         }
         if (op == OP_MUL) {
-          op_res = inp_matrix[j * ld_in + i] * inp_matrix2[_j * ld_in + i];
+          op_res = inp_matrix[j * ld_in + i] * vec_in[_j * ld_in + i];
         }
         if (op == OP_SUB) {
           if (op_order == OPORDER_VECIN_VECIDX) {
-            op_res = inp_matrix2[_j * ld_in + i] - inp_matrix[j * ld_in + i];
+            op_res = vec_in[_j * ld_in + i] - inp_matrix[j * ld_in + i];
           }
           if (op_order == OPORDER_VECIDX_VECIN) {
-            op_res = inp_matrix[j * ld_in + i] - inp_matrix2[_j * ld_in + i];
+            op_res = inp_matrix[j * ld_in + i] - vec_in[_j * ld_in + i];
           }
         }
         if (op == OP_DIV) {
           if (op_order == OPORDER_VECIN_VECIDX) {
-            op_res = inp_matrix2[_j * ld_in + i] / inp_matrix[j * ld_in + i];
+            op_res = vec_in[_j * ld_in + i] / inp_matrix[j * ld_in + i];
           }
           if (op_order == OPORDER_VECIDX_VECIN) {
-            op_res = inp_matrix[j * ld_in + i] / inp_matrix2[_j * ld_in + i];
+            op_res = inp_matrix[j * ld_in + i] / vec_in[_j * ld_in + i];
           }
         }
       } else {
         if (op_order == OPORDER_VECIDX_VECIN) {
          op_res = inp_matrix[j * ld_in + i];
         } else {
-         op_res = inp_matrix2[_j * ld_in + i];
+         op_res = vec_in[_j * ld_in + i];
         }
       }
 
       if (scale_op_res == SCALE_OP_RESULT) {
         op_res = op_res * scale_vals[jj];
       }
+
       if (redop != REDOP_NONE) {
         if (redop == REDOP_SUM) {
           ref_result[i] += op_res;
@@ -533,36 +558,39 @@ int main(int argc, char* argv[])
       }
       for (i = 0; i < m; i++) {
         if (redop == REDOP_NONE) {
-          inp_matrix2[_j * ld_in + i] = ref_result[i];
+          vec_in = ref_result;
+        } else {
+          vec_in = inp_matrix2;
         }
+
         if (op != OP_COPY) {
           if (op == OP_ADD) {
-            op_res = inp_matrix[j * ld_in + i] + inp_matrix2[_j * ld_in + i];
+            op_res = inp_matrix[j * ld_in + i] + vec_in[_j * ld_in + i];
           }
           if (op == OP_MUL) {
-            op_res = inp_matrix[j * ld_in + i] * inp_matrix2[_j * ld_in + i];
+            op_res = inp_matrix[j * ld_in + i] * vec_in[_j * ld_in + i];
           }
           if (op == OP_SUB) {
             if (op_order == OPORDER_VECIN_VECIDX) {
-              op_res = inp_matrix2[_j * ld_in + i] - inp_matrix[j * ld_in + i];
+              op_res = vec_in[_j * ld_in + i] - inp_matrix[j * ld_in + i];
             }
             if (op_order == OPORDER_VECIDX_VECIN) {
-              op_res = inp_matrix[j * ld_in + i] - inp_matrix2[_j * ld_in + i];
+              op_res = inp_matrix[j * ld_in + i] - vec_in[_j * ld_in + i];
             }
           }
           if (op == OP_DIV) {
             if (op_order == OPORDER_VECIN_VECIDX) {
-              op_res = inp_matrix2[_j * ld_in + i] / inp_matrix[j * ld_in + i];
+              op_res = vec_in[_j * ld_in + i] / inp_matrix[j * ld_in + i];
             }
             if (op_order == OPORDER_VECIDX_VECIN) {
-              op_res = inp_matrix[j * ld_in + i] / inp_matrix2[_j * ld_in + i];
+              op_res = inp_matrix[j * ld_in + i] / vec_in[_j * ld_in + i];
             }
           }
         } else {
           if (op_order == OPORDER_VECIDX_VECIN) {
            op_res = inp_matrix[j * ld_in + i];
           } else {
-           op_res = inp_matrix2[_j * ld_in + i];
+           op_res = vec_in[_j * ld_in + i];
           }
         }
 
