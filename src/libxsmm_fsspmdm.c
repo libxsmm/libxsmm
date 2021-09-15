@@ -94,6 +94,14 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   const int N_dense = vlen;
   static int error_once = 0;
 
+  /* TODO: new vars */
+  unsigned int a_unique;
+  double* a_unique_values = NULL;
+  unsigned int a_unique_reg;
+  int archid;
+  int unlimited_unique;
+  const double* a_sparse;
+
   /* some checks */
   if (0 != (N % vlen)
     || (LIBXSMM_NEQ(beta, 1.0) && LIBXSMM_NEQ(beta, 0.0))
@@ -187,6 +195,73 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   }
   a_csr_rowptr[M] = a_nnz;
 
+  /* Let's figure out how many unique values we have */
+  a_unique_values = (double*)(0 != a_nnz ? malloc(sizeof(double) * a_nnz) : NULL);
+
+  if(NULL == a_unique_values) {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR (libxsmm_dfsspmdm_create): failed to packed A matrix!\n");
+    }
+    return NULL;
+  }
+
+  a_unique = 1;
+  a_unique_values[0] = fabs(a_csr_values[0]);
+
+  for (n = 1; n < a_nnz; n++) {
+    unsigned int l_hit = 0;
+    /* search for the value */
+    for (i = 0; i < a_unique; i++) {
+      if (!(a_unique_values[i] < fabs(a_csr_values[n])) &&
+          !(a_unique_values[i] > fabs(a_csr_values[n]))) /*a_unique_values[i] == a_csr_values[n]*/ {
+        l_hit = 1;
+        break;
+      }
+    }
+    /* value was not found */
+    if (l_hit == 0) {
+      a_unique_values[a_unique] = fabs(a_csr_values[n]);
+      a_unique++;
+    }
+  }
+
+  /* check if A contains too many unique non-zeros for storing in registers */
+  archid = libxsmm_get_target_archid();
+
+  if (LIBXSMM_X86_AVX2 == archid) {
+    a_unique_reg = 15;
+
+  } else if (LIBXSMM_X86_AVX512_MIC == archid ||
+            LIBXSMM_X86_AVX512_KNM == archid ||
+            LIBXSMM_X86_AVX512_CORE == archid ||
+            LIBXSMM_X86_AVX512_CLX == archid ||
+            LIBXSMM_X86_AVX512_CPX == archid ||
+            LIBXSMM_X86_AVX512_SPR == archid) {
+    a_unique_reg = 240;
+
+  } else {
+    free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
+    free( new_handle );
+    free( a_unique_values );
+    libxsmm_free( aa_dense );
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR (libxsmm_dfsspmdm_create): unsupported architecture!\n");
+    }
+    return NULL;
+  }
+
+  unlimited_unique = a_unique > a_unique_reg ? 1 : 0;
+
+  if (unlimited_unique) {
+    a_sparse = a_unique_values;
+  } else {
+    a_sparse = perm;
+  }
+
   LIBXSMM_HANDLE_ERROR_OFF_BEGIN();
   {
     /* Attempt to JIT a sparse kernel */
@@ -278,7 +353,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse1 ) {
-          k_sparse1( perm, B + j, C + j );
+          k_sparse1( a_sparse, B + j, C + j );
         }
       }
       dt_sparse1 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
@@ -289,7 +364,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse2 ) {
-          k_sparse2( perm, B + j, C + j );
+          k_sparse2( a_sparse, B + j, C + j );
         }
       }
       dt_sparse2 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
@@ -301,6 +376,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
       new_handle->a_dense = aa_dense;
+      free(a_unique_values);
     } else {
       libxsmm_free( aa_dense );
     }
@@ -310,6 +386,9 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       assert(NULL != k_sparse1);
       new_handle->N_chunksize = N_sparse1;
       new_handle->kernel = k_sparse1;
+      if (unlimited_unique) {
+        new_handle->a_packed = a_unique_values;
+      }
     } else if ( NULL != k_sparse1 ) {
       LIBXSMM_ASSIGN127( &fp, &k_sparse1 );
       libxsmm_free( fp );
@@ -320,6 +399,9 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       assert(NULL != k_sparse2);
       new_handle->N_chunksize = N_sparse2;
       new_handle->kernel = k_sparse2;
+      if (unlimited_unique) {
+        new_handle->a_packed = a_unique_values;
+      }
     } else if ( NULL != k_sparse2 ) {
       LIBXSMM_ASSIGN127( &fp, &k_sparse2 );
       libxsmm_free( fp );
@@ -336,6 +418,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
     libxsmm_free( aa_dense );
     free( new_handle );
+    free(a_unique_values);
     new_handle = NULL;
   }
 
@@ -623,14 +706,18 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
   int i;
   assert( handle != NULL );
 
-  if ( handle->a_dense == NULL ) {
+  if (handle->a_dense != NULL) {
+    for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
+      handle->kernel( B+i, handle->a_dense, C+i );
+    }
+  } else if (handle->a_packed != NULL) {
+    for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
+      handle->kernel( handle->a_packed, B+i, C+i );
+    }
+  } else {
     const double *const perm = internal_dfsspmdm_init();
     for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
       handle->kernel( perm, B+i, C+i );
-    }
-  } else {
-    for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
-      handle->kernel( B+i, handle->a_dense, C+i );
     }
   }
 }
