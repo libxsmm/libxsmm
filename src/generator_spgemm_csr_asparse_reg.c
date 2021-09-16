@@ -158,20 +158,20 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   /* TODO: refactor later */
   if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
     if ( l_unique > 16 - l_n_blocking ) {
-      l_m_blocking = getenv("M_BLOCKING") ? atof(getenv("M_BLOCKING")) : 1;
+      l_m_blocking = 8 / l_n_blocking;
     } else {
       l_m_blocking = 1;
     }
   } else {
     if ( l_fp64 ) {
       if ( l_unique > (32 - l_n_blocking - 1)*8 ) {
-        l_m_blocking = getenv("M_BLOCKING") ? atof(getenv("M_BLOCKING")) : 1;
+        l_m_blocking = 8 / l_n_blocking;
       } else {
         l_m_blocking = 1;
       }
     } else {
       if ( l_unique > (32 - l_n_blocking - 1)*16 ) {
-        l_m_blocking = getenv("M_BLOCKING") ? atof(getenv("M_BLOCKING")) : 1;
+        l_m_blocking = 8 / l_n_blocking;
       } else {
         l_m_blocking = 1;
       }
