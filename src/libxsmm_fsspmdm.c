@@ -213,7 +213,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   for (n = 1; n < a_nnz; n++) {
     unsigned int l_hit = 0;
     /* search for the value */
-    for (i = 0; i < a_unique; i++) {
+    for (i = 0; i < (int) a_unique; i++) {
       if (!(a_unique_values[i] < fabs(a_csr_values[n])) &&
           !(a_unique_values[i] > fabs(a_csr_values[n]))) /*a_unique_values[i] == a_csr_values[n]*/ {
         l_hit = 1;
