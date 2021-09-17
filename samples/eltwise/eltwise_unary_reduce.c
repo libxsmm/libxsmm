@@ -42,7 +42,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, i, j, jj, k, iters = 10000, n_cols_idx = 0, reduce_op = 0, use_bf16 = 0;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, i, j, jj, k, iters = 10000, n_cols_idx = 0, reduce_op = 0, use_bf16 = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
   libxsmm_bfloat16 *sinp_bf16 = NULL;
@@ -83,6 +83,8 @@ int main(int argc, char* argv[])
   if ( argc > 9 ) n_cols_idx = atoi(argv[9]);
   if ( argc > 10 ) iters = atoi(argv[10]);
 
+  printf("CL is: %d %d %d %d %d %d %d %d %d %d\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, use_bf16, n_cols_idx, iters);
+
 #if 0
   libxsmm_meltw_opreduce_vecs_flags opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT;
   libxsmm_meltwfunction_opreduce_vecs_idx new_kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64, opredop_flags);
@@ -92,6 +94,7 @@ int main(int argc, char* argv[])
   n = LIBXSMM_MAX(n,1);
   ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
   result_size = (reduce_rows == 1) ? n : ld_in;
+  result_size_check = (reduce_rows == 1) ? n : m;
 
 #if 0
   int m = E;
@@ -330,7 +333,7 @@ int main(int argc, char* argv[])
     if (use_bf16 == 1) {
       libxsmm_convert_bf16_f32( result_reduce_elts_bf16, result_reduce_elts, result_size );
     }
-    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts, result_reduce_elts, 0, 0);
+    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_F32, result_size_check, 1, ref_result_reduce_elts, result_reduce_elts, 0, 0);
     printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
     printf("L1 test       : %.25g\n", norms_elts.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
@@ -354,7 +357,7 @@ int main(int argc, char* argv[])
         printf("# BF16 Correctness - Eltwise-square reduce  #\n");
       }
       printf("##########################################\n");
-      libxsmm_matdiff(&norms_elts_squared, LIBXSMM_DATATYPE_F32, result_size, 1, ref_result_reduce_elts_squared, result_reduce_elts_squared, 0, 0);
+      libxsmm_matdiff(&norms_elts_squared, LIBXSMM_DATATYPE_F32, result_size_check, 1, ref_result_reduce_elts_squared, result_reduce_elts_squared, 0, 0);
       printf("L1 reference  : %.25g\n", norms_elts_squared.l1_ref);
       printf("L1 test       : %.25g\n", norms_elts_squared.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_elts_squared.l2_abs);
