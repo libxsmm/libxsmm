@@ -45,17 +45,19 @@ int main(int argc, char* argv[])
   unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, i, j, jj, k, iters = 10000, n_cols_idx = 0, reduce_op = 0, use_bf16 = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
-  libxsmm_bfloat16 *sinp_bf16, *result_reduce_elts_bf16, *result_reduce_elts_squared_bf16;
+  libxsmm_bfloat16 *sinp_bf16 = NULL;
+  libxsmm_bfloat16 *result_reduce_elts_bf16 = NULL;
+  libxsmm_bfloat16 *result_reduce_elts_squared_bf16 = NULL;
 #ifdef FP16_REDUCE_COLSIDX
   unsigned short *sinp_hp, *result_reduce_elts_hp;
 #endif
   unsigned long long *cols_ind_array;
   libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
-  libxsmm_meltwfunction_unary kernel;
+  libxsmm_meltwfunction_unary kernel = NULL;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_redu_flags jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
-  libxsmm_meltwfunction_reduce_cols_idx kernel2;
+  libxsmm_meltwfunction_reduce_cols_idx kernel2 = NULL;
   libxsmm_meltw_reduce_cols_idx_param params2;
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;
   unsigned long long l_start, l_end;
