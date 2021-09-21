@@ -18,6 +18,23 @@
  */
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_power_instruction_b_conditional( unsigned int  i_instr,
+                                                      unsigned char i_bo,
+                                                      unsigned char i_bi,
+                                                      unsigned int  i_bd ) {
+  unsigned int l_instr = i_instr;
+
+  /* set BO */
+  l_instr |= (unsigned int)( (0x1f & i_bo) << (31- 6-4) );
+  /* set BI */
+  l_instr |= (unsigned int)( (0x1f & i_bi) << (31-11-4) );
+  /* set BD */
+  l_instr |= (unsigned int)( (0x3fff & i_bd) << (31-16-13) );
+
+  return l_instr;
+}
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_power_instruction_fip_storage_access( unsigned int  i_instr,
                                                            unsigned char i_rs,
                                                            unsigned char i_ra,
@@ -45,6 +62,25 @@ unsigned int libxsmm_power_instruction_fip_arithmetic( unsigned int  i_instr,
   l_instr |= (unsigned int)( (0x1f & i_rt) << (31- 6-4) );
   /* set RA */
   l_instr |= (unsigned int)( (0x1f & i_ra) << (31-11-4) );
+  /* set SI */
+  l_instr |= (unsigned int)( (0xffff & i_si) << (31-16-15) );
+
+  return l_instr;
+}
+
+unsigned int libxsmm_power_instruction_fip_compare( unsigned int  i_instr,
+                                                    unsigned char i_bf,
+                                                    unsigned char i_l,
+                                                    unsigned char i_ra,
+                                                    unsigned int  i_si ) {
+   unsigned int l_instr = i_instr;
+
+   /* set BF */
+  l_instr |= (unsigned int)( (0x7 & i_bf) << (31- 6-2) );
+  /* set L */
+  l_instr |= (unsigned int)( (0x1 & i_l) << (31- 10) );
+  /* set RA */
+  l_instr |= (unsigned int)( (0x1f & i_ra) << (31- 11-4) );
   /* set SI */
   l_instr |= (unsigned int)( (0xffff & i_si) << (31-16-15) );
 
@@ -215,8 +251,14 @@ unsigned int libxsmm_power_instruction_generic_3( unsigned int i_instr,
                                                   unsigned int i_arg2 ) {
   unsigned int l_instr = 0;
 
-  if( i_instr == LIBXSMM_POWER_INSTR_FIP_LD ||
-      i_instr == LIBXSMM_POWER_INSTR_FIP_STD ) {
+  if( i_instr == LIBXSMM_POWER_INSTR_B_BC ) {
+    l_instr = libxsmm_power_instruction_b_conditional( i_instr,
+                                                       i_arg0,
+                                                       i_arg1,
+                                                       i_arg2 );
+  }
+  else if( i_instr == LIBXSMM_POWER_INSTR_FIP_LD ||
+           i_instr == LIBXSMM_POWER_INSTR_FIP_STD ) {
     l_instr = libxsmm_power_instruction_fip_storage_access( i_instr,
                                                             i_arg0,
                                                             i_arg1,
@@ -280,7 +322,14 @@ unsigned int libxsmm_power_instruction_generic_4( unsigned int i_instr,
                                                   unsigned int i_arg3 ) {
   unsigned int l_instr = 0;
 
-  if( i_instr == LIBXSMM_POWER_INSTR_FIP_RLDICR ) {
+  if( i_instr == LIBXSMM_POWER_INSTR_FIP_CMPI ) {
+    l_instr = libxsmm_power_instruction_fip_compare( i_instr,
+                                                     i_arg0,
+                                                     i_arg1,
+                                                     i_arg2,
+                                                     i_arg3 );
+  }
+  else if( i_instr == LIBXSMM_POWER_INSTR_FIP_RLDICR ) {
     l_instr = libxsmm_power_instruction_fip_rotate( i_instr,
                                                     i_arg0,
                                                     i_arg1,

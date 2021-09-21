@@ -165,12 +165,18 @@
 /* undefined instruction */
 #define LIBXSMM_POWER_INSTR_UNDEF 9999
 
+/* branch facility */
+#define LIBXSMM_POWER_INSTR_B_BC 0x40000000
+
 /* fixed-point storage access */
 #define LIBXSMM_POWER_INSTR_FIP_LD 0xe8000000
 #define LIBXSMM_POWER_INSTR_FIP_STD 0xf8000000
 
 /* fixed-point arithmetic */
 #define LIBXSMM_POWER_INSTR_FIP_ADDI 0x38000000
+
+/* fixed-point compare */
+#define LIBXSMM_POWER_INSTR_FIP_CMPI 0x2c000000
 
 /* fixed-point logical */
 #define LIBXSMM_POWER_INSTR_FIP_ORI  0x60000000
@@ -201,6 +207,21 @@
 #define LIBXSMM_POWER_INSTR_VSX_XXBRW 0xf00f076c
 
 /**
+ * Generates a conditional branch instruction.
+ *
+ * @param i_instr input-instruction with zeroed arguments.
+ * @param i_bo conditions under which the branch is taken.
+ * @param i_bi condition register bit (bi+32).
+ * @param i_bd 14-bit immediate relative or absolute branch address.
+ * @return machine code.
+ **/
+LIBXSMM_API_INTERN
+unsigned int libxsmm_power_instruction_b_conditional( unsigned int  i_instr,
+                                                      unsigned char i_bo,
+                                                      unsigned char i_bi,
+                                                      unsigned int  i_bd );
+
+/**
  * Generates a fixed-point storage access instruction.
  *
  * @param i_instr input-instruction with zeroed arguments.
@@ -229,6 +250,23 @@ unsigned int libxsmm_power_instruction_fip_arithmetic( unsigned int  i_instr,
                                                        unsigned char i_rt,
                                                        unsigned char i_ra,
                                                        unsigned int  i_si );
+
+/**
+ * Generates compare fixed-point instruction.
+ *
+ * @param i_instr input-instruction with zeroed arguments.
+ * @param i_bf destination SI field.
+ * @param i_l 0: RA[32:63] are extended to 64 bits, 1: all of RA's bits are used.
+ * @param i_ra source register which is compared.
+ * @param i_si 16-bit immediate.
+ * @return machine code.
+ **/
+LIBXSMM_API_INTERN
+unsigned int libxsmm_power_instruction_fip_compare( unsigned int  i_instr,
+                                                    unsigned char i_bf,
+                                                    unsigned char i_l,
+                                                    unsigned char i_ra,
+                                                    unsigned int  i_si );
 
 /**
  * Generates a logical scalar fixed-point instruction.

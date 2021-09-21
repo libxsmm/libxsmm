@@ -1,6 +1,38 @@
 #include <catch2/catch.hpp>
 #include "generator_power_instructions.h"
 
+TEST_CASE( "Tests libxsmm_power_instruction_b_conditional", "[power][b_conditional]" ) {
+  unsigned int l_instr = 0;
+
+  // bne cr2, 0
+  l_instr = libxsmm_power_instruction_b_conditional( LIBXSMM_POWER_INSTR_B_BC,
+                                                     4,
+                                                     10,
+                                                     0 );
+  REQUIRE( l_instr == 0x408a0000 );
+
+  // blt 8
+  l_instr = libxsmm_power_instruction_b_conditional( LIBXSMM_POWER_INSTR_B_BC,
+                                                     12,
+                                                     0,
+                                                     2 );
+  REQUIRE( l_instr == 0x41800008 );
+
+  // blt 48
+  l_instr = libxsmm_power_instruction_b_conditional( LIBXSMM_POWER_INSTR_B_BC,
+                                                     12,
+                                                     0,
+                                                     12 );
+  REQUIRE( l_instr == 0x41800030 );
+
+  // beq 12
+  l_instr = libxsmm_power_instruction_b_conditional( LIBXSMM_POWER_INSTR_B_BC,
+                                                     12,  // 011at with at=00
+                                                     2,   // zero (eq)
+                                                     3 ); // offset
+  REQUIRE( l_instr == 0x4182000c );
+}
+
 TEST_CASE( "Tests libxsmm_power_instruction_fip_storage_access", "[power][fip_storage_access]" ) {
   unsigned int l_instr = 0;
 
@@ -84,6 +116,46 @@ TEST_CASE( "Tests libxsmm_power_instruction_fip_arithmetic", "[power][fip_arithm
                                                       LIBXSMM_POWER_GPR_R21,
                                                       -1024 );
   REQUIRE( l_instr == 0x38b5fc00 );
+}
+
+TEST_CASE( "Tests libxsmm_power_instruction_fip_compare", "[power][fip_compare]" ) {
+  unsigned int l_instr = 0;
+
+  // cmpi 0, 0, 0, 0
+  // cmpwi r0, 0
+  l_instr = libxsmm_power_instruction_fip_compare( LIBXSMM_POWER_INSTR_FIP_CMPI,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   0 );
+  REQUIRE( l_instr == 0x2c000000 );
+
+  // cmpi 0, 0, r6, 0
+  // cmpwi r6, 0
+  l_instr = libxsmm_power_instruction_fip_compare( LIBXSMM_POWER_INSTR_FIP_CMPI,
+                                                   0,
+                                                   0,
+                                                   LIBXSMM_POWER_GPR_R6,
+                                                   0 );
+  REQUIRE( l_instr == 0x2c060000 );
+
+  // cmpi 0, 1, r8, -4
+  // cmpdi r8, -4
+  l_instr = libxsmm_power_instruction_fip_compare( LIBXSMM_POWER_INSTR_FIP_CMPI,
+                                                   0,
+                                                   1,
+                                                   LIBXSMM_POWER_GPR_R8,
+                                                   -4 );
+  REQUIRE( l_instr == 0x2c28fffc );
+
+  // cmpi 3, 0, r31, 16219
+  // cmpwi cr3, r31, 16219
+  l_instr = libxsmm_power_instruction_fip_compare( LIBXSMM_POWER_INSTR_FIP_CMPI,
+                                                   3,
+                                                   0,
+                                                   LIBXSMM_POWER_GPR_R31,
+                                                   16219 );
+  REQUIRE( l_instr == 0x2d9f3f5b );
 }
 
 TEST_CASE( "Tests libxsmm_power_instruction_fip_logical", "[power][fip_logical]" ) {
@@ -379,6 +451,13 @@ TEST_CASE( "Tests libxsmm_power_instruction_vsx_vector_permute_byte_reverse", "[
 TEST_CASE( "Tests libxsmm_power_instruction_generic", "[power][libxsmm_power_instruction_generic]" ) {
   unsigned int l_instr = 0;
 
+  // beq 12
+  l_instr = libxsmm_power_instruction_generic_3( LIBXSMM_POWER_INSTR_B_BC,
+                                                 12,
+                                                 2,
+                                                 3 );
+  REQUIRE( l_instr == 0x4182000c );
+
   // ld 17, 32(1)
   l_instr = libxsmm_power_instruction_generic_3( LIBXSMM_POWER_INSTR_FIP_LD,
                                                  LIBXSMM_POWER_GPR_R17,
@@ -490,6 +569,15 @@ TEST_CASE( "Tests libxsmm_power_instruction_generic", "[power][libxsmm_power_ins
                                                  LIBXSMM_POWER_VSR_VS47 );
   REQUIRE( l_instr == 0xf2af7f6e );
 
+
+  // cmpi 0, 0, r6, 0
+  // cmpwi r6, 0
+  l_instr = libxsmm_power_instruction_generic_4( LIBXSMM_POWER_INSTR_FIP_CMPI,
+                                                 0,
+                                                 0,
+                                                 LIBXSMM_POWER_GPR_R6,
+                                                 0 );
+  REQUIRE( l_instr == 0x2c060000 );
 
   // rldicr r3, r6, 8, 63
   l_instr = libxsmm_power_instruction_generic_4( LIBXSMM_POWER_INSTR_FIP_RLDICR,
