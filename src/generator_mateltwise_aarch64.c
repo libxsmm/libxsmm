@@ -126,7 +126,7 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
   memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping));
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
 
-  /* open asm */
+  // /* open asm */
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
 
   /* being BLAS aligned, for empty kermls, do nothing */
@@ -137,7 +137,7 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
     libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
 
     /* Stack management formelt kernel */
-    libxsmm_generator_meltw_destroy_stack_frame(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
+    libxsmm_generator_meltw_destroy_stack_frame_aarch64(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
   }
 
   /* close asm */
