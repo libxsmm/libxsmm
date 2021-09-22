@@ -107,7 +107,7 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
           }
         }
 #endif
-        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
                                                 i_gp_reg_mapping->gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
                                                 cur_vreg,
                                                 LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
