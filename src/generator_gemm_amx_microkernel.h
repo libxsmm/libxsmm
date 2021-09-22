@@ -30,27 +30,6 @@ void libxsmm_generator_gemm_footer_decompress_loop_amx( libxsmm_generated_code* 
     unsigned int                       n_iters);
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
-    const libxsmm_micro_kernel_config*             i_micro_kernel_config,
-    const unsigned int                             i_vec_x,
-    const unsigned int                             i_vec_x2,
-    const unsigned int                             i_vec_nom,
-    const unsigned int                             i_vec_denom,
-    const unsigned int                             i_mask_hi,
-    const unsigned int                             i_mask_lo,
-    const unsigned int                             i_vec_c0,
-    const unsigned int                             i_vec_c1,
-    const unsigned int                             i_vec_c2,
-    const unsigned int                             i_vec_c3,
-    const unsigned int                             i_vec_c1_d,
-    const unsigned int                             i_vec_c2_d,
-    const unsigned int                             i_vec_c3_d,
-    const unsigned int                             i_vec_hi_bound,
-    const unsigned int                             i_vec_lo_bound,
-    const unsigned int                             i_vec_ones,
-    const unsigned int                             i_vec_neg_ones);
-
-LIBXSMM_API_INTERN
 void fill_array_4_entries(int *array, int v0, int v1, int v2, int v3);
 
 LIBXSMM_API_INTERN
@@ -88,7 +67,8 @@ void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
     int                                a_offs,
-    unsigned int                       a_lookahead_offs);
+    unsigned int                       a_lookahead_offs,
+    unsigned int                       a_lookahead_br_index);
 
 LIBXSMM_API_INTERN
 void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,

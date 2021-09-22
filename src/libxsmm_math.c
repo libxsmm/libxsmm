@@ -133,11 +133,23 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         info->l2_abs = libxsmm_dsqrt(info->l2_abs);
         info->l2_rel = libxsmm_dsqrt(info->l2_rel);
       }
-      else if (1 == result_nan) {
-        /* in case of NaN in test-set, statistics is not set to inf (ref/test) */
+      else if (0 != result_nan) {
+        /* in case of NaN (in test-set), initialize statistics to either Infinity or NaN */
         info->norm1_abs = info->norm1_rel = info->normi_abs = info->normi_rel = info->normf_rel
                         = info->linf_abs = info->linf_rel = info->l2_abs = info->l2_rel
                         = inf;
+        if (1 == result_nan) {
+          info->l1_tst = info->var_tst = inf;
+          info->avg_tst = /*NaN*/info->v_tst;
+          info->min_tst = +inf;
+          info->max_tst = -inf;
+        }
+        else {
+          info->l1_ref = info->var_ref = inf;
+          info->avg_ref = /*NaN*/info->v_ref;
+          info->min_ref = +inf;
+          info->max_ref = -inf;
+        }
       }
       if (1 == n) LIBXSMM_ISWAP(info->m, info->n);
       if (0 != result_swap) {
@@ -166,54 +178,56 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input)
 {
   if (NULL != output && NULL != input) {
-    if (output->linf_abs < input->linf_abs) {
+    if (output->linf_abs <= input->linf_abs) {
       output->linf_abs = input->linf_abs;
       output->linf_rel = input->linf_rel;
-      output->v_ref = input->v_ref;
-      output->v_tst = input->v_tst;
-      LIBXSMM_ASSERT(0 <= input->m);
-      output->m = input->m;
-      LIBXSMM_ASSERT(0 <= input->n);
-      output->n = input->n;
     }
-    if (output->norm1_abs < input->norm1_abs) {
+    if (output->norm1_abs <= input->norm1_abs) {
       output->norm1_abs = input->norm1_abs;
       output->norm1_rel = input->norm1_rel;
     }
-    if (output->normi_abs < input->normi_abs) {
+    if (output->normi_abs <= input->normi_abs) {
       output->normi_abs = input->normi_abs;
       output->normi_rel = input->normi_rel;
     }
-    if (output->l2_abs < input->l2_abs) {
+    if (output->l2_abs <= input->l2_abs) {
       output->l2_abs = input->l2_abs;
       output->l2_rel = input->l2_rel;
-      output->rsq = input->rsq;
     }
-    if (output->normf_rel < input->normf_rel) {
+    if (output->normf_rel <= input->normf_rel) {
       output->normf_rel = input->normf_rel;
     }
-    if (output->var_ref < input->var_ref) {
+    if (output->var_ref <= input->var_ref) {
       output->var_ref = input->var_ref;
     }
-    if (output->var_tst < input->var_tst) {
+    if (output->var_tst <= input->var_tst) {
       output->var_tst = input->var_tst;
     }
-    if (output->max_ref < input->max_ref) {
+    if (output->max_ref <= input->max_ref) {
       output->max_ref = input->max_ref;
     }
-    if (output->max_tst < input->max_tst) {
+    if (output->max_tst <= input->max_tst) {
       output->max_tst = input->max_tst;
     }
-    if (output->min_ref > input->min_ref) {
+    if (output->min_ref >= input->min_ref) {
       output->min_ref = input->min_ref;
     }
-    if (output->min_tst > input->min_tst) {
+    if (output->min_tst >= input->min_tst) {
       output->min_tst = input->min_tst;
+    }
+    if (output->rsq > input->rsq || 1 < input->rsq) {
+      output->rsq = input->rsq;
+      output->v_ref = input->v_ref;
+      output->v_tst = input->v_tst;
+      output->m = input->m;
+      output->n = input->n;
+      output->i = input->r;
     }
     output->avg_ref = 0.5 * (output->avg_ref + input->avg_ref);
     output->avg_tst = 0.5 * (output->avg_tst + input->avg_tst);
     output->l1_ref += input->l1_ref;
     output->l1_tst += input->l1_tst;
+    ++output->r;
   }
   else {
     libxsmm_matdiff_clear(output);
@@ -232,10 +246,12 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 #endif
     memset(info, 0, sizeof(*info)); /* nullify */
     /* no location discovered yet with a difference */
-    info->m = info->n = -1;
+    info->m = info->n = info->i = -1;
     /* initial minimum/maximum of reference/test */
     info->min_ref = info->min_tst = +inf.value;
     info->max_ref = info->max_tst = -inf.value;
+    /* invalid rather than 1.0 */
+    info->rsq = inf.value;
   }
 }
 

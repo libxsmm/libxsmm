@@ -303,7 +303,7 @@ int main(int argc, char * argv[]) {
     if(argc > i) alpha = atof(argv[i++]);
   }
 
-  printf("Using: iters: %d N: %d E: %d M: %d S: %d P: %d alpha: %f\n", iters, N, E, M, S, P, alpha);
+  printf("Using: iters: %d N: %d E: %d M: %d S: %d P: %d alpha: %.3f\n", iters, N, E, M, S, P, alpha);
 
 #ifdef USE_RTM
   int use_rtm = 1;
@@ -353,6 +353,7 @@ int main(int argc, char * argv[]) {
   for(int i = 0; i < LS; i++)
   {
     eb[i] = new EmbeddingBag(M, E);
+    eb[i]->init();
     for(int j = 0; j < iters; j++)
     {
       eio[j][i] = new EmbeddingInOut();
@@ -402,7 +403,7 @@ int main(int argc, char * argv[]) {
   double t1 = get_time();
 #ifdef VERIFY_CORRECTNESS
   for(int s = 0; s < LS; s++) {
-    double psum = get_checksum(eb[s]->weight_, M*E);
+    double psum = get_checksum(eb[s]->weight_, (size_t)M*E);
     //my_printf("PSUM %d: %g\n", SS+s, psum);
     checksum += psum;
   }
@@ -419,7 +420,7 @@ int main(int argc, char * argv[]) {
 
   my_printf("USE RTM = %d  STREAMING STORES = %d\n", use_rtm, rfo == 1 ? 1 : 0);
 #ifdef COUNT_UNIQUE
-  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P);
+  my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, avgU = %d, P = %d, alpha = %.3f\n", iters, LS, N, M, E, tNS/(iters*LS), tU/(iters*LS), P, alpha);
 #else
   my_printf("Iters = %d, LS = %d, N = %d, M = %d, E = %d, avgNS = %d, P = %d\n", iters, LS, N, M, E, tNS/(iters*LS), P);
 #endif

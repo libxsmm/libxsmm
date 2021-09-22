@@ -200,6 +200,12 @@ LIBXSMM_API unsigned int* libxsmm_rng_create_extstate(unsigned int/*uint32_t*/ s
 }
 
 
+LIBXSMM_API unsigned int libxsmm_rng_get_extstate_size( )
+{
+  return (unsigned int)(64*sizeof(unsigned int));
+}
+
+
 LIBXSMM_API void libxsmm_rng_destroy_extstate(unsigned int* stateptr)
 {
   if ( stateptr != NULL ) {
