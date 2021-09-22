@@ -135,7 +135,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16_emu_amx(li
   return status;
 }
 
-#if defined(LIBXSMM_INTRINSICS_AVX512_CPX) || defined(LIBXSMM_INTRINSICS_AVX512_VL256_CPX)
+#if defined(LIBXSMM_INTRINSICS_AVX512_CPX)
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CPX)
 libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
@@ -178,7 +178,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16(libxsmm_dn
 }
 #endif
 
-#if defined(LIBXSMM_INTRINSICS_AVX512_CPX) || defined(LIBXSMM_INTRINSICS_AVX512_VL256_CPX)
+#if defined(LIBXSMM_INTRINSICS_AVX512_CPX)
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CPX)
 libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16_amx(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
@@ -417,6 +417,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
 #endif
 #     include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic.tpl.c"
       }
+#if 0
     } else if(handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_I32 ){
       typedef unsigned char element_input_type;
       typedef int element_output_type;
@@ -425,7 +426,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
       libxsmm_subimmfunction_reducebatch_strd br_gemm_kernel_strided = handle->gemm_fwd.xgemm.subimrs;
       libxsmm_subimmfunction_reducebatch_strd br_gemm_kernel_strided2 = handle->gemm_fwd2.xgemm.subimrs;
       libxsmm_subimmfunction_reducebatch_offs br_gemm_kernel_offset = handle->gemm_fwd.xgemm.subimro;
-      # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic_i8i32.tpl.c"
+#     include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic_i8i32.tpl.c"
     } else if(handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_I8 ){
       typedef unsigned char element_input_type;
       typedef unsigned char element_output_type;
@@ -433,7 +434,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
       /* Basically we need only offset based and strided BRGEMMs */
       libxsmm_sububmmfunction_reducebatch_strd br_gemm_kernel_strided = handle->gemm_fwd.xgemm.sububmrs;
       libxsmm_sububmmfunction_reducebatch_offs br_gemm_kernel_offset = handle->gemm_fwd.xgemm.sububmro;
-      # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic_i8i8.tpl.c"
+#     include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic_i8i8.tpl.c"
+#endif
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
