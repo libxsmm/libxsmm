@@ -9,7 +9,6 @@
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-
 #include "generator_mateltwise_aarch64.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
@@ -19,11 +18,80 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlength( libxsmm_generated_code*           io_generated_code,
+                                                                           libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
+                                                                           const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
+  if ( io_generated_code->arch  == LIBXSMM_AARCH64_V81 || io_generated_code->arch  == LIBXSMM_AARCH64_V82 || io_generated_code->arch  == LIBXSMM_AARCH64_APPL_M1 ) {
+    io_micro_kernel_config->instruction_set = io_generated_code->arch;
+    io_micro_kernel_config->vector_reg_count = 32;
+    /* Configure input specific microkernel options */
+    if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_in = 8;
+      io_micro_kernel_config->vector_length_in = 2;
+      io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) || (LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) ) {
+      io_micro_kernel_config->datatype_size_in = 4;
+      io_micro_kernel_config->vector_length_in = 4;
+      io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->vector_length_in = 8;
+      io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_in = 1;
+      io_micro_kernel_config->vector_length_in = 16;
+      io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    }
+    /* Configure output specific microkernel options */
+    if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_out = 8;
+      io_micro_kernel_config->vector_length_out = 2;
+      io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) || (LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ) {
+      io_micro_kernel_config->datatype_size_out = 4;
+      io_micro_kernel_config->vector_length_out = 4;
+      io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_out = 2;
+      io_micro_kernel_config->vector_length_out = 8;
+      io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_out = 1;
+      io_micro_kernel_config->vector_length_out = 16;
+      io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    }
+    io_micro_kernel_config->alu_add_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+    io_micro_kernel_config->alu_sub_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+    io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+    io_micro_kernel_config->alu_jmp_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+    io_micro_kernel_config->alu_mov_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+    io_micro_kernel_config->vxor_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+  } else {
+     /* That should not happen */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( libxsmm_generated_code*           io_generated_code,
+                                                                               libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
+                                                                               const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
+  memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
+  libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlength( io_generated_code, io_micro_kernel_config, i_mateltwise_desc );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_meltw_setup_stack_frame_aarch64( libxsmm_generated_code*            io_generated_code,
                                               const libxsmm_meltw_descriptor*      i_mateltwise_desc,
                                               libxsmm_mateltwise_gp_reg_mapping*   i_gp_reg_mapping,
                                               libxsmm_mateltwise_kernel_config*    i_micro_kernel_config) {
-  #if 0
+#if 0
   unsigned int temp_reg                 = LIBXSMM_X86_GP_REG_R10;
   unsigned int skip_pushpops_callee_gp_reg  = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX) ||
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) ||
@@ -87,7 +155,7 @@ void libxsmm_generator_meltw_setup_stack_frame_aarch64( libxsmm_generated_code* 
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
   }
-  #endif
+#endif
 }
 
 LIBXSMM_API_INTERN
@@ -96,7 +164,7 @@ void libxsmm_generator_meltw_destroy_stack_frame_aarch64( libxsmm_generated_code
     const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config ) {
 
   LIBXSMM_UNUSED(i_mateltwise_desc);
-  #if 0
+#if 0
   if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
@@ -109,7 +177,7 @@ void libxsmm_generator_meltw_destroy_stack_frame_aarch64( libxsmm_generated_code
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   }
-  #endif
+#endif
 }
 
 LIBXSMM_API_INTERN
@@ -125,8 +193,12 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
   /* define gp register mapping */
   memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping));
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
+  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X0;
 
-  // /* open asm */
+  /* define mateltwise kernel config */
+  libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, i_mateltwise_desc );
+
+  /* open asm */
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
 
   /* being BLAS aligned, for empty kermls, do nothing */
