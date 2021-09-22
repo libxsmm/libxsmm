@@ -22,6 +22,15 @@ void libxsmm_generator_hinstrps_avx( libxsmm_generated_code*                    
     const unsigned int                             i_vec_tmp2);
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_vpermd_16way_avx2( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_index,
+    const unsigned int                             i_vec_c_lo,
+    const unsigned int                             i_vec_c_hi,
+    const unsigned int                             i_vec_result,
+    const unsigned int                             i_vec_tmp0,
+    const unsigned int                             i_vec_tmp1 );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_inv_ps_minimax3_avx( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_x,
     const unsigned int                             i_vec_c0_lo,
@@ -422,6 +431,17 @@ void libxsmm_generator_xoshiro128p_f32_avx2_avx512( libxsmm_generated_code* io_g
                                                     const unsigned int      i_vec_reg_rng_tmp_1,
                                                     const unsigned int      i_vec_reg_rng_one,
                                                     const unsigned int      o_vec_reg_rng );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_xoshiro128pp_axv2_avx512( libxsmm_generated_code* io_generated_code,
+                                                 const unsigned char     i_vname,
+                                                 const unsigned int      i_vec_reg_rng_state_0,
+                                                 const unsigned int      i_vec_reg_rng_state_1,
+                                                 const unsigned int      i_vec_reg_rng_state_2,
+                                                 const unsigned int      i_vec_reg_rng_state_3,
+                                                 const unsigned int      i_vec_reg_rng_tmp_0,
+                                                 const unsigned int      i_vec_reg_rng_tmp_1,
+                                                 const unsigned int      o_vec_reg_rng );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_cvtbf16ps_avx512( libxsmm_generated_code* io_generated_code,
