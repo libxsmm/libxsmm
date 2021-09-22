@@ -992,7 +992,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
                 0,
                 1+l_n,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-                //l_vec_reg_acc_start + l_n + (i_n_blocking * l_m) );
           } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                 i_micro_kernel_config->instruction_set,
@@ -1001,7 +1000,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
                 1+l_n,
                 0,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-               // l_vec_reg_acc_start + l_n + (i_n_blocking * l_m) );
           } else {
             /* should not happen */
           }
@@ -1013,7 +1011,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
               1+l_n,
               0,
               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-              //l_vec_reg_acc_start + l_n + (i_n_blocking * l_m) );
         }
       }
     }
