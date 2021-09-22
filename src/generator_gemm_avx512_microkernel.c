@@ -951,18 +951,20 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
             (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m );
       }
 
-      /* In case of batch reduce try to prefetch a few more columns ahead for A...  chnage by D-*/
-      // if ((l_n < l_m_blocking)  && ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB) > 0) && (LIBXSMM_GEMM_PRECISION_I8 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) && (LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE))) {
-      //   unsigned int pf_a_cols_ahead = 16;
-      //   if (i_xgemm_desc->lda == 1024) {
-      //     pf_a_cols_ahead = 4;
-      //   }
-      //   libxsmm_x86_instruction_prefetch( io_generated_code,
-      //       LIBXSMM_X86_INSTR_PREFETCHT0,
-      //       i_gp_reg_mapping->gp_reg_a,
-      //       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      //       (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_n + pf_a_cols_ahead * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in);
-      // }
+      /* In case of batch reduce try to prefetch a few more columns ahead for A... */
+#if 0
+      if ((l_n < l_m_blocking)  && ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB) > 0) && (LIBXSMM_GEMM_PRECISION_I8 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) && (LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE))) {
+        unsigned int pf_a_cols_ahead = 16;
+        if (i_xgemm_desc->lda == 1024) {
+          pf_a_cols_ahead = 4;
+        }
+        libxsmm_x86_instruction_prefetch( io_generated_code,
+            LIBXSMM_X86_INSTR_PREFETCHT0,
+            i_gp_reg_mapping->gp_reg_a,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_n + pf_a_cols_ahead * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size_in);
+      }
+#endif
 
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
         /* post increment early */
