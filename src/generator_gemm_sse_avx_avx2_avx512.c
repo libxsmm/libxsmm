@@ -111,8 +111,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* block according to the number of available registers or given limits */
-  // if ( i_xgemm_desc->n == 7 && io_generated_code->arch > LIBXSMM_X86_AVX512_VL256 && io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CLX
-  //       && io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX && io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
   if ( i_xgemm_desc->n == 7 && io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE && io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
     libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 7, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
   } else {
