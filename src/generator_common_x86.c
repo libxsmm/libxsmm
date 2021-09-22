@@ -211,12 +211,12 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx( libxsmm_generate
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vpermd_16way_avx2( libxsmm_generated_code*                        io_generated_code,
-    const unsigned int                             i_vec_index,
-    const unsigned int                             i_vec_c_lo,
-    const unsigned int                             i_vec_c_hi,
-    const unsigned int                             i_vec_result,
-    const unsigned int                             i_vec_tmp0,
-    const unsigned int                             i_vec_tmp1 ) {
+                                                const unsigned int                             i_vec_index,
+                                                const unsigned int                             i_vec_c_lo,
+                                                const unsigned int                             i_vec_c_hi,
+                                                const unsigned int                             i_vec_result,
+                                                const unsigned int                             i_vec_tmp0,
+                                                const unsigned int                             i_vec_tmp1 ) {
 
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
       LIBXSMM_X86_INSTR_VPERMD, 'y',
