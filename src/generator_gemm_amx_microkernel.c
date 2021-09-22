@@ -891,7 +891,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int n_tiles = n_blocking_info->tiles;
   int i, im, in;
   int pf_dist = i_xgemm_desc->c3;
-  int emit_tilestores = ((i_brgemm_loop == (i_xgemm_desc->c3 - 1)) && (is_last_k == 1)) ? 1 : 0;
+  int emit_tilestores = ((i_brgemm_loop == (i_xgemm_desc->c3 - 1)) && (is_last_k == 1) && (fully_unrolled_brloop == 1)) ? 1 : 0;
   int use_paired_tilestores = ((LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0)) ? 1 : 0;
   int n_CL_to_pf;
   unsigned int tile_compute_instr = 0;

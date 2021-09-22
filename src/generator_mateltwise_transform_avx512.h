@@ -94,17 +94,12 @@ void libxsmm_generator_transform_32way_half_store_avx512( libxsmm_generated_code
                                                           const unsigned int      i_st_instr );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_norm_to_normt_mbit_scalar_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
-                                                                               libxsmm_loop_label_tracker*             io_loop_label_tracker,
-                                                                               const unsigned int                      i_gp_reg_in,
-                                                                               const unsigned int                      i_gp_reg_out,
-                                                                               const unsigned int                      i_gp_reg_m_loop,
-                                                                               const unsigned int                      i_gp_reg_n_loop,
-                                                                               const unsigned int                      i_gp_reg_mask,
-                                                                               const unsigned int                      i_mask_reg_0,
-                                                                               const unsigned int                      i_mask_reg_1,
-                                                                               const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                               const libxsmm_meltw_descriptor*         i_mateltwise_desc );
+void libxsmm_generator_transform_two_4x4_64bit_norm_to_normt_avx512( libxsmm_generated_code* io_generated_code,
+                                                                     const char              i_vector_name,
+                                                                     const unsigned int      i_vec_reg_src_start,
+                                                                     const unsigned int      i_vec_reg_dst_start,
+                                                                     const unsigned int      i_mask_reg_1,
+                                                                     const unsigned int      i_mask_reg_2 );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,

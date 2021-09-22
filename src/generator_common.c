@@ -1134,6 +1134,14 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "the AVX512VL instruction set extension is currently not available (error #%u)!", i_error_code );
       break;
+    case LIBXSMM_ERR_BITMASK_ELTWISE:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "eltwise kernels with bitmasks are only possible with M and leading dimensions being multiples of 16 (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_GP_TEMP_MAPPING:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "GP Temp Register is used by other parts of the code (error #%u)!", i_error_code );
+      break;
     default: /* we do not know what happened */
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "an unknown error occurred (error #%u)!", i_error_code );
