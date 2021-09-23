@@ -414,9 +414,24 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: %u\n", i_vec_instr);
+      exit(-1);
+  }
+
+  if ( ((0x3 & i_vec_instr) == 2) && (i_vec_reg_src_1 != LIBXSMM_AARCH64_ASIMD_REG_UNDEF) ) {
+      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: got 3 registers, but instruction has only 2: %u\n", i_vec_instr);
       exit(-1);
   }
 
@@ -431,7 +446,9 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     /* setting Rn */
     code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_0) << 5);
     /* setting Rm */
-    code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_1) << 16);
+    if ( (0x3 & i_vec_instr) == 0x3 ) {
+      code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_1) << 16);
+    }
     /* setting Q */
     code[code_head] |= (unsigned int)((0x2 & i_tupletype) << 29);
     /* setting sz */
@@ -1008,6 +1025,7 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
   }
 
   switch ( i_alu_instr ) {
+    case LIBXSMM_AARCH64_INSTR_GP_ORR_SR:
     case LIBXSMM_AARCH64_INSTR_GP_ADD_SR:
     case LIBXSMM_AARCH64_INSTR_GP_SUB_SR:
       break;

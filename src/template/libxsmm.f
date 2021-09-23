@@ -153,6 +153,7 @@
      &    LIBXSMM_AARCH64_V81         = 2001,                           &
      &    LIBXSMM_AARCH64_V82         = 2002,                           &
      &    LIBXSMM_AARCH64_A64FX       = 2100,                           &
+     &    LIBXSMM_AARCH64_APPL_M1     = 2200,                           &
      &    LIBXSMM_AARCH64_ALLFEAT     = 2999
 
         !> Generic function type (double-precision).
@@ -198,8 +199,9 @@
           REAL(C_DOUBLE) l1_tst, min_tst, max_tst, avg_tst, var_tst
           !> Values (v_ref, v_tst) and location (m, n) of largest linf_abs.
           REAL(C_DOUBLE) v_ref, v_tst
-          !> Location (m, n) of largest difference (linf_abs).
-          INTEGER(LIBXSMM_BLASINT_KIND) m, n
+          !> Values (v_ref, v_tst), location (m, n), and zero-based i-th of
+          !> r reductions (libxsmm_matdiff_reduce) of smallest R-squared.
+          INTEGER(LIBXSMM_BLASINT_KIND) m, n, i, r
         END TYPE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize

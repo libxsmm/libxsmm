@@ -39,6 +39,7 @@
 #define LIBXSMM_AARCH64_V81      2001 /* Baseline */
 #define LIBXSMM_AARCH64_V82      2002 /* A64FX minus SVE */
 #define LIBXSMM_AARCH64_A64FX    2100 /* SVE */
+#define LIBXSMM_AARCH64_APPL_M1  2200 /* Apple M1 */
 #define LIBXSMM_AARCH64_ALLFEAT  2999
 
 #if defined(LIBXSMM_PLATFORM_X86)
@@ -67,10 +68,18 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
  */
 LIBXSMM_API int libxsmm_cpuid(void);
 
-/** Names the CPU architecture given by CPUID. */
+/**
+ * Names the CPU architecture given by CPUID.
+ * Do not use libxsmm_cpuid() to match the current CPU!
+ * Use libxsmm_get_target_archid() instead.
+ */
 LIBXSMM_API const char* libxsmm_cpuid_name(int id);
 
-/** SIMD vector length (VLEN) in 32-bit elements. */
+/**
+ * SIMD vector length (VLEN) in 32-bit elements.
+ * Do not use libxsmm_cpuid() to match the current CPU!
+ * Use libxsmm_get_target_archid() instead.
+ */
 LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
 
 #endif /*LIBXSMM_CPUID_H*/

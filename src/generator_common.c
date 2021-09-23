@@ -17,6 +17,9 @@
 #endif
 
 
+LIBXSMM_APIVAR_DEFINE(int internal_error_suppression_level);
+
+
 LIBXSMM_API_INLINE
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
@@ -910,13 +913,32 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
 }
 
 LIBXSMM_API_INTERN
+int libxsmm_get_handle_error(void)
+{
+  return (0 == internal_error_suppression_level ? 1 : 0);
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_set_handle_error(int enable)
+{
+  if (0 == enable) { /* disable */
+    LIBXSMM_EXPECT(1 <= LIBXSMM_ATOMIC_ADD_FETCH(
+      &internal_error_suppression_level, 1, LIBXSMM_ATOMIC_RELAXED));
+  }
+  else { /* enable */
+    LIBXSMM_EXPECT(0 <= LIBXSMM_ATOMIC_SUB_FETCH(
+      &internal_error_suppression_level, 1, LIBXSMM_ATOMIC_RELAXED));
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
                            const char* context,
                            int emit_message ) {
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
-    if (0 != emit_message) {
+    if (0 != emit_message && 0 != libxsmm_get_handle_error()) {
       LIBXSMM_STDIO_ACQUIRE();
       if (0 != context && 0 != *context && '0' != *context) {
         fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
@@ -1111,6 +1133,14 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_NO_AVX512VL:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "the AVX512VL instruction set extension is currently not available (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_BITMASK_ELTWISE:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "eltwise kernels with bitmasks are only possible with M and leading dimensions being multiples of 16 (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_GP_TEMP_MAPPING:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "GP Temp Register is used by other parts of the code (error #%u)!", i_error_code );
       break;
     default: /* we do not know what happened */
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

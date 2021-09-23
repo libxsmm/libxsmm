@@ -20,13 +20,16 @@ if [ "${MAKE}" ] && [ "${CXX}" ] && [ "${CC}" ] && \
    [ "${GREP}" ] && [ "${SORT}" ];
 then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
-  cd "${HERE}/.."
+  cd "${HERE}/.." || exit 1
   ARG=$*
   if [ "" = "${ARG}" ]; then
     ARG=lib
   fi
-  ${MAKE} -e CXX=${CXX} CC=${CC} FC= FORCE_CXX=1 DBG=1 ILP64=1 EFLAGS="--analyze" ${ARG} 2> .analyze.log
-  ISSUES=$(${GREP} -e "error:" -e "warning:" .analyze.log | ${GREP} -v "is never read" | ${SORT} -u)
+  ${MAKE} -e CXX="${CXX}" CC="${CC}" FC= FORCE_CXX=1 DBG=1 ILP64=1 EFLAGS="--analyze" ${ARG} 2> .analyze.log
+  ISSUES=$(${GREP} -e "error:" -e "warning:" .analyze.log \
+    | ${GREP} -v "make:" \
+    | ${GREP} -v "is never read" \
+    | ${SORT} -u)
   echo
   echo   "================================================================================"
   if [ "" = "${ISSUES}" ]; then

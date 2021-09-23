@@ -13,6 +13,7 @@
 GIT=$(command -v git)
 
 if [ "${GIT}" ]; then
+  ${GIT} remote update origin --prune
   ${GIT} reflog expire --expire=now --all
   ${GIT} gc --prune=now
 else

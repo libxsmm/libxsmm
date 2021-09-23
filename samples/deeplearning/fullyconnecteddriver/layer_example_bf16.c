@@ -273,6 +273,8 @@ int main(int argc, char* argv[])
     fullyconnected_desc.bk = bk;
     fullyconnected_desc.bc = bc;
     fullyconnected_desc.threads = nThreads;
+    fullyconnected_desc.compressed_A = 0;
+    fullyconnected_desc.sparsity_factor_A = 1;
     fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_BF16;
     fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_BF16;
     fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED;
