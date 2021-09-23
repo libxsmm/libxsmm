@@ -13,6 +13,8 @@
 #define GENERATOR_MATELTWISE_UNARY_BINARY_AARCH64_H
 
 #include "generator_common.h"
+LIBXSMM_API_INTERN
+void libxsmm_generator_configure_aarch64_vlens(i_mateltwise_desc, i_micro_kernel_config);
 
 LIBXSMM_API_INTERN
 void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
