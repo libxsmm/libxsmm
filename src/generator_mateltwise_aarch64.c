@@ -92,7 +92,7 @@ void libxsmm_generator_meltw_setup_stack_frame_aarch64( libxsmm_generated_code* 
                                               const libxsmm_meltw_descriptor*      i_mateltwise_desc,
                                               libxsmm_mateltwise_gp_reg_mapping*   i_gp_reg_mapping,
                                               libxsmm_mateltwise_kernel_config*    i_micro_kernel_config) {
-  #if 0
+#if 0
   unsigned int temp_reg                 = LIBXSMM_X86_GP_REG_R10;
   unsigned int skip_pushpops_callee_gp_reg  = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX) ||
                                           (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) ||
@@ -156,7 +156,7 @@ void libxsmm_generator_meltw_setup_stack_frame_aarch64( libxsmm_generated_code* 
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
   }
-  #endif
+#endif
 }
 
 LIBXSMM_API_INTERN
@@ -165,7 +165,7 @@ void libxsmm_generator_meltw_destroy_stack_frame_aarch64( libxsmm_generated_code
     const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config ) {
 
   LIBXSMM_UNUSED(i_mateltwise_desc);
-  #if 0
+#if 0
   if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
@@ -178,7 +178,7 @@ void libxsmm_generator_meltw_destroy_stack_frame_aarch64( libxsmm_generated_code
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   }
-  #endif
+#endif
 }
 
 LIBXSMM_API_INTERN
