@@ -44,4 +44,3 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
                                                   const libxsmm_meltw_descriptor* i_mateltw_desc );
 
 #endif /* GENERATOR_MATELTWISE_AARCH64_H */
-
