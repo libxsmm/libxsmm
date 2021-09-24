@@ -21,7 +21,7 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
-void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, float *out, float alpha, unsigned char *out_mask, unsigned char type) {
+void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, float *in, float *out, float alpha, unsigned char *out_mask, unsigned char type) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
@@ -33,13 +33,13 @@ void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
         out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.0) : in[(j*ldi) + i];
       }
       if ( type != 2) {
-        out_mask[(j*ldo/8) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
+        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
       }
     }
   }
 }
 
-void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type) {
+void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
@@ -64,13 +64,13 @@ void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         out[(j*ldo) + i] = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? res : in[(j*ldi) + i];
       }
       if ( type != 2) {
-        out_mask[(j*ldo/8) + i/8] |= (unsigned char)(( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0x0 : (1 << (i%8)) );
+        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0x0 : (1 << (i%8)) );
       }
     }
   }
 }
 
-void relu_fwd_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, float *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type) {
+void relu_fwd_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, float *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
@@ -89,13 +89,13 @@ void relu_fwd_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
         out[(j*ldo) + i] = res_bf16;
       }
       if ( type != 2) {
-        out_mask[(j*ldo/8) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
+        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
       }
     }
   }
 }
 
-void relu_fwd_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_bfloat16 *in, float *out, float alpha, unsigned char *out_mask, unsigned char type) {
+void relu_fwd_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, libxsmm_bfloat16 *in, float *out, float alpha, unsigned char *out_mask, unsigned char type) {
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
@@ -113,7 +113,7 @@ void relu_fwd_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
         out[(j*ldo) + i] = ( bf16_hp.f < 0.0f ) ? in_f : bf16_hp.f;
       }
       if ( type != 2) {
-        out_mask[(j*ldo/8) + i/8] |= (unsigned char)(( bf16_hp.f < 0.0f ) ? 0x0 : (1 << (i%8)) );
+        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( bf16_hp.f < 0.0f ) ? 0x0 : (1 << (i%8)) );
       }
     }
   }
@@ -236,7 +236,7 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltwfunction_unary unary_kernel;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_f32_f32_fwd: ldi needs to be equal to or bigger than M\n");
@@ -253,7 +253,7 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*(mask_ld+1), 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -272,20 +272,20 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   for ( i = 0; i < N*mask_ld; ++i ) {
     mask[i] = 0;
   }
-  for ( i = 0; i < N*(mask_ld+1); ++i ) {
+  for ( i = 0; i < N*mask_ld; ++i ) {
     mask_gold[i] = 0;
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    relu_fwd_f32_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
+    relu_fwd_f32_f32_gold( M, 1, ldi, ldo, mask_ld, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*mask_ld)], type );
   }
 
   unary_param.op.primary = (void*)(&alpha);
   unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
-  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   } else if ( type == 1 ) {
@@ -325,12 +325,12 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
       for ( i = 0; i < N; ++i ) {
         for ( j = 0; j < M/8; ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at possition i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at possition i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
         }
@@ -373,7 +373,7 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   libxsmm_matdiff_info norms_out;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_bf16_bf16_fwd: ldi needs to be equal to or bigger than M\n");
@@ -392,7 +392,7 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   f32out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   f32out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*(mask_ld+1), 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -412,20 +412,20 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   for ( i = 0; i < N*mask_ld; ++i ) {
     mask[i] = 0;
   }
-  for ( i = 0; i < N*(mask_ld+1); ++i ) {
+  for ( i = 0; i < N*mask_ld; ++i ) {
     mask_gold[i] = 0;
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    relu_fwd_bf16_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
+    relu_fwd_bf16_bf16_gold( M, 1, ldi, ldo, mask_ld, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*mask_ld)], type );
   }
 
   unary_param.op.primary = (void*)(&alpha);
   unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
-  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   } else if ( type == 1 ) {
@@ -528,7 +528,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_matdiff_info norms_out;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_f32_bf16_fwd: ldi needs to be equal to or bigger than M\n");
@@ -547,7 +547,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   f32out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   f32out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*(mask_ld+1), 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -568,20 +568,20 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   for ( i = 0; i < N*mask_ld; ++i ) {
     mask[i] = 0;
   }
-  for ( i = 0; i < N*(mask_ld+1); ++i ) {
+  for ( i = 0; i < N*mask_ld; ++i ) {
     mask_gold[i] = 0;
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    relu_fwd_f32_bf16_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
+    relu_fwd_f32_bf16_gold( M, 1, ldi, ldo, mask_ld, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*mask_ld)], type );
   }
 
   unary_param.op.primary = (void*)(&alpha);
   unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
-  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   } else if ( type == 1 ) {
@@ -677,7 +677,7 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_matdiff_info norms_out;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ldo/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_bf16_f32_fwd: ldi needs to be equal to or bigger than M\n");
@@ -694,7 +694,7 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*(mask_ld+1), 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -714,13 +714,13 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   for ( i = 0; i < N*mask_ld; ++i ) {
     mask[i] = 0;
   }
-  for ( i = 0; i < N*(mask_ld+1); ++i ) {
+  for ( i = 0; i < N*mask_ld; ++i ) {
     mask_gold[i] = 0;
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    relu_fwd_bf16_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*ldo)/8], type );
+    relu_fwd_bf16_f32_gold( M, 1, ldi, ldo, mask_ld, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &mask_gold[(i*mask_ld)], type );
   }
 
   /* use jited relu */
@@ -728,7 +728,7 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   unary_param.in.primary = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
-  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   } else if ( type == 1 ) {
@@ -807,6 +807,7 @@ int test_relu_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   float *out, *out_gold;
   float *out_fwd;
   unsigned int *mask;
+  unsigned char *mask_bit;
   unsigned char *mask_gold;
   unsigned int i, j;
   float alpha = 0.1f;
@@ -815,7 +816,7 @@ int test_relu_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltwfunction_unary unary_kernel;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ldi/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ((ldi+15)-((ldi+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_f32_f32_bwd: ldi needs to be equal to or bigger than M\n");
@@ -832,7 +833,8 @@ int test_relu_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   out_fwd   = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
-  mask      = (unsigned int*) libxsmm_aligned_malloc( sizeof(unsigned int)*N*mask_ld, 64);
+  mask      = (unsigned int*)  libxsmm_aligned_malloc( sizeof(unsigned int) *N*mask_ld, 64);
+  mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
 
   /* init in */
@@ -850,29 +852,33 @@ int test_relu_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   for ( i = 0; i < N*ldo; ++i ) {
     out_gold[i] = 0;
   }
-  for ( i = 0; i < N*mask_ld; ++i ) {
-    if ( bitm == 0 ) {
-      mask[i] = ( i % 2 == 1) ? 0x3f800000 : 0xbf800000;
-    } else {
-      mask[i] = 0xaaaaaaaa;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < mask_ld; ++j ) {
+      if ( bitm == 0 ) {
+        mask[(i*mask_ld)+j] = ( j % 2 == 1) ? 0x3f800000 : 0xbf800000;
+      } else {
+        mask_bit[(i*mask_ld)+j] = 0xaa;
+      }
     }
   }
-  for ( i = 0; i < N*ldi; ++i ) {
-    mask_gold[i] = ( i % 2 == 1 ) ? 0 : 1;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < ldi; ++j ) {
+      mask_gold[(i*ldi)+j] = ( j % 2 == 1 ) ? 0 : 1;
+    }
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    relu_bwd_f32_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &out_fwd[(i*ldi)], &mask_gold[i*ldi], type );
+    relu_bwd_f32_f32_gold( M, 1, ldi, ldo, &in[(i*ldi)], &out_gold[(i*ldo)], alpha, &out_fwd[(i*ldi)], &mask_gold[(i*ldi)], type );
   }
 
   /* use jited relu */
   unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
-  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
+  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : ( (bitm == 0 ) ? (void*)mask : (void*)mask_bit );
   unary_param.out.primary   = (void*)out;
 
-  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   } else if ( type == 1 ) {
@@ -912,6 +918,7 @@ int test_relu_f32_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   libxsmm_free( out );
   libxsmm_free( in );
   libxsmm_free( mask );
+  libxsmm_free( mask_bit );
   libxsmm_free( mask_gold );
 
   if ( ret == EXIT_SUCCESS ) {
@@ -928,6 +935,7 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   libxsmm_bfloat16 *out, *out_gold;
   float *f32out, *f32out_gold;
   unsigned short *mask;
+  unsigned char *mask_bit;
   unsigned char *mask_gold;
   unsigned int i, j;
   float alpha = 0.1f;
@@ -937,7 +945,7 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   libxsmm_matdiff_info norms_out;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ldi/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ((ldi+15)-((ldi+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_bf16_bf16_bwd: ldi needs to be equal to or bigger than M\n");
@@ -957,7 +965,8 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   f32out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   f32out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned short*) libxsmm_aligned_malloc( sizeof(unsigned short)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
+  mask_bit  = (unsigned char*)  libxsmm_aligned_malloc( sizeof(unsigned char)* N*mask_ld, 64);
+  mask_gold = (unsigned char*)  libxsmm_aligned_malloc( sizeof(unsigned char)* N*ldi, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -976,15 +985,19 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   for ( i = 0; i < N*ldo; ++i ) {
     out_gold[i] = 0;
   }
-  for ( i = 0; i < N*mask_ld; ++i ) {
-    if ( bitm == 0 ) {
-      mask[i] = ( i % 2 == 1) ? 0x3f80 : 0xbf80;
-    } else {
-      mask[i] = 0xaaaa;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < mask_ld; ++j ) {
+      if ( bitm == 0 ) {
+        mask[(i*mask_ld)+j] = ( j % 2 == 1) ? 0x3f80 : 0xbf80;
+      } else {
+        mask_bit[(i*mask_ld)+j] = 0xaa;
+      }
     }
   }
-  for ( i = 0; i < N*ldi; ++i ) {
-    mask_gold[i] = ( i % 2 == 1 ) ? 0 : 1;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < ldi; ++j ) {
+      mask_gold[(i*ldi)+j] = ( j % 2 == 1 ) ? 0 : 1;
+    }
   }
 
   /* compute out_gold */
@@ -995,9 +1008,9 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   /* use jited relu */
   unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
-  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
+  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : ( (bitm == 0 ) ? (void*)mask : (void*)mask_bit );
   unary_param.out.primary   = (void*)out;
-  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   } else if ( type == 1 ) {
@@ -1046,6 +1059,7 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   libxsmm_free( out );
   libxsmm_free( in );
   libxsmm_free( mask );
+  libxsmm_free( mask_bit );
   libxsmm_free( mask_gold );
 
   if ( ret == EXIT_SUCCESS ) {
@@ -1062,6 +1076,7 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_bfloat16 *out, *out_gold;
   float *f32out, *f32out_gold;
   unsigned int *mask;
+  unsigned char *mask_bit;
   unsigned char *mask_gold;
   unsigned int i, j;
   float alpha = 0.1f;
@@ -1071,7 +1086,7 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_matdiff_info norms_out;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ldi/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ((ldi+15)-((ldi+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_f32_bf16_bwd: ldi needs to be equal to or bigger than M\n");
@@ -1090,7 +1105,8 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   f32out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   f32out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
-  mask      = (unsigned int*) libxsmm_aligned_malloc( sizeof(unsigned int)*N*mask_ld, 64);
+  mask      = (unsigned int*)  libxsmm_aligned_malloc( sizeof(unsigned int) *N*mask_ld, 64);
+  mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
 
   /* init in */
@@ -1112,15 +1128,19 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   for ( i = 0; i < N*ldo; ++i ) {
     out_gold[i] = 0;
   }
-  for ( i = 0; i < N*mask_ld; ++i ) {
-    if ( bitm == 0 ) {
-      mask[i] = ( i % 2 == 1) ? 0x3f800000 : 0xbf800000;
-    } else {
-      mask[i] = 0xaaaaaaaa;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < mask_ld; ++j ) {
+      if ( bitm == 0 ) {
+        mask[(i*mask_ld)+j] = ( j % 2 == 1) ? 0x3f800000 : 0xbf800000;
+      } else {
+        mask_bit[(i*mask_ld)+j] = 0xaa;
+      }
     }
   }
-  for ( i = 0; i < N*ldi; ++i ) {
-    mask_gold[i] = ( i % 2 == 1 ) ? 0 : 1;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < ldi; ++j ) {
+      mask_gold[(i*ldi)+j] = ( j % 2 == 1 ) ? 0 : 1;
+    }
   }
 
   /* compute out_gold */
@@ -1131,9 +1151,9 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   /* use jited relu */
   unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
-  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
+  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : ( (bitm == 0 ) ? (void*)mask : (void*)mask_bit );
   unary_param.out.primary   = (void*)out;
-  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   } else if ( type == 1 ) {
@@ -1182,6 +1202,7 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_free( out_fwd );
   libxsmm_free( in );
   libxsmm_free( mask );
+  libxsmm_free( mask_bit );
   libxsmm_free( mask_gold );
 
   if ( ret == EXIT_SUCCESS ) {
@@ -1197,6 +1218,7 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_bfloat16 *in, *out_fwd;
   float *out, *out_gold;
   unsigned short *mask;
+  unsigned char *mask_bit;
   unsigned char *mask_gold;
   unsigned int i, j;
   float alpha = 0.1f;
@@ -1206,7 +1228,7 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_matdiff_info norms_out;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ldi/8;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldi : ((ldi+15)-((ldi+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_bf16_f32_bwd: ldi needs to be equal to or bigger than M\n");
@@ -1223,8 +1245,9 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   out_fwd   = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
-  mask      = (unsigned short*) libxsmm_aligned_malloc( sizeof(unsigned short)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
+  mask      = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*N*mask_ld, 64);
+  mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)* N*mask_ld, 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)* N*ldi, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1243,15 +1266,19 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   for ( i = 0; i < N*ldo; ++i ) {
     out_gold[i] = 0.0f;
   }
-  for ( i = 0; i < N*mask_ld; ++i ) {
-    if ( bitm == 0 ) {
-      mask[i] = ( i % 2 == 1) ? 0x3f80 : 0xbf80;
-    } else {
-      mask[i] = 0xaaaa;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < mask_ld; ++j ) {
+      if ( bitm == 0 ) {
+        mask[(i*mask_ld)+j] = ( j % 2 == 1) ? 0x3f80 : 0xbf80;
+      } else {
+        mask_bit[(i*mask_ld)+j] = 0xaa;
+      }
     }
   }
-  for ( i = 0; i < N*ldi; ++i ) {
-    mask_gold[i] = ( i % 2 == 1 ) ? 0 : 1;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < ldi; ++j ) {
+      mask_gold[(i*ldi)+j] = ( j % 2 == 1 ) ? 0 : 1;
+    }
   }
 
   /* compute out_gold */
@@ -1262,9 +1289,9 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   /* use jited relu */
   unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
-  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask;
+  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : ( (bitm == 0 ) ? (void*)mask : (void*)mask_bit );
   unary_param.out.primary   = (void*)out;
-  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   } else if ( type == 1 ) {
@@ -1304,6 +1331,7 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_free( out );
   libxsmm_free( in );
   libxsmm_free( mask );
+  libxsmm_free( mask_bit );
   libxsmm_free( mask_gold );
 
   if ( ret == EXIT_SUCCESS ) {

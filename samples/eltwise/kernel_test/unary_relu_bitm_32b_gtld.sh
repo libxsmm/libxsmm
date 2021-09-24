@@ -12,7 +12,7 @@ ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(16,97,16), 6)
+randnum = rnd.sample(range(1,101), 18)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
