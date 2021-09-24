@@ -27,6 +27,31 @@
   fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
 }
 
+double mean(double *array, int N) {
+  double res = 0.0;
+  int i;
+
+  for (i = 0; i < N; i++) {
+    res += array[i];
+  }
+
+  res = res/(double)N;
+  return res;
+}
+
+double std(double *array, int N) {
+  double m = mean(array, N);
+  int i;
+  double res = 0.0;
+
+  for (i = 0; i < N; i++) {
+    res += (array[i] - m) * (array[i] - m);
+  }
+
+  res = sqrt(res/(double)N);
+  return res;
+}
+
 void shuffle_array(unsigned int *array, int n) {
   if (n > 1)
   {
@@ -103,7 +128,10 @@ int main(int argc, char* argv[])
   unsigned long long nuke_size =  ((unsigned long long)( (unsigned long long)2 * (unsigned long long)1024 * (unsigned long long)1024 * (unsigned long long)1024 + (unsigned long long)nThreads)/ (unsigned long long) nThreads) * (unsigned long long) nThreads;
   unsigned long long l_start, l_end;
   double l_total = 0.0;
+  double *l_totals;
   double gflop = 0.0;
+  double *gflop_array;
+  double m, s;
   int i;
 
   libxsmm_dnn_fullyconnected_desc fullyconnected_desc;
@@ -215,6 +243,8 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
   dummies = (unsigned long long*) libxsmm_aligned_malloc( nThreads*sizeof(unsigned long long), 2097152);
+  l_totals = (double*) libxsmm_aligned_malloc( nThreads*iters*sizeof(double), 2097152);
+  gflop_array = (double*) libxsmm_aligned_malloc( nThreads*sizeof(double), 2097152);
 
   for (i = 0; i < nThreads; i++) {
     input_libxsmm[i]               = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
@@ -222,6 +252,7 @@ int main(int argc, char* argv[])
     filter_libxsmm[i]              = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
     bias_libxsmm[i]                = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOFm     *sizeof(libxsmm_bfloat16), 2097152);
     relumask_libxsmm[i]            = (unsigned char*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(unsigned char), 2097152);
+    gflop_array[i]                 = 0.0;
   }
 
   /* allocate data */
@@ -487,6 +518,8 @@ int main(int argc, char* argv[])
     int j;
     int it = 0;
     unsigned long long __i;
+    unsigned long long _l_start, _l_end;
+
 
     for (it = 0; it < iters; it++) {
       if (nuke_caches > 0) {
@@ -532,29 +565,49 @@ int main(int argc, char* argv[])
       }
 #endif
 
-#pragma omp barrier
-      if (tid == 0) {
-        l_start = libxsmm_timer_tick();
-      }
+//#pragma omp barrier
+      _l_start = libxsmm_timer_tick();
 
       libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[tid], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, 0 );
-#pragma omp barrier
-      if (tid == 0) {
-        l_end = libxsmm_timer_tick();
-        l_total += libxsmm_timer_duration(l_start, l_end);
-      }
+//#pragma omp barrier
+      _l_end = libxsmm_timer_tick();
+      l_totals[tid*iters+it] = libxsmm_timer_duration(_l_start, _l_end);
     }
   }
 
   gflop = (2.0*(double)nImg*(double)nIFm*(double)nOFm*(double)nThreads*iters) / (1000*1000*1000);
 
+  l_total = l_totals[0];
+  for (i = 1; i< iters; i++) {
+    l_total += l_totals[i];
+  }
+
   printf("GFLOP  = %.5g\n", gflop);
   printf("fp time = %.5g\n", ((double)(l_total)));
   printf("GFLOPS  = %.5g\n", gflop/l_total);
 
+  m = mean(l_totals, nThreads*iters);
+  s = std(l_totals, nThreads*iters);
+
+  printf("mean of ALL times is %.5g, std is %.5g which is %.5g%%\n", m, s, s*100.0/m);
+
   for (i = 1; i < nThreads; i++) {
     dummies[0] += dummies[i];
   }
+
+  for (i = 0; i < nThreads; i++) {
+    int _i;
+    l_total = l_totals[i*iters+0];
+    for (_i = 1; _i < iters; _i++) {
+      l_total += l_totals[i*iters+_i];
+    }
+    gflop_array[i] = gflop/l_total;
+  }
+
+  m = mean(gflop_array, nThreads);
+  s = std(gflop_array, nThreads);
+
+  printf("mean of ALL GFLOPS is %.5g, std is %.5g which is %.5g%%\n", m, s, s*100.0/m);
 
   printf("PERFDUMP,%s,FP,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f,%llu\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
       nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
@@ -611,6 +664,8 @@ int main(int argc, char* argv[])
   libxsmm_free(bias_libxsmm);
   libxsmm_free(scratch);
   libxsmm_free(nuke_buffer);
+  libxsmm_free(l_totals);
+  libxsmm_free(gflop_array);
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
