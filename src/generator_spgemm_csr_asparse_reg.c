@@ -131,7 +131,12 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     l_breg_unique = 32 - l_n_blocking;
     l_base_acc_reg = 32 - l_n_blocking;
     l_bcast_reg = l_base_acc_reg - 1;
-    l_prefetch = 0;
+    if ( (io_generated_code->arch == LIBXSMM_X86_AVX512_KNL) ||
+         (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM)    ) {
+      l_prefetch = 1;
+    } else {
+      l_prefetch = 0;
+    }
 
     if ( l_fp64 ) {
       l_preg_unique = (32 - l_n_blocking - 1 - 8)*8;
