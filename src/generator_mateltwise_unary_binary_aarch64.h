@@ -19,6 +19,18 @@ void libxsmm_generator_configure_aarch64_vlens( const libxsmm_meltw_descriptor* 
                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config );
 
 LIBXSMM_API_INTERN
+void adjust_after_microkernel_addr_aarch64_gp_reg(  libxsmm_generated_code*                 io_generated_code,
+                                                    libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
+                                                    libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
+                                                    const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                    unsigned int                            i_gp_reg,
+                                                    unsigned int                            i_gp_scratch_reg,
+                                                    unsigned int                            i_adjust_instr,
+                                                    unsigned int                            m_microkernel,
+                                                    unsigned int                            n_microkernel,
+                                                    unsigned int                            i_loop_type ) ;
+
+LIBXSMM_API_INTERN
 void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
@@ -77,6 +89,7 @@ void adjust_in_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*         
                                                 libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                                 unsigned int                            i_gp_reg,
+                                                unsigned int                            i_gp_scratch_reg,
                                                 unsigned int                            i_adjust_instr,
                                                 unsigned int                            i_adjust_param,
                                                 unsigned int                            i_loop_type );
