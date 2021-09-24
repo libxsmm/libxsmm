@@ -48,7 +48,8 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
 /**
  * Generates a microkernel using VSX.
  *
- * The generator unrolls M, N, and K.
+ * The generator unrolls M, N.
+ * K is possibly unrolled (partially) and a loop is used if not unrolled completely.
  * M can be arbitrary, i.e., does not have to be a multiple of the vector length.
  * The kernel splits M into 128-bit chunks and (if required) one additional part (< 128 bits).
  *
@@ -64,18 +65,58 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
  *
  * @param io_generated_code pointer to the pointer of the generated code structure.
  * @param i_xgemm_desc description of the matrix-operation.
+ * @param i_gpr_a register holding address to A (contents are preserved).
+ * @param i_gpr_b register holding address to B (contents are preserved).
+ * @param i_gpr_c register holding address to C (contents are preserved).
  * @param i_m_blocking used blocking for M.
  * @param i_n_blocking used blocking for N.
+ * @param i_k_blocking used blokcing for K.
  */
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code        * io_generated_code,
                                                    libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                   unsigned char                   i_gpr_a,
+                                                   unsigned char                   i_gpr_b,
+                                                   unsigned char                   i_gpr_c,
                                                    unsigned int                    i_m_blocking,
                                                    unsigned int                    i_n_blocking,
                                                    unsigned int                    i_k_blocking );
 
 /**
- * Genrates a matrix kernel for POWER.
+ * Generates a kernel which loops over M-blocks.
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure.
+ * @param i_xgemm_desc description of the matrix-operation.
+ * @param i_bytes_per_val number of bytes per value.
+ * @param i_gpr_a register holding address to A (contents are not preserved).
+ * @param i_gpr_b register holding address to B (contents are not preserved).
+ * @param i_gpr_c register holding address to C (contents are not preserved).
+ * @param i_gpr_scratch scratch register.
+ * @param i_max_block_m maximum size of a block w.r.t. M.
+ * @param i_n used size of the blocks w.r.t. N.
+ **/
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_power_m_loop_vsx( libxsmm_generated_code        * io_generated_code,
+                                              libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                              unsigned int                    i_bytes_per_val,
+                                              unsigned char                   i_gpr_a,
+                                              unsigned char                   i_gpr_b,
+                                              unsigned char                   i_gpr_c,
+                                              unsigned char                   i_gpr_scratch,
+                                              unsigned int                    i_max_block_m,
+                                              unsigned int                    i_n );
+
+/**
+ * Generates a matrix kernel for POWER-VSX.
+ * @param io_generated_code pointer to the pointer of the generated code structure.
+ * @param i_xgemm_desc description of the matrix-operation.
+ **/
+LIBXSMM_API_INTERN
+int libxsmm_generator_gemm_power_kernel_vsx( libxsmm_generated_code        * io_generated_code,
+                                             libxsmm_gemm_descriptor const * i_xgemm_desc );
+
+/**
+ * Generates a matrix kernel for POWER.
  * @param io_generated_code pointer to the pointer of the generated code structure.
  * @param i_xgemm_desc description of the matrix-operation.
  **/
