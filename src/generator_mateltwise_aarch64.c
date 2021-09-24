@@ -187,12 +187,11 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
   libxsmm_mateltwise_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker        l_loop_label_tracker;
 
-  /* define loop_label_tracker */
+  /* define loop_label_tracker this code needs to be rewritten for Mateltwise by D-  */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define gp register mapping */
   memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping));
-  libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X0;
 
   /* define mateltwise kernel config */
