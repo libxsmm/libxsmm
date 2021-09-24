@@ -125,30 +125,54 @@ unsigned char libxsmm_generator_gemm_power_load_store_vsx( libxsmm_generated_cod
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code        * io_generated_code,
                                                    libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                                   unsigned char                   i_gpr_a,
+                                                   unsigned char                   i_gpr_b,
+                                                   unsigned char                   i_gpr_c,
                                                    unsigned int                    i_m_blocking,
                                                    unsigned int                    i_n_blocking,
                                                    unsigned int                    i_k_blocking ) {
+  unsigned int l_bytes_per_val = 4;
   unsigned int l_vector_length = 4;
 
-  unsigned char l_gpr_a = LIBXSMM_POWER_GPR_R3;
-  unsigned char l_gpr_b = LIBXSMM_POWER_GPR_R4;
-  unsigned char l_gpr_c = LIBXSMM_POWER_GPR_R5;
+  unsigned char l_gpr_a = LIBXSMM_POWER_GPR_R21;
+  unsigned char l_gpr_b = LIBXSMM_POWER_GPR_R22;
+  unsigned char l_gpr_k = 20;
 
-  unsigned char l_gpr_scratch[12] = {  6,  7,  8,  9,
+  unsigned char l_gpr_scratch[14] = {  6,  7,  8,  9,
                                       10, 11, 12, 13,
-                                      14, 15, 16, 17 };
-
-  unsigned int l_bytes_per_val = 4;
+                                      14, 15, 16, 17,
+                                      18, 19 };
 
   unsigned int l_stride_a = i_xgemm_desc->lda * l_bytes_per_val;
   unsigned int l_stride_b = i_xgemm_desc->ldb * l_bytes_per_val;
   unsigned int l_stride_c = i_xgemm_desc->ldc * l_bytes_per_val;
 
-
   /* derive blocking in terms of 128bit and remainder ops */
   unsigned int l_m_blocking_full = i_m_blocking / l_vector_length;
   unsigned int l_remainder_size = i_m_blocking % l_vector_length;
                l_remainder_size *= l_bytes_per_val;
+
+  /* derive k-unrolling */
+  unsigned short l_k_unroll = 1;
+  if( i_k_blocking%4 == 0 ) {
+    l_k_unroll = 4;
+  }
+
+  /* loop labels */
+  libxsmm_loop_label_tracker l_loop_labels;
+
+  /* locally store addresses of A and C */
+  libxsmm_power_instruction_3( io_generated_code,
+                               LIBXSMM_POWER_INSTR_FIP_ORI,
+                               l_gpr_a,
+                               i_gpr_a,
+                               0 );
+
+  libxsmm_power_instruction_3( io_generated_code,
+                               LIBXSMM_POWER_INSTR_FIP_ORI,
+                               l_gpr_b,
+                               i_gpr_b,
+                               0 );
 
   /* load accumulator block */
   unsigned char l_vsr_c_first = 0;
@@ -161,14 +185,26 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
                                                            0,
                                                            l_bytes_per_val == 4 ? 0 : 1,
                                                            0,
-                                                           l_gpr_c,
+                                                           i_gpr_c,
                                                            l_gpr_scratch,
                                                            l_vsr_c_first );
 
   unsigned char l_vsr_a_first = l_vsr_c_first + l_n_vsr_c;
 
-  /* iterate over K */
-  for( unsigned short l_k = 0; l_k < i_k_blocking; l_k++ ) {
+  /* iterate over k if necessary */
+  if( l_k_unroll != i_k_blocking ) {
+    libxsmm_reset_loop_label_tracker( &l_loop_labels );
+    libxsmm_power_instruction_3( io_generated_code,
+                                LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                l_gpr_k,
+                                0,
+                                i_k_blocking );
+    libxsmm_power_instruction_register_jump_back_label( io_generated_code,
+                                                        &l_loop_labels );
+  }
+
+  /* unrolled k */
+  for( unsigned short l_k = 0; l_k < l_k_unroll; l_k++ ) {
     /* load (partial) column of A */
     unsigned int l_n_vsr_a = 0;
     l_n_vsr_a = libxsmm_generator_gemm_power_load_store_vsx( io_generated_code,
@@ -233,6 +269,18 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
     }
   }
 
+  /* end of k-loop */
+  if( l_k_unroll != i_k_blocking ) {
+    libxsmm_power_instruction_3( io_generated_code,
+                                LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                l_gpr_k,
+                                l_gpr_k,
+                                -l_k_unroll );
+    libxsmm_power_instruction_cond_jump_back_to_label( io_generated_code,
+                                                      l_gpr_k,
+                                                      &l_loop_labels );
+  }
+
   /* store accumulator block */
   l_n_vsr_c = libxsmm_generator_gemm_power_load_store_vsx( io_generated_code,
                                                            l_m_blocking_full,
@@ -242,65 +290,253 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
                                                            1,
                                                            l_bytes_per_val == 4 ? 0 : 1,
                                                            0,
-                                                           l_gpr_c,
+                                                           i_gpr_c,
                                                            l_gpr_scratch,
                                                            l_vsr_c_first );
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_gemm_power_kernel( libxsmm_generated_code        * io_generated_code,
-                                         libxsmm_gemm_descriptor const * i_xgemm_desc ) {
-  // unsigned int l_bytes_per_val = 0;
+void libxsmm_generator_gemm_power_m_loop_vsx( libxsmm_generated_code        * io_generated_code,
+                                              libxsmm_gemm_descriptor const * i_xgemm_desc,
+                                              unsigned int                    i_bytes_per_val,
+                                              unsigned char                   i_gpr_a,
+                                              unsigned char                   i_gpr_b,
+                                              unsigned char                   i_gpr_c,
+                                              unsigned char                   i_gpr_scratch,
+                                              unsigned int                    i_max_block_m,
+                                              unsigned int                    i_n ) {
+  unsigned short l_gpr_m = i_gpr_scratch;
+  unsigned int l_n_max_blocks_m = i_xgemm_desc->m / i_max_block_m;
+
+  libxsmm_loop_label_tracker l_loop_labels;
+  libxsmm_reset_loop_label_tracker( &l_loop_labels );
+
+  /* loop over maximum-sized m-blocks if necessary */
+  if( l_n_max_blocks_m > 1 ) {
+    libxsmm_power_instruction_3( io_generated_code,
+                                LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                l_gpr_m,
+                                0,
+                                l_n_max_blocks_m );
+    libxsmm_power_instruction_register_jump_back_label( io_generated_code,
+                                                        &l_loop_labels );
+  }
+
+  if( l_n_max_blocks_m > 0 ) {
+    /* micro-kernel for maximum sizes block w.r.t. m */
+    libxsmm_generator_gemm_power_microkernel_vsx( io_generated_code,
+                                                  i_xgemm_desc,
+                                                  i_gpr_a,
+                                                  i_gpr_b,
+                                                  i_gpr_c,
+                                                  i_max_block_m,
+                                                  i_n,
+                                                  i_xgemm_desc->k );
+
+    /* increase A and B pointers */
+    unsigned int l_n_bytes_per_block_m = i_max_block_m*i_bytes_per_val;
+    libxsmm_power_instruction_3( io_generated_code,
+                                 LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                 i_gpr_a,
+                                 i_gpr_a,
+                                 l_n_bytes_per_block_m );
+
+    libxsmm_power_instruction_3( io_generated_code,
+                                 LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                 i_gpr_c,
+                                 i_gpr_c,
+                                 l_n_bytes_per_block_m );
+  }
+
+  /* end of max-size m-block loop */
+  if( l_n_max_blocks_m > 1 ) {
+    libxsmm_power_instruction_3( io_generated_code,
+                                 LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                 l_gpr_m,
+                                 l_gpr_m,
+                                 -1 );
+
+    libxsmm_power_instruction_cond_jump_back_to_label( io_generated_code,
+                                                       l_gpr_m,
+                                                       &l_loop_labels );
+  }
+
+  /* generate microkernel for remainder if necessary */
+  unsigned int l_m_remaining = i_xgemm_desc->m % i_max_block_m;
+
+  if( l_m_remaining > 0 ) {
+    libxsmm_generator_gemm_power_microkernel_vsx( io_generated_code,
+                                                  i_xgemm_desc,
+                                                  i_gpr_a,
+                                                  i_gpr_b,
+                                                  i_gpr_c,
+                                                  l_m_remaining,
+                                                  i_n,
+                                                  i_xgemm_desc->k );
+  }
+}
+
+LIBXSMM_API_INTERN
+int libxsmm_generator_gemm_power_kernel_vsx( libxsmm_generated_code        * io_generated_code,
+                                             libxsmm_gemm_descriptor const * i_xgemm_desc ) {
+  /* derive if FP32 or FP64 and respective vector length */
+  unsigned int l_bytes_per_val = 0;
   unsigned int l_vector_length = 0;
   if( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-    // l_bytes_per_val = 4;
+    l_bytes_per_val = 4;
     l_vector_length = 4;
   }
   else if( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-    // l_bytes_per_val = 8;
+    l_bytes_per_val = 8;
     l_vector_length = 2;
   }
   else {
     return 1;
   }
 
-  /*
-   * derive number of required VS-registers
-   */
-  unsigned int l_n_vs_m = i_xgemm_desc->m;
-  l_n_vs_m += l_vector_length-1;
-  l_n_vs_m /= l_vector_length;
+  /* loop labels */
+  libxsmm_loop_label_tracker l_loop_labels;
+  libxsmm_reset_loop_label_tracker( &l_loop_labels );
 
-  unsigned int l_n_vs_all = l_n_vs_m * (i_xgemm_desc->n + 1); /* acc block and A-col */
+  /* derive maximum block-size bound by the number of available registers */
+  unsigned int l_max_block_m  = i_xgemm_desc->m;
+               l_max_block_m += l_vector_length-1;
+               l_max_block_m /= l_vector_length;
+  if( l_max_block_m > 12 ) {
+    l_max_block_m = 12;
+  }
+  l_max_block_m *= l_vector_length;
+
+  unsigned int l_max_block_n  = 64 - (l_max_block_m/l_vector_length) - 1;
+               l_max_block_n /= (l_max_block_m/l_vector_length);
+  if( l_max_block_n > i_xgemm_desc->n ) {
+    l_max_block_n = i_xgemm_desc->n;
+  }
+  if( l_max_block_n > 12 ) {
+    l_max_block_n = 12;
+  }
+
+  /* derive number of required GP-, FP-, and VS-registers */
+  unsigned int l_n_vs_all = (l_max_block_m/l_vector_length) * (l_max_block_n + 1); /* acc block and A-col */
   l_n_vs_all += 1; /* B bcast-register */
 
-  unsigned short l_gprMax = 7;
-  if( l_n_vs_m > i_xgemm_desc->n ) {
-    l_gprMax += l_n_vs_m;
-  }
-  else {
-    l_gprMax += i_xgemm_desc->n;
-  }
+  unsigned short l_gprMax = 24;
   unsigned short l_fprMax = (l_n_vs_all < 32) ? l_n_vs_all - 1 : 31;
   unsigned short l_vsrMax = (l_n_vs_all < 33) ? 0 : l_n_vs_all - 33;
 
-  /*
-   * Generate machine code.
-   */
+  /* save registers on stack as required by ABI */
   libxsmm_power_instruction_open_stream( io_generated_code,
                                          l_gprMax,
                                          l_fprMax,
                                          l_vsrMax );
 
-  libxsmm_generator_gemm_power_microkernel_vsx( io_generated_code,
-                                                i_xgemm_desc,
-                                                i_xgemm_desc->m,
-                                                i_xgemm_desc->n,
-                                                i_xgemm_desc->k );
+  /* function-input holding A's, B's and C's location in memory */
+  unsigned char l_gpr_a = LIBXSMM_POWER_GPR_R3;
+  unsigned char l_gpr_b = LIBXSMM_POWER_GPR_R4;
+  unsigned char l_gpr_c = LIBXSMM_POWER_GPR_R5;
 
+  /* GPR mapping */
+  unsigned char l_gpr_scratch = 23;
+  unsigned char l_gpr_n = 24;
+  unsigned int l_n_max_blocks_n = i_xgemm_desc->n / l_max_block_n;
+
+  /* loop over max-sized blocks in N-dimension */
+  if( l_n_max_blocks_n > 1 ) {
+    libxsmm_power_instruction_3( io_generated_code,
+                                LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                l_gpr_n,
+                                0,
+                                l_n_max_blocks_n );
+    libxsmm_power_instruction_register_jump_back_label( io_generated_code,
+                                                        &l_loop_labels );
+  }
+
+  /* generate M-loop for max-sized block in N-dimension */
+  if( l_n_max_blocks_n > 0 ) {
+    libxsmm_generator_gemm_power_m_loop_vsx( io_generated_code,
+                                             i_xgemm_desc,
+                                             l_bytes_per_val,
+                                             l_gpr_a,
+                                             l_gpr_b,
+                                             l_gpr_c,
+                                             l_gpr_scratch,
+                                             l_max_block_m,
+                                             l_max_block_n );
+
+    /* adjust matrix pointers */
+    unsigned int l_off  = 0;
+
+    /* A */
+    unsigned int l_n_max_blocks_m = i_xgemm_desc->m / l_max_block_m;
+    if( l_n_max_blocks_m > 0 ) {
+      l_off -= l_n_max_blocks_m*l_max_block_m;
+    }
+    l_off *= l_bytes_per_val;
+    libxsmm_power_instruction_3( io_generated_code,
+                                 LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                 l_gpr_a,
+                                 l_gpr_a,
+                                 l_off );
+
+    /* B */
+    l_off = i_xgemm_desc->ldb * l_max_block_n;
+    l_off *= l_bytes_per_val;
+    libxsmm_power_instruction_3( io_generated_code,
+                                 LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                 l_gpr_b,
+                                 l_gpr_b,
+                                 l_off );
+
+    /* C */
+    l_off = i_xgemm_desc->ldc * l_max_block_n;
+    if( l_n_max_blocks_m > 0 ) {
+      l_off -= l_n_max_blocks_m*l_max_block_m;
+    }
+    l_off *= l_bytes_per_val;
+    libxsmm_power_instruction_3( io_generated_code,
+                                 LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                 l_gpr_c,
+                                 l_gpr_c,
+                                 l_off );
+  }
+
+  /* end of n-loop */
+  if( l_n_max_blocks_n > 1 ) {
+    libxsmm_power_instruction_3( io_generated_code,
+                                 LIBXSMM_POWER_INSTR_FIP_ADDI,
+                                 l_gpr_n,
+                                 l_gpr_n,
+                                 -1 );
+    libxsmm_power_instruction_cond_jump_back_to_label( io_generated_code,
+                                                       l_gpr_n,
+                                                       &l_loop_labels );
+  }
+
+  /* generate M-loop for remaining entries in N-dimension */
+  unsigned int l_n_remaining = i_xgemm_desc->n % l_max_block_n;
+  if( l_n_remaining > 0 ) {
+    libxsmm_generator_gemm_power_m_loop_vsx( io_generated_code,
+                                             i_xgemm_desc,
+                                             l_bytes_per_val,
+                                             l_gpr_a,
+                                             l_gpr_b,
+                                             l_gpr_c,
+                                             l_gpr_scratch,
+                                             l_max_block_m,
+                                             l_n_remaining );
+  }
+
+  /* restore registers from stack according to ABI */
   libxsmm_power_instruction_close_stream( io_generated_code,
                                           l_gprMax,
                                           l_fprMax,
                                           l_vsrMax );
   return 0;
+}
+
+LIBXSMM_API_INTERN
+int libxsmm_generator_gemm_power_kernel( libxsmm_generated_code        * io_generated_code,
+                                         libxsmm_gemm_descriptor const * i_xgemm_desc ) {
+  return libxsmm_generator_gemm_power_kernel_vsx( io_generated_code,
+                                                  i_xgemm_desc );
 }

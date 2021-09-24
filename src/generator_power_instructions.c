@@ -522,3 +522,59 @@ void libxsmm_power_instruction_close_stream( libxsmm_generated_code * io_generat
   l_code[l_code_head] = 0x4e800020;
   io_generated_code->code_size += 4;
 }
+
+LIBXSMM_API_INTERN
+void libxsmm_power_instruction_register_jump_back_label( libxsmm_generated_code     * io_generated_code,
+                                                         libxsmm_loop_label_tracker * io_loop_label_tracker ) {
+  /* check if we still have label we can jump to */
+  if ( io_loop_label_tracker->label_count == 512 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code,
+                          LIBXSMM_ERR_EXCEED_JMPLBL );
+    return;
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    int l_lab = io_loop_label_tracker->label_count;
+    io_loop_label_tracker->label_count++;
+    io_loop_label_tracker->label_address[l_lab] = io_generated_code->code_size;
+  }
+  else {
+    fprintf(stderr, "libxsmm_power_instruction_cond_jump_back_to_label: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_power_instruction_cond_jump_back_to_label( libxsmm_generated_code     * io_generated_code,
+                                                        unsigned int                 i_gpr,
+                                                        libxsmm_loop_label_tracker * io_loop_label_tracker ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_lab = --io_loop_label_tracker->label_count;
+    unsigned int   l_b_dst = (io_loop_label_tracker->label_address[l_lab])/4;
+    unsigned int   l_code_head = io_generated_code->code_size/4;
+    unsigned int * l_code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* branch immediate */
+    int l_b_imm = (int)l_b_dst - (int)l_code_head;
+
+    /* compare GPR to 0 */
+    l_code[l_code_head] = libxsmm_power_instruction_fip_compare( LIBXSMM_POWER_INSTR_FIP_CMPI,
+                                                                 0,
+                                                                 0,
+                                                                 i_gpr,
+                                                                 0 );
+
+    /* branch if equal */
+    l_code[l_code_head+1] = libxsmm_power_instruction_b_conditional( LIBXSMM_POWER_INSTR_B_BC,
+                                                                     4,
+                                                                     2,
+                                                                     l_b_imm-1 );
+
+    /* advance code head */
+    io_generated_code->code_size += 4+4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_power_instruction_cond_jump_back_to_label: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
