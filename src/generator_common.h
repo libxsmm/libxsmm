@@ -983,6 +983,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int alu_mov_instruction;
   unsigned int vxor_instruction;
 
+  /* some helper values for kernels using bitmasks */
+  unsigned int ldi_mask;
+  unsigned int ldo_mask;
+  unsigned int vlen_in_mask;
+  unsigned int vlen_out_mask;
+
   /* Auxiliary varialiables for vreg management  */
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
