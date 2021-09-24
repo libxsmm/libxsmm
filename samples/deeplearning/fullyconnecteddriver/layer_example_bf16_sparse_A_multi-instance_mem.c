@@ -21,8 +21,35 @@
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
+//#define PRINT_PROGRESS
+
 #define CHKERR_LIBXSMM_DNN(A) { const int chkerr_libxsmm_dnn_ = A; if (LIBXSMM_DNN_SUCCESS != chkerr_libxsmm_dnn_) { \
   fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
+}
+
+double mean(double *array, int N) {
+  double res = 0.0;
+  int i;
+
+  for (i = 0; i < N; i++) {
+    res += array[i];
+  }
+
+  res = res/(double)N;
+  return res;
+}
+
+double std(double *array, int N) {
+  double m = mean(array, N);
+  int i;
+  double res = 0.0;
+
+  for (i = 0; i < N; i++) {
+    res += (array[i] - m) * (array[i] - m);
+  }
+
+  res = sqrt(res/(double)N);
+  return res;
 }
 
 void shuffle_array(unsigned int *array, int n) {
@@ -71,10 +98,9 @@ int main(int argc, char* argv[])
   char *nuke_buffer;
 
   naive_fullyconnected_t naive_param;
-  void** scratch;
+  char** scratch;
   size_t scratch_size = 0;
   unsigned long long *dummies;
-
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -87,6 +113,8 @@ int main(int argc, char* argv[])
   int bk = 32;
   int bc = 32;
   int sparsity_factor = 2;
+  int nuke_caches = 1;
+  int warmup_acts = 1;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -97,10 +125,13 @@ int main(int argc, char* argv[])
   int nThreads = 1; /* number of threads */
 #endif
 
-  unsigned long long nuke_size = 100 * 1024 *1024 * nThreads;
+  unsigned long long nuke_size =  ((unsigned long long)( (unsigned long long)2 * (unsigned long long)1024 * (unsigned long long)1024 * (unsigned long long)1024 + (unsigned long long)nThreads)/ (unsigned long long) nThreads) * (unsigned long long) nThreads;
   unsigned long long l_start, l_end;
   double l_total = 0.0;
+  double *l_totals;
   double gflop = 0.0;
+  double *gflop_array;
+  double m, s;
   int i;
 
   libxsmm_dnn_fullyconnected_desc fullyconnected_desc;
@@ -110,7 +141,6 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor **libxsmm_filter;
   libxsmm_dnn_tensor **libxsmm_bias;
   libxsmm_dnn_tensor **libxsmm_relumask;
-  libxsmm_dnn_tensor_datalayout *libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
@@ -135,6 +165,9 @@ int main(int argc, char* argv[])
   if (argc > i) bk         = atoi(argv[i++]);
   if (argc > i) bc         = atoi(argv[i++]);
   if (argc > i) sparsity_factor = atoi(argv[i++]);
+  if (argc > i) nuke_caches = atoi(argv[i++]);
+  if (argc > i) warmup_acts = atoi(argv[i++]);
+
 
   if ( nImg % bn != 0 ) {
     bn = nImg;
@@ -154,6 +187,26 @@ int main(int argc, char* argv[])
   if ((bk != 32) || (bc != 32)) {
     printf("BK and BC supported values are only 32 (provided are bk=%d bc=%d)!\n", bk, bc);
     return -1;
+  }
+
+  if (nuke_caches > 0) {
+    printf("#############################################\n");
+    printf("# WEIGHTS are COLD before performance run...#\n");
+    printf("#############################################\n");
+  } else {
+    printf("#############################################\n");
+    printf("# WEIGHTS are HOT before performance run... #\n");
+    printf("#############################################\n");
+  }
+
+  if (warmup_acts > 0) {
+    printf("#############################################\n");
+    printf("#  ACTS are HOT before performance run...   #\n");
+    printf("#############################################\n");
+  } else {
+    printf("#############################################\n");
+    printf("#  ACTS are COLD before performance run...  #\n");
+    printf("#############################################\n");
   }
 
   /* set struct for naive convolution */
@@ -185,7 +238,13 @@ int main(int argc, char* argv[])
   bias_libxsmm = (libxsmm_bfloat16**) libxsmm_aligned_malloc( nThreads*sizeof(libxsmm_bfloat16*), 2097152);
   relumask_libxsmm = (unsigned char**) libxsmm_aligned_malloc( nThreads*sizeof(unsigned char*), 2097152);
   nuke_buffer = (char*) libxsmm_aligned_malloc( nuke_size*sizeof(char), 2097152);
+  if (nuke_buffer == NULL) {
+    fprintf(stderr, "Nuke buffer alloc failed....\n");
+    exit(EXIT_FAILURE);
+  }
   dummies = (unsigned long long*) libxsmm_aligned_malloc( nThreads*sizeof(unsigned long long), 2097152);
+  l_totals = (double*) libxsmm_aligned_malloc( nThreads*iters*sizeof(double), 2097152);
+  gflop_array = (double*) libxsmm_aligned_malloc( nThreads*sizeof(double), 2097152);
 
   for (i = 0; i < nThreads; i++) {
     input_libxsmm[i]               = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
@@ -193,6 +252,7 @@ int main(int argc, char* argv[])
     filter_libxsmm[i]              = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
     bias_libxsmm[i]                = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOFm     *sizeof(libxsmm_bfloat16), 2097152);
     relumask_libxsmm[i]            = (unsigned char*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(unsigned char), 2097152);
+    gflop_array[i]                 = 0.0;
   }
 
   /* allocate data */
@@ -265,36 +325,46 @@ int main(int argc, char* argv[])
   libxsmm_bias = (libxsmm_dnn_tensor**) libxsmm_aligned_malloc( nThreads*sizeof(libxsmm_dnn_tensor*), 2097152);
   libxsmm_relumask = (libxsmm_dnn_tensor**) libxsmm_aligned_malloc( nThreads*sizeof(libxsmm_dnn_tensor*), 2097152);
 
-  for (i = 0; i < nThreads; i++) {
-    libxsmm_handle[i] = libxsmm_dnn_create_fullyconnected( fullyconnected_desc, &status );
-    CHKERR_LIBXSMM_DNN( status );
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    libxsmm_dnn_tensor_datalayout *libxsmm_layout;
+    libxsmm_dnn_err_t l_status;
+    libxsmm_handle[tid] = libxsmm_dnn_create_fullyconnected( fullyconnected_desc, &l_status );
+    CHKERR_LIBXSMM_DNN( l_status );
     /* setup LIBXSMM buffers */
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_input[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, input_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[tid], LIBXSMM_DNN_REGULAR_INPUT, &l_status ); CHKERR_LIBXSMM_DNN( l_status );
+    libxsmm_input[tid]  = libxsmm_dnn_link_tensor( libxsmm_layout, input_libxsmm[tid], &l_status ); CHKERR_LIBXSMM_DNN( l_status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_OUTPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_output[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, output_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[tid], LIBXSMM_DNN_REGULAR_OUTPUT, &l_status ); CHKERR_LIBXSMM_DNN( l_status );
+    libxsmm_output[tid]  = libxsmm_dnn_link_tensor( libxsmm_layout, output_libxsmm[tid], &l_status ); CHKERR_LIBXSMM_DNN( l_status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_FILTER, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_filter[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, filter_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[tid], LIBXSMM_DNN_REGULAR_FILTER, &l_status ); CHKERR_LIBXSMM_DNN( l_status );
+    libxsmm_filter[tid]  = libxsmm_dnn_link_tensor( libxsmm_layout, filter_libxsmm[tid], &l_status ); CHKERR_LIBXSMM_DNN( l_status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_CHANNEL_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_bias[i] = libxsmm_dnn_link_tensor( libxsmm_layout, bias_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[tid], LIBXSMM_DNN_REGULAR_CHANNEL_BIAS, &l_status ); CHKERR_LIBXSMM_DNN( l_status );
+    libxsmm_bias[tid] = libxsmm_dnn_link_tensor( libxsmm_layout, bias_libxsmm[tid], &l_status ); CHKERR_LIBXSMM_DNN( l_status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[i], LIBXSMM_DNN_RELU_MASK, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_relumask[i]  = libxsmm_dnn_link_tensor( libxsmm_layout, relumask_libxsmm[i], &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[tid], LIBXSMM_DNN_RELU_MASK, &l_status ); CHKERR_LIBXSMM_DNN( l_status );
+    libxsmm_relumask[tid]  = libxsmm_dnn_link_tensor( libxsmm_layout, relumask_libxsmm[tid], &l_status ); CHKERR_LIBXSMM_DNN( l_status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our own external to the library */
-    matrix_copy_NC_to_NCNC_bf16( naive_input_bf16,     input_libxsmm[i],     1, nImg, nIFm, bn, bc );
-    matrix_copy_NC_to_NCNC_bf16( naive_output_bf16,    output_libxsmm[i],    1, nImg, nOFm, bn, bk );
-    matrix_copy_KC_to_KCCK_bf16( naive_filter_bf16,    filter_libxsmm[i]      , nIFm, nOFm, bc, bk );
-    matrix_copy_NC_to_NCNC_bf16( naive_bias_bf16,      bias_libxsmm[i],    1, 1, nOFm, 1, nOFm );
+    matrix_copy_NC_to_NCNC_bf16_serial( naive_input_bf16,     input_libxsmm[tid],     1, nImg, nIFm, bn, bc );
+    matrix_copy_NC_to_NCNC_bf16_serial( naive_output_bf16,    output_libxsmm[tid],    1, nImg, nOFm, bn, bk );
+    matrix_copy_NC_to_NCNC_bf16_serial( naive_filter_bf16,    filter_libxsmm[tid],    1, nIFm, nOFm, bc, bk );
+    matrix_copy_NC_to_NCNC_bf16_serial( naive_bias_bf16,      bias_libxsmm[tid],    1, 1, nOFm, 1, nOFm );
   }
 
   /* Sparsify filters to requested level */
@@ -314,6 +384,7 @@ int main(int argc, char* argv[])
   }
 #else
   fprintf(stderr,
+
       "ERROR: support for at least "
 # if defined(LIBXSMM_INTEL_COMPILER)
       "AVX512BW"
@@ -328,10 +399,21 @@ int main(int argc, char* argv[])
   if (sparsity_factor > 1) {
     memcpy((libxsmm_bfloat16*)filter_libxsmm[0] + (nIFm * nOFm)/sparsity_factor, sparse_idx_libxsmm, ((nIFm * nOFm)/32)*sizeof(unsigned int));
   }
-  for (i = 1; i < nThreads; i++) {
-    memcpy((libxsmm_bfloat16*)filter_libxsmm[i], (libxsmm_bfloat16*)filter_libxsmm[0], (nIFm * nOFm)/sparsity_factor*sizeof(libxsmm_bfloat16));
-    if (sparsity_factor > 1) {
-      memcpy((libxsmm_bfloat16*)filter_libxsmm[i] + (nIFm * nOFm)/sparsity_factor, sparse_idx_libxsmm, ((nIFm * nOFm)/32)*sizeof(unsigned int));
+
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    if (tid > 0) {
+      memcpy((libxsmm_bfloat16*)filter_libxsmm[tid], (libxsmm_bfloat16*)filter_libxsmm[0], (nIFm * nOFm)/sparsity_factor*sizeof(libxsmm_bfloat16));
+      if (sparsity_factor > 1) {
+        memcpy((libxsmm_bfloat16*)filter_libxsmm[tid] + (nIFm * nOFm)/sparsity_factor, sparse_idx_libxsmm, ((nIFm * nOFm)/32)*sizeof(unsigned int));
+      }
     }
   }
 
@@ -361,12 +443,21 @@ int main(int argc, char* argv[])
   /* let's allocate and bind scratch */
   scratch_size = libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_handle[0], &status );
   CHKERR_LIBXSMM_DNN( status );
-  scratch = (void**) libxsmm_aligned_malloc( nThreads*sizeof(void*), 2097152);
-  for (i = 0; i < nThreads; i++) {
-    scratch[i] = libxsmm_aligned_scratch( scratch_size, 2097152 );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle[i], scratch[i] ) );
+  scratch = (char**) libxsmm_aligned_malloc( nThreads*sizeof(char*), 2097152);
+
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    scratch[tid] = (char*) libxsmm_aligned_malloc( scratch_size * sizeof(char), 2097152 );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle[tid], scratch[tid] ) );
     /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
-    init_buf( (float*)scratch[i], scratch_size/4, 0, 0 );
+    memset(scratch[tid], 42, scratch_size);
   }
 
   printf("##########################################\n");
@@ -374,7 +465,7 @@ int main(int argc, char* argv[])
   printf("##########################################\n");
   {
     const int tid = 0;
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[0], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[0], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, 0 ) );
   }
 
   /* copy out data */
@@ -406,7 +497,7 @@ int main(int argc, char* argv[])
     const int tid = 0;
 #endif
     for (i = 0; i < iters; ++i) {
-      libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[tid], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
+      libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[tid], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, 0 );
     }
   }
 
@@ -420,83 +511,117 @@ int main(int argc, char* argv[])
 #else
     const int tid = 0;
 #endif
+    unsigned long long chunk_size = (unsigned long long)nuke_size/((unsigned long long)nThreads);
+    char *pt_nuke = (char*)nuke_buffer + (unsigned long long) (((unsigned long long)tid) * (unsigned long long) chunk_size);
+    libxsmm_bfloat16* pt_out = (libxsmm_bfloat16*) output_libxsmm[tid];
+    libxsmm_bfloat16* pt_in = (libxsmm_bfloat16*) input_libxsmm[tid];
     int j;
+    int it = 0;
+    unsigned long long __i;
+    unsigned long long _l_start, _l_end;
 
-    if (tid == 0) {
-      printf("##########################################\n");
-      printf("#   Nuking caches....                     \n");
-      printf("##########################################\n");
-    }
 
-    memset((char*)nuke_buffer + tid * (nuke_size/nThreads), (char)tid, (nuke_size/nThreads) * sizeof(char));
-    for (j = 0; j < 10; j++) {
-      for (i = 0; i < nuke_size/nThreads; i++) {
-        char *pt = (char*)nuke_buffer + i + tid * (nuke_size/nThreads);
-        dummies[tid] += (unsigned long long) (*pt);
+    for (it = 0; it < iters; it++) {
+      if (nuke_caches > 0) {
+#ifdef PRINT_PROGRESS
+        if (tid == 0) {
+          printf("##########################################\n");
+          printf("#   Nuking caches....                     \n");
+          printf("##########################################\n");
+        }
+#endif
+        memset((char*)nuke_buffer + (unsigned long long)(((unsigned long long)tid)* chunk_size), (char)tid, (unsigned long long)chunk_size * (unsigned long long)sizeof(char));
+        for (j = 0; j < 10; j++) {
+          for (__i = 0; __i < chunk_size; __i++) {
+              dummies[tid] += (unsigned long long) pt_nuke[__i];
+          }
+        }
       }
-    }
 
-    if (tid == 0) {
-      printf("##################################################\n");
-      printf("#   Bringing input/output activations in cache... \n");
-      printf("##################################################\n");
-    }
-
-    for (j = 0; j < 10; j++) {
-      for (i = 0; i < nImg*nOFm; i++) {
-        libxsmm_bfloat16* pt = (libxsmm_bfloat16*) output_libxsmm[tid] + i;
-        dummies[tid] += (unsigned long long) (*pt);
+      if (warmup_acts > 0) {
+#ifdef PRINT_PROGRESS
+        if (tid == 0) {
+          printf("##################################################\n");
+          printf("#   Bringing input/output activations in cache... \n");
+          printf("##################################################\n");
+        }
+#endif
+        for (j = 0; j < 10; j++) {
+          for (__i = 0; __i < nImg*nOFm; __i++) {
+            dummies[tid] += (unsigned long long) pt_out[__i];
+            pt_out[__i] = (libxsmm_bfloat16) dummies[tid];
+          }
+          for (__i = 0; __i < nImg*nIFm; __i++) {
+            dummies[tid] += (unsigned long long) pt_in[__i];
+          }
+        }
       }
-      for (i = 0; i < nImg*nIFm; i++) {
-        libxsmm_bfloat16* pt = (libxsmm_bfloat16*) input_libxsmm[tid] + i;
-        dummies[tid] += (unsigned long long) (*pt);
+
+#ifdef PRINT_PROGRESS
+      if (tid == 0) {
+        printf("##########################################\n");
+        printf("#   Performance run,,,,                  #\n");
+        printf("##########################################\n");
       }
-    }
+#endif
 
-    if (tid == 0) {
-      printf("##########################################\n");
-      printf("#   Performance run,,,,                  #\n");
-      printf("##########################################\n");
-    }
+//#pragma omp barrier
+      _l_start = libxsmm_timer_tick();
 
-    #pragma omp barrier
-    if (tid == 0) {
-      l_start = libxsmm_timer_tick();
-    }
-
-    libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[tid], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
-
-    #pragma omp barrier
-    if (tid == 0) {
-      l_end = libxsmm_timer_tick();
-      l_total = libxsmm_timer_duration(l_start, l_end);
+      libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[tid], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, 0 );
+//#pragma omp barrier
+      _l_end = libxsmm_timer_tick();
+      l_totals[tid*iters+it] = libxsmm_timer_duration(_l_start, _l_end);
     }
   }
 
+  gflop = (2.0*(double)nImg*(double)nIFm*(double)nOFm*(double)nThreads*iters) / (1000*1000*1000);
 
-  gflop = (2.0*(double)nImg*(double)nIFm*(double)nOFm*(double)nThreads) / (1000*1000*1000);
+  l_total = l_totals[0];
+  for (i = 1; i< iters; i++) {
+    l_total += l_totals[i];
+  }
 
   printf("GFLOP  = %.5g\n", gflop);
   printf("fp time = %.5g\n", ((double)(l_total)));
   printf("GFLOPS  = %.5g\n", gflop/l_total);
 
+  m = mean(l_totals, nThreads*iters);
+  s = std(l_totals, nThreads*iters);
+
+  printf("mean of ALL times is %.5g, std is %.5g which is %.5g%%\n", m, s, s*100.0/m);
+
   for (i = 1; i < nThreads; i++) {
     dummies[0] += dummies[i];
   }
+
+  for (i = 0; i < nThreads; i++) {
+    int _i;
+    l_total = l_totals[i*iters+0];
+    for (_i = 1; _i < iters; _i++) {
+      l_total += l_totals[i*iters+_i];
+    }
+    gflop_array[i] = gflop/l_total;
+  }
+
+  m = mean(gflop_array, nThreads);
+  s = std(gflop_array, nThreads);
+
+  printf("mean of ALL GFLOPS is %.5g, std is %.5g which is %.5g%%\n", m, s, s*100.0/m);
 
   printf("PERFDUMP,%s,FP,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f,%llu\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
       nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
       norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel, dummies[0]);
 
-   /* clean-up */
+  /* clean-up */
   for (i = 0; i < nThreads; i++) {
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_scratch( libxsmm_handle[i] ) );
-    libxsmm_free(scratch[i]);
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_INPUT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_OUTPUT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_FILTER ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_release_tensor( libxsmm_handle[i], LIBXSMM_DNN_RELU_MASK ) );
+
 
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input[i] ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_output[i] ) );
@@ -511,7 +636,7 @@ int main(int argc, char* argv[])
     libxsmm_free(filter_libxsmm[i]);
     libxsmm_free(relumask_libxsmm[i]);
     libxsmm_free(bias_libxsmm[i]);
-
+    libxsmm_free(scratch[i]);
   }
 
   /* deallocate data */
@@ -539,6 +664,8 @@ int main(int argc, char* argv[])
   libxsmm_free(bias_libxsmm);
   libxsmm_free(scratch);
   libxsmm_free(nuke_buffer);
+  libxsmm_free(l_totals);
+  libxsmm_free(gflop_array);
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
