@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
   double *l_totals;
   double gflop = 0.0;
   double *gflop_array;
-  double m, s;
+  double m, s, min_gflops, max_gflops, iter_flops;
   int i;
 
   libxsmm_dnn_fullyconnected_desc fullyconnected_desc;
@@ -565,7 +565,7 @@ int main(int argc, char* argv[])
       }
 #endif
 
-//#pragma omp barrier
+#pragma omp barrier
       _l_start = libxsmm_timer_tick();
 
       libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[tid], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, 0 );
@@ -607,7 +607,28 @@ int main(int argc, char* argv[])
   m = mean(gflop_array, nThreads);
   s = std(gflop_array, nThreads);
 
-  printf("mean of ALL GFLOPS is %.5g, std is %.5g which is %.5g%%\n", m, s, s*100.0/m);
+  printf("Mean of ALL GFLOPS is %.5g, std is %.5g which is %.5g%%\n\n", m, s, s*100.0/m);
+
+  min_gflops = gflop_array[0];
+  max_gflops = gflop_array[0];
+  for (i = 1; i < nThreads; i++) {
+    min_gflops = LIBXSMM_MIN(min_gflops, gflop_array[i]);
+    max_gflops = LIBXSMM_MAX(max_gflops, gflop_array[i]);
+  }
+
+  printf("Among threads total MIN is %.5g and total MAX is %.5g\n", min_gflops, max_gflops);
+
+  iter_flops = (2.0*(double)nImg*(double)nIFm*(double)nOFm*(double)nThreads) / (1000*1000*1000);
+  min_gflops = iter_flops / l_totals[0];
+  max_gflops = iter_flops / l_totals[0];
+  m = max_gflops;
+  for (i = 1; i < nThreads * iters; i++) {
+    min_gflops = LIBXSMM_MIN(min_gflops, iter_flops / l_totals[i]);
+    max_gflops = LIBXSMM_MAX(max_gflops, iter_flops / l_totals[i]);
+    m += iter_flops / l_totals[i];
+  }
+
+  printf("Among threads and iters MIN is %.5g and MAX is %.5g and MEAN is %.5g\n", min_gflops, max_gflops, m/(double)(nThreads*iters));
 
   printf("PERFDUMP,%s,FP,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f,%llu\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
       nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
