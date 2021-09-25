@@ -131,7 +131,12 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     l_breg_unique = 32 - l_n_blocking;
     l_base_acc_reg = 32 - l_n_blocking;
     l_bcast_reg = l_base_acc_reg - 1;
-    l_prefetch = 1;
+    if ( (io_generated_code->arch == LIBXSMM_X86_AVX512_KNL) ||
+         (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM)    ) {
+      l_prefetch = 1;
+    } else {
+      l_prefetch = 0;
+    }
 
     if ( l_fp64 ) {
       l_preg_unique = (32 - l_n_blocking - 1 - 8)*8;
@@ -336,7 +341,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                    l_base_acc_reg + l_n );
         }
 
-        /* only prefetch if we do temporal stores */
+        /* only prefetch if we're not doing temporal stores */
         if ( l_prefetch && (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) == 0 ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
                                             LIBXSMM_X86_INSTR_PREFETCHT2,
