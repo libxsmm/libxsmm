@@ -2,6 +2,7 @@
 #include "generator_mateltwise_aarch64.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
+#include "generator_mateltwise_unary_binary_aarch64.h"
 #include "libxsmm_main.h"
 
 #define MN_LOOP_ORDER 0
@@ -442,6 +443,7 @@ void adjust_in_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*         
 
   if ((is_inp_gp_reg > 0) || (is_out_gp_reg > 0)) {
     unsigned int vlen   = (is_inp_gp_reg > 0) ? i_micro_kernel_config->vlen_in : i_micro_kernel_config->vlen_out;
+    unsigned int tsize  = (is_inp_gp_reg > 0) ? i_micro_kernel_config->datatype_size_in : i_micro_kernel_config->datatype_size_out;
     unsigned int ld     = (is_inp_gp_reg > 0) ? i_mateltwise_desc->ldi: i_mateltwise_desc->ldo;
 
 
@@ -449,25 +451,25 @@ void adjust_in_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*         
       if (i_loop_type == LOOP_TYPE_M) {
         //libxsmm_aarch64_instruction_alu_compute_imm12(  io_generated_code, i_adjust_instr, i_gp_reg, is_out_gp_reg, vlen * i_adjust_param * tsize,0);
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg,
-                                                         i_adjust_param * vlen  * ld );
+                                                         vlen * i_adjust_param * tsize  );
       } else {
         // libxsmm_aarch64_instruction_alu_compute_imm12(  io_generated_code, i_adjust_instr, i_gp_reg, is_out_gp_reg, vlen * i_adjust_param * tsize,0);
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_1, i_gp_reg,
-                                                        i_adjust_param * vlen * ld );
+                                                        i_adjust_param * tsize * ld );
       }
     } else {
       if (bcast_row > 0) {
         if (i_loop_type == LOOP_TYPE_N) {
         // libxsmm_aarch64_instruction_alu_compute_imm12(  io_generated_code, i_adjust_instr, i_gp_reg, is_out_gp_reg, vlen * i_adjust_param * tsize,0);
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_1, i_gp_reg,
-                                                        i_adjust_param * vlen * ld );
+                                                        i_adjust_param * tsize );
         }
       }
       if (bcast_col > 0) {
         if (i_loop_type == LOOP_TYPE_M) {
         // libxsmm_aarch64_instruction_alu_compute_imm12(  io_generated_code, i_adjust_instr, i_gp_reg, is_out_gp_reg, vlen * i_adjust_param * tsize,0);
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg,
-                                                       i_adjust_param * vlen * ld );
+                                                        vlen * i_adjust_param * tsize);
         }
       }
     }

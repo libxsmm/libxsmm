@@ -16,7 +16,7 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_configure_aarch64_vlens( const libxsmm_meltw_descriptor*         i_mateltwise_desc,
-                                                const libxsmm_mateltwise_kernel_config* i_micro_kernel_config );
+                                                libxsmm_mateltwise_kernel_config* i_micro_kernel_config );
 
 LIBXSMM_API_INTERN
 void adjust_after_microkernel_addr_aarch64_gp_reg(  libxsmm_generated_code*                 io_generated_code,
