@@ -515,6 +515,8 @@ int main(int argc, char* argv[])
     char *pt_nuke = (char*)nuke_buffer + (unsigned long long) (((unsigned long long)tid) * (unsigned long long) chunk_size);
     libxsmm_bfloat16* pt_out = (libxsmm_bfloat16*) output_libxsmm[tid];
     libxsmm_bfloat16* pt_in = (libxsmm_bfloat16*) input_libxsmm[tid];
+    libxsmm_bfloat16* pt_wt = (libxsmm_bfloat16*) filter_libxsmm[tid];
+
     int j;
     int it = 0;
     unsigned long long __i;
@@ -530,12 +532,28 @@ int main(int argc, char* argv[])
           printf("##########################################\n");
         }
 #endif
+
+#if USE_NUKE_BUFFER
         memset((char*)nuke_buffer + (unsigned long long)(((unsigned long long)tid)* chunk_size), (char)tid, (unsigned long long)chunk_size * (unsigned long long)sizeof(char));
         for (j = 0; j < 10; j++) {
           for (__i = 0; __i < chunk_size; __i++) {
               dummies[tid] += (unsigned long long) pt_nuke[__i];
           }
         }
+#else
+        for (__i = 0; __i < (nImg*nOFm)/32; __i++) {
+          _mm_clflushopt((libxsmm_bfloat16*)pt_out + __i * 32);
+        }
+        for (__i = 0; __i < (nIFm*nOFm)/32; __i++) {
+          _mm_clflushopt((libxsmm_bfloat16*)pt_wt + __i * 32);
+        }
+        for (__i = 0; __i < (nImg*nIFm)/32; __i++) {
+          _mm_clflushopt((libxsmm_bfloat16*)pt_in + __i * 32);
+        }
+        for (__i = 0; __i < scratch_size/64; __i++) {
+          _mm_clflushopt((char*)scratch[tid]+ __i * 64);
+        }
+#endif
       }
 
       if (warmup_acts > 0) {
@@ -569,7 +587,7 @@ int main(int argc, char* argv[])
       _l_start = libxsmm_timer_tick();
 
       libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[tid], LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, 0 );
-//#pragma omp barrier
+
       _l_end = libxsmm_timer_tick();
       l_totals[tid*iters+it] = libxsmm_timer_duration(_l_start, _l_end);
     }
