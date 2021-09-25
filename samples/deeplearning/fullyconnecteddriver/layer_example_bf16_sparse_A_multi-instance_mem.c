@@ -516,6 +516,7 @@ int main(int argc, char* argv[])
     libxsmm_bfloat16* pt_out = (libxsmm_bfloat16*) output_libxsmm[tid];
     libxsmm_bfloat16* pt_in = (libxsmm_bfloat16*) input_libxsmm[tid];
     libxsmm_bfloat16* pt_wt = (libxsmm_bfloat16*) filter_libxsmm[tid];
+    char*             pt_scratch = (char*) scratch[tid];
 
     int j;
     int it = 0;
@@ -551,7 +552,7 @@ int main(int argc, char* argv[])
           _mm_clflushopt((libxsmm_bfloat16*)pt_in + __i * 32);
         }
         for (__i = 0; __i < scratch_size/64; __i++) {
-          _mm_clflushopt((char*)scratch[tid]+ __i * 64);
+          _mm_clflushopt((char*)pt_scratch+ __i * 64);
         }
 #endif
       }
@@ -571,6 +572,9 @@ int main(int argc, char* argv[])
           }
           for (__i = 0; __i < nImg*nIFm; __i++) {
             dummies[tid] += (unsigned long long) pt_in[__i];
+          }
+          for (__i = 0; __i < nIFm*bk*sizeof(libxsmm_bfloat16); __i++) {
+            dummies[tid] += (unsigned long long) pt_scratch[__i];
           }
         }
       }
