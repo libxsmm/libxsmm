@@ -705,8 +705,8 @@
 #define LIBXSMM_ERR_VNNI_A                90041
 #define LIBXSMM_ERR_VNNI_B                90042
 #define LIBXSMM_ERR_NO_AVX512VL           90043
-#define LIBXSMM_ERR_BITMASK_ELTWISE       90044
-#define LIBXSMM_ERR_GP_TEMP_MAPPING       90045
+#define LIBXSMM_ERR_GP_TEMP_MAPPING       90044
+#define LIBXSMM_ERR_BITMASK_REQUIRED      90045
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
