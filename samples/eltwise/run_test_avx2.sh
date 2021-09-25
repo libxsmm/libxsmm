@@ -15,8 +15,6 @@ export LIBXSMM_TARGET=hsw
 . ./kernel_test/unary_copy_32b_gtld.sh
 . ./kernel_test/unary_dropout_32b_eqld.sh
 . ./kernel_test/unary_dropout_32b_gtld.sh
-. ./kernel_test/unary_dropout_bitm_32b_eqld.sh
-. ./kernel_test/unary_dropout_bitm_32b_gtld.sh
 . ./kernel_test/unary_exp_32b_eqld.sh
 . ./kernel_test/unary_exp_32b_gtld.sh
 . ./kernel_test/unary_gelu_32b_eqld.sh
@@ -33,8 +31,6 @@ export LIBXSMM_TARGET=hsw
 . ./kernel_test/unary_rcp_sqrt_32b_gtld.sh
 . ./kernel_test/unary_relu_32b_eqld.sh
 . ./kernel_test/unary_relu_32b_gtld.sh
-. ./kernel_test/unary_relu_bitm_32b_eqld.sh
-. ./kernel_test/unary_relu_bitm_32b_gtld.sh
 . ./kernel_test/unary_replicate_col_var_32b_eqld.sh
 . ./kernel_test/unary_replicate_col_var_32b_gtld.sh
 . ./kernel_test/unary_sigmoid_32b_eqld.sh
