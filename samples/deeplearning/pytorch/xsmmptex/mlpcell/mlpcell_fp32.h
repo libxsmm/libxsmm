@@ -110,7 +110,7 @@ inline void add_f32_f32(int N, int M, libxsmm_meltw_binary_param *binary_param)
 
 inline void relu_fwd_f32(long N, long M, libxsmm_meltw_unary_param *params)
 {
-  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
 
   libxsmm_meltwfunction_unary relu_kernel = libxsmm_dispatch_meltw_unary(M, N, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   if ( relu_kernel == NULL ) {
@@ -122,7 +122,7 @@ inline void relu_fwd_f32(long N, long M, libxsmm_meltw_unary_param *params)
 
 inline void relu_bwd_f32(long N, long M, libxsmm_meltw_unary_param *params)
 {
-  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
 
   libxsmm_meltwfunction_unary relu_kernel = libxsmm_dispatch_meltw_unary(M, N, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( relu_kernel == NULL ) {
@@ -175,7 +175,7 @@ class MLPCell_F32
     libxsmm_meltw_unary_param cvt_params;
     libxsmm_meltw_unary_param relu_params;
     libxsmm_meltw_unary_param dropout_params;
-    libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+    libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     libxsmm_meltw_binary_param add_params;
     libxsmm_meltw_binary_flags binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
     libxsmm_meltw_binary_type binary_type = LIBXSMM_MELTW_TYPE_BINARY_ADD;
@@ -337,7 +337,7 @@ class MLPCell_F32
 
       libxsmm_meltw_unary_param relu_params;
       libxsmm_meltw_unary_param dropout_params;
-      libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+      libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
 
       for(int m=tb; m<te; m++) {
 
@@ -530,7 +530,7 @@ std::vector<at::Tensor> bwd(std::vector<at::Tensor> inputs)
     libxsmm_meltw_unary_param dropout_params;
     libxsmm_meltw_unary_param delbias_params;
     libxsmm_meltw_unary_param cvt_params;
-    libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+    libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
 
     int threads = 1;
 #ifdef _OPENMP
