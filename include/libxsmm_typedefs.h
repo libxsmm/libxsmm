@@ -286,13 +286,13 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
 } libxsmm_meltw_opreduce_vecs_flags;
 
 typedef enum libxsmm_meltw_unary_flags {
-  LIBXSMM_MELTW_FLAG_UNARY_NONE         = 0,
-  LIBXSMM_MELTW_FLAG_UNARY_BITMASK      = 1,
-  LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW    = 2,
-  LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL    = 4,
-  LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR = 8,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS  = 16,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS  = 32
+  LIBXSMM_MELTW_FLAG_UNARY_NONE              = 0,
+  LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT = 1,
+  LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW         = 2,
+  LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL         = 4,
+  LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR      = 8,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS       = 16,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS       = 32
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
