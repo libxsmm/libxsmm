@@ -447,27 +447,23 @@ void adjust_in_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*         
 
     if (bcast_input == 0) {
       if (i_loop_type == LOOP_TYPE_M) {
-        //libxsmm_aarch64_instruction_alu_compute_imm12(  io_generated_code, i_adjust_instr, i_gp_reg, is_out_gp_reg, vlen * i_adjust_param * tsize,0);
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg,
-                                                         i_adjust_param * vlen  * ld );
+                                                       i_adjust_param * vlen  * ld );
       } else {
-        // libxsmm_aarch64_instruction_alu_compute_imm12(  io_generated_code, i_adjust_instr, i_gp_reg, is_out_gp_reg, vlen * i_adjust_param * tsize,0);
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_1, i_gp_reg,
-                                                        i_adjust_param * vlen * ld );
+                                                       i_adjust_param * vlen * ld );
       }
     } else {
       if (bcast_row > 0) {
         if (i_loop_type == LOOP_TYPE_N) {
-        // libxsmm_aarch64_instruction_alu_compute_imm12(  io_generated_code, i_adjust_instr, i_gp_reg, is_out_gp_reg, vlen * i_adjust_param * tsize,0);
-        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_1, i_gp_reg,
-                                                        i_adjust_param * vlen * ld );
+          libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_1, i_gp_reg,
+                                                         i_adjust_param * vlen * ld );
         }
       }
       if (bcast_col > 0) {
         if (i_loop_type == LOOP_TYPE_M) {
-        // libxsmm_aarch64_instruction_alu_compute_imm12(  io_generated_code, i_adjust_instr, i_gp_reg, is_out_gp_reg, vlen * i_adjust_param * tsize,0);
-        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg,
-                                                       i_adjust_param * vlen * ld );
+          libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, i_adjust_instr, i_gp_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg,
+                                                         i_adjust_param * vlen * ld );
         }
       }
     }
