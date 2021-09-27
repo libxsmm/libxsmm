@@ -32,6 +32,7 @@ void libxsmm_generator_transform_norm_to_vnni_mbit_scalar_aarch64_asimd_microker
                                                                                      const unsigned int                      i_gp_reg_out,
                                                                                      const unsigned int                      i_gp_reg_m_loop,
                                                                                      const unsigned int                      i_gp_reg_n_loop,
+                                                                                     const unsigned int                      i_gp_reg_scratch,
                                                                                      const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                      const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                                                                      const unsigned int                      i_pad_vnni );
@@ -43,6 +44,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_mbit_scalar_aarch64_asimd_microke
                                                                                       const unsigned int                      i_gp_reg_out,
                                                                                       const unsigned int                      i_gp_reg_m_loop,
                                                                                       const unsigned int                      i_gp_reg_n_loop,
+                                                                                      const unsigned int                      i_gp_reg_scratch,
                                                                                       const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                       const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
@@ -53,6 +55,7 @@ void libxsmm_generator_transform_norm_padnm_mod2_mbit_scalar_aarch64_asimd_micro
                                                                                         const unsigned int                      i_gp_reg_out,
                                                                                         const unsigned int                      i_gp_reg_m_loop,
                                                                                         const unsigned int                      i_gp_reg_n_loop,
+                                                                                        const unsigned int                      i_gp_reg_scratch,
                                                                                         const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                         const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
@@ -108,6 +111,7 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_aarch64_asimd_microkernel( l
                                                                                const unsigned int                      i_gp_reg_out,
                                                                                const unsigned int                      i_gp_reg_m_loop,
                                                                                const unsigned int                      i_gp_reg_n_loop,
+                                                                               const unsigned int                      i_gp_reg_scratch,
                                                                                const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                                                                const unsigned int                      i_pad_vnni );
@@ -119,6 +123,7 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_aarch64_asimd_microkernel( 
                                                                                 const unsigned int                      i_gp_reg_out,
                                                                                 const unsigned int                      i_gp_reg_m_loop,
                                                                                 const unsigned int                      i_gp_reg_n_loop,
+                                                                                const unsigned int                      i_gp_reg_scratch,
                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
@@ -129,6 +134,7 @@ void libxsmm_generator_transform_norm_padnm_mod2_16bit_aarch64_asimd_microkernel
                                                                                   const unsigned int                      i_gp_reg_out,
                                                                                   const unsigned int                      i_gp_reg_m_loop,
                                                                                   const unsigned int                      i_gp_reg_n_loop,
+                                                                                  const unsigned int                      i_gp_reg_scratch,
                                                                                   const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                   const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
