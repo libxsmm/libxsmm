@@ -33,7 +33,15 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
       io_micro_kernel_config->datatype_size_in = 4;
       io_micro_kernel_config->vector_length_in = 4;
       io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->vector_length_in = 8;
+      io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
     } else if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_in = 2;
+      io_micro_kernel_config->vector_length_in = 8;
+      io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) ) {
       io_micro_kernel_config->datatype_size_in = 2;
       io_micro_kernel_config->vector_length_in = 8;
       io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
@@ -54,7 +62,15 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
       io_micro_kernel_config->datatype_size_out = 4;
       io_micro_kernel_config->vector_length_out = 4;
       io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_out = 2;
+      io_micro_kernel_config->vector_length_out = 8;
+      io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
     } else if ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
+      io_micro_kernel_config->datatype_size_out = 2;
+      io_micro_kernel_config->vector_length_out = 8;
+      io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
+    } else if ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
       io_micro_kernel_config->datatype_size_out = 2;
       io_micro_kernel_config->vector_length_out = 8;
       io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;

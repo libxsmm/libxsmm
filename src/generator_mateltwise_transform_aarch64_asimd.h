@@ -21,6 +21,7 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_aarch64_asimd_microke
                                                                                       const unsigned int                      i_gp_reg_out,
                                                                                       const unsigned int                      i_gp_reg_m_loop,
                                                                                       const unsigned int                      i_gp_reg_n_loop,
+                                                                                      const unsigned int                      i_gp_reg_scratch,
                                                                                       const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                       const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
@@ -62,6 +63,7 @@ void libxsmm_generator_transform_norm_to_normt_64bit_aarch64_asimd_microkernel( 
                                                                                 const unsigned int                      i_gp_reg_out,
                                                                                 const unsigned int                      i_gp_reg_m_loop,
                                                                                 const unsigned int                      i_gp_reg_n_loop,
+                                                                                const unsigned int                      i_gp_reg_scratch,
                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
@@ -72,6 +74,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_aarch64_asimd_microkernel( 
                                                                                 const unsigned int                      i_gp_reg_out,
                                                                                 const unsigned int                      i_gp_reg_m_loop,
                                                                                 const unsigned int                      i_gp_reg_n_loop,
+                                                                                const unsigned int                      i_gp_reg_scratch,
                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
@@ -82,6 +85,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_aarch64_asimd_microkernel( 
                                                                                 const unsigned int                      i_gp_reg_out,
                                                                                 const unsigned int                      i_gp_reg_m_loop,
                                                                                 const unsigned int                      i_gp_reg_n_loop,
+                                                                                const unsigned int                      i_gp_reg_scratch,
                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
@@ -92,6 +96,7 @@ void libxsmm_generator_transform_norm_to_normt_08bit_aarch64_asimd_microkernel( 
                                                                                 const unsigned int                      i_gp_reg_out,
                                                                                 const unsigned int                      i_gp_reg_m_loop,
                                                                                 const unsigned int                      i_gp_reg_n_loop,
+                                                                                const unsigned int                      i_gp_reg_scratch,
                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
