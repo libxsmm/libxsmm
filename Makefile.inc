@@ -1758,7 +1758,7 @@ ifeq (undefined,$(origin TARGET))
       endif
       # stop here as SSE=2 is implicitly present (64-bit ABI)
     else ifneq (0,$(AVX))
-      CTARGET := -march=native
+      CTARGET := -march=native -mtune=native
     endif
   endif # CTARGET
   endif # DBG
