@@ -2575,7 +2575,9 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
     const libxsmm_descriptor* desc;
 #if defined(__APPLE__) && defined(__arm64__)
     /* TODO: proper buffer x-allocation provides kernel info, etc. */
-    fprintf(stderr, "LIBXSMM WARNING: libxsmm_get_mmkernel_info is not implemented on MacOS aarch64!\n");
+    if (libxsmm_verbosity < 0) {
+      fprintf(stderr, "LIBXSMM WARNING: libxsmm_get_mmkernel_info is not implemented on MacOS aarch64!\n");
+    }
     info->iprecision = LIBXSMM_GEMM_PRECISION_F32;
     info->oprecision = LIBXSMM_GEMM_PRECISION_F32;
     info->prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
