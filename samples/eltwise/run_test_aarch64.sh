@@ -20,3 +20,15 @@
 . ./kernel_test_aarch64/unary_vnnitrans_16b_gtld.sh
 . ./kernel_test_aarch64/unary_copy_32b_eqld.sh
 . ./kernel_test_aarch64/unary_copy_32b_gtld.sh
+. ./kernel_test_aarch64/unary_xor_32b_eqld.sh
+. ./kernel_test_aarch64/unary_xor_32b_gtld.sh
+. ./kernel_test_aarch64/unary_sqrt_32b_eqld.sh
+. ./kernel_test_aarch64/unary_sqrt_32b_gtld.sh
+. ./kernel_test_aarch64/unary_x2_32b_eqld.sh
+. ./kernel_test_aarch64/unary_x2_32b_gtld.sh
+. ./kernel_test_aarch64/unary_xor_32b_eqld.sh
+. ./kernel_test_aarch64/unary_xor_32b_gtld.sh
+. ./kernel_test_aarch64/binary_add_32b_eqld.sh
+. ./kernel_test_aarch64/binary_add_32b_gtld.sh
+. ./kernel_test_aarch64/binary_mul_32b_eqld.sh
+. ./kernel_test_aarch64/binary_mul_32b_gtld.sh
