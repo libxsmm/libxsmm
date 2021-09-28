@@ -145,7 +145,7 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* h
     {
       int mysize = libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_handle[n], &status );
       CHKERR_LIBXSMM_DNN( status );
-      sptrptr[n] = libxsmm_aligned_scratch( mysize, 2097152 );
+      sptrptr[n] = libxsmm_aligned_malloc( mysize, 2097152 );
       max_size = mysize;
 
 #ifdef USE_MLSL

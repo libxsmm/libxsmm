@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
       if ( scratch != NULL ) {
         libxsmm_free( scratch );
       }
-      scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+      scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
       init_buf( (float*)scratch, scratch_size/4, 0, 0 );
     }
     if ( libxsmm_dnn_optimizer_get_scratch_size( libxsmm_opt[i], &status ) > scratch_size ) {
@@ -327,7 +327,7 @@ int main(int argc, char* argv[])
       if ( scratch != NULL ) {
         libxsmm_free( scratch );
       }
-      scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+      scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
       init_buf( (float*)scratch, scratch_size/4, 0, 0 );
     }
   }
@@ -363,7 +363,7 @@ int main(int argc, char* argv[])
     if ( scratch != NULL ) {
       libxsmm_free( scratch );
     }
-    scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+    scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
     init_buf( (float*)scratch, scratch_size/4, 0, 0 );
   }
 
