@@ -12,7 +12,7 @@ ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(16,97,16), 6)
+randnum = rnd.sample(range(2,101,2), 18)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
@@ -28,15 +28,8 @@ do
   N=`echo ${i} | awk -F"_" '{print $2}'`
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
-  echo ${M} ${N} ${LDI} ${LDI}
-  for PREC_IN in 2 4
-  do
-    for PREC_OUT in 2 4
-    do
-      ./eltwise_unary_dropout F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 112 112
-      ./eltwise_unary_dropout B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 112 112
-    done
-  done
+  echo ${M} ${N} ${LDI} ${LDO}
+  taskset -c 3 ./eltwise_unary_transform V 2 ${M} ${N} ${LDI} ${LDI}
 done
 
 rm ${TESTFILE1}

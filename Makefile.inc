@@ -1791,6 +1791,12 @@ ifneq (0,$(INTEL))
   INTRINSICS ?= 2
 else ifneq (0,$(CLANG))
   INTRINSICS ?= 2
+else ifneq (,$(GCC_VERSION))
+  ifneq (0,$(shell echo "$$((100000<=$(GCC_VERSION_NUM)))"))
+  ifeq (/usr/bin/,$(call qdir,$(call which,$(CC))))
+    INTRINSICS ?= 2
+  endif
+  endif
 endif
 ifeq (x86_64,$(MNAME))
   INTRINSICS ?= 1006

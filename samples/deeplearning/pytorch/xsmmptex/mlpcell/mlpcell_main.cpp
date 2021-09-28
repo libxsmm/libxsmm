@@ -158,7 +158,7 @@ std::vector<at::Tensor> dropout_forward(torch::Tensor input, float p, bool train
 #endif
       {
         libxsmm_meltw_unary_param dropout_params;
-        libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+        libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
         int tid = omp_get_thread_num();
         int threads = omp_get_max_threads();
         int jobs, tb, te;
@@ -209,7 +209,7 @@ std::vector<at::Tensor> dropout_forward(torch::Tensor input, float p, bool train
 #endif
       {
         libxsmm_meltw_unary_param dropout_params;
-        libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+        libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
         int tid = omp_get_thread_num();
         int threads = omp_get_max_threads();
         int jobs, tb, te;
@@ -294,7 +294,7 @@ at::Tensor dropout_backward(torch::Tensor input, torch::Tensor dropout_mask, flo
       int threads = omp_get_max_threads();
 
       libxsmm_meltw_unary_param dropout_params;
-      libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+      libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
 
       int jobs, tb, te;
       if(dim == 4) {
@@ -343,7 +343,7 @@ at::Tensor dropout_backward(torch::Tensor input, torch::Tensor dropout_mask, flo
       int threads = omp_get_max_threads();
 
       libxsmm_meltw_unary_param dropout_params;
-      libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK;
+      libxsmm_meltw_unary_flags dropout_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
 
       int jobs, tb, te;
 

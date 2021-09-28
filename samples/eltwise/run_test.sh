@@ -26,10 +26,6 @@
 . ./kernel_test/unary_copy_mixed_gtld.sh
 . ./kernel_test/unary_dropout_32b_eqld.sh
 . ./kernel_test/unary_dropout_32b_gtld.sh
-. ./kernel_test/unary_dropout_bitm_32b_eqld.sh
-. ./kernel_test/unary_dropout_bitm_32b_gtld.sh
-. ./kernel_test/unary_dropout_bitm_mixed_eqld.sh
-. ./kernel_test/unary_dropout_bitm_mixed_gtld.sh
 . ./kernel_test/unary_dropout_mixed_eqld.sh
 . ./kernel_test/unary_dropout_mixed_gtld.sh
 . ./kernel_test/unary_exp_32b_eqld.sh
@@ -62,10 +58,6 @@
 . ./kernel_test/unary_rcp_sqrt_mixed_gtld.sh
 . ./kernel_test/unary_relu_32b_eqld.sh
 . ./kernel_test/unary_relu_32b_gtld.sh
-. ./kernel_test/unary_relu_bitm_32b_eqld.sh
-. ./kernel_test/unary_relu_bitm_32b_gtld.sh
-. ./kernel_test/unary_relu_bitm_mixed_eqld.sh
-. ./kernel_test/unary_relu_bitm_mixed_gtld.sh
 . ./kernel_test/unary_relu_mixed_eqld.sh
 . ./kernel_test/unary_relu_mixed_gtld.sh
 . ./kernel_test/unary_replicate_col_var_32b_eqld.sh

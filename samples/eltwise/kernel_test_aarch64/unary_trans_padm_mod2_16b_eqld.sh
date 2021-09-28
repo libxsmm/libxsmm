@@ -12,12 +12,13 @@ ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(16,97,16), 6)
+randnum = rnd.sample(range(2,101,1), 18)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
+        padldo = m + m%2
         line = str(m) + '_' + str(n) + '_' \
-             + str(m) + '_' + str(n) + '\n'
+             + str(m) + '_' + str(padldo) + '\n'
         f1.write(line)
 f1.close()
 END
@@ -28,18 +29,8 @@ do
   N=`echo ${i} | awk -F"_" '{print $2}'`
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
-  echo ${M} ${N} ${LDI} ${LDI}
-  for PREC_IN in 2 4
-  do
-    for PREC_OUT in 2 4
-    do
-      for RELU_OP in D L E
-      do
-        ./eltwise_unary_relu ${RELU_OP} F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 112 112
-        ./eltwise_unary_relu ${RELU_OP} B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 112 112
-      done
-    done
-  done
+  echo ${M} ${N} ${LDI} ${LDO}
+  taskset -c 3 ./eltwise_unary_transform Y 2 ${M} ${N} ${LDI} ${LDO}
 done
 
 rm ${TESTFILE1}
