@@ -450,7 +450,7 @@ int main(int argc, char* argv[]) {
   }
 
   /* let's allocate and bind scratch */
-  scratch = libxsmm_aligned_scratch(max_scratch_size, 2097152);
+  scratch = libxsmm_aligned_malloc(max_scratch_size, 2097152);
   init_buf((float*)scratch, scratch_size / 4, 0, 0);
 
   for (i = range_start - 1; i <= range_end - 1; ++i) {

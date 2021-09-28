@@ -2166,7 +2166,7 @@ int main(int argc, char* argv[])
       scratch_size = alloc_size;
     }
   }
-  scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+  scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
 
   /* init data */
   for ( i = 0 ; i < num_layers+2; ++i ) {

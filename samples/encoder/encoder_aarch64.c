@@ -408,14 +408,14 @@ int main( /*int argc, char* argv[]*/ ) {
   mycode.arch = LIBXSMM_AARCH64_V81;
 
   /* testing asimd ldr/str instructions */
-  test_asimd_move( "asimd_mov_LDR_R", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R );
-  test_asimd_move( "asimd_mov_LDR_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF );
+  test_asimd_move( "asimd_mov_LDR_R",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R );
+  test_asimd_move( "asimd_mov_LDR_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF );
   test_asimd_move( "asimd_mov_LDR_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST );
-  test_asimd_move( "asimd_mov_LDR_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_PRE );
-  test_asimd_move( "asimd_mov_LDR_STR_R", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_R );
-  test_asimd_move( "asimd_mov_STR_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF );
+  test_asimd_move( "asimd_mov_LDR_I_PRE",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_PRE );
+  test_asimd_move( "asimd_mov_STR_R",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_R );
+  test_asimd_move( "asimd_mov_STR_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF );
   test_asimd_move( "asimd_mov_STR_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST );
-  test_asimd_move( "asimd_mov_STR_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_PRE );
+  test_asimd_move( "asimd_mov_STR_I_PRE",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_PRE );
 
   test_asimd_struct_move( "asimd_mov_LD1R", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R );
   test_asimd_struct_move( "asimd_mov_LD1R_R_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST );

@@ -1424,7 +1424,7 @@ int main(int argc, char* argv[])
   /* let's allocate and bind scratch */
   if ( my_fc_fwd.scratch_size > 0 || my_fc_bwd.scratch_size > 0 ) {
     size_t alloc_size = LIBXSMM_MAX( my_fc_fwd.scratch_size, my_fc_bwd.scratch_size);
-    scratch = libxsmm_aligned_scratch( alloc_size, 2097152 );
+    scratch = libxsmm_aligned_malloc( alloc_size, 2097152 );
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
 

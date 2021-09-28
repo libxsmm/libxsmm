@@ -2216,8 +2216,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # if defined(__APPLE__) && defined(__arm64__)
       code->ptr = code_buffer; /* commit buffer */
       LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
-      sys_icache_invalidate(code_buffer, generated_code.code_size);
       pthread_jit_write_protect_np(1/*true*/);
+      sys_icache_invalidate(code_buffer, generated_code.code_size);
 # else
       /* attribute/protect buffer and revoke unnecessary flags */
       result = libxsmm_malloc_attrib((void**)code_buffer_result, LIBXSMM_MALLOC_FLAG_X, jit_name);
@@ -2580,6 +2580,19 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
   int result;
   code.xgemm = kernel;
   if (NULL != info) {
+#if defined(__APPLE__) && defined(__arm64__)
+    /* TODO: proper buffer x-allocation provides kernel info, etc. */
+    if (libxsmm_verbosity < 0) {
+      fprintf(stderr, "LIBXSMM WARNING: libxsmm_get_mmkernel_info is not implemented on MacOS aarch64!\n");
+    }
+    info->iprecision = LIBXSMM_GEMM_PRECISION_F32;
+    info->oprecision = LIBXSMM_GEMM_PRECISION_F32;
+    info->prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+    info->flags = LIBXSMM_GEMM_FLAG_NONE;
+    info->lda = info->ldb = info->ldc = 1;
+    info->m = info->n = info->k = 1;
+    result = EXIT_SUCCESS;
+#else
     const libxsmm_descriptor* desc;
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
         NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
@@ -2597,16 +2610,6 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
       result = EXIT_SUCCESS;
     }
     else {
-#if defined(__APPLE__) && defined(__arm64__)
-      /* TODO: proper buffer x-allocation provides kernel info, etc. */
-      info->iprecision = LIBXSMM_GEMM_PRECISION_F32;
-      info->oprecision = LIBXSMM_GEMM_PRECISION_F32;
-      info->prefetch = LIBXSMM_GEMM_PREFETCH_SIGONLY;
-      info->flags = LIBXSMM_GEMM_FLAG_NONE;
-      info->lda = info->ldb = info->ldc = 1;
-      info->m = info->n = info->k = 1;
-      result = EXIT_SUCCESS;
-#else
       if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
@@ -2618,8 +2621,8 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
         }
       }
       result = EXIT_FAILURE;
-#endif
     }
+#endif
   }
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
