@@ -183,7 +183,8 @@
  *   --> from ISA manual
  * 1st byte
  *   7: SVE: predication required
- *   6-3: not used
+ *   6-4: not used
+ *   3:   tuple-type: ignroe second sz bit
  *   2:   has immediate
  *   1-0: number of register operands
  */
@@ -239,20 +240,22 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R         0x0d40c002
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST  0x0dc0c003
 /* define ASIMD compute instructions */
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S     0x5f801003
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V     0x0f801003
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V       0x0e20cc03
-#define LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V        0x2e201c03
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V       0x0e20d403
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V       0x0ea0d403
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V       0x2e20dc03
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V       0x2e20fc03
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V       0x2ea0f802
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V      0x2ea1f802
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V     0x0ea1d802
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V     0x0e20fc03
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V    0x2ea1d802
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V    0x0ea0fc03
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S     0x5f80100b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V     0x0f80100b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V       0x0e20cc0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V        0x2e201c0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V       0x0e20d40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V       0x0ea0d40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V       0x2e20dc0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V       0x2e20fc0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V       0x2ea0f80a
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V      0x2ea1f80a
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V     0x0ea1d80a
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V     0x0e20fc0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V    0x2ea1d80a
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V    0x0ea0fc0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1_V       0x0e003803
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2_V       0x0e007803
 
 /* define SVE LD/ST instriction */
 #define LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF    0x85804006
@@ -302,27 +305,17 @@ typedef enum libxsmm_aarch64_asimd_width {
 } libxsmm_aarch64_asimd_width;
 
 /**
- * 15 14 Q sz */
+ * sz sz Q */
 typedef enum libxsmm_aarch64_asimd_tupletype {
   LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8B  = 0x0,
-  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B = 0x2,
-  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4H  = 0x4,
-  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8H  = 0x6,
-  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2S  = 0x0,
-  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S  = 0x2,
-  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D  = 0x3
+  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B = 0x1,
+  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4H  = 0x2,
+  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8H  = 0x3,
+  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2S  = 0x4,
+  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S  = 0x5,
+  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_1D  = 0x6,
+  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D  = 0x7
 } libxsmm_aarch64_asimd_tupletype;
-
-typedef enum libxsmm_aarch64_asimd_structtype {
-  LIBXSMM_AARCH64_ASIMD_SCRUCTTYPE_8B  = 0x0,
-  LIBXSMM_AARCH64_ASIMD_SCRUCTTYPE_16B = 0x1,
-  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_4H  = 0x2,
-  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_8H  = 0x3,
-  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_2S  = 0x4,
-  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_4S  = 0x5,
-  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_1D  = 0x6,
-  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_2D  = 0x7
-} libxsmm_aarch64_asimd_structtype;
 
 typedef enum libxsmm_aarch64_sve_type {
   LIBXSMM_AARCH64_SVE_TYPE_B = 0x0,
@@ -399,15 +392,15 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
  * @param i_gp_reg_addr gp register containing the base address
  * @param i_gp_reg_offset gp register containing an offset
  * @param i_vec_reg the simd register
- * @param i_structtype struct specifier
+ * @param i_tupletype tuple specifier
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*                io_generated_code,
-                                                    const unsigned int                     i_vmove_instr,
-                                                    const unsigned char                    i_gp_reg_addr,
-                                                    const unsigned char                    i_gp_reg_offset,
-                                                    const unsigned char                    i_vec_reg,
-                                                    const libxsmm_aarch64_asimd_structtype i_structtype );
+void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*               io_generated_code,
+                                                    const unsigned int                    i_vmove_instr,
+                                                    const unsigned char                   i_gp_reg_addr,
+                                                    const unsigned char                   i_gp_reg_offset,
+                                                    const unsigned char                   i_vec_reg,
+                                                    const libxsmm_aarch64_asimd_tupletype i_tupletype );
 
 /**
  * Generates ldp, stp, etc. instructions

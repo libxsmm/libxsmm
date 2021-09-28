@@ -267,12 +267,12 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*                io_generated_code,
-                                                    const unsigned int                     i_vmove_instr,
-                                                    const unsigned char                    i_gp_reg_addr,
-                                                    const unsigned char                    i_gp_reg_offset,
-                                                    const unsigned char                    i_vec_reg,
-                                                    const libxsmm_aarch64_asimd_structtype i_structtype ) {
+void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*               io_generated_code,
+                                                    const unsigned int                    i_vmove_instr,
+                                                    const unsigned char                   i_gp_reg_addr,
+                                                    const unsigned char                   i_gp_reg_offset,
+                                                    const unsigned char                   i_vec_reg,
+                                                    const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);
@@ -297,10 +297,10 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
     code[code_head] |= (unsigned int)(0x1f & i_vec_reg);
     /* setting Rn */
     code[code_head] |= (unsigned int)((0x1f & i_gp_reg_addr) << 5);
-   /* setting size */
-    code[code_head] |= (unsigned int)((0x6 & (unsigned int)i_structtype) << 9);
+    /* setting size */
+    code[code_head] |= (unsigned int)((0x6 & (unsigned int)i_tupletype) << 9);
     /* setting opc */
-    code[code_head] |= (unsigned int)((0x1 & (unsigned int)i_structtype) << 30);
+    code[code_head] |= (unsigned int)((0x1 & (unsigned int)i_tupletype) << 30);
 
     /* load/store with offset register */
     if ( (i_vmove_instr & 0x3) == 0x3 ) {
@@ -424,6 +424,8 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2_V:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: %u\n", i_vec_instr);
@@ -450,9 +452,13 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
       code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_1) << 16);
     }
     /* setting Q */
-    code[code_head] |= (unsigned int)((0x2 & i_tupletype) << 29);
+    code[code_head] |= (unsigned int)((0x1 & i_tupletype) << 30);
     /* setting sz */
-    code[code_head] |= (unsigned int)((0x1 & i_tupletype) << 22);
+    if ( (0x8 & i_vec_instr) == 0x8 ) {
+      code[code_head] |= (unsigned int)((0x2 & i_tupletype) << 21);
+    } else {
+      code[code_head] |= (unsigned int)((0x6 & i_tupletype) << 21);
+    }
     if ( (i_vec_instr == LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S) ||
          (i_vec_instr == LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V)    ) {
       unsigned char l_idx = ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) ? i_index << 1 : i_index;
