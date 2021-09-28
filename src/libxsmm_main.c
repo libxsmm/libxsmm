@@ -2572,7 +2572,6 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
   int result;
   code.xgemm = kernel;
   if (NULL != info) {
-    const libxsmm_descriptor* desc;
 #if defined(__APPLE__) && defined(__arm64__)
     /* TODO: proper buffer x-allocation provides kernel info, etc. */
     if (libxsmm_verbosity < 0) {
@@ -2586,6 +2585,7 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
     info->m = info->n = info->k = 1;
     result = EXIT_SUCCESS;
 #else
+    const libxsmm_descriptor* desc;
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
         NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
     {
