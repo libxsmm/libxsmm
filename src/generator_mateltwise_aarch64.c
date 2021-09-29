@@ -107,6 +107,10 @@ void libxsmm_generator_meltw_setup_stack_frame_aarch64( libxsmm_generated_code* 
                                               const libxsmm_meltw_descriptor*      i_mateltwise_desc,
                                               libxsmm_mateltwise_gp_reg_mapping*   i_gp_reg_mapping,
                                               libxsmm_mateltwise_kernel_config*    i_micro_kernel_config) {
+  LIBXSMM_UNUSED(io_generated_code);
+  LIBXSMM_UNUSED(i_mateltwise_desc);
+  LIBXSMM_UNUSED(i_gp_reg_mapping);
+  LIBXSMM_UNUSED(i_micro_kernel_config);
 #if 0
   unsigned int temp_reg                 = LIBXSMM_X86_GP_REG_R10;
   unsigned int skip_pushpops_callee_gp_reg  = ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX) ||
@@ -180,6 +184,8 @@ void libxsmm_generator_meltw_destroy_stack_frame_aarch64( libxsmm_generated_code
     const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config ) {
 
   LIBXSMM_UNUSED(i_mateltwise_desc);
+  LIBXSMM_UNUSED(io_generated_code);
+  LIBXSMM_UNUSED(i_micro_kernel_config);
 #if 0
   if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
@@ -203,7 +209,7 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
   libxsmm_mateltwise_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker        l_loop_label_tracker;
 
-  /* define loop_label_tracker this code needs to be rewritten for Mateltwise by D-  */
+  /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define gp register mapping */
@@ -234,6 +240,8 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
       } else {
         libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
       }
+    } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
+      libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
     } else  {
       /* This should not happen  */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
@@ -247,4 +255,3 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
   /* close asm */
   libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xe0f );
 }
-

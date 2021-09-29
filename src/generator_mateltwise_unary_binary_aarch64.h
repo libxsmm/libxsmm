@@ -14,9 +14,31 @@
 
 #include "generator_common.h"
 
+void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*                 io_generated_code,
+                                                 libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
+                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                 unsigned int                            i_vlen,
+                                                 unsigned int                            i_start_vreg,
+                                                 unsigned int                            i_m_blocking,
+                                                 unsigned int                            i_n_blocking,
+                                                 unsigned int                            i_mask_last_m_chunk,
+                                                 unsigned int                            i_mask_reg);
+
+LIBXSMM_API_INTERN
+void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*                 io_generated_code,
+                                                    libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
+                                                    const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                    const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                    unsigned int                            i_vlen,
+                                                    unsigned int                            i_start_vreg,
+                                                    unsigned int                            i_m_blocking,
+                                                    unsigned int                            i_n_blocking,
+                                                    unsigned int                            i_mask_last_m_chunk,
+                                                    unsigned int                            i_mask_reg);
 LIBXSMM_API_INTERN
 void libxsmm_generator_configure_aarch64_vlens( const libxsmm_meltw_descriptor*         i_mateltwise_desc,
-                                                const libxsmm_mateltwise_kernel_config* i_micro_kernel_config );
+                                                libxsmm_mateltwise_kernel_config* i_micro_kernel_config );
 
 LIBXSMM_API_INTERN
 void adjust_after_microkernel_addr_aarch64_gp_reg(  libxsmm_generated_code*                 io_generated_code,
