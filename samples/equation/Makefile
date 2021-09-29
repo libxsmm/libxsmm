@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm  $(OUTDIR)/equation_groupnorm $(OUTDIR)/equation_batchnorm $(OUTDIR)/equation_splitSGDç
+XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_groupnorm $(OUTDIR)/equation_batchnorm $(OUTDIR)/equation_splitSGD
 .PHONY: all
 all: $(XFILES)
 
