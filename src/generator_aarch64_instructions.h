@@ -183,8 +183,9 @@
  *   --> from ISA manual
  * 1st byte
  *   7: SVE: predication required
- *   6-4: not used
- *   3:   tuple-type: ignroe second sz bit
+ *   6-5: not used
+ *   4:   tuple-type: ignore all sz bits
+ *   3:   tuple-type: ignore second sz bit
  *   2:   has immediate
  *   1-0: number of register operands
  */
@@ -254,8 +255,20 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V     0x0e20fc0b
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V    0x2ea1d80a
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V    0x0ea0fc0b
-#define LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1_V       0x0e003803
-#define LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2_V       0x0e007803
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TRN1         0x0e002803
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TRN2         0x0e006803
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1         0x0e003803
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2         0x0e007803
+#define LIBXSMM_AARCH64_INSTR_ASIMD_UZP1         0x0e001803
+#define LIBXSMM_AARCH64_INSTR_ASIMD_UZP2         0x0e005803
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TBL_1        0x0e000013
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TBL_2        0x0e002013
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TBL_3        0x0e004013
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TBL_4        0x0e006013
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_1        0x0e001013
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2        0x0e003013
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3        0x0e005013
+#define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4        0x0e007013
 
 /* define SVE LD/ST instriction */
 #define LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF    0x85804006

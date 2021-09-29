@@ -444,8 +444,20 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_compute( "asimd_comp_FRECPS_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V,  0, 0 );
   test_asimd_compute( "asimd_comp_FRSQRTE_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V, 0, 1 );
   test_asimd_compute( "asimd_comp_FRSQRTS_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V, 0, 0 );
-  test_asimd_compute( "asimd_comp_ZIP1_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1_V,    0, 0 );
-  test_asimd_compute( "asimd_comp_ZIP2_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_TRN1",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TRN1,      0, 0 );
+  test_asimd_compute( "asimd_comp_TRN2",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TRN2,      0, 0 );
+  test_asimd_compute( "asimd_comp_ZIP1",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1,      0, 0 );
+  test_asimd_compute( "asimd_comp_ZIP2",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2,      0, 0 );
+  test_asimd_compute( "asimd_comp_UZP1",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_UZP1,      0, 0 );
+  test_asimd_compute( "asimd_comp_UZP2",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_UZP2,      0, 0 );
+  test_asimd_compute( "asimd_comp_TBL_1",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBL_1,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBL_2",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBL_2,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBL_3",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBL_3,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBL_4",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBL_4,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBX_1",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_1,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBX_2",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBX_3",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBX_4",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4,     0, 0 );
 
   mycode.arch = LIBXSMM_AARCH64_A64FX;
   /* testing asimd ldr/str instructions */
