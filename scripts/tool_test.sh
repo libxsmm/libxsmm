@@ -367,6 +367,8 @@ then
              [ "$(command -v cat)" ] && [ "$(command -v tail)" ];
           then
             echo " | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
+          elif [ "0" = "${LIMITLOG}" ]
+            echo " >/dev/null" >> ${TESTSCRIPT}
           else
             echo >> ${TESTSCRIPT}
           fi
