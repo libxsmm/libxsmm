@@ -424,8 +424,20 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V:
-    case LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1_V:
-    case LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TRN1:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TRN2:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_UZP1:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_UZP2:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TBL_1:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TBL_2:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TBL_3:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TBL_4:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_1:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: %u\n", i_vec_instr);
@@ -454,10 +466,12 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     /* setting Q */
     code[code_head] |= (unsigned int)((0x1 & i_tupletype) << 30);
     /* setting sz */
-    if ( (0x8 & i_vec_instr) == 0x8 ) {
-      code[code_head] |= (unsigned int)((0x2 & i_tupletype) << 21);
-    } else {
-      code[code_head] |= (unsigned int)((0x6 & i_tupletype) << 21);
+    if ( (0x10 & i_vec_instr) == 0x0 ) {
+      if ( (0x8 & i_vec_instr) == 0x8 ) {
+        code[code_head] |= (unsigned int)((0x2 & i_tupletype) << 21);
+      } else {
+        code[code_head] |= (unsigned int)((0x6 & i_tupletype) << 21);
+      }
     }
     if ( (i_vec_instr == LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S) ||
          (i_vec_instr == LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V)    ) {
