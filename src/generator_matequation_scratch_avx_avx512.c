@@ -23,6 +23,8 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
   if (is_unary_opcode_transform_kernel(cur_op->info.u_op.type) > 0) {
     *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, cur_op->info.u_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
+  } else if (is_unary_opcode_reduce_kernel(cur_op->info.u_op.type) > 0) {
+    *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, cur_op->info.u_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
   } else {
     *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, cur_op->info.u_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
   }
