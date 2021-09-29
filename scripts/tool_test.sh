@@ -337,18 +337,19 @@ then
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e "${SLURMFILE}" ]; then
-          DIR=$(cd $(dirname ${SLURMFILE}); pwd -P)
-          if [ -e "${DIR}/../Makefile" ]; then
-            DIR=${DIR}/..
+          ABSDIR=$(dirname ${SLURMFILE})
+          if [ ! -e "${ABSDIR}/Makefile" ] && [ -d "${SLURMFILE}" ] && [ -e "${ABSDIR}/../Makefile" ]; then
+            ABSDIR=${ABSDIR}/..
           fi
-          echo "cd ${REPOROOT} && make -e \${MAKEJ} && cd ${DIR} && make -e \${MAKEJ}" >> ${TESTSCRIPT}
+          ABSDIR=$(cd ${ABSDIR}; pwd -P)
+          echo "cd ${REPOROOT} && make -e \${MAKEJ} && cd ${ABSDIR} && make -e \${MAKEJ}" >> ${TESTSCRIPT}
           echo "RESULT=\$?" >> ${TESTSCRIPT}
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> ${TESTSCRIPT}
           # control log
           echo "echo \"--- RUN ${TESTID}\"" >> ${TESTSCRIPT}
-          DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
+          DIRSED=$(echo "${ABSDIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
-            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\.\//${DIRSED}\//" \
+            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(\.\|\.\.\)\//${DIRSED}\/\1\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
             ${SLURMFILE} > ${SLURMFILE}.run && ${CHMOD} +rx ${SLURMFILE}.run
