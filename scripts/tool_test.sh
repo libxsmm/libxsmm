@@ -181,12 +181,7 @@ then
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT}"
-  elif [ "" = "${LAUNCH_CMD}" ] && [ "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ]; then
-    umask 007
-    TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
-    ${CHMOD} +rx ${TESTSCRIPT}
-    LAUNCH="${TESTSCRIPT}"
-  elif [ "${LAUNCH_CMD}" ]; then
+  elif [[ ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") || (-d "$1") ]]; then
     umask 007
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
@@ -338,7 +333,7 @@ then
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e "${SLURMFILE}" ]; then
           ABSDIR=$(dirname ${SLURMFILE})
-          if [ ! -e "${ABSDIR}/Makefile" ] && [ -d "${SLURMFILE}" ] && [ -e "${ABSDIR}/../Makefile" ]; then
+          if [ ! -e "${ABSDIR}/Makefile" ] && [ -d "${ABSDIR}" ] && [ -e "${ABSDIR}/../Makefile" ]; then
             ABSDIR=${ABSDIR}/..
           fi
           ABSDIR=$(cd ${ABSDIR}; pwd -P)
