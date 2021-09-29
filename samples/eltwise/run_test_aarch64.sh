@@ -26,9 +26,15 @@
 . ./kernel_test_aarch64/unary_sqrt_32b_gtld.sh
 . ./kernel_test_aarch64/unary_x2_32b_eqld.sh
 . ./kernel_test_aarch64/unary_x2_32b_gtld.sh
+. ./kernel_test_aarch64/unary_negate_32b_eqld.sh
+. ./kernel_test_aarch64/unary_negate_32b_gtld.sh
 . ./kernel_test_aarch64/unary_xor_32b_eqld.sh
 . ./kernel_test_aarch64/unary_xor_32b_gtld.sh
 . ./kernel_test_aarch64/binary_add_32b_eqld.sh
 . ./kernel_test_aarch64/binary_add_32b_gtld.sh
 . ./kernel_test_aarch64/binary_mul_32b_eqld.sh
 . ./kernel_test_aarch64/binary_mul_32b_gtld.sh
+. ./kernel_test_aarch64/binary_sub_32b_eqld.sh
+. ./kernel_test_aarch64/binary_sub_32b_gtld.sh
+. ./kernel_test_aarch64/binary_div_32b_gtld.sh
+. ./kernel_test_aarch64/binary_div_32b_eqld.sh
