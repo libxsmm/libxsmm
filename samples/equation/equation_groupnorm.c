@@ -26,8 +26,8 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
-void tpp_groupnorm_fwd_fp32(long NP, long CP, long HW, long CB, long G, long num_HW_blocks, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps,
-                            libxsmm_matrix_eqn_function func10, libxsmm_matrix_eqn_function func00, libxsmm_meltwfunction_unary reduce_HW_kernel, libxsmm_meltwfunction_unary reduce_rows_kernel,
+void tpp_groupnorm_fwd_fp32(long NP, long CP, long HW, long CB, long G, long CI, long num_HW_blocks, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps,
+                            libxsmm_matrix_eqn_function func10, libxsmm_matrix_eqn_function func00, libxsmm_matrix_eqn_function func0C, libxsmm_meltwfunction_unary reduce_HW_kernel, libxsmm_meltwfunction_unary reduce_HW_G_kernel, libxsmm_meltwfunction_unary reduce_HW_CI_kernel, libxsmm_meltwfunction_unary reduce_rows_kernel,
                             libxsmm_meltwfunction_unary reduce_groups_kernel, libxsmm_meltwfunction_unary all_zero_G_kernel, libxsmm_meltwfunction_unary all_zero_kernel, libxsmm_meltwfunction_binary add_kernel) {
 
 
@@ -45,14 +45,16 @@ void tpp_groupnorm_fwd_fp32(long NP, long CP, long HW, long CB, long G, long num
     for(np = 0; np < NP; np++){
       for (cp = 0; cp < CP; cp++){
         LIBXSMM_ALIGNED(float tmp[2*CB], 64);
+        LIBXSMM_ALIGNED(float tmp_G[2*group_size], 64);
+        LIBXSMM_ALIGNED(float tmp_CI[2*CI], 64);
         LIBXSMM_ALIGNED(float sum_X[G], 64);
         LIBXSMM_ALIGNED(float sum_X2[G], 64);
         LIBXSMM_ALIGNED(float s[CB], 64);
         LIBXSMM_ALIGNED(float b[CB], 64);
 
-        int i, j, cb, hwb, g;
+        int i, j, k, cb, hwb, g;
         libxsmm_matrix_eqn_param eqn_param;
-        libxsmm_meltw_unary_param m_reduce_groups_params, v_reduce_groups_params, reduce_HW_params;
+        libxsmm_meltw_unary_param m_reduce_groups_params, v_reduce_groups_params, reduce_HW_params, reduce_HW_G_params, reduce_HW_CI_params;
         libxsmm_meltw_unary_param all_zero_param;
         libxsmm_meltw_binary_param add_param;
         libxsmm_matrix_arg arg_array[5];
@@ -67,63 +69,158 @@ void tpp_groupnorm_fwd_fp32(long NP, long CP, long HW, long CB, long G, long num
         all_zero_param.out.primary = &tmp[CB];
         all_zero_kernel(&all_zero_param);
 
-        // for (cb = 0; cb < 2*CB; cb++) {
-        //   tmp[cb] = 0.0f;
-        // }
+/*******  Process only CI (=16) ***********/
+        for(i=0; i < CB; i += CI){                              /* Loop over C_O*/
 
-        LIBXSMM_ALIGNED(float new_tmp[2*CB], 64);
-        reduce_HW_params.out.primary   = new_tmp;                  /* [2*CB] */
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          reduce_HW_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW_block, CB] -----> [2 * CB] */
-          reduce_HW_kernel(&reduce_HW_params);
+          for (cb = 0; cb < 2*CI; cb++) {
+            tmp_CI[cb] = 0.0f;
+          }
 
-          add_param.in0.primary = tmp;
-          add_param.in1.primary = new_tmp;
-          add_param.out.primary = tmp;
-          add_kernel(&add_param);
+          g = (cp*CB + i)/group_size;                                   /* determine current group */
+          LIBXSMM_ALIGNED(float new_tmp[2*CI], 64);
+          reduce_HW_CI_params.out.primary   = new_tmp;                  /* [2*CI] */
+          for(hwb=0; hwb < num_HW_blocks; hwb++){
+            reduce_HW_CI_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), i, CP, HW, CB);      /* [HW_block, CI] -----> [2 * CI] */
+            reduce_HW_CI_kernel(&reduce_HW_CI_params);
 
-          add_param.in0.primary = &tmp[CB];
-          add_param.in1.primary = &new_tmp[CB];
-          add_param.out.primary = &tmp[CB];
-          add_kernel(&add_param);
-          // for (cb = 0; cb < 2*CB; cb++) {
-          //   tmp[cb] += new_tmp[cb];
-          // }
-        }
 
-        for(i=0; i < CB; i += group_size){
-          g = (cp*CB + i)/group_size;                              /* determine current group */
-          m_reduce_groups_params.in.primary    = &tmp[i];
-          m_reduce_groups_params.out.primary   = &sum_X[g];
-          v_reduce_groups_params.in.primary    = &tmp[CB + i];
-          v_reduce_groups_params.out.primary   = &sum_X2[g];
-          reduce_groups_kernel(&m_reduce_groups_params);
-          reduce_groups_kernel(&v_reduce_groups_params);
+            for (cb = 0; cb < 2*CI; cb++) {
+              tmp_CI[cb] += new_tmp[cb];
+            }
+          }
 
-          mean[np*G + g] = sum_X[g] / ((float)group_size * HW);
-          var[np*G + g] = (sum_X2[g] / ((float)group_size * HW)) - (mean[np*G + g]*mean[np*G + g]);        /* var = E[X^2] - (E[X])^2 */
+          for(k=0; k < CI; k += group_size){
+            g = (cp*CB + i + k)/group_size;
+            for(j = 0; j < group_size; j++){
+              sum_X[g] += tmp_CI[k + j];
+              sum_X2[g] += tmp_CI[CI + k + j];
+            }
+            mean[np*G + g] = sum_X[g] / ((float)group_size * HW);
+            var[np*G + g] = (sum_X2[g] / ((float)group_size * HW)) - (mean[np*G + g]*mean[np*G + g]);        /* var = E[X^2] - (E[X])^2 */
 
-          for(j = 0; j < group_size; j++){
-            s[i + j] = 1.0f / ((float)sqrt(var[np*G + g] + eps));                               /* 1/sqrt(var(X) + eps) */
-            b[i + j] = -1 * mean[np*G + g] * s[i + j];                               /* -E[X]/sqrt(var(X) + eps) */
+            for(j = 0; j < group_size; j++){
+              s[i + k + j] = 1.0f / ((float)sqrt(var[np*G + g] + eps));                               /* 1/sqrt(var(X) + eps) */
+              b[i + k + j] = -1 * mean[np*G + g] * s[i + k + j];                               /* -E[X]/sqrt(var(X) + eps) */
+            }
+          }
+
+          arg_array[1].primary = &s[i];                                                                   /* [CI] */
+          arg_array[2].primary = &b[i];                                                                   /* [CI] */
+          arg_array[3].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, i, CB);                                    /* [CI] */
+          arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, beta, cp, i, CB);                                     /* [CI] */
+
+          for(hwb=0; hwb < num_HW_blocks; hwb++){
+            arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), i, CP, HW, CB);                       /* [HW, CI] */
+            eqn_param.inputs = arg_array;
+            eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), i, CP, HW, CB);                   /* [HW, CI] */
+            func0C(&eqn_param);                                                                                 /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
           }
         }
 
-        arg_array[1].primary = s;                                                                   /* [CB] */
-        arg_array[2].primary = b;                                                                   /* [CB] */
-        arg_array[3].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);                                    /* [CB] */
-        arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                                     /* [CB] */
+/*******  Process only group code ***********/
 
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);                       /* [HW, CB] */
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);                   /* [HW, CB] */
-          func10(&eqn_param);                                                                                 /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
-        }
+        // for(i=0; i < CB; i += group_size){                              /* Loop over groups*/
+
+        //   for (cb = 0; cb < 2*group_size; cb++) {
+        //     tmp_G[cb] = 0.0f;
+        //   }
+
+        //   g = (cp*CB + i)/group_size;                                   /* determine current group */
+        //   LIBXSMM_ALIGNED(float new_tmp[2*group_size], 64);
+        //   reduce_HW_G_params.out.primary   = new_tmp;                  /* [2*group_size] */
+        //   for(hwb=0; hwb < num_HW_blocks; hwb++){
+        //     reduce_HW_G_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), i, CP, HW, CB);      /* [HW_block, group_size] -----> [2 * group_size] */
+        //     reduce_HW_G_kernel(&reduce_HW_G_params);
+
+
+        //     for (cb = 0; cb < 2*group_size; cb++) {
+        //       tmp_G[cb] += new_tmp[cb];
+        //     }
+        //   }
+
+        //   g = (cp*CB + i)/group_size;
+        //   m_reduce_groups_params.in.primary    = tmp_G;
+        //   m_reduce_groups_params.out.primary   = &sum_X[g];
+        //   v_reduce_groups_params.in.primary    = &tmp_G[group_size];
+        //   v_reduce_groups_params.out.primary   = &sum_X2[g];
+        //   reduce_groups_kernel(&m_reduce_groups_params);
+        //   reduce_groups_kernel(&v_reduce_groups_params);
+
+        //   mean[np*G + g] = sum_X[g] / ((float)group_size * HW);
+        //   var[np*G + g] = (sum_X2[g] / ((float)group_size * HW)) - (mean[np*G + g]*mean[np*G + g]);        /* var = E[X^2] - (E[X])^2 */
+
+        //   for(j = 0; j < group_size; j++){
+        //     s[i + j] = 1.0f / ((float)sqrt(var[np*G + g] + eps));                               /* 1/sqrt(var(X) + eps) */
+        //     b[i + j] = -1 * mean[np*G + g] * s[i + j];                               /* -E[X]/sqrt(var(X) + eps) */
+        //   }
+
+        //   arg_array[1].primary = &s[i];                                                                   /* [group_size] */
+        //   arg_array[2].primary = &b[i];                                                                   /* [group_size] */
+        //   arg_array[3].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, i, CB);                                    /* [group_size] */
+        //   arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, beta, cp, i, CB);                                     /* [group_size] */
+
+        //   for(hwb=0; hwb < num_HW_blocks; hwb++){
+        //     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), i, CP, HW, CB);                       /* [HW, CB] */
+        //     eqn_param.inputs = arg_array;
+        //     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), i, CP, HW, CB);                   /* [HW, CB] */
+        //     func00(&eqn_param);                                                                                 /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
+        //   }
+        // }
+
+/***************************  Process entire block code *****************************/
+      //   LIBXSMM_ALIGNED(float new_tmp[2*CB], 64);
+      //   reduce_HW_params.out.primary   = new_tmp;                  /* [2*CB] */
+      //   for(hwb=0; hwb < num_HW_blocks; hwb++){
+      //     reduce_HW_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW_block, CB] -----> [2 * CB] */
+      //     reduce_HW_kernel(&reduce_HW_params);
+
+      //     add_param.in0.primary = tmp;
+      //     add_param.in1.primary = new_tmp;
+      //     add_param.out.primary = tmp;
+      //     add_kernel(&add_param);
+
+      //     add_param.in0.primary = &tmp[CB];
+      //     add_param.in1.primary = &new_tmp[CB];
+      //     add_param.out.primary = &tmp[CB];
+      //     add_kernel(&add_param);
+      //     // for (cb = 0; cb < 2*CB; cb++) {
+      //     //   tmp[cb] += new_tmp[cb];
+      //     // }
+      //   }
+
+      //   for(i=0; i < CB; i += group_size){
+      //     g = (cp*CB + i)/group_size;                              /* determine current group */
+      //     m_reduce_groups_params.in.primary    = &tmp[i];
+      //     m_reduce_groups_params.out.primary   = &sum_X[g];
+      //     v_reduce_groups_params.in.primary    = &tmp[CB + i];
+      //     v_reduce_groups_params.out.primary   = &sum_X2[g];
+      //     reduce_groups_kernel(&m_reduce_groups_params);
+      //     reduce_groups_kernel(&v_reduce_groups_params);
+
+      //     mean[np*G + g] = sum_X[g] / ((float)group_size * HW);
+      //     var[np*G + g] = (sum_X2[g] / ((float)group_size * HW)) - (mean[np*G + g]*mean[np*G + g]);        /* var = E[X^2] - (E[X])^2 */
+
+      //     for(j = 0; j < group_size; j++){
+      //       s[i + j] = 1.0f / ((float)sqrt(var[np*G + g] + eps));                               /* 1/sqrt(var(X) + eps) */
+      //       b[i + j] = -1 * mean[np*G + g] * s[i + j];                               /* -E[X]/sqrt(var(X) + eps) */
+      //     }
+      //   }
+
+      //   arg_array[1].primary = s;                                                                   /* [CB] */
+      //   arg_array[2].primary = b;                                                                   /* [CB] */
+      //   arg_array[3].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);                                    /* [CB] */
+      //   arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                                     /* [CB] */
+
+      //   for(hwb=0; hwb < num_HW_blocks; hwb++){
+      //     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);                       /* [HW, CB] */
+      //     eqn_param.inputs = arg_array;
+      //     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);                   /* [HW, CB] */
+      //     func10(&eqn_param);                                                                                 /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
+      //   }
       }
     }
   }
-  else{
+  else{                                                         /* Case when group_size > CB */
     #pragma omp parallel for
     for(np = 0; np < NP; np++){
 
@@ -947,11 +1044,11 @@ void scaler_groupnorm_bwd_fp32(long NP, long CP, long HW, long CB, long G, float
 
 
 int main( int argc, char* argv[] ) {
-  libxsmm_blasint my_eqn00, my_eqn10, my_eqn11, my_eqn12, my_eqn13, my_eqn14, my_eqn15, my_eqn16;
-  libxsmm_matrix_eqn_function func00, func10, func11, func12, func13, func14, func15, func16;
+  libxsmm_blasint my_eqn00, my_eqn10, my_eqn11, my_eqn12, my_eqn13, my_eqn14, my_eqn15, my_eqn16, my_eqn0C;
+  libxsmm_matrix_eqn_function func00, func10, func11, func12, func13, func14, func15, func16, func0C;
   libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltwfunction_unary reduce_rows_kernel, reduce_HW_kernel, reduce_groups_kernel;
+  libxsmm_meltwfunction_unary reduce_rows_kernel, reduce_HW_kernel, reduce_HW_G_kernel, reduce_HW_CI_kernel, reduce_groups_kernel;
 
   const float eps = FLT_EPSILON;
   libxsmm_blasint i, it, ld, tmp_ld, tmp_ld2;
@@ -967,6 +1064,7 @@ int main( int argc, char* argv[] ) {
   int CB = 64;
   int G = 1;
   long num_HW_blocks = 16;
+  long CI=16;
   int datatype_mode = 0;
   int iters = 100;
   libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
@@ -1083,6 +1181,17 @@ int main( int argc, char* argv[] ) {
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
   reduce_HW_kernel = libxsmm_dispatch_meltw_unary(CB, HW/num_HW_blocks, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
 
+  libxsmm_blasint group_size = (CP*CB)/G;
+  tmp_ld = group_size;
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
+  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+  reduce_HW_G_kernel = libxsmm_dispatch_meltw_unary(group_size, HW/num_HW_blocks, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+
+  tmp_ld = CI;
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
+  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+  reduce_HW_CI_kernel = libxsmm_dispatch_meltw_unary(CI, HW/num_HW_blocks, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+
   libxsmm_meltwfunction_binary add_kernel = libxsmm_dispatch_meltw_binary(CB, 1, &ld, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
   if ( add_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of add kernel failed. Bailing...!\n");
@@ -1091,7 +1200,6 @@ int main( int argc, char* argv[] ) {
 
 
   /* TPP for reducing groups */
-  libxsmm_blasint group_size = (CP*CB)/G;
   ld = group_size;                /* group_size = (CP*CB)/G */
   tmp_ld = 1;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
@@ -1134,10 +1242,25 @@ int main( int argc, char* argv[] ) {
   func00 = libxsmm_dispatch_matrix_eqn( group_size, HW/num_HW_blocks, &ld, out_dt, my_eqn00 );                         /* y = [HW, group_size] */
 
 
+  /* TPP for scaling */
+  ld = CB;         /* group_size */
+  tmp_ld = 1;
+  tmp_ld2 = 1;
+  my_eqn0C = libxsmm_matrix_eqn_create();                                                        /* y = (s*x + b)*gamma + beta */
+  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0C, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0C, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0C, CI, HW/num_HW_blocks, ld, 0, 0, in_dt );                         /* x = [HW, CI] */
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0C, CI, 1, tmp_ld, 1, 0, LIBXSMM_DATATYPE_F32 );       /* s = [CI] */
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0C, CI, 1, tmp_ld, 2, 0, LIBXSMM_DATATYPE_F32 );       /* b = [CI] */
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0C, CI, 1, tmp_ld2, 3, 0, in_dt );                     /* gamma = [CI] */
+  libxsmm_matrix_eqn_push_back_arg( my_eqn0C, CI, 1, tmp_ld2, 4, 0, in_dt );                     /* beta = [CI] */
+  func0C = libxsmm_dispatch_matrix_eqn( CI, HW/num_HW_blocks, &ld, out_dt, my_eqn0C );           /* y = [HW, CI] */
+
+
   /* Check correctness */
   if (datatype_mode == 0) {
     scaler_groupnorm_fwd_fp32(NP, CP, HW, CB, G, inp, gamma, beta, mean, var, out, eps);
-    tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, reduce_HW_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
+    tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, func0C, reduce_HW_kernel, reduce_HW_G_kernel, reduce_HW_CI_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
   } else if (datatype_mode == 1) {
     scaler_groupnorm_fwd_fp32(NP, CP, HW, CB, G, inp, gamma, beta, mean, var, out, eps);
     tpp_groupnorm_fwd_bf16(NP, CP, HW, CB, G, num_HW_blocks, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func10, reduce_HW_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel);
@@ -1180,10 +1303,10 @@ int main( int argc, char* argv[] ) {
     for (i = 0; i < 1024 * 1024; i++ ) {
       sum += cache_fl[i] + (float)l_total;
     }
-    tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, reduce_HW_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
+    tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, func0C, reduce_HW_kernel, reduce_HW_G_kernel, reduce_HW_CI_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
-      tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, reduce_HW_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
+      tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, func0C, reduce_HW_kernel, reduce_HW_G_kernel, reduce_HW_CI_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
