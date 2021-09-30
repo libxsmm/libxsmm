@@ -434,6 +434,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_compute( "asimd_comp_FMLA_E_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V,  1, 0 );
   test_asimd_compute( "asimd_comp_FMLA_E_S",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S,  1, 0 );
   test_asimd_compute( "asimd_comp_EOR_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_ORR_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,     0, 0 );
   test_asimd_compute( "asimd_comp_FADD_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,    0, 0 );
   test_asimd_compute( "asimd_comp_FSUB_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,    0, 0 );
   test_asimd_compute( "asimd_comp_FMUL_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,    0, 0 );
