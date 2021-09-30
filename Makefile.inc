@@ -1672,7 +1672,7 @@ ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifneq (,$(filter 3,$(AVX))$(filter-out 0,$(VNNI) $(BF16)))
-    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC) && 60000<=$(GCC_VERSION_NUM)) || \
+    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC) && 80000<=$(GCC_VERSION_NUM)) || \
           (0!=$(CLANG) && (40000<=$(CC_VERSION_NUM) || 0==$(CC_VERSION_NUM))) || \
           (0!=$(PGI) && 190000<=$(CC_VERSION_NUM))))"))
     ifneq (,$(call ctest,$(CC),-mfma -mavx512f -mavx512cd))
