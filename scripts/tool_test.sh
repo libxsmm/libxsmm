@@ -345,7 +345,7 @@ then
           echo "echo \"--- RUN ${TESTID}\"" >> "${TESTSCRIPT}"
           DIRSED=$(echo "${ABSDIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
-            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(^\| \)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
+            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
             "${SLURMFILE}" > "${SLURMFILE}.run" && ${CHMOD} +rx "${SLURMFILE}.run"
