@@ -4972,7 +4972,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
 
   unsigned int m, im, use_m_masking, m_trips, max_m_unrolling = 4, m_unroll_factor = 1, m_trips_loop = 0, peeled_m_trips = 0, mask_out_count = 0;
   unsigned int aux_vreg_offset = 16;
-  unsigned int idx_tsize =  i_mateltwise_desc->n;
+  unsigned int idx_tsize = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES) > 0 ) ? 8 : 4;
   unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVL;
   int pf_dist = 4, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 1, load_acc = 1;
   unsigned int vstore_instr = 0;
@@ -5034,9 +5034,17 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      0,
+      48,
       i_gp_reg_mapping->gp_reg_n,
       0 );
+
+  libxsmm_x86_instruction_alu_mem( io_generated_code,
+     i_micro_kernel_config->alu_mov_instruction,
+     i_gp_reg_mapping->gp_reg_n,
+     LIBXSMM_X86_GP_REG_UNDEF, 0,
+     0,
+     i_gp_reg_mapping->gp_reg_n,
+     0 );
 
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_n, 0);
   libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JLE, END_LABEL, p_jump_label_tracker);
@@ -5045,7 +5053,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      8,
+      40,
       i_gp_reg_mapping->gp_reg_ind_base,
       0 );
 
@@ -5053,7 +5061,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      16,
+      32,
       i_gp_reg_mapping->gp_reg_in_base,
       0 );
 
@@ -5061,7 +5069,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      24,
+      56,
       i_gp_reg_mapping->gp_reg_out,
       0 );
 

@@ -174,11 +174,10 @@ typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER              =  9,
   LIBXSMM_MELTW_OPERATION_ACT_TRANSFORM_C_NORM_TO_VNNI_EXT_BUFFER          = 10,
   /* standalone TPPs */
-  LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX                                  = 11,
-  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX                                = 12,
-  LIBXSMM_MELTW_OPERATION_UNARY                                            = 13,
-  LIBXSMM_MELTW_OPERATION_BINARY                                           = 14,
-  LIBXSMM_MELTW_OPERATION_TERNARY                                          = 15
+  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX                                = 11,
+  LIBXSMM_MELTW_OPERATION_UNARY                                            = 12,
+  LIBXSMM_MELTW_OPERATION_BINARY                                           = 13,
+  LIBXSMM_MELTW_OPERATION_TERNARY                                          = 14
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_null_flags {
@@ -271,7 +270,9 @@ typedef enum libxsmm_meltw_unary_flags {
   LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR      = 8,
   LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS       = 16,
   LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS       = 32,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC    = 64
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC    = 64,
+  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES   = 128,
+  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES   = 256
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
@@ -318,7 +319,8 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2          = 40,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2         = 41,
   LIBXSMM_MELTW_TYPE_UNARY_QUANT                        = 42,
-  LIBXSMM_MELTW_TYPE_UNARY_DEQUANT                      = 43
+  LIBXSMM_MELTW_TYPE_UNARY_DEQUANT                      = 43,
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX              = 44
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -662,14 +664,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_op_arg {
   void* quaternary;
 } libxsmm_matrix_op_arg;
 
-/** argument struct for matrix-eltwise: reduce */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_reduce_cols_idx_param {
-  unsigned long long n;
-  const void* ind_ptr;    /* index array pointer */
-  const void* inp_ptr;    /* input pointer */
-  void* out_ptr;          /* output pointer */
-} libxsmm_meltw_reduce_cols_idx_param;
-
 /** argument struct for matrix-eltwise: opreduce vecs indexed */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs_idx_param {
   unsigned long long n;
@@ -728,7 +722,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_gemm_param {
 } libxsmm_meltw_gemm_param;
 
 /** Specialized function for matrix-eltw (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_reduce_cols_idx)(const libxsmm_meltw_reduce_cols_idx_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_opreduce_vecs_idx)(const libxsmm_meltw_opreduce_vecs_idx_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_unary)(const libxsmm_meltw_unary_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_binary)(const libxsmm_meltw_binary_param* in_struct);
@@ -736,7 +729,6 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_terna
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   void (*xmeltw)(const void* in_struct);
-  libxsmm_meltwfunction_reduce_cols_idx meltw_reduce_cols_idx;
   libxsmm_meltwfunction_opreduce_vecs_idx meltw_opreduce_vecs_idx;
   libxsmm_meltwfunction_unary meltw_unary;
   libxsmm_meltwfunction_binary meltw_binary;
