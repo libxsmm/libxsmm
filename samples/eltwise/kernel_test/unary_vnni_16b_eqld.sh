@@ -29,7 +29,7 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDO}
-  taskset -c 3 ./eltwise_unary_transform V 2 ${M} ${N} ${LDI} ${LDI}
+  ./eltwise_unary_transform V 2 ${M} ${N} ${LDI} ${LDI}
 done
 
 rm ${TESTFILE1}
