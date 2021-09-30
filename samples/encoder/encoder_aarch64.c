@@ -512,6 +512,14 @@ int main( /*int argc, char* argv[]*/ ) {
   test_gpr_alu_compute_imm12( "aarch64_comp_i12_SUB_I", &mycode, LIBXSMM_AARCH64_INSTR_GP_SUB_I );
   test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_ADD_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_ADD_SR );
   test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_SUB_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_SUB_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_ORR_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_ORR_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_AND_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_AND_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_EOR_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_EOR_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_LSL_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_LSL_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_LSR_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_LSR_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_ASR_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_ASR_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_MUL",    &mycode, LIBXSMM_AARCH64_INSTR_GP_MUL    );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_UDIV",   &mycode, LIBXSMM_AARCH64_INSTR_GP_UDIV   );
 
   free( codebuffer );
 

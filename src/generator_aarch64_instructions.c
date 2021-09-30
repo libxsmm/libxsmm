@@ -962,6 +962,14 @@ void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_g
   switch ( i_alu_instr ) {
     case LIBXSMM_AARCH64_INSTR_GP_ADD_I:
     case LIBXSMM_AARCH64_INSTR_GP_SUB_I:
+#if 0
+    case LIBXSMM_AARCH64_INSTR_GP_ORR_I:
+    case LIBXSMM_AARCH64_INSTR_GP_AND_I:
+    case LIBXSMM_AARCH64_INSTR_GP_EOR_I:
+    case LIBXSMM_AARCH64_INSTR_GP_LSL_I:
+    case LIBXSMM_AARCH64_INSTR_GP_LSR_I:
+    case LIBXSMM_AARCH64_INSTR_GP_ASR_I:
+#endif
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm12: unexpected instruction number: %u\n", i_alu_instr);
@@ -1047,8 +1055,15 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
 
   switch ( i_alu_instr ) {
     case LIBXSMM_AARCH64_INSTR_GP_ORR_SR:
+    case LIBXSMM_AARCH64_INSTR_GP_AND_SR:
+    case LIBXSMM_AARCH64_INSTR_GP_EOR_SR:
+    case LIBXSMM_AARCH64_INSTR_GP_LSL_SR:
+    case LIBXSMM_AARCH64_INSTR_GP_LSR_SR:
+    case LIBXSMM_AARCH64_INSTR_GP_ASR_SR:
     case LIBXSMM_AARCH64_INSTR_GP_ADD_SR:
     case LIBXSMM_AARCH64_INSTR_GP_SUB_SR:
+    case LIBXSMM_AARCH64_INSTR_GP_MUL:
+    case LIBXSMM_AARCH64_INSTR_GP_UDIV:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_shifted_reg: unexpected instruction number: %u\n", i_alu_instr);
@@ -1056,7 +1071,7 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
   }
 
   /* check for imm being in range */
-  if ( (i_imm6 > 0x3f) ) {
+  if ( (i_imm6 > 0x3f) && ((i_alu_instr & 0x4) == 0x4) ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_shifted_reg: unexpected imm: %u %u\n", i_alu_instr, (unsigned int)i_imm6);
     exit(-1);
   }
@@ -1078,7 +1093,7 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
     /* computing hw */
     unsigned char l_imm = (unsigned char)( i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0 ) ? (0x1f & i_imm6) : (0x3f & i_imm6);
      /* fix bits */
-    code[code_head]  = (unsigned int)(0xff000000 & i_alu_instr);
+    code[code_head]  = (unsigned int)(0xffffff00 & i_alu_instr);
     /* setting Rd */
     code[code_head] |= (unsigned int)(0x1f & i_gp_reg_dst);
     /* setting Rn */
@@ -1087,10 +1102,14 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
     code[code_head] |= (unsigned int)((0x1f & i_gp_reg_src_1) << 16);
     /* setting sf */
     code[code_head] |= (unsigned int)((0x20 & i_gp_reg_dst) << 26);
-    /* setting imm16 */
-    code[code_head] |= (unsigned int)((0x3f & l_imm) << 10);
+    /* setting imm6 */
+    if ( (i_alu_instr & 0x4) == 0x4 ) {
+      code[code_head] |= (unsigned int)((0x3f & l_imm) << 10);
+    }
     /* setting sh */
-    code[code_head] |= (unsigned int)((0x3  & i_shift_dir) << 22);
+    if ( (i_alu_instr & 0x10) == 0x0 ) {
+      code[code_head] |= (unsigned int)((0x3  & i_shift_dir) << 22);
+    }
 
     /* advance code head */
     io_generated_code->code_size += 4;

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export KMP_AFFINITY=compact,1,0,granularity=fine
 # export LD_PRELOAD=~/anaconda3/lib/libiomp5.so                   # needed for KMP_AFFINITY

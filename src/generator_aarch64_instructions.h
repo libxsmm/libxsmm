@@ -184,7 +184,7 @@
  * 1st byte
  *   7: SVE: predication required
  *   6-5: not used
- *   4:   tuple-type: ignore all sz bits
+ *   4:   tuple-type: ignore all sz bits, ignore shift bits for GP insturctions
  *   3:   tuple-type: ignore second sz bit
  *   2:   has immediate
  *   1-0: number of register operands
@@ -207,11 +207,24 @@
 #define LIBXSMM_AARCH64_INSTR_GP_STP_I_PRE       0x29800007
 #define LIBXSMM_AARCH64_INSTR_GP_STNP_I_OFF      0x28000007
 /* define GP compute instructions */
-#define LIBXSMM_AARCH64_INSTR_GP_ORR_SR          0x2A000007
+/*#define LIBXSMM_AARCH64_INSTR_GP_ORR_I           0x22000006*/
+#define LIBXSMM_AARCH64_INSTR_GP_ORR_SR          0x2a000007
+/*#define LIBXSMM_AARCH64_INSTR_GP_AND_I           0x12000006*/
+#define LIBXSMM_AARCH64_INSTR_GP_AND_SR          0x0a000007
+/*#define LIBXSMM_AARCH64_INSTR_GP_EOR_I           0x52000006*/
+#define LIBXSMM_AARCH64_INSTR_GP_EOR_SR          0x4a000007
+/*#define LIBXSMM_AARCH64_INSTR_GP_LSL_I           0x53000006*/
+#define LIBXSMM_AARCH64_INSTR_GP_LSL_SR          0x1ac02013
+/*#define LIBXSMM_AARCH64_INSTR_GP_LSR_I           0x53007c06*/
+#define LIBXSMM_AARCH64_INSTR_GP_LSR_SR          0x1ac02413
+/*#define LIBXSMM_AARCH64_INSTR_GP_ASR_I           0x13000006*/
+#define LIBXSMM_AARCH64_INSTR_GP_ASR_SR          0x1ac02813
 #define LIBXSMM_AARCH64_INSTR_GP_ADD_I           0x11000006
 #define LIBXSMM_AARCH64_INSTR_GP_ADD_SR          0x0b000007
 #define LIBXSMM_AARCH64_INSTR_GP_SUB_I           0x51000006
 #define LIBXSMM_AARCH64_INSTR_GP_SUB_SR          0x4b000007
+#define LIBXSMM_AARCH64_INSTR_GP_MUL             0x1b007c13
+#define LIBXSMM_AARCH64_INSTR_GP_UDIV            0x1ac00813
 #define LIBXSMM_AARCH64_INSTR_GP_MOVZ            0x52800000
 #define LIBXSMM_AARCH64_INSTR_GP_MOVK            0x72800000
 #define LIBXSMM_AARCH64_INSTR_GP_MOVN            0x12800000
