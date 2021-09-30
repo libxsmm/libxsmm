@@ -103,7 +103,7 @@ public:
 
 #ifdef USE_LIBXSMM_JIT
     _ld = E;
-    kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
+    kernel = libxsmm_dispatch_meltw_unary(E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
     kernel1 = libxsmm_dispatch_meltw_unary(E, 1, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD);
     kernel2 = libxsmm_dispatch_meltw_binary(E, 1, &_ld, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_MELTW_TYPE_BINARY_MULADD);
 #endif
@@ -140,11 +140,14 @@ public:
 #ifdef USE_LIBXSMM_JIT
 
      // lookup reduction kernel
-      libxsmm_meltw_reduce_cols_idx_param params;
-      params.n = end - start;
-      params.ind_ptr = &mb_indices[start];
-      params.inp_ptr = outGrad;
-      params.out_ptr = &g_sum[0];
+      libxsmm_meltw_unary_param params;
+      unsigned long long __n = end - start;
+
+      params.in.primary = outGrad;
+      params.in.secondary = mb_indices[start];
+      params.in.tertiary = &__n;
+      params.out.primary = &g_sum[0];
+
       kernel( &params );
 
       // squared + reduction kernel
@@ -197,7 +200,7 @@ public:
 
 #ifdef USE_LIBXSMM_JIT
   int _ld;
-  libxsmm_meltwfunction_reduce_cols_idx kernel;
+  libxsmm_meltwfunction_unary kernel;
   libxsmm_meltwfunction_unary kernel1;
   libxsmm_meltwfunction_binary kernel2;
 #endif

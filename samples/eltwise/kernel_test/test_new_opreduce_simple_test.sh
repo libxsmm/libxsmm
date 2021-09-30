@@ -1,7 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+CPU=${HERE}/../../../scripts/tool_cpuinfo.sh
 
 EXP_ID=0
-N_CORES=56
+N_CORES=$(${CPU} -nc)
 
 for op in 0 1 2 3 4
 do
