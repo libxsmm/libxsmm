@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Evanelos Georganas, Alexander Heinecke (Intel Corp.)
+/* Deepti Aggarwal, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_MATELTWISE_UNARY_BINARY_AARCH64_H
