@@ -44,7 +44,6 @@ void adjust_after_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*      
                                ((i_gp_reg == i_gp_reg_mapping->gp_reg_in2) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1) > 0))) ? 1 : 0;
   unsigned int bcast_input = ( bcast_row == 1 || bcast_col == 1 || bcast_scalar == 1 ) ? 1 : 0;
 
-
   if ((is_inp_gp_reg > 0) || (is_out_gp_reg > 0)) {
     unsigned int tsize  = (is_inp_gp_reg > 0) ? i_micro_kernel_config->datatype_size_in : i_micro_kernel_config->datatype_size_out;
     unsigned int ld     = (is_inp_gp_reg > 0) ? i_mateltwise_desc->ldi: i_mateltwise_desc->ldo;
