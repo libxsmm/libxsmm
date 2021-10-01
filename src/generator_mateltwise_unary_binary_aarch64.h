@@ -38,7 +38,6 @@ void adjust_after_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*      
                                                    libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                    const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                                    unsigned int                            i_gp_reg,
-                                                   unsigned int                            i_gp_scratch_reg,
                                                    unsigned int                            i_adjust_instr,
                                                    unsigned int                            m_microkernel,
                                                    unsigned int                            n_microkernel,
@@ -50,7 +49,6 @@ void adjust_in_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*         
                                                 libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc,
                                                 unsigned int                            i_gp_reg,
-                                                unsigned int                            i_gp_scratch_reg,
                                                 unsigned int                            i_adjust_instr,
                                                 unsigned int                            i_adjust_param,
                                                 unsigned int                            i_loop_type );
