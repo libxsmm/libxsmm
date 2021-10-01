@@ -21,8 +21,8 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
                                 unsigned int**          o_row_idx,
                                 unsigned int**          o_column_idx,
                                 double**                o_values,
-                                unsigned int*           o_row_count,
-                                unsigned int*           o_column_count,
+                                unsigned int*           io_row_count,
+                                unsigned int*           io_column_count,
                                 unsigned int*           o_element_count );
 
 #endif /* GENERATOR_SPGEMM_CSR_READER_H */
