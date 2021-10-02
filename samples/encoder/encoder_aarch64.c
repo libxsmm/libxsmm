@@ -434,6 +434,14 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_compute( "asimd_comp_ORR_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,     0, 0 );
   test_asimd_compute( "asimd_comp_AND_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_AND_V,     0, 0 );
   test_asimd_compute( "asimd_comp_ADDV_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ADDV_V,    0, 1 );
+  test_asimd_compute( "asimd_comp_CMEQ_R_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMEQ_R_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_CMEQ_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMEQ_Z_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_CMGE_R_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMGE_R_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_CMGE_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMGE_Z_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_CMGT_R_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMGT_R_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_CMGT_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMGT_Z_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_CMLE_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMLE_Z_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_CMLT_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMLT_Z_V,  0, 1 );
   test_asimd_compute( "asimd_comp_FMLA_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V,    0, 0 );
   test_asimd_compute( "asimd_comp_FMLA_E_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V,  1, 0 );
   test_asimd_compute( "asimd_comp_FMLA_E_S",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S,  1, 0 );
