@@ -12,7 +12,7 @@ ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(8,101,8), 10)
+randnum = rnd.sample(range(4,101,4), 18)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
@@ -33,7 +33,7 @@ do
   for RELU_OP in D
   do
     ./eltwise_unary_relu ${RELU_OP} F 0 4 4 ${M} ${N} ${LDI} ${LDI}
-#    ./eltwise_unary_relu ${RELU_OP} F 1 4 4 ${M} ${N} ${LDI} ${LDI}
+    ./eltwise_unary_relu ${RELU_OP} F 1 4 4 ${M} ${N} ${LDI} ${LDI}
 #    ./eltwise_unary_relu ${RELU_OP} B 1 4 4 ${M} ${N} ${LDI} ${LDI}
   done
 done

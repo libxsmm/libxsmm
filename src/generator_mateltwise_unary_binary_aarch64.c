@@ -273,7 +273,8 @@ void libxsmm_generator_configure_aarch64_M_N_blocking( libxsmm_generated_code*  
   /* The m blocking is done in chunks of vlen */
   unsigned int m_chunks = 0;
   /* TODO: Make m chunk remainder depend on number of available zmm registers */
-  unsigned int m_chunk_remainder = 8;
+  unsigned int m_chunk_remainder = 4;
+  unsigned int m_chunk_boundary = 32;
   unsigned int m_range, m_block_size, foo1, foo2;
 
   /* in order to work with bitmaks we need at least 8 entries, on ASIMD, that means 2 registers */
@@ -283,13 +284,16 @@ void libxsmm_generator_configure_aarch64_M_N_blocking( libxsmm_generated_code*  
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BITMASK_REQUIRED );
       return;
     }
+    available_vregs /= 2;
+    m_chunk_boundary /= 2;
   }
 
   m_chunks = (m+vlen-1)/vlen;
+  m_chunks = (m_chunks/2)*2;
 
   if (m % vlen == 0) {
     /* If there is not remainder in M, then we block M in order to limit block size */
-    if (m_chunks > 32) {
+    if (m_chunks > m_chunk_boundary) {
       libxsmm_compute_equalized_blocking(m_chunks, (m_chunks+1)/2, &m_range, &m_block_size, &foo1, &foo2);
       *m_blocking = m_range * vlen;
     } else {
@@ -297,7 +301,7 @@ void libxsmm_generator_configure_aarch64_M_N_blocking( libxsmm_generated_code*  
     }
   } else {
     /* If there is remainder we make sure we can fully unroll the kernel with masks */
-    if (m_chunks > 16) {
+    if (m_chunks > (m_chunk_boundary/2)) {
       *m_blocking = (m_chunks - m_chunk_remainder) * vlen;
     } else {
       if (available_vregs * vlen >= m) {
@@ -890,11 +894,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
                                                       unsigned int                            i_mask_last_m_chunk,
                                                       unsigned int                            i_mask_reg) {
   unsigned int im, in;
-  LIBXSMM_UNUSED(i_gp_reg_mapping);
-  LIBXSMM_UNUSED(i_mateltwise_desc);
-  LIBXSMM_UNUSED(i_start_vreg);
-  LIBXSMM_UNUSED(i_m_blocking);
-  LIBXSMM_UNUSED(i_n_blocking);
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_mask_reg);
   LIBXSMM_UNUSED(i_vlen);
@@ -1578,10 +1577,14 @@ void libxsmm_configure_microkernel_aarch64_loops( libxsmm_generated_code*       
 
   max_nm_unrolling  = max_nm_unrolling - reserved_zmms;
 
-  if (i_use_m_input_masking == 1) {
+  if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && (i_vlen_in == 4) ) {
     m_unroll_factor = m_trips;
   } else {
-    m_unroll_factor = LIBXSMM_MIN(m_trips,16);
+    if (i_use_m_input_masking == 1) {
+      m_unroll_factor = m_trips;
+    } else {
+      m_unroll_factor = LIBXSMM_MIN(m_trips,16);
+    }
   }
 
   if (m_unroll_factor > max_nm_unrolling) {
@@ -2515,6 +2518,7 @@ void libxsmm_generator_unary_binary_aarch64_microkernel( libxsmm_generated_code*
       inner_block  = (inner_ind < inner_blocking ) ? inner_blocking : inner_bound - inner_ind;
       n_microkernel = (loop_order == NM_LOOP_ORDER) ? out_block : inner_block;
       m_microkernel = (loop_order == MN_LOOP_ORDER) ? out_block : inner_block;
+
 
       libxsmm_generator_unary_aarch64_binary_2d_microkernel(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc, m_microkernel, n_microkernel);
 

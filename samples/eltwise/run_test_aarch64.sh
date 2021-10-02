@@ -30,6 +30,8 @@
 . ./kernel_test_aarch64/unary_negate_32b_gtld.sh
 . ./kernel_test_aarch64/unary_xor_32b_eqld.sh
 . ./kernel_test_aarch64/unary_xor_32b_gtld.sh
+. ./kernel_test_aarch64/unary_relu_32b_eqld.sh
+. ./kernel_test_aarch64/unary_relu_32b_gtld.sh
 . ./kernel_test_aarch64/binary_add_32b_eqld.sh
 . ./kernel_test_aarch64/binary_add_32b_gtld.sh
 . ./kernel_test_aarch64/binary_mul_32b_eqld.sh

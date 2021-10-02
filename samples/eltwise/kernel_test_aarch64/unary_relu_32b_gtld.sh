@@ -33,7 +33,7 @@ do
   for RELU_OP in D
   do
     ./eltwise_unary_relu ${RELU_OP} F 0 4 4 ${M} ${N} 100 100
-#    ./eltwise_unary_relu ${RELU_OP} F 1 4 4 ${M} ${N} 100 100
+    ./eltwise_unary_relu ${RELU_OP} F 1 4 4 ${M} ${N} 100 100
 #    ./eltwise_unary_relu ${RELU_OP} B 1 4 4 ${M} ${N} 100 100
   done
 done
