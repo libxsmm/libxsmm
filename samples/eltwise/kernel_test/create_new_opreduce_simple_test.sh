@@ -1,6 +1,4 @@
-#!/bin/bash
-
-
+#!/usr/bin/env bash
 
 for op in 0 1 2 3 4
 do
