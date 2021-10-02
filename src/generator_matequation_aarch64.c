@@ -651,8 +651,8 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   /* define gp register mapping */
   memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping));
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X0;
-  l_gp_reg_mapping.temp_reg    = LIBXSMM_AARCH64_GP_REG_X11;
-  l_gp_reg_mapping.gp_reg_scratch_0    = LIBXSMM_AARCH64_GP_REG_X12;
+  l_gp_reg_mapping.temp_reg    = LIBXSMM_AARCH64_GP_REG_X26;
+  l_gp_reg_mapping.gp_reg_scratch_0    = LIBXSMM_AARCH64_GP_REG_X27;
 
 #if 0
   l_gp_reg_mapping.gp_reg_out = LIBXSMM_X86_GP_REG_RAX;

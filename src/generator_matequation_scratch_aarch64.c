@@ -102,10 +102,10 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
 #endif
   unsigned int timestamp = 0;
   unsigned int last_timestamp;
-  unsigned int temp_reg = LIBXSMM_AARCH64_GP_REG_X11;
+  unsigned int temp_reg = LIBXSMM_AARCH64_GP_REG_X26;
 
   i_gp_reg_mapping->temp_reg = temp_reg;
-  i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_AARCH64_GP_REG_X12;
+  i_gp_reg_mapping->gp_reg_scratch_0 = LIBXSMM_AARCH64_GP_REG_X27;
 
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
@@ -114,7 +114,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
     last_timestamp = eqn->eqn_root->visit_timestamp;
   }
 
-  i_gp_reg_mapping->gp_reg_mapping_eltwise.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X10;
+  i_gp_reg_mapping->gp_reg_mapping_eltwise.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X28;
   libxsmm_generator_meqn_getaddr_stack_var_aarch64(  io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0, i_gp_reg_mapping->gp_reg_mapping_eltwise.gp_reg_param_struct );
 
   /* Iterate over the equation tree based on the optimal traversal order and call the proper JITer */
