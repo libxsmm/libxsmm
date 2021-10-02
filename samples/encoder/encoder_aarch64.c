@@ -471,6 +471,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_compute( "asimd_comp_FCMGT_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V, 0, 1 );
   test_asimd_compute( "asimd_comp_FCMLE_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMLE_Z_V, 0, 1 );
   test_asimd_compute( "asimd_comp_FCMLT_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMLT_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_BIF_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_BIF_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_BIT_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_BIT_V,     0, 0 );
 
   mycode.arch = LIBXSMM_AARCH64_A64FX;
   /* testing asimd ldr/str instructions */

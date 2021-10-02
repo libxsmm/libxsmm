@@ -451,6 +451,8 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FCMLE_Z_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FCMLT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_BIF_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_BIT_V:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: %u\n", i_vec_instr);
