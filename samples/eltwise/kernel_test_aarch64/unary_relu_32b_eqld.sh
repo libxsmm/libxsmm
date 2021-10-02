@@ -30,7 +30,7 @@ do
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
 #  for RELU_OP in D L E
-  for RELU_OP in D
+  for RELU_OP in D L
   do
     ./eltwise_unary_relu ${RELU_OP} F 0 4 4 ${M} ${N} ${LDI} ${LDI}
     ./eltwise_unary_relu ${RELU_OP} F 1 4 4 ${M} ${N} ${LDI} ${LDI}
