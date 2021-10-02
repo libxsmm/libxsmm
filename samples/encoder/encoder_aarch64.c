@@ -430,11 +430,13 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_pair_move( "asimd_movp_STNP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF );
 
   /* test SIMD compute instructions */
+  test_asimd_compute( "asimd_comp_EOR_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_ORR_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_AND_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_AND_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_ADDV_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ADDV_V,    0, 1 );
   test_asimd_compute( "asimd_comp_FMLA_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V,    0, 0 );
   test_asimd_compute( "asimd_comp_FMLA_E_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V,  1, 0 );
   test_asimd_compute( "asimd_comp_FMLA_E_S",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S,  1, 0 );
-  test_asimd_compute( "asimd_comp_EOR_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,     0, 0 );
-  test_asimd_compute( "asimd_comp_ORR_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,     0, 0 );
   test_asimd_compute( "asimd_comp_FADD_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,    0, 0 );
   test_asimd_compute( "asimd_comp_FSUB_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,    0, 0 );
   test_asimd_compute( "asimd_comp_FMUL_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,    0, 0 );
@@ -459,6 +461,16 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_compute( "asimd_comp_TBX_2",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2,     0, 0 );
   test_asimd_compute( "asimd_comp_TBX_3",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3,     0, 0 );
   test_asimd_compute( "asimd_comp_TBX_4",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4,     0, 0 );
+  test_asimd_compute( "asimd_comp_FMAX_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_FMIN_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMIN_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_FCMEQ_R_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_R_V, 0, 0 );
+  test_asimd_compute( "asimd_comp_FCMEQ_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_FCMGE_R_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V, 0, 0 );
+  test_asimd_compute( "asimd_comp_FCMGE_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_FCMGT_R_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V, 0, 0 );
+  test_asimd_compute( "asimd_comp_FCMGT_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_FCMLE_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMLE_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_FCMLT_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMLT_Z_V, 0, 1 );
 
   mycode.arch = LIBXSMM_AARCH64_A64FX;
   /* testing asimd ldr/str instructions */
