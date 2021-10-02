@@ -1057,6 +1057,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   int rbp_offs_half;
 
   /* Aux variables for relu variants */
+  unsigned int mask_helper0_vreg;
+  unsigned int mask_helper1_vreg;
   unsigned int fam_lu_vreg_alpha;
 
   /* Aux variable for dropout */

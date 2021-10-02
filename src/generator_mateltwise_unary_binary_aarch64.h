@@ -19,7 +19,8 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks( libxsmm_generated_code*
                                                          libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                          unsigned int                            op,
                                                          unsigned int                            flags,
-                                                         unsigned int                            i_gp_reg_tmp,
+                                                         unsigned int                            i_gp_reg_tmp0,
+                                                         unsigned int                            i_gp_reg_tmp1,
                                                          const unsigned int                      i_gp_reg_aux0,
                                                          const unsigned int                      i_gp_reg_aux1);
 
@@ -58,7 +59,14 @@ void libxsmm_generator_configure_aarch64_vlens( const libxsmm_meltw_descriptor* 
                                                 libxsmm_mateltwise_kernel_config* i_micro_kernel_config );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_configure_aarch64_M_N_blocking(unsigned int m, unsigned int n, unsigned int vlen, unsigned int *m_blocking, unsigned int *n_blocking, unsigned int available_vregs);
+void libxsmm_generator_configure_aarch64_M_N_blocking( libxsmm_generated_code*         io_generated_code,
+                                                       const libxsmm_meltw_descriptor* i_mateltwise_desc,
+                                                       unsigned int m,
+                                                       unsigned int n,
+                                                       unsigned int vlen,
+                                                       unsigned int *m_blocking,
+                                                       unsigned int *n_blocking,
+                                                       unsigned int available_vregs );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_configure_aarch64_loop_order(const libxsmm_meltw_descriptor* i_mateltwise_desc, unsigned int *loop_order, unsigned int *m_blocking, unsigned int *n_blocking, unsigned int *out_blocking, unsigned int *inner_blocking, unsigned int *out_bound, unsigned int *inner_bound);
@@ -185,7 +193,8 @@ LIBXSMM_API_INTERN
 void libxsmm_configure_aarch64_kernel_vregs_masks( libxsmm_generated_code*                       io_generated_code,
                                                    libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                    const libxsmm_meltw_descriptor*         i_mateltwise_desc,
-                                                   unsigned int                            i_gp_reg_tmp,
+                                                   unsigned int                            i_gp_reg_tmp0,
+                                                   unsigned int                            i_gp_reg_tmp1,
                                                    const unsigned int                      i_gp_reg_aux0,
                                                    const unsigned int                      i_gp_reg_aux1);
 
