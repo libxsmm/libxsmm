@@ -410,11 +410,13 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
   }
 
   switch ( i_vec_instr ) {
+    case LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_AND_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ADDV_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V:
-    case LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V:
-    case LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V:
@@ -439,6 +441,16 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMIN_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMLE_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMLT_Z_V:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: %u\n", i_vec_instr);
