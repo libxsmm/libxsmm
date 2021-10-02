@@ -6,76 +6,60 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
+/* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-
+/* TODO: Move common functionality in different file */
 #include "generator_matequation_avx_avx512.h"
-#include "generator_matequation_scratch_avx_avx512.h"
-#include "generator_matequation_regblocks_avx_avx512.h"
-#include "generator_mateltwise_sse_avx_avx512.h"
-#include "generator_mateltwise_unary_binary_avx_avx512.h"
-#include "generator_x86_instructions.h"
+#include "generator_common_aarch64.h"
+#include "generator_aarch64_instructions.h"
+#include "generator_matequation_aarch64.h"
+#include "generator_matequation_scratch_aarch64.h"
+#include "generator_mateltwise_aarch64.h"
+#include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
-#include "generator_common_x86.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_matequation_aarch64_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
     libxsmm_matequation_kernel_config*    io_micro_kernel_config) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
-  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
-    io_micro_kernel_config->instruction_set = io_generated_code->arch;
-    io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
-    io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
-    io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
-    io_micro_kernel_config->alu_jmp_instruction = LIBXSMM_X86_INSTR_JL;
-    io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
-    io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
-    io_micro_kernel_config->vmove_instruction_in = LIBXSMM_X86_INSTR_VMOVUPS;
-    io_micro_kernel_config->vmove_instruction_out= LIBXSMM_X86_INSTR_VMOVUPS;
-    io_micro_kernel_config->vector_name = 'z';
-  } else {
-    io_micro_kernel_config->instruction_set = io_generated_code->arch;
-    io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
-    io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
-    io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
-    io_micro_kernel_config->alu_jmp_instruction = LIBXSMM_X86_INSTR_JL;
-    io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
-    io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
-    io_micro_kernel_config->vmove_instruction_in = LIBXSMM_X86_INSTR_VMOVUPS;
-    io_micro_kernel_config->vmove_instruction_out= LIBXSMM_X86_INSTR_VMOVUPS;
-    io_micro_kernel_config->vector_name = 'y';
-  }
+  io_micro_kernel_config->instruction_set = io_generated_code->arch;
+  io_micro_kernel_config->alu_add_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+  io_micro_kernel_config->alu_sub_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+  io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+  io_micro_kernel_config->alu_jmp_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+  io_micro_kernel_config->alu_mov_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
+  io_micro_kernel_config->vxor_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var stack_var ) {
+int libxsmm_generator_mateqn_get_fp_relative_offset( libxsmm_meqn_stack_var stack_var ) {
   /* The stack at exit of setup looks like this:
    *
-   *      Return address                            <-- RBP+8
-   *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr15                        <-- RBP-8
-   *      Param_struct_ptr14                        <-- RBP-16
-   *      Param_struct_ptr13                        <-- RBP-24
-   *      Param_struct_ptr12                        <-- RBP-32
-   *      Param_struct_ptr11                        <-- RBP-40
-   *      Param_struct_ptr10                        <-- RBP-48
-   *      Param_struct_ptr9                         <-- RBP-56
-   *      Param_struct_ptr8                         <-- RBP-64
-   *      Param_struct_ptr7                         <-- RBP-72
-   *      Param_struct_ptr6                         <-- RBP-80
-   *      Param_struct_ptr5                         <-- RBP-88
-   *      Param_struct_ptr4                         <-- RBP-96
-   *      Param_struct_ptr3                         <-- RBP-104
-   *      Param_struct_ptr2                         <-- RBP-112
-   *      Param_struct_ptr1                         <-- RBP-120
-   *      Param_struct_ptr0                         <-- RBP-128
-   *      Scratch ptr in stack (to be filled)       <-- RBP-136
-   *      Address scratch ptrin stack (to be filled)<-- RBP-144
-   *      Saved equation output ptr                 <-- RBP-152
-   *      Const_0                                   <-- RBP-160
+   *      Return address                            <-- FP+8
+   *      Entry/saved FP                            <-- FP
+   *      Param_struct_ptr15                        <-- FP-8
+   *      Param_struct_ptr14                        <-- FP-16
+   *      Param_struct_ptr13                        <-- FP-24
+   *      Param_struct_ptr12                        <-- FP-32
+   *      Param_struct_ptr11                        <-- FP-40
+   *      Param_struct_ptr10                        <-- FP-48
+   *      Param_struct_ptr9                         <-- FP-56
+   *      Param_struct_ptr8                         <-- FP-64
+   *      Param_struct_ptr7                         <-- FP-72
+   *      Param_struct_ptr6                         <-- FP-80
+   *      Param_struct_ptr5                         <-- FP-88
+   *      Param_struct_ptr4                         <-- FP-96
+   *      Param_struct_ptr3                         <-- FP-104
+   *      Param_struct_ptr2                         <-- FP-112
+   *      Param_struct_ptr1                         <-- FP-120
+   *      Param_struct_ptr0                         <-- FP-128
+   *      Scratch ptr in stack (to be filled)       <-- FP-136
+   *      Address scratch ptrin stack (to be filled)<-- FP-144
+   *      Saved equation output ptr                 <-- FP-152
+   *      Const_0                                   <-- FP-160
    *      ...
-   *      Const_9                                   <-- RBP-232
+   *      Const_9                                   <-- FP-232
    *
    * * */
 
@@ -144,116 +128,129 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_meqn_getaddr_stack_var( libxsmm_generated_code*              io_generated_code,
+void libxsmm_generator_meqn_getaddr_stack_var_aarch64( libxsmm_generated_code*              io_generated_code,
                                                 libxsmm_meqn_stack_var              stack_var,
                                                 unsigned int                        i_gp_reg ) {
-  int offset = libxsmm_generator_mateqn_get_rbp_relative_offset(stack_var);
+  int offset = libxsmm_generator_mateqn_get_fp_relative_offset(stack_var);
   /* make sure we requested a legal stack var */
   if (offset == 0) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
-  libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, i_gp_reg);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg, offset);
+
+  libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ORR_SR, LIBXSMM_AARCH64_GP_REG_X29, LIBXSMM_AARCH64_GP_REG_X29, i_gp_reg, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I, i_gp_reg, i_gp_reg, -offset, 0 );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_meqn_getval_stack_var( libxsmm_generated_code*               io_generated_code,
+void libxsmm_generator_meqn_getval_stack_var_aarch64( libxsmm_generated_code*               io_generated_code,
                                                 libxsmm_meqn_stack_var              stack_var,
                                                 unsigned int                        i_gp_reg ) {
-  int offset = libxsmm_generator_mateqn_get_rbp_relative_offset(stack_var);
+  int offset = libxsmm_generator_mateqn_get_fp_relative_offset(stack_var);
   /* make sure we requested a legal stack var */
   if (offset == 0) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
-  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, offset, i_gp_reg, 0 );
+  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I, LIBXSMM_AARCH64_GP_REG_X29, i_gp_reg, -offset, 0 );
+  libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_gp_reg );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_meqn_getaddr_stack_tmp_i( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_meqn_getaddr_stack_tmp_i_aarch64( libxsmm_generated_code*            io_generated_code,
                                                 unsigned int                        i_tmp_offset_i,
+                                                unsigned int                        i_gp_reg_scratch,
                                                 unsigned int                        i_gp_reg ) {
-  libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, i_gp_reg );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg, i_tmp_offset_i);
+  libxsmm_generator_meqn_getval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, i_gp_reg );
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, i_gp_reg, i_gp_reg_scratch, i_gp_reg, i_tmp_offset_i );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_meqn_getaddr_stack_tmpaddr_i_aarch64( libxsmm_generated_code*            io_generated_code,
                                                 unsigned int                        i_tmp_offset_i,
+                                                unsigned int                        i_gp_reg_scratch,
                                                 unsigned int                        i_gp_reg ) {
-  libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, i_gp_reg );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg, i_tmp_offset_i);
+  libxsmm_generator_meqn_getval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, i_gp_reg );
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, i_gp_reg, i_gp_reg_scratch, i_gp_reg, i_tmp_offset_i );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_meqn_setval_stack_var( libxsmm_generated_code*               io_generated_code,
+void libxsmm_generator_meqn_setval_stack_var_aarch64( libxsmm_generated_code*               io_generated_code,
                                                 libxsmm_meqn_stack_var              stack_var,
+                                                unsigned int                        i_aux_reg,
                                                 unsigned int                        i_gp_reg ) {
-  int offset = libxsmm_generator_mateqn_get_rbp_relative_offset(stack_var);
+  int offset = libxsmm_generator_mateqn_get_fp_relative_offset(stack_var);
   /* make sure we requested to set  a legal stack var */
   if (offset >= 0) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
-  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_UNDEF, 0, offset, i_gp_reg, 1 );
+  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I, LIBXSMM_AARCH64_GP_REG_X29, i_aux_reg, -offset, 0 );
+  libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_aux_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_gp_reg );
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   io_generated_code,
+void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_code*   io_generated_code,
                                               const libxsmm_meqn_descriptor*                      i_mateqn_desc,
                                               libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,
                                               libxsmm_matequation_kernel_config*                  i_micro_kernel_config,
                                               libxsmm_matrix_eqn*                                 i_eqn,
                                               unsigned int                                        i_strategy ) {
 
-  unsigned int temp_reg                     = LIBXSMM_X86_GP_REG_R8;
-  unsigned int skip_pushpops_callee_gp_reg  = 0;
+  unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
   unsigned int allocate_scratch = 1;
 
   LIBXSMM_UNUSED(i_mateqn_desc);
-
-  i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
-  libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 232 );
+#if 0
+  libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ORR_SR, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_X29, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+#endif
+  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_X29, 0, 0 );
+  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 232, 0 );
 
   /* The stack at exit of setup looks like this:
    *
-   *      Return address                            <-- RBP+8
-   *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr15                        <-- RBP-8
-   *      Param_struct_ptr14                        <-- RBP-16
-   *      Param_struct_ptr13                        <-- RBP-24
-   *      Param_struct_ptr12                        <-- RBP-32
-   *      Param_struct_ptr11                        <-- RBP-40
-   *      Param_struct_ptr10                        <-- RBP-48
-   *      Param_struct_ptr9                         <-- RBP-56
-   *      Param_struct_ptr8                         <-- RBP-64
-   *      Param_struct_ptr7                         <-- RBP-72
-   *      Param_struct_ptr6                         <-- RBP-80
-   *      Param_struct_ptr5                         <-- RBP-88
-   *      Param_struct_ptr4                         <-- RBP-96
-   *      Param_struct_ptr3                         <-- RBP-104
-   *      Param_struct_ptr2                         <-- RBP-112
-   *      Param_struct_ptr1                         <-- RBP-120
-   *      Param_struct_ptr0                         <-- RBP-128
-   *      Scratch ptr in stack (to be filled)       <-- RBP-136
-   *      Address scratch ptrin stack (to be filled)<-- RBP-144
-   *      Saved equation output ptr                 <-- RBP-152
-   *      Const_0                                   <-- RBP-160
+   *      Return address                            <-- FP+8
+   *      Entry/saved FP                            <-- FP
+   *      Param_struct_ptr15                        <-- FP-8
+   *      Param_struct_ptr14                        <-- FP-16
+   *      Param_struct_ptr13                        <-- FP-24
+   *      Param_struct_ptr12                        <-- FP-32
+   *      Param_struct_ptr11                        <-- FP-40
+   *      Param_struct_ptr10                        <-- FP-48
+   *      Param_struct_ptr9                         <-- FP-56
+   *      Param_struct_ptr8                         <-- FP-64
+   *      Param_struct_ptr7                         <-- FP-72
+   *      Param_struct_ptr6                         <-- FP-80
+   *      Param_struct_ptr5                         <-- FP-88
+   *      Param_struct_ptr4                         <-- FP-96
+   *      Param_struct_ptr3                         <-- FP-104
+   *      Param_struct_ptr2                         <-- FP-112
+   *      Param_struct_ptr1                         <-- FP-120
+   *      Param_struct_ptr0                         <-- FP-128
+   *      Scratch ptr in stack (to be filled)       <-- FP-136
+   *      Address scratch ptrin stack (to be filled)<-- FP-144
+   *      Saved equation output ptr                 <-- FP-152
+   *      Const_0                                   <-- FP-160
    *      ...
-   *      Const_9                                   <-- RBP-232
+   *      Const_9                                   <-- FP-232
    *
    * * */
 
   if (allocate_scratch > 0) {
     unsigned int scratch_size = 0;
+#if 0
     unsigned int addr_scratch_size = 0;
-
+#endif
     /* Now align RSP to 64 byte boundary  */
-    libxsmm_x86_instruction_alu_imm_i64( io_generated_code, i_micro_kernel_config->alu_mov_instruction, temp_reg, 0xFFFFFFFFFFFFFFC0 );
-    libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, temp_reg, LIBXSMM_X86_GP_REG_RSP);
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, temp_reg, 0xFFFFFFFFFFFFFFC0 );
+    /* reg-reg instruction */
+#if 0
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_AND_SR, LIBXSMM_AARCH64_GP_REG_XSP, temp_reg, LIBXSMM_AARCH64_GP_REG_XSP, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+#endif
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, i_gp_reg_mapping->gp_reg_scratch_0, 0, 0 );
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_AND_SR, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg, i_gp_reg_mapping->gp_reg_scratch_0, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_XSP, 0, 0 );
+
 
     if (i_strategy == JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS) {
       /*TODO: Now we allocate tmps with dsize float */
@@ -264,12 +261,20 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
       i_micro_kernel_config->tmp_size = tmp_size;
       /* make scratch size multiple of 64b */
       scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
-      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, temp_reg, 0, 0 );
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB, temp_reg, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg, scratch_size );
+      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, temp_reg, LIBXSMM_AARCH64_GP_REG_XSP, 0, 0 );
+      libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
       if (libxsmm_verbosity < 0) {
         fprintf( stderr, "JITing Matrix Equation with STACK-ALLOCATED TEMPS (n_tmp = %d , stack_scratch_size = %.5g KB)\n", n_tmp, (1.0*scratch_size)/1024.0 );
       }
-    } else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS){
+    } else {
+      fprintf( stderr, "On Aarch64 for now JITing equations only using stack vars\n");
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
+#if 0
+    else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS){
       libxsmm_blasint n_args = i_eqn->eqn_root->n_args;
       i_micro_kernel_config->n_args = n_args;
       addr_scratch_size = n_args * 8;
@@ -301,18 +306,15 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
         fprintf( stderr, "JITing Matrix Equation with HYBRID STRATEGY for TEMPS (n_tmp = %d , stack_scratch_size = %.5g KB , addr_scratch_size = %.5g KB)\n", n_tmp, (1.0*scratch_size)/1024.0, (1.0*addr_scratch_size)/1024.0 );
       }
     }
-  }
-
-  /* Now push to RSP the callee-save registers  */
-  if (skip_pushpops_callee_gp_reg == 0) {
-    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
-    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
-    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
-    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
-    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+#endif
   }
 
   /* Store the out ptr in stack  */
+  libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, temp_reg );
+  libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
+
+#if 0
+  /* Store the out ptr in stack  */i
   if (i_strategy == JIT_STRATEGY_HYBRID) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
@@ -335,29 +337,28 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, temp_reg );
     }
   }
+#endif
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code*                   io_generated_code,
+void libxsmm_generator_matequation_destroy_stack_frame_aarch64( libxsmm_generated_code*                   io_generated_code,
                                               libxsmm_matequation_kernel_config*                  i_micro_kernel_config,
                                               libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,
                                               unsigned int                                        i_strategy  ) {
   LIBXSMM_UNUSED(i_gp_reg_mapping);
+  LIBXSMM_UNUSED(i_micro_kernel_config);
   LIBXSMM_UNUSED(i_strategy);
-  if (i_micro_kernel_config->skip_pushpops_callee_gp_reg == 0) {
-    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
-  }
 
-  libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
+
+  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_X29, LIBXSMM_AARCH64_GP_REG_XSP, 0, 0 );
+#if 0
+  libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ORR_SR, LIBXSMM_AARCH64_GP_REG_X29, LIBXSMM_AARCH64_GP_REG_X29, LIBXSMM_AARCH64_GP_REG_XSP, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+#endif
 }
 
+#if 0
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_elem* find_op_at_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint timestamp) {
+libxsmm_matrix_eqn_elem* find_op_at_timestamp_aarch64(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint timestamp) {
   libxsmm_matrix_eqn_elem *result = NULL;
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     result = NULL;
@@ -428,6 +429,7 @@ void enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue
   *queue_size = *queue_size + 1;
 }
 
+LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_meltw_unary_flags flags);
 LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_meltw_unary_flags flags) {
   int result = 0;
   if ( ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) ||
@@ -438,6 +440,7 @@ LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_meltw_unary_flags flags) {
   return result;
 }
 
+LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags);
 LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags) {
   int result = 0;
   if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) ||
@@ -451,6 +454,7 @@ LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags) {
   return result;
 }
 
+LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags);
 LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags) {
   int result = 0;
   if ( ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) ||
@@ -467,6 +471,7 @@ LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags) 
   return result;
 }
 
+LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags flags, libxsmm_matrix_eqn_elem *node);
 LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) ||
@@ -479,6 +484,7 @@ LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags 
   return result;
 }
 
+LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flags flags, libxsmm_matrix_eqn_elem *node);
 LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flags flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) ||
@@ -499,6 +505,7 @@ LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flag
   return result;
 }
 
+LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_meltw_ternary_flags flags, libxsmm_matrix_eqn_elem *node);
 LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_meltw_ternary_flags flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) ||
@@ -526,9 +533,11 @@ LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_meltw_ternary_fl
   }
   return result;
 }
+#endif
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size ) {
+void libxsmm_generator_decompose_equation_tree_aarch64( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size ) {
+#if 0
   libxsmm_matrix_eqn_elem *root = eqn->eqn_root;
   unsigned int last_timestamp = eqn->eqn_root->visit_timestamp, timestamp = 0;
 
@@ -576,8 +585,13 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
       enqueue_equation(eqn, jiting_queue, queue_size);
     }
   }
+#else
+  enqueue_equation(eqn, jiting_queue, queue_size);
+#endif
 }
 
+#if 0
+LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result);
 LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result) {
   if (node->tmp.dtype != LIBXSMM_DATATYPE_F32) {
     *result = 0;
@@ -595,9 +609,10 @@ LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsign
     are_nodes_pure_f32(node->r2, result);
   }
 }
+#endif
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
+void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc) {
   libxsmm_matequation_gp_reg_mapping  l_gp_reg_mapping;
   libxsmm_matequation_kernel_config   l_kernel_config;
@@ -606,11 +621,12 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_matrix_eqn *eqn = libxsmm_matrix_eqn_get_equation( eqn_idx );
   libxsmm_matrix_eqn **jiting_queue;
   unsigned int queue_size = 0;
+
   /* TODO: Use number of tree nodes as max size */
   unsigned int max_queue_size = 256;
-  unsigned int strategy = JIT_STRATEGY_HYBRID;
+  /* TODO: Now using only strategy with tmp scratch blocks on aarch64 */
+  unsigned int strategy = JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS;
   unsigned int eqn_tree_id = 0;
-  unsigned int temp_reg = LIBXSMM_X86_GP_REG_R8;
   unsigned int all_nodes_f32 = 1;
 
   if ( eqn == NULL ) {
@@ -618,27 +634,27 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     return;
   }
 
+  /* Check if equation is purely F32 */
   are_nodes_pure_f32(eqn->eqn_root, &all_nodes_f32);
-  if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) &&
-       !((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1))) {
+  if ( !((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1))) {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
 
   /* Some basic initialization of the config kernel */
-  libxsmm_generator_matequation_init_micro_kernel_config(io_generated_code, &l_kernel_config);
+  libxsmm_generator_matequation_aarch64_init_micro_kernel_config(io_generated_code, &l_kernel_config);
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define gp register mapping */
   memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping));
-#if defined(_WIN32) || defined(__CYGWIN__)
-  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RCX;
-#else /* match calling convention on Linux */
-  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RDI;
-#endif
+  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X0;
+  l_gp_reg_mapping.temp_reg    = LIBXSMM_AARCH64_GP_REG_X11;
+  l_gp_reg_mapping.gp_reg_scratch_0    = LIBXSMM_AARCH64_GP_REG_X12;
+
+#if 0
   l_gp_reg_mapping.gp_reg_out = LIBXSMM_X86_GP_REG_RAX;
   l_gp_reg_mapping.temp_reg    = LIBXSMM_X86_GP_REG_RBX;
   l_gp_reg_mapping.temp_reg2   = LIBXSMM_X86_GP_REG_RCX;
@@ -652,16 +668,15 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     l_kernel_config.n_avail_gpr = l_kernel_config.n_avail_gpr - 1;
     l_gp_reg_mapping.gp_reg_offset = LIBXSMM_X86_GP_REG_R13;
   }
+#endif
 
   jiting_queue = (libxsmm_matrix_eqn**) malloc(max_queue_size * sizeof(libxsmm_matrix_eqn*));
+  libxsmm_generator_decompose_equation_tree_aarch64( eqn, jiting_queue, &queue_size );
 
-  libxsmm_generator_decompose_equation_tree( eqn, jiting_queue, &queue_size );
-
-  /* Open asm */
-  libxsmm_x86_instruction_open_stream_matequation( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct);
-
+  /* open asm */
+  libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
   /* Setup the stack */
-  libxsmm_generator_matequation_setup_stack_frame( io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, eqn, strategy);
+  libxsmm_generator_matequation_setup_stack_frame_aarch64( io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, eqn, strategy);
 
   for (eqn_tree_id = 0; eqn_tree_id < queue_size; eqn_tree_id++) {
     libxsmm_matrix_eqn *cur_eqn = jiting_queue[eqn_tree_id];
@@ -669,20 +684,15 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
 
     /* Determine the output and precision of current equation tree to be JITed */
     if (eqn_tree_id == (queue_size - 1)) {
-      libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg);
+      libxsmm_generator_meqn_getval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, l_gp_reg_mapping.temp_reg );
     } else {
-      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, temp_reg);
+      libxsmm_generator_meqn_getaddr_stack_tmp_i_aarch64( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, l_gp_reg_mapping.gp_reg_scratch_0, l_gp_reg_mapping.temp_reg );
       copy_mateqn_desc.datatype = cur_eqn->eqn_root->tmp.dtype;
     }
 
-    libxsmm_x86_instruction_alu_mem( io_generated_code,
-        l_kernel_config.alu_mov_instruction,
-        l_gp_reg_mapping.gp_reg_param_struct,
-        LIBXSMM_X86_GP_REG_UNDEF, 0,
-        16,
-        temp_reg,
-        1 );
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, l_gp_reg_mapping.gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, l_gp_reg_mapping.temp_reg );
 
+#if 0
     if (is_eqn_node_breaking_point(cur_eqn->eqn_root) > 0) {
       /* For these nodes use strategy via scratch  */
       /* Re assign visit_stamps to current equation tree  */
@@ -724,13 +734,22 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     }
+#else
+    /* For now JIT equations via scratch  */
+    /* Re assign visit_stamps to current equation tree  */
+    libxsmm_generator_matequation_assign_timestamps(cur_eqn);
+    if (eqn_tree_id < queue_size - 1) {
+      copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
+    }
+    l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
+    libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
+#endif
   }
 
   /* Destroy stack frame */
-  libxsmm_generator_matequation_destroy_stack_frame(  io_generated_code,  &l_kernel_config, &l_gp_reg_mapping, strategy);
-
-  /* Close asm */
-  libxsmm_x86_instruction_close_stream_matequation( io_generated_code );
+  libxsmm_generator_matequation_destroy_stack_frame_aarch64(  io_generated_code,  &l_kernel_config, &l_gp_reg_mapping, strategy);
+  /* close asm */
+  libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xe0f );
 
   free(jiting_queue);
 }
