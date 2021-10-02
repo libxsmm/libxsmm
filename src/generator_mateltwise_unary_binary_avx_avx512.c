@@ -46,7 +46,7 @@ void adjust_after_microkernel_addr_gp_reg( libxsmm_generated_code*              
 
   if ((is_inp_gp_reg > 0) || (is_out_gp_reg > 0)) {
     unsigned int tsize  = (is_inp_gp_reg > 0) ? i_micro_kernel_config->datatype_size_in : i_micro_kernel_config->datatype_size_out;
-    unsigned int ld     = (is_inp_gp_reg > 0) ? i_mateltwise_desc->ldi: i_mateltwise_desc->ldo;
+    unsigned int ld     = (is_inp_gp_reg > 0) ? (((i_gp_reg == i_gp_reg_mapping->gp_reg_in2) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY)) ? i_mateltwise_desc->ldi2 : i_mateltwise_desc->ldi) : i_mateltwise_desc->ldo;
 
     if (bcast_input == 0) {
       if (i_loop_type == LOOP_TYPE_M) {
@@ -145,7 +145,7 @@ void adjust_in_microkernel_addr_gp_reg( libxsmm_generated_code*                 
   if ((is_inp_gp_reg > 0) || (is_out_gp_reg > 0)) {
     unsigned int vlen   = (is_inp_gp_reg > 0) ? i_micro_kernel_config->vlen_in : i_micro_kernel_config->vlen_out;
     unsigned int tsize  = (is_inp_gp_reg > 0) ? i_micro_kernel_config->datatype_size_in : i_micro_kernel_config->datatype_size_out;
-    unsigned int ld     = (is_inp_gp_reg > 0) ? i_mateltwise_desc->ldi: i_mateltwise_desc->ldo;
+    unsigned int ld     = (is_inp_gp_reg > 0) ? (((i_gp_reg == i_gp_reg_mapping->gp_reg_in2) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ) ? i_mateltwise_desc->ldi2 : i_mateltwise_desc->ldi) : i_mateltwise_desc->ldo;
 
     if (bcast_input == 0) {
       if (i_loop_type == LOOP_TYPE_M) {
