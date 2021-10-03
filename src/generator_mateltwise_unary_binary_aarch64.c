@@ -1006,10 +1006,10 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu_inv( libxsmm_generated_code
                                                           unsigned int                            i_n_blocking,
                                                           unsigned int                            i_mask_last_m_chunk,
                                                           unsigned int                            i_mask_reg) {
+  unsigned int im, in;
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_mask_reg);
   LIBXSMM_UNUSED(i_vlen);
-  unsigned int im, in;
 
   for (in = 0; in < i_n_blocking; in++) {
     unsigned int l_mask_adv = 0;
