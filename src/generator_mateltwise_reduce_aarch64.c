@@ -26,7 +26,7 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
 
-  unsigned int _in, im, m, n, m_trips, use_m_masking, mask_count, compute_squared_vals_reduce, compute_plain_vals_reduce;
+  unsigned int _in, im, m, n, m_trips, use_m_masking, mask_count = 0, compute_squared_vals_reduce, compute_plain_vals_reduce;
   unsigned int start_vreg_sum = 0;
   unsigned int start_vreg_sum2 = 0;
   unsigned int reduce_instr = 0;
