@@ -85,6 +85,60 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
                                                      const unsigned int      i_ld,
                                                      const unsigned int      i_data_size );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_load_prng_state_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                      const unsigned int      i_gp_reg_prng_state_ptr,
+                                                      const unsigned int      prng_state0_vreg,
+                                                      const unsigned int      prng_state1_vreg,
+                                                      const unsigned int      prng_state2_vreg,
+                                                      const unsigned int      prng_state3_vreg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_store_prng_state_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                       const unsigned int      i_gp_reg_prng_state_ptr,
+                                                       const unsigned int      prng_state0_vreg,
+                                                       const unsigned int      prng_state1_vreg,
+                                                       const unsigned int      prng_state2_vreg,
+                                                       const unsigned int      prng_state3_vreg );
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_dropout_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                      const unsigned int      i_gp_reg_tmp,
+                                                      const unsigned int      i_gp_reg_prob_ptr,
+                                                      const unsigned int      dropout_vreg_one,
+                                                      const unsigned int      dropout_prob_vreg,
+                                                      const unsigned int      dropout_invprob_vreg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_dropout_inv_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                          const unsigned int      i_gp_reg_tmp,
+                                                          const unsigned int      i_gp_reg_prob_ptr,
+                                                          const unsigned int      dropout_vreg_one,
+                                                          const unsigned int      dropout_vreg_zero,
+                                                          const unsigned int      dropout_prob_vreg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_xoshiro128p_f32_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                      const unsigned int      i_vec_reg_rng_state_0,
+                                                      const unsigned int      i_vec_reg_rng_state_1,
+                                                      const unsigned int      i_vec_reg_rng_state_2,
+                                                      const unsigned int      i_vec_reg_rng_state_3,
+                                                      const unsigned int      i_vec_reg_rng_tmp_0,
+                                                      const unsigned int      i_vec_reg_rng_tmp_1,
+                                                      const unsigned int      i_vec_reg_rng_one,
+                                                      const unsigned int      o_vec_reg_rng );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_xoshiro128pp_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                   const unsigned int      i_vec_reg_rng_state_0,
+                                                   const unsigned int      i_vec_reg_rng_state_1,
+                                                   const unsigned int      i_vec_reg_rng_state_2,
+                                                   const unsigned int      i_vec_reg_rng_state_3,
+                                                   const unsigned int      i_vec_reg_rng_tmp_0,
+                                                   const unsigned int      i_vec_reg_rng_tmp_1,
+                                                   const unsigned int      o_vec_reg_rng );
+
 #if 0
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_aarch64_setup_stack_frame( libxsmm_generated_code*            io_generated_code,

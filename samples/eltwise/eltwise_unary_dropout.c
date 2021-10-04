@@ -277,14 +277,63 @@ void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned sh
   }
 }
 #else
-void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( rng_state );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+void lsfr_Xwide( unsigned int* rng_state, float* prng_out, unsigned int width ) {
+  const unsigned int state_ld = 16;
+  const float one = 1.0f;
+  unsigned int w;
+  union { unsigned int i; float f; } rng_num;
+
+  for ( w = 0 ; w < width; ++w ) {
+    /* setup */
+    unsigned int state_0 = rng_state[w + (0 * state_ld)];
+    unsigned int state_1 = rng_state[w + (1 * state_ld)];
+    unsigned int state_2 = rng_state[w + (2 * state_ld)];
+    unsigned int state_3 = rng_state[w + (3 * state_ld)];
+    unsigned int tmp_0, tmp_1;
+    rng_num.i = state_3 + state_0;
+    rng_num.i = rng_num.i >> 9;
+    rng_num.i = 0x3f800000 | rng_num.i;
+    prng_out[w] = rng_num.f - one;
+    tmp_0 = state_1 << 9;
+    state_2 = state_2 ^ state_0;
+    state_3 = state_3 ^ state_1;
+    state_1 = state_1 ^ state_2;
+    state_0 = state_0 ^ state_3;
+    state_2 = state_2 ^ tmp_0;
+    tmp_0 = state_3 << 11;
+    tmp_1 = state_3 >> 21;
+    state_3 = tmp_0 | tmp_1;
+    rng_state[w + (0 * state_ld)] = state_0;
+    rng_state[w + (1 * state_ld)] = state_1;
+    rng_state[w + (2 * state_ld)] = state_2;
+    rng_state[w + (3 * state_ld)] = state_3;
+  }
+}
+
+void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned char *dropout_mask, void* rng_state, float p) {
+  float vrng[16];
+  unsigned int w = 4;
+  unsigned int i;
+  unsigned int j;
+  float pn = 1 - p;
+  float pi = 1/pn;
+
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, w); i+=w) {
+    lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
+    for ( j = 0; j < w; ++j ) {
+      out[i+j] = ( vrng[j] < pn ) ? pi * in[i+j] : 0.0f;
+      dropout_mask[(i+j)/8] |= (unsigned char)(( vrng[j] < pn ) ? (1 << ((i+j)%8)) : 0x0 );
+    }
+  }
+  if (i < M) {
+    lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
+    j = 0;
+    for ( ; i < M; ++i ) {
+      out[i] = ( vrng[j] < pn ) ? pi * in[i] : 0.0f;
+      dropout_mask[i/8] |= (unsigned char)(( vrng[j] < pn ) ? (1 << (i%8)) : 0x0 );
+      j++;
+    }
+  }
 }
 
 void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
@@ -415,7 +464,7 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_fwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], rng_state_gold, p );
+    dropout_fwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned char*)&mask_gold[(i*mask_ld)], rng_state_gold, p );
   }
 
   /* use jited tranpose */
