@@ -358,8 +358,6 @@ int main( int argc, char* argv[] ) {
   } else if (datatype_mode == 3) {
     eqn0_bf16f32(M, N, ld, bf16_arg0, bf16_arg1, bf16_arg2, bf16_arg3, out);
   }
-
-
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
     if (datatype_mode == 0) {
