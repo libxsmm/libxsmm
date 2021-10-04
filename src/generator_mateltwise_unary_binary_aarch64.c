@@ -1135,31 +1135,31 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
                                                        i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_one, i_micro_kernel_config->dropout_vreg_tmp2 );
 
       /* compare with p */
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V, i_micro_kernel_config->dropout_prob_vreg, i_micro_kernel_config->dropout_vreg_tmp2, 0, i_micro_kernel_config->tmp_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V, i_micro_kernel_config->dropout_prob_vreg, i_micro_kernel_config->dropout_vreg_tmp2, 0, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
       if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) {
         if ( im % 2 == 0 ) {
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_AND_V, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->mask_helper0_vreg, 0, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_AND_V, i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->mask_helper0_vreg, 0, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
         } else {
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_AND_V, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->mask_helper1_vreg, 0, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_AND_V, i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->mask_helper1_vreg, 0, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
         }
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ADDV_V, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ADDV_V, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
         if ( im % 2 == 0 ) {
           if ( im == i_m_blocking - 1 ) {
             libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
-                                                    i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_AARCH64_GP_REG_UNDEF, 1, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_WIDTH_B );
+                                                    i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_AARCH64_GP_REG_UNDEF, 1, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_WIDTH_B );
             l_mask_adv++;
           } else {
             libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF,
-                                                    i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_WIDTH_B );
+                                                    i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_WIDTH_B );
           }
         } else {
           libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
-                                                  i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_WIDTH_B );
+                                                  i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_micro_kernel_config->dropout_vreg_tmp2, LIBXSMM_AARCH64_ASIMD_WIDTH_B );
 
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V, i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->dropout_vreg_tmp1, 0, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V, i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_tmp2, 0, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
 
           libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
-                                                    i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_AARCH64_GP_REG_UNDEF, 1, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_WIDTH_B );
+                                                    i_gp_reg_mapping->gp_reg_dropoutmask, LIBXSMM_AARCH64_GP_REG_UNDEF, 1, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_WIDTH_B );
           l_mask_adv++;
         }
       }
@@ -1168,11 +1168,8 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
       libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V, cur_vreg, i_micro_kernel_config->dropout_invprob_vreg, 0, cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
 
       /* blend zero and multiplication result together */
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->dropout_vreg_tmp0, 0, i_micro_kernel_config->dropout_vreg_tmp0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_BIF_V, i_micro_kernel_config->dropout_vreg_tmp0, i_micro_kernel_config->tmp_vreg, 0, cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
-#if 0
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V, i_micro_kernel_config->dropout_vreg_tmp2, i_micro_kernel_config->dropout_vreg_tmp2, 0, cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
-#endif
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_tmp1, 0, i_micro_kernel_config->dropout_vreg_tmp1, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_BIF_V, i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_tmp0, 0, cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
     }
     if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, i_gp_reg_mapping->gp_reg_dropoutmask, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_dropoutmask, (i_micro_kernel_config->ldo_mask - (l_mask_adv*8))/8 );
