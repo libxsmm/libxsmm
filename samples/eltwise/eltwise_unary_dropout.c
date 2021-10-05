@@ -315,8 +315,8 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned ch
   unsigned int w = 4;
   unsigned int i;
   unsigned int j;
-  float pn = 1 - p;
-  float pi = 1/pn;
+  float pn = 1.0f - p;
+  float pi = 1.0f/pn;
 
   for (i = 0; i < LIBXSMM_ALIGNDOWN(M, w); i+=w) {
     lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
@@ -336,13 +336,13 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned ch
   }
 }
 
-void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
+void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned char *dropout_mask, float p) {
+  unsigned int i;
+  float pn = 1.0f - p;
+  float pi = 1.0f/pn;
+  for (i = 0; i < M; ++i) {
+    out[i] = ( ( dropout_mask[i/8] & (1 << (i%8)) ) != 0 ) ? in[i] * pi : 0.0f;
+  }
 }
 #endif
 
@@ -464,7 +464,7 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_fwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned char*)&mask_gold[(i*mask_ld)], rng_state_gold, p );
+    dropout_fwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], rng_state_gold, p );
   }
 
   /* use jited tranpose */
@@ -1019,15 +1019,15 @@ int test_dropout_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     out_gold[i] = 0;
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask[i] = 0xaa;
+    mask[i] = (unsigned char)(0xaa ^ (i%256));
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask_gold[i] = 0xaa;
+    mask_gold[i] = (unsigned char)(0xaa ^ (i%256));
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_bwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], p );
+    dropout_bwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], p );
   }
 
   /* use jited tranpose */
