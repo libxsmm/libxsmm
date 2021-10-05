@@ -14,14 +14,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#ifdef __AVX512BW__
-#include <libxsmm_intrinsics_x86.h>
-#else
-#ifdef __AVX2__
-#include <libxsmm_intrinsics_x86.h>
-#endif
-#endif
-
 #if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
@@ -35,325 +27,141 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
-#ifdef __AVX512BW__
-void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
+void lsfr_Xwide( unsigned int* rng_state, float* prng_out, unsigned int width ) {
+  const unsigned int state_ld = 16;
+  const float one = 1.0f;
+  unsigned int w;
+  union { unsigned int i; float f; } rng_num;
+
+  for ( w = 0 ; w < width; ++w ) {
+    unsigned int state_0 = rng_state[w + (0 * state_ld)];
+    unsigned int state_1 = rng_state[w + (1 * state_ld)];
+    unsigned int state_2 = rng_state[w + (2 * state_ld)];
+    unsigned int state_3 = rng_state[w + (3 * state_ld)];
+    unsigned int tmp_0, tmp_1;
+    rng_num.i = state_3 + state_0;
+    rng_num.i = rng_num.i >> 9;
+    rng_num.i = 0x3f800000 | rng_num.i;
+    prng_out[w] = rng_num.f - one;
+    tmp_0 = state_1 << 9;
+    state_2 = state_2 ^ state_0;
+    state_3 = state_3 ^ state_1;
+    state_1 = state_1 ^ state_2;
+    state_0 = state_0 ^ state_3;
+    state_2 = state_2 ^ tmp_0;
+    tmp_0 = state_3 << 11;
+    tmp_1 = state_3 >> 21;
+    state_3 = tmp_0 | tmp_1;
+    rng_state[w + (0 * state_ld)] = state_0;
+    rng_state[w + (1 * state_ld)] = state_1;
+    rng_state[w + (2 * state_ld)] = state_2;
+    rng_state[w + (3 * state_ld)] = state_3;
+  }
+}
+
+void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned char *dropout_mask, void* rng_state, float p) {
+  float vrng[16];
+  unsigned int w;
   unsigned int i;
+  unsigned int j;
   float pn = 1 - p;
-  __m512 vp = _mm512_set1_ps(pn);
-  __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
-    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
-    __m512 vin = _mm512_loadu_ps(in+i);
-    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_storeu_ps(out+i, vout);
-    dropout_mask[i/16] = dmsk;
+  float pi = 1/pn;
+  unsigned int cpuid = libxsmm_cpuid();
+
+  if ( (cpuid >= LIBXSMM_X86_AVX512_MIC) && (cpuid <= LIBXSMM_X86_ALLFEAT) ) {
+    w = 16;
+  } else if ( cpuid == LIBXSMM_X86_AVX2 ) {
+    w = 8;
+  } else {
+    w = 4;
+  }
+
+  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, w); i+=w) {
+    lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
+    for ( j = 0; j < w; ++j ) {
+      out[i+j] = ( vrng[j] < pn ) ? pi * in[i+j] : 0.0f;
+      dropout_mask[(i+j)/8] |= (unsigned char)(( vrng[j] < pn ) ? (1 << ((i+j)%8)) : 0x0 );
+    }
   }
   if (i < M) {
-    int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
-    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
-    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_mask_storeu_ps(out+i, mask, vout);
-    dropout_mask[i/16] = dmsk & mask;
+    lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
+    j = 0;
+    for ( ; i < M; ++i ) {
+      out[i] = ( vrng[j] < pn ) ? pi * in[i] : 0.0f;
+      dropout_mask[i/8] |= (unsigned char)(( vrng[j] < pn ) ? (1 << (i%8)) : 0x0 );
+      j++;
+    }
   }
 }
 
-void dropout_fwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, void* rng_state, float p) {
+void dropout_fwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned char *dropout_mask, void* rng_state, float p) {
+  float* flt_in  = (float*)libxsmm_aligned_malloc( M*sizeof(float), 4096 );
+  float* flt_out = (float*)libxsmm_aligned_malloc( M*sizeof(float), 4096 );
+
+  libxsmm_convert_bf16_f32( in,  flt_in,  M );
+  dropout_fwd_f32_f32_gold( M, flt_in, flt_out, dropout_mask, rng_state, p );
+  libxsmm_rne_convert_fp32_bf16( flt_out, out, M );
+
+  libxsmm_free( flt_in );
+  libxsmm_free( flt_out );
+}
+
+void dropout_fwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned char *dropout_mask, void* rng_state, float p) {
+  float* flt_out = (float*)libxsmm_aligned_malloc( M*sizeof(float), 4096 );
+
+  dropout_fwd_f32_f32_gold( M, in, flt_out, dropout_mask, rng_state, p );
+  libxsmm_rne_convert_fp32_bf16( flt_out, out, M );
+
+  libxsmm_free( flt_out );
+}
+
+void dropout_fwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned char *dropout_mask, void* rng_state, float p) {
+  float* flt_in  = (float*)libxsmm_aligned_malloc( M*sizeof(float), 4096 );
+
+  libxsmm_convert_bf16_f32( in,  flt_in,  M );
+  dropout_fwd_f32_f32_gold( M, flt_in, out, dropout_mask, rng_state, p );
+
+  libxsmm_free( flt_in );
+}
+
+void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned char *dropout_mask, float p) {
   unsigned int i;
-  float pn = 1 - p;
-  __m512 vp = _mm512_set1_ps(pn);
-  __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
-    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
-    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
-    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm256_storeu_si256((__m256i*)(out+i),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
-    dropout_mask[i/16] = dmsk;
-  }
-  if (i < M) {
-    int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
-    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_maskz_loadu_epi16(mask, (__m256i*)(in+i))),16));
-    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm256_mask_storeu_epi16((__m256i*)(out+i), mask, _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
-    dropout_mask[i/16] = dmsk & mask;
+  float pn = 1.0f - p;
+  float pi = 1.0f/pn;
+  for (i = 0; i < M; ++i) {
+    out[i] = ( ( dropout_mask[i/8] & (1 << (i%8)) ) != 0 ) ? in[i] * pi : 0.0f;
   }
 }
 
-void dropout_fwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, void* rng_state, float p) {
-  unsigned int i;
-  float pn = 1 - p;
-  __m512 vp = _mm512_set1_ps(pn);
-  __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
-    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
-    __m512 vin = _mm512_loadu_ps(in+i);
-    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm256_storeu_si256((__m256i*)(out+i),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
-    dropout_mask[i/16] = dmsk;
-  }
-  if (i < M) {
-    int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
-    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
-    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm256_mask_storeu_epi16((__m256i*)(out+i), mask, _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
-    dropout_mask[i/16] = dmsk & mask;
-  }
+void dropout_bwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned char *dropout_mask, float p) {
+  float* flt_in  = (float*)libxsmm_aligned_malloc( M*sizeof(float), 4096 );
+  float* flt_out = (float*)libxsmm_aligned_malloc( M*sizeof(float), 4096 );
+
+  libxsmm_convert_bf16_f32( in,  flt_in,  M );
+  dropout_bwd_f32_f32_gold( M, flt_in, flt_out, dropout_mask, p );
+  libxsmm_rne_convert_fp32_bf16( flt_out, out, M );
+
+  libxsmm_free( flt_in );
+  libxsmm_free( flt_out );
 }
 
-void dropout_fwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
-  unsigned int i;
-  float pn = 1 - p;
-  __m512 vp = _mm512_set1_ps(pn);
-  __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
-    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
-    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
-    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_storeu_ps(out+i, vout);
-    dropout_mask[i/16] = dmsk;
-  }
-  if (i < M) {
-    int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 rnd = LIBXSMM_INTRINSICS_MM512_RNG_EXTSTATE_PS(rng_state);
-    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_maskz_loadu_epi16(mask, (__m256i*)(in+i))),16));
-    __mmask16 dmsk = _mm512_cmplt_ps_mask(rnd, vp);
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_mask_storeu_ps(out+i, mask, vout);
-    dropout_mask[i/16] = dmsk & mask;
-  }
+void dropout_bwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned char *dropout_mask, float p) {
+  float* flt_out = (float*)libxsmm_aligned_malloc( M*sizeof(float), 4096 );
+
+  dropout_bwd_f32_f32_gold( M, in, flt_out, dropout_mask, p );
+  libxsmm_rne_convert_fp32_bf16( flt_out, out, M );
+
+  libxsmm_free( flt_out );
 }
 
-void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
-  unsigned int i = 0;
-  float pn = 1 - p;
-  __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
-    __m512 vin = _mm512_loadu_ps(in+i);
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_storeu_ps(out+i, vout);
-  }
-  if (i < M) {
-    int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_mask_storeu_ps(out+i, mask, vout);
-  }
-}
+void dropout_bwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned char *dropout_mask, float p) {
+  float* flt_in  = (float*)libxsmm_aligned_malloc( M*sizeof(float), 4096 );
 
-void dropout_bwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, float p) {
-  unsigned int i = 0;
-  float pn = 1 - p;
-  __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
-    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm256_storeu_si256((__m256i*)(out+i),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
-  }
-  if (i < M) {
-    int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_maskz_loadu_epi16(mask, (__m256i*)(in+i))),16));
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm256_mask_storeu_epi16((__m256i*)(out+i), mask, _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
-  }
-}
+  libxsmm_convert_bf16_f32( in,  flt_in,  M );
+  dropout_bwd_f32_f32_gold( M, flt_in, out, dropout_mask, p );
 
-void dropout_bwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, float p) {
-  unsigned int i = 0;
-  float pn = 1 - p;
-  __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
-    __m512 vin = _mm512_loadu_ps(in+i);
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm256_storeu_si256((__m256i*)(out+i),_mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
-  }
-  if (i < M) {
-    int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 vin = _mm512_maskz_loadu_ps(mask, in+i);
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm256_mask_storeu_epi16((__m256i*)(out+i), mask, _mm512_cvtepi32_epi16(_mm512_srai_epi32(LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(vout),16)));
-  }
+  libxsmm_free( flt_in );
 }
-
-void dropout_bwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned short *dropout_mask, float p) {
-  unsigned int i = 0;
-  float pn = 1 - p;
-  __m512 vpi = _mm512_set1_ps(1.0/pn);
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 16); i+=16) {
-    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(in+i))),16));
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_storeu_ps(out+i, vout);
-  }
-  if (i < M) {
-    int rem = M - i;
-    __mmask16 mask = (1 << rem) - 1;
-    __m512 vin = _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_maskz_loadu_epi16(mask, (__m256i*)(in+i))),16));
-    __mmask16 dmsk = dropout_mask[i/16];
-    __m512 vout = _mm512_maskz_mul_ps(dmsk, vin, vpi);
-    _mm512_mask_storeu_ps(out+i, mask, vout);
-  }
-}
-#else
-#ifdef __AVX2__
-void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
-  unsigned int i;
-  float pn = 1 - p;
-  unsigned char* out_mask = (unsigned char*)dropout_mask;
-  __m256 vp = _mm256_set1_ps(pn);
-  __m256 vpi = _mm256_set1_ps(1.0/pn);
-  __m256 vzero = _mm256_setzero_ps();
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 8); i+=8) {
-    __m256 rnd = LIBXSMM_INTRINSICS_MM256_RNG_EXTSTATE_PS(rng_state);
-    __m256 vin = _mm256_loadu_ps(in+i);
-    __m256 vmsk = _mm256_cmp_ps(vp, rnd, 0x06);
-    __m256 vout = _mm256_mul_ps(vin, vpi);
-    vout = _mm256_blendv_ps( vzero, vout, vmsk );
-    _mm256_storeu_ps(out+i, vout);
-    out_mask[i/8] = _mm256_movemask_ps( vmsk );
-  }
-  if (i < M) {
-    int rem = M - i;
-    __m256 rnd = LIBXSMM_INTRINSICS_MM256_RNG_EXTSTATE_PS(rng_state);
-    __m256i memmsk = _mm256_set_epi32( (rem == 8) ? 0xffffffff : 0x00000000, (rem >= 7) ? 0xffffffff : 0x00000000, (rem >= 6) ? 0xffffffff : 0x00000000, (rem >= 5) ? 0xffffffff : 0x00000000,
-                                       (rem >= 4) ? 0xffffffff : 0x00000000, (rem >= 3) ? 0xffffffff : 0x00000000, (rem >= 2) ? 0xffffffff : 0x00000000, (rem >= 1) ? 0xffffffff : 0x00000000  );
-    __m256 vin = _mm256_maskload_ps(in+i, memmsk);
-    __m256 vmsk = _mm256_cmp_ps(vp, rnd, 0x06);
-    __m256 vout = _mm256_mul_ps(vin, vpi);
-    vout = _mm256_blendv_ps( vzero, vout, vmsk );
-    _mm256_maskstore_ps(out+i, memmsk, vout);
-    out_mask[i/8] = _mm256_movemask_ps( vmsk );
-  }
-}
-
-void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
-  unsigned int i = 0;
-  float pn = 1 - p;
-  unsigned char* out_mask = (unsigned char*)dropout_mask;
-  __m256 vpi = _mm256_set1_ps(1.0/pn);
-  __m256 vzero = _mm256_setzero_ps();
-  __m256i vand = _mm256_set_epi32( 0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001 );
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, 8); i+=8) {
-    __m256 vin = _mm256_loadu_ps(in+i);
-    __m256i vmask = _mm256_set1_epi8( out_mask[i/8] );
-    vmask = _mm256_and_si256( vmask, vand );
-    vmask = _mm256_cmpeq_epi32( vmask, vand );
-    __m256 vout = _mm256_mul_ps(vin, vpi);
-    vout = _mm256_blendv_ps( vzero, vout, _mm256_castsi256_ps(vmask) );
-    _mm256_storeu_ps(out+i, vout);
-  }
-  if (i < M) {
-    int rem = M - i;
-    __m256i memmsk = _mm256_set_epi32( (rem == 8) ? 0xffffffff : 0x00000000, (rem >= 7) ? 0xffffffff : 0x00000000, (rem >= 6) ? 0xffffffff : 0x00000000, (rem >= 5) ? 0xffffffff : 0x00000000,
-                                       (rem >= 4) ? 0xffffffff : 0x00000000, (rem >= 3) ? 0xffffffff : 0x00000000, (rem >= 2) ? 0xffffffff : 0x00000000, (rem >= 1) ? 0xffffffff : 0x00000000  );
-    __m256 vin = _mm256_maskload_ps(in+i, memmsk);
-    __m256i vmask = _mm256_set1_epi8( out_mask[i/8] );
-    vmask = _mm256_and_si256( vmask, vand );
-    vmask = _mm256_cmpeq_epi32( vmask, vand );
-    __m256 vout = _mm256_mul_ps(vin, vpi);
-    vout = _mm256_blendv_ps( vzero, vout, _mm256_castsi256_ps(vmask) );
-    _mm256_maskstore_ps(out+i, memmsk, vout);
-  }
-}
-#else
-void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( rng_state );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
-}
-
-void dropout_bwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned short *dropout_mask, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
-}
-#endif
-
-void dropout_fwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, void* rng_state, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( rng_state );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
-}
-
-void dropout_fwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, void* rng_state, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( rng_state );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
-}
-
-void dropout_fwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned short *dropout_mask, void* rng_state, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( rng_state );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
-}
-
-void dropout_bwd_bf16_bf16_gold(unsigned int M, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
-}
-
-void dropout_bwd_f32_bf16_gold(unsigned int M, float *in, libxsmm_bfloat16 *out, unsigned short *dropout_mask, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
-}
-
-void dropout_bwd_bf16_f32_gold(unsigned int M, libxsmm_bfloat16 *in, float *out, unsigned short *dropout_mask, float p) {
-  LIBXSMM_UNUSED( M );
-  LIBXSMM_UNUSED( in );
-  LIBXSMM_UNUSED( out );
-  LIBXSMM_UNUSED( dropout_mask );
-  LIBXSMM_UNUSED( p );
-  fprintf( stderr, "In order to run the dropout test you have to compile with AVX512BW support!\n" );
-}
-#endif
 
 int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
@@ -415,7 +223,7 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_fwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], rng_state_gold, p );
+    dropout_fwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], rng_state_gold, p );
   }
 
   /* use jited tranpose */
@@ -556,7 +364,7 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_fwd_bf16_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], rng_state_gold, p );
+    dropout_fwd_bf16_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], rng_state_gold, p );
   }
 
   /* use jited tranpose */
@@ -704,7 +512,7 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_fwd_f32_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], rng_state_gold, p );
+    dropout_fwd_f32_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], rng_state_gold, p );
   }
 
   /* use jited tranpose */
@@ -851,7 +659,7 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_fwd_bf16_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], rng_state_gold, p );
+    dropout_fwd_bf16_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], rng_state_gold, p );
   }
 
   /* use jited tranpose */
@@ -970,15 +778,15 @@ int test_dropout_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     out_gold[i] = 0;
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask[i] = 0xaa;
+    mask[i] = (unsigned char)(0xaa ^ (i%256));
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask_gold[i] = 0xaa;
+    mask_gold[i] = (unsigned char)(0xaa ^ (i%256));
   }
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_bwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], p );
+    dropout_bwd_f32_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], p );
   }
 
   /* use jited tranpose */
@@ -1083,7 +891,7 @@ int test_dropout_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_bwd_bf16_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], p );
+    dropout_bwd_bf16_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], p );
   }
 
   /* use jited tranpose */
@@ -1196,7 +1004,7 @@ int test_dropout_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_bwd_f32_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], p );
+    dropout_bwd_f32_bf16_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], p );
   }
 
   /* use jited tranpose */
@@ -1307,7 +1115,7 @@ int test_dropout_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   /* compute out_gold */
   for ( i = 0; i < N; ++i ) {
-    dropout_bwd_bf16_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], (unsigned short*)&mask_gold[(i*mask_ld)], p );
+    dropout_bwd_bf16_f32_gold( M, &in[(i*ldi)], &out_gold[(i*ldo)], &mask_gold[(i*mask_ld)], p );
   }
 
   /* use jited tranpose */
