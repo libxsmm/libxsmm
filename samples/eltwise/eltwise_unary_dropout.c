@@ -897,10 +897,10 @@ int test_dropout_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
     out_gold[i] = 0;
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask[i] = 0xaa;
+    mask[i] = (unsigned char)(0xaa ^ (i%256));
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask_gold[i] = 0xaa;
+    mask_gold[i] = (unsigned char)(0xaa ^ (i%256));
   }
 
   /* compute out_gold */
@@ -1010,10 +1010,10 @@ int test_dropout_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     out_gold[i] = 0;
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask[i] = 0xaa;
+    mask[i] = (unsigned char)(0xaa ^ (i%256));
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask_gold[i] = 0xaa;
+    mask_gold[i] = (unsigned char)(0xaa ^ (i%256));
   }
 
   /* compute out_gold */
@@ -1121,10 +1121,10 @@ int test_dropout_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     out_gold[i] = 0;
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask[i] = 0xaa;
+    mask[i] = (unsigned char)(0xaa ^ (i%256));
   }
   for ( i = 0; i < N*mask_ld; ++i ) {
-    mask_gold[i] = 0xaa;
+    mask_gold[i] = (unsigned char)(0xaa ^ (i%256));
   }
 
   /* compute out_gold */
