@@ -401,7 +401,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
                                                 const unsigned int                    i_vec_instr,
                                                 const unsigned char                   i_vec_reg_src_0,
                                                 const unsigned char                   i_vec_reg_src_1,
-                                                const unsigned char                   i_index,
+                                                const unsigned char                   i_idx_shf,
                                                 const unsigned char                   i_vec_reg_dst,
                                                 const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
@@ -410,11 +410,34 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
   }
 
   switch ( i_vec_instr ) {
+    case LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_AND_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ADD_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ADDV_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_BIC_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_BIF_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_BIT_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_BSL_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_NEG_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_NOT_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_ORN_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_SHL_I_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_SSHR_I_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_USHR_I_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_SSHL_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_USHL_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_CMEQ_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_CMEQ_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_CMGE_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_CMGE_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_CMGT_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_CMGT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_CMLE_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_CMLT_Z_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V:
-    case LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V:
-    case LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V:
@@ -425,6 +448,19 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMIN_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FADDP_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMAXP_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMINP_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMLE_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCMLT_Z_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TRN1:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TRN2:
     case LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1:
@@ -474,11 +510,11 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
         code[code_head] |= (unsigned int)((0x6 & i_tupletype) << 21);
       }
     }
-    if ( (i_vec_instr == LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S) ||
-         (i_vec_instr == LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V)    ) {
-      unsigned char l_idx = ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) ? i_index << 1 : i_index;
-      if ( (i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D && i_index > 2) || (i_index > 4) ) {
-        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: inoompatible tuple and index type for instruction: %u\n", i_vec_instr);
+    /* FMLA, eltwise */
+    if ( ((0x4 & i_vec_instr) == 0x4) && ((0x18 & i_vec_instr) != 0x18) ) {
+      unsigned char l_idx = ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) ? i_idx_shf << 1 : i_idx_shf;
+      if ( (i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D && i_idx_shf > 2) || (i_idx_shf > 4) ) {
+        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for fmla instruction: %u\n", i_vec_instr);
         exit(-1);
       }
 
@@ -486,6 +522,23 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
       code[code_head] |= (unsigned int)((0x1 & l_idx) << 21);
       /* setting H */
       code[code_head] |= (unsigned int)((0x2 & l_idx) << 10);
+    }
+    /* shifts */
+    if ( (0x18 & i_vec_instr) == 0x18 ) {
+      unsigned char l_shift = 0x0;
+      if ( ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8B ) || ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B ) ) {
+        l_shift = (unsigned char)(0x8 | (((0x4 & i_vec_instr) == 0x4) ? (0x8 - (i_idx_shf & 0x7)) : (i_idx_shf & 0x7) ));
+      } else if ( ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4H ) || ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8H ) ) {
+        l_shift = (unsigned char)(0x10 | (((0x4 & i_vec_instr) == 0x4) ? (0x10 - (i_idx_shf & 0xf)) : (i_idx_shf & 0xf) ));
+      } else if ( ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2S ) || ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S ) ) {
+        l_shift = (unsigned char)(0x20 | (((0x4 & i_vec_instr) == 0x4) ? (0x20 - (i_idx_shf & 0x1f)) : (i_idx_shf & 0x1f) ));
+      } else if ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) {
+        l_shift = (unsigned char)(0x40 | (((0x4 & i_vec_instr) == 0x4) ? (0x40 - (i_idx_shf & 0x3f)) : (i_idx_shf & 0x3f) ));
+      } else {
+        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for shift nstruction: %u\n", i_vec_instr);
+        exit(-1);
+      }
+      code[code_head] |= (unsigned int)(l_shift << 16);
     }
 
     /* advance code head */

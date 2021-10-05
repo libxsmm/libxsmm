@@ -184,7 +184,7 @@
  * 1st byte
  *   7: SVE: predication required
  *   6-5: not used
- *   4:   tuple-type: ignore all sz bits, ignore shift bits for GP insturctions
+ *   4:   tuple-type: ignore all sz bits, ignore shift bits for GP insturctions, if 4 & 3 is set for ASIMD -> immediate, e.g. shift is used
  *   3:   tuple-type: ignore second sz bit
  *   2:   has immediate
  *   1-0: number of register operands
@@ -254,11 +254,34 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R         0x0d40c002
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST  0x0dc0c003
 /* define ASIMD compute instructions */
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S     0x5f80100b
-#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V     0x0f80100b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V        0x2e201c13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V        0x0ea01c13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_AND_V        0x0e201c13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ADD_V        0x0e208403
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ADDV_V       0x0e31b802
+#define LIBXSMM_AARCH64_INSTR_ASIMD_BIC_V        0x0e601c13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_BIF_V        0x2ee01c13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_BIT_V        0x2ea01c13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_BSL_V        0x2e601c13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_NEG_V        0x2e20b802
+#define LIBXSMM_AARCH64_INSTR_ASIMD_NOT_V        0x2e205812
+#define LIBXSMM_AARCH64_INSTR_ASIMD_ORN_V        0x0ee01c13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_SHL_I_V      0x0f00541a
+#define LIBXSMM_AARCH64_INSTR_ASIMD_SSHR_I_V     0x0f00041e
+#define LIBXSMM_AARCH64_INSTR_ASIMD_USHR_I_V     0x2f00041e
+#define LIBXSMM_AARCH64_INSTR_ASIMD_SSHL_R_V     0x0e204403
+#define LIBXSMM_AARCH64_INSTR_ASIMD_USHL_R_V     0x2e204403
+#define LIBXSMM_AARCH64_INSTR_ASIMD_CMEQ_R_V     0x2e208c03
+#define LIBXSMM_AARCH64_INSTR_ASIMD_CMEQ_Z_V     0x0e209802
+#define LIBXSMM_AARCH64_INSTR_ASIMD_CMGE_R_V     0x0e203c03
+#define LIBXSMM_AARCH64_INSTR_ASIMD_CMGE_Z_V     0x2e208802
+#define LIBXSMM_AARCH64_INSTR_ASIMD_CMGT_R_V     0x0e203403
+#define LIBXSMM_AARCH64_INSTR_ASIMD_CMGT_Z_V     0x0e208802
+#define LIBXSMM_AARCH64_INSTR_ASIMD_CMLE_Z_V     0x2e209802
+#define LIBXSMM_AARCH64_INSTR_ASIMD_CMLT_Z_V     0x0e20a802
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S     0x5f80100f
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V     0x0f80100f
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V       0x0e20cc0b
-#define LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V        0x2e201c0b
-#define LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V        0x0ea01c0b
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V       0x0e20d40b
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V       0x0ea0d40b
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V       0x2e20dc0b
@@ -269,6 +292,19 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V     0x0e20fc0b
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V    0x2ea1d80a
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V    0x0ea0fc0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V       0x0e20f40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMIN_V       0x0ea0f40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FADDP_V      0x2e20d40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMAXP_V      0x2e20f40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMINP_V      0x2ea0f40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_R_V    0x0e20e40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_Z_V    0x0ea0d80a
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V    0x2e20e40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_Z_V    0x2ea0c80a
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V    0x2ea0e40b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V    0x0ea0c80a
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FCMLE_Z_V    0x2ea0d80a
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FCMLT_Z_V    0x0ea0e80a
 #define LIBXSMM_AARCH64_INSTR_ASIMD_TRN1         0x0e002803
 #define LIBXSMM_AARCH64_INSTR_ASIMD_TRN2         0x0e006803
 #define LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1         0x0e003803
@@ -455,7 +491,7 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_vec_instr actual operation variant
  * @param i_vec_reg_src_0 first source register
- * @param i_index index if non-negative this value is the scalar access to src0
+ * @param i_idx_shf index if non-negative this value is the scalar access to src0 or the shift immediaate
  * @param i_vec_reg_src_1 second source register
  * @param i_vec_reg_dst destination register
  * @param i_tupletype tuple type
@@ -465,7 +501,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
                                                 const unsigned int                    i_vec_instr,
                                                 const unsigned char                   i_vec_reg_src_0,
                                                 const unsigned char                   i_vec_reg_src_1,
-                                                const unsigned char                   i_index,
+                                                const unsigned char                   i_idx_shf,
                                                 const unsigned char                   i_vec_reg_dst,
                                                 const libxsmm_aarch64_asimd_tupletype i_tupletype );
 
