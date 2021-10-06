@@ -1341,7 +1341,7 @@ void libxsmm_aarch64_instruction_register_jump_label( libxsmm_generated_code*   
       int l_distance = (int)io_jump_label_tracker->label_address[i_label_no] - (int)l_source.instr_addr[l_ref];
       l_distance /= 4;
 
-      code[l_source.instr_addr[l_ref]] |= (unsigned int)((0x7ffff & l_distance) << 5);
+      code[l_source.instr_addr[l_ref]/4] |= (unsigned int)((0x7ffff & l_distance) << 5);
     }
   } else {
     /* assembly not supported right now */
