@@ -22,7 +22,7 @@ for m in randnum:
 f1.close()
 END
 
-BINARY_OP=4
+BINARY_OP=5
 
 for i in `cat ${TESTFILE1}`
 do
