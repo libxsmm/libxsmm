@@ -12,7 +12,7 @@ ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(16,97,16), 6)
+randnum = rnd.sample(range(1,101), 18)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
@@ -22,6 +22,12 @@ for m in randnum:
 f1.close()
 END
 
+REDUCE_X=0
+REDUCE_X2=1
+REDUCE_ROWS=1
+REDUCE_OP=0
+N_IDX=0
+
 for i in `cat ${TESTFILE1}`
 do
   M=`echo ${i} | awk -F"_" '{print $1}'`
@@ -29,17 +35,8 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
-  for PREC_IN in 2 4
-  do
-    for PREC_OUT in 2 4
-    do
-      for RELU_OP in D L E
-      do
-        ./eltwise_unary_relu ${RELU_OP} F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
-        ./eltwise_unary_relu ${RELU_OP} B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
-      done
-    done
-  done
+  N_ADJ=$((${N} + ${N_IDX}))
+  ./eltwise_unary_reduce ${M} ${N_ADJ} ${LDI} ${REDUCE_X} ${REDUCE_X2} ${REDUCE_ROWS} ${REDUCE_OP} 0 ${N_IDX} 0
 done
 
 rm ${TESTFILE1}

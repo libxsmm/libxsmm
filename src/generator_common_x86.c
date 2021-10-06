@@ -211,12 +211,12 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx( libxsmm_generate
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vpermd_16way_avx2( libxsmm_generated_code*                        io_generated_code,
-    const unsigned int                             i_vec_index,
-    const unsigned int                             i_vec_c_lo,
-    const unsigned int                             i_vec_c_hi,
-    const unsigned int                             i_vec_result,
-    const unsigned int                             i_vec_tmp0,
-    const unsigned int                             i_vec_tmp1 ) {
+                                                const unsigned int                             i_vec_index,
+                                                const unsigned int                             i_vec_c_lo,
+                                                const unsigned int                             i_vec_c_hi,
+                                                const unsigned int                             i_vec_result,
+                                                const unsigned int                             i_vec_tmp0,
+                                                const unsigned int                             i_vec_tmp1 ) {
 
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
       LIBXSMM_X86_INSTR_VPERMD, 'y',
@@ -1313,6 +1313,21 @@ void libxsmm_generator_store_prng_state_avx_avx512( libxsmm_generated_code* io_g
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                     LIBXSMM_X86_INSTR_VMOVUPS_ST, i_gp_reg_prng_state_ptr, LIBXSMM_X86_GP_REG_UNDEF, 0, 192,
                                     i_vname, prng_state3_vreg, 0, 0, 1 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_load_vreg_minus_infinity(libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
+                                                   const unsigned int      i_gp_reg_tmp,
+                                                   const unsigned int      i_vreg_minus_infinity) {
+  /* load constant register with minus infinity */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_tmp, 0xff800000);
+  libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_tmp );
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
+                                    LIBXSMM_X86_INSTR_VBROADCASTSS,
+                                    LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                    i_vname, i_vreg_minus_infinity, 0, 1, 0 );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_tmp );
 }
 
 LIBXSMM_API_INTERN

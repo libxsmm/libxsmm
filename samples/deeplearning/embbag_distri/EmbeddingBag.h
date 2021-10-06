@@ -25,9 +25,10 @@ public:
 #ifdef USE_LIBXSMM_JIT
     _ld = E;
     if (sizeof(T) == 4) {
-      kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
+      kernel = libxsmm_dispatch_meltw_unary(E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
+#else
     } else {
-      kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F16, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
+      kernel = libxsmm_dispatch_meltw_unary(E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F16, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
     }
     kernel1 = libxsmm_dispatch_meltw_unary(E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR);
     kernel2 = libxsmm_dispatch_meltw_binary(E, 1, &_ld, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_MELTW_TYPE_BINARY_MULADD);
@@ -55,13 +56,15 @@ public:
     #pragma omp parallel for
     for (int n = 0; n < N; n++)
     {
-      libxsmm_meltw_reduce_cols_idx_param params;
+      libxsmm_meltw_unary_param params;
       auto start = offsets[n];
       auto end = (n < N - 1 ? offsets[n + 1] : NS);
-      params.n = end - start;
-      params.ind_ptr = &indices[start];
-      params.inp_ptr = weight;
-      params.out_ptr = &output[n][0];
+      unsigned long long __n = end-start;
+
+      params.in.primary = weight;
+      params.in.secondary = &indices[start];
+      params.in.tertiary = &__n;
+      params.out.primary = &output[n][0];
       kernel( &params );
     }
   }
@@ -227,7 +230,7 @@ public:
 
 #ifdef USE_LIBXSMM_JIT
   int _ld;
-  libxsmm_meltwfunction_reduce_cols_idx kernel;
+  libxsmm_meltwfunction_unary kernel;
   libxsmm_meltwfunction_unary kernel1;
   libxsmm_meltwfunction_binary kernel2;
 #endif

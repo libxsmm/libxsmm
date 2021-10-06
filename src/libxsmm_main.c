@@ -2118,15 +2118,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           char tsizename[4];
           internal_get_typesize_string(tsizename, sizeof(tsizename), request->descriptor.meltw->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          if ( request->descriptor.meltw->operation == LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX ) {
-            LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_idxtsize%u_%u_%ux%u_opcode%u_flags%u.meltw", target_arch, tsizename,
-              request->descriptor.meltw->n, request->descriptor.meltw->m, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo,
-              (unsigned int)request->descriptor.meltw->operation, (unsigned int)request->descriptor.meltw->flags);
-          } else {
-            LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_opcode%u_flags%u_params%u.meltw", target_arch, tsizename,
-              request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo,
-              (unsigned int)request->descriptor.meltw->operation, (unsigned int)request->descriptor.meltw->flags, (unsigned int)request->descriptor.meltw->param);
-          }
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_opcode%u_flags%u_params%u.meltw", target_arch, tsizename,
+            request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo,
+            (unsigned int)request->descriptor.meltw->operation, (unsigned int)request->descriptor.meltw->flags, (unsigned int)request->descriptor.meltw->param);
         }
       }
     } break;
@@ -2208,8 +2202,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # if defined(__APPLE__) && defined(__arm64__)
       code->ptr = code_buffer; /* commit buffer */
       LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
-      sys_icache_invalidate(code_buffer, generated_code.code_size);
       pthread_jit_write_protect_np(1/*true*/);
+      sys_icache_invalidate(code_buffer, generated_code.code_size);
 # else
       /* attribute/protect buffer and revoke unnecessary flags */
       result = libxsmm_malloc_attrib((void**)code_buffer_result, LIBXSMM_MALLOC_FLAG_X, jit_name);
@@ -2572,6 +2566,19 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
   int result;
   code.xgemm = kernel;
   if (NULL != info) {
+#if defined(__APPLE__) && defined(__arm64__)
+    /* TODO: proper buffer x-allocation provides kernel info, etc. */
+    if (libxsmm_verbosity < 0) {
+      fprintf(stderr, "LIBXSMM WARNING: libxsmm_get_mmkernel_info is not implemented on MacOS aarch64!\n");
+    }
+    info->iprecision = LIBXSMM_GEMM_PRECISION_F32;
+    info->oprecision = LIBXSMM_GEMM_PRECISION_F32;
+    info->prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+    info->flags = LIBXSMM_GEMM_FLAG_NONE;
+    info->lda = info->ldb = info->ldc = 1;
+    info->m = info->n = info->k = 1;
+    result = EXIT_SUCCESS;
+#else
     const libxsmm_descriptor* desc;
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
         NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
@@ -2589,16 +2596,6 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
       result = EXIT_SUCCESS;
     }
     else {
-#if defined(__APPLE__) && defined(__arm64__)
-      /* TODO: proper buffer x-allocation provides kernel info, etc. */
-      info->iprecision = LIBXSMM_GEMM_PRECISION_F32;
-      info->oprecision = LIBXSMM_GEMM_PRECISION_F32;
-      info->prefetch = LIBXSMM_GEMM_PREFETCH_SIGONLY;
-      info->flags = LIBXSMM_GEMM_FLAG_NONE;
-      info->lda = info->ldb = info->ldc = 1;
-      info->m = info->n = info->k = 1;
-      result = EXIT_SUCCESS;
-#else
       if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
@@ -2610,8 +2607,8 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
         }
       }
       result = EXIT_FAILURE;
-#endif
     }
+#endif
   }
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -4400,23 +4397,6 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
   }
   return result;
 }
-
-
-LIBXSMM_API libxsmm_meltwfunction_reduce_cols_idx libxsmm_dispatch_meltw_reduce_cols_idx(
-  libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-  libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype idx_type)
-{
-  libxsmm_descriptor_blob blob;
-  libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
-  const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
-    in_type, out_type, m, idx_dtype_size, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    0, 0, LIBXSMM_MELTW_OPERATION_REDUCE_COLS_IDX);
-
-  libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
-
-  return result.meltw_reduce_cols_idx;
-}
-
 
 LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opreduce_vecs_idx(
   libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,

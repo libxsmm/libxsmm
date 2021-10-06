@@ -27,13 +27,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="eltwise_reduce.c" />
+    <ClCompile Include="eltwise_unary_reduce.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>eltwise_reduce</ProjectName>
+    <ProjectName>eltwise_unary_reduce</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{A05787E8-13A7-43E3-BC15-FBCEEFC68880}</ProjectGuid>
   </PropertyGroup>
