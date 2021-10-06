@@ -7,7 +7,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
+/* Alexander Breuer (Univ. Jena), Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_COMMON_AARCH64_H
@@ -35,6 +35,11 @@ void libxsmm_generator_loop_header_aarch64( libxsmm_generated_code*     io_gener
                                             const unsigned int          i_gp_reg_loop_cnt,
                                             const unsigned int          i_trips );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_loop_header_gp_reg_bound_aarch64( libxsmm_generated_code*     io_generated_code,
+                                            libxsmm_loop_label_tracker* io_loop_label_tracker,
+                                            const unsigned int          i_gp_reg_loop_cnt,
+                                            const unsigned int          i_gp_reg_bound );
 LIBXSMM_API_INTERN
 void libxsmm_generator_loop_footer_aarch64( libxsmm_generated_code*     io_generated_code,
                                             libxsmm_loop_label_tracker* io_loop_label_tracker,
