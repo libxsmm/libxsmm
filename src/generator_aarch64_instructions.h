@@ -732,7 +732,6 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
                                                           const unsigned int          i_gp_reg_cmp,
                                                           libxsmm_loop_label_tracker* io_loop_label_tracker );
 
-#if 0
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack
  *
@@ -750,15 +749,16 @@ void libxsmm_aarch64_instruction_register_jump_label( libxsmm_generated_code*   
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_jmp_instr the particular jump instruction used
+ * @param i_gp_reg_cmp the register holding the condition result
  * @param i_label_no position in the jump label tracker to jump to
  * @param io_jump_label_tracker data structures that tracks arbitrary jump labels
 */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_jump_to_label( libxsmm_generated_code*     io_generated_code,
                                                 const unsigned int          i_jmp_instr,
+                                                const unsigned int          i_gp_reg_cmp,
                                                 const unsigned int          i_label_no,
                                                 libxsmm_jump_label_tracker* io_jump_label_tracker );
-#endif
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */
 
