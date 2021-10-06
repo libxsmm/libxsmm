@@ -13,14 +13,14 @@
 #define GENERATOR_MATELTWISE_REDUCE_AARCH64_H
 
 #include "generator_common.h"
-#if 0
+
 LIBXSMM_API_INTERN
-void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
+void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_code*                        io_generated_code,
     libxsmm_loop_label_tracker*                    io_loop_label_tracker,
     libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc );
-#endif
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code*                        io_generated_code,
     libxsmm_loop_label_tracker*                    io_loop_label_tracker,

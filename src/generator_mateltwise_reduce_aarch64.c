@@ -18,6 +18,114 @@
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC
 #endif
+LIBXSMM_API_INTERN
+void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_code*                        io_generated_code,
+    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
+    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
+    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
+    const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
+
+  unsigned int bn, bc, N, C, Nb, iM, im, in, vreg0;
+  unsigned int use_m_masking, m_trips, m_outer_trips, m_inner_trips;
+  unsigned int cur_acc0;
+  unsigned int vlen = 4;
+  unsigned int m_unroll_factor = 4;
+
+  bc  = i_mateltwise_desc->m;
+  bn  = i_mateltwise_desc->n;
+  C   = i_mateltwise_desc->ldi;
+  N   = i_mateltwise_desc->ldo;
+
+  Nb  = N/bn;
+
+  if ( (N % bn != 0)  || (C % bc != 0) ) {
+    /* This should not happen  */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  /* Configure the register mapping for this eltwise kernel */
+  i_gp_reg_mapping->gp_reg_in     = LIBXSMM_AARCH64_GP_REG_X9;
+  i_gp_reg_mapping->gp_reg_out    = LIBXSMM_AARCH64_GP_REG_X10;
+  i_gp_reg_mapping->gp_reg_n_loop = LIBXSMM_AARCH64_GP_REG_X11;
+  i_gp_reg_mapping->gp_reg_scratch_0  = LIBXSMM_AARCH64_GP_REG_X12;
+
+  /* load the input pointer and output pointer */
+  libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 32, i_gp_reg_mapping->gp_reg_in );
+
+  libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 56, i_gp_reg_mapping->gp_reg_out );
+
+  use_m_masking     = (bc % vlen == 0) ? 0 : 1;
+  m_unroll_factor   = (use_m_masking == 0) ? 8 : 4;
+  m_trips           = (bc + vlen - 1)/vlen;
+  m_outer_trips     = (m_trips + m_unroll_factor - 1)/m_unroll_factor;
+
+  if (use_m_masking > 0) {
+    printf("Support for m %% 4 == 0 cases\n");
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  /* Register allocation: Registers zmm8-zmm15 are accumulators, zmm0-zmm7 are used for loading input */
+  for (iM = 0; iM < m_outer_trips; iM++) {
+    m_inner_trips = (iM == m_outer_trips - 1) ? m_trips - iM * m_unroll_factor : m_unroll_factor;
+    for (im = 0; im < m_inner_trips; im++) {
+      cur_acc0 = m_unroll_factor + im;
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
+                cur_acc0, cur_acc0, 0, cur_acc0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+    }
+
+    if (Nb > 1) {
+      /* open n loop */
+      libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, Nb);
+    }
+
+    for (in = 0; in < bn; in++ ) {
+      int extra_bytes = bc * i_micro_kernel_config->datatype_size_in - 16 * m_inner_trips;
+      for (im = 0; im < m_inner_trips; im++) {
+        cur_acc0 = m_unroll_factor + im;
+        vreg0    = im;
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST, i_gp_reg_mapping->gp_reg_in, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, vreg0, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V, vreg0, cur_acc0, 0, cur_acc0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+      }
+      if (extra_bytes > 0) {
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                        i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in, extra_bytes );
+      }
+    }
+
+    if (Nb > 1) {
+      unsigned int offset = C * bn * i_micro_kernel_config->datatype_size_in - bc * bn * i_micro_kernel_config->datatype_size_in;
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                        i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in, offset );
+      /* close n loop */
+      libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, 1);
+
+      /* Readjust reg_in */
+      if (m_outer_trips > 1) {
+        unsigned int offset = C * N * i_micro_kernel_config->datatype_size_in - vlen * m_unroll_factor * i_micro_kernel_config->datatype_size_in ;
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
+                                                          i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in, offset );
+      }
+    }
+
+    if (Nb == 1) {
+      if (m_outer_trips > 1) {
+        unsigned int offset = bc * bn * i_micro_kernel_config->datatype_size_in - vlen * m_unroll_factor * i_micro_kernel_config->datatype_size_in ;
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
+                                                          i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in, offset );
+      }
+    }
+
+    for (im = 0; im < m_inner_trips; im++) {
+      cur_acc0 = m_unroll_factor + im;
+      libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
+                                                i_gp_reg_mapping->gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
+                                                cur_acc0,
+                                                LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+    }
+  }
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code*                        io_generated_code,
