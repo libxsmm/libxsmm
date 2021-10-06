@@ -477,8 +477,6 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4:
-
-
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: %u\n", i_vec_instr);
@@ -1315,17 +1313,105 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
   }
 }
 
-#if 0
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_register_jump_label( libxsmm_generated_code*          io_generated_code,
+void libxsmm_aarch64_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
                                                       const unsigned int          i_label_no,
                                                       libxsmm_jump_label_tracker* io_jump_label_tracker ) {
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_register_jump_label: at least ARM V81 needs to be specified as target arch!\n");
+    exit(-1);
+  }
+
+  /* check if the label we try to set is still available */
+  if ( io_jump_label_tracker->label_address[i_label_no] > 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_JMPLBL_USED );
+    return;
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int l_ref = 0;
+    libxsmm_jump_source l_source = io_jump_label_tracker->label_source[i_label_no];
+    unsigned int* code = (unsigned int *)io_generated_code->generated_code;
+
+    /* first added label to tracker */
+    io_jump_label_tracker->label_address[i_label_no] = io_generated_code->code_size;
+
+    /* patching all previous references */
+    for ( l_ref = 0; l_ref < l_source.ref_count; ++l_ref ) {
+      int l_distance = (int)io_jump_label_tracker->label_address[i_label_no] - (int)l_source.instr_addr[l_ref];
+      l_distance /= 4;
+
+      code[l_source.instr_addr[l_ref]] |= (unsigned int)((0x7ffff & l_distance) << 5);
+    }
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_aarch64_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_jump_to_label( libxsmm_generated_code*     io_generated_code,
-                                                const unsigned int            i_jmp_instr,
-                                                const unsigned int            i_label_no,
-                                                libxsmm_jump_label_tracker* io_jump_label_tracker ) {
+void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*     io_generated_code,
+                                                     const unsigned int          i_jmp_instr,
+                                                     const unsigned int          i_gp_reg_cmp,
+                                                     const unsigned int          i_label_no,
+                                                     libxsmm_jump_label_tracker* io_jump_label_tracker ) {
+  unsigned int l_pos;
+
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_to_label: at least ARM V81 needs to be specified as target arch!\n");
+    exit(-1);
+  }
+
+  /* check if the label we are trying to set inside of bounds */
+  if ( (i_label_no < 512) == 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
+    return;
+  }
+
+  /* check if we still have label we can jump to */
+  if ( io_jump_label_tracker->label_source[i_label_no].ref_count == 512-1 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
+    return;
+  }
+
+  switch ( i_jmp_instr ) {
+    case LIBXSMM_AARCH64_INSTR_GP_CBNZ:
+    case LIBXSMM_AARCH64_INSTR_GP_CBZ:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_back_to_label: unexpected instruction number: %u\n", i_jmp_instr);
+      exit(-1);
+  }
+
+  /* add addr at current position and instruction to tracking structure */
+  l_pos = io_jump_label_tracker->label_source[i_label_no].ref_count;
+  io_jump_label_tracker->label_source[i_label_no].instr_type[l_pos] = i_jmp_instr;
+  io_jump_label_tracker->label_source[i_label_no].instr_addr[l_pos] = io_generated_code->code_size;
+  io_jump_label_tracker->label_source[i_label_no].ref_count++;
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int l_jmp_dst = (io_jump_label_tracker->label_address[i_label_no])/4;
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* computing jump immediate */
+    int l_jmp_imm = (l_jmp_dst == 0) ? 0 : (int)l_jmp_dst - (int)code_head;
+     /* fix bits */
+    code[code_head]  = (unsigned int)(0xff000000 & i_jmp_instr);
+    /* setting Rd */
+    code[code_head] |= (unsigned int)(0x1f & i_gp_reg_cmp);
+    /* setting sf */
+    code[code_head] |= (unsigned int)((0x20 & i_gp_reg_cmp) << 26);
+     /* setting imm16 */
+    code[code_head] |= (unsigned int)((0x7ffff & l_jmp_imm) << 5);
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_to_label: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
 }
-#endif
+
