@@ -461,6 +461,8 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FCMLE_Z_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FCMLT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FRINTM_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FCVTMS_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TRN1:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TRN2:
     case LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1:
@@ -475,6 +477,8 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3:
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4:
+
+
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: %u\n", i_vec_instr);
@@ -1325,4 +1329,3 @@ void libxsmm_aarch64_instruction_jump_to_label( libxsmm_generated_code*     io_g
                                                 libxsmm_jump_label_tracker* io_jump_label_tracker ) {
 }
 #endif
-
