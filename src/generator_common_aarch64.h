@@ -31,6 +31,11 @@ void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_ge
                                                    unsigned char           i_gp_reg_scratch );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_code,
+    unsigned int                                   instr,
+    const unsigned int                             i_vec_inout );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_loop_header_aarch64( libxsmm_generated_code*     io_generated_code,
                                             libxsmm_loop_label_tracker* io_loop_label_tracker,
                                             const unsigned int          i_gp_reg_loop_cnt,

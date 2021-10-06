@@ -16,6 +16,14 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_code,
+    unsigned int                                   instr,
+    const unsigned int                             i_vec_inout ) {
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, instr, i_vec_inout, i_vec_inout, 0, i_vec_inout, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, instr, i_vec_inout, i_vec_inout, 0, i_vec_inout, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_generated_code,
                                                    unsigned char           i_p_reg,
                                                    int                     i_n_bits,
