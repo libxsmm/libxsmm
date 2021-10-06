@@ -1315,24 +1315,6 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
   }
 }
 
-LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_full_vec_load_of_constants ( libxsmm_generated_code *io_generated_code,
-                                                              const unsigned char     i_vec_reg,
-                                                              const unsigned int      i_gp_reg_tmp,
-                                                              const libxsmm_aarch64_asimd_tupletype i_tupletype,
-                                                              const unsigned long long imm64) {
-
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, imm64 );
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
-                                                    LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR,
-    0, i_gp_reg_tmp);
-    libxsmm_aarch64_instruction_asimd_struct_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
-                                                    LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_UNDEF, i_vec_reg,
-                                                    i_tupletype );
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                    LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
-}
 #if 0
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_register_jump_label( libxsmm_generated_code*          io_generated_code,

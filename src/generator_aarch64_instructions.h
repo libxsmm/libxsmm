@@ -732,22 +732,6 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
                                                           const unsigned int          i_gp_reg_cmp,
                                                           libxsmm_loop_label_tracker* io_loop_label_tracker );
 
-/**
- * Load constants in the ASIMD register
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_vec_reg ASIMD register
- * @param i_gp_reg_tmp the gp register which contains the comperitor
- * @param i_tupletype input datatype
- * @param imm64 constant value to land in ASIMD reg
-*/
-LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_full_vec_load_of_constants ( libxsmm_generated_code *io_generated_code,
-                                                              const unsigned char     i_vec_reg,
-                                                              const unsigned int      i_gp_reg_tmp,
-                                                              const libxsmm_aarch64_asimd_tupletype i_tupletype,
-                                                              unsigned long long imm64);
-
 #if 0
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack
