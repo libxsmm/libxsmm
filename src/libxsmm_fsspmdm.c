@@ -93,8 +93,6 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   const int N_sparse2 = vlen * 2;
   const int N_dense = vlen;
   static int error_once = 0;
-
-  /* TODO: new vars */
   unsigned int a_unique;
   double* a_unique_values = NULL;
   unsigned int a_unique_reg;
@@ -454,8 +452,6 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   const int N_sparse2 = vlen * 2;
   const int N_dense = vlen;
   static int error_once = 0;
-
-  /* TODO: new vars */
   unsigned int a_unique;
   float* a_unique_values = NULL;
   unsigned int a_unique_reg;

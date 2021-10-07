@@ -73,7 +73,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   unsigned int l_base_acc_reg, l_base_perm_reg, l_bcast_reg;
   int l_prefetch;
 
-  /* TODO: new variables */
   unsigned int l_m_blocking;
   unsigned int l_base_row;
   unsigned int l_block_rows;
@@ -118,7 +117,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   /* Define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
-  /* TODO: extract this method */
   /* Let's figure out how many unique values we have */
   l_unique = 1;
   l_unique_values[0] = fabs(i_values[0]);
@@ -178,13 +176,16 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     }
   }
 
-  /* TODO: remove print */
-  printf("l_n_blocking = %u\n", l_n_blocking);
-  printf("l_m_blocking = %u\n", l_m_blocking);
-
   /* Init config */
   if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
     l_breg_unique = 16 - l_n_blocking;
+
+    if ( l_unique > l_breg_unique ) {
+      l_m_blocking = 8 / l_n_blocking;
+    } else {
+      l_m_blocking = 1;
+    }
+
     l_base_acc_reg = 16 - l_n_blocking*l_m_blocking;
     l_prefetch = 0;
 
@@ -192,42 +193,42 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     l_base_perm_reg = l_bcast_reg = (unsigned int)-1;
     l_max_unique = l_breg_unique;
   } else {
-    l_breg_unique = 32 - l_n_blocking;
-    l_base_acc_reg = 32 - l_n_blocking*l_m_blocking;
-    l_bcast_reg = l_base_acc_reg - 1;
-    l_prefetch = 1;
 
     if ( l_fp64 ) {
       l_preg_unique = (32 - l_n_blocking - 1 - 8)*8;
       l_psreg_unique = (32 - l_n_blocking - 1)*8;
-      l_base_perm_reg = l_bcast_reg - 8;
-      l_max_unique = l_psreg_unique;
     } else {
       l_preg_unique = (32 - l_n_blocking - 1 - 16)*16;
       l_psreg_unique = (32 - l_n_blocking - 1)*16;
+    }
+
+    if ( l_unique > l_psreg_unique ) {
+      l_m_blocking = 8 / l_n_blocking;
+    } else {
+      l_m_blocking = 1;
+    }
+
+    l_breg_unique = 32 - l_n_blocking;
+    l_base_acc_reg = 32 - l_n_blocking*l_m_blocking;
+    l_bcast_reg = l_base_acc_reg - 1;
+    l_prefetch = 1;
+    l_max_unique = l_psreg_unique;
+
+    if ( l_fp64 ) {
+      l_base_perm_reg = l_bcast_reg - 8;
+    } else {
       l_base_perm_reg = l_bcast_reg - 16;
-      l_max_unique = l_psreg_unique;
     }
   }
 
   /* prerequisite */
   assert(0 != i_values);
 
-  /* TODO: remove this section */
-  /* check that there are not too many unique values */
-  /*
-  if ( l_unique > l_breg_unique && l_unique > l_preg_unique && l_unique > l_psreg_unique ) {
-    free(l_unique_values); free(l_unique_pos); free(l_unique_sgn);
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
-    return;
-  }
-  */
-
   /* allocate an array for holding the indices of the FMAing elements of every row */
   l_idx_fma_target = (unsigned int*) calloc((size_t) l_m_blocking, sizeof(unsigned int));
 
   if (NULL == l_idx_fma_target) {
-    fprintf(stderr, "LIBXSMM ERROR (libxsmm_generator_spgemm_csr_asparse_reg): failed to allocate temporary buffers!\n");
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ALLOC );
     free(l_unique_values); free(l_unique_pos); free(l_unique_sgn);
     return;
   }
@@ -573,11 +574,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
           /* increment row element index */
           l_idx_fma_target[l_block_row]++;
 
-        } else {
-          /* Something went wrong */
-          /* TODO: delete this after DBG */
-          printf("Something went wrong");
-          assert(0);
         }
       }
     }
