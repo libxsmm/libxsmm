@@ -7,13 +7,21 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
+/* Alexander Breuer (Univ. Jena), Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_code,
+    unsigned int                                   instr,
+    const unsigned int                             i_vec_inout ) {
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, instr, i_vec_inout, i_vec_inout, 0, i_vec_inout, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, instr, i_vec_inout, i_vec_inout, 0, i_vec_inout, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_generated_code,
@@ -65,6 +73,15 @@ void libxsmm_generator_loop_footer_aarch64( libxsmm_generated_code*     io_gener
                                                  i_gp_reg_loop_cnt, i_gp_reg_loop_cnt, i_loop_blocking, 0 );
   libxsmm_aarch64_instruction_cond_jump_back_to_label( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_CBNZ,
                                                        i_gp_reg_loop_cnt, io_loop_label_tracker );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_loop_header_gp_reg_bound_aarch64( libxsmm_generated_code*     io_generated_code,
+                                            libxsmm_loop_label_tracker* io_loop_label_tracker,
+                                            const unsigned int          i_gp_reg_loop_cnt,
+                                            const unsigned int          i_gp_reg_bound ) {
+  libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ORR_SR, i_gp_reg_bound, i_gp_reg_bound, i_gp_reg_loop_cnt, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+  libxsmm_aarch64_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
 }
 
 LIBXSMM_API_INTERN
@@ -1024,7 +1041,7 @@ void libxsmm_generator_scalefps_aarch64( libxsmm_generated_code*                
                                               i_vec_y, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_vec_y,
                                               i_tupletype );
 
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
+  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ADD_V,
                                               i_vec_y, i_vec_expmask, 0, i_vec_y,
                                               i_tupletype );
 
