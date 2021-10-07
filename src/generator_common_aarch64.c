@@ -1041,7 +1041,7 @@ void libxsmm_generator_scalefps_aarch64( libxsmm_generated_code*                
                                               i_vec_y, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_vec_y,
                                               i_tupletype );
 
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
+  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ADD_V,
                                               i_vec_y, i_vec_expmask, 0, i_vec_y,
                                               i_tupletype );
 

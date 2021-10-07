@@ -254,7 +254,8 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
 
     if (i_strategy == JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS) {
       /*TODO: Now we allocate tmps with dsize float */
-      libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
+      /* Extra tmp for ternary accommodation */
+      libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score + 1;
       libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
       scratch_size = tmp_size * n_tmp;
