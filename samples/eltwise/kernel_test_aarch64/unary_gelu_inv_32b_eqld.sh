@@ -22,7 +22,7 @@ for m in randnum:
 f1.close()
 END
 
-BINARY_OP=3
+UNARY_OP=12
 
 for i in `cat ${TESTFILE1}`
 do
@@ -31,9 +31,9 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
-  for BCAST_IN in 0 1 2 3 4 5 6
+  for BCAST_IN in 0 1 2 3
   do
-    ./eltwise_binary_simple ${BINARY_OP} ${BCAST_IN} 4 4 4 ${M} ${N} ${LDI} ${LDI}
+    ./eltwise_unary_simple ${UNARY_OP} ${BCAST_IN} 4 4 4 ${M} ${N} ${LDI} ${LDI}
   done
 done
 

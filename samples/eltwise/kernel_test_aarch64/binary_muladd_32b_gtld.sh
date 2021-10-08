@@ -31,7 +31,7 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} 100 100
-  for BCAST_IN in 0 1 2 3
+  for BCAST_IN in 0 1 2 3 4 5 6
   do
     ./eltwise_unary_simple ${BINARY_OP} ${BCAST_IN} 4 4 4 ${M} ${N} 100 100
   done

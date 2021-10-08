@@ -12,7 +12,50 @@
 #ifndef GENERATOR_MATELTWISE_TRANSFORM_AARCH64_ASIMD_H
 #define GENERATOR_MATELTWISE_TRANSFORM_AARCH64_ASIMD_H
 
+#include "generator_aarch64_instructions.h"
 #include "generator_common.h"
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_Xway_unpack_network_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                                    const unsigned char*    i_in_idx,
+                                                                    const unsigned char*    i_out_idx,
+                                                                    const unsigned int      i_vec_reg_src_start,
+                                                                    const unsigned int      i_vec_reg_dst_start,
+                                                                    const unsigned int      i_in_offset,
+                                                                    const unsigned int      i_even_instr,
+                                                                    const unsigned int      i_odd_instr,
+                                                                    const unsigned int      i_ways,
+                                                                    const libxsmm_aarch64_asimd_tupletype i_tupletype );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_norm_to_normt_64bit_4x4_shufflenetwork_aarch64_asimd( libxsmm_generated_code*                 io_generated_code,
+                                                                                       const unsigned int                      i_gp_reg_in,
+                                                                                       const unsigned int                      i_gp_reg_out,
+                                                                                       const unsigned int                      i_gp_reg_scratch,
+                                                                                       const unsigned int                      i_m_valid,
+                                                                                       const unsigned int                      i_n_valid,
+                                                                                       const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                       const libxsmm_meltw_descriptor*         i_mateltwise_desc );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_norm_to_normt_32bit_4x4_shufflenetwork_aarch64_asimd( libxsmm_generated_code*                 io_generated_code,
+                                                                                       const unsigned int                      i_gp_reg_in,
+                                                                                       const unsigned int                      i_gp_reg_out,
+                                                                                       const unsigned int                      i_gp_reg_scratch,
+                                                                                       const unsigned int                      i_m_valid,
+                                                                                       const unsigned int                      i_n_valid,
+                                                                                       const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                       const libxsmm_meltw_descriptor*         i_mateltwise_desc );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_norm_to_normt_32bit_8x8_shufflenetwork_aarch64_asimd( libxsmm_generated_code*                 io_generated_code,
+                                                                                       const unsigned int                      i_gp_reg_in,
+                                                                                       const unsigned int                      i_gp_reg_out,
+                                                                                       const unsigned int                      i_gp_reg_scratch,
+                                                                                       const unsigned int                      i_m_valid,
+                                                                                       const unsigned int                      i_n_valid,
+                                                                                       const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                       const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_mbit_scalar_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,

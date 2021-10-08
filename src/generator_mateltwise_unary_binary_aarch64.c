@@ -685,18 +685,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
             i_micro_kernel_config->vec_lo_bound,
             (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D);
 #if 0
-        else {
-          libxsmm_generator_exp_ps_3dts_avx512( io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_y,
-              i_micro_kernel_config->vec_z,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_log2e);
-        }
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ) {
         if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
           libxsmm_generator_tanh_ps_rational_78_avx( io_generated_code,
@@ -815,8 +803,19 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
               i_micro_kernel_config->vec_shifter,
               i_micro_kernel_config->vec_halves,
               i_micro_kernel_config->vec_c0,
+              i_micro_kernel_config->vec_c01,
+              i_micro_kernel_config->vec_c02,
+              i_micro_kernel_config->vec_c03,
               i_micro_kernel_config->vec_c1,
+              i_micro_kernel_config->vec_c11,
+              i_micro_kernel_config->vec_c12,
+              i_micro_kernel_config->vec_c13,
               i_micro_kernel_config->vec_c2,
+              i_micro_kernel_config->vec_c21,
+              i_micro_kernel_config->vec_c22,
+              i_micro_kernel_config->vec_c23,
+              i_micro_kernel_config->vec_tmp0,
+              i_micro_kernel_config->vec_tmp1,
               (i_micro_kernel_config->datatype_size_in == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
 
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV) {
@@ -834,8 +833,19 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
               i_micro_kernel_config->vec_shifter,
               i_micro_kernel_config->vec_halves,
               i_micro_kernel_config->vec_c0,
+              i_micro_kernel_config->vec_c01,
+              i_micro_kernel_config->vec_c02,
+              i_micro_kernel_config->vec_c03,
               i_micro_kernel_config->vec_c1,
+              i_micro_kernel_config->vec_c11,
+              i_micro_kernel_config->vec_c12,
+              i_micro_kernel_config->vec_c13,
               i_micro_kernel_config->vec_c2,
+              i_micro_kernel_config->vec_c21,
+              i_micro_kernel_config->vec_c22,
+              i_micro_kernel_config->vec_c23,
+              i_micro_kernel_config->vec_tmp0,
+              i_micro_kernel_config->vec_tmp1,
               (i_micro_kernel_config->datatype_size_in == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
       }
     }
@@ -1229,6 +1239,7 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
   unsigned int l_m_adjust = ( i_mateltwise_desc->m == 1 ) ? i_micro_kernel_config->datatype_size_out : 16*i_m_blocking;
   unsigned int l_m_adjust_in2 = ( i_mateltwise_desc->m == 1 ) ? i_micro_kernel_config->datatype_size_in : 16*i_m_blocking;
   unsigned int offset = 0, offset2 = 0;
+  unsigned int _in_blocking = (bcast_col == 1) ? 1 : i_n_blocking;
   LIBXSMM_UNUSED(i_vlen);
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_mask_reg);
@@ -1284,15 +1295,48 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
 #endif
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
-#if 0
-      unsigned int l_bf16_compute = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) ) ? 1 : 0;
-      unsigned int l_vlen = (l_bf16_compute > 0) ? 32 : 16;
-      unsigned int vmove_instr_in2 = (bcast_input == 0 || bcast_col == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST : LIBXSMM_AARCH64_INSTR_ASIMD_LD1R;
-#endif
+      unsigned int _im = (bcast_row == 1) ? 0 : im;
+      if (bcast_scalar == 1) {
+        _im = 0;
+      }
+
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
-      if ( bcast_input == 0) {
+
+      if ( (bcast_row == 1) || (bcast_scalar == 1) ) {
+        offset2 = (bcast_scalar == 1) ?  0:i_micro_kernel_config->datatype_size_in*i_n_blocking;
         offset = (l_ld_bytes*i_n_blocking);
-        offset2 = (l_ld_bytes_in2*i_n_blocking);
+        if (_im == 0) {
+
+          libxsmm_aarch64_instruction_asimd_struct_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
+                                                        i_gp_reg_mapping->gp_reg_in2, 0,  i_micro_kernel_config->tmp_vreg,
+                                                        (i_micro_kernel_config->datatype_size_in == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+        if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD) {
+          if ( i_mateltwise_desc->m == 1 ) {
+            libxsmm_aarch64_instruction_asimd_struct_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST,
+                                                           i_gp_reg_mapping->gp_reg_out, LIBXSMM_AARCH64_GP_REG_XZR, i_micro_kernel_config->tmp_vreg2,
+                                                           (i_micro_kernel_config->datatype_size_in == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          } else {
+            libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
+                                                    i_gp_reg_mapping->gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
+                                                    i_micro_kernel_config->tmp_vreg2,
+                                                    LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+          }
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, binary_op_instr,
+                                                     cur_vreg,i_micro_kernel_config->tmp_vreg, 0, i_micro_kernel_config->tmp_vreg2,
+                                                     (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
+                                                     i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg2, 0, cur_vreg,
+                                                     (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          } else {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, binary_op_instr,
+                                                      cur_vreg, i_micro_kernel_config->tmp_vreg, 0, cur_vreg,
+                                                      (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          }
+        }
+      }
+      if ( bcast_input == 0 || bcast_col == 1) {
+        offset = (l_ld_bytes*i_n_blocking);
+        offset2 = (bcast_col == 1) ? (i_m_blocking*16):(l_ld_bytes_in2*_in_blocking);
         if ( i_mateltwise_desc->m == 1 ) {
           libxsmm_aarch64_instruction_asimd_struct_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST,
                                                          i_gp_reg_mapping->gp_reg_in2, LIBXSMM_AARCH64_GP_REG_XZR, i_micro_kernel_config->tmp_vreg,
@@ -1325,46 +1369,12 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
                                                     cur_vreg, i_micro_kernel_config->tmp_vreg, 0, cur_vreg,
                                                     (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
         }
-      } else {
-        if ( (bcast_row == 1) || (bcast_scalar == 1) ) {
-          offset = (bcast_scalar == 1) ?  i_micro_kernel_config->datatype_size_in:i_micro_kernel_config->datatype_size_in*i_n_blocking;
-          if (im == 0) {
-            if ((bcast_row == 1) || ((bcast_scalar == 1) && (in == 0))) {
-                libxsmm_aarch64_instruction_asimd_struct_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
-                                                              i_gp_reg_mapping->gp_reg_in2, 0, i_micro_kernel_config->tmp_vreg,
-                                                              (i_micro_kernel_config->datatype_size_in == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
-                if (bcast_row == 1) {
-                  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                                i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
-                                                                (unsigned long long)((unsigned long long)(i_micro_kernel_config->datatype_size_in)) );
-                }
-            } else if ((bcast_scalar == 1) && (in > 0) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ) {
-#if 0
-                libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
-                                                        i_start_vreg, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
-                                                        i_micro_kernel_config->tmp_vreg,
-                                                        LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-#endif
-            }
-          }
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, binary_op_instr,
-                                                    cur_vreg, i_micro_kernel_config->tmp_vreg, 0, cur_vreg,
-                                                    (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
-
-          if ( bcast_col == 1 ) {
-            offset = 16*i_m_blocking;
-            if (in == 0) {
-              libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
-                                                      i_gp_reg_mapping->gp_reg_in2, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
-                                                      i_micro_kernel_config->tmp_vreg,
-                                                      LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, binary_op_instr,
-                                                    cur_vreg, i_micro_kernel_config->tmp_vreg, 0, cur_vreg,
-                                                    (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
-            }
-          }
-        }
       }
+    }
+    if ( (l_ld_bytes != l_m_adjust) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD) ) {
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                              i_gp_reg_mapping->gp_reg_out,i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out,
+                                              (unsigned long long)((unsigned long long)(l_ld_bytes-l_m_adjust)) );
     }
     if ( bcast_input == 0 ) {
       if ( l_ld_bytes_in2 != l_m_adjust_in2 ) {
@@ -1372,96 +1382,22 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
                                                       i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
                                                       (unsigned long long)((unsigned long long)(l_ld_bytes_in2-l_m_adjust_in2)) );
       }
-      if ( (l_ld_bytes != l_m_adjust) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD) ) {
-        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                i_gp_reg_mapping->gp_reg_out,i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out,
-                                                (unsigned long long)((unsigned long long)(l_ld_bytes-l_m_adjust)) );
-      }
     }
-  }
-#if 0
-      /* Optimize the input loading in case we have reuse */
-      if ( (bcast_input == 0) ||
-           (bcast_col == 1) ||
-           ((bcast_row == 1) && (im == 0)) ||
-           ((bcast_scalar == 1) && (im == 0) && (in == 0))) {
-
-        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
-          libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-            vmove_instr_in2,
-            i_gp_reg_mapping->gp_reg_in2,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (_im * l_vlen + in_offset) * i_micro_kernel_config->datatype_size_in,
-            'y',
-            i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) ) ? 1 : 0,  ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) ) ? _i_mask_reg : 0, 0 );
-
-          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg );
-        } else {
-          libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-            vmove_instr_in2,
-            i_gp_reg_mapping->gp_reg_in2,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (_im * l_vlen + in_offset) * i_micro_kernel_config->datatype_size_in,
-            i_micro_kernel_config->vector_name,
-            i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) ) ? _i_mask_reg : 0, 0 );
-        }
-
-        libxsmm_aarch64_instruction_asimd_move( io_generated_code, vmove_instr_in2,
-                                                i_gp_reg_mapping->gp_reg_in2, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
-                                                i_micro_kernel_config->tmp_vreg,
-                                                LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-
-      }
-
-      if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD) {
-#if 0
-        if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
-          libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-            i_micro_kernel_config->vmove_instruction_in,
-            i_gp_reg_mapping->gp_reg_out,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (im * l_vlen + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
-            'y',
-            i_micro_kernel_config->tmp_vreg2, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
-
-          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg2 );
-        } else {
-          libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-            i_micro_kernel_config->vmove_instruction_in,
-            i_gp_reg_mapping->gp_reg_out,
-            LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (im * l_vlen + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
-            i_micro_kernel_config->vector_name,
-            i_micro_kernel_config->tmp_vreg2, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0,  ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
-        }
-#endif
-        libxsmm_aarch64_instruction_asimd_move( io_generated_code, vmove_instr_in2,
-                                                i_gp_reg_mapping->gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
-                                                i_micro_kernel_config->tmp_vreg2,
-                                                LIBXSMM_AARCH64_ASIMD_WIDTH_Q);
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, binary_op_instr,
-                                                    i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg, 0, cur_vreg,
-                                                    (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
-      } else {
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, binary_op_instr,
-                                                    i_micro_kernel_config->tmp_vreg, cur_vreg, 0, cur_vreg,
-                                                    (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
-      }
-
-
+    if (bcast_col == 1 && in < (i_n_blocking-1)){
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
+                                              i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
+                                              (unsigned long long)((unsigned long long)(offset2)) );
     }
-    if ( l_ld_bytes-(16*i_m_blocking) > 0 ) {
+
+    if (bcast_row == 1) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                     i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
-                                                     (unsigned long long)((unsigned long long)(l_ld_bytes-(16*i_m_blocking))) );
+                                                    i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
+                                                    (unsigned long long)((unsigned long long)(i_micro_kernel_config->datatype_size_in)) );
     }
   }
-#endif
-
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                 i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
                                                 (unsigned long long)((unsigned long long)(offset2)) );
-
   if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD) {
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                 i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out,
@@ -1906,7 +1842,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
 
 
-    reserved_zmms += 14;
+    reserved_zmms += 25;
 
     i_micro_kernel_config->vec_xr         = reserved_zmms - 1;
     i_micro_kernel_config->vec_xa         = reserved_zmms - 2;
@@ -1919,9 +1855,20 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     i_micro_kernel_config->vec_scale      = reserved_zmms - 9;
     i_micro_kernel_config->vec_shifter    = reserved_zmms - 10;
     i_micro_kernel_config->vec_halves     = reserved_zmms - 11;
-    i_micro_kernel_config->vec_c0         = reserved_zmms - 12;
-    i_micro_kernel_config->vec_c1         = reserved_zmms - 13;
-    i_micro_kernel_config->vec_c2         = reserved_zmms - 14;
+    i_micro_kernel_config->vec_c03        = reserved_zmms - 12;
+    i_micro_kernel_config->vec_c02        = reserved_zmms - 13;
+    i_micro_kernel_config->vec_c01        = reserved_zmms - 14;
+    i_micro_kernel_config->vec_c0         = reserved_zmms - 15;
+    i_micro_kernel_config->vec_c13        = reserved_zmms - 16;
+    i_micro_kernel_config->vec_c12        = reserved_zmms - 17;
+    i_micro_kernel_config->vec_c11        = reserved_zmms - 18;
+    i_micro_kernel_config->vec_c1         = reserved_zmms - 19;
+    i_micro_kernel_config->vec_c23        = reserved_zmms - 20;
+    i_micro_kernel_config->vec_c22        = reserved_zmms - 21;
+    i_micro_kernel_config->vec_c21        = reserved_zmms - 22;
+    i_micro_kernel_config->vec_c2         = reserved_zmms - 23;
+    i_micro_kernel_config->vec_tmp0       = reserved_zmms - 24;
+    i_micro_kernel_config->vec_tmp1       = reserved_zmms - 25;
 
     if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU ) {
       libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64( io_generated_code,
@@ -1931,9 +1878,21 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
           i_micro_kernel_config->vec_shifter,
           i_micro_kernel_config->vec_halves,
           i_micro_kernel_config->vec_c0,
+          i_micro_kernel_config->vec_c01,
+          i_micro_kernel_config->vec_c02,
+          i_micro_kernel_config->vec_c03,
           i_micro_kernel_config->vec_c1,
+          i_micro_kernel_config->vec_c11,
+          i_micro_kernel_config->vec_c12,
+          i_micro_kernel_config->vec_c13,
           i_micro_kernel_config->vec_c2,
+          i_micro_kernel_config->vec_c21,
+          i_micro_kernel_config->vec_c22,
+          i_micro_kernel_config->vec_c23,
+          i_micro_kernel_config->vec_tmp0,
+          i_micro_kernel_config->vec_tmp1,
           i_gp_reg_tmp0,
+          i_gp_reg_tmp1,
           (i_micro_kernel_config->datatype_size_in == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
     }
 
@@ -1945,9 +1904,21 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
           i_micro_kernel_config->vec_shifter,
           i_micro_kernel_config->vec_halves,
           i_micro_kernel_config->vec_c0,
+          i_micro_kernel_config->vec_c01,
+          i_micro_kernel_config->vec_c02,
+          i_micro_kernel_config->vec_c03,
           i_micro_kernel_config->vec_c1,
+          i_micro_kernel_config->vec_c11,
+          i_micro_kernel_config->vec_c12,
+          i_micro_kernel_config->vec_c13,
           i_micro_kernel_config->vec_c2,
+          i_micro_kernel_config->vec_c21,
+          i_micro_kernel_config->vec_c22,
+          i_micro_kernel_config->vec_c23,
+          i_micro_kernel_config->vec_tmp0,
+          i_micro_kernel_config->vec_tmp1,
           i_gp_reg_tmp0,
+          i_gp_reg_tmp1,
           (i_micro_kernel_config->datatype_size_in == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
     }
 
@@ -2362,13 +2333,13 @@ void libxsmm_generator_unary_binary_aarch64_microkernel( libxsmm_generated_code*
   unsigned int l_gp_reg_aux1 = LIBXSMM_AARCH64_GP_REG_UNDEF;
 
   /* Some rudimentary checking of M, N and LDs*/
+#if 0
   if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) ||
        (i_mateltwise_desc->m > i_mateltwise_desc->ldo)    ) {
-#if 0
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
     return;
-#endif
   }
+#endif
 
   /* @TODO FixMe */
   if ( ( i_mateltwise_desc->m % 4 != 0 ) && ( i_mateltwise_desc->m != 1 ) ) {
