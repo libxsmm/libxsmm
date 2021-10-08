@@ -685,18 +685,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
             i_micro_kernel_config->vec_lo_bound,
             (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D);
 #if 0
-        else {
-          libxsmm_generator_exp_ps_3dts_avx512( io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_y,
-              i_micro_kernel_config->vec_z,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_log2e);
-        }
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ) {
         if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
           libxsmm_generator_tanh_ps_rational_78_avx( io_generated_code,

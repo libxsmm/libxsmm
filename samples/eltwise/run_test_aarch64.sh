@@ -54,7 +54,4 @@
 . ./kernel_test/unary_gelu_32b_gtld.sh
 . ./kernel_test/unary_gelu_inv_32b_eqld.sh
 . ./kernel_test/unary_gelu_inv_32b_gtld.sh
-. ./kernel_test/unary_gelu_inv_mixed_eqld.sh
-. ./kernel_test/unary_gelu_inv_mixed_gtld.sh
-. ./kernel_test/unary_gelu_mixed_eqld.sh
-. ./kernel_test/unary_gelu_mixed_gtld.sh
+

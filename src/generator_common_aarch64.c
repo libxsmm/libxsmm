@@ -692,10 +692,10 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64( libxsmm_generate
   unsigned long long scale_array = 0x406a0ea1 ;
   unsigned long long shifter_array = 0x4b400000 ;
   unsigned long long half_array = 0x3f000000 ;
-  unsigned long long c0_array[8]  = { 0x3ecc541c3ecc4231, 0x3ed174c33ecd6c48, 0x3ee5acd53ed9bd5d, 0x3efd53843ef2aedd, 0x3f00f7783f016724, 0x3ef0464d3efb389e, 0x3ed50a783ee3014f, 0x3ebae3633ec779db } ;
-  unsigned long long c1_array[8]  = { 0xbacb9740b7c7fb58, 0xbd0d292abc3e4b3a, 0xbdd9978fbd8bc5d0, 0xbe27b66dbe0f92d3, 0xbe3125bfbe328ce7, 0xbe17a056be26dc9d, 0xbdecc593be06bdeb, 0xbdb5ea3abdcf57aa } ;
-  unsigned long long c2_array[8]  = { 0xbd7d9780bd877b85, 0xbd08a1e9bd4cb70e, 0xb9476fd2bc808857, 0x3c9241603c36f765, 0x3ca5732c3ca7b1fc, 0x3c8079f73c95af63, 0x3c2fa86b3c55fa4f, 0x3c2fa86b3c55fa4f } ;
-  unsigned long long idx_array[2] = { 0x0404040400000000,0x0c0c0c0c08080808};
+  unsigned int c0_array[16] = { 0x3ecc4231u, 0x3ecc541cu, 0x3ecd6c48u, 0x3ed174c3u, 0x3ed9bd5du, 0x3ee5acd5u, 0x3ef2aeddu, 0x3efd5384u, 0x3f016724u, 0x3f00f778u, 0x3efb389eu, 0x3ef0464du, 0x3ee3014fu, 0x3ed50a78u, 0x3ec779dbu, 0x3ebae363u };
+  unsigned int c1_array[16] = { 0xb7c7fb58u, 0xbacb9740u, 0xbc3e4b3au, 0xbd0d292au, 0xbd8bc5d0u, 0xbdd9978fu, 0xbe0f92d3u, 0xbe27b66du, 0xbe328ce7u, 0xbe3125bfu, 0xbe26dc9du, 0xbe17a056u, 0xbe06bdebu, 0xbdecc593u, 0xbdcf57aau, 0xbdb5ea3au };
+  unsigned int c2_array[16] = { 0xbd877b85u, 0xbd7d9780u, 0xbd4cb70eu, 0xbd08a1e9u, 0xbc808857u, 0xb9476fd2u, 0x3c36f765u, 0x3c924160u, 0x3ca7b1fcu, 0x3ca5732cu, 0x3c95af63u, 0x3c8079f7u, 0x3c55fa4fu, 0x3c2fa86bu, 0x3c0fbb00u, 0x3bec178cu };
+  unsigned int idx_array[4] = { 0x00000000, 0x04040404, 0x08080808, 0x0c0c0c0c};
   libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( io_generated_code, i_vec_thres, i_gp_reg_tmp, i_tupletype , thres_array );
   libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( io_generated_code, i_vec_absmask, i_gp_reg_tmp, i_tupletype , absmask_array );
   libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( io_generated_code, i_vec_scale, i_gp_reg_tmp, i_tupletype , scale_array );
@@ -752,10 +752,10 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64( libxsmm_gene
   unsigned long long shifter_array = 0x4b400000 ;
   unsigned long long half_array = 0x3f000000 ;
 
-  unsigned long long c0_array[8] = { 0x3f4c927b3f4c4245, 0x3f5d7bda3f5085f8, 0x3f86142f3f73ea12, 0x3f8b4b0f3f8d3df4, 0x3f5e54233f8022c8, 0x3f199bed3f39ceb5, 0x3ede17373f00bee0, 0x3eb4454c3ec59b86 } ;
-  unsigned long long c1_array[8] = { 0xbc4b28bab930e738, 0xbe5feb0ebda4212f, 0xbf09e61bbec8b0e5, 0xbf185954bf1c403f, 0xbed08a61bf03e1ee, 0xbe61788bbe9b4508, 0xbdfc542abe257770, 0xbda8d7e9bdca014e } ;
-  unsigned long long c2_array[8] = { 0xbe6eb875be87047b, 0xbd81727fbe2210c1, 0x3da2cbe83cb9625c, 0x3dca0bd03dd1d4d1, 0x3d6f1bd33da47dd0, 0x3cd2618c3d216381, 0x3c3ca6723c89f6e6, 0x3c08ed083bd26a14 } ;
-  unsigned long long idx_array[2] = { 0x0404040400000000,0x0c0c0c0c08080808};
+  unsigned int c0_array[16] = { 0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu, 0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu };
+  unsigned int c1_array[16] = { 0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u, 0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u };
+  unsigned int c2_array[16] = { 0xbe87047bu, 0xbe6eb875u, 0xbe2210c1u, 0xbd81727fu, 0x3cb9625cu, 0x3da2cbe8u, 0x3dd1d4d1u, 0x3dca0bd0u, 0x3da47dd0u, 0x3d6f1bd3u, 0x3d216381u, 0x3cd2618cu, 0x3c89f6e6u, 0x3c3ca672u, 0x3c08ed08u, 0x3bd26a14u };
+  unsigned int idx_array[4] = { 0x00000000, 0x04040404, 0x08080808, 0x0c0c0c0c};
 
   libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( io_generated_code, i_vec_thres, i_gp_reg_tmp, i_tupletype , thres_array );
   libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( io_generated_code, i_vec_absmask, i_gp_reg_tmp, i_tupletype , absmask_array );
@@ -828,7 +828,7 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64( libxsmm_generated_code*        
                                              i_vec_xa, i_vec_xa, 0, i_vec_index,
                                              i_tupletype );
 
-#ifndef LIBXSMM_SPLIT_FMA
+#ifndef LIBXSMM_AARCH64_SPLIT_FMA
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
                                              i_vec_shifter, i_vec_shifter, 0, i_vec_C0,
                                              i_tupletype );
