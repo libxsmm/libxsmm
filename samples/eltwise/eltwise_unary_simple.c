@@ -369,7 +369,7 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.00012 ) {
+  if ( norms_out.normf_rel > 0.0009 ) {
     ret = EXIT_FAILURE;
   }
 
