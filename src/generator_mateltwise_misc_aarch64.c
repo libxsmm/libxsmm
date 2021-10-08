@@ -36,6 +36,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generate
 
   LIBXSMM_UNUSED(i_use_masking);
   LIBXSMM_UNUSED(mask_inout);
+  LIBXSMM_UNUSED(vlen);
 
   if (m_trips_loop > 1) {
     libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, m_trips_loop);
