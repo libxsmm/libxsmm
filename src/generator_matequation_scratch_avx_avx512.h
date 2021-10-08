@@ -28,10 +28,6 @@ void libxsmm_generator_matequation_create_binary_descriptor(libxsmm_descriptor_b
     libxsmm_datatype out_precision);
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_create_reduce_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op,
-    libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision);
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_generated_code*   io_generated_code,
     libxsmm_matequation_kernel_config*                  i_micro_kernel_config,
     libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,

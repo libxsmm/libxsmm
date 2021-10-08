@@ -705,8 +705,8 @@
 #define LIBXSMM_ERR_VNNI_A                90041
 #define LIBXSMM_ERR_VNNI_B                90042
 #define LIBXSMM_ERR_NO_AVX512VL           90043
-#define LIBXSMM_ERR_BITMASK_ELTWISE       90044
-#define LIBXSMM_ERR_GP_TEMP_MAPPING       90045
+#define LIBXSMM_ERR_GP_TEMP_MAPPING       90044
+#define LIBXSMM_ERR_BITMASK_REQUIRED      90045
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
@@ -970,8 +970,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
 LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
-  unsigned int vector_length_in;
-  unsigned int vector_length_out;
   unsigned int datatype_size_in;
   unsigned int datatype_size_out;
   unsigned int vmove_instruction_in;
@@ -982,6 +980,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int alu_jmp_instruction;
   unsigned int alu_mov_instruction;
   unsigned int vxor_instruction;
+
+  /* some helper values for kernels using bitmasks */
+  unsigned int ldi_mask;
+  unsigned int ldo_mask;
 
   /* Auxiliary varialiables for vreg management  */
   unsigned int reserved_zmms;
@@ -1111,8 +1113,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_gp_reg_mapping_struct {
 LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
-  unsigned int vector_length_in;
-  unsigned int vector_length_out;
   unsigned int datatype_size_in;
   unsigned int datatype_size_out;
   unsigned int vmove_instruction_in;

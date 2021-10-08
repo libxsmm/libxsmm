@@ -1,3 +1,4 @@
 encoder_aarch64
 encoder_x86
-bytecode.bin
+jit_bigsur_test
+*.bin
