@@ -1251,11 +1251,10 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
   unsigned int l_m_adjust = ( i_mateltwise_desc->m == 1 ) ? i_micro_kernel_config->datatype_size_out : 16*i_m_blocking;
   unsigned int l_m_adjust_in2 = ( i_mateltwise_desc->m == 1 ) ? i_micro_kernel_config->datatype_size_in : 16*i_m_blocking;
   unsigned int offset = 0, offset2 = 0;
+  unsigned int _in_blocking = (bcast_col == 1) ? 1 : i_n_blocking;
   LIBXSMM_UNUSED(i_vlen);
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_mask_reg);
-      printf("bcast_row %i, bcast_col  %i, bcast_scalar  %i, bcast_input  %i,  \n",
-        bcast_row, bcast_col, bcast_scalar, bcast_input);
 
   switch (i_mateltwise_desc->param) {
     case LIBXSMM_MELTW_TYPE_BINARY_ADD: {
@@ -1309,22 +1308,11 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       unsigned int _im = (bcast_row == 1) ? 0 : im;
-      unsigned int _in = (bcast_col == 1) ? 0 : in;
-      unsigned int _in_blocking = (bcast_col == 1) ? 1 : i_n_blocking;
-      unsigned int in_offset=16;
-      printf("bcast_row %i, bcast_col  %i, bcast_scalar  %i, bcast_input  %i, _im %i, _in %i ,in_offset %i, calcoffset %i \n",
-        bcast_row, bcast_col, bcast_scalar, bcast_input, _im, _in, in_offset,in_offset );
       if (bcast_scalar == 1) {
         _im = 0;
-        _in = 0;
-        in_offset = 0;
       }
 
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
-      in_offset = _in * i_mateltwise_desc->ldi2;
-      if (bcast_row == 1) {
-        in_offset = i_micro_kernel_config->datatype_size_in;
-      }
 
       if ( (bcast_row == 1) || (bcast_scalar == 1) ) {
         offset2 = (bcast_scalar == 1) ?  0:i_micro_kernel_config->datatype_size_in*i_n_blocking;
