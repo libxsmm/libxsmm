@@ -262,7 +262,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
           } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2) > 0) {
             bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
           }
-          /* Set up then a binary SUB: right2 + temp_scratch -> output */
+          /* Set up then a binary ADD: right2 + temp_scratch -> output */
           libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->r2, temp_reg, 0);
           libxsmm_generator_meqn_getaddr_stack_tmp_i_aarch64( io_generated_code, temp_scratch_id * i_micro_kernel_config->tmp_size, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg);
           libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR7, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
