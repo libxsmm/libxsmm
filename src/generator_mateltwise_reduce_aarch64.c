@@ -103,9 +103,9 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
 
       /* Readjust reg_in */
       if (m_outer_trips > 1) {
-        unsigned int offset = C * N * i_micro_kernel_config->datatype_size_in - vlen * m_unroll_factor * i_micro_kernel_config->datatype_size_in ;
+        unsigned int _offset = C * N * i_micro_kernel_config->datatype_size_in - vlen * m_unroll_factor * i_micro_kernel_config->datatype_size_in ;
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
-                                                          i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in, offset );
+                                                          i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in, _offset );
       }
     }
 

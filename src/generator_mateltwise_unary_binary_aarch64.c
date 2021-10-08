@@ -2315,11 +2315,13 @@ void libxsmm_generator_unary_binary_aarch64_microkernel( libxsmm_generated_code*
   unsigned int l_gp_reg_aux1 = LIBXSMM_AARCH64_GP_REG_UNDEF;
 
   /* Some rudimentary checking of M, N and LDs*/
+#if 0
   if ( (i_mateltwise_desc->m > i_mateltwise_desc->ldi) ||
        (i_mateltwise_desc->m > i_mateltwise_desc->ldo)    ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
     return;
   }
+#endif
 
   /* @TODO FixMe */
   if ( ( i_mateltwise_desc->m % 4 != 0 ) && ( i_mateltwise_desc->m != 1 ) ) {

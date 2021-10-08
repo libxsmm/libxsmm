@@ -178,7 +178,105 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
 #if 0
     } else {
 #endif
-      if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
+      if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
+        if (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_NMULADD) {
+          int temp_scratch_id = eqn->eqn_root->reg_score;
+          unsigned short bin_flags = 0;
+          libxsmm_meltw_ternary_flags flags  = cur_op->info.t_op.flags;
+          if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
+          }
+          if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_2) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
+          }
+
+          /* Set up first a binary MUL: left x right2 -> temp_scratch */
+          libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->le, temp_reg, 0);
+          libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->r2, temp_reg, 1);
+          libxsmm_generator_meqn_getaddr_stack_tmp_i_aarch64( io_generated_code, temp_scratch_id * i_micro_kernel_config->tmp_size, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg);
+          libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
+          meltw_desc = libxsmm_meltw_descriptor_init2(&blob, in_precision, cur_op->info.t_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED,
+              cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.m, cur_op->r2->tmp.ld, 0, (unsigned short)bin_flags, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_OPERATION_BINARY);
+          libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+          libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+
+          bin_flags = 0;
+          if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_1) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
+          }
+          /* Set up then a binary SUB: right - temp_scratch -> output */
+          libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->ri, temp_reg, 0);
+          libxsmm_generator_meqn_getaddr_stack_tmp_i_aarch64( io_generated_code, temp_scratch_id * i_micro_kernel_config->tmp_size, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg);
+          libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR7, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
+          libxsmm_generator_matequation_set_output_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op, temp_reg, (timestamp == last_timestamp) );
+          meltw_desc = libxsmm_meltw_descriptor_init2(&blob, in_precision, cur_op->info.t_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED,
+              cur_op->tmp.m, cur_op->tmp.n, cur_op->ri->tmp.ld, cur_op->tmp.ld, cur_op->tmp.m, 0, (unsigned short)bin_flags, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_OPERATION_BINARY);
+          libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+          libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+        } else if (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MULADD) {
+          int temp_scratch_id = eqn->eqn_root->reg_score;
+          unsigned short bin_flags = 0;
+          libxsmm_meltw_ternary_flags flags  = cur_op->info.t_op.flags;
+          if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
+          }
+          if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_1) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
+          }
+
+          /* Set up first a binary MUL: left x right -> temp_scratch */
+          libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->le, temp_reg, 0);
+          libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->ri, temp_reg, 1);
+          libxsmm_generator_meqn_getaddr_stack_tmp_i_aarch64( io_generated_code, temp_scratch_id * i_micro_kernel_config->tmp_size, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg);
+          libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
+          meltw_desc = libxsmm_meltw_descriptor_init2(&blob, in_precision, cur_op->info.t_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED,
+              cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.m, cur_op->ri->tmp.ld, 0, (unsigned short)bin_flags, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_OPERATION_BINARY);
+          libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+          libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+
+          bin_flags = 0;
+          if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_2) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
+          } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2) > 0) {
+            bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0;
+          }
+          /* Set up then a binary SUB: right2 + temp_scratch -> output */
+          libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->r2, temp_reg, 0);
+          libxsmm_generator_meqn_getaddr_stack_tmp_i_aarch64( io_generated_code, temp_scratch_id * i_micro_kernel_config->tmp_size, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg);
+          libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR7, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
+          libxsmm_generator_matequation_set_output_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op, temp_reg, (timestamp == last_timestamp) );
+          meltw_desc = libxsmm_meltw_descriptor_init2(&blob, in_precision, cur_op->info.t_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED,
+              cur_op->tmp.m, cur_op->tmp.n, cur_op->r2->tmp.ld, cur_op->tmp.ld, cur_op->tmp.m, 0, (unsigned short)bin_flags, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_OPERATION_BINARY);
+          libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+          libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+        } else {
+          /* This should not happen  */
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+          return;
+        }
+      } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
         /* Prepare struct param */
         libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->le,
             temp_reg, 0);
@@ -254,6 +352,8 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
       }
     } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_transform_kernel(meltw_desc->param) > 0)) {
       libxsmm_generator_transform_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+    } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
+      /* JITing already taken care of, do nothing... */
     } else {
       libxsmm_generator_unary_binary_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
     }
