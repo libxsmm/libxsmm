@@ -889,7 +889,7 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64( libxsmm_generated_code*        
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
                                              i_vec_half, i_vec_half, 0, i_vec_C0,
                                              i_tupletype );
-#ifndef LIBXSMM_SPLIT_FMA
+#ifndef LIBXSMM_AARCH64_SPLIT_FMA
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V,
                                               i_vec_xr, i_vec_C2, 0, i_vec_half,
                                               i_tupletype );
