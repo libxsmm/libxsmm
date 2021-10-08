@@ -326,8 +326,8 @@ void libxsmm_aarch64_instruction_load16bytes_const_to_vec( libxsmm_generated_cod
                                                           const unsigned char     i_vec_reg,
                                                           const unsigned int      i_gp_reg_tmp0,
                                                           const unsigned int      i_gp_reg_tmp1,
-                                                          const unsigned long long imm64,
-                                                          const unsigned long long imm64_1);
+                                                          void                    *imm64_array,
+                                                          const unsigned int       i_start_index);
 
 #endif /* GENERATOR_COMMON_AARCH64_H */
 
