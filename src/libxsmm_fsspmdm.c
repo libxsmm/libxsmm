@@ -600,7 +600,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
             LIBXSMM_X86_AVX512_CLX == archid ||
             LIBXSMM_X86_AVX512_CPX == archid ||
             LIBXSMM_X86_AVX512_SPR == archid) {
-    a_unique_reg = 240;
+    a_unique_reg = 480;
 
   } else {
     free( a_csr_values ); free( a_csr_rowptr ); free( a_csr_colidx );
