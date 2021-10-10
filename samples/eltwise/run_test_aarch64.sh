@@ -50,7 +50,7 @@
 . ./kernel_test_aarch64/binary_div_32b_eqld.sh
 . ./kernel_test_aarch64/binary_muladd_32b_gtld.sh
 . ./kernel_test_aarch64/binary_muladd_32b_eqld.sh
-.  /kernel_test_aarch64/unary_gelu_32b_eqld.sh
+. ./kernel_test_aarch64/unary_gelu_32b_eqld.sh
 . ./kernel_test_aarch64/unary_gelu_32b_gtld.sh
 . ./kernel_test_aarch64/unary_gelu_inv_32b_eqld.sh
 . ./kernel_test_aarch64/unary_gelu_inv_32b_gtld.sh
