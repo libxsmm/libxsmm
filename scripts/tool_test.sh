@@ -9,6 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
+# shellcheck disable=SC1090,SC2129,SC2155,SC2164,SC2178,SC2206,SC2207
 set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
@@ -43,7 +44,7 @@ if [ "${WGET}" ] && [ "${SED}" ] && [ "${PIPELINE}" ] && \
    [ "${BUILDKITE_AGENT_ACCESS_TOKEN}" ];
 then
   REVSTART=$(${WGET} -qO- \
-  https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
+  "https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN}" \
   | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
 fi
 if [ "" = "${REVSTART}" ]; then
@@ -83,8 +84,8 @@ then
   fi
 
   # should be source'd after the above variables are set
-  source ${HERE}/../.env/buildkite.env ""
-  #source ${HERE}/../.env/travis.env ""
+  source "${HERE}/../.env/buildkite.env" ""
+  #source "${HERE}/../.env/travis.env" ""
 
   # support yml-files for Travis-CI that depend on TRAVIS_* variables
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
@@ -140,7 +141,7 @@ then
   if [ "" = "${TESTSET}" ]; then
     TESTSET=travis
   fi
-  if [ "" = "${TESTSETFILE}" ] || [ ! -e ${TESTSETFILE} ]; then
+  if [ "" = "${TESTSETFILE}" ] || [ ! -e "${TESTSETFILE}" ]; then
     if [ -e ".${TESTSET}.yml" ]; then
       TESTSETFILE=.${TESTSET}.yml
     elif [ -e "${TESTSET}.yml" ]; then
@@ -162,11 +163,11 @@ then
   fi
 
   # eventually cleanup run-script of terminated/previous sessions
-  ${RM} -f "${HERE}/../.tool_??????.sh"
+  ${RM} -f "${HERE}"/../.tool_??????.sh
   # setup batch execution (TEST may be a singular test given by filename)
   if [ "" = "${LAUNCH_CMD}" ] && [ "" = "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "${BUILDKITE_LABEL}" ]; then
-      LABEL=$(echo "${BUILDKITE_LABEL}" | ${TR} -s [:punct:][:space:] - | ${SED} -e "s/^-//" -e "s/-$//")
+      LABEL=$(echo "${BUILDKITE_LABEL}" | ${TR} -s [[:punct:][:space:]] - | ${SED} -e "s/^-//" -e "s/-$//")
     fi
     if [ "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
@@ -177,23 +178,18 @@ then
     fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
     umask 007
-    TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
-    ${CHMOD} +rx ${TESTSCRIPT}
+    TESTSCRIPT=$(${MKTEMP} "${HERE}/../.tool_XXXXXX.sh")
+    ${CHMOD} +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT}"
-  elif [ "" = "${LAUNCH_CMD}" ] && [ "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ]; then
+  elif [[ ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") || (-d "$1") ]]; then
     umask 007
-    TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
-    ${CHMOD} +rx ${TESTSCRIPT}
-    LAUNCH="${TESTSCRIPT}"
-  elif [ "${LAUNCH_CMD}" ]; then
-    umask 007
-    TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
-    ${CHMOD} +rx ${TESTSCRIPT}
+    TESTSCRIPT=$(${MKTEMP} "${HERE}/../.tool_XXXXXX.sh")
+    ${CHMOD} +rx "${TESTSCRIPT}"
     LAUNCH="${LAUNCH_CMD} ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
     if [ "" = "${MAKEJ}" ]; then
-      export MAKEJ="-j $(eval ${HERE}/tool_cpuinfo.sh -nc)"
+      export MAKEJ="-j $(eval "${HERE}/tool_cpuinfo.sh" -nc)"
     fi
     SHOW_PARTITION=0
     LAUNCH="\${TEST}"
@@ -203,10 +199,10 @@ then
   fi
 
   # backup current environment (snapshot)
-  ${RM} -f "${HERE}/../.env_??????"
-  ENVFILE=$(${MKTEMP} ${HERE}/../.env_XXXXXX)
-  ${CHMOD} +r ${ENVFILE}
-  declare -px > ${ENVFILE}
+  ${RM} -f "${HERE}"/../.env_??????
+  ENVFILE=$(${MKTEMP} "${HERE}/../.env_XXXXXX")
+  ${CHMOD} +r "${ENVFILE}"
+  declare -px > "${ENVFILE}"
 
   RESULT=0
   # control log
@@ -222,7 +218,7 @@ then
     else # dummy
       SLURMDIR=$0
     fi
-    for SLURMFILE in $(${LS} -1 ${SLURMDIR}); do
+    for SLURMFILE in $(${LS} -1 "${SLURMDIR}"); do
     if [[ (-d ${SLURMDIR}) && ("" = "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
@@ -230,7 +226,7 @@ then
       SLURMFILE=${TEST}
     fi
     if [ "none" = "${PARTITIONS}" ] && [ "$0" != "${SLURMFILE}" ] && [ -e "${SLURMFILE}" ]; then
-      PARTITION=$(${SED} -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
+      PARTITION=$(${SED} -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" "${SLURMFILE}")
       if [ "${PARTITION}" ]; then PARTITIONS=${PARTITION}; fi
     fi
     if [ "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
@@ -244,14 +240,14 @@ then
       fi
       if [ "${LIMITFILE}" ]; then
         if [ "${PIPELINE}" ]; then LIMITBASE="${PIPELINE}-"; fi
-        if [ "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
+        if [ "${LIMITDIR}" ] && [ -d "${LIMITDIR}" ]; then
           LIMITFILE=${LIMITDIR}/${LIMITBASE}${LIMITFILE}
         else
           LIMITFILE=${REPOROOT}/${LIMITBASE}${LIMITFILE}
         fi
       fi
       if [ "${LIMITFILE}" ] && [ -e "${LIMITFILE}" ]; then
-        OLD=$(stat -c %Y ${LIMITFILE})
+        OLD=$(stat -c %Y "${LIMITFILE}")
       else # ensure build is not skipped
         OLD=${NOW}
         LIMIT=0
@@ -274,14 +270,14 @@ then
     if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ]; then
       CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
       if [ "${CONFIGPAT}" ]; then
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
+        CONFIGFILES=($(bash -c "${LS} -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
       else
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
+        CONFIGFILES=($(bash -c "${LS} -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
       fi
       CONFIGCOUNT=${#CONFIGFILES[@]}
       if [ "0" != "${CONFIGCOUNT}" ]; then
         CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
-        CONFIG=$(${BASENAME} ${CONFIGFILE} .env)
+        CONFIG=$(${BASENAME} "${CONFIGFILE}" .env)
       else
         echo "WARNING: configuration \"${CONFIG}\" not found!"
         CONFIGFILE=""
@@ -308,83 +304,86 @@ then
       fi
       # prepare temporary script for remote environment/execution
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
-        echo "#!/usr/bin/env bash" > ${TESTSCRIPT}
-        echo "set -eo pipefail" >> ${TESTSCRIPT}
-        echo "cd ${REPOROOT}" >> ${TESTSCRIPT}
-        echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >> ${TESTSCRIPT}
-        if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >> ${TESTSCRIPT}; fi
-        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
+        echo "#!/usr/bin/env bash" > "${TESTSCRIPT}"
+        echo "set -eo pipefail" >> "${TESTSCRIPT}"
+        echo "cd ${REPOROOT}" >> "${TESTSCRIPT}"
+        echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >> "${TESTSCRIPT}"
+        if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >> "${TESTSCRIPT}"; fi
+        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> "${TESTSCRIPT}"
         # make execution environment available
         if [ "" = "${INTEL_LICENSE_FILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
-          ${MKDIR} -p ${REPOROOT}/licenses
-          ${CP} -u /$HOME/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
-          ${CP} -u ${LICSDIR}/licenses/* ${REPOROOT}/licenses 2>/dev/null
-          ${CP} -u /opt/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
-          echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
+          ${MKDIR} -p "${REPOROOT}/licenses"
+          ${CP} -u "${HOME}"/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
+          ${CP} -u "${LICSDIR}"/licenses/* "${REPOROOT}/licenses" 2>/dev/null
+          ${CP} -u /opt/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
+          echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> "${TESTSCRIPT}"
         fi
         # setup environment on a per-test basis
-        echo "if [ -e \"${ENVFILE}\" ]; then" >> ${TESTSCRIPT}
+        echo "if [ -e \"${ENVFILE}\" ]; then" >> "${TESTSCRIPT}"
         if [ "${LAUNCH_CMD}" ]; then
-          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\" \"${HERE}/../.env.sh\"" >> ${TESTSCRIPT}
-          echo "  source \"${HERE}/../.env.sh\"" >> ${TESTSCRIPT}
+          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\" \"${HERE}/../.env.sh\"" >> "${TESTSCRIPT}"
+          echo "  source \"${HERE}/../.env.sh\"" >> "${TESTSCRIPT}"
         else
-          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\"" >> ${TESTSCRIPT}
+          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\"" >> "${TESTSCRIPT}"
         fi
-        echo "fi" >> ${TESTSCRIPT}
+        echo "fi" >> "${TESTSCRIPT}"
         if [ -e "${CONFIGFILE}" ]; then
-          echo "  source \"${CONFIGFILE}\" \"\"" >> ${TESTSCRIPT}
+          echo "  source \"${CONFIGFILE}\" \"\"" >> "${TESTSCRIPT}"
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e "${SLURMFILE}" ]; then
-          DIR=$(cd $(dirname ${SLURMFILE}); pwd -P)
-          if [ -e "${DIR}/../Makefile" ]; then
-            DIR=${DIR}/..
+          ABSDIR=$(dirname "${SLURMFILE}")
+          if [ ! -e "${ABSDIR}/Makefile" ] && [ -d "${ABSDIR}" ] && [ -e "${ABSDIR}/../Makefile" ]; then
+            ABSDIR=${ABSDIR}/..
           fi
-          echo "cd ${REPOROOT} && make -e \${MAKEJ} && cd ${DIR} && make -e \${MAKEJ}" >> ${TESTSCRIPT}
-          echo "RESULT=\$?" >> ${TESTSCRIPT}
-          echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> ${TESTSCRIPT}
+          ABSDIR=$(cd "${ABSDIR}"; pwd -P)
+          echo "cd ${REPOROOT} && make -e \${MAKEJ} && cd ${ABSDIR} && make -e \${MAKEJ}" >> "${TESTSCRIPT}"
+          echo "RESULT=\$?" >> "${TESTSCRIPT}"
+          echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> "${TESTSCRIPT}"
           # control log
-          echo "echo \"--- RUN ${TESTID}\"" >> ${TESTSCRIPT}
-          DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
+          echo "echo \"--- RUN ${TESTID}\"" >> "${TESTSCRIPT}"
+          DIRSED=$(echo "${ABSDIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
-            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\.\//${DIRSED}\//" \
+            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
-            ${SLURMFILE} > ${SLURMFILE}.run && ${CHMOD} +rx ${SLURMFILE}.run
-          RUNFILE=$(readlink -f ${SLURMFILE}.run)
+            "${SLURMFILE}" > "${SLURMFILE}.run" && ${CHMOD} +rx "${SLURMFILE}.run"
+          RUNFILE=$(readlink -f "${SLURMFILE}.run")
           if [ "${TOOL_COMMAND}" ]; then
-            if [ "0" = "${TOOL_INJECT}" ] || [ "" = "$(${SED} -n "/^taskset/p" ${RUNFILE})" ]; then
-              echo -n "${TOOL_COMMAND} ${RUNFILE} ${TOOL_COMMAND_POST}" >> ${TESTSCRIPT}
+            if [ "0" = "${TOOL_INJECT}" ] || [ "" = "$(${SED} -n "/^taskset/p" "${RUNFILE}")" ]; then
+              echo -n "${TOOL_COMMAND} ${RUNFILE} ${TOOL_COMMAND_POST}" >> "${TESTSCRIPT}"
             else # inject TOOL_COMMAND
               TOOL_COMMAND_SED1="$(echo "${TOOL_COMMAND}" | ${SED} "s/\//\\\\\//g") "
               if [ "${TOOL_COMMAND_POST}" ]; then
                 TOOL_COMMAND_SED2=" $(echo "${TOOL_COMMAND_POST}" | ${SED} "s/\//\\\\\//g")"
               fi
-              ${SED} -i "s/\(^taskset[[:space:]]..*\)/${TOOL_COMMAND_SED1}\1${TOOL_COMMAND_SED2}/" ${RUNFILE}
-              echo -n "${RUNFILE}" >> ${TESTSCRIPT}
+              ${SED} -i "s/\(^taskset[[:space:]]..*\)/${TOOL_COMMAND_SED1}\1${TOOL_COMMAND_SED2}/" "${RUNFILE}"
+              echo -n "${RUNFILE}" >> "${TESTSCRIPT}"
             fi
           else
-            echo -n "${RUNFILE}" >> ${TESTSCRIPT}
+            echo -n "${RUNFILE}" >> "${TESTSCRIPT}"
           fi
           if [ "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
              [ "$(command -v cat)" ] && [ "$(command -v tail)" ];
           then
-            echo " | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
+            echo " | cat -s | tail -n ${LIMITLOG}" >> "${TESTSCRIPT}"
+          elif [ "0" = "${LIMITLOG}" ]; then
+            echo " >/dev/null" >> "${TESTSCRIPT}"
           else
-            echo >> ${TESTSCRIPT}
+            echo >> "${TESTSCRIPT}"
           fi
-          echo "${RM} -f ${RUNFILE}" >> ${TESTSCRIPT}
+          echo "${RM} -f ${RUNFILE}" >> "${TESTSCRIPT}"
         else
-          echo "${TEST}" >> ${TESTSCRIPT}
+          echo "${TEST}" >> "${TESTSCRIPT}"
         fi
-        echo >> ${TESTSCRIPT}
+        echo >> "${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
       else
         # setup environment on a per-test basis
         if [ "${CONFIGFILE}" ]; then
           if [ -e "${ENVFILE}" ]; then
-            eval ${HERE}/tool_envrestore.sh "${ENVFILE}"
+            eval "${HERE}/tool_envrestore.sh" "${ENVFILE}"
           fi
           source "${CONFIGFILE}" ""
         fi
@@ -416,7 +415,7 @@ then
     done # CONFIGS
     done # PARTITIONS
     if [ "${TOUCHFILE}" ]; then
-      echo "${JOBID}" > ${TOUCHFILE}
+      echo "${JOBID}" > "${TOUCHFILE}"
       TOUCHFILE=""
     fi
     done # SLURMFILE
@@ -455,5 +454,5 @@ then
     RESULT=${RESULTCODE}
   fi
 
-  exit ${RESULT}
+  exit "${RESULT}"
 fi

@@ -84,6 +84,9 @@ LIBXSMM_API_INTERN
 void libxsmm_setup_tile( unsigned int tile_id, unsigned int n_rows, unsigned int n_cols, libxsmm_tile_config *tc);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_setup_masking_infra( libxsmm_generated_code* io_generated_code, libxsmm_micro_kernel_config*  i_micro_kernel_config );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*            io_generated_code,
                                                     const libxsmm_gemm_descriptor*      i_xgemm_desc,
                                                     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,

@@ -42,7 +42,8 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, i, j, jj, k, iters = 10000, n_cols_idx = 0, reduce_op = 0, use_bf16 = 0;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, i, j, jj, k, iters = 10000, reduce_op = 0, use_bf16 = 0;
+  unsigned long long n_cols_idx = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
   libxsmm_bfloat16 *sinp_bf16 = NULL;
@@ -56,9 +57,8 @@ int main(int argc, char* argv[])
   libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
   libxsmm_meltwfunction_unary kernel = NULL;
   libxsmm_meltw_unary_param unary_param;
-  libxsmm_meltw_redu_flags jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_NONE;
-  libxsmm_meltwfunction_reduce_cols_idx kernel2 = NULL;
-  libxsmm_meltw_reduce_cols_idx_param params2;
+  libxsmm_meltwfunction_unary kernel2 = NULL;
+  libxsmm_meltw_unary_param params2;
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;
   unsigned long long l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
   if ( argc > 9 ) n_cols_idx = atoi(argv[9]);
   if ( argc > 10 ) iters = atoi(argv[10]);
 
-  printf("CL is: %d %d %d %d %d %d %d %d %d %d\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, use_bf16, n_cols_idx, iters);
+  printf("CL is: %d %d %d %d %d %d %d %d %llu %d\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, use_bf16, n_cols_idx, iters);
 
 #if 0
   libxsmm_meltw_opreduce_vecs_flags opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT;
@@ -95,19 +95,6 @@ int main(int argc, char* argv[])
   ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
   result_size = (reduce_rows == 1) ? n : ld_in;
   result_size_check = (reduce_rows == 1) ? n : m;
-
-#if 0
-  int m = E;
-  int ld_in = E;
-  float sum;
-  libxsmm_meltw_redu_flags      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ROWS | LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
-  libxsmm_meltwfunction_reduce  kernel = libxsmm_dispatch_meltw_reduce(m, 1, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_flags, 0);
-  libxsmm_meltw_reduce_param    params;
-
-  params.in_ptr = g_sum;
-  params.out_ptr_1 = &sum;
-  kernel( &params );
-#endif
 
   /* Allocate arrays  */
   sinp  = (float*) malloc( ld_in*n*sizeof(float) );
@@ -203,28 +190,6 @@ int main(int argc, char* argv[])
     }
   }
 
-  /* Generate JITED kernel */
-  if (reduce_op == 0) {
-    if (reduce_rows == 1) {
-      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
-    } else {
-      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_ADD | LIBXSMM_MELTW_FLAG_REDUCE_COLS;
-    }
-  } else {
-    if (reduce_rows == 1) {
-      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX | LIBXSMM_MELTW_FLAG_REDUCE_ROWS;
-    } else {
-      jit_flags = LIBXSMM_MELTW_FLAG_REDUCE_OP_MAX | LIBXSMM_MELTW_FLAG_REDUCE_COLS;
-    }
-  }
-
-  if (reduce_elts == 1) {
-    jit_flags |=  LIBXSMM_MELTW_FLAG_REDUCE_ELTS;
-  }
-  if (reduce_elts_squared == 1) {
-    jit_flags |=  LIBXSMM_MELTW_FLAG_REDUCE_ELTS_SQUARED;
-  }
-
   if (reduce_rows == 1) {
     unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
   } else {
@@ -275,28 +240,30 @@ int main(int argc, char* argv[])
     kernel( &unary_param );
   } else {
 #ifdef FP16_REDUCE_COLSIDX
-    kernel2 = libxsmm_dispatch_meltw_reduce_cols_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_I64);
+    kernel2 = libxsmm_dispatch_meltw_unary(m, 0, &ld_in, &ld_in, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F16, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
 #else
     if (use_bf16 == 0) {
-      kernel2 = libxsmm_dispatch_meltw_reduce_cols_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64);
+      kernel2 = libxsmm_dispatch_meltw_unary(m, 0, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
     } else {
-      kernel2 = libxsmm_dispatch_meltw_reduce_cols_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_I64);
+      kernel2 = libxsmm_dispatch_meltw_unary(m, 0, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
     }
 #endif
     /* Call JITed kernel and compare result  */
     printf("Calling JITed reduce cols idx kernel... \n");
-    params2.n = n_cols_idx;
-    params2.ind_ptr = cols_ind_array;
+    params2.in.primary = sinp;
+    params2.in.secondary = cols_ind_array;
+    params2.in.tertiary = &n_cols_idx;
+    params2.out.primary = result_reduce_elts;
 #ifdef FP16_REDUCE_COLSIDX
-    params2.inp_ptr = sinp_hp;
-    params2.out_ptr = result_reduce_elts_hp;
+    params2.in.primary  = sinp_hp;
+    params2.out.primary= result_reduce_elts_hp;
 #else
     if (use_bf16 == 0) {
-      params2.inp_ptr = sinp;
-      params2.out_ptr = result_reduce_elts;
+      params2.in.primary  = sinp;
+      params2.out.primary  = result_reduce_elts;
     } else {
-      params2.inp_ptr = sinp_bf16;
-      params2.out_ptr = result_reduce_elts_bf16;
+      params2.in.primary  = sinp_bf16;
+      params2.out.primary  = result_reduce_elts_bf16;
     }
 #endif
 #ifdef FP16_REDUCE_COLSIDX

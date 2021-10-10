@@ -309,6 +309,8 @@ void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, l
         libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
       }
     }
+    cur_node->visit_timestamp = *current_timestamp;
+    *current_timestamp = *current_timestamp + 1;
   } else {
     /* shouldn't happen */
   }
