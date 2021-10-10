@@ -255,7 +255,6 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   libxsmm_blasint i, j;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
-  libxsmm_blasint s;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type unary_type;
@@ -366,15 +365,16 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   }
   unary_kernel( &unary_param );
 
-  s = 0;
+#if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( unequal_fp32_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j])  ) {
         printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-        s = 1;
       }
     }
   }
+#endif
+
   /* compare result */
   libxsmm_matdiff_clear(&norms_out);
   printf("##########################################\n");
