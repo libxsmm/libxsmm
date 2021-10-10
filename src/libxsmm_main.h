@@ -806,7 +806,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
   int ldc;
   int N_chunksize;
   double* a_dense;
-  double* a_packed;
   libxsmm_dmmfunction kernel;
 };
 
@@ -818,7 +817,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
   int ldc;
   int N_chunksize;
   float* a_dense;
-  float* a_packed;
   libxsmm_smmfunction kernel;
 };
 
