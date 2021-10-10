@@ -279,6 +279,84 @@ void libxsmm_generator_scalefps_aarch64( libxsmm_generated_code*                
                                          const unsigned int                             i_vec_z,
                                          const unsigned int                             i_vec_expmask,
                                          const libxsmm_aarch64_asimd_tupletype          i_tupletype  );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64 ( libxsmm_generated_code*                        io_generated_code,
+                                                                    const unsigned int                             i_vec_c0,
+                                                                    const unsigned int                             i_vec_c1,
+                                                                    const unsigned int                             i_vec_c2,
+                                                                    const unsigned int                             i_vec_c3,
+                                                                    const unsigned int                             i_vec_c1_d,
+                                                                    const unsigned int                             i_vec_c2_d,
+                                                                    const unsigned int                             i_vec_c3_d,
+                                                                    const unsigned int                             i_vec_hi_bound,
+                                                                    const unsigned int                             i_vec_lo_bound,
+                                                                    const unsigned int                             i_vec_ones,
+                                                                    const unsigned int                             i_vec_neg_ones,
+                                                                    const unsigned int                             i_gp_reg_tmp,
+                                                                    const libxsmm_aarch64_asimd_tupletype          i_tupletype );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_aarch64( libxsmm_generated_code*                        io_generated_code,
+                                                                      const unsigned int                             i_vec_c0,
+                                                                      const unsigned int                             i_vec_c1,
+                                                                      const unsigned int                             i_vec_c2,
+                                                                      const unsigned int                             i_vec_c3,
+                                                                      const unsigned int                             i_vec_c1_d,
+                                                                      const unsigned int                             i_vec_c2_d,
+                                                                      const unsigned int                             i_vec_c3_d,
+                                                                      const unsigned int                             i_vec_hi_bound,
+                                                                      const unsigned int                             i_vec_lo_bound,
+                                                                      const unsigned int                             i_vec_ones,
+                                                                      const unsigned int                             i_vec_neg_ones,
+                                                                      const unsigned int                             i_vec_halves,
+                                                                      const unsigned int                             i_gp_reg_tmp,
+                                                                      const libxsmm_aarch64_asimd_tupletype i_tupletype );
+LIBXSMM_API_INTERN
+void libxsmm_generator_tanh_ps_rational_78_aarch64(  libxsmm_generated_code*                        io_generated_code,
+                                                    const unsigned int                             i_vec_x,
+                                                    const unsigned int                             i_vec_x2,
+                                                    const unsigned int                             i_vec_nom,
+                                                    const unsigned int                             i_vec_denom,
+                                                    const unsigned int                             i_mask_hi,
+                                                    const unsigned int                             i_mask_lo,
+                                                    const unsigned int                             i_vec_c0,
+                                                    const unsigned int                             i_vec_c1,
+                                                    const unsigned int                             i_vec_c2,
+                                                    const unsigned int                             i_vec_c3,
+                                                    const unsigned int                             i_vec_c1_d,
+                                                    const unsigned int                             i_vec_c2_d,
+                                                    const unsigned int                             i_vec_c3_d,
+                                                    const unsigned int                             i_vec_hi_bound,
+                                                    const unsigned int                             i_vec_lo_bound,
+                                                    const unsigned int                             i_vec_ones,
+                                                    const unsigned int                             i_vec_neg_ones,
+                                                    const unsigned int                             i_vec_tmp,
+                                                    const libxsmm_aarch64_asimd_tupletype i_tupletype );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_sigmoid_ps_rational_78_aarch64( libxsmm_generated_code*                        io_generated_code,
+                                                        const unsigned int                             i_vec_x,
+                                                        const unsigned int                             i_vec_x2,
+                                                        const unsigned int                             i_vec_nom,
+                                                        const unsigned int                             i_vec_denom,
+                                                        const unsigned int                             i_mask_hi,
+                                                        const unsigned int                             i_mask_lo,
+                                                        const unsigned int                             i_vec_c0,
+                                                        const unsigned int                             i_vec_c1,
+                                                        const unsigned int                             i_vec_c2,
+                                                        const unsigned int                             i_vec_c3,
+                                                        const unsigned int                             i_vec_c1_d,
+                                                        const unsigned int                             i_vec_c2_d,
+                                                        const unsigned int                             i_vec_c3_d,
+                                                        const unsigned int                             i_vec_hi_bound,
+                                                        const unsigned int                             i_vec_lo_bound,
+                                                        const unsigned int                             i_vec_ones,
+                                                        const unsigned int                             i_vec_neg_ones,
+                                                        const unsigned int                             i_vec_halves,
+                                                        const unsigned int                             i_vec_tmp,
+                                                        const libxsmm_aarch64_asimd_tupletype i_tupletype );
+
 /**
  * Load constants in the ASIMD register
  *
