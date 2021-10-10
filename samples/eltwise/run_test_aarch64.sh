@@ -56,3 +56,9 @@
 . ./kernel_test_aarch64/unary_gelu_inv_32b_gtld.sh
 . ./kernel_test_aarch64/unary_tanh_32b_eqld.sh
 . ./kernel_test_aarch64/unary_tanh_32b_gtld.sh
+. ./kernel_test_aarch64/unary_tanh_inv_32b_eqld.sh
+. ./kernel_test_aarch64/unary_tanh_inv_32b_gtld.sh
+. ./kernel_test_aarch64/unary_sigmoid_32b_eqld.sh
+. ./kernel_test_aarch64/unary_sigmoid_32b_gtld.sh
+. ./kernel_test_aarch64/unary_sigmoid_inv_32b_eqld.sh
+. ./kernel_test_aarch64/unary_sigmoid_inv_32b_gtld.sh
