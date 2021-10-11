@@ -15,6 +15,7 @@
 #include <math.h>
 
 #define PI 3.14159265358979323846
+#define EPS 1.19209290e-03F
 
 #define NO_BCAST 0
 #define ROW_BCAST 1
@@ -44,6 +45,15 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   bf16_hp.i[0] = 0;
   return bf16_hp.f;
 }
+
+int unequal_fp32_vals(float a, float b) {
+  if (fabs(a-b) < EPS) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
 
 float fsigmoid(float x) {
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
@@ -355,6 +365,16 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   }
   unary_kernel( &unary_param );
 
+#if 0
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( unequal_fp32_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j])  ) {
+        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
+      }
+    }
+  }
+#endif
+
   /* compare result */
   libxsmm_matdiff_clear(&norms_out);
   printf("##########################################\n");
@@ -369,9 +389,18 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( norms_out.normf_rel > 0.0007 ) {
-    ret = EXIT_FAILURE;
-  }
+double error_bound =0.0;
+if(RCP_OP || RCP_SQRT_OP){
+  error_bound = 0.0027;
+}else{
+  error_bound = 0.0007;
+}
+
+if ( norms_out.normf_rel > error_bound ) {
+  ret = EXIT_FAILURE;
+}
+
+
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
