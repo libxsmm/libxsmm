@@ -1364,8 +1364,12 @@ int main( int argc, char* argv[] ) {
     printf("Testing Leaky ReLU ");
   } else if ( type == 'E' ) {
     itype = 2;
+#if 0
     bitm = 0;
     printf("Testing ELU (disabling bitmask support) ");
+#else
+    printf("Testing ELU ");
+#endif
   } else {
     itype = 0;
     printf("Testing ReLU ");
