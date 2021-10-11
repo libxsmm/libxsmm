@@ -185,7 +185,7 @@
  *   7: SVE: predication required
  *   6-5: not used
  *   4:   tuple-type: ignore all sz bits, ignore shift bits for GP insturctions, if 4 & 3 is set for ASIMD -> immediate, e.g. shift is used
- *   3:   tuple-type: ignore second sz bit
+ *   3:   tuple-type: ignore second sz bit, vec register is destination (for UMOV/INS)
  *   2:   has immediate
  *   1-0: number of register operands
  */
@@ -253,6 +253,9 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF   0x2c000007
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R         0x0d40c002
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST  0x0dc0c003
+/* ASIMD <-> GPR moves */
+#define LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V      0x4e001c1e
+#define LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G     0x0e003c16
 /* define ASIMD compute instructions */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V        0x2e201c13
 #define LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V        0x0ea01c13
@@ -448,6 +451,24 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
                                              const short                       i_offset,
                                              const unsigned char               i_vec_reg,
                                              const libxsmm_aarch64_asimd_width i_asimdwidth );
+
+/**
+ * Generates ins, umov instructions for moving data between ASDIM and GP registers
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_vmove_instr actual vmov variant
+ * @param i_gp_reg gp register
+ * @param i_vec_reg the simd register
+ * @param i_index the index to address the vector element
+ * @param i_asimdwidth widht of regiaters (1,2,4,8,16 byte)
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*           io_generated_code,
+                                                 const unsigned int                i_vmove_instr,
+                                                 const unsigned char               i_gp_reg,
+                                                 const unsigned char               i_vec_reg,
+                                                 const short                       i_index,
+                                                 const libxsmm_aarch64_asimd_width i_asimdwidth );
 
 /**
  * Generates ldX, stX, etc. instructions for structs

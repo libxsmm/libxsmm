@@ -206,7 +206,7 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
     code[code_head] |= (unsigned int)(0x1f & i_vec_reg);
     /* setting Rn */
     code[code_head] |= (unsigned int)((0x1f & i_gp_reg_addr) << 5);
-   /* setting size */
+    /* setting size */
     code[code_head] |= (unsigned int)((0x6 & (unsigned int)i_asimdwidth) << 29);
     /* setting opc */
     code[code_head] |= (unsigned int)((0x1 & (unsigned int)i_asimdwidth) << 23);
@@ -262,6 +262,66 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
   } else {
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_move: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*           io_generated_code,
+                                                 const unsigned int                i_vmove_instr,
+                                                 const unsigned char               i_gp_reg,
+                                                 const unsigned char               i_vec_reg,
+                                                 const short                       i_index,
+                                                 const libxsmm_aarch64_asimd_width i_asimdwidth ) {
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: at least ARM V81 needs to be specified as target arch!\n");
+    exit(-1);
+  }
+
+  switch ( i_vmove_instr ) {
+    case LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: unexpected instruction number: %u\n", i_vmove_instr);
+      exit(-1);
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
+    unsigned int l_imm5 = 0x0;
+    /* fix bits */
+    code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
+    /* setting Rd */
+    code[code_head] |= (unsigned int)( (i_vmove_instr & 0x8) == 0x8 ? (0x1f & i_vec_reg) : (0x1f & i_gp_reg) );
+    /* setting Rn */
+    code[code_head] |= (unsigned int)( (i_vmove_instr & 0x8) == 0x8 ? ((0x1f & i_gp_reg) << 5) : ((0x1f & i_vec_reg) << 5) );
+    /* setting Q */
+    code[code_head] |= (unsigned int)( ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_D ) ? 0x40000000 : 0x0 );
+
+    /* setting imm5 */
+    if ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_B ) {
+      l_imm5 = 0x1 | ((i_index & 0xf) << 1);
+    } else if ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_H ) {
+      l_imm5 = 0x2 | ((i_index & 0x7) << 2);
+    } else if ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_S ) {
+      l_imm5 = 0x4 | ((i_index & 0x3) << 3);
+    } else if ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_D ) {
+      l_imm5 = 0x8 | ((i_index & 0x1) << 4);
+    } else {
+      /* shouldn't happen */
+      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: unexpected datatype for instruction: %u\n", i_vmove_instr);
+      exit(-1);
+    }
+    /* setting imm5 */
+    code[code_head] |= (unsigned int)( l_imm5 << 16 );
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: inline/pure assembly print is not supported!\n");
     exit(-1);
   }
 }
