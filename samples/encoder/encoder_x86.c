@@ -1201,6 +1201,10 @@ int main( /*int argc, char* argv[]*/ ) {
   test_mask_compute_reg( "mask_reg_KXORQ", &mycode, LIBXSMM_X86_INSTR_KXORQ, 0, LIBXSMM_X86_IMM_UNDEF );
 
   /* testing prefetches */
+  test_prefetch( "pf_PREFETCHT0", &mycode, LIBXSMM_X86_INSTR_PREFETCHT0 );
+  test_prefetch( "pf_PREFETCHT1", &mycode, LIBXSMM_X86_INSTR_PREFETCHT1 );
+  test_prefetch( "pf_PREFETCHT2", &mycode, LIBXSMM_X86_INSTR_PREFETCHT2 );
+  test_prefetch( "pf_PREFETCHNTA", &mycode, LIBXSMM_X86_INSTR_PREFETCHNTA );
   test_prefetch( "pf_CLDEMOTE", &mycode, LIBXSMM_X86_INSTR_CLDEMOTE );
   test_prefetch( "pf_CLFLUSHOPT", &mycode, LIBXSMM_X86_INSTR_CLFLUSHOPT );
 

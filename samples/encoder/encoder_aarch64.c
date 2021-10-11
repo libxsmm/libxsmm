@@ -73,6 +73,26 @@ void test_asimd_move( char* test_name, libxsmm_generated_code* mycode, unsigned 
   dump_code_buffer( mycode, test_name );
 }
 
+void test_asimd_gpr_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  int simd[4] = {LIBXSMM_AARCH64_ASIMD_WIDTH_B, LIBXSMM_AARCH64_ASIMD_WIDTH_H, LIBXSMM_AARCH64_ASIMD_WIDTH_S, LIBXSMM_AARCH64_ASIMD_WIDTH_D};
+  unsigned char v;
+  unsigned char g;
+  unsigned char w;
+  char index = 1;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (g = 0; g < 64; ++g ) {
+    for (v = 0; v < 32; ++v ) {
+      for (w = 0; w < 4; ++w ) {
+        libxsmm_aarch64_instruction_asimd_gpr_move( mycode, instr, g, v, index, simd[w] );
+      }
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 void test_asimd_struct_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
   unsigned char b;
   unsigned char o;
@@ -422,6 +442,9 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_move( "asimd_mov_STR_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF );
   test_asimd_move( "asimd_mov_STR_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST );
   test_asimd_move( "asimd_mov_STR_I_PRE",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_PRE );
+
+  test_asimd_gpr_move( "asimd_mov_MOV_G_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V );
+  test_asimd_gpr_move( "asimd_mov_UMOV_V_G",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G );
 
   test_asimd_struct_move( "asimd_mov_LD1R", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R );
   test_asimd_struct_move( "asimd_mov_LD1R_R_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST );
