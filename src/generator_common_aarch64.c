@@ -136,6 +136,56 @@ void libxsmm_generator_load_store_partial_vreg_advgp_aarch64_asimd( libxsmm_gene
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_brdcast_partial_vreg_advgp_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                                    const unsigned int      i_gp_reg_addr,
+                                                                    const unsigned int      i_gp_reg_scratch,
+                                                                    const unsigned int      i_vec_reg,
+                                                                    const unsigned int      i_datatype_size,
+                                                                    const unsigned int      i_masked_elems,
+                                                                    const unsigned int      i_is_store ) {
+
+  unsigned int l_move_instr = LIBXSMM_AARCH64_INSTR_ASIMD_LD1R;
+  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+
+  if ( i_masked_elems == 1 ) {
+
+      libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_POST,
+                                            i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 0,
+                                            0x1f & i_gp_reg_scratch );
+
+    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                i_gp_reg_scratch, i_vec_reg, 1, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+  } else if ( i_masked_elems == 2 ) {
+      libxsmm_aarch64_instruction_asimd_struct_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
+                                                      i_gp_reg_addr, 0, i_vec_reg,
+                                                      (i_datatype_size == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+
+      libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_POST,
+                                            LIBXSMM_AARCH64_GP_REG_XZR, LIBXSMM_AARCH64_GP_REG_UNDEF, 8,
+                                            i_gp_reg_scratch );
+
+    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                i_gp_reg_scratch, i_vec_reg, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+  } else if ( i_masked_elems == 3 ) {
+
+      libxsmm_aarch64_instruction_asimd_struct_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
+                                                      i_gp_reg_addr, 0, i_vec_reg,
+                                                      (i_datatype_size == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+      libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_POST,
+                                            LIBXSMM_AARCH64_GP_REG_XZR, LIBXSMM_AARCH64_GP_REG_UNDEF, 4,
+                                            0x1f & i_gp_reg_scratch );
+      libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                  i_gp_reg_scratch, i_vec_reg, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+  } else {
+      libxsmm_aarch64_instruction_asimd_struct_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
+                                                      i_gp_reg_addr, 0, i_vec_reg,
+                                                      (i_datatype_size == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+  }
+}
+
+
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_load_2dregblock_aarch64_asimd( libxsmm_generated_code* io_generated_code,
                                                       const unsigned int      i_gp_reg_addr,
                                                       const unsigned int      i_gp_reg_scratch,
