@@ -53,6 +53,25 @@ void libxsmm_generator_loop_footer_aarch64( libxsmm_generated_code*     io_gener
                                             const unsigned int          i_loop_blocking );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                             const unsigned int      i_gp_reg_addr,
+                                                             const unsigned int      i_gp_reg_scratch,
+                                                             const unsigned int      i_vec_reg,
+                                                             const unsigned int      i_datatype_size,
+                                                             const unsigned int      i_masked_elems,
+                                                             const unsigned int      i_adv_gpr,
+                                                             const unsigned int      i_is_store );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                            const unsigned int      i_gp_reg_addr,
+                                                            const unsigned int      i_gp_reg_scratch,
+                                                            const unsigned int      i_vec_reg,
+                                                            const unsigned int      i_datatype_size,
+                                                            const unsigned int      i_masked_elems,
+                                                            const unsigned int      i_adv_gpr );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_load_2dregblock_aarch64_asimd( libxsmm_generated_code* io_generated_code,
                                                       const unsigned int      i_gp_reg_addr,
                                                       const unsigned int      i_gp_reg_scratch_a,
