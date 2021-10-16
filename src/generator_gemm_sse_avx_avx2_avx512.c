@@ -934,7 +934,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_m
         return 28;
       }
       /* handle bf16 */
-      if ( ( i_arch < LIBXSMM_X86_AVX512_VL256_CPX ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+      if ( ( i_arch < LIBXSMM_X86_AVX512_CPX ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && ( i_arch != LIBXSMM_X86_AVX512_VL256_CPX ) ) ) {
         return 28;
       }
       if ( ( (i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
