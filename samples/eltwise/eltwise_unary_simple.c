@@ -284,7 +284,8 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   /* init in */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ldi; ++j ) {
-      in[(i*ldi)+j] = (float)libxsmm_rng_f64();
+//      in[(i*ldi)+j] = (float)libxsmm_rng_f64();
+      in[(i*ldi)+j] = (float)libxsmm_rng_f64() - 5.0;
     }
   }
 
@@ -365,12 +366,12 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   }
   unary_kernel( &unary_param );
 
-#if 0
+#if 1
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      if ( unequal_fp32_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j])  ) {
+      // if ( unequal_fp32_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j])  ) {
         printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-      }
+      // }
     }
   }
 #endif
