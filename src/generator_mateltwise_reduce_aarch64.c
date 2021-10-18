@@ -530,10 +530,11 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   unsigned int im, m, n, m_trips, use_m_masking, compute_squared_vals_reduce, compute_plain_vals_reduce;
   unsigned int reduce_instr = 0, hreduce_instr = 0;
   unsigned int reg_sum = 31, reg_sum_squared = 30;
+  unsigned int aux_vreg = 0;
   unsigned int cur_vreg = 0;
   unsigned int vlen = 4;
   unsigned int available_vregs = 30;
-  unsigned int mask_reg = 0;
+  unsigned int mask_count = 0;
   unsigned int flag_reduce_elts = ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
                                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD) ||
                                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX)) ? 1 : 0;
@@ -543,8 +544,6 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
                                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD) ||
                                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD)) ? 1 : 0;
   unsigned int flag_reduce_op_max = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ? 1 : 0;
-
-  LIBXSMM_UNUSED( mask_reg );
 
   /* Some rudimentary checking of M, N and LDs*/
   if ( i_mateltwise_desc->m > i_mateltwise_desc->ldi ) {
@@ -613,25 +612,23 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   im = 0;
 
   if (use_m_masking == 1) {
-    printf("Support for m %% 4 == 0 cases\n");
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
+    mask_count = m % vlen;
   }
-#if 0
+
   if ((use_m_masking > 0) && ( flag_reduce_op_max > 0 )) {
     aux_vreg = available_vregs - 1;
     available_vregs--;
-    libxsmm_generator_load_vreg_minus_infinity(io_generated_code, 'y', LIBXSMM_X86_GP_REG_RAX, aux_vreg);
+    if (mask_count == 1) {
+      unsigned int mask_array[4] = { 0x0, 0xff800000, 0xff800000, 0xff800000};
+      libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, aux_vreg,  i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_X12, mask_array, 0 );
+    } else if (mask_count == 2) {
+      unsigned int mask_array[4] = { 0x0, 0x0, 0xff800000, 0xff800000};
+      libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, aux_vreg,  i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_X12, mask_array, 0 );
+    } else if (mask_count == 3) {
+      unsigned int mask_array[4] = { 0x0, 0x0, 0x0, 0xff800000};
+      libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, aux_vreg,  i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_X12, mask_array, 0 );
+    }
   }
-
-  libxsmm_generator_mateltwise_initialize_avx_mask(io_generated_code, mask_out, 1);
-  /* Calculate input mask in case we see m_masking */
-  if (use_m_masking == 1) {
-    mask_reg = available_vregs-1;
-    libxsmm_generator_mateltwise_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
-    available_vregs--;
-  }
-#endif
 
   if (n > 1) {
     /* open n loop */
@@ -644,27 +641,11 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
       libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
                 reg_sum, reg_sum, 0, reg_sum, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
     } else if ( flag_reduce_op_max > 0 ) {
-      libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF, i_gp_reg_mapping->gp_reg_in, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, reg_sum, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-#if 0
-      libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-          vmove_instruction_in,
-          i_gp_reg_mapping->gp_reg_in,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          0,
-          vname_in,
-          reg_sum, ((use_m_masking == 1) && (im == (m_trips-1))) ? 1 : 0, ((use_m_masking == 1) && (im == (m_trips-1))) ? mask_reg : 0, 0);
-
-      /* If we have remainder, then we want to blend in -INF for the zero'ed out entries */
-      if ((use_m_masking == 1) && (im == (m_trips-1))) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
-                  LIBXSMM_X86_INSTR_VBLENDVPS,
-                  'y',
-                  reg_sum,
-                  aux_vreg,
-                  reg_sum,
-                  0, 0, 0, (mask_reg) << 4);
+      libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( io_generated_code, i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0,
+                                                             reg_sum, i_micro_kernel_config->datatype_size_in, ((im == m_trips-1) && (use_m_masking > 0)) ? mask_count : 0, 0, 0);
+      if ((use_m_masking == 1) && (im == m_trips - 1)) {
+        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V, aux_vreg, reg_sum, 0, reg_sum, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
       }
-#endif
     }
   }
 
@@ -675,30 +656,13 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
 
   for (im = 0; im < m_trips; im++) {
     cur_vreg = im % available_vregs;
-    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
-                                                i_gp_reg_mapping->gp_reg_in, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
-                                                cur_vreg,
-                                                LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-#if 0
-    libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-        vmove_instruction_in,
-        i_gp_reg_mapping->gp_reg_in,
-        LIBXSMM_X86_GP_REG_UNDEF, 0,
-        im * vlen * i_micro_kernel_config->datatype_size_in,
-        vname_in,
-        cur_vreg, ((use_m_masking == 1) && (im == (m_trips-1))) ? 1 : 0, ((use_m_masking == 1) && (im == (m_trips-1))) ? mask_reg : 0, 0 );
 
-    /* If we have remainder, then we want to blend in -INF for the zero'ed out entries */
-    if ( (flag_reduce_op_max > 0) && (im == m_trips-1) && (use_m_masking > 0)) {
-      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
-                LIBXSMM_X86_INSTR_VBLENDVPS,
-                'y',
-                cur_vreg,
-                aux_vreg,
-                cur_vreg,
-                0, 0, 0, (mask_reg) << 4);
+    libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( io_generated_code, i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0,
+        cur_vreg, i_micro_kernel_config->datatype_size_in, ((im == m_trips-1) && (use_m_masking > 0)) ? mask_count : 0, 1, 0);
+
+    if ((use_m_masking == 1) && (im == m_trips - 1) && (flag_reduce_op_max > 0)) {
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V, aux_vreg, cur_vreg, 0, cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
     }
-#endif
 
     if ( compute_plain_vals_reduce > 0 ) {
       libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_instr, cur_vreg, reg_sum, 0, reg_sum, (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
@@ -724,7 +688,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
 
   if (n > 1) {
     /* Adjust input and output pointer */
-    int extra_ld_bytes  = i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in - m_trips * 16;
+    int extra_ld_bytes  = i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in - (m_trips * 16 - use_m_masking * (vlen-mask_count) * 4);
     if (extra_ld_bytes > 0) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
           i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in, extra_ld_bytes );
