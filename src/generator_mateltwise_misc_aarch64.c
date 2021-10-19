@@ -34,25 +34,23 @@ void libxsmm_generator_mn_code_block_replicate_col_var_aarch64( libxsmm_generate
   unsigned int im;
   int extra_bytes_ldo = 0;
 
-  LIBXSMM_UNUSED(i_use_masking);
-  LIBXSMM_UNUSED(mask_inout);
-  LIBXSMM_UNUSED(vlen);
-
   if (m_trips_loop > 1) {
     libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, m_trips_loop);
   }
 
   for (im = 0; im < m_unroll_factor; im++) {
-    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST, i_gp_reg_mapping->gp_reg_in, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, im, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+    unsigned int use_masking = ((im == m_unroll_factor - 1) && (i_use_masking == 1)) ? 1 : 0;
+    libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( io_generated_code, i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, im, i_micro_kernel_config->datatype_size_in, (use_masking > 0) ? mask_inout : 0, 1, 0);
   }
 
   libxsmm_generator_loop_header_gp_reg_bound_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, i_gp_reg_mapping->gp_reg_n );
 
   for (im = 0; im < m_unroll_factor; im++) {
-    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST, i_gp_reg_mapping->gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, im, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+    unsigned int use_masking = ((im == m_unroll_factor - 1) && (i_use_masking == 1)) ? 1 : 0;
+    libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( io_generated_code, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, im, i_micro_kernel_config->datatype_size_out, (use_masking > 0) ? mask_inout : 0, 1, 1);
   }
 
-  extra_bytes_ldo = i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out - 16 * m_unroll_factor;
+  extra_bytes_ldo = i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out - (16 * m_unroll_factor - i_use_masking * (vlen-mask_inout) *4);
   if (extra_bytes_ldo > 0) {
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out, (unsigned long long)extra_bytes_ldo );
   }
@@ -116,25 +114,8 @@ void libxsmm_generator_replicate_col_var_aarch64_microkernel( libxsmm_generated_
   peeled_m_trips    = 0;
 
   if (use_m_masking == 1) {
-    printf("Support for m %% 4 == 0 cases\n");
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
+    mask_inout = m % vlen;
   }
-
-#if 0
-  if (use_m_masking == 1) {
-    if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
-      unsigned int precision = (LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ? LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) : LIBXSMM_DATATYPE_F32  ;
-      mask_inout = 1;
-      mask_out_count = vlen - (m % vlen);
-      libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_inout, mask_out_count, precision);
-    } else {
-      mask_inout = 15;
-      libxsmm_generator_mateltwise_initialize_avx_mask(io_generated_code, mask_inout, m % vlen);
-      max_m_unrolling--;
-    }
-  }
-#endif
 
   /* In this case we have to generate a loop for m */
   if (m_unroll_factor > max_m_unrolling) {
