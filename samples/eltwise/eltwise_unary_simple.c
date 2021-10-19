@@ -284,7 +284,7 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   /* init in */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ldi; ++j ) {
-     in[(i*ldi)+j] = (float)libxsmm_rng_f64();
+      in[(i*ldi)+j] = (float)libxsmm_rng_f64();
     }
   }
 
