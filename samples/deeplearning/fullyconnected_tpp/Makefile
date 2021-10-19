@@ -46,8 +46,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/layer_example_f32
-#$(OUTDIR)/layer_example_bf16_amx $(OUTDIR)/layer_example_bf16
+XFILES := $(OUTDIR)/layer_example_f32 $(OUTDIR)/layer_example_bf16_amx $(OUTDIR)/layer_example_bf16
 
 .PHONY: all
 all: $(XFILES)
