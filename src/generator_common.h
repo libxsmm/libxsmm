@@ -793,6 +793,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int fused_bcolbias;
   unsigned int fused_scolbias;
   unsigned int fused_relu;
+  unsigned int fused_relu_nobitmask;
   unsigned int fused_relu_bwd;
   unsigned int fused_sigmoid;
   unsigned int overwrite_C;
