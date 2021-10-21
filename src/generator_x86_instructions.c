@@ -1495,6 +1495,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPADDSB:
     case LIBXSMM_X86_INSTR_VPSUBD:
     case LIBXSMM_X86_INSTR_VPMAXSD:
+    case LIBXSMM_X86_INSTR_VPMAXSW:
     case LIBXSMM_X86_INSTR_VPMINSD:
     case LIBXSMM_X86_INSTR_VPDPBUSD:
     case LIBXSMM_X86_INSTR_VPDPBUSDS:
@@ -1982,6 +1983,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPADDSB:
     case LIBXSMM_X86_INSTR_VPSUBD:
     case LIBXSMM_X86_INSTR_VPMAXSD:
+    case LIBXSMM_X86_INSTR_VPMAXSW:
     case LIBXSMM_X86_INSTR_VPMINSD:
     case LIBXSMM_X86_INSTR_V4FMADDPS:
     case LIBXSMM_X86_INSTR_V4FNMADDPS:
@@ -2306,6 +2308,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
     case LIBXSMM_X86_INSTR_VRCP14PS:
     case LIBXSMM_X86_INSTR_VMOVDQU64:
     case LIBXSMM_X86_INSTR_VPMAXSD:
+    case LIBXSMM_X86_INSTR_VPMAXSW:
     case LIBXSMM_X86_INSTR_VPMINSD:
     case LIBXSMM_X86_INSTR_VSUBPD:
     case LIBXSMM_X86_INSTR_VPADDD:
