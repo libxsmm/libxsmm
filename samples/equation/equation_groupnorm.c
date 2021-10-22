@@ -74,8 +74,8 @@ void tpp_groupnorm_fwd_fp32(long NP, long CP, long HW, long CB, long G, long CI,
 
   LIBXSMM_VLA_DECL(4, float, inp, pinp, CP, HW, CB);            /* [NP, CP, HW, CB] */
   LIBXSMM_VLA_DECL(4, float, out, pout, CP, HW, CB);
-  LIBXSMM_VLA_DECL(2, float, gamma, pgamma, CB);    // [CP,CB]
-  LIBXSMM_VLA_DECL(2, float, beta, pbeta, CB);      // [CP,CB]
+  LIBXSMM_VLA_DECL(2, float, gamma, pgamma, CB);                // [CP,CB]
+  LIBXSMM_VLA_DECL(2, float, beta, pbeta, CB);                  // [CP,CB]
 
   int np, group_size;
   group_size = (CP*CB)/G;
@@ -598,195 +598,6 @@ void tpp_groupnorm_fwd_bf16(long NP, long CP, long HW, long CB, long G, long CI,
   }
 }
 
-// void tpp_groupnorm_bwd_fp32(long NP, long CP, long HW, long CB, long G, long num_HW_blocks, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta,
-//     libxsmm_matrix_eqn_function dgamma_func, libxsmm_matrix_eqn_function dbeta_func, libxsmm_matrix_eqn_function din_func, float eps,
-//     libxsmm_meltwfunction_unary all_zero_kernel, libxsmm_meltwfunction_binary add_kernel, libxsmm_meltwfunction_unary copy_kernel) {
-
-//   int group_size;
-//   group_size = (CP*CB)/G;
-
-//   const float scale = 1.0f / ((float)group_size*HW);
-
-//   LIBXSMM_VLA_DECL(4, float, din, pdin, CP, HW, CB);
-//   LIBXSMM_VLA_DECL(4, float, inp, pinp, CP, HW, CB);
-//   LIBXSMM_VLA_DECL(4, float, dout, pdout, CP, HW, CB);
-//   LIBXSMM_VLA_DECL(2, float, gamma, pgamma, CB);
-//   // LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, CB);
-//   // LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, CB);
-
-//   LIBXSMM_ALIGNED(float dgamma_NP[NP*CP*CB], 64);
-//   LIBXSMM_ALIGNED(float dbeta_NP[NP*CP*CB], 64);
-
-//   #pragma omp parallel
-//   {
-//     LIBXSMM_ALIGNED(float a[CB], 64);
-//     LIBXSMM_ALIGNED(float b[CB], 64);
-//     LIBXSMM_ALIGNED(float c[CB], 64);
-//     int np, cp;
-
-//     #pragma omp for collapse(2)
-//     for (cp = 0; cp < CP; cp++) {
-//       for (np = 0; np < NP; np++) {
-
-//         int g, hwb, cb;
-
-//         libxsmm_matrix_eqn_param eqn_param;
-//         libxsmm_matrix_arg arg_array[8];
-
-//         LIBXSMM_ALIGNED(float lcl_dgamma_ptr[CB], 64);
-//         LIBXSMM_ALIGNED(float lcl_dbeta_ptr[CB], 64);
-
-//         float *dgamma_ncp_ptr = &dgamma_NP[cp*NP*CB + np*CB];
-//         float *dbeta_ncp_ptr = &dbeta_NP[cp*NP*CB + np*CB];
-
-//         libxsmm_meltw_unary_param all_zero_param;
-//         all_zero_param.out.primary = lcl_dgamma_ptr;
-//         all_zero_kernel(&all_zero_param);
-//         all_zero_param.out.primary = lcl_dbeta_ptr;
-//         all_zero_kernel(&all_zero_param);
-
-//         // for(g = 0; g < G; g++){                                                  /* compute a and b for each channel from group means and variance */
-//         //   for(j = 0; j < group_size; j++){
-//         //     a[g*group_size + j] = 1.0f / ((float)sqrt(var[np*G + g] + eps));
-//         //     b[g*group_size + j] = -a[g*group_size + j]*mean[np*G + + g];
-//         //   }
-//         // }
-
-//         for(cb = 0; cb < CB; cb++){
-//           g = (cp*CB + cb)/group_size;                              /* determine current group */
-//           a[cb] = 1.0f / ((float)sqrt(var[np*G + g] + eps));
-//           b[cb] = -a[cb]*mean[np*G + g];
-//         }
-
-//         arg_array[1].primary = a;
-//         arg_array[2].primary = b;
-//         arg_array[4].primary = lcl_dgamma_ptr;
-//         arg_array[5].primary = lcl_dbeta_ptr;
-//         // arg_array[4].primary = &dgamma_NP[np*CP*CB + cp*CB];
-//         // arg_array[5].primary = &dbeta_NP[np*CP*CB + cp*CB];
-//         arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-
-//         for(hwb=0; hwb < num_HW_blocks; hwb++){
-
-//           arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-//           arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-//           eqn_param.inputs = arg_array;
-
-//           eqn_param.output.primary = lcl_dgamma_ptr;
-//           dgamma_func(&eqn_param);
-
-//           eqn_param.output.primary = lcl_dbeta_ptr;
-//           dbeta_func(&eqn_param);
-//         }
-
-//         libxsmm_meltw_unary_param copy_param;
-//         copy_param.in.primary = lcl_dgamma_ptr;
-//         copy_param.out.primary = dgamma_ncp_ptr;
-//         copy_kernel(&copy_param);
-
-//         copy_param.in.primary = lcl_dbeta_ptr;
-//         copy_param.out.primary = dbeta_ncp_ptr;
-//         copy_kernel(&copy_param);
-//       }
-//     }
-
-//     #pragma omp barrier
-
-//     #pragma omp for
-//     for (cp = 0; cp < CP; cp++) {
-//       libxsmm_meltw_unary_param all_zero_param;
-//       all_zero_param.out.primary = &pdgamma[cp*CB];
-//       all_zero_kernel(&all_zero_param);
-//       all_zero_param.out.primary = &pdbeta[cp*CB];
-//       all_zero_kernel(&all_zero_param);
-
-//       /* #pragma omp simd */
-//       /* for (int cb = 0; cb < CB; cb++) { */
-//       /*   pdgamma[cp*CB + cb] = 0.0f; */
-//       /*   pdbeta[cp*CB + cb] = 0.0f; */
-//       /* } */
-
-//       libxsmm_meltw_binary_param add_param;
-//       int ni;
-//       for(ni = 0; ni < NP; ni++){
-
-//         add_param.in0.primary = &pdgamma[cp*CB];
-//         add_param.in1.primary = &dgamma_NP[cp*NP*CB + ni*CB];
-//         add_param.out.primary = &pdgamma[cp*CB];
-//         add_kernel(&add_param);
-
-//         add_param.in0.primary = &pdbeta[cp*CB];
-//         add_param.in1.primary = &dbeta_NP[cp*NP*CB + ni*CB];
-//         add_param.out.primary = &pdbeta[cp*CB];
-//         add_kernel(&add_param);
-
-//         /* #pragma omp simd */
-//         /* for (int cb = 0; cb < CB; cb++) { */
-//         /*   pdgamma[cp*CB + cb] += dgamma_N[cp*N*CB + n*CB + cb];  */
-//         /*   pdbeta[cp*CB + cb] += dbeta_N[cp*N*CB + n*CB + cb];  */
-//         /* } */
-//       }
-//     }
-
-//     /* b = (db * mean[nb] - ds) * a * a * a * scale; */
-//     /* c = -b * mean[nb] - db * a * scale; */
-
-//     // for(g = 0; g < G; g++){                                                  /* compute b and c for each channel from group means and variance */
-//     //   float gds = 0.0f;
-//     //   float gdb = 0.0f;
-//     //   for(j = 0; j < group_size; j++){
-//     //     gds += ds[g*group_size + j];                                        /* Group ds and db calculation */
-//     //     gdb += db[g*group_size + j];
-//     //   }
-//     //   for(j = 0; j < group_size; j++){
-//     //     b[g*group_size + j] = (gdb * mean[np*G + g] - gds) * a[g*group_size + j] * a[g*group_size + j] * a[g*group_size + j] * scale;
-//     //     c[g*group_size + j] = -b[g*group_size + j] * mean[np*G + g] - gdb * a[g*group_size + j] * scale;
-//     //   }
-//     // }
-
-//     #pragma omp for collapse(2)
-//     for (np = 0; np < NP; np++){
-//       for (cp = 0; cp < CP; cp++) {
-//         int hwb, cb, g;
-//         libxsmm_matrix_eqn_param eqn_param;
-//         libxsmm_matrix_arg arg_array[8];
-
-//         for(cb = 0; cb < CB; cb++){
-//           g = (cp*CB + cb)/group_size;                              /* determine current group */
-//           a[cb] = pgamma[cp*CB + cb] / ((float)sqrt(var[np*G + g] + eps));                            /* a = gamma_ptr[CB] * brstd_ptr[CB] */
-//           b[cb] = -a[cb] * scale * pdgamma[cp*CB + cb] / ((float)sqrt(var[np*G + g] + eps));          /* b = gamma_ptr[CB] * brstd_ptr[CB] * del_gamma_ptr[v] * brstd_ptr[CB] * recp_nhw */
-//           c[cb] = -b[cb] * mean[np*G + g] - a[cb] * scale * pdbeta[cp*CB + cb];                      /* c = -gamma_ptr[CB] * brstd_ptr[CB] * recp_nhw * del_beta_ptr[CB] + gamma_ptr[CB] * brstd_ptr[CB] * recp_nhw * bmean_ptr[CB] * del_gamma_ptr[CB] * brstd_ptr[CB]) */
-//         }
-
-//         arg_array[1].primary = a;
-//         arg_array[2].primary = b;
-//         arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-//         arg_array[7].primary = c;
-
-//         for(hwb=0; hwb < num_HW_blocks; hwb++){
-//           arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-//           arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-//           eqn_param.inputs = arg_array;
-//           eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-//           din_func(&eqn_param);
-//         }
-//       }
-//     }
-
-//     // int cp;
-//     // #pragma omp for
-//     // for (cp = 0; cp < CP; cp++) {
-//     //   for (np=0; np < NP; np++ ) {
-//     //     int cb;
-//     //     for(cb = 0; cb < CB; cb++){
-//     //       LIBXSMM_VLA_ACCESS(2, dgamma, cp, cb, CB) += dgamma_NP[np*CP*CB + cp*CB + cb];
-//     //       LIBXSMM_VLA_ACCESS(2, dbeta, cp, cb, CB) += dbeta_NP[np*CP*CB + cp*CB + cb];
-//     //     }
-//     //   }
-//     // }
-//   }
-// }
-
 
 void tpp_groupnorm_bwd_fp32(long NP, long CP, long HW, long CB, long G, long num_HW_blocks, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta,
     libxsmm_matrix_eqn_function dgamma_func, libxsmm_matrix_eqn_function dbeta_func, libxsmm_matrix_eqn_function db_func, libxsmm_matrix_eqn_function ds_func, libxsmm_matrix_eqn_function din_func, float eps) {
@@ -806,104 +617,215 @@ void tpp_groupnorm_bwd_fp32(long NP, long CP, long HW, long CB, long G, long num
   LIBXSMM_ALIGNED(float dgamma_NP[NP*CP*CB], 64);
   LIBXSMM_ALIGNED(float dbeta_NP[NP*CP*CB], 64);
 
-  #pragma omp parallel
-  {
-    LIBXSMM_ALIGNED(float a[CP*CB], 64);
-    LIBXSMM_ALIGNED(float b[CP*CB], 64);
-    LIBXSMM_ALIGNED(float c[CP*CB], 64);
-    LIBXSMM_ALIGNED(float ds[CP*CB], 64);
-    LIBXSMM_ALIGNED(float db[CP*CB], 64);
-    int np;
 
-    #pragma omp for
-    for (np = 0; np < NP; np++) {
-      int j, g, cp, hwb;
+  if (group_size <= CB){
+    #pragma omp parallel
+    {
+      LIBXSMM_ALIGNED(float a[CB], 64);
+      LIBXSMM_ALIGNED(float b[CB], 64);
+      LIBXSMM_ALIGNED(float c[CB], 64);
+      LIBXSMM_ALIGNED(float ds[CB], 64);
+      LIBXSMM_ALIGNED(float db[CB], 64);
 
-      libxsmm_matrix_eqn_param eqn_param;
-      libxsmm_matrix_arg arg_array[10];
-      eqn_param.inputs = arg_array;
+      int np, cp;
+      #pragma omp for collapse(2)
+      for (np = 0; np < NP; np++){
+        for (cp = 0; cp < CP; cp++) {
+          int j, g, hwb, lg;
 
-      for(j = 0; j < CP*CB; j++){
-        dgamma_NP[np*CP*CB + j] = 0.0f;
-        dbeta_NP[np*CP*CB + j] = 0.0f;
-      }
+          libxsmm_matrix_eqn_param eqn_param;
+          libxsmm_matrix_arg arg_array[10];
+          eqn_param.inputs = arg_array;
 
-      for(g = 0; g < G; g++){                                                  /* compute a and b for each channel from group means and variance */
-        for(j = 0; j < group_size; j++){
-          a[g*group_size + j] = 1.0f / ((float)sqrt(var[np*G + g] + eps));
-          b[g*group_size + j] = -a[g*group_size + j]*mean[np*G + g];
-          ds[g*group_size + j] = 0.0f;
-          db[g*group_size + j] = 0.0f;
+          for(j = 0; j < CB; j++){
+            dgamma_NP[np*CP*CB + cp*CB + j] = 0.0f;
+            dbeta_NP[np*CP*CB + cp*CB + j] = 0.0f;
+          }
+
+
+          for(g = (cp*CB)/group_size; g < ((cp+1)*CB)/group_size; g++){                                                  /* compute a and b for each channel from group means and variance */
+            lg = g - (cp*CB)/group_size;
+            for(j = 0; j < group_size; j++){
+              a[lg*group_size + j] = 1.0f / ((float)sqrt(var[np*G + g] + eps));
+              b[lg*group_size + j] = -a[lg*group_size + j]*mean[np*G + g];
+              ds[lg*group_size + j] = 0.0f;
+              db[lg*group_size + j] = 0.0f;
+            }
+          }
+
+          // for (cp = 0; cp < CP; cp++) {
+            arg_array[1].primary = a;
+            arg_array[2].primary = b;
+            arg_array[4].primary = &dgamma_NP[np*CP*CB + cp*CB];
+            arg_array[5].primary = &dbeta_NP[np*CP*CB + cp*CB];
+            arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+            arg_array[8].primary = ds;
+            arg_array[9].primary = db;
+
+            for(hwb=0; hwb < num_HW_blocks; hwb++){
+              arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+              arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+
+              eqn_param.output.primary = ds;
+              ds_func(&eqn_param);
+
+              eqn_param.output.primary = db;
+              db_func(&eqn_param);
+
+              eqn_param.output.primary = &dgamma_NP[np*CP*CB + cp*CB];
+              dgamma_func(&eqn_param);
+
+              eqn_param.output.primary = &dbeta_NP[np*CP*CB + cp*CB];
+              dbeta_func(&eqn_param);
+            }
+          // }
+
+          /* b = (db * mean[nb] - ds) * a * a * a * scale; */
+          /* c = -b * mean[nb] - db * a * scale; */
+
+          for(g = (cp*CB)/group_size; g < ((cp+1)*CB)/group_size; g++){                                                  /* compute b and c for each channel from group means and variance */
+            lg = g - (cp*CB)/group_size;
+            float gds = 0.0f;
+            float gdb = 0.0f;
+            for(j = 0; j < group_size; j++){
+              gds += ds[lg*group_size + j];                                        /* Group ds and db calculation */
+              gdb += db[lg*group_size + j];
+            }
+            for(j = 0; j < group_size; j++){
+              b[lg*group_size + j] = (gdb * mean[np*G + g] - gds) * a[lg*group_size + j] * a[lg*group_size + j] * a[lg*group_size + j] * scale;
+              c[lg*group_size + j] = -b[lg*group_size + j] * mean[np*G + g] - gdb * a[lg*group_size + j] * scale;
+            }
+          }
+
+          // for (cp = 0; cp < CP; cp++) {
+
+            arg_array[1].primary = a;
+            arg_array[2].primary = b;
+            arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+            arg_array[7].primary = c;
+
+            for(hwb=0; hwb < num_HW_blocks; hwb++){
+              arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+              arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+              eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+              din_func(&eqn_param);
+            }
+          // }
         }
       }
 
+      #pragma omp for
       for (cp = 0; cp < CP; cp++) {
-        arg_array[1].primary = &a[cp*CB];
-        arg_array[2].primary = &b[cp*CB];
-        arg_array[4].primary = &dgamma_NP[np*CP*CB + cp*CB];
-        arg_array[5].primary = &dbeta_NP[np*CP*CB + cp*CB];
-        arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-        arg_array[8].primary = &ds[cp*CB];
-        arg_array[9].primary = &db[cp*CB];
-
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-
-          eqn_param.output.primary = &ds[cp*CB];
-          ds_func(&eqn_param);
-
-          eqn_param.output.primary = &db[cp*CB];
-          db_func(&eqn_param);
-
-          eqn_param.output.primary = &dgamma_NP[np*CP*CB + cp*CB];
-          dgamma_func(&eqn_param);
-
-          eqn_param.output.primary = &dbeta_NP[np*CP*CB + cp*CB];
-          dbeta_func(&eqn_param);
-        }
-      }
-
-      /* b = (db * mean[nb] - ds) * a * a * a * scale; */
-      /* c = -b * mean[nb] - db * a * scale; */
-
-      for(g = 0; g < G; g++){                                                  /* compute b and c for each channel from group means and variance */
-        float gds = 0.0f;
-        float gdb = 0.0f;
-        for(j = 0; j < group_size; j++){
-          gds += ds[g*group_size + j];                                        /* Group ds and db calculation */
-          gdb += db[g*group_size + j];
-        }
-        for(j = 0; j < group_size; j++){
-          b[g*group_size + j] = (gdb * mean[np*G + g] - gds) * a[g*group_size + j] * a[g*group_size + j] * a[g*group_size + j] * scale;
-          c[g*group_size + j] = -b[g*group_size + j] * mean[np*G + g] - gdb * a[g*group_size + j] * scale;
-        }
-      }
-
-      for (cp = 0; cp < CP; cp++) {
-
-        arg_array[1].primary = &a[cp*CB];
-        arg_array[2].primary = &b[cp*CB];
-        arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-        arg_array[7].primary = &c[cp*CB];
-
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          din_func(&eqn_param);
+        for (np=0; np < NP; np++ ) {
+          int cb;
+          for(cb = 0; cb < CB; cb++){
+            LIBXSMM_VLA_ACCESS(2, dgamma, cp, cb, CB) += dgamma_NP[np*CP*CB + cp*CB + cb];
+            LIBXSMM_VLA_ACCESS(2, dbeta, cp, cb, CB) += dbeta_NP[np*CP*CB + cp*CB + cb];
+          }
         }
       }
     }
+  }
+  else{
+    #pragma omp parallel
+    {
+      LIBXSMM_ALIGNED(float a[CP*CB], 64);
+      LIBXSMM_ALIGNED(float b[CP*CB], 64);
+      LIBXSMM_ALIGNED(float c[CP*CB], 64);
+      LIBXSMM_ALIGNED(float ds[CP*CB], 64);
+      LIBXSMM_ALIGNED(float db[CP*CB], 64);
+      int np;
 
-    int cp;
-    #pragma omp for
-    for (cp = 0; cp < CP; cp++) {
-      for (np=0; np < NP; np++ ) {
-        int cb;
-        for(cb = 0; cb < CB; cb++){
-          LIBXSMM_VLA_ACCESS(2, dgamma, cp, cb, CB) += dgamma_NP[np*CP*CB + cp*CB + cb];
-          LIBXSMM_VLA_ACCESS(2, dbeta, cp, cb, CB) += dbeta_NP[np*CP*CB + cp*CB + cb];
+      #pragma omp for
+      for (np = 0; np < NP; np++) {
+        int j, g, cp, hwb;
+
+        libxsmm_matrix_eqn_param eqn_param;
+        libxsmm_matrix_arg arg_array[10];
+        eqn_param.inputs = arg_array;
+
+        for(j = 0; j < CP*CB; j++){
+          dgamma_NP[np*CP*CB + j] = 0.0f;
+          dbeta_NP[np*CP*CB + j] = 0.0f;
+        }
+
+        for(g = 0; g < G; g++){                                                  /* compute a and b for each channel from group means and variance */
+          for(j = 0; j < group_size; j++){
+            a[g*group_size + j] = 1.0f / ((float)sqrt(var[np*G + g] + eps));
+            b[g*group_size + j] = -a[g*group_size + j]*mean[np*G + g];
+            ds[g*group_size + j] = 0.0f;
+            db[g*group_size + j] = 0.0f;
+          }
+        }
+
+        for (cp = 0; cp < CP; cp++) {
+          arg_array[1].primary = &a[cp*CB];
+          arg_array[2].primary = &b[cp*CB];
+          arg_array[4].primary = &dgamma_NP[np*CP*CB + cp*CB];
+          arg_array[5].primary = &dbeta_NP[np*CP*CB + cp*CB];
+          arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+          arg_array[8].primary = &ds[cp*CB];
+          arg_array[9].primary = &db[cp*CB];
+
+          for(hwb=0; hwb < num_HW_blocks; hwb++){
+            arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+
+            eqn_param.output.primary = &ds[cp*CB];
+            ds_func(&eqn_param);
+
+            eqn_param.output.primary = &db[cp*CB];
+            db_func(&eqn_param);
+
+            eqn_param.output.primary = &dgamma_NP[np*CP*CB + cp*CB];
+            dgamma_func(&eqn_param);
+
+            eqn_param.output.primary = &dbeta_NP[np*CP*CB + cp*CB];
+            dbeta_func(&eqn_param);
+          }
+        }
+
+        /* b = (db * mean[nb] - ds) * a * a * a * scale; */
+        /* c = -b * mean[nb] - db * a * scale; */
+
+        for(g = 0; g < G; g++){                                                  /* compute b and c for each channel from group means and variance */
+          float gds = 0.0f;
+          float gdb = 0.0f;
+          for(j = 0; j < group_size; j++){
+            gds += ds[g*group_size + j];                                        /* Group ds and db calculation */
+            gdb += db[g*group_size + j];
+          }
+          for(j = 0; j < group_size; j++){
+            b[g*group_size + j] = (gdb * mean[np*G + g] - gds) * a[g*group_size + j] * a[g*group_size + j] * a[g*group_size + j] * scale;
+            c[g*group_size + j] = -b[g*group_size + j] * mean[np*G + g] - gdb * a[g*group_size + j] * scale;
+          }
+        }
+
+        for (cp = 0; cp < CP; cp++) {
+
+          arg_array[1].primary = &a[cp*CB];
+          arg_array[2].primary = &b[cp*CB];
+          arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+          arg_array[7].primary = &c[cp*CB];
+
+          for(hwb=0; hwb < num_HW_blocks; hwb++){
+            arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            din_func(&eqn_param);
+          }
+        }
+      }
+
+      int cp;
+      #pragma omp for
+      for (cp = 0; cp < CP; cp++) {
+        for (np=0; np < NP; np++ ) {
+          int cb;
+          for(cb = 0; cb < CB; cb++){
+            LIBXSMM_VLA_ACCESS(2, dgamma, cp, cb, CB) += dgamma_NP[np*CP*CB + cp*CB + cb];
+            LIBXSMM_VLA_ACCESS(2, dbeta, cp, cb, CB) += dbeta_NP[np*CP*CB + cp*CB + cb];
+          }
         }
       }
     }
@@ -1443,25 +1365,25 @@ int main( int argc, char* argv[] ) {
   if (datatype_mode == 0) {
 
     // scaler_groupnorm_fwd_fp32(NP, CP, HW, CB, G, inp, gamma, beta, mean, var, out, eps);
-    unit_test(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, eqn_out, func0C);
+    // unit_test(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, eqn_out, func0C);
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
-      unit_test(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, eqn_out, func0C);
+      // unit_test(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, eqn_out, func0C);
       // scaler_groupnorm_fwd_fp32(NP, CP, HW, CB, G, inp, gamma, beta, mean, var, out, eps);
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
     printf("Unit time FWD  = %.5g\n", ((double)(l_total)));
 
-    // tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, func0C, reduce_HW_kernel, reduce_HW_G_kernel, reduce_HW_CI_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
+    tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, func0C, reduce_HW_kernel, reduce_HW_G_kernel, reduce_HW_CI_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
-      // tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, func0C, reduce_HW_kernel, reduce_HW_G_kernel, reduce_HW_CI_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
+      tpp_groupnorm_fwd_fp32(NP, CP, HW, CB, G, CI, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, func00, func0C, reduce_HW_kernel, reduce_HW_G_kernel, reduce_HW_CI_kernel, reduce_rows_kernel, reduce_groups_kernel, all_zero_G_kernel, all_zero_kernel, add_kernel);
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
-    // printf("TPP groupnorm time FWD  = %.5g\n", ((double)(l_total2)));
-    // printf("Speedup FWD is %.5g\n", l_total/l_total2);
+    printf("TPP groupnorm time FWD  = %.5g\n", ((double)(l_total2)));
+    printf("Speedup FWD is %.5g\n", l_total/l_total2);
   } else if (datatype_mode == 1) {
 
     scaler_groupnorm_fwd_fp32(NP, CP, HW, CB, G, inp, gamma, beta, mean, var, out, eps);
@@ -1633,17 +1555,17 @@ int main( int argc, char* argv[] ) {
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
-    // printf("Scaler groupnorm time BWD = %.5g\n", ((double)(l_total)));
+    printf("Scaler groupnorm time BWD = %.5g\n", ((double)(l_total)));
 
-    // tpp_groupnorm_bwd_fp32(NP, CP, HW, CB, G, num_HW_blocks, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func11, func12, func13, func14, func15, eps);
+    tpp_groupnorm_bwd_fp32(NP, CP, HW, CB, G, num_HW_blocks, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func11, func12, func13, func14, func15, eps);
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
-      // tpp_groupnorm_bwd_fp32(NP, CP, HW, CB, G, num_HW_blocks, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func11, func12, func13, func14, func15, eps);
+      tpp_groupnorm_bwd_fp32(NP, CP, HW, CB, G, num_HW_blocks, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func11, func12, func13, func14, func15, eps);
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
-    // printf("TPP groupnorm time BWD = %.5g\n", ((double)(l_total2)));
-    // printf("Speedup BWD is %.5g\n", l_total/l_total2);
+    printf("TPP groupnorm time BWD = %.5g\n", ((double)(l_total2)));
+    printf("Speedup BWD is %.5g\n", l_total/l_total2);
   } else if (datatype_mode == 1) {
 
     scaler_groupnorm_bwd_fp32(NP, CP, HW, CB, G, dout, inp, mean, var, gamma, dinp, dgamma, dbeta, eps);
