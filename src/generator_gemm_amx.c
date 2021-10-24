@@ -930,13 +930,14 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   unsigned int reserved_mask_regs = 1;
   LIBXSMM_UNUSED(i_gp_reg_mapping);
 
-  i_micro_kernel_config->fused_bcolbias     = 0;
-  i_micro_kernel_config->fused_scolbias     = 0;
-  i_micro_kernel_config->fused_relu         = 0;
-  i_micro_kernel_config->fused_relu_bwd     = 0;
-  i_micro_kernel_config->fused_sigmoid      = 0;
-  i_micro_kernel_config->overwrite_C        = 0;
-  i_micro_kernel_config->vnni_format_C      = 0;
+  i_micro_kernel_config->fused_bcolbias       = 0;
+  i_micro_kernel_config->fused_scolbias       = 0;
+  i_micro_kernel_config->fused_relu           = 0;
+  i_micro_kernel_config->fused_relu_nobitmask = 0;
+  i_micro_kernel_config->fused_relu_bwd       = 0;
+  i_micro_kernel_config->fused_sigmoid        = 0;
+  i_micro_kernel_config->overwrite_C          = 0;
+  i_micro_kernel_config->vnni_format_C        = 0;
 
   /* TODO: Add support fror more fusions  */
   if ((i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT) || (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A) ||
@@ -946,6 +947,9 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
     }
     if ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_ACT_RELU) > 0) {
       i_micro_kernel_config->fused_relu = 1;
+    }
+    if ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_ACT_RELU_NOBITMASK) > 0) {
+      i_micro_kernel_config->fused_relu_nobitmask = 1;
     }
     if ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_ACT_RELU_BWD) > 0) {
       i_micro_kernel_config->fused_relu_bwd = 1;
@@ -976,7 +980,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   }
 
   /* Setup zmms to be reused throughout the kernel  */
-  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) ) {
+  if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) ) {
     i_micro_kernel_config->zero_reg = reserved_zmms;
     libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                              LIBXSMM_X86_INSTR_VPXORD,
