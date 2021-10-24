@@ -472,8 +472,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
 
-  unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
-  unsigned int l_breg_unique, l_base_acc_reg, l_ld_reg;
+  const unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
+  unsigned int l_breg_unique, l_base_acc_reg, l_base_ld_reg;
+
+  const libxsmm_aarch64_asimd_tupletype l_tuplet = (l_fp64) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S;
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
@@ -493,16 +495,18 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
     l_n_blocking = 1;
   } else if ( i_xgemm_desc->n == 2*l_micro_kernel_config.vector_length ) {
     l_n_blocking = 2;
+  } else if ( i_xgemm_desc->n == 4*l_micro_kernel_config.vector_length ) {
+    l_n_blocking = 4;
   } else {
-      free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
-      return;
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
   }
 
   /* Init config */
   l_breg_unique = 32 - l_n_blocking - 1;
   l_base_acc_reg = 32 - l_n_blocking;
-  l_ld_reg = l_base_acc_reg - 1;
+  l_base_ld_reg = l_base_acc_reg - 1;
 
   /* prerequisite */
   LIBXSMM_ASSERT(0 != i_values);
@@ -515,7 +519,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
   for ( l_m = 1; l_m < l_n_row_idx; l_m++ ) {
     l_hit = 0;
     /* search for the value */
-    for ( l_z = 0; l_z < l_unique; l_z++) {
+    for ( l_z = 0; l_z < l_unique; l_z++ ) {
       if ( /*l_unique_values[l_z] == i_values[l_m]*/!(l_unique_values[l_z] < fabs(i_values[l_m])) && !(l_unique_values[l_z] > fabs(i_values[l_m])) ) {
         l_unique_pos[l_m] = l_z;
         l_hit = 1;
@@ -531,7 +535,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
   }
 
   /* check that there are not too many unique values */
-  if ( l_unique > l_breg_unique) {
+  if ( l_unique > l_breg_unique ) {
     free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
     return;
@@ -560,16 +564,13 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
 
   /* load A into registers */
   for ( l_z = 0; l_z < l_unique; l_z++) {
-    libxsmm_aarch64_asimd_tupletype tt;
     unsigned long long imm;
 
     if ( l_fp64 ) {
-      tt = LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
       union { double f; unsigned long long i; } u;
       u.f = l_unique_values[l_z];
       imm = u.i;
     } else {
-      tt = LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S;
       union { float f; unsigned int i; } u;
       u.f = (float) l_unique_values[l_z];
       imm = (unsigned long long) u.i;
@@ -578,7 +579,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
     libxsmm_aarch64_instruction_broadcast_scalar_to_vec( io_generated_code,
                                                          l_z,
                                                          l_gp_reg_mapping.gp_reg_help_1,
-                                                         tt,
+                                                         l_tuplet,
                                                          imm );
   }
 
@@ -619,10 +620,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
                                                    l_n*l_micro_kernel_config.datatype_size_in*l_micro_kernel_config.vector_length );
         libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R,
                                                 l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, 0,
-                                                l_ld_reg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+                                                l_base_ld_reg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
         libxsmm_aarch64_instruction_asimd_compute( io_generated_code, fma_instruction,
-                                                   l_ld_reg, l_unique_reg, 0, l_acc_reg,
-                                                   (l_fp64) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+                                                   l_base_ld_reg, l_unique_reg, 0, l_acc_reg,
+                                                   l_tuplet);
       }
     }
     if (l_row_elements > 0) {
