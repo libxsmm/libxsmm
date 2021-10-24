@@ -9,15 +9,17 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+
 #include "common_edge_proxy.h"
 
+
 int main(int argc, char* argv[]) {
-  int M = atoi(argv[1]);
-  int N = atoi(argv[2]);
-  int K = atoi(argv[3]);
-  unsigned int N_CRUNS = atoi(argv[4]);
-  unsigned int REPS =    atoi(argv[5]);
-  char* l_csr_file =     argv[6];
+  int M = ( argc == 7 ) ? atoi(argv[1]) : 9;
+  int N = ( argc == 7 ) ? atoi(argv[2]) : 10;
+  int K = ( argc == 7 ) ? atoi(argv[3]) : 9;
+  unsigned int N_CRUNS = ( argc == 7 ) ? atoi(argv[4]) : 8;
+  unsigned int REPS =    ( argc == 7 ) ? atoi(argv[5]) : 1;
+  char* l_csr_file =     ( argc == 7 ) ?      argv[6]  : "file.csr";
 
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -155,7 +157,6 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-
   printf("max error: %f\n", l_max_error);
 
   printf("PERFDUMP,%s,%u,%i,%i,%i,%u,%u,%f,%f,%f\n", l_csr_file, REPS, M, N, K, l_elements, N * l_elements * N_CRUNS * 2, l_max_error, l_total, ((double)((double)REPS * (double)N * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
