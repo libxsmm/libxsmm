@@ -13,42 +13,10 @@
 #include "generator_gemm_common.h"
 #include "libxsmm_main.h"
 
-LIBXSMM_API_INTERN
-void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*        io_generated_code,
-                                               const char*                    i_routine_name,
-                                               const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  char l_new_code[512];
-  int l_max_code_length = 511;
-  int l_code_length = 0;
-
-  if ( io_generated_code->code_type > 1 ) {
-    return;
-  } else if ( io_generated_code->code_type == 1 ) {
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
-  } else {
-    /* selecting the correct signature */
-    if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-      if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
-      } else {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
-      }
-    } else {
-      if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
-      } else {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
-      }
-    }
-  }
-
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         io_generated_code,
                                                const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                               const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
                                                const double*                   i_values ) {
@@ -85,22 +53,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   }
 
   /* Check that the arch is supported */
-  if ( strcmp(i_arch, "knl") == 0 ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_MIC;
-  } else if ( strcmp(i_arch, "knm") == 0 ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_KNM;
-  } else if ( strcmp(i_arch, "skx") == 0 ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_CORE;
-  } else if ( strcmp(i_arch, "clx") == 0 ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_CLX;
-  } else if ( strcmp(i_arch, "cpx") == 0 ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_CPX;
-  } else if ( strcmp(i_arch, "spr") == 0 ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_SPR;
-  } else if ( strcmp(i_arch, "hsw") == 0 ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX2;
-  } else {
-    free(l_unique_values); free(l_unique_pos); free(l_unique_sgn);
+  if ( io_generated_code->arch < LIBXSMM_X86_AVX2 ) {
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
