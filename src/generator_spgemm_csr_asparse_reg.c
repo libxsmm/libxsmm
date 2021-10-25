@@ -464,7 +464,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
   unsigned int l_z;
   unsigned int l_row_elements;
   unsigned int l_unique;
-  unsigned int l_reg_num;
   unsigned int l_hit;
   unsigned int l_n_blocking;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
@@ -473,9 +472,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
 
   const unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
-  unsigned int l_breg_unique, l_base_acc_reg, l_base_ld_reg;
+  unsigned int l_reg_unique, l_base_acc_reg, l_base_ld_reg;
 
   const libxsmm_aarch64_asimd_tupletype l_tuplet = (l_fp64) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S;
+  const libxsmm_aarch64_asimd_width l_width = (l_fp64) ? LIBXSMM_AARCH64_ASIMD_WIDTH_D : LIBXSMM_AARCH64_ASIMD_WIDTH_S;
+  const unsigned int l_values_per_reg = (l_fp64) ? 2 : 4;
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
@@ -504,7 +505,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
   }
 
   /* Init config */
-  l_breg_unique = 32 - l_n_blocking - ((l_n_blocking > 1) ? 2 : 1);
+  l_reg_unique = l_values_per_reg*(32 - l_n_blocking - ((l_n_blocking > 1) ? 2 : 1));
   l_base_acc_reg = 32 - l_n_blocking;
   l_base_ld_reg = l_base_acc_reg - ((l_n_blocking > 1) ? 2 : 1);
 
@@ -535,7 +536,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
   }
 
   /* check that there are not too many unique values */
-  if ( l_unique > l_breg_unique ) {
+  if ( l_unique > l_reg_unique ) {
     free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
     return;
@@ -564,23 +565,27 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
 
   /* load A into registers */
   for ( l_z = 0; l_z < l_unique; l_z++) {
-    unsigned long long imm;
+    unsigned long long l_imm;
 
     if ( l_fp64 ) {
       union { double f; unsigned long long i; } u;
       u.f = l_unique_values[l_z];
-      imm = u.i;
+      l_imm = u.i;
     } else {
       union { float f; unsigned int i; } u;
       u.f = (float) l_unique_values[l_z];
-      imm = (unsigned long long) u.i;
+      l_imm = (unsigned long long) u.i;
     }
 
-    libxsmm_aarch64_instruction_broadcast_scalar_to_vec( io_generated_code,
-                                                         l_z,
-                                                         l_gp_reg_mapping.gp_reg_help_1,
-                                                         l_tuplet,
-                                                         imm );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code,
+                                               l_gp_reg_mapping.gp_reg_help_1,
+                                               l_imm );
+    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code,
+                                                LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                l_gp_reg_mapping.gp_reg_help_1,
+                                                l_z / l_values_per_reg,
+                                                l_z % l_values_per_reg,
+                                                l_width );
   }
 
   for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
@@ -622,7 +627,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
     for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
       const unsigned int u = i_row_idx[l_m] + l_z;
       const unsigned int l_unique_reg = l_unique_pos[u];
-      const unsigned int fma_instruction = (l_unique_sgn[u] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_V;
+      const unsigned int fma_instruction = (l_unique_sgn[u] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
       LIBXSMM_ASSERT(u < l_n_row_idx);
 
       if ( 1 == l_n_blocking ) {
@@ -632,8 +637,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
                                                 l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, 0,
                                                 l_base_ld_reg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
         libxsmm_aarch64_instruction_asimd_compute( io_generated_code, fma_instruction,
-                                                   l_base_ld_reg, l_unique_reg, 0, l_base_acc_reg,
-                                                   l_tuplet );
+                                                   l_base_ld_reg,
+                                                   l_unique_reg / l_values_per_reg,
+                                                   l_unique_reg % l_values_per_reg,
+                                                   l_base_acc_reg, l_tuplet );
       } else {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_2,
@@ -644,10 +651,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
                                                        l_base_ld_reg, l_base_ld_reg + 1,
                                                        LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, fma_instruction,
-                                                     l_base_ld_reg, l_unique_reg, 0, l_base_acc_reg + l_n,
-                                                     l_tuplet );
+                                                     l_base_ld_reg,
+                                                     l_unique_reg / l_values_per_reg,
+                                                     l_unique_reg % l_values_per_reg,
+                                                     l_base_acc_reg + l_n, l_tuplet );
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, fma_instruction,
-                                                     l_base_ld_reg + 1, l_unique_reg, 0, l_base_acc_reg + l_n + 1,
+                                                     l_base_ld_reg + 1,
+                                                     l_unique_reg / l_values_per_reg,
+                                                     l_unique_reg % l_values_per_reg,
+                                                     l_base_acc_reg + l_n + 1,
                                                      l_tuplet );
         }
       }
