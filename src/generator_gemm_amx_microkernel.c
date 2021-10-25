@@ -85,7 +85,8 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
   unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
   unsigned int gp_reg_relu         = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_1 : i_gp_reg_mapping->gp_reg_help_0;
   unsigned int gp_reg_outptr       = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_1 : i_gp_reg_mapping->gp_reg_help_0;
-  unsigned int fuse_relu           = i_micro_kernel_config->fused_relu ;
+  unsigned int fuse_relu           = i_micro_kernel_config->fused_relu;
+  unsigned int fuse_relu_nobitmask = i_micro_kernel_config->fused_relu_nobitmask;
   unsigned int reserved_zmms       = i_micro_kernel_config->reserved_zmms;
   unsigned int max_unrolling       = 31;
   unsigned int eager_result_store  = 0;
@@ -333,6 +334,15 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
           0 );
     }
 
+    if (fuse_relu_nobitmask == 1) {
+      libxsmm_x86_instruction_vec_compute_3reg(io_generated_code,
+          LIBXSMM_X86_INSTR_VPMAXSW,
+          i_micro_kernel_config->vector_name,
+          reg_0,
+          i_micro_kernel_config->zero_reg,
+          reg_0);
+    }
+
     if (fuse_relu_bwd == 1) {
       /* Load relu mask  */
       unsigned int mask_mov_instr = (tile1 >= 0) ? LIBXSMM_X86_INSTR_KMOVD_LD: LIBXSMM_X86_INSTR_KMOVW_LD;
@@ -529,7 +539,7 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
   unsigned int col = 0, reg_0 = 0;
   unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
   unsigned int reserved_zmms       = i_micro_kernel_config->reserved_zmms;
-  unsigned int fused_eltwise       = ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_sigmoid == 1)) ? 1 : 0;
+  unsigned int fused_eltwise       = ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_sigmoid == 1)) ? 1 : 0;
 
   if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
     libxsmm_x86_instruction_tile_move( io_generated_code,

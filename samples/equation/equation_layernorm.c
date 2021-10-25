@@ -797,13 +797,24 @@ int main( int argc, char* argv[] ) {
   func2 = libxsmm_dispatch_matrix_eqn( S3, S1, &tmp_ld, LIBXSMM_DATATYPE_F32, my_eqn2 );
 
   /* db equation */
+#if 1
   my_eqn3 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 3, 0, in_dt );
   libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 6, 0, in_dt );
   func3 = libxsmm_dispatch_matrix_eqn( 1, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn3 );
+#else
+  my_eqn3 = libxsmm_matrix_eqn_create();
+  libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 3, 0, in_dt );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 6, 0, in_dt );
+  func3 = libxsmm_dispatch_matrix_eqn( 1, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn3 );
+#endif
 
   /* ds equation */
+#if 1
   my_eqn4 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
@@ -811,6 +822,17 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, tmp_ld, 6, 0, in_dt );
   libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 0, 0, in_dt );
   func4 = libxsmm_dispatch_matrix_eqn( 1, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn4 );
+#else
+  my_eqn4 = libxsmm_matrix_eqn_create();
+  libxsmm_matrix_eqn_push_back_unary_op( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_unary_op( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 3, 0, in_dt );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, tmp_ld, 6, 0, in_dt );
+  libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 0, 0, in_dt );
+  func4 = libxsmm_dispatch_matrix_eqn( 1, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn4 );
+#endif
 
   /* din equation */
   my_eqn5 = libxsmm_matrix_eqn_create();

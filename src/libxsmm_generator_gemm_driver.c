@@ -14,7 +14,7 @@
 LIBXSMM_INLINE void print_help(void) {
   printf("\nwrong usage -> exit!\n\n\n");
   printf("Usage (sparse*dense=dense, dense*sparse=dense):\n");
-  printf("    sparse, sparse_csr, sparse_csr_reg\n");
+  printf("    sparse, sparse_csr\n");
   printf("    filename to append\n");
   printf("    routine name\n");
   printf("    M\n");
@@ -119,7 +119,6 @@ int main(int argc, char* argv []) {
   /* check for sparse / dense only */
   if ( (strcmp(l_type, "sparse")         != 0) &&
        (strcmp(l_type, "sparse_csr")     != 0) &&
-       (strcmp(l_type, "sparse_csr_reg") != 0) &&
        (strcmp(l_type, "dense")          != 0) &&
        (strcmp(l_type, "dense_asm")      != 0) ) {
     print_help();
@@ -129,7 +128,6 @@ int main(int argc, char* argv []) {
   /* check for the right number of arguments depending on type */
   if ( ( (strcmp(l_type, "sparse") == 0) && (argc != 18) )         ||
        ( (strcmp(l_type, "sparse_csr") == 0) && (argc != 18) )     ||
-       ( (strcmp(l_type, "sparse_csr_reg") == 0) && (argc != 18) ) ||
        ( (strcmp(l_type, "dense")  == 0) && (argc != 17) )         ||
        ( (strcmp(l_type, "dense_asm")  == 0) && (argc != 17) ) ) {
     print_help();
@@ -225,8 +223,7 @@ int main(int argc, char* argv []) {
     return EXIT_FAILURE;
   }
 
-  if ( strcmp(l_type, "sparse") == 0 || strcmp(l_type, "sparse_csr") == 0 ||
-       strcmp(l_type, "sparse_csr_reg") == 0 ) {
+  if ( strcmp(l_type, "sparse") == 0 || strcmp(l_type, "sparse_csr") == 0 ) {
     /* read additional parameter for CSC/CSR description */
     l_matrix_file_in = argv[17];
 
@@ -253,9 +250,6 @@ int main(int argc, char* argv []) {
 
     if ( strcmp(l_type, "sparse_csr") == 0 ) {
       l_is_csr = 1;
-    }
-    if ( strcmp(l_type, "sparse_csr_reg") == 0 ) {
-      l_is_csr = 3;
     }
 
     libxsmm_generator_spgemm( l_file_out, l_routine_name, l_xgemm_desc, l_arch, l_matrix_file_in, l_is_csr );

@@ -89,5 +89,13 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc );
 
+LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_meltw_unary_flags flags);
+LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags);
+LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags);
+LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags flags, libxsmm_matrix_eqn_elem *node);
+LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flags flags, libxsmm_matrix_eqn_elem *node);
+LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_meltw_ternary_flags flags, libxsmm_matrix_eqn_elem *node);
+LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result);
+
 #endif /* GENERATOR_MATEQUATION_AVX_AVX512_H */
 

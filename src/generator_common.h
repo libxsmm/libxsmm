@@ -475,6 +475,7 @@
 #define LIBXSMM_X86_INSTR_VPADDSB          0x300516ec
 #define LIBXSMM_X86_INSTR_VPSUBD           0x300516fa
 #define LIBXSMM_X86_INSTR_VPMAXSD          0x3005263d
+#define LIBXSMM_X86_INSTR_VPMAXSW          0x300516ee
 #define LIBXSMM_X86_INSTR_VPMINSD          0x30052639
 
 /* QUAD MADD, QUAD VNNI and VNNI */
@@ -792,6 +793,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int fused_bcolbias;
   unsigned int fused_scolbias;
   unsigned int fused_relu;
+  unsigned int fused_relu_nobitmask;
   unsigned int fused_relu_bwd;
   unsigned int fused_sigmoid;
   unsigned int overwrite_C;
@@ -1002,12 +1004,21 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int vec_nom;
   unsigned int vec_denom;
   unsigned int vec_c0;
+  unsigned int vec_c01;
+  unsigned int vec_c02;
+  unsigned int vec_c03;
   unsigned int vec_c1;
+  unsigned int vec_c11;
+  unsigned int vec_c12;
+  unsigned int vec_c13;
   unsigned int vec_c2;
-  unsigned int vec_c3;
+  unsigned int vec_c21;
+  unsigned int vec_c22;
+  unsigned int vec_c23;
   unsigned int vec_c1_d;
   unsigned int vec_c2_d;
   unsigned int vec_c3_d;
+  unsigned int vec_c3;
   unsigned int vec_hi_bound;
   unsigned int vec_lo_bound;
   unsigned int vec_ones;
@@ -1057,6 +1068,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   int rbp_offs_half;
 
   /* Aux variables for relu variants */
+  unsigned int mask_helper0_vreg;
+  unsigned int mask_helper1_vreg;
   unsigned int fam_lu_vreg_alpha;
 
   /* Aux variable for dropout */
@@ -1105,6 +1118,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_gp_reg_mapping_struct {
   unsigned int gp_reg_offset;
   unsigned int temp_reg;
   unsigned int temp_reg2;
+  unsigned int gp_reg_scratch_0;
+  unsigned int gp_reg_scratch_1;
   libxsmm_mateltwise_gp_reg_mapping gp_reg_mapping_eltwise;
   libxsmm_gp_reg_mapping            gp_reg_mapping_gemm;
 } libxsmm_matequation_gp_reg_mapping;
