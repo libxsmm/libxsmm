@@ -1153,7 +1153,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm24( libxsmm_generated_code* io_g
   } else {
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, i_alu_instr, i_gp_reg_src, i_gp_reg_dst,
                                                    (unsigned short)(0xfff & i_imm24), 0);
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, i_alu_instr, i_gp_reg_src, i_gp_reg_dst,
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, i_alu_instr, i_gp_reg_dst, i_gp_reg_dst,
                                                    (unsigned short)(0xfff & (i_imm24 >> 12)), 1);
   }
 }
