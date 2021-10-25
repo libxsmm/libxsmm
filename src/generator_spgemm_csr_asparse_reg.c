@@ -18,6 +18,38 @@
 
 
 LIBXSMM_API_INTERN
+void libxsmm_analyse_sparse_nnz( unsigned int   i_n_row_idx,
+                                 const double*  i_values,
+                                 unsigned int*  o_unique,
+                                 double*        o_unique_values,
+                                 unsigned int*  o_unique_pos,
+                                 int*           o_unique_sgn ) {
+  unsigned int l_unique = 1;
+  unsigned int l_hit, l_m, l_z;
+
+  o_unique_values[0] = fabs(i_values[0]);
+  o_unique_pos[0] = 0;
+  o_unique_sgn[0] = (i_values[0] > 0) ? 1 : -1;
+  for ( l_m = 1; l_m < i_n_row_idx; l_m++ ) {
+    l_hit = 0;
+    /* search for the value */
+    for ( l_z = 0; l_z < l_unique; l_z++ ) {
+      if ( !(o_unique_values[l_z] < fabs(i_values[l_m])) && !(o_unique_values[l_z] > fabs(i_values[l_m])) ) {
+        o_unique_pos[l_m] = l_z;
+        l_hit = 1;
+      }
+    }
+    /* value was not found */
+    if ( !l_hit ) {
+      o_unique_values[l_unique] = fabs(i_values[l_m]);
+      o_unique_pos[l_m] = l_unique++;
+    }
+    o_unique_sgn[l_m] = (i_values[l_m] > 0) ? 1 : -1;
+  }
+  *o_unique = l_unique;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*         io_generated_code,
                                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                    const unsigned int*             i_row_idx,
@@ -29,7 +61,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   unsigned int l_row_elements;
   unsigned int l_unique;
   unsigned int l_reg_num;
-  unsigned int l_hit;
   unsigned int l_n_blocking;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
@@ -110,27 +141,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   assert(0 != i_values);
 
   /* Let's figure out how many unique values we have */
-  l_unique = 1;
-  l_unique_values[0] = fabs(i_values[0]);
-  l_unique_pos[0] = 0;
-  l_unique_sgn[0] = (i_values[0] > 0) ? 1 : -1;
-  for ( l_m = 1; l_m < l_n_row_idx; l_m++ ) {
-    l_hit = 0;
-    /* search for the value */
-    for ( l_z = 0; l_z < l_unique; l_z++) {
-      if ( /*l_unique_values[l_z] == i_values[l_m]*/!(l_unique_values[l_z] < fabs(i_values[l_m])) && !(l_unique_values[l_z] > fabs(i_values[l_m])) ) {
-        l_unique_pos[l_m] = l_z;
-        l_hit = 1;
-      }
-    }
-    /* value was not found */
-    if ( l_hit == 0 ) {
-      l_unique_values[l_unique] = fabs(i_values[l_m]);
-      l_unique_pos[l_m] = l_unique;
-      l_unique++;
-    }
-    l_unique_sgn[l_m] = (i_values[l_m] > 0) ? 1 : -1;
-  }
+  libxsmm_analyse_sparse_nnz( l_n_row_idx, i_values, &l_unique,
+                              l_unique_values, l_unique_pos, l_unique_sgn );
 
   /* check that there are not too many unique values */
   if ( l_unique > l_breg_unique && l_unique > l_preg_unique && l_unique > l_psreg_unique ) {
@@ -464,7 +476,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
   unsigned int l_z;
   unsigned int l_row_elements;
   unsigned int l_unique;
-  unsigned int l_hit;
   unsigned int l_n_blocking;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
@@ -513,27 +524,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
   LIBXSMM_ASSERT(0 != i_values);
 
   /* Let's figure out how many unique values we have */
-  l_unique = 1;
-  l_unique_values[0] = fabs(i_values[0]);
-  l_unique_pos[0] = 0;
-  l_unique_sgn[0] = (i_values[0] > 0) ? 1 : -1;
-  for ( l_m = 1; l_m < l_n_row_idx; l_m++ ) {
-    l_hit = 0;
-    /* search for the value */
-    for ( l_z = 0; l_z < l_unique; l_z++ ) {
-      if ( /*l_unique_values[l_z] == i_values[l_m]*/!(l_unique_values[l_z] < fabs(i_values[l_m])) && !(l_unique_values[l_z] > fabs(i_values[l_m])) ) {
-        l_unique_pos[l_m] = l_z;
-        l_hit = 1;
-      }
-    }
-    /* value was not found */
-    if ( l_hit == 0 ) {
-      l_unique_values[l_unique] = fabs(i_values[l_m]);
-      l_unique_pos[l_m] = l_unique;
-      l_unique++;
-    }
-    l_unique_sgn[l_m] = (i_values[l_m] > 0) ? 1 : -1;
-  }
+  libxsmm_analyse_sparse_nnz( l_n_row_idx, i_values, &l_unique,
+                              l_unique_values, l_unique_pos, l_unique_sgn );
 
   /* check that there are not too many unique values */
   if ( l_unique > l_reg_unique ) {
@@ -614,7 +606,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
                                                 l_gp_reg_mapping.gp_reg_help_5, 0, 0,
                                                 l_base_acc_reg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
       } else {
-
         for ( l_n = 0; l_n < l_n_blocking; l_n += 2 ) {
           libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF,
                                                        l_gp_reg_mapping.gp_reg_help_5, l_n*l_micro_kernel_config.datatype_size_in*l_micro_kernel_config.vector_length,
