@@ -67,6 +67,35 @@ LIBXSMM_API_INTERN const float* internal_sfsspmdm_init(void)
 }
 
 
+LIBXSMM_API_INTERN
+void libxsmm_fsspmdm_base_vlen(libxsmm_blasint N,
+                               int i_fp64,
+                               int* o_sparse,
+                               int* o_dense) {
+  int vl = libxsmm_cpuid_vlen32(libxsmm_target_archid);
+  if ( i_fp64 ) {
+    vl = LIBXSMM_UPDIV(vl, 2);
+  }
+
+  *o_sparse = vl;
+  *o_dense = vl;
+
+  /* No sparse SVE routines; set length for NEON */
+  if ( LIBXSMM_AARCH64_A64FX == libxsmm_target_archid ) {
+    *o_sparse = (i_fp64) ? 2 : 4;
+  /* Dense NEON benefits from larger sizes */
+  } else if ( libxsmm_target_archid >= LIBXSMM_AARCH64_V81 &&
+              libxsmm_target_archid <= LIBXSMM_AARCH64_ALLFEAT ) {
+    if ( 0 == N % (2*vl) ) {
+      *o_dense = 2*vl;
+    }
+    if ( 0 == N % (4*vl) ) {
+      *o_dense = 4*vl;
+    }
+  }
+}
+
+
 LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
@@ -89,15 +118,16 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_dmmfunction k_sparse4 = NULL;
   libxsmm_dmmfunction k_dense = NULL;
   int i, j, n, nkerns, a_nnz = 0;
-  const int vlen = LIBXSMM_UPDIV(libxsmm_cpuid_vlen32(libxsmm_target_archid), 2);
-  const int N_sparse1 = vlen;
-  const int N_sparse2 = vlen * 2;
-  const int N_sparse4 = vlen * 4;
-  const int N_dense = vlen;
+  int N_sparse1, N_sparse2, N_sparse4, N_dense;
   static int error_once = 0;
 
+  /* Compute the vector/chunk sizes */
+  libxsmm_fsspmdm_base_vlen(N, 1, &N_sparse1, &N_dense);
+  N_sparse2 = 2*N_sparse1;
+  N_sparse4 = 4*N_sparse1;
+
   /* some checks */
-  if (0 != (N % vlen)
+  if (0 != (N % N_sparse1)
     || (LIBXSMM_NEQ(beta, 1.0) && LIBXSMM_NEQ(beta, 0.0))
     || lda < K || ldc < N || ldb < N)
   {
@@ -395,15 +425,16 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_smmfunction k_sparse4 = NULL;
   libxsmm_smmfunction k_dense = NULL;
   int i, j, n, nkerns, a_nnz = 0;
-  const int vlen = libxsmm_cpuid_vlen32(libxsmm_target_archid);
-  const int N_sparse1 = vlen;
-  const int N_sparse2 = vlen * 2;
-  const int N_sparse4 = vlen * 4;
-  const int N_dense = vlen;
+  int N_sparse1, N_sparse2, N_sparse4, N_dense;
   static int error_once = 0;
 
+  /* Compute the vector/chunk sizes */
+  libxsmm_fsspmdm_base_vlen(N, 0, &N_sparse1, &N_dense);
+  N_sparse2 = 2*N_sparse1;
+  N_sparse4 = 4*N_sparse1;
+
   /* some checks */
-  if (0 != (N % vlen)
+  if (0 != (N % N_sparse1)
     || (LIBXSMM_NEQ(beta, 1.0) && LIBXSMM_NEQ(beta, 0.0))
     || lda < K || ldc < N || ldb < N)
   {
