@@ -617,9 +617,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64( libxsmm_generated_code*  
 
     for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
       const unsigned int u = i_row_idx[l_m] + l_z;
-      const unsigned int l_unique_reg = l_unique_pos[u];
-      const unsigned int fma_instruction = (l_unique_sgn[u] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
-      LIBXSMM_ASSERT(u < l_n_row_idx);
+      unsigned int l_unique_reg, fma_instruction;
+      LIBXSMM_ASSERT(u < l_n_row_idx); /* mute issue pointed out by Clang's static analysis */
+      l_unique_reg = l_unique_pos[u];
+      fma_instruction = (l_unique_sgn[u] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
 
       if ( 1 == l_n_blocking ) {
         libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_1,
