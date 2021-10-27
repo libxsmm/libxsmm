@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #SBATCH -J wmt16_en_de
 #SBATCH --partition=nv-v100

@@ -10,7 +10,7 @@
 ###############################################################################
 
 
-#!/bin/bash
+#!/usr/bin/env bash
 
 export KMP_AFFINITY=compact,1,0,granularity=fine              # Set KMP affinity
 # export KMP_BLOCKTIME=1
