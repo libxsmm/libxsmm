@@ -731,8 +731,6 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                                               const unsigned char            i_vec_reg_dst,
                                               const unsigned char            i_pred_reg,
                                               const libxsmm_aarch64_sve_type i_type ) {
-  LIBXSMM_UNUSED( i_index );
-
   if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: at least ARM A64FX needs to be specified as target arch!\n");
     exit(-1);
@@ -740,6 +738,9 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
   switch ( i_vec_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
       break;
     default:
@@ -753,16 +754,31 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_vec_instr);
-    /* setting Rd */
+    /* setting Zda */
     code[code_head] |= (unsigned int)(0x1f & i_vec_reg_dst);
-    /* setting Rn */
+    /* setting Zn */
     code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_0) << 5);
-    /* setting Rm */
-    code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_1) << 16);
+    /* setting Zm and optional index */
+    if ( i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I &&
+         i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I ) {
+      code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_1) << 16);
+    } else {
+      if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_S ) {
+        code[code_head] |= (unsigned int)((0x7 & i_vec_reg_src_1) << 16);
+        code[code_head] |= (unsigned int)((0x3 & i_index) << 19);
+      } else if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_D ) {
+        code[code_head] |= (unsigned int)((0xf & i_vec_reg_src_1) << 16);
+        code[code_head] |= (unsigned int)((0x1 & i_index) << 20);
+      }
+    }
+
+    /* setting type */
     if ( i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V ) {
-      /* setting type */
       code[code_head] |= (unsigned int)((0x3 & i_type) << 22);
-      /* setting p reg */
+    }
+    /* setting p reg */
+    if ( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMLA_V ||
+         i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMLS_V ) {
       code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
     }
 

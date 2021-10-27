@@ -80,12 +80,10 @@ void libxsmm_fsspmdm_base_vlen(libxsmm_blasint N,
   *o_sparse = vl;
   *o_dense = vl;
 
-  /* No sparse SVE routines; set length for NEON */
-  if ( LIBXSMM_AARCH64_A64FX == libxsmm_target_archid ) {
-    *o_sparse = (i_fp64) ? 2 : 4;
   /* Dense NEON benefits from larger sizes */
-  } else if ( libxsmm_target_archid >= LIBXSMM_AARCH64_V81 &&
-              libxsmm_target_archid <= LIBXSMM_AARCH64_ALLFEAT ) {
+  if ( libxsmm_target_archid >= LIBXSMM_AARCH64_V81 &&
+       libxsmm_target_archid <= LIBXSMM_AARCH64_ALLFEAT &&
+       libxsmm_target_archid != LIBXSMM_AARCH64_A64FX ) {
     if ( 0 == N % (2*vl) ) {
       *o_dense = 2*vl;
     }
