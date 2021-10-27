@@ -25,6 +25,7 @@ scripts/tool_gitaddforks.sh export-ignore
 scripts/libxsmm_version.sh  export-ignore
 scripts/tool_envrestore.sh export-ignore
 samples/deeplearning/mlpdriver/mnist_data export-ignore
+samples/deeplearning/gxm/model_zoo export-ignore
 samples/xgemm/kernel_test* export-ignore
 samples/seissol/*.orient export-ignore
 samples/seissol/*.bound export-ignore
