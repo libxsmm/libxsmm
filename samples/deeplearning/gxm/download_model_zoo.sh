@@ -14,7 +14,7 @@ HERE=$(cd "$(dirname "$0")" && pwd -P)
 MKDIR=$(command -v mkdir)
 WGET=$(command -v wget)
 
-# ls -1 | tr "\n" " "
+# ls -1 | xargs
 NAMES=" \
   cifar10/mean.binaryproto cifar10/solver.prototxt cifar10/train_val.prototxt \
   convnet/solver.prototxt convnet/solver_dump_formula.prototxt convnet/solver_formula.prototxt convnet/test.prototxt convnet/train_val.prototxt convnet/train_val_dump.prototxt convnet/train_val_lmdb.prototxt convnet/train_val_mol.prototxt convnet/train_val_single.prototxt convnet/train_val_split_lmdb.prototxt convnet/xsmm_train_val.prototxt convnet/xsmm_tv_lmdb.prototxt \
@@ -28,7 +28,6 @@ if [ "${MKDIR}" ] && [ "${WGET}" ]; then
     DIR=$(dirname ${NAME})
     ${MKDIR} -p ${HERE}/model_zoo/${DIR}
     cd ${HERE}/model_zoo/${DIR}
-    echo "$NAME"
     ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/deeplearning/gxm/model_zoo/${NAME}
   done
 fi

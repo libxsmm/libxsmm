@@ -14,13 +14,22 @@ HERE=$(cd "$(dirname "$0")" && pwd -P)
 MKDIR=$(command -v mkdir)
 WGET=$(command -v wget)
 
-# ls -1 | xargs
-NAMES="t10k-images.idx3-ubyte t10k-labels.idx1-ubyte train-images.idx3-ubyte train-labels.idx1-ubyte"
+NAMES=" \
+  MarkupSafe-1.1.1-cp37-cp37m-manylinux1_x86_64.whl \
+  translationstring-1.3-py2.py3-none-any.whl \
+  itsdangerous-1.1.0-py2.py3-none-any.whl \
+  lark_parser-0.8.5-py2.py3-none-any.whl \
+  Werkzeug-1.0.1-py2.py3-none-any.whl \
+  Jinja2-2.11.2-py2.py3-none-any.whl \
+  colander-0.9.9.tar.gz \
+  iso8601-0.1.8.tar.gz \
+  Flask-0.10.1.tar.gz \
+  redis-2.8.0.tar.gz \
+  lark-0.0.4.tar.gz"
 
 if [ "${MKDIR}" ] && [ "${WGET}" ]; then
-  ${MKDIR} -p ${HERE}/mnist_data; cd ${HERE}/mnist_data
+  ${MKDIR} -p ${HERE}/roc/tmp1; cd ${HERE}/roc/tmp1
   for NAME in ${NAMES}; do
-    ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/deeplearning/mlpdriver/mnist_data/${NAME}
+    ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/deeplearning/sparse_training/dlrm/roc/tmp1/${NAME}
   done
 fi
-
