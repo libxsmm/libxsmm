@@ -860,7 +860,7 @@ LIBXSMM_API_INTERN size_t internal_strlen(const char* cstr, size_t maxlen)
 {
   size_t result = 0;
   if (NULL != cstr) {
-    while (0 != cstr[result] && result < maxlen) ++result;
+    while ('\0' != cstr[result] && result < maxlen) ++result;
   }
   return result;
 }
@@ -885,9 +885,7 @@ LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefa
       result = (size_t)ibytes;
       if ((size_t)LIBXSMM_UNLIMITED != result) {
         u = (NULL != unit ? ((unit - units) % 3) : 3);
-        if (u < 3) {
-          result <<= (u + 1) * 10;
-        }
+        if (u < 3) result <<= (u + 1) * 10;
       }
       if (NULL != valid) *valid = 1;
     }
