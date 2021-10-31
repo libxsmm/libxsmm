@@ -16,6 +16,36 @@
 #include "generator_gemm_common_aarch64.h"
 #include "libxsmm_main.h"
 
+#define LIBXSMM_ASPARSE_REG_MAX_M_BLOCK 4
+
+/* 65k should be enough for anybody */
+#define LIBXSMM_ASPARSE_REG_MAX_OPS 65536
+
+typedef struct {
+  enum {
+    LIBXSMM_ASPARSE_REG_OP_LD_ACC,
+    LIBXSMM_ASPARSE_REG_OP_ZERO_ACC,
+    LIBXSMM_ASPARSE_REG_OP_FMA,
+    LIBXSMM_ASPARSE_REG_OP_ST_ACC
+  } op;
+  union {
+    struct {
+      unsigned long long disp;
+      unsigned char acc_idx;
+    } ld;
+    struct {
+      unsigned long long disp;
+      unsigned short n;
+      unsigned short src_vals[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
+      unsigned char acc_idxs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
+    } fma;
+    struct {
+      unsigned long long disp;
+      unsigned char acc_idx;
+    } st;
+  } args;
+} libxsmm_asparse_reg_op;
+
 
 LIBXSMM_API_INTERN
 void libxsmm_analyse_sparse_nnz( unsigned int   i_n_row_idx,
@@ -50,48 +80,202 @@ void libxsmm_analyse_sparse_nnz( unsigned int   i_n_row_idx,
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_asparse_reg_sequence( unsigned int i_m,
+                                   unsigned int i_k,
+                                   unsigned int i_m_blocking,
+                                   unsigned int i_beta0,
+                                   const unsigned int* i_row_idx,
+                                   const unsigned int* i_column_idx,
+                                   unsigned int i_max_ops,
+                                   libxsmm_asparse_reg_op* o_ops,
+                                   unsigned int* o_n_ops) {
+  unsigned int l_done = 0, l_op_idx = 0;
+  unsigned char* l_done_rows = (unsigned char*) calloc(i_m, sizeof(unsigned char));
+  unsigned int* l_nnz_mask = (unsigned int*) malloc(i_k*(i_m_blocking + 1)*sizeof(unsigned int));
+  unsigned int* l_grp_nnz_count = l_nnz_mask + i_k*i_m_blocking;
+  unsigned int l_grp_rows[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
+
+  /* Zero the operation count in order to signify an error state */
+  *o_n_ops = 0;
+
+  /* Check the allocations were successful */
+  if ( NULL == l_done_rows || NULL == l_nnz_mask ) {
+    goto err_ops;
+  }
+
+  /* Process the rows */
+  for ( l_done = 0; l_done < i_m; ) {
+    unsigned int l_m, l_y, l_z, l_nnz, l_u, l_ngrp = 0;
+    unsigned int l_max_nnz = 0, l_arg_max_nnz = ~0;
+
+    /* Reset the arrays */
+    memset( l_nnz_mask, ~0, i_k*i_m_blocking*sizeof(unsigned int) );
+    memset( l_grp_nnz_count, 0, i_k*sizeof(unsigned int) );
+    memset( l_grp_rows, ~0, LIBXSMM_ASPARSE_REG_MAX_M_BLOCK*sizeof(unsigned int) );
+
+    /* Find the pending row with the most non-zeros */
+    for ( l_m = 0; l_m < i_m; l_m++ ) {
+      l_nnz = i_row_idx[l_m + 1] - i_row_idx[l_m];
+      if ( 0 == l_done_rows[l_m] && (~0 == l_arg_max_nnz || l_nnz > l_max_nnz) ) {
+        l_max_nnz = l_nnz;
+        l_arg_max_nnz = l_m;
+      }
+    }
+
+    /* Compute the NNZ pattern for the row */
+    for ( l_z = i_row_idx[l_arg_max_nnz]; l_z < i_row_idx[l_arg_max_nnz] + l_max_nnz; l_z++) {
+      l_nnz_mask[i_column_idx[l_z]] = l_z;
+      l_grp_nnz_count[i_column_idx[l_z]]++;
+    }
+
+    /* Add the row to the group and mark it as done */
+    l_grp_rows[l_ngrp++] = l_arg_max_nnz;
+    l_done_rows[l_arg_max_nnz] = 1;
+    l_done++;
+
+    /* Construct a group around this row */
+    while ( l_done < i_m && l_ngrp < i_m_blocking ) {
+      unsigned int l_overlap, l_max_overlap = ~0, l_arg_max_overlap = ~0;
+
+      /* Find the best row to add to the group */
+      for ( l_m = 0; l_m < i_m; l_m++ ) {
+        if ( 0 == l_done_rows[l_m] ) {
+          l_overlap = 0;
+          for ( l_z = i_row_idx[l_m]; l_z < i_row_idx[l_m + 1]; l_z++ ) {
+            l_overlap += !!l_grp_nnz_count[i_column_idx[l_z]];
+          }
+
+          if ( ~0 == l_arg_max_overlap || l_overlap > l_max_overlap ) {
+            l_max_overlap = l_overlap;
+            l_arg_max_overlap = l_m;
+          }
+        }
+      }
+
+      /* Compute the NNZ pattern for the row */
+      for ( l_z = i_row_idx[l_arg_max_overlap]; l_z < i_row_idx[l_arg_max_overlap + 1]; l_z++) {
+        l_u = i_column_idx[l_z];
+        l_nnz_mask[l_ngrp*i_k + l_u] = l_z;
+        l_grp_nnz_count[l_u]++;
+      }
+
+      /* Add the row to the group and mark it as done */
+      l_grp_rows[l_ngrp++] = l_arg_max_overlap;
+      l_done_rows[l_arg_max_overlap] = 1;
+      l_done++;
+    }
+
+    /* Sequence the dot products for the group */
+    for ( l_y = 0; l_y < i_k; l_y++ ) {
+      /* See if any rows in the group have a non-zero in column l_y */
+      if ( l_grp_nnz_count[l_y] != 0 ) {
+        /* For rows which this is first non-zero load/zero the accumulator */
+        for ( l_z = 0; l_z < l_ngrp; l_z++ ) {
+          if ( l_y == i_column_idx[i_row_idx[l_grp_rows[l_z]]] ) {
+            o_ops[l_op_idx].op = (i_beta0) ? LIBXSMM_ASPARSE_REG_OP_ZERO_ACC : LIBXSMM_ASPARSE_REG_OP_LD_ACC;
+            o_ops[l_op_idx].args.ld.disp = l_grp_rows[l_z];
+            o_ops[l_op_idx].args.ld.acc_idx = l_z;
+
+            if ( ++l_op_idx == i_max_ops ) {
+              goto err_ops;
+            }
+          }
+        }
+
+        /* Prepare the FMA */
+        o_ops[l_op_idx].op = LIBXSMM_ASPARSE_REG_OP_FMA;
+        o_ops[l_op_idx].args.fma.n = l_grp_nnz_count[l_y];
+        o_ops[l_op_idx].args.fma.disp = l_y;
+
+        for ( l_z = 0, l_u = 0; l_z < l_ngrp; l_z++ ) {
+          if ( l_nnz_mask[l_z*i_k + l_y] != ~0 ) {
+            o_ops[l_op_idx].args.fma.src_vals[l_u] = l_nnz_mask[l_z*i_k + l_y];
+            o_ops[l_op_idx].args.fma.acc_idxs[l_u] = l_z;
+            l_u++;
+          }
+        }
+
+        if ( ++l_op_idx == i_max_ops ) {
+          goto err_ops;
+        }
+
+        /* For rows which this is the last non-zero save the accumulator */
+        for ( l_z = 0; l_z < l_ngrp; l_z++ ) {
+          if ( l_y == i_column_idx[i_row_idx[l_grp_rows[l_z] + 1] - 1] ) {
+            o_ops[l_op_idx].op = LIBXSMM_ASPARSE_REG_OP_ST_ACC;
+            o_ops[l_op_idx].args.ld.disp = l_grp_rows[l_z];
+            o_ops[l_op_idx].args.ld.acc_idx = l_z;
+
+            if ( ++l_op_idx == i_max_ops ) {
+              goto err_ops;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* Save the number of sequenced ops */
+  *o_n_ops = l_op_idx;
+
+err_ops:
+  free( l_nnz_mask );
+  free( l_done_rows );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*         io_generated_code,
                                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                    const unsigned int*             i_row_idx,
                                                    const unsigned int*             i_column_idx,
                                                    const double*                   i_values ) {
-  unsigned int l_m;
-  unsigned int l_n;
-  unsigned int l_z;
-  unsigned int l_row_elements;
+  unsigned int l_m, l_n, l_z;
   unsigned int l_unique;
   unsigned int l_reg_num;
-  unsigned int l_n_blocking;
+  unsigned int l_m_blocking, l_n_blocking;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
+
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
+
   double l_code_const_dp[8];
   float l_code_const_fp[16];
   unsigned int l_const_perm_ops[16];
+  unsigned int l_need_bcast_reg = 0;
+  unsigned int l_bcast_reg_vals[20], l_base_bcast_reg = ~0, l_nbcast_regs, l_cur_bcast_reg = 0;
 
-  unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
-  unsigned int l_breg_unique, l_preg_unique, l_psreg_unique;
-  unsigned int l_base_acc_reg, l_base_perm_reg, l_bcast_reg;
-  int l_prefetch;
+  const unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
+  const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
+
+  const unsigned int l_c_is_nt =  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags;
+
+  unsigned int l_num_reg, l_used_reg = 0, l_values_per_reg;
+  unsigned int l_breg_unique, l_preg_unique;
+  unsigned int l_base_c_reg, l_ld_reg = 0, l_base_perm_reg, l_vbytes;
+
+  libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
+  unsigned int l_n_ops, l_op_idx;
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* check if mallocs were successful */
-  if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn ) {
-    free(l_unique_values); free(l_unique_pos); free(l_unique_sgn);
+  if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
     return;
   }
 
   /* Check that the arch is supported */
   if ( io_generated_code->arch < LIBXSMM_X86_AVX2 ) {
-    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
+
+  memset( l_bcast_reg_vals, ~0, sizeof(l_bcast_reg_vals) );
 
   /* Define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
@@ -101,41 +285,33 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
     l_n_blocking = 1;
   } else if ( i_xgemm_desc->n == 2*l_micro_kernel_config.vector_length ) {
     l_n_blocking = 2;
+  } else if ( i_xgemm_desc->n == 4*l_micro_kernel_config.vector_length ) {
+    l_n_blocking = 4;
   } else {
-      free(l_unique_values); free(l_unique_pos); free(l_unique_sgn);
+      free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
       return;
   }
 
   /* Init config */
   if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
-    l_breg_unique = 16 - l_n_blocking;
-    l_base_acc_reg = 16 - l_n_blocking;
-    l_prefetch = 0;
+    l_num_reg = 16;
 
-    l_preg_unique = l_psreg_unique = 0;
-    l_base_perm_reg = l_bcast_reg = (unsigned int)-1;
+    l_preg_unique = 0;
+    l_base_perm_reg = l_nbcast_regs = l_cur_bcast_reg = (unsigned int)-1;
   } else {
-    l_breg_unique = 32 - l_n_blocking;
-    l_base_acc_reg = 32 - l_n_blocking;
-    l_bcast_reg = l_base_acc_reg - 1;
-    if ( (io_generated_code->arch == LIBXSMM_X86_AVX512_MIC) ||
-         (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM)    ) {
-      l_prefetch = 1;
-    } else {
-      l_prefetch = 0;
-    }
+    l_num_reg = 32;
 
     if ( l_fp64 ) {
       l_preg_unique = (32 - l_n_blocking - 1 - 8)*8;
-      l_psreg_unique = (32 - l_n_blocking - 1)*8;
-      l_base_perm_reg = l_bcast_reg - 8;
     } else {
       l_preg_unique = (32 - l_n_blocking - 1 - 16)*16;
-      l_psreg_unique = (32 - l_n_blocking - 1)*16;
-      l_base_perm_reg = l_bcast_reg - 16;
     }
   }
+
+  l_breg_unique = l_num_reg - l_n_blocking;
+  l_values_per_reg = l_micro_kernel_config.vector_length;
+  l_vbytes = l_values_per_reg*l_fbytes;
 
   /* prerequisite */
   assert(0 != i_values);
@@ -145,8 +321,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                               l_unique_values, l_unique_pos, l_unique_sgn );
 
   /* check that there are not too many unique values */
-  if ( l_unique > l_breg_unique && l_unique > l_preg_unique && l_unique > l_psreg_unique ) {
-    free(l_unique_values); free(l_unique_pos); free(l_unique_sgn);
+  if ( l_unique > l_breg_unique && l_unique > l_preg_unique ) {
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
     return;
   }
@@ -157,27 +333,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_R8;
-  /* TODO: full support for Windows calling convention */
-  l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
-/*  l_gp_reg_mapping.gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_UNDEF;*/
 #else /* match calling convention on Linux */
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
-  l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
-  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
-/*  l_gp_reg_mapping.gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_R9;*/
 #endif
-  l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
-  l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
-  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14;
-  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -186,11 +346,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
   /*
-   * load A into registers
+   * Load A into registers
    * pre-broadcast if possible, otherwise load for run-time broadcasting
    */
   if (l_unique <= l_breg_unique ) {
-    /* pre-broadcast A values into registers */
+    /* Pre-broadcast A values into registers */
     for ( l_z = 0; l_z < l_unique; l_z++) {
       char l_id[65];
       LIBXSMM_SNPRINTF(l_id, 64, "%u", l_z);
@@ -214,255 +374,256 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                                             l_z );
       }
     }
+
+    /* Update the register count */
+    l_used_reg += l_unique;
   } else {
     /* load packed A into registers */
-    l_z = 0;
-    l_reg_num = 0;
-    while (l_z < l_unique) {
+    for ( l_z = 0; l_z < l_unique; ) {
+      void* l_const;
       char l_id[65];
-      LIBXSMM_SNPRINTF(l_id, 64, "%u", l_reg_num);
-      l_m = 0;
+      LIBXSMM_SNPRINTF(l_id, 64, "%u", l_used_reg);
 
       if ( l_fp64 ) {
-        while (l_z < l_unique && l_m < 8) {
-          l_code_const_dp[l_m++] = l_unique_values[l_z++];
+        l_const = l_code_const_dp;
+
+        for ( l_m = 0; l_z < l_unique && l_m < 8; l_m++ ) {
+          l_code_const_dp[l_m] = l_unique_values[l_z++];
         }
-        libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code,
-                                                            (unsigned char*)l_code_const_dp,
-                                                            l_id,
-                                                            l_micro_kernel_config.vector_name,
-                                                            l_reg_num++ );
       } else {
-        while (l_z < l_unique && l_m < 16) {
-          l_code_const_fp[l_m++] = (float)l_unique_values[l_z++];
+        l_const = l_code_const_fp;
+
+        for ( l_m = 0; l_z < l_unique && l_m < 16; l_m++ ) {
+          l_code_const_fp[l_m] = (float) l_unique_values[l_z++];
         }
-        libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code,
-                                                            (unsigned char*)l_code_const_fp,
-                                                            l_id,
-                                                            l_micro_kernel_config.vector_name,
-                                                            l_reg_num++ );
       }
+
+      libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code,
+                                                          l_const, l_id,
+                                                          l_micro_kernel_config.vector_name,
+                                                          l_used_reg++ );
     }
 
-    /* load permute operands into registers if space is available (otherwise they are read from memory) */
-    if ( l_fp64 && l_unique <= l_preg_unique ) {
-      for (l_reg_num = l_base_perm_reg; l_reg_num < l_base_perm_reg + 8; l_reg_num++ ) {
-        char l_id[65];
-        LIBXSMM_SNPRINTF(l_id, 64, "%u", l_reg_num);
-        l_m = 0;
-        /* repeat pattern to select 64-bits using vpermd */
-        while (l_m < 16) {
-            l_const_perm_ops[l_m++] = (l_reg_num - l_base_perm_reg)*2;
-            l_const_perm_ops[l_m++] = (l_reg_num - l_base_perm_reg)*2 + 1;
+    l_base_perm_reg = l_used_reg;
+
+    /* Load permute operands into registers */
+    for (l_reg_num = l_base_perm_reg; l_reg_num < l_base_perm_reg + l_values_per_reg; l_reg_num++ ) {
+      char l_id[65];
+      LIBXSMM_SNPRINTF(l_id, 64, "%u", l_reg_num);
+
+      for (l_m = 0; l_m < 16; ) {
+        /* Repeat pattern to select 64-bits using vpermd */
+        if ( l_fp64 ) {
+          l_const_perm_ops[l_m++] = (l_reg_num - l_base_perm_reg)*2;
+          l_const_perm_ops[l_m++] = (l_reg_num - l_base_perm_reg)*2 + 1;
+        /* Repeat pattern to select 32-bits using vpermd */
+        } else {
+          l_const_perm_ops[l_m++] = (l_reg_num - l_base_perm_reg);
         }
-        libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code,
-                                                            (unsigned char*)l_const_perm_ops,
-                                                            l_id,
-                                                            l_micro_kernel_config.vector_name,
-                                                            l_reg_num );
       }
-    } else if ( !l_fp64 && l_unique <= l_preg_unique ) {
-      for (l_reg_num = l_base_perm_reg; l_reg_num<l_base_perm_reg + 16; l_reg_num++ ) {
-        char l_id[65];
-        LIBXSMM_SNPRINTF(l_id, 64, "%u", l_reg_num);
-        l_m = 0;
-        /* repeat pattern to select 32-bits using vpermd */
-        while (l_m < 16) {
-            l_const_perm_ops[l_m++] = (l_reg_num - l_base_perm_reg);
-        }
-        libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code,
-                                                            (unsigned char*)l_const_perm_ops,
-                                                            l_id,
-                                                            l_micro_kernel_config.vector_name,
-                                                            l_reg_num );
-      }
+
+      libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code,
+                                                          (unsigned char*) l_const_perm_ops,
+                                                          l_id,
+                                                          l_micro_kernel_config.vector_name,
+                                                          l_reg_num );
     }
+
+    /* Update the register count */
+    l_used_reg += l_values_per_reg;
+
+    /* Mark that we also need at least one broadcast register */
+    l_need_bcast_reg = 1;
   }
 
-  /* n loop */
-#if 0
-  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_blocking );
-#endif
+  /* See if we have registers spare for m blocking */
+  if ( l_used_reg + 1 + l_need_bcast_reg + 4*l_n_blocking <= l_num_reg ) {
+    l_m_blocking = 4;
+    l_ld_reg = l_used_reg++;
+  } else if ( l_used_reg + 1 + l_need_bcast_reg + 2*l_n_blocking <= l_num_reg ) {
+    l_m_blocking = 2;
+    l_ld_reg = l_used_reg++;
+  } else {
+    LIBXSMM_ASSERT( l_used_reg + l_need_bcast_reg + l_n_blocking <= l_num_reg );
+    l_m_blocking = 1;
+  }
 
-  for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
-    l_row_elements = i_row_idx[l_m+1] - i_row_idx[l_m];
-    if (l_row_elements > 0) {
-      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-        /* load C or reset to 0 depending on beta */
-        if ( 0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags) ) { /* Beta=1 */
+  /* Update the register count */
+  l_base_c_reg = l_used_reg;
+  l_used_reg += l_m_blocking*l_n_blocking;
+
+  /* If we're broadcasting then allocate some broadcast registers */
+  if ( l_need_bcast_reg ) {
+    l_base_bcast_reg = l_used_reg;
+    l_nbcast_regs = l_num_reg - l_base_bcast_reg;
+  }
+
+  printf("Used %d registers with %d blocking %d unique and %d bcast\n", l_used_reg + l_nbcast_regs, l_m_blocking, l_unique, l_nbcast_regs);
+
+  /* Sequence the operations */
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
+                                LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags,
+                                i_row_idx, i_column_idx, LIBXSMM_ASPARSE_REG_MAX_OPS,
+                                l_ops, &l_n_ops );
+
+  /* Ensure it worked */
+  if ( 0 == l_n_ops ) {
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
+
+  for ( l_op_idx = 0; l_op_idx < l_n_ops; l_op_idx++ ) {
+    unsigned int l_rva, l_rvb, l_rvc, l_fma_insn, l_mov_insn, l_u, l_v;
+    unsigned long long l_disp;
+
+    switch ( l_ops[l_op_idx].op ) {
+      case LIBXSMM_ASPARSE_REG_OP_LD_ACC:
+        l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.ld.acc_idx;
+        l_disp = l_ops[l_op_idx].args.ld.disp*i_xgemm_desc->ldc*l_fbytes;
+
+        for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             l_micro_kernel_config.instruction_set,
                                             l_micro_kernel_config.c_vmove_instruction,
                                             l_gp_reg_mapping.gp_reg_c,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size_out +
-                                              l_n*l_micro_kernel_config.datatype_size_out*l_micro_kernel_config.vector_length,
+                                            l_disp + l_n*l_vbytes,
                                             l_micro_kernel_config.vector_name,
-                                            l_base_acc_reg + l_n, 0, 1, 0 );
-        } else {
+                                            l_rvc + l_n, 0, 1, 0 );
+        }
+        break;
+      case LIBXSMM_ASPARSE_REG_OP_ZERO_ACC:
+        l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.ld.acc_idx;
+        l_disp = l_ops[l_op_idx].args.ld.disp;
+
+        for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    l_micro_kernel_config.instruction_set,
                                                    l_micro_kernel_config.vxor_instruction,
                                                    l_micro_kernel_config.vector_name,
-                                                   l_base_acc_reg + l_n,
-                                                   l_base_acc_reg + l_n,
-                                                   l_base_acc_reg + l_n );
+                                                   l_rvc + l_n, l_rvc + l_n, l_rvc + l_n );
+
+          /* As we'll be writing to C later, consider pre-fetching into cache */
+          if ( 0 == l_c_is_nt ) {
+            libxsmm_x86_instruction_prefetch( io_generated_code,
+                                              LIBXSMM_X86_INSTR_PREFETCHW,
+                                              l_gp_reg_mapping.gp_reg_c,
+                                              LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                              l_disp + l_n*l_vbytes );
+          }
+        }
+        break;
+      case LIBXSMM_ASPARSE_REG_OP_FMA:
+        l_rvb = l_ld_reg;
+        l_disp = l_ops[l_op_idx].args.fma.disp*i_xgemm_desc->ldb*l_fbytes;;
+
+        for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+          for ( l_z = 0; l_z < l_ops[l_op_idx].args.fma.n; l_z++ ) {
+            l_u = l_ops[l_op_idx].args.fma.src_vals[l_z];
+            l_rva = (l_unique > l_breg_unique) ? ~0 : l_unique_pos[l_u];
+            l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.fma.acc_idxs[l_z];
+
+            if ( l_fp64 ) {
+              l_fma_insn = (l_unique_sgn[l_u] == 1) ? LIBXSMM_X86_INSTR_VFMADD231PD : LIBXSMM_X86_INSTR_VFNMADD231PD;
+            } else {
+              l_fma_insn = (l_unique_sgn[l_u] == 1) ? LIBXSMM_X86_INSTR_VFMADD231PS : LIBXSMM_X86_INSTR_VFNMADD231PS;
+            }
+
+            /* If necessary, broadcast a packed constant */
+            if ( l_unique > l_breg_unique ) {
+              /* See if we already have it */
+              for ( l_v = 0; l_v < l_nbcast_regs; l_v++ ) {
+                if ( l_bcast_reg_vals[l_v] == l_unique_pos[l_u] ) {
+                  l_rva = l_base_bcast_reg + l_v;
+                  break;
+                }
+              }
+
+              /* Otherwise pick a register to broadcast into */
+              if ( ~0 == l_rva ) {
+                l_rva = l_base_bcast_reg + l_cur_bcast_reg;
+                libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                         l_micro_kernel_config.instruction_set,
+                                                         LIBXSMM_X86_INSTR_VPERMD,
+                                                         l_micro_kernel_config.vector_name,
+                                                         l_unique_pos[l_u] / l_values_per_reg,
+                                                         l_base_perm_reg + l_unique_pos[l_u] % l_values_per_reg,
+                                                         l_rva );
+
+                /* Update our records */
+                l_bcast_reg_vals[l_cur_bcast_reg] = l_unique_pos[l_u];
+                l_cur_bcast_reg = (l_cur_bcast_reg + 1) % l_nbcast_regs;
+              }
+            }
+
+            /* If B will be reused, load to a register */
+            if ( l_ops[l_op_idx].args.fma.n > 1 ) {
+              /* Load on first use */
+              if ( 0 == l_z ) {
+                libxsmm_x86_instruction_vec_move( io_generated_code,
+                                                  l_micro_kernel_config.instruction_set,
+                                                  l_micro_kernel_config.c_vmove_instruction,
+                                                  l_gp_reg_mapping.gp_reg_b,
+                                                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                  l_disp + l_n*l_vbytes,
+                                                  l_micro_kernel_config.vector_name,
+                                                  l_rvb, 0, 1, 0 );
+              }
+
+              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                       l_micro_kernel_config.instruction_set,
+                                                       l_fma_insn,
+                                                       l_micro_kernel_config.vector_name,
+                                                       l_rva, l_rvb, l_rvc + l_n );
+            /* Otherwise load as part of the FMA */
+            } else {
+              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                       l_micro_kernel_config.instruction_set,
+                                                       l_fma_insn, 0,
+                                                       l_gp_reg_mapping.gp_reg_b,
+                                                       LIBXSMM_X86_GP_REG_UNDEF,
+                                                       0, l_disp + l_n*l_vbytes,
+                                                       l_micro_kernel_config.vector_name,
+                                                       l_rva, l_rvc + l_n );
+            }
+          }
+        }
+        break;
+      case LIBXSMM_ASPARSE_REG_OP_ST_ACC:
+        l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.st.acc_idx;
+        l_disp = l_ops[l_op_idx].args.st.disp*i_xgemm_desc->ldc*l_fbytes;
+
+        /* Handle non-temporal stores */
+        if ( 0 != l_c_is_nt ) {
+          l_mov_insn = (l_fp64) ? LIBXSMM_X86_INSTR_VMOVNTPD : LIBXSMM_X86_INSTR_VMOVNTPS;
+        } else {
+          l_mov_insn = l_micro_kernel_config.c_vmove_instruction;
         }
 
-        /* only prefetch if we're not doing temporal stores */
-        if ( l_prefetch && (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) == 0 ) {
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-                                            LIBXSMM_X86_INSTR_PREFETCHT2,
+        for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+                                            l_micro_kernel_config.instruction_set,
+                                            l_mov_insn,
                                             l_gp_reg_mapping.gp_reg_c,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size_out +
-                                              (l_n+1)*l_micro_kernel_config.datatype_size_out*l_micro_kernel_config.vector_length );
+                                            l_disp + l_n*l_vbytes,
+                                            l_micro_kernel_config.vector_name,
+                                            l_rvc + l_n, 0, 0, 1 );
         }
-      }
-    }
-    for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
-      /* check k such that we just use columns which actually need to be multiplied */
-      const unsigned int u = i_row_idx[l_m] + l_z;
-      unsigned int l_unique_reg, fma_instruction;
-      LIBXSMM_ASSERT(u < l_n_row_idx);
-
-      /* select the correct FMA instruction */
-      if ( l_fp64 ) {
-        fma_instruction = (l_unique_sgn[u] == 1) ? LIBXSMM_X86_INSTR_VFMADD231PD : LIBXSMM_X86_INSTR_VFNMADD231PD;
-      } else {
-        fma_instruction = (l_unique_sgn[u] == 1) ? LIBXSMM_X86_INSTR_VFMADD231PS : LIBXSMM_X86_INSTR_VFNMADD231PS;
-      }
-
-      /* broadcast unique element of A if not in pre-broadcast mode */
-      if (l_unique > l_breg_unique ) {
-        if ( l_fp64 ) {
-          /* load permute selector operand if not stored in registers */
-          if ( l_unique > l_preg_unique ) {
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                                              l_micro_kernel_config.instruction_set,
-                                              l_micro_kernel_config.a_vmove_instruction,
-                                              l_gp_reg_mapping.gp_reg_a,
-                                              LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                              (l_unique_pos[u] % 8)*64,
-                                              l_micro_kernel_config.vector_name,
-                                              l_bcast_reg, 0, 1, 0 );
-
-            libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-                                                    l_micro_kernel_config.instruction_set,
-                                                    LIBXSMM_X86_INSTR_VPERMD,
-                                                    l_micro_kernel_config.vector_name,
-                                                    l_unique_pos[u] / 8,
-                                                    l_bcast_reg,
-                                                    l_bcast_reg);
-
-          /* permute selector operand already in register */
-          } else {
-            libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-                                                    l_micro_kernel_config.instruction_set,
-                                                    LIBXSMM_X86_INSTR_VPERMD,
-                                                    l_micro_kernel_config.vector_name,
-                                                    l_unique_pos[u] / 8,
-                                                    l_base_perm_reg + l_unique_pos[u] % 8,
-                                                    l_bcast_reg);
-          }
-        } else {
-          /* load permute selector operand if not stored in registers */
-          if ( l_unique > l_preg_unique ) {
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                                              l_micro_kernel_config.instruction_set,
-                                              l_micro_kernel_config.a_vmove_instruction,
-                                              l_gp_reg_mapping.gp_reg_a,
-                                              LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                              (l_unique_pos[u] % 16)*64,
-                                              l_micro_kernel_config.vector_name,
-                                              l_bcast_reg, 0, 1, 0 );
-
-            libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-                                                    l_micro_kernel_config.instruction_set,
-                                                    LIBXSMM_X86_INSTR_VPERMD,
-                                                    l_micro_kernel_config.vector_name,
-                                                    l_unique_pos[u] / 16,
-                                                    l_bcast_reg,
-                                                    l_bcast_reg);
-
-          /* permute selector operand already in register */
-          } else {
-            libxsmm_x86_instruction_vec_compute_reg(io_generated_code,
-                                                    l_micro_kernel_config.instruction_set,
-                                                    LIBXSMM_X86_INSTR_VPERMD,
-                                                    l_micro_kernel_config.vector_name,
-                                                    l_unique_pos[u] / 16,
-                                                    l_base_perm_reg + l_unique_pos[u] % 16,
-                                                    l_bcast_reg);
-          }
-        }
-      }
-
-      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-        /* select correct register depending on mode */
-        l_unique_reg = l_unique > 31 ? l_bcast_reg : l_unique_pos[u];
-
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 l_micro_kernel_config.instruction_set,
-                                                 fma_instruction,
-                                                 0,
-                                                 l_gp_reg_mapping.gp_reg_b,
-                                                 LIBXSMM_X86_GP_REG_UNDEF,
-                                                 0,
-                                                 i_column_idx[u]*i_xgemm_desc->ldb*l_micro_kernel_config.datatype_size_in +
-                                                   l_n*l_micro_kernel_config.datatype_size_in*l_micro_kernel_config.vector_length,
-                                                 l_micro_kernel_config.vector_name,
-                                                 l_unique_reg,
-                                                 l_base_acc_reg + l_n );
-
-          if ( l_prefetch )
-            libxsmm_x86_instruction_prefetch( io_generated_code,
-                                            LIBXSMM_X86_INSTR_PREFETCHT2,
-                                            l_gp_reg_mapping.gp_reg_b,
-                                            LIBXSMM_X86_GP_REG_UNDEF,
-                                            0,
-                                            i_column_idx[u]*i_xgemm_desc->ldb*l_micro_kernel_config.datatype_size_in +
-                                              (l_n+1)*l_micro_kernel_config.datatype_size_in*l_micro_kernel_config.vector_length );
-      }
-    }
-    if (l_row_elements > 0) {
-      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-        unsigned int l_store_instruction = 0;
-        if ((LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) > 0) {
-          if ( l_fp64 ) {
-            l_store_instruction = LIBXSMM_X86_INSTR_VMOVNTPD;
-          } else {
-            l_store_instruction = LIBXSMM_X86_INSTR_VMOVNTPS;
-          }
-        } else {
-          l_store_instruction = l_micro_kernel_config.c_vmove_instruction;
-        }
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-                                          l_micro_kernel_config.instruction_set,
-                                          l_store_instruction,
-                                          l_gp_reg_mapping.gp_reg_c,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size_out +
-                                            l_n*l_micro_kernel_config.datatype_size_out*l_micro_kernel_config.vector_length,
-                                          l_micro_kernel_config.vector_name,
-                                          l_base_acc_reg + l_n, 0, 0, 1 );
-      }
+        break;
+      default:
+        break;
     }
   }
-
-  /* close n loop */
-#if 0
-  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_blocking );
-  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
-#endif
 
   /* close asm */
   libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
-  free(l_unique_values);
-  free(l_unique_pos);
-  free(l_unique_sgn);
+  free( l_unique_values );
+  free( l_unique_pos );
+  free( l_unique_sgn );
+  free( l_ops );
 }
 
 LIBXSMM_API_INTERN
@@ -471,28 +632,29 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                             const unsigned int*             i_row_idx,
                                                             const unsigned int*             i_column_idx,
                                                             const double*                   i_values ) {
-  unsigned int l_m;
-  unsigned int l_n;
-  unsigned int l_z;
-  unsigned int l_row_elements;
+  unsigned int l_n, l_u, l_z;
   unsigned int l_unique;
-  unsigned int l_n_blocking;
+  unsigned int l_m_blocking, l_n_blocking;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
   const unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
-  unsigned int l_reg_unique, l_base_acc_reg, l_base_ld_reg;
+  unsigned int l_reg_unique, l_base_c_reg, l_base_c_gp_reg, l_base_ld_reg;
 
   const libxsmm_aarch64_asimd_tupletype l_tuplet = (l_fp64) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S;
   const libxsmm_aarch64_asimd_width l_width = (l_fp64) ? LIBXSMM_AARCH64_ASIMD_WIDTH_D : LIBXSMM_AARCH64_ASIMD_WIDTH_S;
   const unsigned int l_values_per_reg = (l_fp64) ? 2 : 4;
+  const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
+
+  libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
+  unsigned int l_n_ops, l_op_idx;
 
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* check if mallocs were successful */
-  if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn ) {
-    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
+  if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
     return;
   }
@@ -505,15 +667,13 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   } else if ( i_xgemm_desc->n == 4*l_values_per_reg ) {
     l_n_blocking = 4;
   } else {
-    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
 
   /* Init config */
   l_reg_unique = l_values_per_reg*(32 - l_n_blocking - ((l_n_blocking > 1) ? 2 : 1));
-  l_base_acc_reg = 32 - l_n_blocking;
-  l_base_ld_reg = l_base_acc_reg - ((l_n_blocking > 1) ? 2 : 1);
 
   /* prerequisite */
   LIBXSMM_ASSERT(0 != i_values);
@@ -522,10 +682,35 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   libxsmm_analyse_sparse_nnz( l_n_row_idx, i_values, &l_unique,
                               l_unique_values, l_unique_pos, l_unique_sgn );
 
-  /* check that there are not too many unique values */
+  /* Check that there are not too many unique values */
   if ( l_unique > l_reg_unique ) {
-    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
+    return;
+  }
+
+  l_base_ld_reg = LIBXSMM_UPDIV(l_unique, l_values_per_reg);
+  l_base_c_reg = l_base_ld_reg + ((l_n_blocking > 1) ? 2 : 1);
+  l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X12;
+
+  if ( l_base_c_reg + 4*l_n_blocking <= 32 ) {
+    l_m_blocking = 4;
+  } else if ( l_base_c_reg + 2*l_n_blocking <= 32 ) {
+    l_m_blocking = 2;
+  } else {
+    l_m_blocking = 1;
+  }
+
+  /* Sequence the operations */
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
+                                LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags,
+                                i_row_idx, i_column_idx, LIBXSMM_ASPARSE_REG_MAX_OPS,
+                                l_ops, &l_n_ops );
+
+  /* Ensure it worked */
+  if ( 0 == l_n_ops ) {
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 
@@ -535,20 +720,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_AARCH64_GP_REG_X2;
-  l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_AARCH64_GP_REG_X3;
-  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_AARCH64_GP_REG_X4;
-  l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_AARCH64_GP_REG_X6;
-  l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_AARCH64_GP_REG_X7;
-  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_AARCH64_GP_REG_X8;
-  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X9;
-  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X10;
-  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_X11;
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_AARCH64_GP_REG_X27;
-  l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_AARCH64_GP_REG_X28;
-  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_AARCH64_GP_REG_X29;
+  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X24;
+  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X25;
 
   /* open asm */
-  libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
+  libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xfff );
 
   /* load A into registers */
   for ( l_z = 0; l_z < l_unique; l_z++) {
@@ -575,104 +751,119 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                 l_width );
   }
 
-  for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
-    l_row_elements = i_row_idx[l_m + 1] - i_row_idx[l_m];
-    if ( 0 == l_row_elements ) {
-      continue;
-    }
+  for ( l_op_idx = 0; l_op_idx < l_n_ops; l_op_idx++ ) {
+    unsigned int l_rg, l_rva, l_rvb, l_rvc, l_fma_insn;
+    unsigned long long l_disp;
 
-    /* Compute the address of the relevant row in C */
-    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                   l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_3,
-                                                   l_gp_reg_mapping.gp_reg_help_5,
-                                                   l_m*i_xgemm_desc->ldc*(16 / l_values_per_reg) );
+    switch ( l_ops[l_op_idx].op ) {
+      case LIBXSMM_ASPARSE_REG_OP_LD_ACC:
+      case LIBXSMM_ASPARSE_REG_OP_ZERO_ACC:
+        l_rg = l_base_c_gp_reg + l_ops[l_op_idx].args.ld.acc_idx;
+        l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.ld.acc_idx;
+        l_disp = l_ops[l_op_idx].args.ld.disp*i_xgemm_desc->ldc*l_fbytes;
 
-    /* Beta = 0; zero the accumulators */
-    if ( LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags ) {
-      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
-                                                   l_base_acc_reg + l_n, l_base_acc_reg + l_n, 0, l_base_acc_reg + l_n,
-                                                   LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
-      }
-    }
-    /* Beta = 1; load C into the accumulators */
-    else {
-      if ( 1 == l_n_blocking ) {
-        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
-                                                l_gp_reg_mapping.gp_reg_help_5, 0, 0,
-                                                l_base_acc_reg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-      } else {
-        for ( l_n = 0; l_n < l_n_blocking; l_n += 2 ) {
-          libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF,
-                                                       l_gp_reg_mapping.gp_reg_help_5, 16*l_n,
-                                                       l_base_acc_reg + l_n, l_base_acc_reg + l_n + 1,
-                                                       LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-        }
-      }
-    }
-
-    for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
-      const unsigned int u = i_row_idx[l_m] + l_z;
-      unsigned int l_unique_reg, fma_instruction;
-      LIBXSMM_ASSERT(u < l_n_row_idx); /* mute issue pointed out by Clang's static analysis */
-      l_unique_reg = l_unique_pos[u];
-      fma_instruction = (l_unique_sgn[u] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
-
-      if ( 1 == l_n_blocking ) {
-        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_1,
-                                                   i_column_idx[u]*i_xgemm_desc->ldb*(16 / l_values_per_reg) );
-        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R,
-                                                l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1, 0,
-                                                l_base_ld_reg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, fma_instruction,
-                                                   l_base_ld_reg,
-                                                   l_unique_reg / l_values_per_reg,
-                                                   l_unique_reg % l_values_per_reg,
-                                                   l_base_acc_reg, l_tuplet );
-      } else {
+        /* Save offset into a GPR for later reuse */
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                       l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_2,
-                                                       l_gp_reg_mapping.gp_reg_help_3, i_column_idx[u]*i_xgemm_desc->ldb*(16 / l_values_per_reg) );
-        for ( l_n = 0; l_n < l_n_blocking; l_n += 2 ) {
-          libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF,
-                                                       l_gp_reg_mapping.gp_reg_help_3, 16*l_n,
-                                                       l_base_ld_reg, l_base_ld_reg + 1,
-                                                       LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, fma_instruction,
-                                                     l_base_ld_reg,
-                                                     l_unique_reg / l_values_per_reg,
-                                                     l_unique_reg % l_values_per_reg,
-                                                     l_base_acc_reg + l_n, l_tuplet );
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, fma_instruction,
-                                                     l_base_ld_reg + 1,
-                                                     l_unique_reg / l_values_per_reg,
-                                                     l_unique_reg % l_values_per_reg,
-                                                     l_base_acc_reg + l_n + 1,
-                                                     l_tuplet );
-        }
-      }
-    }
+                                                       l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
+                                                       l_rg, l_disp );
 
-    if ( 1 == l_n_blocking ) {
-      libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF,
-                                              l_gp_reg_mapping.gp_reg_help_5, 0, 0,
-                                              l_base_acc_reg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-    } else {
-      for ( l_n = 0; l_n < l_n_blocking; l_n += 2 ) {
-        libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF,
-                                                     l_gp_reg_mapping.gp_reg_help_5, 16*l_n,
-                                                     l_base_acc_reg + l_n, l_base_acc_reg + l_n + 1,
-                                                     LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-      }
+        /* Zero */
+        if ( LIBXSMM_ASPARSE_REG_OP_ZERO_ACC == l_ops[l_op_idx].op ) {
+          for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
+                                                       l_rvc + l_n, l_rvc + l_n, 0, l_rvc + l_n,
+                                                       LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+          }
+        /* Load */
+        } else if ( 1 == l_n_blocking ) {
+          libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
+                                                  l_rg, 0, 0, l_rvc, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+        /* Load paired */
+        } else {
+          for ( l_n = 0; l_n < l_n_blocking; l_n += 2 ) {
+            libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF,
+                                                         l_rg, 16*l_n, l_rvc + l_n, l_rvc + l_n + 1,
+                                                         LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+          }
+        }
+        break;
+      case LIBXSMM_ASPARSE_REG_OP_FMA:
+        l_rvb = l_base_ld_reg;
+        l_disp = l_ops[l_op_idx].args.fma.disp*i_xgemm_desc->ldb*l_fbytes;
+
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                       l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_0,
+                                                       l_gp_reg_mapping.gp_reg_help_1, l_disp );
+
+        if ( 1 == l_n_blocking ) {
+          libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
+                                                  l_gp_reg_mapping.gp_reg_help_1, 0, 0,
+                                                  l_rvb, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+          for ( l_z = 0; l_z < l_ops[l_op_idx].args.fma.n; l_z++ ) {
+            l_u = l_ops[l_op_idx].args.fma.src_vals[l_z];
+            l_rva = l_unique_pos[l_u];
+            l_rvc = l_base_c_reg + l_ops[l_op_idx].args.fma.acc_idxs[l_z];
+            l_fma_insn = (l_unique_sgn[l_u] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
+
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, l_fma_insn,
+                                                       l_rvb,
+                                                       l_rva / l_values_per_reg,
+                                                       l_rva % l_values_per_reg,
+                                                       l_rvc, l_tuplet );
+          }
+        } else {
+          for ( l_n = 0; l_n < l_n_blocking; l_n += 2 ) {
+            libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF,
+                                                         l_gp_reg_mapping.gp_reg_help_1, 16*l_n,
+                                                         l_rvb, l_rvb + 1, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+            for ( l_z = 0; l_z < l_ops[l_op_idx].args.fma.n; l_z++ ) {
+              l_u = l_ops[l_op_idx].args.fma.src_vals[l_z];
+              l_rva = l_unique_pos[l_u];
+              l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.fma.acc_idxs[l_z];
+              l_fma_insn = (l_unique_sgn[l_u] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
+
+
+              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, l_fma_insn,
+                                                         l_rvb,
+                                                         l_rva / l_values_per_reg,
+                                                         l_rva % l_values_per_reg,
+                                                         l_rvc + l_n, l_tuplet );
+              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, l_fma_insn,
+                                                         l_rvb + 1,
+                                                         l_rva / l_values_per_reg,
+                                                         l_rva % l_values_per_reg,
+                                                         l_rvc + l_n + 1, l_tuplet );
+            }
+          }
+        }
+        break;
+      case LIBXSMM_ASPARSE_REG_OP_ST_ACC:
+        l_rg = l_base_c_gp_reg + l_ops[l_op_idx].args.st.acc_idx;
+        l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.st.acc_idx;
+
+        if ( 1 == l_n_blocking ) {
+          libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF,
+                                                  l_rg, 0, 0, l_rvc, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+        } else {
+          for ( l_n = 0; l_n < l_n_blocking; l_n += 2 ) {
+            libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF,
+                                                         l_rg, 16*l_n, l_rvc + l_n, l_rvc + l_n + 1,
+                                                         LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+          }
+        }
+        break;
+      default:
+        break;
     }
   }
 
   /* close asm */
-  libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xe0f );
+  libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xfff );
 
   free( l_unique_values );
   free( l_unique_pos );
   free( l_unique_sgn );
+  free( l_ops );
 }
 
 LIBXSMM_API_INTERN
@@ -681,15 +872,14 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
                                                            const unsigned int*             i_row_idx,
                                                            const unsigned int*             i_column_idx,
                                                            const double*                   i_values ) {
-  unsigned int l_m, l_n, l_z;
-  unsigned int l_row_elements;
+  unsigned int l_m, l_n, l_u, l_z;
   unsigned int l_unique;
-  unsigned int l_n_blocking;
+  unsigned int l_m_blocking, l_n_blocking;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
-  unsigned int l_reg_unique, l_base_acc_reg, l_ld_reg;
+  unsigned int l_reg_unique, l_base_c_reg, l_base_c_gp_reg, l_ld_reg, l_used_reg;
 
   const unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
@@ -697,12 +887,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   libxsmm_aarch64_sve_type l_svet;
 
+  libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
+  unsigned int l_n_ops, l_op_idx;
+
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* check if mallocs were successful */
-  if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn ) {
-    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
+  if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
     return;
   }
@@ -718,7 +911,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   } else if ( i_xgemm_desc->n == 4*l_micro_kernel_config.vector_length ) {
     l_n_blocking = 4;
   } else {
-    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
@@ -735,8 +928,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   }
 
   l_reg_unique = l_npacked_reg*l_npacked_values_per_reg + (32 - l_n_blocking - 1 - l_npacked_reg);
-  l_base_acc_reg = 32 - l_n_blocking;
-  l_ld_reg = l_base_acc_reg - 1;
 
   /* prerequisite */
   LIBXSMM_ASSERT(0 != i_values);
@@ -745,9 +936,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   libxsmm_analyse_sparse_nnz( l_n_row_idx, i_values, &l_unique,
                               l_unique_values, l_unique_pos, l_unique_sgn );
 
-  /* check that there are not too many unique values */
+  /* Check that there are not too many unique values */
   if ( l_unique > l_reg_unique ) {
-    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn );
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
     return;
   }
@@ -758,23 +949,14 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_AARCH64_GP_REG_X2;
-  l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_AARCH64_GP_REG_X3;
-  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_AARCH64_GP_REG_X4;
-  l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_AARCH64_GP_REG_X6;
-  l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_AARCH64_GP_REG_X7;
-  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_AARCH64_GP_REG_X8;
-  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X9;
-  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X10;
-  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_X11;
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_AARCH64_GP_REG_X27;
-  l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_AARCH64_GP_REG_X28;
-  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_AARCH64_GP_REG_X29;
+  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X24;
+  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X25;
 
   /* open asm */
-  libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
+  libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xfff );
 
-  /* Load A (l_n) into registers (l_z) */
-  for ( l_n = l_z = 0; l_n < l_unique; l_z++) {
+  /* Load A (l_n) into registers (l_used_reg) */
+  for ( l_n = l_used_reg = 0; l_n < l_unique; l_used_reg++) {
     double l_rvals_d[2] = {};
     float l_rvals_f[4] = {};
     void *imm_arr;
@@ -789,7 +971,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
     }
 
     /* See if we can pack any more values in */
-    if ( l_z < l_npacked_reg ) {
+    if ( l_used_reg < l_npacked_reg ) {
       if ( l_fp64 && l_n < l_unique ) {
         l_rvals_d[1] = l_unique_values[l_n++];
       } else {
@@ -799,85 +981,127 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
       }
     }
 
-    libxsmm_aarch64_instruction_sve_rep16bytes_const_to_vec( io_generated_code, l_z,
+    libxsmm_aarch64_instruction_sve_rep16bytes_const_to_vec( io_generated_code, l_used_reg,
                                                              l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1,
                                                              LIBXSMM_AARCH64_SVE_REG_P0, imm_arr, 0 );
+  }
+
+  l_ld_reg = l_used_reg++;
+  l_base_c_reg = l_used_reg;
+  l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X12;
+
+  /* See if we have registers spare for m blocking */
+  if ( l_base_c_reg + 4*l_n_blocking <= 32 ) {
+    l_m_blocking = 4;
+  } else if ( l_base_c_reg + 2*l_n_blocking <= 32 ) {
+    l_m_blocking = 2;
+  } else {
+    l_m_blocking = 1;
+  }
+
+  /* Sequence the operations */
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
+                                LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags,
+                                i_row_idx, i_column_idx, LIBXSMM_ASPARSE_REG_MAX_OPS,
+                                l_ops, &l_n_ops );
+
+  /* Ensure it worked */
+  if ( 0 == l_n_ops ) {
+    free( l_unique_values ); free( l_unique_pos ); free( l_unique_sgn ); free( l_ops );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
   }
 
   libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, LIBXSMM_AARCH64_SVE_REG_P0,
                                                 -1, l_gp_reg_mapping.gp_reg_help_0 );
 
 
-  for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
-    l_row_elements = i_row_idx[l_m + 1] - i_row_idx[l_m];
-    if ( 0 == l_row_elements ) {
-      continue;
-    }
+  for ( l_op_idx = 0; l_op_idx < l_n_ops; l_op_idx++ ) {
+    unsigned int l_rg, l_rva, l_rvb, l_rvc, l_fma_insn, l_idx;
+    unsigned long long l_disp;
 
-    /* Compute the address of the relevant row in C */
-    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                   l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_3,
-                                                   l_gp_reg_mapping.gp_reg_help_5,
-                                                   l_m*i_xgemm_desc->ldc*l_fbytes );
+    switch ( l_ops[l_op_idx].op ) {
+      case LIBXSMM_ASPARSE_REG_OP_LD_ACC:
+      case LIBXSMM_ASPARSE_REG_OP_ZERO_ACC:
+        l_rg = l_base_c_gp_reg + l_ops[l_op_idx].args.ld.acc_idx;
+        l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.ld.acc_idx;
+        l_disp = l_ops[l_op_idx].args.ld.disp*i_xgemm_desc->ldc*l_fbytes;
 
-    /* Beta = 0; zero the accumulators */
-    if ( LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags ) {
-      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
-                                                 l_base_acc_reg + l_n, l_base_acc_reg + l_n, 0, l_base_acc_reg + l_n,
-                                                 LIBXSMM_AARCH64_GP_REG_UNDEF, l_svet );
-      }
-    }
-    /* Beta = 1; load C into the accumulators */
-    else {
-      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-        libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
-                                              l_gp_reg_mapping.gp_reg_help_5, 0, l_n,
-                                              l_base_acc_reg + l_n, LIBXSMM_AARCH64_SVE_REG_P0 );
-      }
-    }
+        /* Save offset into a GPR for later reuse */
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                       l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
+                                                       l_rg, l_disp );
 
-    for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
-      const unsigned int u = i_row_idx[l_m] + l_z;
-      unsigned int l_unique_reg, l_idx, fma_instruction;
-      LIBXSMM_ASSERT(u < l_n_row_idx);
+        /* Zero */
+        if ( LIBXSMM_ASPARSE_REG_OP_ZERO_ACC == l_ops[l_op_idx].op ) {
+          for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
+                                                     l_rvc + l_n, l_rvc + l_n, 0, l_rvc + l_n,
+                                                     LIBXSMM_AARCH64_GP_REG_UNDEF, l_svet );
+          }
+        /* Load */
+        } else {
+          for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+            libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                                  l_rg, 0, l_n,
+                                                  l_rvc + l_n, LIBXSMM_AARCH64_SVE_REG_P0 );
+          }
+        }
+        break;
+      case LIBXSMM_ASPARSE_REG_OP_FMA:
+        l_rvb = l_ld_reg;
+        l_disp = l_ops[l_op_idx].args.fma.disp*i_xgemm_desc->ldb*l_fbytes;
 
-      /* Constant is packed in its register */
-      if ( l_unique_pos[u] < l_npacked_reg*l_npacked_values_per_reg ) {
-        l_unique_reg = l_unique_pos[u] / l_npacked_values_per_reg;
-        l_idx = l_unique_pos[u] % l_npacked_values_per_reg;
-        fma_instruction = (l_unique_sgn[u] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I;
-      /* Constant is broadcasted in its register */
-      } else {
-        l_unique_reg = l_unique_pos[u] - l_npacked_reg*(l_npacked_values_per_reg - 1);
-        l_idx = 0;
-        fma_instruction = (l_unique_sgn[u] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V;
-      }
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                       l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_0,
+                                                       l_gp_reg_mapping.gp_reg_help_1, l_disp );
 
-      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                      l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_2,
-                                                      l_gp_reg_mapping.gp_reg_help_3, i_column_idx[u]*i_xgemm_desc->ldb*l_fbytes );
-      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-        libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
-                                              l_gp_reg_mapping.gp_reg_help_3, 0, l_n,
-                                              l_ld_reg, LIBXSMM_AARCH64_SVE_REG_P0 );
-        libxsmm_aarch64_instruction_sve_compute ( io_generated_code, fma_instruction,
-                                                  l_ld_reg, l_unique_reg, l_idx, l_base_acc_reg + l_n,
-                                                  LIBXSMM_AARCH64_SVE_REG_P0, l_svet );
-      }
-    }
+        for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+          libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                                l_gp_reg_mapping.gp_reg_help_1, 0, l_n,
+                                                l_rvb, LIBXSMM_AARCH64_SVE_REG_P0 );
+          for ( l_z = 0; l_z < l_ops[l_op_idx].args.fma.n; l_z++ ) {
+            l_u = l_ops[l_op_idx].args.fma.src_vals[l_z];
+            l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.fma.acc_idxs[l_z];
 
-    for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-      libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
-                                            l_gp_reg_mapping.gp_reg_help_5, 0, l_n,
-                                            l_base_acc_reg + l_n, LIBXSMM_AARCH64_SVE_REG_P0 );
+            /* Constant is packed in its register */
+            if ( l_unique_pos[l_u] < l_npacked_reg*l_npacked_values_per_reg ) {
+              l_rva = l_unique_pos[l_u] / l_npacked_values_per_reg;
+              l_idx = l_unique_pos[l_u] % l_npacked_values_per_reg;
+              l_fma_insn = (l_unique_sgn[l_u] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I;
+            /* Constant is broadcasted in its register */
+            } else {
+              l_rva = l_unique_pos[l_u] - l_npacked_reg*(l_npacked_values_per_reg - 1);
+              l_idx = 0;
+              l_fma_insn = (l_unique_sgn[l_u] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V;
+            }
+
+            libxsmm_aarch64_instruction_sve_compute ( io_generated_code, l_fma_insn,
+                                                      l_rvb, l_rva, l_idx, l_rvc + l_n,
+                                                      LIBXSMM_AARCH64_SVE_REG_P0, l_svet );
+          }
+        }
+        break;
+      case LIBXSMM_ASPARSE_REG_OP_ST_ACC:
+        l_rg = l_base_c_gp_reg + l_ops[l_op_idx].args.st.acc_idx;
+        l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].args.st.acc_idx;
+
+        for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+          libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
+                                                l_rg, 0, l_n, l_rvc + l_n,
+                                                LIBXSMM_AARCH64_SVE_REG_P0 );
+        }
+        break;
+      default:
+        break;
     }
   }
 
   /* close asm */
-  libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xe0f );
+  libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xfff );
 
   free( l_unique_values );
   free( l_unique_pos );
   free( l_unique_sgn );
+  free( l_ops );
 }

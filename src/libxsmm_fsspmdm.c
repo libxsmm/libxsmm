@@ -13,68 +13,14 @@
 #include "generator_common.h"
 
 
-LIBXSMM_API_INTERN const double* internal_dfsspmdm_init(void);
-LIBXSMM_API_INTERN const double* internal_dfsspmdm_init(void)
-{
-  /* Double precision AVX-512 lane broadcasts */
-  LIBXSMM_ALIGNED(static const unsigned int perm[], LIBXSMM_ALIGNMENT) = {
-    0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-    2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
-    4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5,
-    6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7,
-    8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9,
-    10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11,
-    12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13,
-    14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15
-  };
-  static const double* result = NULL;
-  if (NULL == result) { /* internal lazy initialization */
-    result = (const double*)((const void*)perm);
-    LIBXSMM_INIT
-  }
-  return result;
-}
-
-
-LIBXSMM_API_INTERN const float* internal_sfsspmdm_init(void);
-LIBXSMM_API_INTERN const float* internal_sfsspmdm_init(void)
-{
-  /* Single precision AVX-512 lane broadcasts */
-  LIBXSMM_ALIGNED(static const unsigned int perm[], LIBXSMM_ALIGNMENT) = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-    10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-    11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
-    12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
-    13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
-    14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
-    15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15
-  };
-  static const float* result = NULL;
-  if (NULL == result) { /* internal lazy initialization */
-    result = (const float*)((const void*)perm);
-    LIBXSMM_INIT
-  }
-  return result;
-}
-
-
 LIBXSMM_API_INTERN
-void libxsmm_fsspmdm_base_vlen(libxsmm_blasint N,
-                               int i_fp64,
-                               int* o_sparse,
-                               int* o_dense) {
-  int vl = libxsmm_cpuid_vlen32(libxsmm_target_archid);
+void libxsmm_fsspmdm_base_vlen( libxsmm_blasint N,
+                                int i_fp64,
+                                int* o_sparse,
+                                int* o_dense) {
+  int vl = libxsmm_cpuid_vlen32( libxsmm_target_archid );
   if ( i_fp64 ) {
-    vl = LIBXSMM_UPDIV(vl, 2);
+    vl = LIBXSMM_UPDIV( vl, 2 );
   }
 
   *o_sparse = vl;
@@ -100,7 +46,6 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   const double alpha, const double beta, libxsmm_blasint c_is_nt,
   const double* a_dense)
 {
-  const double *const perm = internal_dfsspmdm_init(); /* shall be first */
   const double one = 1.0;
   double* a_csr_values = NULL;
   unsigned int* a_csr_rowptr = NULL;
@@ -120,7 +65,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   static int error_once = 0;
 
   /* Compute the vector/chunk sizes */
-  libxsmm_fsspmdm_base_vlen(N, 1, &N_sparse1, &N_dense);
+  libxsmm_fsspmdm_base_vlen( N, 1, &N_sparse1, &N_dense );
   N_sparse2 = 2*N_sparse1;
   N_sparse4 = 4*N_sparse1;
 
@@ -315,7 +260,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse1 ) {
-          k_sparse1( perm, B + j, C + j );
+          k_sparse1( NULL, B + j, C + j );
         }
       }
       dt_sparse1 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
@@ -326,7 +271,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse2 ) {
-          k_sparse2( perm, B + j, C + j );
+          k_sparse2( NULL, B + j, C + j );
         }
       }
       dt_sparse2 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
@@ -337,7 +282,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse4 ) {
-          k_sparse4( perm, B + j, C + j );
+          k_sparse4( NULL, B + j, C + j );
         }
       }
       dt_sparse4 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
@@ -407,7 +352,6 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   const float alpha, const float beta, libxsmm_blasint c_is_nt,
   const float* a_dense)
 {
-  const float *const perm = internal_sfsspmdm_init(); /* shall be first */
   const float one = 1.0f;
   float* a_csr_values = NULL;
   unsigned int* a_csr_rowptr = NULL;
@@ -621,7 +565,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse1 ) {
-          k_sparse1( perm, B + j, C + j );
+          k_sparse1( NULL, B + j, C + j );
         }
       }
       dt_sparse1 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
@@ -632,7 +576,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse2 ) {
-          k_sparse2( perm, B + j, C + j );
+          k_sparse2( NULL, B + j, C + j );
        }
       }
       dt_sparse2 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
@@ -643,7 +587,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse4 ) {
-          k_sparse4( perm, B + j, C + j );
+          k_sparse4( NULL, B + j, C + j );
         }
       }
       dt_sparse4 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
@@ -713,9 +657,8 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
   assert( handle != NULL );
 
   if ( handle->a_dense == NULL ) {
-    const double *const perm = internal_dfsspmdm_init();
     for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
-      handle->kernel( perm, B+i, C+i );
+      handle->kernel( NULL, B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
@@ -731,9 +674,8 @@ LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const
   assert( handle != NULL );
 
   if ( handle->a_dense == NULL ) {
-    const float *const perm = internal_sfsspmdm_init();
     for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
-      handle->kernel( perm, B+i, C+i );
+      handle->kernel( NULL, B+i, C+i );
     }
   } else {
     for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
