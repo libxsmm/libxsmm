@@ -3103,6 +3103,10 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
        case LIBXSMM_X86_INSTR_PREFETCHNTA:
           l_instype -= 16;
           break;
+       case LIBXSMM_X86_INSTR_PREFETCHW:
+          l_opcode = -0xb;
+          l_instype -= 8;
+          break;
        case LIBXSMM_X86_INSTR_CLDEMOTE:
           l_opcode = 0x4;
           l_instype -= 16;
