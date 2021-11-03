@@ -1530,7 +1530,7 @@ void libxsmm_aarch64_instruction_sve_rep16bytes_const_to_vec( libxsmm_generated_
 
   libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF,
                                              LIBXSMM_AARCH64_GP_REG_XSP, 0, i_gp_reg_tmp0, i_gp_reg_tmp1 );
-  libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
+  libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF,
                                         LIBXSMM_AARCH64_GP_REG_XSP, 0, 0, i_vec_reg, i_pred_tmp );
 
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,

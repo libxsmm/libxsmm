@@ -643,6 +643,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF:
        break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: unexpected instruction number: %u\n", i_vmove_instr);
@@ -699,12 +700,18 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
         code[code_head] |= (unsigned int)((0x7 & i_offset) << 10);
         code[code_head] |= (unsigned int)((0x3f & (i_offset >> 3)) << 16);
       } else {
-        if ( i_offset < -8 || i_offset > 7 ) {
-          fprintf(stderr, "libxsmm_aarch64_instruction_sve_struct_move: for LD1W/D, ST1W/D offset is out of range!\n");
+        short l_offset = i_offset;
+
+        if ( LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF == i_vmove_instr ) {
+          l_offset /= 16;
+        }
+
+        if ( l_offset < -8 || l_offset > 7 ) {
+          fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1W/D, LD1RQD, ST1W/D,  offset is out of range!\n");
           exit(-1);
         }
 
-        code[code_head] |= (unsigned int)((0xf & i_offset) << 16);
+        code[code_head] |= (unsigned int)((0xf & l_offset) << 16);
       }
     }
 
