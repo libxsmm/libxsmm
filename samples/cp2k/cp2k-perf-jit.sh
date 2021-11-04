@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -32,7 +32,7 @@ case "$1" in
   ;;
 esac
 
-if [ "" = "${!RUNS}" ]; then
+if [ -z "${RUNS}" ]; then
   RUNS=RUNS11
 fi
 

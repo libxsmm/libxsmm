@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #SBATCH -J dlrm_terabyte
 #SBATCH --partition=clxtrb

@@ -89,7 +89,8 @@ int main(int argc, char* argv[])
     {
       Eigen::ThreadPool threadpool(nthreads);
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
-      Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n);
+      typedef Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> tensor_type;
+      tensor_type ta(m, k), tb(k, n), tc(m, n);
       LIBXSMM_BLAS_CONST char transa = 'N', transb = 'N';
       LIBXSMM_BLAS_CONST ITYPE alpha(1), beta(0);
       unsigned long long start;
@@ -101,7 +102,8 @@ int main(int argc, char* argv[])
         ta.setRandom(); tb.setRandom();
         start = libxsmm_timer_tick();
         for (int i = 0; i < nrepeat; ++i) {
-          tc.device(device) = ta.contract(tb, product_dims);
+          const tensor_type& tt = ta.contract(tb, product_dims);
+          tc.device(device) = tt;
         }
         d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       }

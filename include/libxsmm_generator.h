@@ -163,11 +163,9 @@ void libxsmm_generator_spgemm_csr_kernel(libxsmm_generated_code*        io_gener
                                          const unsigned int*            i_column_idx,
                                          const double*                  i_values);
 
-/* @TODO change int based architecture value */
 LIBXSMM_API
 void libxsmm_generator_spgemm_csr_reg_kernel(libxsmm_generated_code*        io_generated_code,
                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                             const char*                    i_arch,
                                              const unsigned int*            i_row_idx,
                                              const unsigned int*            i_column_idx,
                                              const double*                  i_values);

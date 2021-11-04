@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #SBATCH -J prune_resnet
 #SBATCH --partition=nv-v100
