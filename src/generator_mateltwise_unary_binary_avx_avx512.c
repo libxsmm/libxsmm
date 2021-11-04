@@ -622,7 +622,7 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
         if ( cur_vreg == cur_vreg_real ) {
           if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
                LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ) {
-            if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256_CPX) ) {
+            if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX ) {
               libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
                                                         i_micro_kernel_config->vector_name,
                                                         cur_vreg, cur_vreg );
@@ -2233,7 +2233,7 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
 
   /* if we need FP32->BF16 downconverts and we don't have native instruction, then prepare stack */
   if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
-       LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) && ((io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX)) ) {
+       LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX)) {
     i_micro_kernel_config->use_fp32bf16_cvt_replacement = 1;
     libxsmm_generator_vcvtneps2bf16_avx512_prep_stack( io_generated_code, i_gp_reg_tmp );
     i_micro_kernel_config->dcvt_mask_aux0 = i_micro_kernel_config->reserved_mask_regs;
@@ -2244,7 +2244,7 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
   }
 
-  if ((io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mateltwise_desc->m % i_micro_kernel_config->vlen_in != 0)) {
+  if ((io_generated_code->arch < LIBXSMM_X86_AVX512) && (i_mateltwise_desc->m % i_micro_kernel_config->vlen_in != 0)) {
     i_micro_kernel_config->inout_vreg_mask = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
   }
@@ -2481,15 +2481,12 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
 
   /* Configure vlens */
   libxsmm_generator_configure_avx512_vlens(i_mateltwise_desc, i_micro_kernel_config);
-  if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+  if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
     i_micro_kernel_config->vlen_in = i_micro_kernel_config->vlen_in/2;
     i_micro_kernel_config->vlen_out = i_micro_kernel_config->vlen_out/2;
     available_vregs = 16;
-  } else if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
-    i_micro_kernel_config->vlen_in = i_micro_kernel_config->vlen_in/2;
-    i_micro_kernel_config->vlen_out = i_micro_kernel_config->vlen_out/2;
-    available_vregs = 32;
   }
+
   /* set mask lds */
   if ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ) {
     i_micro_kernel_config->ldo_mask = (i_mateltwise_desc->ldo+15) - ((i_mateltwise_desc->ldo+15)%16);
