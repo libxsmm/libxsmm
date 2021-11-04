@@ -20,50 +20,6 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
-int libxsmm_generator_mateltwise_aarch64_sve_get_elem_size(int type){
-    switch(type){
-      case LIBXSMM_DATATYPE_F64: return 8;
-      case LIBXSMM_DATATYPE_F32:
-      case LIBXSMM_DATATYPE_I32: return 4;
-      case LIBXSMM_DATATYPE_BF16:
-      case LIBXSMM_DATATYPE_F16:
-      case LIBXSMM_DATATYPE_I16: return 2;
-      case LIBXSMM_DATATYPE_I8: return 1;
-      default: 
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
-        return -1;
-    }
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_mateltwise_aarch64_sve_update_micro_kernel_config_vectorlength( libxsmm_generated_code*           io_generated_code,
-                                                                           libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
-                                                                           const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {// todo we should use a flag, not a version check
-    io_micro_kernel_config->instruction_set = io_generated_code->arch;
-    io_micro_kernel_config->vector_reg_count = 32;
-    /* Configure input & output specific microkernel options */
-    int in_size = libxsmm_generator_mateltwise_aarch64_sve_get_elem_size(LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
-    int out_size = libxsmm_generator_mateltwise_aarch64_sve_get_elem_size(LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ));
-    if(in_size <= 0 || out_size <= 0) return;
-    io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
-    io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
-    io_micro_kernel_config->datatype_size_in = in_size;
-    io_micro_kernel_config->datatype_size_out = out_size;
-    io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
-    io_micro_kernel_config->alu_add_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
-    io_micro_kernel_config->alu_sub_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
-    io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
-    io_micro_kernel_config->alu_jmp_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
-    io_micro_kernel_config->alu_mov_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
-    io_micro_kernel_config->vxor_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
-  } else {
-     /* That should not happen */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-  }
-}
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_aarch64_sve_init_micro_kernel_config_fullvector( libxsmm_generated_code*           io_generated_code,
                                                                                libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
                                                                                const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
@@ -149,10 +105,11 @@ void libxsmm_generator_meltw_setup_stack_frame_aarch64_sve( libxsmm_generated_co
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_meltw_destroy_stack_frame_aarch64( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_meltw_destroy_stack_frame_aarch64_sve( libxsmm_generated_code*            io_generated_code,
     const libxsmm_meltw_descriptor*     i_mateltwise_desc,
     const libxsmm_mateltwise_kernel_config*  i_micro_kernel_config ) {
       // what is this supposed to do?
+      // probably it shall save all registers, which haven't been saved yet
   LIBXSMM_UNUSED(i_mateltwise_desc);
   LIBXSMM_UNUSED(io_generated_code);
   LIBXSMM_UNUSED(i_micro_kernel_config);
@@ -173,7 +130,7 @@ void libxsmm_generator_meltw_destroy_stack_frame_aarch64( libxsmm_generated_code
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_mateltwise_aarch64_sve_kernel( libxsmm_generated_code*         io_generated_code,
                                                   const libxsmm_meltw_descriptor* i_mateltwise_desc ) {
   libxsmm_mateltwise_kernel_config  l_kernel_config;
   libxsmm_mateltwise_gp_reg_mapping l_gp_reg_mapping;
@@ -192,10 +149,10 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
   /* open asm */
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
 
-  /* being BLAS aligned, for empty kermls, do nothing */
+  /* being BLAS aligned, for empty kernels, do nothing */
   if ( (i_mateltwise_desc->m > 0) && ((i_mateltwise_desc->n > 0) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX)) ) {
     /* Stack management for melt kernel */
-    libxsmm_generator_meltw_setup_stack_frame_aarch64( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
+    libxsmm_generator_meltw_setup_stack_frame_aarch64_sve( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
     if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
       if (is_unary_opcode_reduce_kernel(i_mateltwise_desc->param) > 0) {
@@ -235,7 +192,7 @@ void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*       
     }
 
     /* Stack management formelt kernel */
-    libxsmm_generator_meltw_destroy_stack_frame_aarch64(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
+    libxsmm_generator_meltw_destroy_stack_frame_aarch64_sve(  io_generated_code, i_mateltwise_desc, &l_kernel_config );
   }
 
   /* close asm */

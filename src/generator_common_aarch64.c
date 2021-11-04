@@ -77,9 +77,9 @@ void libxsmm_generator_loop_footer_aarch64( libxsmm_generated_code*     io_gener
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_loop_header_gp_reg_bound_aarch64( libxsmm_generated_code*     io_generated_code,
-                                            libxsmm_loop_label_tracker* io_loop_label_tracker,
-                                            const unsigned int          i_gp_reg_loop_cnt,
-                                            const unsigned int          i_gp_reg_bound ) {
+                                                         libxsmm_loop_label_tracker* io_loop_label_tracker,
+                                                         const unsigned int          i_gp_reg_loop_cnt,
+                                                         const unsigned int          i_gp_reg_bound ) {
   libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ORR_SR, i_gp_reg_bound, i_gp_reg_bound, i_gp_reg_loop_cnt, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
   libxsmm_aarch64_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
 }
@@ -99,6 +99,9 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
   unsigned int l_vstore_instr  = (  i_adv_gpr == 0 ) ? LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF : LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST;
   unsigned int l_vmove_instr   = ( i_is_store == 0 ) ? l_vload_instr : l_vstore_instr;
 
+  /* todo sve understand, what is done here, and implement it on sve registers */
+  /* is the masking just how many elements will be loaded??? */
+  printf("gca.c, load %d elements\n", i_masked_elems);
   if ( i_masked_elems == 1 ) {
     unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size;
     if ( i_is_store == 0 ) {

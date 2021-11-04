@@ -53,11 +53,11 @@ void libxsmm_generator_transform_aarch64_microkernel( libxsmm_generated_code*   
                                                       const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
                                                       const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) {
-    if(io_generated_code->arch >= LIBXSMM_AARCH64_A64FX){// todo better A64FX check, todo enable-disable-flag for testing/comparison (debug only)
+    /* if(io_generated_code->arch >= LIBXSMM_AARCH64_A64FX){// todo better A64FX check, todo enable-disable-flag for testing/comparison (debug only)
       libxsmm_generator_transform_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
-    } else {
+    } else { */
       libxsmm_generator_transform_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
-    }
+    // }
   } else {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
