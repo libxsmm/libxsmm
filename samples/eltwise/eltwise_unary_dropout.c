@@ -68,19 +68,24 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned ch
   float pi = 1/pn;
   unsigned int cpuid = libxsmm_cpuid();
   const char *env_cpuid = getenv("LIBXSMM_TARGET");
-  const int is_env_cpuid_avx512 = ( env_cpuid == libxsmm_stristr(env_cpuid, "cpx") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "clx") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "skx") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "skl") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "avx3") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "avx512") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "knm") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "knl") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "mic") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "spr") ||
-                                    env_cpuid == libxsmm_stristr(env_cpuid, "amx") );
-  const int is_env_cpuid_avx2 = ( env_cpuid == libxsmm_stristr(env_cpuid, "hsw") ||
-                                  env_cpuid == libxsmm_stristr(env_cpuid, "avx2") );
+  int is_env_cpuid_avx512 = 0;
+  int is_env_cpuid_avx2 = 0;
+
+  if ( env_cpuid != NULL ) {
+    is_env_cpuid_avx512 = ( env_cpuid == libxsmm_stristr(env_cpuid, "cpx") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "clx") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "skx") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "skl") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "avx3") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "avx512") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "knm") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "knl") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "mic") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "spr") ||
+                            env_cpuid == libxsmm_stristr(env_cpuid, "amx") );
+    is_env_cpuid_avx2 = ( env_cpuid == libxsmm_stristr(env_cpuid, "hsw") ||
+                          env_cpuid == libxsmm_stristr(env_cpuid, "avx2") );
+  }
 
   if ( ((cpuid >= LIBXSMM_X86_AVX512_MIC) && (cpuid <= LIBXSMM_X86_ALLFEAT)) || ( is_env_cpuid_avx512 != 0 ) ) {
     w = 16;

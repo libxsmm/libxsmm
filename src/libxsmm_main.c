@@ -860,7 +860,7 @@ LIBXSMM_API_INTERN size_t internal_strlen(const char* cstr, size_t maxlen)
 {
   size_t result = 0;
   if (NULL != cstr) {
-    while (0 != cstr[result] && result < maxlen) ++result;
+    while ('\0' != cstr[result] && result < maxlen) ++result;
   }
   return result;
 }
@@ -885,9 +885,7 @@ LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefa
       result = (size_t)ibytes;
       if ((size_t)LIBXSMM_UNLIMITED != result) {
         u = (NULL != unit ? ((unit - units) % 3) : 3);
-        if (u < 3) {
-          result <<= (u + 1) * 10;
-        }
+        if (u < 3) result <<= (u + 1) * 10;
       }
       if (NULL != valid) *valid = 1;
     }
@@ -2082,7 +2080,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       {
         const unsigned int nnz = request->descriptor.sreg->row_ptr[request->descriptor.sreg->gemm->m];
         extra.nflops = 2 * libxsmm_cpuid_vlen32(libxsmm_target_archid)/2 * request->descriptor.sreg->gemm->n * nnz;
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_reg_kernel, &generated_code, request->descriptor.sreg->gemm, target_arch,
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_reg_kernel, &generated_code, request->descriptor.sreg->gemm,
           request->descriptor.sreg->row_ptr, request->descriptor.sreg->column_idx,
           (const double*)request->descriptor.sreg->values);
 # if !defined(LIBXSMM_VTUNE)

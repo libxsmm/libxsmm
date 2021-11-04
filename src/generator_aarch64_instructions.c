@@ -498,6 +498,9 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_S:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V:
@@ -573,7 +576,10 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
       }
     }
     /* FMLA, eltwise */
-    if ( ((0x4 & i_vec_instr) == 0x4) && ((0x18 & i_vec_instr) != 0x18) ) {
+    if ( (LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S == i_vec_instr) ||
+         (LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V == i_vec_instr) ||
+         (LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_S == i_vec_instr) ||
+         (LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V == i_vec_instr) ) {
       unsigned char l_idx = ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) ? i_idx_shf << 1 : i_idx_shf;
       if ( (i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D && i_idx_shf > 2) || (i_idx_shf > 4) ) {
         fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for fmla instruction: %u\n", i_vec_instr);
@@ -1147,10 +1153,13 @@ void libxsmm_aarch64_instruction_alu_compute_imm24( libxsmm_generated_code* io_g
   if ( i_imm24 <= 0xfff ) {
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, i_alu_instr, i_gp_reg_src, i_gp_reg_dst,
                                                    (unsigned short)(0xfff & i_imm24), 0);
+  } else if ( (i_imm24 & 0xfff) == 0 ) {
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, i_alu_instr, i_gp_reg_src, i_gp_reg_dst,
+                                                   (unsigned short)(0xfff & (i_imm24 >> 12)), 1);
   } else {
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, i_alu_instr, i_gp_reg_src, i_gp_reg_dst,
                                                    (unsigned short)(0xfff & i_imm24), 0);
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, i_alu_instr, i_gp_reg_src, i_gp_reg_dst,
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, i_alu_instr, i_gp_reg_dst, i_gp_reg_dst,
                                                    (unsigned short)(0xfff & (i_imm24 >> 12)), 1);
   }
 }
