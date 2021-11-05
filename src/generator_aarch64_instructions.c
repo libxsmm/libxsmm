@@ -576,10 +576,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
       }
     }
     /* FMLA, eltwise */
-    if ( (LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S == i_vec_instr) ||
-         (LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V == i_vec_instr) ||
-         (LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_S == i_vec_instr) ||
-         (LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V == i_vec_instr) ) {
+    if ( ((0x4 & i_vec_instr) == 0x4) && ((0x18 & i_vec_instr) != 0x18) ) {
       unsigned char l_idx = ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) ? i_idx_shf << 1 : i_idx_shf;
       if ( (i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D && i_idx_shf > 2) || (i_idx_shf > 4) ) {
         fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for fmla instruction: %u\n", i_vec_instr);
