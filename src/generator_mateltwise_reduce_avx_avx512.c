@@ -3069,11 +3069,17 @@ LIBXSMM_API_INTERN void libxsmm_generator_avx_extract_mask4_from_mask8( libxsmm_
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
+void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_generated_code*                        io_generated_code,
     libxsmm_loop_label_tracker*                    io_loop_label_tracker,
     libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
-    const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
+    libxsmm_meltw_descriptor*                      i_mateltwise_desc );
+LIBXSMM_API_INTERN
+void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_generated_code*                        io_generated_code,
+    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
+    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
+    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
+    libxsmm_meltw_descriptor*                      i_mateltwise_desc ) {
 
   unsigned int m, im, _im, use_m_masking, m_trips, max_m_unrolling = 4, m_unroll_factor = 1, m_trips_loop = 0, peeled_m_trips = 0, mask_out_count = 0, vecin_offset = 0, vecidxin_offset = 0, vecout_offset = 0, temp_vreg = 31, use_stack_vars = 0;
   unsigned int vlen = 16;
@@ -3443,6 +3449,9 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 
   m                 = i_mateltwise_desc->m;
   if (bcast_param > 0) {
+    if (bcast_param > m) {
+      bcast_param = m;
+    }
     m = bcast_param;
     bcast_loops = i_mateltwise_desc->m / bcast_param;
   }
@@ -5180,6 +5189,69 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
   free(p_jump_label_tracker);
 #endif
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
+    libxsmm_loop_label_tracker*                    io_loop_label_tracker,
+    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
+    const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
+    const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
+  libxsmm_meltw_descriptor  i_mateltwise_desc_copy = *i_mateltwise_desc;
+  unsigned int bcast_param = (unsigned int) (i_mateltwise_desc->param >> 2);
+
+  if (bcast_param == 0) {
+    libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, &i_mateltwise_desc_copy );
+  } else {
+    if ((bcast_param >= i_mateltwise_desc->m) || ((i_mateltwise_desc->m % bcast_param) == 0)) {
+      libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, &i_mateltwise_desc_copy );
+    } else {
+      /* In this case we stamp out two different microkernels back to back...  */
+      unsigned int temp_gpr = LIBXSMM_X86_GP_REG_R8;
+      int aux = 0;
+
+      i_mateltwise_desc_copy.m = i_mateltwise_desc->m - (i_mateltwise_desc->m % bcast_param);
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_param_struct );
+      libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, &i_mateltwise_desc_copy );
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_param_struct);
+
+      /* Store and adjust contents of input param struct before stamping out the second microkernel*/
+      for (aux = 0; aux <= 72; aux += 8) {
+        libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, aux, temp_gpr, 0 );
+        libxsmm_x86_instruction_push_reg( io_generated_code, temp_gpr );
+
+        /* Adjusting Output ptr */
+        if (aux == 32) {
+          libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, temp_gpr, i_mateltwise_desc_copy.m * i_micro_kernel_config->datatype_size_out);
+          libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, aux, temp_gpr, 1 );
+        }
+
+        /* Adjusting Input ptrs */
+        if ((aux == 16) || (aux == 24) || (aux == 56)) {
+          libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, temp_gpr, (i_mateltwise_desc_copy.m/bcast_param) * i_micro_kernel_config->datatype_size_in);
+          libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, aux, temp_gpr, 1 );
+        }
+
+        /* Adjusting Argop ptrs */
+        if ((aux == 64) || (aux == 72)) {
+          unsigned int idx_tsize =  i_mateltwise_desc->n;
+          libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_ADDQ, temp_gpr, i_mateltwise_desc_copy.m * idx_tsize);
+          libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, aux, temp_gpr, 1 );
+        }
+      }
+
+      i_mateltwise_desc_copy.m = i_mateltwise_desc->m % bcast_param;
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_param_struct );
+      libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, &i_mateltwise_desc_copy );
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_param_struct);
+
+      /* Recover contents of input param struct */
+      for (aux = 72; aux >= 0; aux -= 8) {
+        libxsmm_x86_instruction_pop_reg( io_generated_code, temp_gpr );
+        libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_X86_GP_REG_UNDEF, 0, aux, temp_gpr, 1 );
+      }
+    }
+  }
 }
 
 LIBXSMM_API_INTERN
