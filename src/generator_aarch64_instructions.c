@@ -708,7 +708,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
         }
 
         if ( l_offset < -8 || l_offset > 7 ) {
-          fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1W/D, LD1RQD, ST1W/D,  offset is out of range!\n");
+          fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1W/D, LD1RQD, ST1W/D, offset is out of range!\n");
           exit(-1);
         }
 
