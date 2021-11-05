@@ -702,6 +702,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
       } else {
         short l_offset = i_offset;
 
+        /* TODO: Make this generic */
         if ( LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF == i_vmove_instr ) {
           l_offset /= 16;
         }
@@ -765,7 +766,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     code[code_head] |= (unsigned int)(0x1f & i_vec_reg_dst);
     /* setting Zn */
     code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_0) << 5);
-    /* setting Zm and optional index */
+    /* setting Zm and optional index; TODO: make this generic */
     if ( i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I &&
          i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I ) {
       code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_1) << 16);
@@ -780,12 +781,11 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     }
 
     /* setting type */
-    if ( i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V ) {
+    if ( (0x10 & i_vec_instr) != 0x10 ) {
       code[code_head] |= (unsigned int)((0x3 & i_type) << 22);
     }
     /* setting p reg */
-    if ( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMLA_V ||
-         i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMLS_V ) {
+    if ( (0x80 & i_vec_instr) == 0x80 ) {
       code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
     }
 
