@@ -626,6 +626,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   const unsigned int l_values_per_reg = (l_fp64) ? 2 : 4;
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
 
+  const unsigned int l_c_is_nt =  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags;
   const unsigned int l_beta0 = LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags;
 
   libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
@@ -757,7 +758,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                          l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                          l_rg, l_c_disp );
 
-          /* Zero */
+          /* Zero (elide if constant is +ve) */
           if ( l_beta0 ) {
             if ( l_unique_sgn[l_u] == 1 ) {
               l_fma_insn = LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_E_V;
@@ -796,6 +797,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
         for ( l_z = 0; l_z < l_ops[l_op_idx].n; l_z++ ) {
           unsigned int l_u = l_ops[l_op_idx].src_vals[l_z];
           unsigned int l_fma_insn = (l_unique_sgn[l_u] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
+          unsigned int l_stp_insn = (l_c_is_nt) ? LIBXSMM_AARCH64_INSTR_GP_STNP_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF;
           unsigned int l_rva = l_unique_pos[l_u];
           unsigned int l_rg = l_base_c_gp_reg + l_ops[l_op_idx].acc_idxs[l_z];
           unsigned int l_rvc = l_base_c_reg + l_n_blocking*l_ops[l_op_idx].acc_idxs[l_z];
@@ -804,11 +806,13 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
           /* See if we need to load/zero the accumulator */
           if ( LIBXSMM_ASPARSE_REG_FLAG_FIRST & l_ops[l_op_idx].flags[l_z] ) {
             /* Save offset into a GPR for later reuse */
-            libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                           l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
-                                                           l_rg, l_c_disp );
+            if ( 0 == l_n ) {
+              libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                             l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
+                                                             l_rg, l_c_disp );
+            }
 
-            /* Zero */
+            /* Zero (elide if constant is +ve) */
             if ( l_beta0 ) {
               if ( l_unique_sgn[l_u] == 1 ) {
                 l_fma_insn = LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_E_V;
@@ -842,7 +846,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
 
           /* See if we need to save the accumulator */
           if ( LIBXSMM_ASPARSE_REG_FLAG_LAST & l_ops[l_op_idx].flags[l_z] ) {
-            libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF,
+            libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, l_stp_insn,
                                                          l_rg, 16*l_n, l_rvc + l_n, l_rvc + l_n + 1,
                                                          LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
           }
@@ -937,7 +941,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
     goto cleanup;
   }
 
-  /* define gp register mapping */
+  /* Define gp register mapping */
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
 
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
@@ -1046,15 +1050,23 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         /* See if we need to load/zero the accumulator */
         if ( LIBXSMM_ASPARSE_REG_FLAG_FIRST & l_ops[l_op_idx].flags[l_z] ) {
           /* Save offset into a GPR for later reuse */
-          libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                         l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
-                                                         l_rg, l_c_disp );
+          if ( 0 == l_n ) {
+            libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                          l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
+                                                          l_rg, l_c_disp );
+          }
 
-          /* Zero */
+          /* Zero (elide if constant is +ve) */
           if ( l_beta0 ) {
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
-                                                     l_rvc + l_n, l_rvc + l_n, 0, l_rvc + l_n,
-                                                     LIBXSMM_AARCH64_GP_REG_UNDEF, l_svet );
+            if ( l_unique_sgn[l_u] == 1 && l_rva < l_npacked_reg ) {
+              l_fma_insn = LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I;
+            } else if ( l_unique_sgn[l_u] == 1 ) {
+              l_fma_insn = LIBXSMM_AARCH64_INSTR_SVE_FMUL_V;
+            } else {
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
+                                                       l_rvc + l_n, l_rvc + l_n, 0, l_rvc + l_n,
+                                                       LIBXSMM_AARCH64_GP_REG_UNDEF, l_svet );
+            }
           /* Load */
           } else {
             libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,

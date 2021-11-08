@@ -750,6 +750,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
       break;
     default:
@@ -769,7 +771,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_0) << 5);
     /* setting Zm and optional index; TODO: make this generic */
     if ( i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I &&
-         i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I ) {
+         i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I &&
+         i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I ) {
       code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_1) << 16);
     } else {
       if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_S ) {
