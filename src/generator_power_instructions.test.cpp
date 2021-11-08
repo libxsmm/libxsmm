@@ -31,6 +31,13 @@ TEST_CASE( "Tests libxsmm_power_instruction_b_conditional", "[power][b_condition
                                                      2,   // zero (eq)
                                                      3 ); // offset
   REQUIRE( l_instr == 0x4182000c );
+
+  // bdnz 25*4
+  l_instr = libxsmm_power_instruction_b_conditional( LIBXSMM_POWER_INSTR_B_BC,
+                                                     16,
+                                                     0,
+                                                     25 );
+  REQUIRE( l_instr == 0x42000064 );
 }
 
 TEST_CASE( "Tests libxsmm_power_instruction_fip_storage_access", "[power][fip_storage_access]" ) {

@@ -199,6 +199,11 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
                                 l_gpr_k,
                                 0,
                                 i_k_blocking );
+    /* use count register for inner-loop */
+    libxsmm_power_instruction_2( io_generated_code,
+                                 LIBXSMM_POWER_INSTR_FIP_MTSPR,
+                                 l_gpr_k,
+                                 LIBXSMM_POWER_SPR_CTR );
     libxsmm_power_instruction_register_jump_back_label( io_generated_code,
                                                         &l_loop_labels );
   }
@@ -271,14 +276,8 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
 
   /* end of k-loop */
   if( l_k_unroll != i_k_blocking ) {
-    libxsmm_power_instruction_3( io_generated_code,
-                                LIBXSMM_POWER_INSTR_FIP_ADDI,
-                                l_gpr_k,
-                                l_gpr_k,
-                                -l_k_unroll );
-    libxsmm_power_instruction_cond_jump_back_to_label( io_generated_code,
-                                                      l_gpr_k,
-                                                      &l_loop_labels );
+    libxsmm_power_instruction_cond_jump_back_to_label_ctr( io_generated_code,
+                                                           &l_loop_labels );
   }
 
   /* store accumulator block */
