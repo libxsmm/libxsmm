@@ -217,6 +217,40 @@ TEST_CASE( "Tests libxsmm_power_instruction_fip_rotate", "[power][fip_rotate]" )
   REQUIRE( l_instr == 0x78c347e4 );
 }
 
+TEST_CASE( "Tests libxsmm_power_instruction_fip_system", "[power][fip_system]" ) {
+  unsigned int l_instr = 0;
+
+  // mtspr 0, r0
+  l_instr = libxsmm_power_instruction_fip_system( LIBXSMM_POWER_INSTR_FIP_MTSPR,
+                                                  LIBXSMM_POWER_GPR_R0,
+                                                  0 );
+  REQUIRE( l_instr == 0x7c0003a6 );
+
+  // mtctr r0
+  l_instr = libxsmm_power_instruction_fip_system( LIBXSMM_POWER_INSTR_FIP_MTSPR,
+                                                  LIBXSMM_POWER_GPR_R0,
+                                                  LIBXSMM_POWER_SPR_CTR );
+  REQUIRE( l_instr == 0x7c0903a6 );
+
+  // mtctr r17
+  l_instr = libxsmm_power_instruction_fip_system( LIBXSMM_POWER_INSTR_FIP_MTSPR,
+                                                  LIBXSMM_POWER_GPR_R17,
+                                                  LIBXSMM_POWER_SPR_CTR );
+  REQUIRE( l_instr == 0x7e2903a6 );
+
+  // mtctr r8
+  l_instr = libxsmm_power_instruction_fip_system( LIBXSMM_POWER_INSTR_FIP_MTSPR,
+                                                  LIBXSMM_POWER_GPR_R8,
+                                                  LIBXSMM_POWER_SPR_CTR );
+  REQUIRE( l_instr == 0x7d0903a6 );
+
+  // mtctr r29
+  l_instr = libxsmm_power_instruction_fip_system( LIBXSMM_POWER_INSTR_FIP_MTSPR,
+                                                  LIBXSMM_POWER_GPR_R29,
+                                                  LIBXSMM_POWER_SPR_CTR );
+  REQUIRE( l_instr == 0x7fa903a6 );
+}
+
 TEST_CASE( "Tests libxsmm_power_instruction_flp_storage_access", "[power][flp_storage_access]" ) {
   unsigned int l_instr = 0;
 
@@ -451,6 +485,24 @@ TEST_CASE( "Tests libxsmm_power_instruction_vsx_vector_permute_byte_reverse", "[
 TEST_CASE( "Tests libxsmm_power_instruction_generic", "[power][libxsmm_power_instruction_generic]" ) {
   unsigned int l_instr = 0;
 
+  // mtctr r17
+  l_instr = libxsmm_power_instruction_generic_2( LIBXSMM_POWER_INSTR_FIP_MTSPR,
+                                                 LIBXSMM_POWER_GPR_R17,
+                                                 LIBXSMM_POWER_SPR_CTR );
+  REQUIRE( l_instr == 0x7e2903a6 );
+
+  // xxbrd vs21, vs47
+  l_instr = libxsmm_power_instruction_generic_2( LIBXSMM_POWER_INSTR_VSX_XXBRD,
+                                                 LIBXSMM_POWER_VSR_VS21,
+                                                 LIBXSMM_POWER_VSR_VS47 );
+  REQUIRE( l_instr == 0xf2b77f6e );
+
+  // xxbrw vs21, vs47
+  l_instr = libxsmm_power_instruction_generic_2( LIBXSMM_POWER_INSTR_VSX_XXBRW,
+                                                 LIBXSMM_POWER_VSR_VS21,
+                                                 LIBXSMM_POWER_VSR_VS47 );
+  REQUIRE( l_instr == 0xf2af7f6e );
+
   // beq 12
   l_instr = libxsmm_power_instruction_generic_3( LIBXSMM_POWER_INSTR_B_BC,
                                                  12,
@@ -556,18 +608,6 @@ TEST_CASE( "Tests libxsmm_power_instruction_generic", "[power][libxsmm_power_ins
                                                  LIBXSMM_POWER_GPR_R8,
                                                  LIBXSMM_POWER_GPR_R4 );
   REQUIRE( l_instr == 0x7e28235a );
-
-  // xxbrd vs21, vs47
-  l_instr = libxsmm_power_instruction_generic_2( LIBXSMM_POWER_INSTR_VSX_XXBRD,
-                                                 LIBXSMM_POWER_VSR_VS21,
-                                                 LIBXSMM_POWER_VSR_VS47 );
-  REQUIRE( l_instr == 0xf2b77f6e );
-
-  // xxbrw vs21, vs47
-  l_instr = libxsmm_power_instruction_generic_2( LIBXSMM_POWER_INSTR_VSX_XXBRW,
-                                                 LIBXSMM_POWER_VSR_VS21,
-                                                 LIBXSMM_POWER_VSR_VS47 );
-  REQUIRE( l_instr == 0xf2af7f6e );
 
 
   // cmpi 0, 0, r6, 0

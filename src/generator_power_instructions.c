@@ -128,6 +128,20 @@ unsigned int libxsmm_power_instruction_fip_rotate( unsigned int  i_instr,
 }
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_power_instruction_fip_system( unsigned int  i_instr,
+                                                   unsigned char i_rs,
+                                                   unsigned int  i_spr ) {
+  unsigned int l_instr = i_instr;
+
+  /* set RS */
+  l_instr |= (unsigned int)( (0x1f & i_rs)   << (31- 6-4) );
+  /* set SPR */
+  l_instr |= (unsigned int)( (0x3ff & i_spr) << (31-11-9) );
+
+  return l_instr;
+}
+
+LIBXSMM_API_INTERN
 unsigned int libxsmm_power_instruction_flp_storage_access( unsigned int  i_instr,
                                                            unsigned char i_frs,
                                                            unsigned char i_ra,
@@ -230,8 +244,13 @@ unsigned int libxsmm_power_instruction_generic_2( unsigned int i_instr,
                                                   unsigned int i_arg1 ) {
   unsigned int l_instr = 0;
 
-  if( i_instr == LIBXSMM_POWER_INSTR_VSX_XXBRD ||
-      i_instr == LIBXSMM_POWER_INSTR_VSX_XXBRW ) {
+  if( i_instr == LIBXSMM_POWER_INSTR_FIP_MTSPR ) {
+    l_instr = libxsmm_power_instruction_fip_system( i_instr,
+                                                    i_arg0,
+                                                    i_arg1 );
+  }
+  else if( i_instr == LIBXSMM_POWER_INSTR_VSX_XXBRD ||
+           i_instr == LIBXSMM_POWER_INSTR_VSX_XXBRW ) {
     l_instr = libxsmm_power_instruction_vsx_vector_permute_byte_reverse( i_instr,
                                                                          i_arg0,
                                                                          i_arg1 );
