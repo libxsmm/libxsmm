@@ -195,6 +195,38 @@ cleanup:
 }
 
 LIBXSMM_API_INTERN
+int libxsmm_asparse_reg_pick_bcast_reg( const unsigned int* i_vals,
+                                        unsigned int i_nvals,
+                                        const unsigned int* i_unique_pos,
+                                        const libxsmm_asparse_reg_op* i_ops,
+                                        unsigned int i_nops ) {
+  int l_nuse = 0, l_arg_nuse = 0, l_x, l_y, l_z, l_hit;
+
+  /* See when the value in reg l_x is next used */
+  for ( l_x = 0; l_x < i_nvals; l_x++ ) {
+    for ( l_y = 0, l_hit = 0; l_y < i_nops && !l_hit; l_y++ ) {
+      for ( l_z = 0; l_z < i_ops[l_y].n && !l_hit; l_z++ ) {
+        if ( i_unique_pos[i_ops[l_y].src_vals[l_z]] == i_vals[l_x] ) {
+          if ( l_y > l_nuse ) {
+            l_nuse = l_y;
+            l_arg_nuse = l_x;
+          }
+
+          l_hit = 1;
+        }
+      }
+    }
+
+    /* Value is never used again; we're done */
+    if ( !l_hit ) {
+      return l_x;
+    }
+  }
+
+  return l_arg_nuse;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*         io_generated_code,
                                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                    const unsigned int*             i_row_idx,
@@ -527,6 +559,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
           /* Otherwise pick a register to broadcast into */
           if ( ~0 == l_rva ) {
+            l_cur_bcast_reg = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_regs,
+                                                                  l_unique_pos,
+                                                                  l_ops + l_op_idx + 1,
+                                                                  l_n_ops - l_op_idx - 1 );
+
             l_rva = l_base_bcast_reg + l_cur_bcast_reg;
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                      l_micro_kernel_config.instruction_set,
@@ -538,7 +575,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
             /* Update our records */
             l_bcast_reg_vals[l_cur_bcast_reg] = l_unique_pos[l_u];
-            l_cur_bcast_reg = (l_cur_bcast_reg + 1) % l_nbcast_regs;
           }
         }
 
