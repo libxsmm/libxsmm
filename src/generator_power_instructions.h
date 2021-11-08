@@ -51,6 +51,7 @@
 
 /* special registers */
 #define LIBXSMM_POWER_GPR_SP 1
+#define LIBXSMM_POWER_SPR_CTR 288 /* reversed 5-bit parts: 01001 00000 */
 
 /* floating-point registers */
 #define LIBXSMM_POWER_FPR_F0   0
@@ -184,6 +185,9 @@
 /* fixed-point rotate and shift */
 #define LIBXSMM_POWER_INSTR_FIP_RLDICR 0x78000004
 
+/* fixed-point move to/from system regisster */
+#define LIBXSMM_POWER_INSTR_FIP_MTSPR 0x7c0003a6
+
 /* floating-point storage access */
 #define LIBXSMM_POWER_INSTR_FLP_LFD 0xc8000000
 #define LIBXSMM_POWER_INSTR_FLP_STFD 0xd8000000
@@ -299,6 +303,19 @@ unsigned int libxsmm_power_instruction_fip_rotate( unsigned int  i_instr,
                                                    unsigned char i_rs,
                                                    unsigned int  i_sh,
                                                    unsigned int  i_mb );
+
+/**
+ * Generates a move to/from system register instruction.
+ *
+ * @param i_instr input-instruction with zeroed arguments.
+ * @param i_rs source/destination GPR.
+ * @param i_spr destination/source SPR.
+ * @return machine code.
+ **/
+LIBXSMM_API_INTERN
+unsigned int libxsmm_power_instruction_fip_system( unsigned int  i_instr,
+                                                   unsigned char i_rs,
+                                                   unsigned int  i_spr );
 
 /**
  * Generates a floating-point storage access instruction.
