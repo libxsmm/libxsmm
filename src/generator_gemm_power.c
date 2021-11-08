@@ -198,7 +198,7 @@ void libxsmm_generator_gemm_power_microkernel_vsx( libxsmm_generated_code       
                                 LIBXSMM_POWER_INSTR_FIP_ADDI,
                                 l_gpr_k,
                                 0,
-                                i_k_blocking );
+                                i_k_blocking / l_k_unroll );
     /* use count register for inner-loop */
     libxsmm_power_instruction_2( io_generated_code,
                                  LIBXSMM_POWER_INSTR_FIP_MTSPR,
