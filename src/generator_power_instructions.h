@@ -522,7 +522,7 @@ void libxsmm_power_instruction_close_stream( libxsmm_generated_code * io_generat
  *
  * @param io_generated_code pointer to the pointer of the generated code structure.
  * @param io_loop_label_tracker data structure to handle loop labels, nested loops are supported, but not overlapping loops.
-*/
+ **/
 LIBXSMM_API_INTERN
 void libxsmm_power_instruction_register_jump_back_label( libxsmm_generated_code     * io_generated_code,
                                                          libxsmm_loop_label_tracker * io_loop_label_tracker );
@@ -533,11 +533,20 @@ void libxsmm_power_instruction_register_jump_back_label( libxsmm_generated_code 
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gprs  GPR which is compared to zero.
  * @param io_loop_label_tracker data structure to handle loop labels will jump to latest registered label.
-*/
+ **/
 LIBXSMM_API_INTERN
 void libxsmm_power_instruction_cond_jump_back_to_label( libxsmm_generated_code     * io_generated_code,
                                                         unsigned int                 i_gpr,
                                                         libxsmm_loop_label_tracker * io_loop_label_tracker );
 
+/**
+ * Pops the latest from the loop label stack and adds a jump based on the value of the count register, i.e., ctr==0.
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param io_loop_label_tracker data structure to handle loop labels will jump to latest registered label.
+ **/
+LIBXSMM_API_INTERN
+void libxsmm_power_instruction_cond_jump_back_to_label_ctr( libxsmm_generated_code     * io_generated_code,
+                                                            libxsmm_loop_label_tracker * io_loop_label_tracker );
 
 #endif

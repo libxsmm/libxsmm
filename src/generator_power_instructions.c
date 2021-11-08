@@ -597,3 +597,30 @@ void libxsmm_power_instruction_cond_jump_back_to_label( libxsmm_generated_code  
     exit(-1);
   }
 }
+
+LIBXSMM_API_INTERN
+void libxsmm_power_instruction_cond_jump_back_to_label_ctr( libxsmm_generated_code     * io_generated_code,
+                                                            libxsmm_loop_label_tracker * io_loop_label_tracker ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int   l_lab = --io_loop_label_tracker->label_count;
+    unsigned int   l_b_dst = (io_loop_label_tracker->label_address[l_lab])/4;
+    unsigned int   l_code_head = io_generated_code->code_size/4;
+    unsigned int * l_code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* branch immediate */
+    int l_b_imm = (int)l_b_dst - (int)l_code_head;
+
+    /* bdnz */
+    l_code[l_code_head] = libxsmm_power_instruction_generic_3( LIBXSMM_POWER_INSTR_B_BC,
+                                                               16,
+                                                               0,
+                                                               l_b_imm );
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  }
+  else {
+    fprintf(stderr, "libxsmm_power_instruction_cond_jump_back_to_label_ctr: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
