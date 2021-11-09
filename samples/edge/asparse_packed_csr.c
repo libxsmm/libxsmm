@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
 #else
   mykernel = libxsmm_create_packed_spxgemm_csr( l_xgemm_desc, N_CRUNS, l_rowptr, l_colidx, (const void*)l_a_sp ).dmm;
 #endif
-  
+
   l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
     mykernel( l_a_sp, l_b, l_c_asm );
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
   printf("max error: %f\n", l_max_error);
 
   printf("PERFDUMP,%s,%u,%i,%i,%i,%u,%u,%f,%f,%f\n", l_csr_file, REPS, M, N, K, l_elements, N * l_elements * N_CRUNS * 2, l_max_error, l_total, ((double)((double)REPS * (double)N * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
-  
+
   /* free */
   libxsmm_free( l_a_de );
   libxsmm_free( l_b );

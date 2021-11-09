@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./kernel_test/unary_trans_08b_eqld.sh
 . ./kernel_test/unary_trans_08b_gtld.sh
