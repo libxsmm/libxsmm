@@ -86,7 +86,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
         LIBXSMM_X86_GP_REG_UNDEF,
         0,
         im * vlen * i_micro_kernel_config->datatype_size_in,
-        'z',
+        vname_in,
         im,
         use_masking,
         mask_inout,
@@ -97,10 +97,8 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
       }
 
       if (downconvert_input_f32bf16 > 0) {
-        if  ((io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX)) {
-
-          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code,
-              'z',
+        if (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) {
+          libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, 'z',
               im, im,
               i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
               i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1);
