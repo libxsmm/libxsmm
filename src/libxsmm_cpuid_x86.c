@@ -287,7 +287,8 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_X86_SSE3: {
       target_arch = "sse3";
     } break;
-    case LIBXSMM_AARCH64_V81: {
+    case LIBXSMM_AARCH64_V81:
+    case LIBXSMM_AARCH64_V82: {
       target_arch = "aarch64";
     } break;
     case LIBXSMM_AARCH64_A64FX: {
@@ -299,7 +300,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
     } break;
-    default: if (LIBXSMM_X86_GENERIC <= id) {
+    default: if (LIBXSMM_X86_GENERIC <= id
+              && LIBXSMM_X86_ALLFEAT >= id)
+    {
       target_arch = "x86_64";
     }
     else {
