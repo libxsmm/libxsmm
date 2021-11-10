@@ -646,8 +646,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_i
     }
   } else if ( ( i_arch > LIBXSMM_X86_AVX2) && ( i_arch <= LIBXSMM_X86_AVX512_VL256) && ( ( LIBXSMM_GEMM_PRECISION_I8  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) )  ||
                                                          ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) )      ) ) {
-    if ( i_xgemm_desc->m >= 16 ) {
-      l_m_blocking = 16;
+    if ( i_xgemm_desc->m >= 8 ) {
+      l_m_blocking = 8;
     } else {
       l_m_blocking = i_xgemm_desc->m;
       /* in case we don't have a full vector length, we use masking */
@@ -857,8 +857,8 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_updat
     }
   } else if ( ( i_arch > LIBXSMM_X86_AVX2) && ( i_arch <= LIBXSMM_X86_AVX512_VL256) && ( ( LIBXSMM_GEMM_PRECISION_I8  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) )  ||
                                                          ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) )      ) ) {
-    if (i_current_m_blocking == 16) {
-      l_m_blocking = i_xgemm_desc->m % 16;
+    if (i_current_m_blocking == 8) {
+      l_m_blocking = i_xgemm_desc->m % 8;
       if ( l_m_blocking % 8 != 0 ) {
         l_use_masking_a_c = 1;
       }
