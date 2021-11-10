@@ -731,36 +731,16 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_extract_mask2_from_mask4( libxsmm_generated_code* io_generated_code,
     unsigned int input_vec_mask,
     unsigned int output_vec_mask,
-    unsigned int aux_gpr,
     unsigned int lohi);
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_extract_mask2_from_mask4( libxsmm_generated_code* io_generated_code,
     unsigned int input_vec_mask,
     unsigned int output_vec_mask,
-    unsigned int aux_gpr,
     unsigned int lohi) {
   if (lohi == 0 ) {
-    /* Extract entry 0 */
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, aux_gpr, input_vec_mask, 0, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    /* Insert to 0 1 */
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, aux_gpr, output_vec_mask, 0, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, aux_gpr, output_vec_mask, 1, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    /* Extract entry 1 */
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, aux_gpr, input_vec_mask, 1, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    /* Insert to 2 3 */
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, aux_gpr, output_vec_mask, 2, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, aux_gpr, output_vec_mask, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1, input_vec_mask, input_vec_mask, 0, output_vec_mask, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
   } else {
-    /* Extract entry 2 */
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, aux_gpr, input_vec_mask, 2, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    /* Insert to 0 1 */
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, aux_gpr, output_vec_mask, 0, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, aux_gpr, output_vec_mask, 1, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    /* Extract entry 3 */
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, aux_gpr, input_vec_mask, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    /* Insert to 2 3 */
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, aux_gpr, output_vec_mask, 2, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, aux_gpr, output_vec_mask, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2, input_vec_mask, input_vec_mask, 0, output_vec_mask, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
   }
 }
 
@@ -1243,7 +1223,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
             }
           } else {
             /* Extract lo mask to aux  */
-            libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, scratch_gpr, 0);
+            libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 0);
             if (record_argop_off_vec0 == 1) {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
                   temp_vreg_argop0, argop_mask_aux, 0, im + vecargop_vec0_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
@@ -1253,7 +1233,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                   temp_vreg_argop1, argop_mask_aux, 0, im + vecargop_vec1_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
             }
             /* Extract hi mask to aux  */
-            libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, scratch_gpr, 1);
+            libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 1);
             if (record_argop_off_vec0 == 1) {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
                   temp_vreg_argop0, argop_mask_aux, 0, im + max_m_unrolling + vecargop_vec0_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
@@ -1567,7 +1547,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
             }
           } else {
             /* Extract lo mask to aux  */
-            libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, scratch_gpr, 0);
+            libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 0);
             if (record_argop_off_vec0 == 1) {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
                   temp_vreg_argop0, argop_mask_aux, 0, im + vecargop_vec0_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
@@ -1577,7 +1557,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                   temp_vreg_argop1, argop_mask_aux, 0, im + vecargop_vec1_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
             }
             /* Extract hi mask to aux  */
-            libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, scratch_gpr, 1);
+            libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 1);
             if (record_argop_off_vec0 == 1) {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
                   temp_vreg_argop0, argop_mask_aux, 0, im + max_m_unrolling + vecargop_vec0_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
