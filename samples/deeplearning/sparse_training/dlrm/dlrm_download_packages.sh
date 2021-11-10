@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -10,17 +10,26 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-GIT=$(command -v git)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+MKDIR=$(command -v mkdir)
+WGET=$(command -v wget)
 
-if [ "${GIT}" ]; then
-  ${GIT} gc
-  ${GIT} fsck --full
-  ${GIT} reflog expire --expire=now --all
-  # ${GIT} gc --prune=now
-  ${GIT} gc --aggressive
-  ${GIT} remote update --prune
-else
-  >&2 echo "Error: missing prerequisites!"
-  exit 1
+NAMES=" \
+  MarkupSafe-1.1.1-cp37-cp37m-manylinux1_x86_64.whl \
+  translationstring-1.3-py2.py3-none-any.whl \
+  itsdangerous-1.1.0-py2.py3-none-any.whl \
+  lark_parser-0.8.5-py2.py3-none-any.whl \
+  Werkzeug-1.0.1-py2.py3-none-any.whl \
+  Jinja2-2.11.2-py2.py3-none-any.whl \
+  colander-0.9.9.tar.gz \
+  iso8601-0.1.8.tar.gz \
+  Flask-0.10.1.tar.gz \
+  redis-2.8.0.tar.gz \
+  lark-0.0.4.tar.gz"
+
+if [ "${MKDIR}" ] && [ "${WGET}" ]; then
+  ${MKDIR} -p ${HERE}/roc/tmp1; cd ${HERE}/roc/tmp1
+  for NAME in ${NAMES}; do
+    ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/deeplearning/sparse_training/dlrm/roc/tmp1/${NAME}
+  done
 fi
-

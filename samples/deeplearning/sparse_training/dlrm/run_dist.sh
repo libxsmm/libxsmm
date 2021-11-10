@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function print_vars {
   for VAR in ${!CCL*} ${!I_MPI*} ${!i_mpi*} ${!KMP_*} ${!OMP_*} LD_PRELOAD ${!DLRM_*} ${!PYTORCH_*} ${!PCL_*} VIRTUAL_ENV ${!ARGS_*} $@ ; do
