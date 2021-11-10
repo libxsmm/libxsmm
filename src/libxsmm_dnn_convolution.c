@@ -196,10 +196,10 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_blocksifm_blocking( libxsmm
     if ((handle->desc.C >= 2048) && (handle->desc.K >= 512)) {
       result = 1;
     }
-    if ( (handle->target_archid < LIBXSMM_X86_AVX512) && (handle->desc.C >= 512) ) {
+    if ( (handle->target_archid < LIBXSMM_X86_AVX512_VL256) && (handle->desc.C >= 512) ) {
       result = 2;
     }
-    if ( (handle->target_archid < LIBXSMM_X86_AVX512) && (handle->desc.C >= 1024) ) {
+    if ( (handle->target_archid < LIBXSMM_X86_AVX512_VL256) && (handle->desc.C >= 1024) ) {
       result = 4;
     }
   } else {
@@ -1220,7 +1220,7 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
   handle->use_fallback_fwd_loops = libxsmm_dnn_convolution_setup_fallback_loops_fwd(handle);
   handle->fwd_padding_copy = libxsmm_dnn_convolution_setup_fwd_padding_copy(handle);
 
-#if 0
+#if 1
   if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
     int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
     int brgemm_pf_oob = 0;
