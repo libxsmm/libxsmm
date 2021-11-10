@@ -1355,12 +1355,12 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
     if (apply_op == 1) {
       if (bcast_param == 0) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-            i_gp_reg_mapping->gp_reg_invec, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_invec, (unsigned long long)(m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_out) );
+            i_gp_reg_mapping->gp_reg_invec, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_invec, (unsigned long long)((unsigned long long)m_unroll_factor * (unsigned long long)vlen * (unsigned long long)i_micro_kernel_config->datatype_size_out) );
       }
     }
     if (bcast_param == 0) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-          i_gp_reg_mapping->gp_reg_in_base, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in_base, (unsigned long long)(m_unroll_factor * vlen * i_micro_kernel_config->datatype_size_in) );
+          i_gp_reg_mapping->gp_reg_in_base, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in_base, (unsigned long long)((unsigned long long)m_unroll_factor *(unsigned long long)vlen * (unsigned long long)i_micro_kernel_config->datatype_size_in) );
     }
     libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, 1);
   }
@@ -1448,7 +1448,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
     if (apply_redop == 1) {
       if (load_acc == 1) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out,
-            (unsigned long long)peeled_m_trips * (unsigned long long)16 - (unsigned long long) (use_m_masking * (vlen-mask_inout) * 4) );
+            (unsigned long long)peeled_m_trips * (unsigned long long)16 - (unsigned long long) ( (unsigned long long)use_m_masking * (unsigned long long)(vlen-mask_inout) * (unsigned long long)4) );
       }
     }
     if (apply_op == 1) {
@@ -1775,14 +1775,14 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel( libxsmm_generate
         /* Adjusting Output ptr */
         if (aux == 32) {
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-              temp_gpr, scratch_gpr, temp_gpr, (unsigned long long)(i_mateltwise_desc_copy.m * i_micro_kernel_config->datatype_size_out));
+              temp_gpr, scratch_gpr, temp_gpr, (unsigned long long)( (unsigned long long)i_mateltwise_desc_copy.m * (unsigned long long)i_micro_kernel_config->datatype_size_out));
           libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, aux, temp_gpr );
         }
 
         /* Adjusting Input ptrs */
         if ((aux == 16) || (aux == 24) || (aux == 56)) {
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-              temp_gpr, scratch_gpr, temp_gpr, (unsigned long long)((i_mateltwise_desc_copy.m/bcast_param) * i_micro_kernel_config->datatype_size_in));
+              temp_gpr, scratch_gpr, temp_gpr, (unsigned long long)((unsigned long long)(i_mateltwise_desc_copy.m/bcast_param) *(unsigned long long)i_micro_kernel_config->datatype_size_in));
           libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, aux, temp_gpr );
         }
 
@@ -1790,7 +1790,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel( libxsmm_generate
         if ((aux == 64) || (aux == 72)) {
           unsigned int idx_tsize =  i_mateltwise_desc->n;
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-              temp_gpr, scratch_gpr, temp_gpr, (unsigned long long)(i_mateltwise_desc_copy.m * idx_tsize));
+              temp_gpr, scratch_gpr, temp_gpr, (unsigned long long)((unsigned long long)i_mateltwise_desc_copy.m *(unsigned long long)idx_tsize));
           libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, aux, temp_gpr );
         }
       }
