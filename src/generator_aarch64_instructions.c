@@ -281,6 +281,8 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
   switch ( i_vmove_instr ) {
     case LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G:
     case LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_DUP_HALF:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_DUP_FULL:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: unexpected instruction number: %u\n", i_vmove_instr);
@@ -299,6 +301,10 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
     code[code_head] |= (unsigned int)( (i_vmove_instr & 0x8) == 0x8 ? ((0x1f & i_gp_reg) << 5) : ((0x1f & i_vec_reg) << 5) );
     /* setting Q */
     code[code_head] |= (unsigned int)( ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_D ) ? 0x40000000 : 0x0 );
+
+    if (i_vmove_instr == LIBXSMM_AARCH64_INSTR_ASIMD_DUP_FULL) {
+      code[code_head] |= (unsigned int) 0x40000000;
+    }
 
     /* setting imm5 */
     if ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_B ) {
