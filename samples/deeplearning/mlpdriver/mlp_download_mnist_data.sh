@@ -1,3 +1,4 @@
+#!/usr/bin/env sh
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -6,17 +7,20 @@
 # Further information: https://github.com/hfp/libxsmm/                        #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
-# Narendra Chaudhary (Intel Corp.)
+# Hans Pabst (Intel Corp.)
 ###############################################################################
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+MKDIR=$(command -v mkdir)
+WGET=$(command -v wget)
 
-#!/usr/bin/env bash
+# ls -1 | xargs
+NAMES="t10k-images.idx3-ubyte t10k-labels.idx1-ubyte train-images.idx3-ubyte train-labels.idx1-ubyte"
 
-export KMP_AFFINITY=compact,1,0,granularity=fine              # Set KMP affinity
-# export KMP_BLOCKTIME=1
+if [ "${MKDIR}" ] && [ "${WGET}" ]; then
+  ${MKDIR} -p ${HERE}/mnist_data; cd ${HERE}/mnist_data
+  for NAME in ${NAMES}; do
+    ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/deeplearning/mlpdriver/mnist_data/${NAME}
+  done
+fi
 
-export OMP_NUM_THREADS=28                                     # Set number of threads
-export LD_LIBRARY_PATH=../../../../libxsmm/lib/        # Set LD_LIBRARY_PATH
-
-# python torch_example.py                                       # Run the pytorch example
-python Efficiency_test.py                                       # Run the Efficiency test

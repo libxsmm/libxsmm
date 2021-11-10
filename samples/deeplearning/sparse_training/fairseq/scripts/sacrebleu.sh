@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ $# -ne 4 ]; then
     echo "usage: $0 TESTSET SRCLANG TGTLANG GEN"

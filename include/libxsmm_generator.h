@@ -79,12 +79,12 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   libxsmm_datatype in_type, libxsmm_datatype out_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldo, libxsmm_blasint ldi,
-  unsigned short flags, unsigned char param, unsigned char operation);
+  unsigned short flags, unsigned short param, unsigned char operation);
 LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_descriptor_blob* blob,
   libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldo, libxsmm_blasint ldi, libxsmm_blasint ldi2, libxsmm_blasint ldi3,
-  unsigned short flags, unsigned char param, unsigned char operation);
+  unsigned short flags, unsigned short param, unsigned char operation);
 
 /** Initialize matrix equation as used by low-level routines */
 LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descriptor_blob* blob,
@@ -163,11 +163,9 @@ void libxsmm_generator_spgemm_csr_kernel(libxsmm_generated_code*        io_gener
                                          const unsigned int*            i_column_idx,
                                          const double*                  i_values);
 
-/* @TODO change int based architecture value */
 LIBXSMM_API
 void libxsmm_generator_spgemm_csr_reg_kernel(libxsmm_generated_code*        io_generated_code,
                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                             const char*                    i_arch,
                                              const unsigned int*            i_row_idx,
                                              const unsigned int*            i_column_idx,
                                              const double*                  i_values);

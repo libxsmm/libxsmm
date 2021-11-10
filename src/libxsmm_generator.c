@@ -334,7 +334,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   libxsmm_datatype in_type, libxsmm_datatype out_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldi, libxsmm_blasint ldo,
-  unsigned short flags, unsigned char param, unsigned char operation)
+  unsigned short flags, unsigned short param, unsigned char operation)
 {
   union {
     libxsmm_meltw_descriptor* ptr;
@@ -346,7 +346,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   result.ptr->datatype2 = 0;
   result.ptr->flags = (unsigned short)flags;
   result.ptr->operation = (unsigned char)operation;
-  result.ptr->param = (unsigned char)param;
+  result.ptr->param = (unsigned short)param;
   result.ptr->ldi = ldi;
   result.ptr->ldo = ldo;
   result.ptr->ldi2 = 0;
@@ -361,7 +361,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldi2, libxsmm_blasint ldi3,
-  unsigned short flags, unsigned char param, unsigned char operation)
+  unsigned short flags, unsigned short param, unsigned char operation)
 {
   union {
     libxsmm_meltw_descriptor* ptr;
@@ -373,7 +373,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   result.ptr->datatype2 = (unsigned char)LIBXSMM_GETENUM(in2_type, out2_type);
   result.ptr->flags = (unsigned short)flags;
   result.ptr->operation = (unsigned char)operation;
-  result.ptr->param = (unsigned char)param;
+  result.ptr->param = (unsigned short)param;
   result.ptr->ldi = ldi;
   result.ptr->ldo = ldo;
   result.ptr->ldi2 = ldi2;
