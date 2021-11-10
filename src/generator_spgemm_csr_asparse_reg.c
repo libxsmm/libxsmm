@@ -236,7 +236,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                                    const unsigned int*             i_column_idx,
                                                    const double*                   i_values ) {
   unsigned int l_n, l_z;
-  unsigned int l_unique, l_off;
+  unsigned int l_unique, l_uoff, l_poff;
   unsigned int l_m_blocking, l_n_blocking;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
 
@@ -247,7 +247,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   const unsigned int l_perm_consts[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 
   unsigned int l_need_bcast_reg = 0;
-  unsigned int l_bcast_reg_vals[20], l_base_bcast_reg = ~0, l_nbcast_regs, l_cur_bcast_reg;
+  unsigned int l_bcast_reg_vals[31], l_base_bcast_reg = ~0, l_nbcast_regs, l_cur_bcast_reg;
 
   const unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
@@ -282,7 +282,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
   /* Tracks which accumulators are negated due to use of VMULP[SD] */
   unsigned int l_acc_neg_tbl[4][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK] = {};
-
 
   /* Check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
@@ -342,7 +341,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                               l_unique_values, l_unique_pos, l_unique_sgn );
 
   /* Check that there are not too many unique values */
-  if ( l_unique > l_breg_unique && l_unique > l_preg_unique ) {
+  if ( l_unique > 1280 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
     goto cleanup;
   }
@@ -374,17 +373,14 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
   /* Copy the unique values into the data segment with 64-byte alignment */
-  l_off = libxsmm_x86_instruction_add_data( io_generated_code,
-                                            (unsigned char*) l_unique_values,
-                                            l_unique*l_fbytes, 64,
-                                            &l_const_data_tracker );
+  l_uoff = libxsmm_x86_instruction_add_data( io_generated_code,
+                                             (unsigned char*) l_unique_values,
+                                             l_unique*l_fbytes, 64,
+                                             &l_const_data_tracker );
   libxsmm_x86_instruction_lea_data( io_generated_code, LIBXSMM_X86_GP_REG_R9,
-                                    l_off, &l_const_data_tracker );
+                                    l_uoff, &l_const_data_tracker );
 
-  /*
-   * Load A into registers
-   * pre-broadcast if possible, otherwise load for run-time broadcasting
-   */
+  /* Try to store A entirely in broadcasted registers */
   if ( l_unique <= l_breg_unique ) {
     /* Broadcast the unique values into registers */
     for ( l_z = 0; l_z < l_unique; l_z++ ) {
@@ -399,7 +395,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
     /* Update the register count */
     l_used_reg += l_unique;
-  } else {
+  /* Else, see if we can store A entirely in packed registers */
+  } else if ( l_unique <= l_preg_unique ) {
     /* Load the packed unique values into registers */
     for ( l_z = 0; l_z < l_unique; l_z += l_values_per_reg ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -416,12 +413,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
     l_base_perm_reg = l_used_reg;
 
     /* Copy the permutation constants into the data segment */
-    l_off = libxsmm_x86_instruction_add_data( io_generated_code,
-                                              (unsigned char*) l_perm_consts,
-                                              sizeof(l_perm_consts), 8,
-                                              &l_const_data_tracker );
-    libxsmm_x86_instruction_lea_data( io_generated_code, LIBXSMM_X86_GP_REG_R9,
-                                      l_off, &l_const_data_tracker );
+    l_poff = libxsmm_x86_instruction_add_data( io_generated_code,
+                                               (unsigned char*) l_perm_consts,
+                                               sizeof(l_perm_consts), 8,
+                                               &l_const_data_tracker );
 
     /* Broadcast permute constants into registers */
     for ( l_z = 0; l_z < l_values_per_reg; l_z++ ) {
@@ -429,7 +424,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                         l_micro_kernel_config.instruction_set,
                                         l_broadcast_insn,
                                         LIBXSMM_X86_GP_REG_R9,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0, l_z*l_fbytes,
+                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                        l_poff - l_uoff + l_z*l_fbytes,
                                         l_micro_kernel_config.vector_name,
                                         l_base_perm_reg + l_z, 0, 0, 0 );
     }
@@ -437,6 +433,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
     /* Update the register count */
     l_used_reg += l_values_per_reg;
 
+    /* Mark that we also need at least one broadcast register */
+    l_need_bcast_reg = 1;
+  /* Otherwise, load the entries of A from memory at runtime */
+  } else {
     /* Mark that we also need at least one broadcast register */
     l_need_bcast_reg = 1;
   }
@@ -538,9 +538,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
           }
         }
 
-        /* If necessary, broadcast a packed constant */
+        /* If necessary, broadcast a unique value */
         if ( l_unique > l_breg_unique ) {
-          /* See if we already have it */
+          /* See if we already have it broadcasted */
           for ( l_v = 0; l_v < l_nbcast_regs; l_v++ ) {
             if ( l_bcast_reg_vals[l_v] == l_u ) {
               l_rva = l_base_bcast_reg + l_v;
@@ -553,15 +553,27 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
             l_cur_bcast_reg = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_regs,
                                                                   l_ops + l_op_idx + 1,
                                                                   l_n_ops - l_op_idx - 1 );
-
             l_rva = l_base_bcast_reg + l_cur_bcast_reg;
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                     l_micro_kernel_config.instruction_set,
-                                                     LIBXSMM_X86_INSTR_VPERMD,
-                                                     l_micro_kernel_config.vector_name,
-                                                     l_u / l_values_per_reg,
-                                                     l_base_perm_reg + l_u % l_values_per_reg,
-                                                     l_rva );
+
+            /* Broadcast from memory */
+            if ( l_unique > l_preg_unique ) {
+              libxsmm_x86_instruction_vec_move( io_generated_code,
+                                                l_micro_kernel_config.instruction_set,
+                                                l_broadcast_insn,
+                                                LIBXSMM_X86_GP_REG_R9,
+                                                LIBXSMM_X86_GP_REG_UNDEF, 0, l_u*l_fbytes,
+                                                l_micro_kernel_config.vector_name,
+                                                l_rva, 0, 0, 0 );
+            /* Broadcast from a packed register */
+            } else {
+              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                       l_micro_kernel_config.instruction_set,
+                                                       LIBXSMM_X86_INSTR_VPERMD,
+                                                       l_micro_kernel_config.vector_name,
+                                                       l_u / l_values_per_reg,
+                                                       l_base_perm_reg + l_u % l_values_per_reg,
+                                                       l_rva );
+            }
 
             /* Update our records */
             l_bcast_reg_vals[l_cur_bcast_reg] = l_u;
