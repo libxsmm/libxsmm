@@ -89,7 +89,7 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
       for (im = 0; im < m_inner_trips; im++) {
         cur_acc0 = m_unroll_factor + im;
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 LIBXSMM_X86_INSTR_VXORPS,
                                                  i_micro_kernel_config->vector_name,
                                                  cur_acc0, cur_acc0, cur_acc0 );
       }
@@ -199,11 +199,11 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
       cur_acc0 = 8 + im * 2;
       cur_acc1 = 8 + im * 2 + 1;
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                cur_acc0, cur_acc0, cur_acc0 );
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                cur_acc1, cur_acc1, cur_acc1 );
     }
@@ -579,7 +579,7 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
         if ( compute_plain_vals_reduce > 0 ) {
           if ( flag_reduce_op_add > 0 ) {
             libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                     LIBXSMM_X86_INSTR_VPXORD,
+                                                     LIBXSMM_X86_INSTR_VXORPS,
                                                      i_micro_kernel_config->vector_name,
                                                      start_vreg_sum + im + _in * m_unroll_factor, start_vreg_sum + im + _in * m_unroll_factor, start_vreg_sum + im + _in * m_unroll_factor );
           } else if ( flag_reduce_op_max > 0 ) {
@@ -598,7 +598,7 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
 
         if ( compute_squared_vals_reduce > 0 ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                   LIBXSMM_X86_INSTR_VPXORD,
+                                                   LIBXSMM_X86_INSTR_VXORPS,
                                                    i_micro_kernel_config->vector_name,
                                                    start_vreg_sum2 + im + _in * m_unroll_factor, start_vreg_sum2 + im + _in * m_unroll_factor, start_vreg_sum2 + im + _in * m_unroll_factor );
         }
@@ -804,7 +804,7 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
         /* Initialize accumulators to zero */
         if ( flag_reduce_op_add > 0 ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                   LIBXSMM_X86_INSTR_VPXORD,
+                                                   LIBXSMM_X86_INSTR_VXORPS,
                                                    i_micro_kernel_config->vector_name,
                                                    start_vreg_sum + im + _in * m_unroll_factor, start_vreg_sum + im + _in * m_unroll_factor, start_vreg_sum + im + _in * m_unroll_factor );
         } else if ( flag_reduce_op_max > 0 ) {
@@ -822,7 +822,7 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
 
         if ( compute_squared_vals_reduce > 0 ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                   LIBXSMM_X86_INSTR_VPXORD,
+                                                   LIBXSMM_X86_INSTR_VXORPS,
                                                    i_micro_kernel_config->vector_name,
                                                    start_vreg_sum2 + im + _in * m_unroll_factor, start_vreg_sum2 + im + _in * m_unroll_factor, start_vreg_sum2 + im + _in * m_unroll_factor );
         }
@@ -1131,7 +1131,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
     if ( compute_plain_vals_reduce > 0 ) {
       if ( flag_reduce_op_add > 0 ) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 LIBXSMM_X86_INSTR_VXORPS,
                                                  i_micro_kernel_config->vector_name,
                                                  reg_sum, reg_sum, reg_sum );
       } else if ( flag_reduce_op_max > 0 ) {
@@ -1158,7 +1158,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
     if ( compute_squared_vals_reduce > 0 ) {
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                reg_sum_squared, reg_sum_squared, reg_sum_squared );
     }
@@ -2124,7 +2124,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
     if ( compute_plain_vals_reduce > 0 ) {
       if ( flag_reduce_op_add > 0 ) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 LIBXSMM_X86_INSTR_VXORPS,
                                                  i_micro_kernel_config->vector_name,
                                                  reg_sum, reg_sum, reg_sum );
       } else if ( flag_reduce_op_max > 0 ) {
@@ -2153,7 +2153,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
     if ( compute_squared_vals_reduce > 0 ) {
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                reg_sum_squared, reg_sum_squared, reg_sum_squared );
     }
@@ -2268,7 +2268,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, 'z', aux_vreg, i );
         } else {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                   LIBXSMM_X86_INSTR_VPXORD,
+                                                   LIBXSMM_X86_INSTR_VXORPS,
                                                    i_micro_kernel_config->vector_name,
                                                    i, i, i );
         }
@@ -3538,7 +3538,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       if (apply_redop == 1) {
         if (load_acc == 0) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 LIBXSMM_X86_INSTR_VXORPS,
                                                  i_micro_kernel_config->vector_name,
                                                  im + vecout_offset, im + vecout_offset, im + vecout_offset);
         } else {
@@ -3573,12 +3573,12 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       /* Initialize argop vectors if need be  */
       if (record_argop_off_vec0 == 1) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                im + vecargop_vec0_offset, im + vecargop_vec0_offset, im + vecargop_vec0_offset);
         if (idx_tsize == 8) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 LIBXSMM_X86_INSTR_VXORPS,
                                                  i_micro_kernel_config->vector_name,
                                                  im + max_m_unrolling + vecargop_vec0_offset, im + max_m_unrolling + vecargop_vec0_offset, im + max_m_unrolling + vecargop_vec0_offset);
         }
@@ -3587,12 +3587,12 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       /* Initialize argop vectors if need be  */
       if (record_argop_off_vec1 == 1) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                im + vecargop_vec1_offset, im + vecargop_vec1_offset, im + vecargop_vec1_offset);
         if (idx_tsize == 8) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 LIBXSMM_X86_INSTR_VXORPS,
                                                  i_micro_kernel_config->vector_name,
                                                  im + max_m_unrolling + vecargop_vec1_offset, im + max_m_unrolling + vecargop_vec1_offset, im + max_m_unrolling + vecargop_vec1_offset);
         }
@@ -4340,7 +4340,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       if (apply_redop == 1) {
         if (load_acc == 0) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 LIBXSMM_X86_INSTR_VXORPS,
                                                  i_micro_kernel_config->vector_name,
                                                  im + vecout_offset, im + vecout_offset, im + vecout_offset);
         } else {
@@ -4376,12 +4376,12 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       /* Initialize argop vectors if need be  */
       if (record_argop_off_vec0 == 1) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                im + vecargop_vec0_offset, im + vecargop_vec0_offset, im + vecargop_vec0_offset);
         if (idx_tsize == 8) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 LIBXSMM_X86_INSTR_VXORPS,
                                                  i_micro_kernel_config->vector_name,
                                                  im + max_m_unrolling + vecargop_vec0_offset, im + max_m_unrolling + vecargop_vec0_offset, im + max_m_unrolling + vecargop_vec0_offset);
         }
@@ -4390,12 +4390,12 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       /* Initialize argop vectors if need be  */
       if (record_argop_off_vec1 == 1) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                im + vecargop_vec1_offset, im + vecargop_vec1_offset, im + vecargop_vec1_offset);
         if (idx_tsize == 8) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                 LIBXSMM_X86_INSTR_VPXORD,
+                                                 LIBXSMM_X86_INSTR_VXORPS,
                                                  i_micro_kernel_config->vector_name,
                                                  im + max_m_unrolling + vecargop_vec1_offset, im + max_m_unrolling + vecargop_vec1_offset, im + max_m_unrolling + vecargop_vec1_offset);
         }
@@ -5421,7 +5421,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
     for (im = 0; im < m_unroll_factor; im++) {
       if (load_acc == 0) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                im, im , im);
       } else {
@@ -5640,7 +5640,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
     for (im = 0; im < peeled_m_trips; im++) {
       if (load_acc == 0) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                               LIBXSMM_X86_INSTR_VPXORD,
+                                               LIBXSMM_X86_INSTR_VXORPS,
                                                i_micro_kernel_config->vector_name,
                                                im, im , im);
       } else {
