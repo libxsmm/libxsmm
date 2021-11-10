@@ -2164,10 +2164,18 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg( libxsmm_generated_code* io_ge
                                                    const unsigned int      i_use_broadcast,
                                                    const unsigned int      i_reg_number_src1,
                                                    const unsigned int      i_reg_number_dst ) {
-  libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
-                                                          i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
-                                                          i_reg_number_src1, i_reg_number_dst,
-                                                          0, 0, LIBXSMM_X86_IMM_UNDEF );
+  /* @TODO: fixing needed */
+  if ( ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->code_type < 2 ) ) ||
+       ( io_generated_code->arch < LIBXSMM_X86_AVX ) ) {
+    libxsmm_x86_instruction_vec_compute_mem( io_generated_code, io_generated_code->arch, i_vec_instr,
+                                             i_use_broadcast, i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement,
+                                             i_vector_name, i_reg_number_src1, i_reg_number_dst );
+  } else {
+    libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
+                                                            i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
+                                                            i_reg_number_src1, i_reg_number_dst,
+                                                            0, 0, LIBXSMM_X86_IMM_UNDEF );
+  }
 }
 
 LIBXSMM_API_INTERN
