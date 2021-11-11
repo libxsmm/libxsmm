@@ -253,6 +253,9 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF   0x2c000007
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R         0x0d40c002
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST  0x0dc0c003
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_I_POST   0x0ddf8002
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_R_POST   0x0dc08003
+
 /* ASIMD <-> GPR moves */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V      0x4e001c1e
 #define LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G     0x0e003c16
@@ -510,12 +513,33 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
  * @param i_tupletype tuple specifier
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*               io_generated_code,
-                                                    const unsigned int                    i_vmove_instr,
-                                                    const unsigned char                   i_gp_reg_addr,
-                                                    const unsigned char                   i_gp_reg_offset,
-                                                    const unsigned char                   i_vec_reg,
-                                                    const libxsmm_aarch64_asimd_tupletype i_tupletype );
+void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*               io_generated_code,
+                                                      const unsigned int                    i_vmove_instr,
+                                                      const unsigned char                   i_gp_reg_addr,
+                                                      const unsigned char                   i_gp_reg_offset,
+                                                      const unsigned char                   i_vec_reg,
+                                                      const libxsmm_aarch64_asimd_tupletype i_tupletype );
+
+/**
+ * Generates ldX, stX, etc. instructions for structs
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_vmove_instr actual vmov variant
+ * @param i_gp_reg_addr gp register containing the base address
+ * @param i_gp_reg_offset gp register containing an offset
+ * @param i_vec_reg the simd register
+ * @param i_index the index to address the vector element
+ * @param i_asimdwidth widht of regiaters (1,2,4,8,16 byte)
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*           io_generated_code,
+                                                    const unsigned int                i_vmove_instr,
+                                                    const unsigned char               i_gp_reg_addr,
+                                                    const unsigned char               i_gp_reg_offset,
+                                                    const short                       i_offset,
+                                                    const unsigned char               i_vec_reg,
+                                                    const short                       i_index,
+                                                    const libxsmm_aarch64_asimd_width i_asimdwidth );
 
 /**
  * Generates ldp, stp, etc. instructions
