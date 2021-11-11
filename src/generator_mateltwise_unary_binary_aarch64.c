@@ -481,6 +481,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
   unsigned int bcast_scalar = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0))) ? 1 : 0;
 
   unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
+  unsigned char l_needs_sve_mask;
 
   LIBXSMM_UNUSED(i_gp_reg_mapping);
   LIBXSMM_UNUSED(i_vlen);
@@ -503,10 +504,11 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
       }
 
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
+      l_needs_sve_mask = (cur_vreg == i_start_vreg);
       switch(i_mateltwise_desc->param){
         case LIBXSMM_MELTW_TYPE_UNARY_X2:
           if( l_is_sve ) {
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, 
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
           } else {/* ASIMD */
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
@@ -517,12 +519,9 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
         case LIBXSMM_MELTW_TYPE_UNARY_NEGATE:
           if( l_is_sve ) {
             /* fneg only exists predicated */
-            /* todo if predicate register is defined, we don't need whilelt */
-            /* we may need this predicate only once */
-            libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P, 
+            if( l_needs_sve_mask ) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P,
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
-          
           } else {
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
                                                      cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
@@ -534,8 +533,8 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
             /* either create a 1-register like asimd, or add immediate value */
             /* todo test which one is faster (if it matters somehow) */
             unsigned char l_immediate_enum = 1; // 0 = 0.5, 1 = 1.0
-            libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P, 
+            if( l_needs_sve_mask ) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P,
                                                      cur_vreg, l_immediate_enum, 0, cur_vreg, l_pred_reg, l_sve_type );
           } else {
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
@@ -567,9 +566,15 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
                                                      (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_SQRT:
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V,
+          if( l_is_sve ) {
+            if( l_needs_sve_mask ) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P,
+                                                     cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+          } else {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V,
                                                      cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
                                                      (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_EXP:
           libxsmm_generator_exp_ps_3dts_aarch64( io_generated_code,

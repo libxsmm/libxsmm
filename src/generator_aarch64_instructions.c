@@ -749,6 +749,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   unsigned char l_is_predicated = false;
   unsigned char l_is_type_specific = true; /* the only exception currently is xor */
   switch ( i_vec_instr ) {
+    /* usual, binary functions, unpredicated */
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V:
@@ -756,6 +757,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
       l_is_type_specific = false;
       break;
+    /* special function with immediate */
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P:
       if( l_vec_reg_src_1 > 1) {
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: immediate for FADD may be 0 for 0.5 for 1 for 1.0, but nothing else! Received %u\n", l_vec_reg_src_1 );
@@ -767,10 +769,18 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
       l_is_predicated = true;
       l_has_src_0 = false;
       break;
+    /* unary function, unpredicated */
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V:
       l_has_src_0 = false;
       l_vec_reg_src_1 = i_vec_reg_src_0;
       break;
+    /* unary function, predicated */
+    case LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P:
+      l_is_predicated = true;
+      l_has_src_0 = false;
+      l_vec_reg_src_1 = i_vec_reg_src_0;
+      break;
+    /* usual, binary functions, predicated */
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P:/* only dst = src_0 is supported */
       if( i_vec_reg_src_0 != i_vec_reg_dst ){
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);

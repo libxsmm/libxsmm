@@ -44,9 +44,9 @@ void benchmark( int m, int n, struct SVE_UnaryBenchmark &io_result ) {
   for(int i=0;i<l_dataSize;i++) l_input[i] = (T) i;
 
   libxsmm_meltwfunction_unary l_kernel = libxsmm_dispatch_meltw_unary(m, n, &m, &m,
-     LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, 
+     LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
      LIBXSMM_MELTW_FLAG_UNARY_NONE, io_result.unaryType );
-  
+
   libxsmm_meltw_unary_param param;
 
   param.in.primary  = (void*) l_input.data();
@@ -72,7 +72,7 @@ void benchmark( int m, int n, struct SVE_UnaryBenchmark &io_result ) {
 
   double l_flopsPerRun = io_result.flopsPerElement * (m * n);
   double l_bandwidthPerRun = io_result.bandwidthPerElement * (m * n);
-  
+
   // compute performance metrics
   io_result.gflops = (double) l_flopsPerRun * l_benchmarkRuns / l_duration * 1e-9;
   io_result.gbandwidth = (double) l_bandwidthPerRun * l_benchmarkRuns / l_duration * 1e-9;
@@ -106,7 +106,8 @@ int testSVEKernels(){
   libxsmm_meltwfunction_unary trans    = libxsmm_dispatch_meltw_unary(m, n, &m, &n, f32, f32, f32, none, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
   libxsmm_meltwfunction_unary inc      = libxsmm_dispatch_meltw_unary(m, n, &m, &m, f32, f32, f32, none, LIBXSMM_MELTW_TYPE_UNARY_INC);
   libxsmm_meltwfunction_unary recipro  = libxsmm_dispatch_meltw_unary(m, n, &m, &m, f32, f32, f32, none, LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL);
-  
+  libxsmm_meltwfunction_unary sqrt     = libxsmm_dispatch_meltw_unary(m, n, &m, &m, f32, f32, f32, none, LIBXSMM_MELTW_TYPE_UNARY_SQRT);
+
   if(set_zero == nullptr || copy == nullptr || square == nullptr || trans == nullptr || inc == nullptr ){
     std::cerr << "generated kernel is null!!" << std::endl;
     return -1;
@@ -147,6 +148,13 @@ int testSVEKernels(){
   recipro( &param );
   std::cout << "1/x" << std::endl;
 
+  /* undoing the x² */
+  param.in.primary  = (void*) a.data();
+  param.out.primary = (void*) a.data();
+
+  sqrt( &param );
+  std::cout << "sqrt" << std::endl;
+
   // todo compare vector with expected result
   for(int i=0;i<size;i++){
     std::cout << "[" << i << "] a: " << a[i] << ", b: " << b[i] << ", c: " << c[i] << std::endl;
@@ -182,13 +190,20 @@ int main(/*int argc, char* argv[]*/) {
   types.push_back( { LIBXSMM_MELTW_TYPE_UNARY_X2, "x²", 1, sizeof(T) * 2 } );
   types.push_back( { LIBXSMM_MELTW_TYPE_UNARY_INC, "+=1", 1, sizeof(T) * 2 });
   types.push_back( { LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, "1/x", 1, sizeof(T) * 2 } );
+  types.push_back( { LIBXSMM_MELTW_TYPE_UNARY_SQRT, "sqrt", 1, sizeof(T) * 2 } );
+
+  libxsmm_finalize();
 
   for(auto &type : types){
     struct SVE_UnaryBenchmark asimd = type, sve = type;
-    libxsmm_set_target_archid( LIBXSMM_AARCH64_V82 );
-    benchmark<T>(m, n, asimd);
+    libxsmm_init();
     libxsmm_set_target_archid( LIBXSMM_AARCH64_A64FX );
     benchmark<T>(m, n, sve);
+    libxsmm_finalize();
+    libxsmm_init();
+    libxsmm_set_target_archid( LIBXSMM_AARCH64_V82 );
+    benchmark<T>(m, n, asimd);
+    libxsmm_finalize();
     // print benchmark results
     std::cout << "bench " << type.name << ": " << sve.gflops << " gflops, " << sve.gbandwidth << " GB/s" << std::endl;
     std::cout << "  comparison: " << sve.gbandwidth / asimd.gbandwidth << "x faster" << std::endl;
