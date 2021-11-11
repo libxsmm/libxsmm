@@ -57,7 +57,7 @@ void libxsmm_generator_transform_aarch64_microkernel( libxsmm_generated_code*   
       libxsmm_generator_transform_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     } else { */
       libxsmm_generator_transform_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
-    // }
+    /* } */
   } else {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );

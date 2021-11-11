@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Evanelos Georganas, Alexander Heinecke (Intel Corp.)
+/* Evanelos Georganas, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
 
 #ifndef GENERATOR_MATELTWISE_AARCH64_H
@@ -17,6 +17,10 @@
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_mateltwise_aarch64_get_type_size( libxsmm_generated_code* io_generated_code,
                                                                  unsigned char type );
+
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_mateltwise_aarch64_sve_get_vlen();
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*         io_generated_code,

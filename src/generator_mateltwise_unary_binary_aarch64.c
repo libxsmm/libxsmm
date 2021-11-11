@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Deepti Aggarwal, Alexander Heinecke (Intel Corp.)
+/* Deepti Aggarwal, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
 
 #include "generator_aarch64_instructions.h"
@@ -223,19 +223,20 @@ void libxsmm_generator_configure_aarch64_vlens(const libxsmm_meltw_descriptor* i
   /* First, determine the vlen compute based on the  add the architecture check in here D-, move it to the microkernel config */
   unsigned int l_asimd_bytes_per_register = 16; /* 16 bytes * 8 bits/byte = 256 bits */
 
-  /* if is a64fx, override with its vector length (512) */
-  /* if there is another processor with SVE, and its vector length is different, this needs to be adjusted */
-  if(i_micro_kernel_config->instruction_set == LIBXSMM_AARCH64_A64FX) l_asimd_bytes_per_register = 32;
+  /* if is a64fx, override with its vector length (64 bytes = 512 bits) */
+  if(i_micro_kernel_config->instruction_set == LIBXSMM_AARCH64_A64FX) l_asimd_bytes_per_register = libxsmm_generator_mateltwise_aarch64_sve_get_vlen();
 
-  unsigned int l_inp_type_size = libxsmm_generator_mateltwise_aarch64_get_type_size(NULL, LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ));
-  i_micro_kernel_config->vlen_comp = l_asimd_bytes_per_register / l_inp_type_size;
+  unsigned char l_inp_type = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 );
+  unsigned int  l_inp_type_size = l_inp_type == LIBXSMM_DATATYPE_UNSUPPORTED ? 0 : libxsmm_generator_mateltwise_aarch64_get_type_size(NULL, l_inp_type);
+  if(l_inp_type_size > 0) i_micro_kernel_config->vlen_comp = l_asimd_bytes_per_register / l_inp_type_size;
 
   /* The vlen_in is the same as vlen compute */
   i_micro_kernel_config->vlen_in = i_micro_kernel_config->vlen_comp;
 
   /* The vlen_out depends on the output datatype */
-  unsigned int l_out_type_size = libxsmm_generator_mateltwise_aarch64_get_type_size(NULL, LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype2 ));
-  i_micro_kernel_config->vlen_out = l_asimd_bytes_per_register / l_out_type_size;
+  unsigned char l_out_type = LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype );
+  unsigned int  l_out_type_size = l_out_type == LIBXSMM_DATATYPE_UNSUPPORTED ? 0 : libxsmm_generator_mateltwise_aarch64_get_type_size(NULL, l_out_type);
+  if(l_out_type_size > 0) i_micro_kernel_config->vlen_out = l_asimd_bytes_per_register / l_out_type_size;
 
   /* if the computation is done in F32 or the input is in F32, then set vlen_out to 16 */
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ||
@@ -245,7 +246,7 @@ void libxsmm_generator_configure_aarch64_vlens(const libxsmm_meltw_descriptor* i
         LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) )
     {
       i_micro_kernel_config->vlen_out= 4;
-    } 
+    }
   }
 }
 
@@ -2101,7 +2102,7 @@ void libxsmm_generator_unary_binary_aarch64_microkernel( libxsmm_generated_code*
   available_vregs = available_vregs - i_micro_kernel_config->reserved_zmms;
 
   /* Configure M and N blocking factors */
-  // todo sve: here we might intercept the m, n blocking size
+  /* todo sve: here we might intercept the m, n blocking size */
   libxsmm_generator_configure_aarch64_M_N_blocking( io_generated_code, i_mateltwise_desc, i_mateltwise_desc->m, i_mateltwise_desc->n, i_micro_kernel_config->vlen_in, &m_blocking, &n_blocking, available_vregs);
   libxsmm_generator_configure_aarch64_loop_order(i_mateltwise_desc, &loop_order, &m_blocking, &n_blocking, &out_blocking, &inner_blocking, &out_bound, &inner_bound);
   i_micro_kernel_config->loop_order = loop_order;

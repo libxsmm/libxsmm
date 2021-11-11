@@ -27,8 +27,13 @@ int main(/*int argc, char* argv[]*/) {
   typedef float T;
   std::cout << "Hello world!" << std::endl;
 
+  libxsmm_init();
+
+  int target_arch0 = libxsmm_get_target_archid();
+  std::cout << "Detected architecture " << target_arch0 << std::endl;
+
   // somehow was only LIBXSMM_AARCH64_V82 even if it should have been the A64FX
-  libxsmm_set_target_archid( LIBXSMM_AARCH64_A64FX );
+  if( target_arch0 !=  LIBXSMM_AARCH64_A64FX ) libxsmm_set_target_archid( LIBXSMM_AARCH64_A64FX );
 
   // goldig, endlich funktioniert es :)
   // also:
@@ -61,8 +66,7 @@ int main(/*int argc, char* argv[]*/) {
 
   std::cout << "m: " << m << ", n: " << n << std::endl;
 
-  std::cout << "created kernels" << std::endl;
-
+  // apply several functions on the vectors
   libxsmm_meltw_unary_param param;
 
   param.in.primary  = (void*) a.data();
@@ -70,23 +74,22 @@ int main(/*int argc, char* argv[]*/) {
 
   set_zero( &param );
   std::cout << "set zero" << std::endl;
-  
+
   param.in.primary  = (void*) a.data();
   param.out.primary = (void*) c.data();
 
   copy( &param );
   std::cout << "copy" << std::endl;
-  
+
   param.in.primary  = (void*) a.data();
   param.out.primary = (void*) a.data();
 
   square( &param );
   std::cout << "square" << std::endl;
 
-  // todo apply several functions on vector
   // todo compare vector with expected result
   for(int i=0;i<size;i++){
-    std::cout << "i: " << i << ", a[i]: " << a[i] << ", b[i]: " << b[i] << ", c[i]: " << c[i] << std::endl;
+    std::cout << "[" << i << "] a: " << a[i] << ", b: " << b[i] << ", c: " << c[i] << std::endl;
   }
   std::cout << "done" << std::endl;
   // todo done (or free resources ^^)
