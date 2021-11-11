@@ -262,6 +262,7 @@ unsigned int libxsmm_aarch64_instruction_add_data( libxsmm_generated_code*     i
                                                    const unsigned char*        i_data,
                                                    unsigned int                i_ndata_bytes,
                                                    unsigned int                i_alignment,
+                                                   unsigned int                i_append_only,
                                                    libxsmm_const_data_tracker* io_const_data ) {
   i_alignment = LIBXSMM_MAX( i_alignment, 1 );
 
@@ -271,9 +272,11 @@ unsigned int libxsmm_aarch64_instruction_add_data( libxsmm_generated_code*     i
     unsigned int l_doff, l_npad;
 
     /* See if we already have the data */
-    for ( l_doff = 0; l_doff < l_dsize; l_doff += i_alignment ) {
-      if ( i_ndata_bytes <= l_dsize - l_doff && !memcmp( l_data + l_doff, i_data, i_ndata_bytes) ) {
-        return l_doff;
+    if ( !i_append_only ) {
+      for ( l_doff = 0; l_doff < l_dsize; l_doff += i_alignment ) {
+        if ( i_ndata_bytes <= l_dsize - l_doff && !memcmp( l_data + l_doff, i_data, i_ndata_bytes) ) {
+          return l_doff;
+        }
       }
     }
 
