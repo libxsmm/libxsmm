@@ -375,7 +375,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   /* Copy the unique values into the data segment with 64-byte alignment */
   l_uoff = libxsmm_x86_instruction_add_data( io_generated_code,
                                              (unsigned char*) l_unique_values,
-                                             l_unique*l_fbytes, 64,
+                                             l_unique*l_fbytes, 64, 1,
                                              &l_const_data_tracker );
   libxsmm_x86_instruction_lea_data( io_generated_code, LIBXSMM_X86_GP_REG_R9,
                                     l_uoff, &l_const_data_tracker );
@@ -415,7 +415,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
     /* Copy the permutation constants into the data segment */
     l_poff = libxsmm_x86_instruction_add_data( io_generated_code,
                                                (unsigned char*) l_perm_consts,
-                                               sizeof(l_perm_consts), 8,
+                                               sizeof(l_perm_consts), 8, 1,
                                                &l_const_data_tracker );
 
     /* Broadcast permute constants into registers */
@@ -651,7 +651,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                             const unsigned int*             i_column_idx,
                                                             const double*                   i_values ) {
   unsigned int l_n, l_z;
-  unsigned int l_unique;
+  unsigned int l_unique, l_uoff;
   unsigned int l_m_blocking, l_n_blocking;
   unsigned int l_n_row_idx = i_row_idx[i_xgemm_desc->m];
   double *const l_unique_values = (double*)(0 != l_n_row_idx ? malloc(sizeof(double) * l_n_row_idx) : NULL);
@@ -661,7 +661,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   unsigned int l_reg_unique, l_base_c_reg, l_base_c_gp_reg, l_base_ld_reg;
 
   const libxsmm_aarch64_asimd_tupletype l_tuplet = (l_fp64) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S;
-  const libxsmm_aarch64_asimd_width l_width = (l_fp64) ? LIBXSMM_AARCH64_ASIMD_WIDTH_D : LIBXSMM_AARCH64_ASIMD_WIDTH_S;
+  /*const libxsmm_aarch64_asimd_width l_width = (l_fp64) ? LIBXSMM_AARCH64_ASIMD_WIDTH_D : LIBXSMM_AARCH64_ASIMD_WIDTH_S;*/
   const unsigned int l_values_per_reg = (l_fp64) ? 2 : 4;
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
 
@@ -671,6 +671,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
   unsigned int l_n_ops, l_op_idx;
 
+  libxsmm_const_data_tracker l_const_data_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* Check if mallocs were successful */
@@ -707,7 +708,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
     goto cleanup;
   }
 
-  l_base_ld_reg = LIBXSMM_UPDIV(l_unique, l_values_per_reg);
+  /* If needed cast from double to float */
+  if ( !l_fp64 ) {
+    for ( l_z = 0; l_z < l_unique; l_z++ ) {
+      float l_fval = (float) l_unique_values[l_z];
+      memcpy( ((float*) l_unique_values) + l_z, &l_fval, sizeof(l_fval) );
+    }
+  }
+
+  l_base_ld_reg = LIBXSMM_UPDIV( l_unique, l_values_per_reg );
   l_base_c_reg = l_base_ld_reg + ((l_n_blocking > 1) ? 2 : 1);
   l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X12;
 
@@ -730,7 +739,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
     goto cleanup;
   }
 
-  /* define gp register mapping */
+  /* Define gp register mapping */
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
 
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
@@ -739,32 +748,41 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X24;
   l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X25;
 
-  /* open asm */
+  /* Zero the constant data block */
+  libxsmm_reset_const_data_tracker( &l_const_data_tracker );
+
+  /* Open asm */
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xfff );
 
-  /* load A into registers */
-  for ( l_z = 0; l_z < l_unique; l_z++) {
-    unsigned long long l_imm;
+  /* Copy the unique values into the data segment with 16-byte alignment */
+  l_uoff = libxsmm_aarch64_instruction_add_data( io_generated_code,
+                                                 (unsigned char*) l_unique_values,
+                                                 l_unique*l_fbytes, 16, 1,
+                                                 &l_const_data_tracker );
 
-    if ( l_fp64 ) {
-      union { double f; unsigned long long i; } u;
-      u.f = l_unique_values[l_z];
-      l_imm = u.i;
-    } else {
-      union { float f; unsigned int i; } u;
-      u.f = (float) l_unique_values[l_z];
-      l_imm = (unsigned long long) u.i;
-    }
+  /* Pad the segment to be a multiple of 16 */
+  if ( (l_unique*l_fbytes) % 16 != 0 ) {
+    unsigned char l_pad[15] = {};
+    libxsmm_aarch64_instruction_add_data( io_generated_code, l_pad,
+                                          (l_unique*l_fbytes) % 16, 1, 1,
+                                          &l_const_data_tracker );
+  }
 
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code,
-                                               l_gp_reg_mapping.gp_reg_help_1,
-                                               l_imm );
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
-                                                l_gp_reg_mapping.gp_reg_help_1,
-                                                l_z / l_values_per_reg,
-                                                l_z % l_values_per_reg,
-                                                l_width );
+  libxsmm_aarch64_instruction_adr_data( io_generated_code,
+                                        l_gp_reg_mapping.gp_reg_help_0,
+                                        l_uoff, &l_const_data_tracker );
+
+  /* Load A into registers */
+  if ( (l_base_ld_reg % 2) != 0 ) {
+    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
+                                            l_gp_reg_mapping.gp_reg_help_0, 0, 0,
+                                            0, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+  }
+
+  for ( l_z = l_base_ld_reg % 2; l_z < l_base_ld_reg; l_z += 2 ) {
+    libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF,
+                                                 l_gp_reg_mapping.gp_reg_help_0, 16*l_z,
+                                                 l_z, l_z + 1, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
   }
 
   for ( l_op_idx = 0; l_op_idx < l_n_ops; l_op_idx++ ) {
@@ -840,7 +858,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
           unsigned int l_rvc = l_base_c_reg + l_n_blocking*op.acc_idxs[l_z];
           unsigned long long l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
           unsigned int l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
-          unsigned int l_stp_insn = (l_c_is_nt) ? LIBXSMM_AARCH64_INSTR_GP_STNP_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF;
+          unsigned int l_stp_insn = (l_c_is_nt) ? LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF : LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF;
 
           /* See if we need to load/zero the accumulator */
           if ( LIBXSMM_ASPARSE_REG_FLAG_FIRST & op.flags[l_z] ) {
@@ -896,6 +914,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
 
   /* Close asm */
   libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xfff );
+  libxsmm_aarch64_instruction_close_data( io_generated_code, &l_const_data_tracker );
 
 cleanup:
   free( l_unique_values );
