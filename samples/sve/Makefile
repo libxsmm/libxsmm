@@ -4,7 +4,7 @@ run:
 	LD_LIBRARY_PATH=../../lib LIBXSMM_VERBOSE=-1 ./compiled
 
 .PHONY: valgrind
-valgrind:	
+valgrind:
 	LD_LIBRARY_PATH=../../lib LIBXSMM_VERBOSE=-1 valgrind ./compiled
 
 .PHONY: compile

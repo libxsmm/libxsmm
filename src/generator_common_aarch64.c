@@ -96,21 +96,40 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
                                                              const unsigned int      i_is_store ) {
 
   /* i_masked_elems: 0 = load as many as you can; else: load <i_masked_elems> elements */
-  if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
+  if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
     unsigned char l_pred_reg = 0;/* todo which predicate register should we use? */
-    if(i_masked_elems == 0){/* just load/store without predicate */
+    if( i_masked_elems == 0 ) {/* just load/store without predicate */
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF;
       libxsmm_aarch64_instruction_sve_move(io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, l_pred_reg);
     } else {
       /* we need two registers for comparison with whilelt: we use i_gp_reg_addr and i_gp_reg_addr + i_masked_elems (saved into i_gp_reg_scratch) */
+      /* todo: we probably need this in other functions later as well */
+      libxsmm_aarch64_sve_type l_sve_data_type;
+      switch(i_datatype_size) {
+        case 1:
+          l_sve_data_type = LIBXSMM_AARCH64_SVE_TYPE_B;
+          break;
+        case 2:
+          l_sve_data_type = LIBXSMM_AARCH64_SVE_TYPE_H;
+          break;
+        case 4:
+          l_sve_data_type = LIBXSMM_AARCH64_SVE_TYPE_S;
+          break;
+        case 8:
+          l_sve_data_type = LIBXSMM_AARCH64_SVE_TYPE_D;
+          break;
+        default:
+          /* should not happen */
+          return;
+      }
       libxsmm_aarch64_instruction_alu_compute_imm12(io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_scratch, i_masked_elems, 0);
-      libxsmm_aarch64_instruction_sve_pcompute(io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_WHILELT, l_pred_reg, 
-        i_gp_reg_addr, LIBXSMM_AARCH64_GP_WIDTH_X, i_gp_reg_scratch, LIBXSMM_AARCH64_SVE_PATTERN_ALL, LIBXSMM_AARCH64_SVE_TYPE_S);
+      libxsmm_aarch64_instruction_sve_pcompute(io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_WHILELT, l_pred_reg,
+        i_gp_reg_addr, LIBXSMM_AARCH64_GP_WIDTH_X, i_gp_reg_scratch, LIBXSMM_AARCH64_SVE_PATTERN_ALL, l_sve_data_type);
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF;
       libxsmm_aarch64_instruction_sve_move(io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, l_pred_reg);
     }
     /* increment register if needed; add via immediate */
-    if( i_adv_gpr ){
+    if( i_adv_gpr ) {
       unsigned int l_sve_length = libxsmm_generator_mateltwise_aarch64_sve_get_vlen();/* 512 bits = 64 bytes for the A64FX */
       unsigned int l_offset = i_datatype_size * (i_masked_elems ? i_masked_elems : l_sve_length / i_datatype_size);
       libxsmm_aarch64_instruction_alu_compute_imm12(io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0);

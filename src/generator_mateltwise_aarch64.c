@@ -36,7 +36,6 @@ unsigned int libxsmm_generator_mateltwise_aarch64_get_type_size(libxsmm_generate
       return 1;
     default:
       /* what if io_generated_code is null? */
-      printf("Requested type: %d\n", type);
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return 0;
   }
@@ -44,7 +43,7 @@ unsigned int libxsmm_generator_mateltwise_aarch64_get_type_size(libxsmm_generate
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_mateltwise_aarch64_sve_get_vlen(){
-  // the A64FX has 512 bits = 64 bytes
+  /* the A64FX has 512 bits = 64 bytes */
   return 64;
 }
 
@@ -64,7 +63,6 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
     case LIBXSMM_AARCH64_V82:
     case LIBXSMM_AARCH64_APPL_M1:
     case LIBXSMM_AARCH64_A64FX:
-    printf("start microkernel config vl\n");
       io_micro_kernel_config->instruction_set = l_arch;
       io_micro_kernel_config->vector_reg_count = 32;
       /* Configure input specific microkernel options */
@@ -81,7 +79,6 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
       io_micro_kernel_config->alu_jmp_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
       io_micro_kernel_config->alu_mov_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
       io_micro_kernel_config->vxor_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
-      printf("end microkernel config vl\n");
       break;
     default:
       /* That should not happen */

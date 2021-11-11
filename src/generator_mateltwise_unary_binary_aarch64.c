@@ -480,10 +480,15 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
   unsigned int bcast_col = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0))) ? 1 : 0;
   unsigned int bcast_scalar = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0))) ? 1 : 0;
 
+  unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
+
   LIBXSMM_UNUSED(i_gp_reg_mapping);
   LIBXSMM_UNUSED(i_vlen);
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_mask_reg);
+
+  unsigned char l_pred_reg = 0;/* todo decide which predicate register to use */
+  libxsmm_aarch64_sve_type l_sve_type = LIBXSMM_AARCH64_SVE_TYPE_S;/* todo get sve type from inputs somehow */
 
   for (in = 0; in < i_n_blocking; in++) {
     if ((bcast_col == 1) && (in > 0)) {
@@ -500,24 +505,61 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
       switch(i_mateltwise_desc->param){
         case LIBXSMM_MELTW_TYPE_UNARY_X2:
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
-                                                     cur_vreg, cur_vreg, 0, cur_vreg,
-                                                     (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          if( l_is_sve ) {
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, 
+                                                     cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
+          } else {/* ASIMD */
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                                       cur_vreg, cur_vreg, 0, cur_vreg,
+                                                       (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_NEGATE:
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
+          if( l_is_sve ) {
+            /* fneg only exists predicated */
+            /* todo if predicate register is defined, we don't need whilelt */
+            /* we may need this predicate only once */
+            libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P, 
+                                                     cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
+          
+          } else {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
                                                      cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
                                                      (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_INC:
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
+          if( l_is_sve ) {
+            /* either create a 1-register like asimd, or add immediate value */
+            /* todo test which one is faster (if it matters somehow) */
+            unsigned char l_immediate_enum = 1; // 0 = 0.5, 1 = 1.0
+            libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P, 
+                                                     cur_vreg, l_immediate_enum, 0, cur_vreg, l_pred_reg, l_sve_type );
+          } else {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
                                                      cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg,
                                                      (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          }
           break;
-        case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL:
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,
-                                                     cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
-                                                     (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+        case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL:/* this function only produces an estimate. is this truly ok? */
+          if( l_is_sve ){
+            /* todo can we improve the performance by using different temporary registers? */
+            /* one iteration step is close to perfect with 1/[1..50] */
+            unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V, /* save the estimate in tmp */
+                                                     cur_vreg, cur_vreg, 0, tmp_vreg, l_pred_reg, l_sve_type );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V, /* compute the improvement by tmp,cur into cur */
+                                                     cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
+                                                     cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+          } else {
+            /* todo: this is only an approximation */
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,
+                                                      cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
+                                                       (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT:
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V,
@@ -1381,6 +1423,11 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
                                                i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, 0, i_micro_kernel_config->zero_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
   }
 
+  if( op == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL ){
+    i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+  }
+
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_ELU) || (op == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV)) {
     i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->tmp_vreg2 = i_micro_kernel_config->reserved_zmms + 1;
@@ -1464,9 +1511,15 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
   }
 
   if (op == LIBXSMM_MELTW_TYPE_UNARY_XOR) {
-    i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms;
-    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
-    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, 0, i_micro_kernel_config->zero_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+    unsigned char l_zero_reg = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->reserved_zmms = l_zero_reg + 1;
+    i_micro_kernel_config->zero_vreg = l_zero_reg;
+    if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+      /* the sve data type doesn't matter, maybe we should add a new enum value for that */
+      libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V, l_zero_reg, l_zero_reg, 0, l_zero_reg, 0, LIBXSMM_AARCH64_SVE_TYPE_S );
+    } else {
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, l_zero_reg, l_zero_reg, 0, l_zero_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+    }
   }
 
   if (op == LIBXSMM_MELTW_TYPE_UNARY_INC) {
@@ -1953,8 +2006,6 @@ void libxsmm_generator_unary_binary_aarch64_microkernel( libxsmm_generated_code*
     return;
   }
 #endif
-
-  printf("gmuba.c: calling microkernel\n");
 
   /* check datatype */
   if ( ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) )
