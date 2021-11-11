@@ -450,6 +450,7 @@ unsigned int libxsmm_aarch64_instruction_add_data( libxsmm_generated_code*     i
                                                    const unsigned char*        i_data,
                                                    unsigned int                i_ndata_bytes,
                                                    unsigned int                i_alignment,
+                                                   unsigned int                i_append_only,
                                                    libxsmm_const_data_tracker* io_const_data );
 
 /**
