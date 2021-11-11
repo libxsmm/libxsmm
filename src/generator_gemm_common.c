@@ -902,7 +902,6 @@ void libxsmm_generator_gemm_footer_kloop( libxsmm_generated_code*             io
     } else {
       l_b_offset = i_xgemm_desc->k * i_micro_kernel_config->datatype_size_in;
     }
-
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
         i_gp_reg_mapping->gp_reg_b, l_b_offset );
   }
@@ -1050,8 +1049,14 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
         i_gp_reg_mapping->gp_reg_b, l_b_offset );
 
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
-        i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->m)*(i_micro_kernel_config->datatype_size_in)) );
+    // FIXME: Currently both cases do the same, should this be changed?
+    if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
+          i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->m)*(i_micro_kernel_config->datatype_size_in)) );
+    } else {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
+          i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->m)*(i_micro_kernel_config->datatype_size_in)) );
+    }
 
     if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2          ||
          i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C    ) {
@@ -1107,6 +1112,7 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
     }
   }
 
+  // Question: What should happen here for the gather-based A transpose case?
   /* A prefetch */
   if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ||
       i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) {
@@ -1168,8 +1174,13 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
     libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_reduce_loop );
     libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
   } else {
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_a,
-        ((i_xgemm_desc->k) * (i_micro_kernel_config->datatype_size_in) * (i_xgemm_desc->lda) ) - (i_m_blocking * (i_micro_kernel_config->datatype_size_in)) );
+    if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_a,
+          ((i_xgemm_desc->k) * (i_micro_kernel_config->datatype_size_in) * (i_xgemm_desc->lda) ) - (i_m_blocking * (i_micro_kernel_config->datatype_size_in)) );
+    } else {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_a,
+          ((i_xgemm_desc->k) * (i_micro_kernel_config->datatype_size_in) ) - (i_m_blocking * (i_micro_kernel_config->datatype_size_in)) );
+    }
   }
 
   /* loop handling */
@@ -1811,7 +1822,7 @@ void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*     
     l_mask = 0xffff;
   }
 
-  /* shift right by "inverse" remainder */
+  /* shift right by "inverse" remainder*/
   l_mask = l_mask >> i_mask_count;
 
   /* move mask to GP register */

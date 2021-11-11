@@ -366,7 +366,7 @@ void libxsmm_generator_transform_two_4x4_64bit_norm_to_normt_avx512( libxsmm_gen
 }
 
 /*
- * Calling convention, this kernel assumes that all GPRs with are not in the argument list
+ * Calling convention, this kernel assumes that all GPRs which are not in the argument list
  * and all xmm/ymm/zmm/tmm are caller save
  *
  * TODO; stack local variables....
