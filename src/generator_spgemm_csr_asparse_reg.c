@@ -465,8 +465,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
     l_nbcast_regs = l_num_reg - l_base_bcast_reg;
   }
 
-  printf("Used %d registers with %d blocking %d unique and %d bcast\n", l_used_reg + l_nbcast_regs, l_m_blocking, l_unique, l_nbcast_regs);
-
   /* Sequence the operations */
   libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
                                 i_row_idx, i_column_idx, l_unique_pos, l_unique_sgn,
