@@ -379,8 +379,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                              (unsigned char*) l_unique_values,
                                              l_unique*l_fbytes, 64, 1,
                                              &l_const_data_tracker );
+
+  /* Load the base address of the data + 0x300 to reduce imm sizes */
   libxsmm_x86_instruction_lea_data( io_generated_code, LIBXSMM_X86_GP_REG_R9,
-                                    l_uoff, &l_const_data_tracker );
+                                    l_uoff + 0x300, &l_const_data_tracker );
 
   /* Try to store A entirely in broadcasted registers */
   if ( l_unique <= l_breg_unique ) {
@@ -390,7 +392,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                         l_micro_kernel_config.instruction_set,
                                         l_broadcast_insn,
                                         LIBXSMM_X86_GP_REG_R9,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0, l_z*l_fbytes,
+                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                        l_z*l_fbytes - 0x300,
                                         l_micro_kernel_config.vector_name,
                                         l_z, 0, 0, 0 );
     }
@@ -405,7 +408,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                         l_micro_kernel_config.instruction_set,
                                         l_micro_kernel_config.c_vmove_instruction,
                                         LIBXSMM_X86_GP_REG_R9,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0, l_z*l_fbytes,
+                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                        l_z*l_fbytes - 0x300,
                                         l_micro_kernel_config.vector_name,
                                         l_z / l_values_per_reg, 0, 0, 0 );
     }
@@ -427,7 +431,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                         l_broadcast_insn,
                                         LIBXSMM_X86_GP_REG_R9,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_poff - l_uoff + l_z*l_fbytes,
+                                        l_poff - l_uoff + l_z*l_fbytes - 0x300,
                                         l_micro_kernel_config.vector_name,
                                         l_base_perm_reg + l_z, 0, 0, 0 );
     }
@@ -566,7 +570,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                                 l_micro_kernel_config.instruction_set,
                                                 l_broadcast_insn,
                                                 LIBXSMM_X86_GP_REG_R9,
-                                                LIBXSMM_X86_GP_REG_UNDEF, 0, l_u*l_fbytes,
+                                                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                l_u*l_fbytes - 0x300,
                                                 l_micro_kernel_config.vector_name,
                                                 l_rva, 0, 0, 0 );
             /* Broadcast from a packed register */
