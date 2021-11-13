@@ -285,8 +285,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       dt_sparse4 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
-    /* Dense fastest */
-    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4 ) {
+    /* Dense fastest (or within 10%) */
+    if ( dt_dense <= 1.1*dt_sparse1 && dt_dense <= 1.1*dt_sparse2 && dt_dense <= 1.1*dt_sparse4 ) {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
@@ -316,7 +316,6 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     /* Sparse (widest) fastest */
     if ( dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2 ) {
         assert(NULL != k_sparse4);
-        new_handle->N_chunksize = N_sparse4;
         new_handle->kernel = k_sparse4;
     } else if ( NULL != k_sparse4 ) {
         LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
@@ -585,8 +584,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       dt_sparse4 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
-    /* Dense fastest */
-    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4 ) {
+    /* Dense fastest (or within 10%) */
+    if ( dt_dense <= 1.1*dt_sparse1 && dt_dense <= 1.1*dt_sparse2 && dt_dense <= 1.1*dt_sparse4 ) {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
