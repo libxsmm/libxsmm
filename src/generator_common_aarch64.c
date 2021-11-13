@@ -56,6 +56,18 @@ void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_ge
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_mov_aarch64( libxsmm_generated_code* io_generated_code,
+                                    unsigned int            i_src_reg,
+                                    unsigned int            i_dst_reg )
+{
+  libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code,
+                                                       LIBXSMM_AARCH64_INSTR_GP_ORR_SR,
+                                                       LIBXSMM_AARCH64_GP_REG_XZR,
+                                                       i_src_reg, i_dst_reg,
+                                                       0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_loop_header_aarch64( libxsmm_generated_code*     io_generated_code,
                                             libxsmm_loop_label_tracker* io_loop_label_tracker,
                                             const unsigned int          i_gp_reg_loop_cnt,

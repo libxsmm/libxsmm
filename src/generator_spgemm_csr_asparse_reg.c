@@ -23,8 +23,8 @@
 #define LIBXSMM_ASPARSE_REG_MAX_OPS 65536
 
 typedef struct {
-  unsigned long long b_disp;
-  unsigned long long c_disps[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
+  unsigned int b_disp;
+  unsigned int c_disps[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   unsigned short n;
   unsigned short src_vals[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   signed char src_sgns[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
@@ -488,7 +488,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   for ( l_op_idx = 0; l_op_idx < l_n_ops; l_op_idx++ ) {
     libxsmm_asparse_reg_op op = l_ops[l_op_idx];
     unsigned int l_rvb = l_ld_reg;
-    unsigned long long l_b_disp = op.b_disp*i_xgemm_desc->ldb*l_fbytes;
+    unsigned int l_b_disp = op.b_disp*i_xgemm_desc->ldb*l_fbytes;
 
     for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
       for ( l_z = 0; l_z < op.n; l_z++ ) {
@@ -498,7 +498,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
         unsigned int l_uneg = op.src_sgns[l_z] == -1;
         unsigned int l_rva = (l_unique > l_breg_unique) ? ~0 : l_u;
         unsigned int l_rvc = l_base_c_reg + l_n_blocking*l_acc_idx;
-        unsigned long long l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
+        unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
 
         /* Look up our FMA instruction */
         l_fma_insn = l_fma_tbl[l_fp64][l_uneg][l_acc_neg_tbl[l_n][l_acc_idx]];
@@ -679,6 +679,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
   const unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
   unsigned int l_reg_unique, l_base_c_reg, l_base_c_gp_reg, l_base_ld_reg;
+  int l_curr_b_disp = 0;
 
   unsigned int l_bcast_reg_vals[120], l_nbcast_vals = 0;
 
@@ -836,15 +837,22 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                           0, &l_const_data_tracker );
   }
 
+  /* Copy our B pointer to a GPR */
+  libxsmm_generator_mov_aarch64( io_generated_code, l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1 );
+
   for ( l_op_idx = 0; l_op_idx < l_n_ops; l_op_idx++ ) {
     libxsmm_asparse_reg_op op = l_ops[l_op_idx];
     unsigned int l_rvb = l_base_ld_reg;
-    unsigned long long l_b_disp = op.b_disp*i_xgemm_desc->ldb*l_fbytes;
+    int l_b_disp = op.b_disp*i_xgemm_desc->ldb*l_fbytes;
+    unsigned int l_disp_insn = (l_b_disp > l_curr_b_disp) ? LIBXSMM_AARCH64_INSTR_GP_META_ADD : LIBXSMM_AARCH64_INSTR_GP_META_SUB;
 
-    /* Load the address of B */
-    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                   l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_0,
-                                                   l_gp_reg_mapping.gp_reg_help_1, l_b_disp );
+    /* Offset our B pointer */
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, l_disp_insn,
+                                                   l_gp_reg_mapping.gp_reg_help_1,
+                                                   l_gp_reg_mapping.gp_reg_help_0,
+                                                   l_gp_reg_mapping.gp_reg_help_1,
+                                                   abs( l_b_disp - l_curr_b_disp ) );
+    l_curr_b_disp = l_b_disp;
 
     if ( 1 == l_n_blocking ) {
       /* Load B itself */
@@ -857,7 +865,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
         unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
         unsigned int l_rva = (l_unique > l_reg_unique) ? ~0 : l_u;
         unsigned int l_rvc = l_base_c_reg + op.acc_idxs[l_z];
-        unsigned long long l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
+        unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
         unsigned int l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
 
         /* See if we need to load/zero the accumulator */
@@ -942,7 +950,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
           unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
           unsigned int l_rva = (l_unique > l_reg_unique) ? ~0 : l_u;
           unsigned int l_rvc = l_base_c_reg + l_n_blocking*op.acc_idxs[l_z];
-          unsigned long long l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
+          unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
           unsigned int l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
           unsigned int l_stp_insn = (l_c_is_nt) ? LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF : LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF;
 
@@ -1259,7 +1267,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   for ( l_op_idx = 0; l_op_idx < l_n_ops; l_op_idx++ ) {
     libxsmm_asparse_reg_op op = l_ops[l_op_idx];
     unsigned int l_rvb = l_ld_reg;
-    unsigned long long l_b_disp = op.b_disp*i_xgemm_desc->ldb*l_fbytes;
+    unsigned int l_b_disp = op.b_disp*i_xgemm_desc->ldb*l_fbytes;
 
     /* Load B */
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -1277,7 +1285,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         unsigned int l_rva, l_idx;
         unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
         unsigned int l_rvc = l_base_c_reg + l_n_blocking*op.acc_idxs[l_z];
-        unsigned long long l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
+        unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
         unsigned int l_fma_insn, l_ld_insn;
 
         /* Constant is packed in its register */
