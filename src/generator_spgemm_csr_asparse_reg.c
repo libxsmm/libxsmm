@@ -17,7 +17,7 @@
 #include "generator_gemm_common_aarch64.h"
 #include "libxsmm_main.h"
 
-#define LIBXSMM_ASPARSE_REG_MAX_M_BLOCK 4
+#define LIBXSMM_ASPARSE_REG_MAX_M_BLOCK 12
 
 /* 65k should be enough for anybody */
 #define LIBXSMM_ASPARSE_REG_MAX_OPS 65536
@@ -1248,20 +1248,14 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
     l_ld_reg = l_used_reg++;
     l_base_c_reg = l_used_reg;
-    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X12;
+    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X10;
 
-    /* See if we have registers spare for m blocking */
-    if ( l_base_c_reg + 4*l_n_blocking <= 32 ) {
-      l_m_blocking = 4;
-    } else if ( l_base_c_reg + 2*l_n_blocking <= 32 ) {
-      l_m_blocking = 2;
-    } else {
-      l_m_blocking = 1;
-    }
+    /* Use any remaining registers for m blocking */
+    l_m_blocking = LIBXSMM_MIN( (32 - l_base_c_reg) / l_n_blocking, LIBXSMM_ASPARSE_REG_MAX_M_BLOCK );
   /* A loaded in from memory */
   } else {
     l_m_blocking = 4;
-    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X12;
+    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X10;
     l_base_c_reg = 32 - l_m_blocking*l_n_blocking;
     l_ld_reg = l_base_c_reg - 1;
     l_nbcast_vals = l_ld_reg;
