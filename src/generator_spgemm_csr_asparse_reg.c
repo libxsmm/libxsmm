@@ -1078,6 +1078,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
   unsigned int l_reg_unique, l_base_c_reg, l_base_c_gp_reg, l_ld_reg, l_used_reg = 0;
+  int l_curr_b_disp = 0;
 
   unsigned int l_bcast_reg_vals[30], l_nbcast_vals = 0;
 
@@ -1277,15 +1278,22 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
                                          LIBXSMM_AARCH64_GP_REG_X23, i_xgemm_desc->c1 );
 
+  /* Copy our B pointer to a GPR */
+  libxsmm_generator_mov_aarch64( io_generated_code, l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1 );
+
   for ( l_op_idx = 0; l_op_idx < l_n_ops; l_op_idx++ ) {
     libxsmm_asparse_reg_op op = l_ops[l_op_idx];
     unsigned int l_rvb = l_ld_reg;
-    unsigned int l_b_disp = op.b_disp*i_xgemm_desc->ldb*l_fbytes;
+    int l_b_disp = op.b_disp*i_xgemm_desc->ldb*l_fbytes;
+    unsigned int l_disp_insn = (l_b_disp > l_curr_b_disp) ? LIBXSMM_AARCH64_INSTR_GP_META_ADD : LIBXSMM_AARCH64_INSTR_GP_META_SUB;
 
-    /* Load B */
-    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                   l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_0,
-                                                   l_gp_reg_mapping.gp_reg_help_1, l_b_disp );
+    /* Offset our B pointer */
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, l_disp_insn,
+                                                   l_gp_reg_mapping.gp_reg_help_1,
+                                                   l_gp_reg_mapping.gp_reg_help_0,
+                                                   l_gp_reg_mapping.gp_reg_help_1,
+                                                   abs( l_b_disp - l_curr_b_disp ) );
+    l_curr_b_disp = l_b_disp;
 
     for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
       /* Load B itself */
