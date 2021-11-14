@@ -350,6 +350,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF    0x8540c086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF    0x85c0e086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF   0xa5802086
+#define LIBXSMM_AARCH64_INSTR_SVE_PRFW_I_OFF     0x85c04085
+#define LIBXSMM_AARCH64_INSTR_SVE_PRFD_I_OFF     0x85c06085
 
 /* define SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V         0x65200083
@@ -427,6 +429,21 @@ typedef enum libxsmm_aarch64_sve_pattern {
   LIBXSMM_AARCH64_SVE_PATTERN_MUL3   = 0x1e,
   LIBXSMM_AARCH64_SVE_PATTERN_ALL    = 0x1f
 } libxsmm_aarch64_sve_pattern;
+
+typedef enum libxsmm_aarch64_sve_prefetch {
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL1KEEP = 0x0,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL1STRM = 0x1,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL2KEEP = 0x2,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL2STRM = 0x3,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL3KEEP = 0x4,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL3STRM = 0x5,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL1KEEP = 0x8,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL1STRM = 0x9,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL2KEEP = 0xa,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL2STRM = 0xb,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL3KEEP = 0xc,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL3STRM = 0xd
+} libxsmm_aarch64_sve_prefetch;
 
 /**
  * Opens the inline assembly section / jit stream
@@ -602,6 +619,15 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
                                            const short                            i_offset,
                                            const unsigned char                    i_vec_reg,
                                            const unsigned char                    i_pred_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*            io_generated_code,
+                                               const unsigned int                 i_prefetch_instr,
+                                               const unsigned char                i_gp_reg_addr,
+                                               const unsigned char                i_gp_reg_offset,
+                                               const short                        i_offset,
+                                               const unsigned char                i_pred_reg,
+                                               const libxsmm_aarch64_sve_prefetch i_prefetch );
 
 /**
  * Generates fmla and similar

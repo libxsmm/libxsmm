@@ -950,6 +950,62 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*            io_generated_code,
+                                               const unsigned int                 i_prefetch_instr,
+                                               const unsigned char                i_gp_reg_addr,
+                                               const unsigned char                i_gp_reg_offset,
+                                               const short                        i_offset,
+                                               const unsigned char                i_pred_reg,
+                                               const libxsmm_aarch64_sve_prefetch i_prefetch ) {
+  LIBXSMM_UNUSED( i_gp_reg_offset );
+
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: at least ARM A64FX needs to be specified as target arch!\n");
+    exit(-1);
+  }
+
+  switch ( i_prefetch_instr ) {
+    case LIBXSMM_AARCH64_INSTR_SVE_PRFW_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_PRFD_I_OFF:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: unexpected instruction number: %u\n", i_prefetch_instr);
+      exit(-1);
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* fix bits */
+    code[code_head]  = (unsigned int)(0xffffff00 & i_prefetch_instr);
+    /* fix prfop */
+    code[code_head] |= (unsigned int)(0xf & i_prefetch);
+    /* setting Rn */
+    code[code_head] |= (unsigned int)((0x1f & i_gp_reg_addr) << 5);
+    /* setting p reg */
+    code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
+
+    /* setting imm6 */
+    if ( (i_prefetch_instr & 0x4) == 0x4 ) {
+      if ( (i_offset < -32) || (i_offset > 31) ) {
+        fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: offset out of range: %d!\n", i_offset);
+        exit(-1);
+      }
+
+      code[code_head] |= (unsigned int)(i_offset << 16);
+    }
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_generated_code,
                                               const unsigned int             i_vec_instr,
                                               const unsigned char            i_vec_reg_src_0,
