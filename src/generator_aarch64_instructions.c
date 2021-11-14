@@ -237,12 +237,6 @@ void libxsmm_aarch64_instruction_adr_data( libxsmm_generated_code*     io_genera
       exit(-1);
     }
 
-    /* Check the offset is sensible */
-    if ( i_off > io_const_data->const_data_size ) {
-      fprintf( stderr, "libxsmm_aarch64_instruction_adr_data invalid offset\n" );
-      exit(-1);
-    }
-
     /* Save the offset and register in the code */
     code[code_head] = ((0x1f & i_reg) << 27) | (0x1fffff & i_off);
 
