@@ -1086,7 +1086,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   unsigned int l_vlen, l_vbytes;
   unsigned int l_npacked_reg, l_npacked_values_per_reg;
 
-  const unsigned int l_beta0 = LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags;
+  const unsigned int l_c_is_nt = !!(LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags);
+  const unsigned int l_beta0 = !!(LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags);
 
   libxsmm_aarch64_sve_type l_svet;
 
@@ -1097,6 +1098,24 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   libxsmm_const_data_tracker l_const_data_tracker;
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
+
+  /* Load instruction table [single, double] */
+  const unsigned int l_ld_tbl[2] = {
+    LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
+    LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF
+  };
+
+  /* Load w/replication instruction table [single, double] */
+  const unsigned int l_ldr_tbl[2] = {
+    LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,
+    LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF
+  };
+
+  /* Store instruction table [single, double][regular, non-temporal] */
+  const unsigned int l_st_tbl[2][2] = {
+    { LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF, LIBXSMM_AARCH64_INSTR_SVE_STNT1W_I_OFF },
+    { LIBXSMM_AARCH64_INSTR_SVE_ST1D_I_OFF, LIBXSMM_AARCH64_INSTR_SVE_STNT1D_I_OFF }
+  };
 
   /* check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
@@ -1209,7 +1228,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
       /* Broadcast register; load with 32-/64-bit replication */
       } else {
         l_inc = 1;
-        l_ld_insn = (l_fp64) ? LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF;
+        l_ld_insn = l_ldr_tbl[l_fp64];
       }
 
       libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ld_insn,
@@ -1276,7 +1295,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
     for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
       /* Load B itself */
-      libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+      libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ld_tbl[l_fp64],
                                             l_gp_reg_mapping.gp_reg_help_1, 0, l_n,
                                             l_rvb, LIBXSMM_AARCH64_SVE_REG_P0 );
 
@@ -1286,7 +1305,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
         unsigned int l_rvc = l_base_c_reg + l_n_blocking*op.acc_idxs[l_z];
         unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
-        unsigned int l_fma_insn, l_ld_insn;
+        unsigned int l_fma_insn;
 
         /* Constant is packed in its register */
         if ( l_u < l_npacked_reg*l_npacked_values_per_reg ) {
@@ -1320,8 +1339,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
                                                            l_gp_reg_mapping.gp_reg_help_1, l_u*l_fbytes );
 
             /* Load */
-            l_ld_insn = (l_fp64) ? LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF;
-            libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ld_insn,
+            libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ldr_tbl[l_fp64],
                                                   l_gp_reg_mapping.gp_reg_help_1, 0, 0,
                                                   l_rva, LIBXSMM_AARCH64_SVE_REG_P0 );
 
@@ -1352,7 +1370,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
             }
           /* Load */
           } else {
-            libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+            libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ld_tbl[l_fp64],
                                                   l_rg, 0, l_n,
                                                   l_rvc + l_n, LIBXSMM_AARCH64_SVE_REG_P0 );
           }
@@ -1365,7 +1383,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
         /* See if we need to save the accumulator */
         if ( LIBXSMM_ASPARSE_REG_FLAG_LAST & op.flags[l_z] ) {
-          libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
+          libxsmm_aarch64_instruction_sve_move( io_generated_code, l_st_tbl[l_fp64][l_c_is_nt],
                                                 l_rg, 0, l_n, l_rvc + l_n,
                                                 LIBXSMM_AARCH64_SVE_REG_P0 );
         }

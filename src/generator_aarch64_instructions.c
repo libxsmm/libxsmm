@@ -856,8 +856,10 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1D_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_STNT1D_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_STNT1W_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF:
@@ -925,7 +927,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
         }
 
         if ( l_offset < -8 || l_offset > 7 ) {
-          fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1W/D, LD1RQD, ST1W/D, offset is out of range!\n");
+          fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1W/D, LD1RQD, ST[NT]1W/D, offset is out of range!\n");
           exit(-1);
         }
 
