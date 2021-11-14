@@ -5197,12 +5197,6 @@ void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_
       exit(-1);
     }
 
-    /* Check the offset is sensible */
-    if ( i_off > io_const_data->const_data_size ) {
-      fprintf( stderr, "libxsmm_x86_instruction_lea_data invalid offset\n" );
-      exit(-1);
-    }
-
     /* lea i_reg, [rip + i_off + <FIXUP>] */
     l_buf[l_cs++] = (i_reg >= 8) ? 0x4c : 0x48;
     l_buf[l_cs++] = 0x8d;
