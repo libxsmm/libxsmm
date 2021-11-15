@@ -1184,6 +1184,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X24;
   l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X25;
   l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_X26;
+  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_AARCH64_GP_REG_X27;
 
   memset( l_bcast_reg_vals, ~0, sizeof(l_bcast_reg_vals) );
   libxsmm_reset_const_data_tracker( &l_const_data_tracker );
@@ -1338,11 +1339,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
             libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                            l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_0,
-                                                           l_gp_reg_mapping.gp_reg_help_1, l_u*l_fbytes );
+                                                           l_gp_reg_mapping.gp_reg_help_3, l_u*l_fbytes );
 
             /* Load */
             libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ldr_tbl[l_fp64],
-                                                  l_gp_reg_mapping.gp_reg_help_1, 0, 0,
+                                                  l_gp_reg_mapping.gp_reg_help_3, 0, 0,
                                                   l_rva, LIBXSMM_AARCH64_SVE_REG_P0 );
 
             /* Update our records */
