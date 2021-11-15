@@ -1308,6 +1308,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
         unsigned int l_rvc = l_base_c_reg + l_n_blocking*op.acc_idxs[l_z];
         unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
+        unsigned int l_neg = 0;
         unsigned int l_fma_insn;
 
         /* Constant is packed in its register */
@@ -1360,17 +1361,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
                                                           l_rg, l_c_disp );
           }
 
-          /* Zero (elide if constant is +ve) */
+          /* Zero (elide through FMUL + optional FNEG) */
           if ( l_beta0 ) {
-            if ( 1 == op.src_sgns[l_z] && l_rva < l_npacked_reg ) {
-              l_fma_insn = LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I;
-            } else if ( 1 == op.src_sgns[l_z] ) {
-              l_fma_insn = LIBXSMM_AARCH64_INSTR_SVE_FMUL_V;
-            } else {
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
-                                                       l_rvc + l_n, l_rvc + l_n, 0, l_rvc + l_n,
-                                                       LIBXSMM_AARCH64_GP_REG_UNDEF, l_svet );
-            }
+            l_fma_insn = (l_rva < l_npacked_reg) ? LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I : LIBXSMM_AARCH64_INSTR_SVE_FMUL_V;
+            l_neg = op.src_sgns[l_z] == -1;
           /* Load */
           } else {
             libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ld_tbl[l_fp64],
@@ -1383,6 +1377,12 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         libxsmm_aarch64_instruction_sve_compute ( io_generated_code, l_fma_insn,
                                                   l_rvb, l_rva, l_idx, l_rvc + l_n,
                                                   LIBXSMM_AARCH64_SVE_REG_P0, l_svet );
+
+        if ( l_neg ) {
+          libxsmm_aarch64_instruction_sve_compute ( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V,
+                                                    l_rvc + l_n, 0, 0, l_rvc + l_n,
+                                                    LIBXSMM_AARCH64_SVE_REG_P0, l_svet );
+        }
 
         /* See if we need to save the accumulator */
         if ( LIBXSMM_ASPARSE_REG_FLAG_LAST & op.flags[l_z] ) {
