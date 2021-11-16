@@ -65,6 +65,7 @@ unsigned int libxsmm_x86_instruction_add_data( libxsmm_generated_code*     io_ge
                                                const unsigned char*        i_data,
                                                unsigned int                i_ndata_bytes,
                                                unsigned int                i_alignment,
+                                               unsigned int                i_append_only,
                                                libxsmm_const_data_tracker* io_const_data );
 
 LIBXSMM_API_INTERN

@@ -5197,12 +5197,6 @@ void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_
       exit(-1);
     }
 
-    /* Check the offset is sensible */
-    if ( i_off > io_const_data->const_data_size ) {
-      fprintf( stderr, "libxsmm_x86_instruction_lea_data invalid offset\n" );
-      exit(-1);
-    }
-
     /* lea i_reg, [rip + i_off + <FIXUP>] */
     l_buf[l_cs++] = (i_reg >= 8) ? 0x4c : 0x48;
     l_buf[l_cs++] = 0x8d;
@@ -5224,6 +5218,7 @@ unsigned int libxsmm_x86_instruction_add_data( libxsmm_generated_code*     io_ge
                                                const unsigned char*        i_data,
                                                unsigned int                i_ndata_bytes,
                                                unsigned int                i_alignment,
+                                               unsigned int                i_append_only,
                                                libxsmm_const_data_tracker* io_const_data ) {
   i_alignment = LIBXSMM_MAX( i_alignment, 1 );
 
@@ -5233,9 +5228,11 @@ unsigned int libxsmm_x86_instruction_add_data( libxsmm_generated_code*     io_ge
     unsigned int l_doff, l_npad;
 
     /* See if we already have the data */
-    for ( l_doff = 0; l_doff < l_dsize; l_doff += i_alignment ) {
-      if ( i_ndata_bytes <= l_dsize - l_doff && !memcmp( l_data + l_doff, i_data, i_ndata_bytes) ) {
-        return l_doff;
+    if ( !i_append_only ) {
+      for ( l_doff = 0; l_doff < l_dsize; l_doff += i_alignment ) {
+        if ( i_ndata_bytes <= l_dsize - l_doff && !memcmp( l_data + l_doff, i_data, i_ndata_bytes) ) {
+          return l_doff;
+        }
       }
     }
 
