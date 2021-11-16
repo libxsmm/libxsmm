@@ -256,7 +256,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descr
   /** Set of flags */
   unsigned short flags;
   /** optional param field */
-  unsigned char param;
+  unsigned short param;
   /** operation specifier */
   unsigned char operation;
 };
