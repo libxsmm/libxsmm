@@ -70,6 +70,7 @@ void libxsmm_analyse_sparse_nnz( unsigned int   i_n_row_idx,
 
 LIBXSMM_API_INTERN
 void libxsmm_asparse_reg_sequence( unsigned int i_m,
+                                   unsigned int i_k,
                                    unsigned int i_m_blocking,
                                    const unsigned int* i_row_idx,
                                    const unsigned int* i_column_idx,
@@ -79,16 +80,17 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
                                    libxsmm_asparse_reg_op* o_ops,
                                    unsigned int* o_n_ops) {
   unsigned int l_done = 0, l_op_idx = 0;
+  unsigned char* l_done_rows = (unsigned char*) calloc(i_m, sizeof(unsigned char));
+  unsigned char* l_nz_mask = (unsigned char*) malloc(i_k*sizeof(unsigned char));
   unsigned int l_row_offs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   unsigned int l_acc_idxs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   unsigned int l_grp_rows[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
-  unsigned char* l_done_rows = (unsigned char*) calloc(i_m, sizeof(unsigned char));
 
   /* Zero the operation count in order to signify an error state */
   *o_n_ops = 0;
 
   /* Check the allocations were successful */
-  if ( NULL == l_done_rows ) {
+  if ( NULL == l_done_rows || NULL == l_nz_mask ) {
     goto cleanup;
   }
 
@@ -97,20 +99,35 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
     unsigned int l_msz, l_mtot;
 
     /* Reset the arrays */
+    memset( l_nz_mask, 0, i_k );
     memset( l_row_offs, 0, sizeof(l_row_offs) );
     memset( l_acc_idxs, ~0, sizeof(l_acc_idxs) );
     memset( l_grp_rows, ~0, sizeof(l_grp_rows) );
 
     /* Construct a bundle of row groups */
     for ( l_msz = 0, l_mtot = 0; l_done < i_m && l_mtot < i_m_blocking; l_msz++ ) {
-      unsigned int l_m, l_r, l_z, l_ngrp = 0;
+      unsigned int l_m, l_r, l_z, l_overlap, l_max_overlap = 0, l_ngrp = 0;
 
-      /* Pick a pending row */
+      /*
+       * Start a new row group with the row being chosen for maximum overlap
+       * in terms of its non-zero pattern with existing groups in the bundle.
+       */
       for ( l_m = 0, l_r = ~0U; l_m < i_m; l_m++ ) {
         if ( 0 == l_done_rows[l_m] ) {
-          l_r = l_m;
-          break;
+          for ( l_z = i_row_idx[l_m], l_overlap = 0; l_z < i_row_idx[l_m + 1]; l_z++ ) {
+            l_overlap += l_nz_mask[i_column_idx[l_z]];
+          }
+
+          if ( ~0U == l_r || l_overlap > l_max_overlap ) {
+            l_max_overlap = l_overlap;
+            l_r = l_m;
+          }
         }
+      }
+
+      /* Update the non-zero pattern for our bundle */
+      for ( l_z = i_row_idx[l_r]; l_z < i_row_idx[l_r + 1]; l_z++ ) {
+        l_nz_mask[i_column_idx[l_z]] = 1;
       }
 
       /* Start a new row group in our bundle and mark the row as done */
@@ -209,6 +226,7 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
 
 cleanup:
   free( l_done_rows );
+  free( l_nz_mask );
 }
 
 LIBXSMM_API_INTERN
@@ -482,8 +500,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   }
 
   /* Sequence the operations */
-  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, l_m_blocking, i_row_idx,
-                                i_column_idx, l_unique_pos, l_unique_sgn,
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
+                                i_row_idx, i_column_idx, l_unique_pos, l_unique_sgn,
                                 LIBXSMM_ASPARSE_REG_MAX_OPS, l_ops, &l_n_ops );
 
   /* Ensure it worked */
@@ -776,8 +794,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   }
 
   /* Sequence the operations */
-  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, l_m_blocking, i_row_idx,
-                                i_column_idx, l_unique_pos, l_unique_sgn,
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
+                                i_row_idx, i_column_idx, l_unique_pos, l_unique_sgn,
                                 LIBXSMM_ASPARSE_REG_MAX_OPS, l_ops, &l_n_ops );
 
   /* Ensure it worked */
@@ -1277,8 +1295,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   }
 
   /* Sequence the operations */
-  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, l_m_blocking, i_row_idx,
-                                i_column_idx, l_unique_pos, l_unique_sgn,
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
+                                i_row_idx, i_column_idx, l_unique_pos, l_unique_sgn,
                                 LIBXSMM_ASPARSE_REG_MAX_OPS, l_ops, &l_n_ops );
 
   /* Ensure it worked */

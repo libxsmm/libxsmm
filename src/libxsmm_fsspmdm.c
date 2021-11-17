@@ -168,8 +168,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     if ( N_sparse1 <= N ) {
       xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
-      xgemm_desc->c1 = N;
       if ( NULL != xgemm_desc ) {
+        xgemm_desc->c1 = N;
         k_sparse1 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
       }
     }
@@ -177,8 +177,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     if ( NULL != k_sparse1 && 0 == (N % N_sparse2) ) {
       xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
-      xgemm_desc->c1 = N;
       if ( NULL != xgemm_desc ) {
+        xgemm_desc->c1 = N;
         k_sparse2 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
       }
     }
@@ -186,8 +186,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     if ( NULL != k_sparse2 && 0 == (N % N_sparse4) ) {
       xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse4, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
-      xgemm_desc->c1 = N;
       if ( NULL != xgemm_desc ) {
+        xgemm_desc->c1 = N;
         k_sparse4 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
       }
     }
@@ -469,8 +469,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     if ( N_sparse1 <= N ) {
       xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
-      xgemm_desc->c1 = N;
       if ( NULL != xgemm_desc ) {
+        xgemm_desc->c1 = N;
         k_sparse1 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
       }
     }
@@ -478,8 +478,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     if ( NULL != k_sparse1 && 0 == (N % N_sparse2) ) {
       xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
-      xgemm_desc->c1 = N;
       if ( NULL != xgemm_desc ) {
+        xgemm_desc->c1 = N;
         k_sparse2 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
       }
     }
@@ -487,8 +487,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     if ( NULL != k_sparse2 && 0 == (N % N_sparse4) ) {
       xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse4, K,
                                                  0, ldb, ldc, one, beta, flags, prefetch);
-      xgemm_desc->c1 = N;
       if ( NULL != xgemm_desc ) {
+        xgemm_desc->c1 = N;
         k_sparse4 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
       }
     }
