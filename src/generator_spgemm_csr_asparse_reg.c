@@ -80,113 +80,127 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
                                    libxsmm_asparse_reg_op* o_ops,
                                    unsigned int* o_n_ops) {
   unsigned int l_done = 0, l_op_idx = 0;
+  unsigned int l_row_offs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
+  unsigned int l_acc_idxs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
+  unsigned int l_grp_rows[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   unsigned char* l_done_rows = (unsigned char*) calloc(i_m, sizeof(unsigned char));
-  unsigned int* l_nnz_mask = (unsigned int*) malloc(i_k*(i_m_blocking + 1)*sizeof(unsigned int));
-  unsigned int* l_grp_nnz_count = l_nnz_mask + i_k*i_m_blocking;
-  unsigned int l_grp_rows[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
 
   /* Zero the operation count in order to signify an error state */
   *o_n_ops = 0;
 
   /* Check the allocations were successful */
-  if ( NULL == l_done_rows || NULL == l_nnz_mask ) {
+  if ( NULL == l_done_rows ) {
     goto cleanup;
   }
 
   /* Process the rows */
   for ( l_done = 0; l_done < i_m; ) {
-    unsigned int l_m, l_y, l_z, l_nnz, l_u, l_ngrp = 0;
-    unsigned int l_max_nnz = 0, l_arg_max_nnz = ~0;
+    unsigned int l_msz, l_mtot;
 
     /* Reset the arrays */
-    memset( l_nnz_mask, ~0, i_k*i_m_blocking*sizeof(unsigned int) );
-    memset( l_grp_nnz_count, 0, i_k*sizeof(unsigned int) );
-    memset( l_grp_rows, ~0, LIBXSMM_ASPARSE_REG_MAX_M_BLOCK*sizeof(unsigned int) );
+    memset( l_row_offs, 0, sizeof(l_row_offs) );
+    memset( l_acc_idxs, ~0, sizeof(l_acc_idxs) );
+    memset( l_grp_rows, ~0, sizeof(l_grp_rows) );
 
-    /* Find the pending row with the most non-zeros */
-    for ( l_m = 0; l_m < i_m; l_m++ ) {
-      l_nnz = i_row_idx[l_m + 1] - i_row_idx[l_m];
-      if ( 0 == l_done_rows[l_m] && (~0 == l_arg_max_nnz || l_nnz > l_max_nnz) ) {
-        l_max_nnz = l_nnz;
-        l_arg_max_nnz = l_m;
-      }
-    }
+    /* Construct a bundle of row groups */
+    for ( l_msz = 0, l_mtot = 0; l_done < i_m && l_mtot < i_m_blocking; l_msz++ ) {
+      unsigned int l_m, l_r, l_z, l_ngrp = 0;
 
-    /* Compute the NNZ pattern for the row */
-    for ( l_z = i_row_idx[l_arg_max_nnz]; l_z < i_row_idx[l_arg_max_nnz] + l_max_nnz; l_z++) {
-      l_nnz_mask[i_column_idx[l_z]] = l_z;
-      l_grp_nnz_count[i_column_idx[l_z]]++;
-    }
-
-    /* Add the row to the group and mark it as done */
-    l_grp_rows[l_ngrp++] = l_arg_max_nnz;
-    l_done_rows[l_arg_max_nnz] = 1;
-    l_done++;
-
-    /* Construct a group around this row */
-    while ( l_done < i_m && l_ngrp < i_m_blocking ) {
-      unsigned int l_overlap, l_max_overlap = ~0, l_arg_max_overlap = ~0;
-
-      /* Find the best row to add to the group */
-      for ( l_m = 0; l_m < i_m; l_m++ ) {
+      /* Pick a pending row */
+      for ( l_m = 0, l_r = ~0; l_m < i_m; l_m++ ) {
         if ( 0 == l_done_rows[l_m] ) {
-          l_overlap = 0;
-          for ( l_z = i_row_idx[l_m]; l_z < i_row_idx[l_m + 1]; l_z++ ) {
-            l_overlap += !!l_grp_nnz_count[i_column_idx[l_z]];
-          }
-
-          if ( ~0 == l_arg_max_overlap || l_overlap > l_max_overlap ) {
-            l_max_overlap = l_overlap;
-            l_arg_max_overlap = l_m;
-          }
+          l_r = l_m;
+          break;
         }
       }
 
-      /* Compute the NNZ pattern for the row */
-      for ( l_z = i_row_idx[l_arg_max_overlap]; l_z < i_row_idx[l_arg_max_overlap + 1]; l_z++) {
-        l_u = i_column_idx[l_z];
-        l_nnz_mask[l_ngrp*i_k + l_u] = l_z;
-        l_grp_nnz_count[l_u]++;
-      }
+      /* Start a new row group in our bundle and mark the row as done */
+      l_grp_rows[l_msz][0] = l_r;
+      l_done_rows[l_r] = 1;
+      l_acc_idxs[l_msz] = l_mtot;
+      l_ngrp++; l_mtot++; l_done++;
 
-      /* Add the row to the group and mark it as done */
-      l_grp_rows[l_ngrp++] = l_arg_max_overlap;
-      l_done_rows[l_arg_max_overlap] = 1;
-      l_done++;
+      /* Add in any rows which share this rows non-zero pattern */
+      for ( l_m = 0; l_m < i_m && l_done < i_m && l_mtot < i_m_blocking; l_m++ ) {
+        if ( 0 == l_done_rows[l_m] ) {
+          unsigned int l_m_nnz = i_row_idx[l_m + 1] - i_row_idx[l_m];
+
+          /* First check NNZ */
+          if ( l_m_nnz != i_row_idx[l_r + 1] - i_row_idx[l_r] ) {
+            continue;
+          }
+
+          /* If this matches see if the values themselves check out */
+          for ( l_z = 0; l_z < l_m_nnz; l_z++ ) {
+            if ( i_column_idx[i_row_idx[l_r] + l_z] != i_column_idx[i_row_idx[l_m] + l_z] ) {
+              break;
+            }
+          }
+
+          /* Add the row to the group and mark it as done */
+          if ( l_z == l_m_nnz ) {
+            l_grp_rows[l_msz][l_ngrp] = l_m;
+            l_done_rows[l_m] = 1;
+            l_ngrp++; l_mtot++; l_done++;
+          }
+        }
+      }
     }
 
-    /* Sequence the dot products for the group */
-    for ( l_y = 0; l_y < i_k; l_y++ ) {
-      /* See if any rows in the group have a non-zero in column l_y */
-      if ( l_grp_nnz_count[l_y] != 0 ) {
-        o_ops[l_op_idx].n = l_grp_nnz_count[l_y];
-        o_ops[l_op_idx].b_disp = l_y;
+    /* Sequence the dot products for all row groups in the bundle */
+    while ( 1 ) {
+      unsigned int l_y, l_z, l_issued = 0;
 
-        for ( l_z = 0, l_u = 0; l_z < l_ngrp; l_z++ ) {
-          if ( l_nnz_mask[l_z*i_k + l_y] != ~0 ) {
-            o_ops[l_op_idx].flags[l_u] = 0;
+      /* Iterate over each row group in the bundle */
+      for ( l_y = 0; l_y < l_msz; l_y++ ) {
+        unsigned int l_g_row = l_grp_rows[l_y][0];
+        unsigned int l_g_off = i_row_idx[l_g_row] + l_row_offs[l_y];
 
-            /* Note if this is the first non-zero for the row */
-            if ( l_y == i_column_idx[i_row_idx[l_grp_rows[l_z]]] ) {
-              o_ops[l_op_idx].flags[l_u] |= LIBXSMM_ASPARSE_REG_FLAG_FIRST;
+        /* See if the row group still has operations to be issued */
+        if ( l_g_off < i_row_idx[l_g_row + 1] ) {
+
+          /* Iterate through each row in the group */
+          for ( l_z = 0; l_z < i_m_blocking && ~0 != l_grp_rows[l_y][l_z]; l_z++ ) {
+            unsigned int l_row = l_grp_rows[l_y][l_z];
+            unsigned int l_off = i_row_idx[l_row] + l_row_offs[l_y];
+
+            /* Zero the flags */
+            o_ops[l_op_idx].flags[l_z] = 0;
+
+            /* Note if this is the first non-zero */
+            if ( l_off == i_row_idx[l_row] ) {
+              o_ops[l_op_idx].flags[l_z] |= LIBXSMM_ASPARSE_REG_FLAG_FIRST;
             }
 
-            /* Note if this is the first non-zero for the row */
-            if ( l_y == i_column_idx[i_row_idx[l_grp_rows[l_z] + 1] - 1] ) {
-              o_ops[l_op_idx].flags[l_u] |= LIBXSMM_ASPARSE_REG_FLAG_LAST;
+            /* Note if this is the last non-zero */
+            if ( l_off == i_row_idx[l_row + 1] - 1 ) {
+              o_ops[l_op_idx].flags[l_z] |= LIBXSMM_ASPARSE_REG_FLAG_LAST;
             }
 
-            o_ops[l_op_idx].c_disps[l_u] = l_grp_rows[l_z];
-            o_ops[l_op_idx].src_vals[l_u] = i_unique_pos[l_nnz_mask[l_z*i_k + l_y]];
-            o_ops[l_op_idx].src_sgns[l_u] = i_unique_sgn[l_nnz_mask[l_z*i_k + l_y]];
-            o_ops[l_op_idx].acc_idxs[l_u] = l_z;
-            l_u++;
+            o_ops[l_op_idx].c_disps[l_z] = l_row;
+            o_ops[l_op_idx].acc_idxs[l_z] = l_acc_idxs[l_y] + l_z;
+            o_ops[l_op_idx].src_vals[l_z] = i_unique_pos[l_off];
+            o_ops[l_op_idx].src_sgns[l_z] = i_unique_sgn[l_off];
           }
-        }
 
-        if ( ++l_op_idx == i_max_ops ) {
-          goto cleanup;
+          o_ops[l_op_idx].n = l_z;
+          o_ops[l_op_idx].b_disp = i_column_idx[l_g_off];
+
+          if ( ++l_op_idx == i_max_ops ) {
+            goto cleanup;
+          }
+
+          /* March the row pointer forwards for this group */
+          l_row_offs[l_y]++;
+
+          /* Note that we issued an operation */
+          l_issued = 1;
         }
+      }
+
+      /* If no row groups in the bundle issued we're done */
+      if ( 0 == l_issued ) {
+        break;
       }
     }
   }
@@ -195,7 +209,6 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
   *o_n_ops = l_op_idx;
 
 cleanup:
-  free( l_nnz_mask );
   free( l_done_rows );
 }
 
