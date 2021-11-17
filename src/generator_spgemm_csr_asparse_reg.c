@@ -1156,11 +1156,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* Init config */
   if ( l_fp64 ) {
-    l_npacked_reg = 16;
+    l_npacked_reg = 0;
     l_npacked_values_per_reg = 2;
     l_svet = LIBXSMM_AARCH64_SVE_TYPE_D;
   } else {
-    l_npacked_reg = 8;
+    l_npacked_reg = 0;
     l_npacked_values_per_reg = 4;
     l_svet = LIBXSMM_AARCH64_SVE_TYPE_S;
   }
