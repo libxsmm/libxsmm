@@ -107,7 +107,7 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
       unsigned int l_m, l_r, l_z, l_ngrp = 0;
 
       /* Pick a pending row */
-      for ( l_m = 0, l_r = ~0; l_m < i_m; l_m++ ) {
+      for ( l_m = 0, l_r = ~0U; l_m < i_m; l_m++ ) {
         if ( 0 == l_done_rows[l_m] ) {
           l_r = l_m;
           break;
@@ -160,7 +160,7 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
         if ( l_g_off < i_row_idx[l_g_row + 1] ) {
 
           /* Iterate through each row in the group */
-          for ( l_z = 0; l_z < i_m_blocking && ~0 != l_grp_rows[l_y][l_z]; l_z++ ) {
+          for ( l_z = 0; l_z < i_m_blocking && ~0U != l_grp_rows[l_y][l_z]; l_z++ ) {
             unsigned int l_row = l_grp_rows[l_y][l_z];
             unsigned int l_off = i_row_idx[l_row] + l_row_offs[l_y];
 
@@ -261,7 +261,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   const unsigned int l_perm_consts[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 
   unsigned int l_need_bcast_reg = 0;
-  unsigned int l_bcast_reg_vals[31], l_base_bcast_reg = ~0, l_nbcast_regs, l_cur_bcast_reg;
+  unsigned int l_bcast_reg_vals[31], l_base_bcast_reg = ~0U, l_nbcast_regs, l_cur_bcast_reg;
 
   const unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
@@ -295,7 +295,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   };
 
   /* Tracks which accumulators are negated due to use of VMULP[SD] */
-  unsigned int l_acc_neg_tbl[4][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK] = {};
+  unsigned int l_acc_neg_tbl[4][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK] = { 0 };
 
   /* Check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
@@ -509,7 +509,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
         unsigned int l_acc_idx = op.acc_idxs[l_z];
         unsigned int l_u = op.src_vals[l_z], l_v;
         unsigned int l_uneg = op.src_sgns[l_z] == -1;
-        unsigned int l_rva = (l_unique > l_breg_unique) ? ~0 : l_u;
+        unsigned int l_rva = (l_unique > l_breg_unique) ? ~0U : l_u;
         unsigned int l_rvc = l_base_c_reg + l_n_blocking*l_acc_idx;
         unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
 
@@ -571,7 +571,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
           }
 
           /* Otherwise pick a register to broadcast into */
-          if ( ~0 == l_rva ) {
+          if ( ~0U == l_rva ) {
             l_cur_bcast_reg = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_regs,
                                                                   l_ops + l_op_idx + 1,
                                                                   l_n_ops - l_op_idx - 1 );
@@ -815,7 +815,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
 
     /* Pad the segment to be a multiple of 16 */
     if ( (l_unique*l_fbytes) % 16 != 0 ) {
-      unsigned char l_pad[15] = {};
+      unsigned char l_pad[15] = { 0 };
       libxsmm_aarch64_instruction_add_data( io_generated_code, l_pad,
                                             (l_unique*l_fbytes) % 16, 1, 1,
                                             &l_const_data_tracker );
@@ -876,7 +876,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
       for ( l_z = 0; l_z < op.n; l_z++ ) {
         unsigned int l_u = op.src_vals[l_z], l_v;
         unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
-        unsigned int l_rva = (l_unique > l_reg_unique) ? ~0 : l_u;
+        unsigned int l_rva = (l_unique > l_reg_unique) ? ~0U : l_u;
         unsigned int l_rvc = l_base_c_reg + op.acc_idxs[l_z];
         unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
         unsigned int l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
@@ -915,7 +915,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
           }
 
           /* Otherwise pick a register and lane to load it into */
-          if ( ~0 == l_rva ) {
+          if ( ~0U == l_rva ) {
             l_rva = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_vals,
                                                         l_ops + l_op_idx + 1, l_n_ops - l_op_idx - 1 );
 
@@ -961,7 +961,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
         for ( l_z = 0; l_z < op.n; l_z++ ) {
           unsigned int l_u = op.src_vals[l_z], l_v;
           unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
-          unsigned int l_rva = (l_unique > l_reg_unique) ? ~0 : l_u;
+          unsigned int l_rva = (l_unique > l_reg_unique) ? ~0U : l_u;
           unsigned int l_rvc = l_base_c_reg + l_n_blocking*op.acc_idxs[l_z];
           unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
           unsigned int l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
@@ -1007,7 +1007,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
             }
 
             /* Otherwise pick a register and lane to load it into */
-            if ( ~0 == l_rva ) {
+            if ( ~0U == l_rva ) {
               l_rva = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_vals,
                                                           l_ops + l_op_idx + 1, l_n_ops - l_op_idx - 1 );
 
@@ -1225,7 +1225,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   if ( l_unique <= l_reg_unique ) {
     /* Pad the segment to be a multiple of 16 */
     if ( (l_unique*l_fbytes) % 16 != 0 ) {
-      unsigned char l_pad[15] = {};
+      unsigned char l_pad[15] = { 0 };
       libxsmm_aarch64_instruction_add_data( io_generated_code, l_pad,
                                             (l_unique*l_fbytes) % 16, 1, 1,
                                             &l_const_data_tracker );
@@ -1339,7 +1339,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         /* If necessary, broadcast a unique value from memory */
         if ( l_unique > l_reg_unique ) {
           /* See if we already have it in a register */
-          for ( l_v = 0, l_rva = ~0; l_v < l_nbcast_vals; l_v++ ) {
+          for ( l_v = 0, l_rva = ~0U; l_v < l_nbcast_vals; l_v++ ) {
             if ( l_bcast_reg_vals[l_v] == l_u ) {
               l_rva = l_v;
               break;
@@ -1347,7 +1347,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
           }
 
           /* Otherwise pick a register to broadcast into */
-          if ( ~0 == l_rva ) {
+          if ( ~0U == l_rva ) {
             l_rva = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_vals,
                                                         l_ops + l_op_idx + 1, l_n_ops - l_op_idx - 1 );
 
