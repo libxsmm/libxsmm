@@ -255,7 +255,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
           k_dense( B + j, aa_dense, C + j );
         }
       }
-      dt_dense = libxsmm_timer_duration( t, libxsmm_timer_tick() );
+      /* Bias to prefer dense kernels */
+      dt_dense = libxsmm_timer_duration( t, libxsmm_timer_tick() ) / 1.1;
     }
 
     /* Benchmark sparse (regular) */
@@ -286,7 +287,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Dense fastest (or within 10%) */
-    if ( dt_dense <= 1.1*dt_sparse1 && dt_dense <= 1.1*dt_sparse2 && dt_dense <= 1.1*dt_sparse4 ) {
+    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4 ) {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
@@ -554,7 +555,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
           k_dense( B + j, aa_dense, C + j );
         }
       }
-      dt_dense = libxsmm_timer_duration( t, libxsmm_timer_tick() );
+      /* Bias to prefer dense kernels */
+      dt_dense = libxsmm_timer_duration( t, libxsmm_timer_tick() ) / 1.1;
     }
 
     /* Benchmark sparse (regular) */
@@ -585,7 +587,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Dense fastest (or within 10%) */
-    if ( dt_dense <= 1.1*dt_sparse1 && dt_dense <= 1.1*dt_sparse2 && dt_dense <= 1.1*dt_sparse4 ) {
+    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4 ) {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
