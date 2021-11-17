@@ -80,113 +80,127 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
                                    libxsmm_asparse_reg_op* o_ops,
                                    unsigned int* o_n_ops) {
   unsigned int l_done = 0, l_op_idx = 0;
+  unsigned int l_row_offs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
+  unsigned int l_acc_idxs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
+  unsigned int l_grp_rows[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   unsigned char* l_done_rows = (unsigned char*) calloc(i_m, sizeof(unsigned char));
-  unsigned int* l_nnz_mask = (unsigned int*) malloc(i_k*(i_m_blocking + 1)*sizeof(unsigned int));
-  unsigned int* l_grp_nnz_count = l_nnz_mask + i_k*i_m_blocking;
-  unsigned int l_grp_rows[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
 
   /* Zero the operation count in order to signify an error state */
   *o_n_ops = 0;
 
   /* Check the allocations were successful */
-  if ( NULL == l_done_rows || NULL == l_nnz_mask ) {
+  if ( NULL == l_done_rows ) {
     goto cleanup;
   }
 
   /* Process the rows */
   for ( l_done = 0; l_done < i_m; ) {
-    unsigned int l_m, l_y, l_z, l_nnz, l_u, l_ngrp = 0;
-    unsigned int l_max_nnz = 0, l_arg_max_nnz = ~0;
+    unsigned int l_msz, l_mtot;
 
     /* Reset the arrays */
-    memset( l_nnz_mask, ~0, i_k*i_m_blocking*sizeof(unsigned int) );
-    memset( l_grp_nnz_count, 0, i_k*sizeof(unsigned int) );
-    memset( l_grp_rows, ~0, LIBXSMM_ASPARSE_REG_MAX_M_BLOCK*sizeof(unsigned int) );
+    memset( l_row_offs, 0, sizeof(l_row_offs) );
+    memset( l_acc_idxs, ~0, sizeof(l_acc_idxs) );
+    memset( l_grp_rows, ~0, sizeof(l_grp_rows) );
 
-    /* Find the pending row with the most non-zeros */
-    for ( l_m = 0; l_m < i_m; l_m++ ) {
-      l_nnz = i_row_idx[l_m + 1] - i_row_idx[l_m];
-      if ( 0 == l_done_rows[l_m] && (~0 == l_arg_max_nnz || l_nnz > l_max_nnz) ) {
-        l_max_nnz = l_nnz;
-        l_arg_max_nnz = l_m;
-      }
-    }
+    /* Construct a bundle of row groups */
+    for ( l_msz = 0, l_mtot = 0; l_done < i_m && l_mtot < i_m_blocking; l_msz++ ) {
+      unsigned int l_m, l_r, l_z, l_ngrp = 0;
 
-    /* Compute the NNZ pattern for the row */
-    for ( l_z = i_row_idx[l_arg_max_nnz]; l_z < i_row_idx[l_arg_max_nnz] + l_max_nnz; l_z++) {
-      l_nnz_mask[i_column_idx[l_z]] = l_z;
-      l_grp_nnz_count[i_column_idx[l_z]]++;
-    }
-
-    /* Add the row to the group and mark it as done */
-    l_grp_rows[l_ngrp++] = l_arg_max_nnz;
-    l_done_rows[l_arg_max_nnz] = 1;
-    l_done++;
-
-    /* Construct a group around this row */
-    while ( l_done < i_m && l_ngrp < i_m_blocking ) {
-      unsigned int l_overlap, l_max_overlap = ~0, l_arg_max_overlap = ~0;
-
-      /* Find the best row to add to the group */
-      for ( l_m = 0; l_m < i_m; l_m++ ) {
+      /* Pick a pending row */
+      for ( l_m = 0, l_r = ~0U; l_m < i_m; l_m++ ) {
         if ( 0 == l_done_rows[l_m] ) {
-          l_overlap = 0;
-          for ( l_z = i_row_idx[l_m]; l_z < i_row_idx[l_m + 1]; l_z++ ) {
-            l_overlap += !!l_grp_nnz_count[i_column_idx[l_z]];
-          }
-
-          if ( ~0 == l_arg_max_overlap || l_overlap > l_max_overlap ) {
-            l_max_overlap = l_overlap;
-            l_arg_max_overlap = l_m;
-          }
+          l_r = l_m;
+          break;
         }
       }
 
-      /* Compute the NNZ pattern for the row */
-      for ( l_z = i_row_idx[l_arg_max_overlap]; l_z < i_row_idx[l_arg_max_overlap + 1]; l_z++) {
-        l_u = i_column_idx[l_z];
-        l_nnz_mask[l_ngrp*i_k + l_u] = l_z;
-        l_grp_nnz_count[l_u]++;
-      }
+      /* Start a new row group in our bundle and mark the row as done */
+      l_grp_rows[l_msz][0] = l_r;
+      l_done_rows[l_r] = 1;
+      l_acc_idxs[l_msz] = l_mtot;
+      l_ngrp++; l_mtot++; l_done++;
 
-      /* Add the row to the group and mark it as done */
-      l_grp_rows[l_ngrp++] = l_arg_max_overlap;
-      l_done_rows[l_arg_max_overlap] = 1;
-      l_done++;
+      /* Add in any rows which share this rows non-zero pattern */
+      for ( l_m = 0; l_m < i_m && l_done < i_m && l_mtot < i_m_blocking; l_m++ ) {
+        if ( 0 == l_done_rows[l_m] ) {
+          unsigned int l_m_nnz = i_row_idx[l_m + 1] - i_row_idx[l_m];
+
+          /* First check NNZ */
+          if ( l_m_nnz != i_row_idx[l_r + 1] - i_row_idx[l_r] ) {
+            continue;
+          }
+
+          /* If this matches see if the values themselves check out */
+          for ( l_z = 0; l_z < l_m_nnz; l_z++ ) {
+            if ( i_column_idx[i_row_idx[l_r] + l_z] != i_column_idx[i_row_idx[l_m] + l_z] ) {
+              break;
+            }
+          }
+
+          /* Add the row to the group and mark it as done */
+          if ( l_z == l_m_nnz ) {
+            l_grp_rows[l_msz][l_ngrp] = l_m;
+            l_done_rows[l_m] = 1;
+            l_ngrp++; l_mtot++; l_done++;
+          }
+        }
+      }
     }
 
-    /* Sequence the dot products for the group */
-    for ( l_y = 0; l_y < i_k; l_y++ ) {
-      /* See if any rows in the group have a non-zero in column l_y */
-      if ( l_grp_nnz_count[l_y] != 0 ) {
-        o_ops[l_op_idx].n = l_grp_nnz_count[l_y];
-        o_ops[l_op_idx].b_disp = l_y;
+    /* Sequence the dot products for all row groups in the bundle */
+    while ( 1 ) {
+      unsigned int l_y, l_z, l_issued = 0;
 
-        for ( l_z = 0, l_u = 0; l_z < l_ngrp; l_z++ ) {
-          if ( l_nnz_mask[l_z*i_k + l_y] != ~0 ) {
-            o_ops[l_op_idx].flags[l_u] = 0;
+      /* Iterate over each row group in the bundle */
+      for ( l_y = 0; l_y < l_msz; l_y++ ) {
+        unsigned int l_g_row = l_grp_rows[l_y][0];
+        unsigned int l_g_off = i_row_idx[l_g_row] + l_row_offs[l_y];
 
-            /* Note if this is the first non-zero for the row */
-            if ( l_y == i_column_idx[i_row_idx[l_grp_rows[l_z]]] ) {
-              o_ops[l_op_idx].flags[l_u] |= LIBXSMM_ASPARSE_REG_FLAG_FIRST;
+        /* See if the row group still has operations to be issued */
+        if ( l_g_off < i_row_idx[l_g_row + 1] ) {
+
+          /* Iterate through each row in the group */
+          for ( l_z = 0; l_z < i_m_blocking && ~0U != l_grp_rows[l_y][l_z]; l_z++ ) {
+            unsigned int l_row = l_grp_rows[l_y][l_z];
+            unsigned int l_off = i_row_idx[l_row] + l_row_offs[l_y];
+
+            /* Zero the flags */
+            o_ops[l_op_idx].flags[l_z] = 0;
+
+            /* Note if this is the first non-zero */
+            if ( l_off == i_row_idx[l_row] ) {
+              o_ops[l_op_idx].flags[l_z] |= LIBXSMM_ASPARSE_REG_FLAG_FIRST;
             }
 
-            /* Note if this is the first non-zero for the row */
-            if ( l_y == i_column_idx[i_row_idx[l_grp_rows[l_z] + 1] - 1] ) {
-              o_ops[l_op_idx].flags[l_u] |= LIBXSMM_ASPARSE_REG_FLAG_LAST;
+            /* Note if this is the last non-zero */
+            if ( l_off == i_row_idx[l_row + 1] - 1 ) {
+              o_ops[l_op_idx].flags[l_z] |= LIBXSMM_ASPARSE_REG_FLAG_LAST;
             }
 
-            o_ops[l_op_idx].c_disps[l_u] = l_grp_rows[l_z];
-            o_ops[l_op_idx].src_vals[l_u] = i_unique_pos[l_nnz_mask[l_z*i_k + l_y]];
-            o_ops[l_op_idx].src_sgns[l_u] = i_unique_sgn[l_nnz_mask[l_z*i_k + l_y]];
-            o_ops[l_op_idx].acc_idxs[l_u] = l_z;
-            l_u++;
+            o_ops[l_op_idx].c_disps[l_z] = l_row;
+            o_ops[l_op_idx].acc_idxs[l_z] = l_acc_idxs[l_y] + l_z;
+            o_ops[l_op_idx].src_vals[l_z] = i_unique_pos[l_off];
+            o_ops[l_op_idx].src_sgns[l_z] = i_unique_sgn[l_off];
           }
-        }
 
-        if ( ++l_op_idx == i_max_ops ) {
-          goto cleanup;
+          o_ops[l_op_idx].n = l_z;
+          o_ops[l_op_idx].b_disp = i_column_idx[l_g_off];
+
+          if ( ++l_op_idx == i_max_ops ) {
+            goto cleanup;
+          }
+
+          /* March the row pointer forwards for this group */
+          l_row_offs[l_y]++;
+
+          /* Note that we issued an operation */
+          l_issued = 1;
         }
+      }
+
+      /* If no row groups in the bundle issued we're done */
+      if ( 0 == l_issued ) {
+        break;
       }
     }
   }
@@ -195,7 +209,6 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
   *o_n_ops = l_op_idx;
 
 cleanup:
-  free( l_nnz_mask );
   free( l_done_rows );
 }
 
@@ -248,7 +261,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   const unsigned int l_perm_consts[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 
   unsigned int l_need_bcast_reg = 0;
-  unsigned int l_bcast_reg_vals[31], l_base_bcast_reg = ~0, l_nbcast_regs, l_cur_bcast_reg;
+  unsigned int l_bcast_reg_vals[31], l_base_bcast_reg = ~0U, l_nbcast_regs, l_cur_bcast_reg;
 
   const unsigned int l_fp64 = LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
@@ -282,7 +295,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   };
 
   /* Tracks which accumulators are negated due to use of VMULP[SD] */
-  unsigned int l_acc_neg_tbl[4][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK] = {};
+  unsigned int l_acc_neg_tbl[4][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK] = { 0 };
 
   /* Check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
@@ -496,7 +509,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
         unsigned int l_acc_idx = op.acc_idxs[l_z];
         unsigned int l_u = op.src_vals[l_z], l_v;
         unsigned int l_uneg = op.src_sgns[l_z] == -1;
-        unsigned int l_rva = (l_unique > l_breg_unique) ? ~0 : l_u;
+        unsigned int l_rva = (l_unique > l_breg_unique) ? ~0U : l_u;
         unsigned int l_rvc = l_base_c_reg + l_n_blocking*l_acc_idx;
         unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
 
@@ -558,7 +571,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
           }
 
           /* Otherwise pick a register to broadcast into */
-          if ( ~0 == l_rva ) {
+          if ( ~0U == l_rva ) {
             l_cur_bcast_reg = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_regs,
                                                                   l_ops + l_op_idx + 1,
                                                                   l_n_ops - l_op_idx - 1 );
@@ -802,7 +815,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
 
     /* Pad the segment to be a multiple of 16 */
     if ( (l_unique*l_fbytes) % 16 != 0 ) {
-      unsigned char l_pad[15] = {};
+      unsigned char l_pad[15] = { 0 };
       libxsmm_aarch64_instruction_add_data( io_generated_code, l_pad,
                                             (l_unique*l_fbytes) % 16, 1, 1,
                                             &l_const_data_tracker );
@@ -863,7 +876,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
       for ( l_z = 0; l_z < op.n; l_z++ ) {
         unsigned int l_u = op.src_vals[l_z], l_v;
         unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
-        unsigned int l_rva = (l_unique > l_reg_unique) ? ~0 : l_u;
+        unsigned int l_rva = (l_unique > l_reg_unique) ? ~0U : l_u;
         unsigned int l_rvc = l_base_c_reg + op.acc_idxs[l_z];
         unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
         unsigned int l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
@@ -902,7 +915,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
           }
 
           /* Otherwise pick a register and lane to load it into */
-          if ( ~0 == l_rva ) {
+          if ( ~0U == l_rva ) {
             l_rva = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_vals,
                                                         l_ops + l_op_idx + 1, l_n_ops - l_op_idx - 1 );
 
@@ -948,7 +961,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
         for ( l_z = 0; l_z < op.n; l_z++ ) {
           unsigned int l_u = op.src_vals[l_z], l_v;
           unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
-          unsigned int l_rva = (l_unique > l_reg_unique) ? ~0 : l_u;
+          unsigned int l_rva = (l_unique > l_reg_unique) ? ~0U : l_u;
           unsigned int l_rvc = l_base_c_reg + l_n_blocking*op.acc_idxs[l_z];
           unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
           unsigned int l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
@@ -994,7 +1007,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
             }
 
             /* Otherwise pick a register and lane to load it into */
-            if ( ~0 == l_rva ) {
+            if ( ~0U == l_rva ) {
               l_rva = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_vals,
                                                           l_ops + l_op_idx + 1, l_n_ops - l_op_idx - 1 );
 
@@ -1143,11 +1156,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* Init config */
   if ( l_fp64 ) {
-    l_npacked_reg = 16;
+    l_npacked_reg = 0;
     l_npacked_values_per_reg = 2;
     l_svet = LIBXSMM_AARCH64_SVE_TYPE_D;
   } else {
-    l_npacked_reg = 8;
+    l_npacked_reg = 0;
     l_npacked_values_per_reg = 4;
     l_svet = LIBXSMM_AARCH64_SVE_TYPE_S;
   }
@@ -1181,10 +1194,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_AARCH64_GP_REG_X2;
-  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X24;
-  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X25;
-  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_X26;
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_AARCH64_GP_REG_X27;
+  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X27;
+  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X28;
+  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_X29;
+  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_AARCH64_GP_REG_X30;
 
   memset( l_bcast_reg_vals, ~0, sizeof(l_bcast_reg_vals) );
   libxsmm_reset_const_data_tracker( &l_const_data_tracker );
@@ -1212,7 +1225,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   if ( l_unique <= l_reg_unique ) {
     /* Pad the segment to be a multiple of 16 */
     if ( (l_unique*l_fbytes) % 16 != 0 ) {
-      unsigned char l_pad[15] = {};
+      unsigned char l_pad[15] = { 0 };
       libxsmm_aarch64_instruction_add_data( io_generated_code, l_pad,
                                             (l_unique*l_fbytes) % 16, 1, 1,
                                             &l_const_data_tracker );
@@ -1250,14 +1263,14 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
     l_ld_reg = l_used_reg++;
     l_base_c_reg = l_used_reg;
-    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X10;
+    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X3;
 
     /* Use any remaining registers for m blocking */
     l_m_blocking = LIBXSMM_MIN( (32 - l_base_c_reg) / l_n_blocking, LIBXSMM_ASPARSE_REG_MAX_M_BLOCK );
   /* A loaded in from memory */
   } else {
     l_m_blocking = 4;
-    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X10;
+    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X3;
     l_base_c_reg = 32 - l_m_blocking*l_n_blocking;
     l_ld_reg = l_base_c_reg - 1;
     l_nbcast_vals = l_ld_reg;
@@ -1277,7 +1290,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* Start the n loop */
   libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
-                                         LIBXSMM_AARCH64_GP_REG_X23, i_xgemm_desc->c1 );
+                                         LIBXSMM_AARCH64_GP_REG_X0, i_xgemm_desc->c1 );
 
   /* Copy our B pointer to a GPR */
   libxsmm_generator_mov_aarch64( io_generated_code, l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1 );
@@ -1326,7 +1339,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         /* If necessary, broadcast a unique value from memory */
         if ( l_unique > l_reg_unique ) {
           /* See if we already have it in a register */
-          for ( l_v = 0, l_rva = ~0; l_v < l_nbcast_vals; l_v++ ) {
+          for ( l_v = 0, l_rva = ~0U; l_v < l_nbcast_vals; l_v++ ) {
             if ( l_bcast_reg_vals[l_v] == l_u ) {
               l_rva = l_v;
               break;
@@ -1334,7 +1347,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
           }
 
           /* Otherwise pick a register to broadcast into */
-          if ( ~0 == l_rva ) {
+          if ( ~0U == l_rva ) {
             l_rva = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_vals,
                                                         l_ops + l_op_idx + 1, l_n_ops - l_op_idx - 1 );
 
@@ -1404,7 +1417,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* Test the loop condition */
   libxsmm_generator_loop_footer_aarch64( io_generated_code, &l_loop_label_tracker,
-                                         LIBXSMM_AARCH64_GP_REG_X23,
+                                         LIBXSMM_AARCH64_GP_REG_X0,
                                          l_vlen*l_n_blocking );
 
   /* Close asm */
