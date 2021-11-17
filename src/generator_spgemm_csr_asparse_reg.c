@@ -1194,10 +1194,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_AARCH64_GP_REG_X2;
-  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X24;
-  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X25;
-  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_X26;
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_AARCH64_GP_REG_X27;
+  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X27;
+  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X28;
+  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_X29;
+  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_AARCH64_GP_REG_X30;
 
   memset( l_bcast_reg_vals, ~0, sizeof(l_bcast_reg_vals) );
   libxsmm_reset_const_data_tracker( &l_const_data_tracker );
@@ -1263,14 +1263,14 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
     l_ld_reg = l_used_reg++;
     l_base_c_reg = l_used_reg;
-    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X10;
+    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X3;
 
     /* Use any remaining registers for m blocking */
     l_m_blocking = LIBXSMM_MIN( (32 - l_base_c_reg) / l_n_blocking, LIBXSMM_ASPARSE_REG_MAX_M_BLOCK );
   /* A loaded in from memory */
   } else {
     l_m_blocking = 4;
-    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X10;
+    l_base_c_gp_reg = LIBXSMM_AARCH64_GP_REG_X3;
     l_base_c_reg = 32 - l_m_blocking*l_n_blocking;
     l_ld_reg = l_base_c_reg - 1;
     l_nbcast_vals = l_ld_reg;
@@ -1290,7 +1290,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* Start the n loop */
   libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
-                                         LIBXSMM_AARCH64_GP_REG_X23, i_xgemm_desc->c1 );
+                                         LIBXSMM_AARCH64_GP_REG_X0, i_xgemm_desc->c1 );
 
   /* Copy our B pointer to a GPR */
   libxsmm_generator_mov_aarch64( io_generated_code, l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1 );
@@ -1417,7 +1417,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* Test the loop condition */
   libxsmm_generator_loop_footer_aarch64( io_generated_code, &l_loop_label_tracker,
-                                         LIBXSMM_AARCH64_GP_REG_X23,
+                                         LIBXSMM_AARCH64_GP_REG_X0,
                                          l_vlen*l_n_blocking );
 
   /* Close asm */
