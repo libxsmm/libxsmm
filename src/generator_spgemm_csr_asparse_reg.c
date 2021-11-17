@@ -294,7 +294,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   };
 
   /* Tracks which accumulators are negated due to use of VMULP[SD] */
-  unsigned int l_acc_neg_tbl[4][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK] = { 0 };
+  unsigned int l_acc_neg_tbl[4][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK] = { { 0 }, { 0 } };
 
   /* Check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos || 0 == l_unique_sgn || 0 == l_ops ) {
