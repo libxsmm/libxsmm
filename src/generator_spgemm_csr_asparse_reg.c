@@ -70,7 +70,6 @@ void libxsmm_analyse_sparse_nnz( unsigned int   i_n_row_idx,
 
 LIBXSMM_API_INTERN
 void libxsmm_asparse_reg_sequence( unsigned int i_m,
-                                   unsigned int i_k,
                                    unsigned int i_m_blocking,
                                    const unsigned int* i_row_idx,
                                    const unsigned int* i_column_idx,
@@ -213,11 +212,11 @@ cleanup:
 }
 
 LIBXSMM_API_INTERN
-int libxsmm_asparse_reg_pick_bcast_reg( const unsigned int* i_vals,
-                                        unsigned int i_nvals,
-                                        const libxsmm_asparse_reg_op* i_ops,
-                                        unsigned int i_nops ) {
-  int l_nuse = 0, l_arg_nuse = 0, l_x, l_y, l_z, l_hit;
+unsigned int libxsmm_asparse_reg_pick_bcast_reg( const unsigned int* i_vals,
+                                                 unsigned int i_nvals,
+                                                 const libxsmm_asparse_reg_op* i_ops,
+                                                 unsigned int i_nops ) {
+  unsigned int l_nuse = 0, l_arg_nuse = 0, l_x, l_y, l_z, l_hit;
 
   /* See when the value in reg l_x is next used */
   for ( l_x = 0; l_x < i_nvals; l_x++ ) {
@@ -483,8 +482,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   }
 
   /* Sequence the operations */
-  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
-                                i_row_idx, i_column_idx, l_unique_pos, l_unique_sgn,
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, l_m_blocking, i_row_idx,
+                                i_column_idx, l_unique_pos, l_unique_sgn,
                                 LIBXSMM_ASPARSE_REG_MAX_OPS, l_ops, &l_n_ops );
 
   /* Ensure it worked */
@@ -777,8 +776,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   }
 
   /* Sequence the operations */
-  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
-                                i_row_idx, i_column_idx, l_unique_pos, l_unique_sgn,
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, l_m_blocking, i_row_idx,
+                                i_column_idx, l_unique_pos, l_unique_sgn,
                                 LIBXSMM_ASPARSE_REG_MAX_OPS, l_ops, &l_n_ops );
 
   /* Ensure it worked */
@@ -1278,8 +1277,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   }
 
   /* Sequence the operations */
-  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, i_xgemm_desc->k, l_m_blocking,
-                                i_row_idx, i_column_idx, l_unique_pos, l_unique_sgn,
+  libxsmm_asparse_reg_sequence( i_xgemm_desc->m, l_m_blocking, i_row_idx,
+                                i_column_idx, l_unique_pos, l_unique_sgn,
                                 LIBXSMM_ASPARSE_REG_MAX_OPS, l_ops, &l_n_ops );
 
   /* Ensure it worked */

@@ -559,7 +559,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
         l_s = 0x1 & (i_index >> 0);
 
         if ( (0x3 & i_vmove_instr) != 0x3 && i_offset != 4 ) {
-          fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected i_offset: %u\n", i_offset);
+          fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected i_offset: %d\n", i_offset);
           exit(-1);
         }
         break;
@@ -568,7 +568,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
         l_sz = 0x1;
 
         if ( (0x3 & i_vmove_instr) != 0x3 && i_offset != 8 ) {
-          fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected i_offset: %u\n", i_offset);
+          fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected i_offset: %d\n", i_offset);
           exit(-1);
         }
         break;
