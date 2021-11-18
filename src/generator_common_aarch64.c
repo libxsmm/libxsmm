@@ -130,7 +130,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
     }
     /* increment register if needed; add via immediate */
     if( i_adv_gpr ) {
-      unsigned int l_sve_length = libxsmm_generator_mateltwise_aarch64_sve_get_vlen();/* 512 bits = 64 bytes for the A64FX */
+      unsigned int l_sve_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;/* 512 bits = 64 bytes for the A64FX */
       unsigned int l_offset = i_datatype_size * (i_masked_elems ? i_masked_elems : l_sve_length / i_datatype_size);
       libxsmm_aarch64_instruction_alu_compute_imm12(io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0);
     }

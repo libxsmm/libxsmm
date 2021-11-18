@@ -220,14 +220,12 @@ void adjust_in_microkernel_addr_aarch64_gp_reg( libxsmm_generated_code*         
 LIBXSMM_API_INTERN
 void libxsmm_generator_configure_aarch64_vlens(const libxsmm_meltw_descriptor* i_mateltwise_desc, libxsmm_mateltwise_kernel_config* i_micro_kernel_config) {
 
-  /* First, determine the vlen compute based on the  add the architecture check in here D-, move it to the microkernel config */
-  unsigned int l_asimd_bytes_per_register = 16; /* 16 bytes * 8 bits/byte = 256 bits */
-
-  /* if is a64fx, override with its vector length (64 bytes = 512 bits) */
-  if(i_micro_kernel_config->instruction_set == LIBXSMM_AARCH64_A64FX) l_asimd_bytes_per_register = libxsmm_generator_mateltwise_aarch64_sve_get_vlen();
+  /* First, determine the vlen compute based on the architecture; there may be architectures with different widths for different types */
+  /* At the moment, all types are assumed to be of the same length */
+  unsigned int l_asimd_bytes_per_register = libxsmm_cpuid_vlen32(i_micro_kernel_config->instruction_set) * 4;
 
   unsigned char l_inp_type = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 );
-  unsigned int  l_inp_type_size = l_inp_type == LIBXSMM_DATATYPE_UNSUPPORTED ? 0 : libxsmm_generator_mateltwise_aarch64_get_type_size(NULL, l_inp_type);
+  unsigned int  l_inp_type_size = l_inp_type == LIBXSMM_DATATYPE_UNSUPPORTED ? 0 : libxsmm_typesize((libxsmm_datatype) l_inp_type);
   if(l_inp_type_size > 0) i_micro_kernel_config->vlen_comp = l_asimd_bytes_per_register / l_inp_type_size;
 
   /* The vlen_in is the same as vlen compute */
@@ -235,7 +233,7 @@ void libxsmm_generator_configure_aarch64_vlens(const libxsmm_meltw_descriptor* i
 
   /* The vlen_out depends on the output datatype */
   unsigned char l_out_type = LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype );
-  unsigned int  l_out_type_size = l_out_type == LIBXSMM_DATATYPE_UNSUPPORTED ? 0 : libxsmm_generator_mateltwise_aarch64_get_type_size(NULL, l_out_type);
+  unsigned int  l_out_type_size = l_out_type == LIBXSMM_DATATYPE_UNSUPPORTED ? 0 : libxsmm_typesize((libxsmm_datatype) l_out_type);
   if(l_out_type_size > 0) i_micro_kernel_config->vlen_out = l_asimd_bytes_per_register / l_out_type_size;
 
   /* if the computation is done in F32 or the input is in F32, then set vlen_out to 16 */

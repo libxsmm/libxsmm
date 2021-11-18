@@ -20,34 +20,6 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_mateltwise_aarch64_get_type_size(libxsmm_generated_code* io_generated_code, unsigned char type){
-  switch(type){
-    case LIBXSMM_DATATYPE_F64:
-    case LIBXSMM_DATATYPE_I64:
-      return 8;
-    case LIBXSMM_DATATYPE_F32:
-    case LIBXSMM_DATATYPE_I32:
-      return 4;
-    case LIBXSMM_DATATYPE_F16:
-    case LIBXSMM_DATATYPE_I16:
-    case LIBXSMM_DATATYPE_BF16:
-      return 2;
-    case LIBXSMM_DATATYPE_I8:
-      return 1;
-    default:
-      /* what if io_generated_code is null? */
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
-      return 0;
-  }
-}
-
-LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_mateltwise_aarch64_sve_get_vlen(){
-  /* the A64FX has 512 bits = 64 bytes */
-  return 64;
-}
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlength( libxsmm_generated_code*   io_generated_code,
                                                                            libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
                                                                            const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
@@ -67,11 +39,11 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
       io_micro_kernel_config->vector_reg_count = 32;
       /* Configure input specific microkernel options */
       io_micro_kernel_config->vmove_instruction_in = l_load_instr;
-      io_micro_kernel_config->datatype_size_in = libxsmm_generator_mateltwise_aarch64_get_type_size(io_generated_code, LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
+      io_micro_kernel_config->datatype_size_in = libxsmm_typesize((libxsmm_datatype) LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
       if(io_micro_kernel_config->datatype_size_in <= 0) return;
       /* Configure output specific microkernel options */
       io_micro_kernel_config->vmove_instruction_out = l_store_instr;
-      io_micro_kernel_config->datatype_size_out = libxsmm_generator_mateltwise_aarch64_get_type_size(io_generated_code, LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ));
+      io_micro_kernel_config->datatype_size_out = libxsmm_typesize((libxsmm_datatype) LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ));
       /* Clear other instructions */
       io_micro_kernel_config->alu_add_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
       io_micro_kernel_config->alu_sub_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
