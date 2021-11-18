@@ -370,9 +370,7 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
     return;
   }
   #endif
-  
-  
-  
+
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;

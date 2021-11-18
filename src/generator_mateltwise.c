@@ -17,13 +17,12 @@
 LIBXSMM_API
 void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*          io_generated_code,
                                           const libxsmm_meltw_descriptor*  i_mateltw_desc ) {
-  unsigned int l_arch = io_generated_code->arch;
   /* generate kernel */
-  if ( (l_arch >= LIBXSMM_X86_GENERIC) && (l_arch <= LIBXSMM_X86_ALLFEAT) ) {
+  if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_mateltwise_sse_avx_avx512_kernel( io_generated_code, i_mateltw_desc );
-   } else if ( (l_arch >= LIBXSMM_AARCH64_V81) && (l_arch <= LIBXSMM_AARCH64_V82) ) {
+   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_V82) ) {
     libxsmm_generator_mateltwise_aarch64_kernel( io_generated_code, i_mateltw_desc );
-   } else if ( (l_arch == LIBXSMM_AARCH64_A64FX) || (l_arch == LIBXSMM_AARCH64_ALLFEAT) ) {
+   } else if ( (io_generated_code->arch == LIBXSMM_AARCH64_A64FX) || (io_generated_code->arch == LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_mateltwise_aarch64_sve_kernel( io_generated_code, i_mateltw_desc );
    } else  {
     /* TODO fix this error and support for more architectures */
