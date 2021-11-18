@@ -745,9 +745,9 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   unsigned char l_vec_reg_src_1 = i_vec_reg_src_1;
   unsigned char tmp;
 
-  unsigned char l_has_src_0 = true;
-  unsigned char l_is_predicated = false;
-  unsigned char l_is_type_specific = true; /* the only exception currently is xor */
+  unsigned char l_has_src_0 = 1;
+  unsigned char l_is_predicated = 0;
+  unsigned char l_is_type_specific = 1; /* the only exception currently is xor */
   switch ( i_vec_instr ) {
     /* usual, binary functions, unpredicated */
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V:
@@ -755,7 +755,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V:
       break;
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
-      l_is_type_specific = false;
+      l_is_type_specific = 0;
       break;
     /* special function with immediate */
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P:
@@ -766,18 +766,18 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         exit(-1);
       }
-      l_is_predicated = true;
-      l_has_src_0 = false;
+      l_is_predicated = 1;
+      l_has_src_0 = 0;
       break;
     /* unary function, unpredicated */
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V:
-      l_has_src_0 = false;
+      l_has_src_0 = 0;
       l_vec_reg_src_1 = i_vec_reg_src_0;
       break;
     /* unary function, predicated */
     case LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P:
-      l_is_predicated = true;
-      l_has_src_0 = false;
+      l_is_predicated = 1;
+      l_has_src_0 = 0;
       l_vec_reg_src_1 = i_vec_reg_src_0;
       break;
     /* usual, binary functions, predicated */
@@ -786,8 +786,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         exit(-1);
       }
-      l_is_predicated = true;
-      l_has_src_0 = false;
+      l_is_predicated = 1;
+      l_has_src_0 = 0;
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %u\n", i_vec_instr);

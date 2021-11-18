@@ -349,6 +349,30 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
 
   /* In this case we don't have to load any data  */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) return;
+  #if 0 /* todo: code from X86, that is still missing in ASIMD/SVE */
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)) {
+    for (in = 0; in < i_n_blocking; in++) {
+      for (im = 0; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            io_generated_code->arch,
+            LIBXSMM_X86_INSTR_VPMOVZXWD,
+            i_gp_reg_mapping->gp_reg_in,
+            LIBXSMM_X86_GP_REG_UNDEF,
+            0,
+            (im * i_vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+            'z',
+            cur_vreg,
+            ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
+            0, 0);
+      }
+    }
+    return;
+  }
+  #endif
+  
+  
+  
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
@@ -356,6 +380,13 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
         offset = (l_ld_bytes*i_n_blocking);
         libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( io_generated_code, i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_1, cur_vreg,
                                                                 i_micro_kernel_config->datatype_size_in, (im == i_m_blocking - 1) ? i_mask_last_m_chunk : 0, 1, 0 );
+        /* If compute is in F32 and input is BF16 (or input is BF16 and output is F32), then upconvert BF16 -> FP32 */
+        #if 0 /* todo: code from X86, that is still missing in ASIMD/SVE */
+        if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) && LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype)) ||
+             (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype  ) && LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype)) ) {
+          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+        }
+        #endif
       } else {
         if ( (bcast_row == 1) || (bcast_scalar == 1) ) {
           offset = (bcast_scalar == 1) ?  i_micro_kernel_config->datatype_size_in:i_micro_kernel_config->datatype_size_in*i_n_blocking;
@@ -431,16 +462,79 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
   unsigned int l_ld_bytes = i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out;
   unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? i_micro_kernel_config->datatype_size_in * i_vlen * i_m_blocking : i_micro_kernel_config->datatype_size_in * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
   LIBXSMM_UNUSED(i_mask_reg);
+  #if 0 /* todo: code from X86, that is still missing in ASIMD/SVE */
+  if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+    for (in = 0; in < i_n_blocking; in++) {
+      for (im = 0; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            io_generated_code->arch,
+            LIBXSMM_X86_INSTR_VPMOVDW,
+            i_gp_reg_mapping->gp_reg_out,
+            LIBXSMM_X86_GP_REG_UNDEF,
+            0,
+            (im * i_vlen + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
+            'z',
+            cur_vreg,
+            ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
+            0, 1);
+        libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, 'z', cur_vreg, cur_vreg, 16 );
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            io_generated_code->arch,
+            LIBXSMM_X86_INSTR_VPMOVDW,
+            i_gp_reg_mapping->gp_reg_out,
+            i_gp_reg_mapping->gp_reg_offset,
+            1,
+            (im * i_vlen + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
+            'z',
+            cur_vreg,
+            ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
+            0, 1);
+      }
+    }
+  } else if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)) {
+    for (in = 0; in < i_n_blocking; in++) {
+      for (im = 0; im < i_m_blocking; im++) {
+        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+            i_micro_kernel_config->vmove_instruction_out,
+            i_gp_reg_mapping->gp_reg_out,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (im * i_vlen + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
+            'z',
+            cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? 1 : 0, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 1 );
+      }
+    }
+  }  else {
+  #endif
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
-      /* In the XOR case we have a constnt vreg  */
+      #if 0 /* todo: code from X86, that might be missing for ASIMD/SVE */
+        cur_vreg_real = i_start_vreg + in * i_m_blocking + im;
+      #endif
+      /* In the XOR case we have a constant vreg  */
       if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) {
         cur_vreg = i_micro_kernel_config->zero_vreg;
       } else {
         if (bcast_row == 1) {
           cur_vreg = i_start_vreg + in * i_m_blocking;
         }
+        #if 0 /* todo: code from X86, that still is missing in ASIMD/SVE */
+          /* If compute is in F32 and output is BF16 (or input is F32 and output is BF16), then downconvert BF16 -> FP32 */
+          if ( (cur_vreg == cur_vreg_real) &&
+           ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
+             LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ) {
+          if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX ) {
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16,
+                                                      i_micro_kernel_config->vector_name,
+                                                      cur_vreg, cur_vreg );
+          } else {
+            libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
+                                                                 cur_vreg, cur_vreg,
+                                                                 i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1, i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1);
+          }
+        #endif
         if (bcast_scalar == 1) {
           cur_vreg = i_start_vreg;
         }
