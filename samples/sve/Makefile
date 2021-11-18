@@ -11,6 +11,9 @@ valgrind:
 compile:
 	g++ -g -DBLAS=0 -DLIBXSMM_NO_BLAS=1 -I../../include sve.cpp -L../../lib -lxsmm -pthread -o compiled
 
+.PHONY: runTests
+	LIBXSMM_VERBOSE=-1 ../eltwise/run_test_aarch64_sve.sh
+
 # -f is used to avoid reporting an error, when no file is found;
 # this command is useful, so that libxsmm doesn't cry, when we run it twice, and it has to override the old debugging files
 .PHONY: clean

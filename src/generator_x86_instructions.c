@@ -497,7 +497,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
   }
 
   /* 2nd phase: encoding */
-  /* 2 A): writing an insturction template into the byte stream */
+  /* 2 A): writing an instruction template into the byte stream */
   /* const EVEX prefix */
   code[evexp] = 0x62;
   /* p0-op based on instruction value - this is the MMMM field, upper two bits are reseverd to be 00 */
@@ -549,7 +549,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
     /* set registers in modrm */
     code[modrm] = (unsigned char)(((unsigned char)(i_vec_reg_number_dst << 3)) & 0x38);
     code[modrm] |= (unsigned char)(((unsigned char) i_gp_reg_base           )  & 0x07);
-    /* adjust coede head*/
+    /* adjust code head*/
     code_head += 6;
   }
 

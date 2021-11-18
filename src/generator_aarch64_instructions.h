@@ -344,15 +344,20 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF    0x8540c086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF    0x85c0e086
 /* define SVE compute instructions */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V         0x65200083 /* fused multiply-add */
-#define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03000 /* exclusive or, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000800 /* multiply, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x65028000 /* multiply, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da000 /* negate, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188000 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
+/* the two last bytes can be used for instruction-metadata, as they always will be replaced with registers/parameters */
+#define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED 1
+#define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1 2
+/* the actual instructions */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V         0x65200002 /* fused multiply-add */
+#define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03002 /* exclusive or, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000802 /* multiply, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V       0x650e3000 /* reciprocal estimate, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001800 /* Newton step to improve the reciprocal */
-#define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da000 /* square root, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001802 /* Newton step to improve the reciprocal, unpredicated */
+/* define predicated SVE compute instructions */
+#define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da001 /* negate, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da003 /* square root, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x65028001 /* multiply, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188002 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
 /* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403

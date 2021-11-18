@@ -741,57 +741,55 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     exit(-1);
   }
 
-  unsigned char l_vec_reg_src_0 = i_vec_reg_src_0;
-  unsigned char l_vec_reg_src_1 = i_vec_reg_src_1;
-  unsigned char tmp;
-
-  unsigned char l_has_src_0 = 1;
-  unsigned char l_is_predicated = 0;
-  unsigned char l_is_type_specific = 1; /* the only exception currently is xor */
+  #if 0 /* this would be a check whether the instruction is valid; it is removed for performance reasons */
   switch ( i_vec_instr ) {
     /* usual, binary functions, unpredicated */
-    case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V:
-    case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V:
-    case LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V:
-      break;
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
-      l_is_type_specific = 0;
-      break;
-    /* special function with immediate */
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P:
-      if( l_vec_reg_src_1 > 1) {
+    case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %u\n", i_vec_instr);
+      exit(-1);
+  }
+  #endif
+
+  unsigned char l_vec_reg_src_0 = i_vec_reg_src_0;
+  unsigned char l_vec_reg_src_1 = i_vec_reg_src_1;
+
+  unsigned char l_has_two_sources = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1);/* != 0 isn't really needed */
+  unsigned char l_is_predicated = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED);
+  unsigned char l_is_type_specific = i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V; /* the only exception currently is xor */
+
+  /* add with immediate is currently the only instruction with an immediate; may be a flag in the future */
+  /* this check could be disabled for performance reasons */
+  if( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P ){
+    if( l_vec_reg_src_1 > 1) {
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: immediate for FADD may be 0 for 0.5 for 1 for 1.0, but nothing else! Received %u\n", l_vec_reg_src_1 );
         exit(-1);
       } else if( i_vec_reg_dst != i_vec_reg_src_0 ){
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         exit(-1);
       }
-      l_is_predicated = 1;
-      l_has_src_0 = 0;
-      break;
-    /* unary function, unpredicated */
-    case LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V:
-      l_has_src_0 = 0;
-      l_vec_reg_src_1 = i_vec_reg_src_0;
-      break;
-    /* unary function, predicated */
-    case LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P:
-      l_is_predicated = 1;
-      l_has_src_0 = 0;
-      l_vec_reg_src_1 = i_vec_reg_src_0;
-      break;
-    /* usual, binary functions, predicated */
-    case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P:/* only dst = src_0 is supported */
-      if( i_vec_reg_src_0 != i_vec_reg_dst ){
+  }
+
+  /* special instruction, where only dst = src_0 is supported; may be a flag in the future */
+  /* this check could be disabled for performance reasons */
+  if( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P ){
+    if( i_vec_reg_src_0 != i_vec_reg_dst ){
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         exit(-1);
       }
-      l_is_predicated = 1;
-      l_has_src_0 = 0;
-      break;
-    default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %u\n", i_vec_instr);
-      exit(-1);
+  }
+
+  if( !l_has_two_sources ){
+    l_vec_reg_src_1 = i_vec_reg_src_0;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -799,25 +797,24 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     unsigned int* code     = (unsigned int *) io_generated_code->generated_code;
 
     /* fix bits */
-    unsigned int instruction = (unsigned int)(0xffffff00 & i_vec_instr);
+    code[code_head] = (unsigned int)(0xffffff00 & i_vec_instr);
     /* setting Rd */
-    instruction |= (unsigned int)(0x1f & i_vec_reg_dst);
+    code[code_head] |= (unsigned int)(0x1f & i_vec_reg_dst);
     /* setting Rn = second input (by ARM documentation) */
-    instruction |= (unsigned int)((0x1f & l_vec_reg_src_1) << 5);
-    if ( l_has_src_0 ){
-      /* setting Rm = first input, with predicate always replaced by dst */
-      instruction |= (unsigned int)((0x1f & l_vec_reg_src_0) << 16);
+    code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_1) << 5);
+    if ( l_has_two_sources ){
+      /* setting Rm = first input */
+      code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_0) << 16);
     }
     if ( l_is_type_specific ) {
       /* setting type */
-      instruction |= (unsigned int)((0x3 & i_type) << 22);
+      code[code_head] |= (unsigned int)((0x3 & i_type) << 22);
     }
     if( l_is_predicated ) {
       /* setting p reg */
-      instruction |= (unsigned int)((0x7 & i_pred_reg) << 10);
+      code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
     }
 
-    code[code_head] = instruction;
     /* advance code head */
     io_generated_code->code_size += 4;
   } else {

@@ -224,16 +224,16 @@ void libxsmm_generator_configure_aarch64_vlens(const libxsmm_meltw_descriptor* i
   /* At the moment, all types are assumed to be of the same length */
   unsigned int l_asimd_bytes_per_register = libxsmm_cpuid_vlen32(i_micro_kernel_config->instruction_set) * 4;
 
-  unsigned char l_inp_type = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 );
-  unsigned int  l_inp_type_size = l_inp_type == LIBXSMM_DATATYPE_UNSUPPORTED ? 0 : libxsmm_typesize((libxsmm_datatype) l_inp_type);
+  unsigned char l_inp_type = LIBXSMM_GETENUM_INP(i_mateltwise_desc->datatype2);
+  unsigned int  l_inp_type_size = LIBXSMM_TYPESIZE(l_inp_type);/* like libxsmm_typesize; returns 0 if type is unknown */
   if(l_inp_type_size > 0) i_micro_kernel_config->vlen_comp = l_asimd_bytes_per_register / l_inp_type_size;
 
   /* The vlen_in is the same as vlen compute */
   i_micro_kernel_config->vlen_in = i_micro_kernel_config->vlen_comp;
 
   /* The vlen_out depends on the output datatype */
-  unsigned char l_out_type = LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype );
-  unsigned int  l_out_type_size = l_out_type == LIBXSMM_DATATYPE_UNSUPPORTED ? 0 : libxsmm_typesize((libxsmm_datatype) l_out_type);
+  unsigned char l_out_type = LIBXSMM_GETENUM_OUT(i_mateltwise_desc->datatype);
+  unsigned int  l_out_type_size = LIBXSMM_TYPESIZE(l_out_type);
   if(l_out_type_size > 0) i_micro_kernel_config->vlen_out = l_asimd_bytes_per_register / l_out_type_size;
 
   /* if the computation is done in F32 or the input is in F32, then set vlen_out to 16 */
