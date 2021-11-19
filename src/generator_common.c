@@ -1147,6 +1147,14 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "eltwise kernels with bitmasks are require for the chosen eltwise op (error #%u)!", i_error_code );
       break;
+    case LIBXSMM_ERR_TRANS_A:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "GEMM kernel with trans A requested, but target/datatype not supported (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_LDA_TRANS:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "lda needs to be greater than or equal to k (error #%u)!", i_error_code );
+      break;
     default: /* we do not know what happened */
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "an unknown error occurred (error #%u)!", i_error_code );

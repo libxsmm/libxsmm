@@ -170,9 +170,16 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   }
 
   /* check LDA */
-  if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
-    return;
+  if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 ) {
+    if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.k ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA_TRANS );
+      return;
+    }
+  } else {
+    if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
+      return;
+    }
   }
 
   /* check LDB */
@@ -192,6 +199,16 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   if ( l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
     return;
+  }
+
+  /* check for trans A cases which are not supported in the generator */
+  if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 ) {
+    if ( (LIBXSMM_DATATYPE_F32 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_A );
+      return;
+    } else {
+      /* we are fine, we have transpose support */
+    }
   }
 
   /* check for trans B cases which are not supported in the generator */
