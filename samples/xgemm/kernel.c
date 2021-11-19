@@ -136,11 +136,23 @@ void ref_matmul( gemm_def* i_gemm_def, void* a, void* b, void* c ) {
             f_c[(l_j * ldc) + l_i] = 0.0;
           }
           for (l_s = 0; l_s < k; l_s++) {
-            if ( i_gemm_def->trans_b == 0 ) {
-              f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + ((l_s * lda) + l_i)] * f_b[(l_r * ldb * n) + ((l_j * ldb) + l_s)];
+            if (i_gemm_def->trans_b == 0) {
+              if (i_gemm_def->trans_a == 0) {
+                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + (l_s * lda) + l_i] *
+                                                   f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+              } else {
+                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
+                                                   f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+              } // if-else l_trans_a
             } else {
-              f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + ((l_s * lda) + l_i)] * f_b[(l_r * ldb * k) + ((l_s * ldb) + l_j)];
-            }
+              if (i_gemm_def->trans_a == 0) {
+                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + (l_s * lda) + l_i] *
+                                                   f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+              } else { // untested?
+                f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
+                                                   f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
+              } // if-else l_trans_a
+            } // if-else l_trans_b
           }
         }
       }
@@ -431,8 +443,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_flags |= LIBXSMM_GEMM_FLAG_TRANS_B;
   }
   if ( i_gemm_def->trans_a != 0 ) {
-    fprintf(stderr, "trans_a needs to be 0\n");
-    return EXIT_FAILURE;
+    l_flags |= LIBXSMM_GEMM_FLAG_TRANS_A;
   }
   if ( i_gemm_def->vnni_a != 0 ) {
     l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
@@ -1010,7 +1021,11 @@ int main(int argc, char* argv []) {
     l_c_perf = (char*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
     l_c_gold = (char*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
 
-    init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_k );
+    if (l_gemm_def.trans_a == 0) {
+      init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_k );
+    } else {
+      init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_m );
+    }
     if (l_gemm_def.trans_b == 0) {
       init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_n );
     } else {
