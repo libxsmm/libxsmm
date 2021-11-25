@@ -1447,7 +1447,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
                 const char *const an = &a0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride_a, i) - index_base) << ibits];
                 const char *const bn = &b0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride_b, i) - index_base) << ibits];
                 char       *const cn = &c0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, i) - index_base) << obits];
-                kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+                kernel.xmm(ai, bi, ci/*, an, bn, cn*/); /* @TODO fix prefetch */
                 ai = an; bi = bn; ci = cn; /* next */
               }
             }
@@ -1456,7 +1456,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
                 const char *const an = &a0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride_a, i) - index_base) * itypesize];
                 const char *const bn = &b0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride_b, i) - index_base) * itypesize];
                 char       *const cn = &c0[(LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, i) - index_base) * otypesize];
-                kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+                kernel.xmm(ai, bi, ci/*, an, bn, cn*/); /* @TODO fix prefetch */
                 ai = an; bi = bn; ci = cn; /* next */
               }
             }
@@ -1466,12 +1466,12 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
               const char *const an = &a0[NULL != stride_a ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_a, i) - index_base) * itypesize) : 0];
               const char *const bn = &b0[NULL != stride_b ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_b, i) - index_base) * itypesize) : 0];
               char       *const cn = &c0[NULL != stride_c ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, i) - index_base) * otypesize) : 0];
-              kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+              kernel.xmm(ai, bi, ci/*, an, bn, cn*/); /* @TODO fix prefetch */
               ai = an; bi = bn; ci = cn; /* next */
             }
           }
           if (end == size) { /* remainder multiplication */
-            kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
+            kernel.xmm(ai, bi, ci/*, ai, bi, ci*/); /* @TODO fix prefetch */
           }
         }
 #if (0 != LIBXSMM_SYNC)
@@ -1494,7 +1494,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
 # else
                 LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
 # endif
-                kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+                kernel.xmm(ai, bi, ci/*, an, bn, cn*/); /* @TODO fix prefetch */
 # if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock1 || i == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
 # else
@@ -1517,7 +1517,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
 # else
                 LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
 # endif
-                kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+                kernel.xmm(ai, bi, ci/*, an, bn, cn*/); /* @TODO fix prefetch */
 # if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock1 || i == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
 # else
@@ -1529,7 +1529,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
           }
           if (end == size) { /* remainder multiplication */
             LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
-            kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
+            kernel.xmm(ai, bi, ci/*, ai, bi, ci*/); /* @TODO fix prefetch */
             LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock);
           }
         }
@@ -1555,8 +1555,8 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
 #endif
             {
               kernel.xmm( /* with prefetch */
-                *((const void**)ai), *((const void**)bi), *((void**)ci),
-                *((const void**)an), *((const void**)bn), *((const void**)cn));
+                *((const void**)ai), *((const void**)bi), *((void**)ci)/*,
+                *((const void**)an), *((const void**)bn), *((const void**)cn)*/); /* @TODO fix prefetch */
             }
             ai = an; bi = bn; ci = cn; /* next */
           }
@@ -1567,8 +1567,8 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
             end == size)
           {
             kernel.xmm( /* pseudo-prefetch */
-              *((const void**)ai), *((const void**)bi), *((void**)ci),
-              *((const void**)ai), *((const void**)bi), *((const void**)ci));
+              *((const void**)ai), *((const void**)bi), *((void**)ci)/*,
+              *((const void**)ai), *((const void**)bi), *((const void**)ci)*/); /* @TODO fix prefetch */
           }
         }
 #if (0 != LIBXSMM_SYNC)
@@ -1594,8 +1594,8 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
               LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
 # endif
               kernel.xmm( /* with prefetch */
-                *((const void**)ai), *((const void**)bi), cc,
-                *((const void**)an), *((const void**)bn), *((const void**)cn));
+                *((const void**)ai), *((const void**)bi), cc/*,
+                *((const void**)an), *((const void**)bn), *((const void**)cn)*/); /* @TODO fix prefetch */
 # if defined(LIBXSMM_GEMM_LOCKFWD)
               if (lock != lock1 || i == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
 # else
@@ -1612,8 +1612,8 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
           {
             LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
             kernel.xmm( /* pseudo-prefetch */
-              *((const void**)ai), *((const void**)bi), cc,
-              *((const void**)ai), *((const void**)bi), cc);
+              *((const void**)ai), *((const void**)bi), cc/*,
+              *((const void**)ai), *((const void**)bi), cc*/); /* @TODO fix prefetch */
             LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock);
           }
         }

@@ -175,7 +175,7 @@ double run_jit_double( const gemm_def*     i_gemm_def,
   } else {
     if (i_gemm_def->br_type == 0) {
       for (l_t = 0; l_t < g_reps; l_t++) {
-        l_test_jit.dmm(i_a, i_b, o_c, i_a, i_b, o_c);
+        l_test_jit.dmm(i_a, i_b, o_c/*, i_a, i_b, o_c*/); /* @TODO fix prefetch */
       }
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
@@ -355,7 +355,7 @@ double run_jit_float( const gemm_def*     i_gemm_def,
   } else {
     if (i_gemm_def->br_type == 0) {
       for (l_t = 0; l_t < g_reps; l_t++) {
-        l_test_jit.smm(i_a, i_b, o_c, i_a, i_b, o_c);
+        l_test_jit.smm(i_a, i_b, o_c/*, i_a, i_b, o_c*/); /* @TODO fix prefetch */
       }
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
@@ -537,7 +537,7 @@ double run_jit_short_int( const gemm_def*     i_gemm_def,
   } else {
     if (i_gemm_def->br_type == 0) {
       for (l_t = 0; l_t < g_reps; l_t++) {
-        l_test_jit.wimm(i_a, i_b, o_c, i_a, i_b, o_c);
+        l_test_jit.wimm(i_a, i_b, o_c/*, i_a, i_b, o_c*/); /* @TODO fix prefetch */
       }
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
@@ -717,7 +717,7 @@ double run_jit_uschar_int( const gemm_def*      i_gemm_def,
   } else {
     if (i_gemm_def->br_type == 0) {
       for (l_t = 0; l_t < g_reps; l_t++) {
-        l_test_jit.usbimm(i_a, i_b, o_c, i_a, i_b, o_c);
+        l_test_jit.usbimm(i_a, i_b, o_c/*, i_a, i_b, o_c*/); /* @TODO fix prefetch */
       }
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
@@ -897,7 +897,7 @@ double run_jit_suchar_int( const gemm_def*      i_gemm_def,
   } else {
     if (i_gemm_def->br_type == 0) {
       for (l_t = 0; l_t < g_reps; l_t++) {
-        l_test_jit.subimm(i_a, i_b, o_c, i_a, i_b, o_c);
+        l_test_jit.subimm(i_a, i_b, o_c/*, i_a, i_b, o_c*/); /* @TODO fix prefetch */
       }
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
@@ -1269,7 +1269,7 @@ double run_jit_bfloat16_float( const gemm_def*         i_gemm_def,
   } else {
     if (i_gemm_def->br_type == 0) {
       for (l_t = 0; l_t < g_reps; l_t++) {
-        l_test_jit.bsmm(i_a, i_b, o_c, i_a, i_b, o_c);
+        l_test_jit.bsmm(i_a, i_b, o_c/*, i_a, i_b, o_c*/); /* @TODO fix prefetch */
       }
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
@@ -1449,7 +1449,7 @@ double run_jit_bfloat16( const gemm_def*         i_gemm_def,
   } else {
     if (i_gemm_def->br_type == 0) {
       for (l_t = 0; l_t < g_reps; l_t++) {
-        l_test_jit.bmm(i_a, i_b, o_c, i_a, i_b, o_c);
+        l_test_jit.bmm(i_a, i_b, o_c/*, i_a, i_b, o_c*/); /* @TODO fix prefetch */
       }
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
@@ -1626,7 +1626,7 @@ double run_jit_bfloat16_float_flat( const gemm_def*         i_gemm_def,
   } else {
     if (i_gemm_def->br_type == 0) {
       for (l_t = 0; l_t < g_reps; l_t++) {
-        l_test_jit.bsmm(i_a, i_b, o_c, i_a, i_b, o_c);
+        l_test_jit.bsmm(i_a, i_b, o_c/*, i_a, i_b, o_c*/); /* @TODO fix prefetch */
       }
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {
@@ -1805,7 +1805,7 @@ double run_jit_bfloat16_flat( const gemm_def*         i_gemm_def,
   } else {
     if (i_gemm_def->br_type == 0) {
       for (l_t = 0; l_t < g_reps; l_t++) {
-        l_test_jit.bmm(i_a, i_b, o_c, i_a, i_b, o_c);
+        l_test_jit.bmm(i_a, i_b, o_c/*, i_a, i_b, o_c*/); /* @TODO fix prefetch */
       }
     } else if (i_gemm_def->br_type == 1) {
       for (l_t = 0; l_t < g_reps; l_t++) {

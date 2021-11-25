@@ -118,8 +118,8 @@ int main(int argc, char* argv[])
         &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
          &beta, c + STREAM_C(SYNC(j, nc, size)), &ldc);
 #elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
-      xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)),
-              a + STREAM_A(p * na), b + STREAM_B(p * nb), c + STREAM_C(SYNC(p, nc, size)));
+      xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size))/*,
+              a + STREAM_A(p * na), b + STREAM_B(p * nb), c + STREAM_C(SYNC(p, nc, size))*/); /* @TODO fix prefetch */
 #else
       xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)));
 #endif
@@ -135,8 +135,8 @@ int main(int argc, char* argv[])
     &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
      &beta, c + STREAM_C(SYNC(j, nc, size)), &ldc);
 #elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
-  xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)),
-          a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)));
+  xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)) /*,
+          a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size))*/); /* @TODO fix prefetch */
 #else
   xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)));
 #endif

@@ -495,6 +495,14 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 32
 } libxsmm_gemm_prefetch_type;
 
+/** Enumeration of the batchreduce type. */
+typedef enum libxsmm_gemm_batch_reduce_type {
+  LIBXSMM_GEMM_BATCH_REDUCE_NONE    = 0,
+  LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS = 1,
+  LIBXSMM_GEMM_BATCH_REDUCE_OFFSET  = 2,
+  LIBXSMM_GEMM_BATCH_REDUCE_STRIDE  = 4
+} libxsmm_gemm_batch_reduce_type;
+
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_matcopy_flags {
   LIBXSMM_MATCOPY_FLAG_DEFAULT = 0,
@@ -661,6 +669,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
   void* tertiary;
 } libxsmm_matrix_arg;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg_v2 {
+  void* primary;
+  void* secondary;
+  void* tertiary;
+  void* quaternary;
+} libxsmm_matrix_arg_v2;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_op_arg {
   void* primary;
   void* secondary;
@@ -730,6 +745,8 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_opred
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_unary)(const libxsmm_meltw_unary_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_binary)(const libxsmm_meltw_binary_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_ternary)(const libxsmm_meltw_ternary_param* in_struct);
+/* matrix equation function */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_matrix_eqn_function)(const libxsmm_matrix_eqn_param* in_struct);
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   void (*xmeltw)(const void* in_struct);
@@ -740,22 +757,48 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
 } libxsmm_xmeltwfunction;
 
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (bf16, fp32-accumulate). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, float* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, float* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (bf16, fp32-accumulate). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, libxsmm_bfloat16* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, libxsmm_bfloat16* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (low-precision). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wimmfunction)(const short* a, const short* b, int* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wimmfunction)(const short* a, const short* b, int* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (int8, int32 accumulate). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_ssbimmfunction)(const          char* a, const          char* b, int* c, ...);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_usbimmfunction)(const unsigned char* a, const          char* b, int* c, ...);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_subimmfunction)(const          char* a, const unsigned char* b, int* c, ...);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uubimmfunction)(const unsigned char* a, const unsigned char* b, int* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_ssbimmfunction)(const          char* a, const          char* b, int* c);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_usbimmfunction)(const unsigned char* a, const          char* b, int* c);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_subimmfunction)(const          char* a, const unsigned char* b, int* c);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uubimmfunction)(const unsigned char* a, const unsigned char* b, int* c);
+
+/* argument strcuts for generalized interface */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_param {
+  libxsmm_matrix_op_arg op;  /* op state & parameters */
+  libxsmm_matrix_arg_v2 a;   /* a matrix  */
+  libxsmm_matrix_arg_v2 b;   /* b matrix  */
+  libxsmm_matrix_arg_v2 c;   /* c matrix  */
+} libxsmm_gemm_param;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_param {
+  libxsmm_matrix_op_arg op;  /* op state & parameters */
+  libxsmm_matrix_arg_v2 a;   /* a matrix  */
+  libxsmm_matrix_arg_v2 b;   /* b matrix  */
+  libxsmm_matrix_arg_v2 c;   /* c matrix  */
+  libxsmm_matrix_arg_v2 d;   /* additional tensor for binary op on c */
+  libxsmm_matrix_arg_v2 e;   /* additional tensor for tenary op on c */
+  libxsmm_matrix_arg_v2 ap;  /* a after applying unary op */
+  libxsmm_matrix_arg_v2 bp;  /* b after applying unary op */
+  libxsmm_matrix_arg_v2 cp;  /* c before applying binary/ternary op after GEMM */
+} libxsmm_gemm_ext_param;
+
+/* generalized and extended functions for everything that is not a basic GEMM as defined above */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_gemmfunction)    ( const libxsmm_gemm_param*     in_struct );
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_gemmfunction_ext)( const libxsmm_gemm_ext_param* in_struct );
+
+/* @TODO: all these dispatchs are deprecated */
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (int8, int32 accumulate, int8 downconvert). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sububmmfunction)(const          char* a, const unsigned char* b, unsigned char* c, float* scf, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sububmmfunction)(const          char* a, const unsigned char* b, unsigned char* c, float* scf);
 
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction_reducebatch_addr)(const double** a, const double** b, double* c, const unsigned long long* count, ...);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction_reducebatch_addr)(const float** a, const float** b, float* c, const unsigned long long* count, ...);
@@ -798,8 +841,9 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction_reduce
 
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
-  void (*xmm)(const void* a, const void* b, void* c, ...);
-  void (*xbm)(const void** a, const void** b, void* c, const unsigned long long* count, ...);
+  void (*xmm)(const void* a, const void* b, void* c);
+  void (*xbm)(const void** a, const void** b, void* c, const unsigned long long* count);
+  void (*xgemm)(const void* in_struct);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_bsmmfunction bsmm; libxsmm_bmmfunction bmm;
   libxsmm_ssbimmfunction ssbimm; libxsmm_usbimmfunction usbimm; libxsmm_subimmfunction subimm; libxsmm_uubimmfunction uubimm; libxsmm_sububmmfunction sububmm;
   libxsmm_dmmfunction_reducebatch_addr dmra; libxsmm_smmfunction_reducebatch_addr smra; libxsmm_bsmmfunction_reducebatch_addr bsmra; libxsmm_bmmfunction_reducebatch_addr bmra;
@@ -814,10 +858,8 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   libxsmm_bmmfunction_reducebatch_strd_meltwfused bmrs_meltwfused;
   libxsmm_bmmfunction_reducebatch_offs_meltwfused bmro_meltwfused;
   libxsmm_bsmmfunction_reducebatch_strd_meltwfused bsmrs_meltwfused;
+  libxsmm_gemmfunction gemm; libxsmm_gemmfunction_ext gemm_ext;
 } libxsmm_xmmfunction;
-
-/* matrix equation function */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_matrix_eqn_function)(const libxsmm_matrix_eqn_param* in_struct);
 
 /** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mmkernel_info {

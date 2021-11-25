@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
   for ( j = 0; j < reps; j++ ) {
     #pragma omp parallel for private(i)
     for ( i = 0; i < n; i+=nblock) {
-      kernel( b+i, a, c2+i, NULL, NULL, NULL );
+      kernel( b+i, a, c2+i );
     }
     l_end = libxsmm_timer_tick();
   }
