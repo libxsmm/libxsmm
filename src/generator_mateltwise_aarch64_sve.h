@@ -19,11 +19,6 @@ void libxsmm_generator_mateltwise_aarch64_sve_kernel( libxsmm_generated_code*   
                                                   const libxsmm_meltw_descriptor* i_mateltw_desc );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_mateltwise_aarch64_sve_update_micro_kernel_config_vectorlength( libxsmm_generated_code*           io_generated_code,
-                                                                                   libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
-                                                                                   const libxsmm_meltw_descriptor*   i_mateltwise_desc);
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_aarch64_sve_init_micro_kernel_config_fullvector( libxsmm_generated_code*           io_generated_code,
                                                                                libxsmm_mateltwise_kernel_config* io_micro_kernel_config,
                                                                                const libxsmm_meltw_descriptor*   i_mateltwise_desc);

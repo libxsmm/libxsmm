@@ -348,8 +348,10 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED 1
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1 2
 /* the actual instructions */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V         0x65200002 /* fused multiply-add */
 #define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03002 /* exclusive or, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_ORR_V          0x04603002 /* binary or, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FADD_V         0x65000002 /* add, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FSUB_V         0x65000402 /* subtract, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000802 /* multiply, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V       0x650e3000 /* reciprocal estimate, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001802 /* used for Newton step to improve the reciprocal, unpredicated: 2-(src0*src1) */
@@ -358,8 +360,11 @@
 /* define predicated SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da001 /* negate, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da001 /* square root, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x65028001 /* multiply, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x65028001 /* multiply, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d8001 /* divide, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188001 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200003 /* fused multiply-add, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P /* todo: change name to fmla_v_p everywhere */
 /* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403

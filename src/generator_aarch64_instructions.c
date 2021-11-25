@@ -743,12 +743,15 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
   #if 0 /* this would be a check whether the instruction is valid; it is removed for performance reasons */
   switch ( i_vec_instr ) {
-    /* usual, binary functions, unpredicated */
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_ORR_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FADD_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FSUB_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P:
-    case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V:
@@ -785,9 +788,9 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     l_vec_reg_src_0 = l_vec_reg_src_1;
   }
 
-  /* special instruction, where only dst = src_0 is supported; may be a flag in the future */
+  /* special instruction, where only dst = src_0 is supported; maybe a flag in the future */
   /* this check could be disabled for performance reasons */
-  if( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P ){
+  if( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ){
     if( i_vec_reg_src_0 != i_vec_reg_dst ){
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
       exit(-1);

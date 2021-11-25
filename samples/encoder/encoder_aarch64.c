@@ -543,7 +543,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_move( "sve_mov_LD1RW_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF, 64 );
 
   /* test SVE compute insturctions */
-  test_sve_compute( "sve_comp_FMLA_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V,   1 );
+  test_sve_compute( "sve_comp_FMLA_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,   1 );
   test_sve_compute( "sve_comp_EOR_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,    0 );
   test_sve_pcompute( "sve_pcomp_PTRUE",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_PTRUE );
   mycode.arch = LIBXSMM_AARCH64_V81;
