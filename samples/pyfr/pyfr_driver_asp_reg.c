@@ -17,9 +17,28 @@
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
 #else /* prototypes for GEMM */
-void dgemm_(const char*, const char*, const int*, const int*, const int*,
-  const double*, const double*, const int*, const double*, const int*,
-  const double*, double*, const int*);
+void my_dgemm( const int* M, const int* N, const int* K, const double* alpha,
+              const double* a, const int* LDA, const double* b, const int* LDB,
+              const double* beta, double* c, const int* LDC ) {
+  const int my_M = *M;
+  const int my_N = *N;
+  const int my_K = *K;
+  const int my_LDA = *LDA;
+  const int my_LDB = *LDB;
+  const int my_LDC = *LDC;
+  const float my_alpha = *alpha;
+  const float my_beta = *beta;
+  int m = 0, n = 0, k = 0;
+
+  for ( n = 0; n < my_N; ++n ) {
+    for ( m = 0; m < my_M; ++m ) {
+      c[(n * my_LDC) + m] = my_beta * c[(n * my_LDC) + m];
+      for ( k = 0; k < my_K; ++k ) {
+        c[(n * my_LDC) + m] += my_alpha * a[(k * my_LDA) + m] * b[(n * my_LDB) + k];
+      }
+    }
+  }
+}
 #endif
 
 #define REPS 100
@@ -172,7 +191,9 @@ int main(int argc, char* argv[]) {
 
   double alpha = 1.0;
   double beta = 1.0;
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
   char trans = 'N';
+#endif
 
   libxsmm_dfsspmdm* gemm_op_betazero = NULL;
   libxsmm_dfsspmdm* gemm_op_betaone = NULL;
@@ -294,9 +315,17 @@ int main(int argc, char* argv[]) {
   /* BLAS code */
   printf("computing BLAS (A dense) solution...\n");
   beta = 0.0;
-  dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+  dgemm( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#else
+  my_dgemm( &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#endif
   beta = 1.0;
-  dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+  dgemm( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#else
+  my_dgemm( &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#endif
   printf("...done!\n");
 
   /* check for errors */
@@ -365,7 +394,11 @@ int main(int argc, char* argv[]) {
   l_start = libxsmm_timer_tick();
   beta = 0.0;
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
-    dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+    dgemm( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#else
+    my_dgemm( &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#endif
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
@@ -376,7 +409,11 @@ int main(int argc, char* argv[]) {
   l_start = libxsmm_timer_tick();
   beta = 1.0;
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
-    dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+    dgemm( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#else
+    my_dgemm( &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#endif
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);

@@ -2051,7 +2051,7 @@ void libxsmm_generator_unary_binary_aarch64_microkernel( libxsmm_generated_code*
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
-  unsigned int loop_order, m_blocking, out_blocking, out_bound, out_block = 0, n_blocking, inner_blocking, inner_block, inner_bound, n_microkernel = 0, m_microkernel = 0;
+  unsigned int loop_order, m_blocking = 0, out_blocking = 0, out_bound = 0, out_block = 0, n_blocking = 0, inner_blocking = 0, inner_block = 0, inner_bound = 0, n_microkernel = 0, m_microkernel = 0;
   unsigned int out_ind, inner_ind, reset_regs, loop_type;
   unsigned int available_vregs = 32;
   unsigned int l_gp_reg_tmp = LIBXSMM_AARCH64_GP_REG_X16;
