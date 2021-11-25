@@ -1,12 +1,12 @@
 /******************************************************************************
-* Copyright (c) Intel Corporation - All rights reserved.                      *
+* Copyright (c) Friedrich-Schiller University of Jena - All rights reserved.  *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.)
+/* Antonio Noack (FSU Jena)
 ******************************************************************************/
 
 #include <libxsmm_source.h>
@@ -17,10 +17,13 @@
 // main directory:
 // make BLAS=0 STATIC=0 -j 48
 
-
+// compile:
 // g++ -DBLAS=0 -DLIBXSMM_NO_BLAS=1 -I../../include sve.cpp -L../../lib -lxsmm -pthread -o compiled
+
+// run:
 // LD_LIBRARY_PATH=../../lib LIBXSMM_VERBOSE=-1 ./compiled
 
+// inspect a dumped file:
 // objdump -D -b binary -maarch64 libxsmm_x86_64_tsize1_20x5_20x5_opcode12_flags0_params29.meltw
 
 struct SVE_UnaryBenchmark {

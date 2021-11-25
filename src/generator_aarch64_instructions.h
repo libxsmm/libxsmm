@@ -355,9 +355,9 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001802 /* Newton step to improve the reciprocal, unpredicated */
 /* define predicated SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da001 /* negate, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da003 /* square root, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da001 /* square root, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x65028001 /* multiply, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188002 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188001 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
 /* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403

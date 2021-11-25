@@ -19,5 +19,6 @@ compile:
 .PHONY: clean
 clean:
 	rm -f libxsmm_a64fx_tsize*
+	rm -f libxsmm_x86_64_tsize*
 	rm -f core.*
 

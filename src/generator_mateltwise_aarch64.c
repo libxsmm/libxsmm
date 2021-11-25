@@ -25,11 +25,11 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
                                                                            const libxsmm_meltw_descriptor*   i_mateltwise_desc) {
   /* this could be simplified, as can be seen from https://github.com/AntonioNoack/libxsmm/blob/00a6077e6b81556879032f0d9fbf8f84e283dd8d/src/generator_mateltwise_aarch64.c */
   /* we currently keep it as-is, because there may be additional logic/data type depending things in the future */
-  if ( 
-    io_generated_code->arch == LIBXSMM_AARCH64_V81 || 
-    io_generated_code->arch == LIBXSMM_AARCH64_V82 || 
+  if (
+    io_generated_code->arch == LIBXSMM_AARCH64_V81 ||
+    io_generated_code->arch == LIBXSMM_AARCH64_V82 ||
     io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ||
-    io_generated_code->arch == LIBXSMM_AARCH64_A64FX 
+    io_generated_code->arch == LIBXSMM_AARCH64_A64FX
   ) {
     io_micro_kernel_config->instruction_set = io_generated_code->arch;
     io_micro_kernel_config->vector_reg_count = 32;

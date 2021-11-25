@@ -771,25 +771,29 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   /* this check could be disabled for performance reasons */
   if( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P ){
     if( l_vec_reg_src_1 > 1) {
-        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: immediate for FADD may be 0 for 0.5 for 1 for 1.0, but nothing else! Received %u\n", l_vec_reg_src_1 );
-        exit(-1);
-      } else if( i_vec_reg_dst != i_vec_reg_src_0 ){
-        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
-        exit(-1);
-      }
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: immediate for FADD may be 0 for 0.5 for 1 for 1.0, but nothing else! Received %u\n", l_vec_reg_src_1 );
+      exit(-1);
+    } else if( i_vec_reg_dst != i_vec_reg_src_0 ){
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
+      exit(-1);
+    }
+    /* src0 == dst, */
+    /* src1 is 0 or 1, */
+    /* in the command, only a single "src" register is part of the instruction */
+    l_vec_reg_src_0 = l_vec_reg_src_1;
   }
 
   /* special instruction, where only dst = src_0 is supported; may be a flag in the future */
   /* this check could be disabled for performance reasons */
   if( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P ){
     if( i_vec_reg_src_0 != i_vec_reg_dst ){
-        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
-        exit(-1);
-      }
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
+      exit(-1);
+    }
   }
 
   if( !l_has_two_sources ){
-    l_vec_reg_src_1 = i_vec_reg_src_0;
+    l_vec_reg_src_1 = l_vec_reg_src_0;
   }
 
   if ( io_generated_code->code_type > 1 ) {
